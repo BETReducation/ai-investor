@@ -1478,14 +1478,32 @@
 
 <script>
 // ============================================================
-// APEX TRADER — SIGNAL ENGINE (Simulation Mode)
+// APEX TRADER — SIGNAL ENGINE (Live API Mode)
 // ============================================================
+
+const API_BASE = 'http://localhost:5000';
+
+const symbolMap = {
+  'BTC/USDT': 'BTC-USD',
+  'ETH/USDT': 'ETH-USD',
+  'SOL/USDT': 'SOL-USD',
+  'AAPL':     'AAPL',
+  'TSLA':     'TSLA',
+  'EUR/USD':  'EURUSD=X',
+  'GBP/USD':  'GBPUSD=X',
+  'NVDA':     'NVDA',
+};
+
+const intervalMap = {
+  '1m':  { period: '1d',  interval: '1m'  },
+  '5m':  { period: '5d',  interval: '5m'  },
+  '15m': { period: '1mo', interval: '15m' },
+  '1h':  { period: '3mo', interval: '1h'  },
+};
 
 // --- STATE ---
 let engineRunning = false;
-let engineInterval = null;
-let priceInterval = null;
-let signalInterval = null;
+let pollTimer = null;
 let currentAsset = 'BTC/USDT';
 let currentView = 'price';
 let pendingTrade = null;
@@ -1495,31 +1513,22 @@ let dailyPnl = 0;
 let tradesExecuted = 0;
 let tradeWins = 0;
 let signalsToday = 0;
-let tickCount = 0;
 
-// Simulated price data
 const assets = {
-  'BTC/USDT':  { price: 43250, vol: 1.0, category: 'crypto', change: 0 },
-  'ETH/USDT':  { price: 2285,  vol: 1.0, category: 'crypto', change: 0 },
-  'SOL/USDT':  { price: 98.50, vol: 1.0, category: 'crypto', change: 0 },
-  'AAPL':      { price: 189.20,vol: 1.0, category: 'stock',  change: 0 },
-  'TSLA':      { price: 248.75,vol: 1.0, category: 'stock',  change: 0 },
-  'EUR/USD':   { price: 1.0842,vol: 1.0, category: 'forex',  change: 0 },
-  'GBP/USD':   { price: 1.2650,vol: 1.0, category: 'forex',  change: 0 },
-  'NVDA':      { price: 875.40,vol: 1.0, category: 'stock',  change: 0 },
+  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
+  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
+  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
+  'AAPL':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
+  'TSLA':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
+  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',  change: 0 },
+  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',  change: 0 },
+  'NVDA':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
 };
 
-// Price history per asset (for chart)
 let priceHistory = {};
 Object.keys(assets).forEach(a => { priceHistory[a] = []; });
 
-// Indicators (live values)
-let indicators = {
-  rsi: 50, macd: 0, macdSignal: 0, macdHist: 0,
-  bbUpper: 0, bbLower: 0, bbMid: 0, bbPos: 50,
-  maShort: 0, maLong: 0, maSignal: 'neutral',
-  volume: 1.0, srLevel: 'clear', srDistance: 0
-};
+let liveCache = {};
 
 // --- INIT ---
 function init() {
@@ -1529,15 +1538,15 @@ function init() {
   initChart();
   updateTicker();
   setupToggles();
-  addLog('info', 'SYSTEM', 'APEX TRADER initialized — Simulation Mode active');
+  addLog('info', 'SYSTEM', 'APEX TRADER initialized — Live API Mode');
+  addLog('info', 'SYSTEM', 'Backend: ' + API_BASE);
   addLog('info', 'SYSTEM', 'Configure strategy parameters and press START ENGINE');
 }
 
 // --- CLOCK ---
 function updateClock() {
   const now = new Date();
-  document.getElementById('clock').textContent =
-    now.toTimeString().split(' ')[0];
+  document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
 }
 
 // --- TOGGLES ---
@@ -1554,7 +1563,7 @@ function toggleEngine() {
   else stopEngine();
 }
 
-function startEngine() {
+async function startEngine() {
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP ENGINE';
   document.getElementById('engineBtn').className = 'btn-engine stop';
@@ -1562,215 +1571,220 @@ function startEngine() {
   document.getElementById('engineStatus').textContent = 'ENGINE LIVE';
   document.getElementById('emptyAlerts').style.display = 'none';
 
-  addLog('signal', 'ENGINE', `Strategy engine started — Scanning ${Object.keys(assets).length} assets`);
-  addLog('info', 'ENGINE', `Target: ${document.getElementById('targetGain').value}% per trade | SL: ${document.getElementById('stopLoss').value}%`);
-  addLog('info', 'ENGINE', `Timeframe: ${document.getElementById('timeframe').value} | Min signals: ${document.getElementById('minInd').value}`);
+  const cfg = getConfig();
+  addLog('signal', 'ENGINE', `Strategy engine started — ${Object.keys(assets).length} assets | Live API`);
+  addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
+  addLog('info', 'ENGINE', `Min signals: ${cfg.minInd} | Min confidence: ${cfg.minConf}% | Poll: 30s`);
 
-  // Price updates
-  priceInterval = setInterval(() => {
-    updatePrices();
-    updateChart();
-    updateIndicatorBar();
-    updatePositions();
-    updateStats();
-  }, 800);
+  await fetchAllAssets();
+  await scanSignals();
 
-  // Signal scanning
-  signalInterval = setInterval(() => {
-    scanSignals();
-  }, 4000 + Math.random() * 3000);
-
-  // Initial scan
-  setTimeout(scanSignals, 2000);
+  pollTimer = setInterval(async () => {
+    if (!engineRunning) return;
+    await fetchAllAssets();
+    await scanSignals();
+  }, 30000);
 }
 
 function stopEngine() {
   engineRunning = false;
-  clearInterval(priceInterval);
-  clearInterval(signalInterval);
+  clearInterval(pollTimer);
+  pollTimer = null;
   document.getElementById('engineBtn').textContent = '▶ START ENGINE';
   document.getElementById('engineBtn').className = 'btn-engine start';
   document.getElementById('engineDot').className = 'status-dot inactive';
   document.getElementById('engineStatus').textContent = 'ENGINE OFFLINE';
+  setDataStatus('offline');
   addLog('warn', 'ENGINE', 'Strategy engine stopped');
 }
 
-// --- PRICE SIMULATION ---
-function updatePrices() {
-  tickCount++;
-  Object.keys(assets).forEach(sym => {
-    const a = assets[sym];
-    // Random walk with slight trend
-    const drift = (Math.random() - 0.485) * 0.001;
-    const shock = Math.random() < 0.05 ? (Math.random() - 0.5) * 0.003 : 0;
-    const change = a.price * (drift + shock);
-    const prev = a.price;
-    a.price = Math.max(a.price + change, a.price * 0.95);
-    a.change = ((a.price - a.price / (1 + drift + shock)) / a.price) * 100;
-    a.vol = 0.8 + Math.random() * 1.5;
+// --- API HELPERS ---
+function getApiInterval() {
+  const tf = document.getElementById('timeframe').value;
+  return intervalMap[tf] || { period: '3mo', interval: '1d' };
+}
 
-    // Keep history
-    if (!priceHistory[sym]) priceHistory[sym] = [];
-    priceHistory[sym].push({ t: tickCount, p: a.price, v: a.vol });
-    if (priceHistory[sym].length > 200) priceHistory[sym].shift();
+async function apiFetch(path) {
+  const res = await fetch(API_BASE + path);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// --- FETCH PRICES ---
+async function fetchPrices(sym) {
+  const yfSym = symbolMap[sym];
+  if (!yfSym) return;
+  const { period, interval } = getApiInterval();
+  const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+  if (!data.data || data.data.length === 0) return;
+
+  priceHistory[sym] = data.data.map((row, i) => ({ t: i, p: row.Close, v: row.Volume || 1 }));
+
+  const rows = data.data;
+  const latest = rows[rows.length - 1];
+  const prev = rows.length > 1 ? rows[rows.length - 2] : latest;
+  assets[sym].price = latest.Close;
+  assets[sym].vol = latest.Volume || 1;
+  assets[sym].change = prev.Close ? (latest.Close - prev.Close) / prev.Close : 0;
+}
+
+// --- FETCH SIGNALS ---
+async function fetchSignals(sym) {
+  const yfSym = symbolMap[sym];
+  if (!yfSym) return null;
+  const { period, interval } = getApiInterval();
+  const cfg = getConfig();
+  const params = new URLSearchParams({
+    symbol: yfSym, period, interval,
+    rsi_oversold: cfg.rsiOversold,
+    rsi_overbought: cfg.rsiOverbought,
+    volume_surge: cfg.volSpike,
   });
+  const data = await apiFetch(`/api/signals?${params}`);
+  liveCache[sym] = data;
+  return data;
+}
 
+// --- FETCH ALL ASSETS ---
+async function fetchAllAssets() {
+  setDataStatus('loading');
+  let anyError = false;
+  await Promise.all(Object.keys(assets).map(async sym => {
+    try { await fetchPrices(sym); }
+    catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
+  }));
   updateTicker();
   updateWatchlist();
+  updateChartOverlay();
+  drawChart();
+  updatePositions();
+  updateStats();
+  setDataStatus(anyError ? 'error' : 'live');
+}
 
-  // Update chart display
-  const p = assets[currentAsset].price;
-  const fmt = currentAsset.includes('USD/') || currentAsset === 'EUR/USD' || currentAsset === 'GBP/USD'
-    ? p.toFixed(4) : p > 100 ? p.toFixed(2) : p.toFixed(3);
-  document.getElementById('chartPrice').textContent = '$' + parseFloat(fmt).toLocaleString('en-US', {minimumFractionDigits: 2});
-  const chgPct = (assets[currentAsset].change * 100).toFixed(3);
-  const chgDir = chgPct >= 0 ? '▲' : '▼';
-  document.getElementById('chartChange').textContent = `${chgDir} ${Math.abs(chgPct)}% LAST TICK`;
+// --- SCAN SIGNALS ---
+async function scanSignals() {
+  if (!engineRunning) return;
+  addLog('info', 'SCAN', `Scanning ${Object.keys(assets).length} assets via /api/signals...`);
+  const cfg = getConfig();
+  const minConf = cfg.minConf / 100;
+  const minInd = cfg.minInd;
+
+  for (const sym of Object.keys(assets)) {
+    try {
+      const data = await fetchSignals(sym);
+      if (!data || data.overall === 'NEUTRAL') continue;
+      const overall = data.overall;
+      const score = overall === 'BUY' ? (data.buy_score || 0) : (data.sell_score || 0);
+      const confidence = (data.confidence || 0) / 100;
+      const reasons = (data.signals || [])
+        .filter(s => s.type === overall && s.weight > 0)
+        .map(s => s.indicator.toUpperCase());
+      if (score >= minInd && confidence >= minConf) {
+        fireAlert(sym, { type: overall, score, confidence, reasons });
+      }
+    } catch (e) {
+      addLog('err', 'API', `Signal scan failed ${sym}: ${e.message}`);
+    }
+  }
+  updateIndicatorBar();
+  updateStats();
+}
+
+// --- DATA STATUS ---
+function setDataStatus(state) {
+  const dot = document.getElementById('dataDot');
+  const label = document.getElementById('dataStatus');
+  if (state === 'live')         { dot.className = 'status-dot';          label.textContent = 'LIVE DATA';   }
+  else if (state === 'loading') { dot.className = 'status-dot';          label.textContent = 'FETCHING...'; }
+  else if (state === 'error')   { dot.className = 'status-dot inactive'; label.textContent = 'API ERROR';   }
+  else                          { dot.className = 'status-dot inactive'; label.textContent = 'OFFLINE';     }
+}
+
+// --- CHART OVERLAY ---
+function updateChartOverlay() {
+  const a = assets[currentAsset];
+  if (!a || !a.price) return;
+  const chgPct = a.change * 100;
+  document.getElementById('chartPrice').textContent = '$' + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
 
-// --- INDICATOR CALCULATION (Simulated) ---
-function calcIndicators(sym) {
-  const hist = priceHistory[sym] || [];
-  if (hist.length < 20) return;
-
-  const prices = hist.map(h => h.p);
-  const n = prices.length;
-
-  // RSI (simplified)
-  let gains = 0, losses = 0;
-  const period = 14;
-  for (let i = Math.max(0, n - period); i < n - 1; i++) {
-    const d = prices[i+1] - prices[i];
-    if (d > 0) gains += d; else losses -= d;
-  }
-  const rs = losses === 0 ? 100 : gains / losses;
-  indicators.rsi = 100 - (100 / (1 + rs));
-
-  // MACD (simplified EMA approx)
-  const fast = parseInt(document.getElementById('macdFast').value) || 12;
-  const slow = parseInt(document.getElementById('macdSlow').value) || 26;
-  const emaF = prices.slice(-fast).reduce((a,b) => a+b, 0) / fast;
-  const emaS = prices.slice(-slow).reduce((a,b) => a+b, 0) / slow;
-  indicators.macd = emaF - emaS;
-  indicators.macdSignal = indicators.macd * 0.85 + Math.random() * indicators.macd * 0.1;
-  indicators.macdHist = indicators.macd - indicators.macdSignal;
-
-  // Bollinger Bands
-  const bbP = parseInt(document.getElementById('bbPeriod').value) || 20;
-  const bbStdV = parseFloat(document.getElementById('bbStd').value) || 2;
-  const slice = prices.slice(-bbP);
-  const mean = slice.reduce((a,b) => a+b, 0) / bbP;
-  const std = Math.sqrt(slice.reduce((a,b) => a + (b-mean)**2, 0) / bbP);
-  indicators.bbMid = mean;
-  indicators.bbUpper = mean + bbStdV * std;
-  indicators.bbLower = mean - bbStdV * std;
-  const curPrice = prices[n-1];
-  indicators.bbPos = ((curPrice - indicators.bbLower) / (indicators.bbUpper - indicators.bbLower)) * 100;
-
-  // Moving Averages
-  const maS = parseInt(document.getElementById('maShort').value) || 9;
-  const maL = parseInt(document.getElementById('maLong').value) || 21;
-  indicators.maShort = prices.slice(-maS).reduce((a,b) => a+b, 0) / maS;
-  indicators.maLong = prices.slice(-maL).reduce((a,b) => a+b, 0) / maL;
-  indicators.maSignal = indicators.maShort > indicators.maLong ? 'bullish' : 'bearish';
-
-  // Volume
-  const recentVol = hist.slice(-5).reduce((a,b) => a + b.v, 0) / 5;
-  const avgVol = hist.slice(-20).reduce((a,b) => a + b.v, 0) / 20;
-  indicators.volume = recentVol / avgVol;
-
-  // S/R (simplified: distance from recent highs/lows)
-  const highs = prices.slice(-20);
-  const resistance = Math.max(...highs);
-  const support = Math.min(...highs);
-  const distR = Math.abs((curPrice - resistance) / curPrice) * 100;
-  const distS = Math.abs((curPrice - support) / curPrice) * 100;
-  indicators.srDistance = Math.min(distR, distS);
-  indicators.srLevel = indicators.srDistance < parseFloat(document.getElementById('srTol').value) ? 'level' : 'clear';
-}
-
-// --- SIGNAL SCORING ---
-function scoreSignal(sym) {
-  calcIndicators(sym);
+// --- INDICATOR BAR ---
+function updateIndicatorBar() {
+  const cache = liveCache[currentAsset];
+  if (!cache || !cache.indicators) return;
+  const ind = cache.indicators;
   const cfg = getConfig();
-  const hist = priceHistory[sym] || [];
-  if (hist.length < 26) return null;
 
-  let buyScore = 0, sellScore = 0;
-  let buyReasons = [], sellReasons = [];
-
-  // RSI
-  if (cfg.rsiOn) {
-    if (indicators.rsi < cfg.rsiOversold) { buyScore++; buyReasons.push(`RSI ${indicators.rsi.toFixed(0)} OVERSOLD`); }
-    if (indicators.rsi > cfg.rsiOverbought) { sellScore++; sellReasons.push(`RSI ${indicators.rsi.toFixed(0)} OVERBOUGHT`); }
+  const rsi = ind.rsi;
+  if (rsi != null) {
+    const el = document.getElementById('indRsi'), sig = document.getElementById('indRsiSig');
+    el.textContent = rsi.toFixed(1);
+    if (rsi < cfg.rsiOversold)        { el.className = 'indicator-chip-value val-green'; sig.textContent = 'OVERSOLD';   sig.className = 'indicator-chip-signal val-green'; }
+    else if (rsi > cfg.rsiOverbought) { el.className = 'indicator-chip-value val-red';   sig.textContent = 'OVERBOUGHT'; sig.className = 'indicator-chip-signal val-red'; }
+    else                              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEUTRAL';    sig.className = 'indicator-chip-signal val-amber'; }
   }
 
-  // MACD
-  if (cfg.macdOn) {
-    if (indicators.macdHist > 0 && indicators.macd > indicators.macdSignal) { buyScore++; buyReasons.push('MACD BULL CROSS'); }
-    if (indicators.macdHist < 0 && indicators.macd < indicators.macdSignal) { sellScore++; sellReasons.push('MACD BEAR CROSS'); }
+  const macdHist = ind.macd && ind.macd.histogram;
+  if (macdHist != null) {
+    const el = document.getElementById('indMacd'), sig = document.getElementById('indMacdSig');
+    el.textContent = macdHist.toFixed(4);
+    if (macdHist > 0) { el.className = 'indicator-chip-value val-green'; sig.textContent = 'BULL'; sig.className = 'indicator-chip-signal val-green'; }
+    else              { el.className = 'indicator-chip-value val-red';   sig.textContent = 'BEAR'; sig.className = 'indicator-chip-signal val-red'; }
   }
 
-  // Bollinger Bands
-  if (cfg.bbOn) {
-    if (indicators.bbPos < 15) { buyScore++; buyReasons.push('NEAR BB LOWER'); }
-    if (indicators.bbPos > 85) { sellScore++; sellReasons.push('NEAR BB UPPER'); }
+  const pctB = ind.bollinger_bands && ind.bollinger_bands.percent_b;
+  if (pctB != null) {
+    const bbPos = pctB * 100;
+    document.getElementById('indBb').textContent = bbPos.toFixed(0) + '%';
+    if (bbPos < 20)      { document.getElementById('indBb').className = 'indicator-chip-value val-green';  document.getElementById('indBbSig').textContent = 'LOWER'; }
+    else if (bbPos > 80) { document.getElementById('indBb').className = 'indicator-chip-value val-red';    document.getElementById('indBbSig').textContent = 'UPPER'; }
+    else                 { document.getElementById('indBb').className = 'indicator-chip-value val-purple'; document.getElementById('indBbSig').textContent = 'MID';   }
   }
 
-  // MA Cross
-  if (cfg.maOn) {
-    if (indicators.maSignal === 'bullish') { buyScore++; buyReasons.push('MA BULL CROSS'); }
-    else { sellScore++; sellReasons.push('MA BEAR CROSS'); }
+  const close = ind.price && ind.price.close;
+  const ma20 = ind.moving_averages && ind.moving_averages.ma_20;
+  const ma50 = ind.moving_averages && ind.moving_averages.ma_50;
+  if (close && ma20 && ma50) {
+    const bull = close > ma20 && ma20 > ma50;
+    document.getElementById('indMa').textContent = bull ? '▲ BULL' : '▼ BEAR';
+    document.getElementById('indMa').className = 'indicator-chip-value ' + (bull ? 'val-green' : 'val-red');
+    document.getElementById('indMaSig').textContent = bull ? 'BULLISH' : 'BEARISH';
+    document.getElementById('indMaSig').className = 'indicator-chip-signal ' + (bull ? 'val-green' : 'val-red');
   }
 
-  // Volume
-  if (cfg.volOn && indicators.volume >= cfg.volSpike) {
-    buyScore += 0.5; sellScore += 0.5;
-    buyReasons.push(`VOL SPIKE ${indicators.volume.toFixed(1)}×`);
-    sellReasons.push(`VOL SPIKE ${indicators.volume.toFixed(1)}×`);
+  const volRatio = ind.volume && ind.volume.ratio;
+  if (volRatio != null) {
+    document.getElementById('indVol').textContent = volRatio.toFixed(2) + '×';
+    if (volRatio >= cfg.volSpike) { document.getElementById('indVol').className = 'indicator-chip-value val-green';  document.getElementById('indVolSig').textContent = 'SPIKE';  }
+    else                          { document.getElementById('indVol').className = 'indicator-chip-value val-amber'; document.getElementById('indVolSig').textContent = 'NORMAL'; }
   }
 
-  // S/R
-  if (cfg.srOn && indicators.srLevel === 'level') {
-    buyScore += 0.5; sellScore += 0.5;
-    buyReasons.push('AT S/R LEVEL');
-    sellReasons.push('AT S/R LEVEL');
+  const overall = cache.overall;
+  const score = Math.max(cache.buy_score || 0, cache.sell_score || 0);
+  const scoreEl = document.getElementById('indScore'), scoreSig = document.getElementById('indScoreSig');
+  if (overall !== 'NEUTRAL' && score > 0) {
+    scoreEl.textContent = score.toFixed(1);
+    scoreSig.textContent = overall;
+    scoreEl.className = 'indicator-chip-value ' + (overall === 'BUY' ? 'val-green' : 'val-red');
+    scoreSig.className = 'indicator-chip-signal ' + (overall === 'BUY' ? 'val-green' : 'val-red');
+  } else {
+    scoreEl.textContent = score > 0 ? score.toFixed(1) : '—';
+    scoreSig.textContent = 'NEUTRAL';
+    scoreEl.className = 'indicator-chip-value val-amber';
+    scoreSig.className = 'indicator-chip-signal val-amber';
   }
-
-  const minInd = cfg.minInd;
-  const minConf = cfg.minConf / 100;
-  const maxScore = 5.0;
-
-  if (buyScore >= minInd && buyScore / maxScore >= minConf) {
-    return { type: 'BUY', score: buyScore, confidence: buyScore / maxScore, reasons: buyReasons };
-  }
-  if (sellScore >= minInd && sellScore / maxScore >= minConf) {
-    return { type: 'SELL', score: sellScore, confidence: sellScore / maxScore, reasons: sellReasons };
-  }
-  return null;
-}
-
-// --- SCAN ALL ASSETS ---
-function scanSignals() {
-  if (!engineRunning) return;
-  addLog('info', 'SCAN', `Scanning ${Object.keys(assets).length} assets for signals...`);
-
-  Object.keys(assets).forEach(sym => {
-    const sig = scoreSignal(sym);
-    if (sig && sig.confidence >= getConfig().minConf / 100) {
-      fireAlert(sym, sig);
-    }
-  });
 }
 
 // --- FIRE ALERT ---
 function fireAlert(sym, sig) {
-  // Don't duplicate
   if (alerts.find(a => a.sym === sym && a.type === sig.type && !a.dismissed)) return;
 
   signalsToday++;
   const price = assets[sym].price;
+  if (!price) return;
   const cfg = getConfig();
   const capital = parseFloat(document.getElementById('capital').value);
   const posSize = cfg.posSize / 100;
@@ -1792,7 +1806,7 @@ function fireAlert(sym, sig) {
   document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 
   const col = sig.type === 'BUY' ? 'signal' : 'err';
-  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ $${price.toFixed(2)} | Conf: ${conf}% | Score: ${sig.score.toFixed(1)}`);
+  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ $${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
 }
 
@@ -1804,7 +1818,6 @@ function renderAlerts() {
     list.innerHTML = '<div class="empty-state" id="emptyAlerts" style="display:block;">NO PENDING SIGNALS<br><span style="color:var(--text-muted);font-size:8px;">Engine is scanning...</span></div>';
     return;
   }
-
   list.innerHTML = pending.map(a => `
     <div class="alert-card ${a.type.toLowerCase()} new" id="alert-${a.id}">
       <div class="alert-card-header">
@@ -1814,26 +1827,12 @@ function renderAlerts() {
       </div>
       <div class="alert-body">
         <div class="alert-price-row">
-          <div class="alert-price-item">
-            <div class="alert-price-key">ENTRY</div>
-            <div class="alert-price-val">$${formatPrice(a.price, a.sym)}</div>
-          </div>
-          <div class="alert-price-item">
-            <div class="alert-price-key">TARGET</div>
-            <div class="alert-price-val green">$${formatPrice(a.target, a.sym)}</div>
-          </div>
-          <div class="alert-price-item">
-            <div class="alert-price-key">STOP</div>
-            <div class="alert-price-val red">$${formatPrice(a.sl, a.sym)}</div>
-          </div>
-          <div class="alert-price-item">
-            <div class="alert-price-key">QTY</div>
-            <div class="alert-price-val">${a.qty.toFixed(4)}</div>
-          </div>
+          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">$${formatPrice(a.price, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">$${formatPrice(a.target, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">$${formatPrice(a.sl, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">QTY</div><div class="alert-price-val">${a.qty.toFixed(4)}</div></div>
         </div>
-        <div class="alert-reasons">
-          ${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}
-        </div>
+        <div class="alert-reasons">${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}</div>
         <div class="alert-confidence">
           <div class="confidence-label">CONFIDENCE</div>
           <div class="confidence-bar"><div class="confidence-fill" style="width:${a.conf}%"></div></div>
@@ -1855,7 +1854,6 @@ function openModal(alertId) {
   const a = alerts.find(x => String(x.id) === String(alertId));
   if (!a) return;
   pendingTrade = a;
-
   const capital = parseFloat(document.getElementById('capital').value);
   const posSize = getConfig().posSize;
   const invested = capital * posSize / 100;
@@ -1876,8 +1874,7 @@ function openModal(alertId) {
     <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
   `;
   document.getElementById('modalWarning').innerHTML =
-    `⚠ SIMULATION MODE: No real order will be placed. This system is for demonstration purposes. Always verify signals independently before live trading.`;
-
+    `⚠ SIMULATION MODE: No real order will be placed. Always verify signals independently before live trading.`;
   document.getElementById('modal').style.display = 'flex';
 }
 
@@ -1891,23 +1888,17 @@ function confirmTrade() {
   const a = pendingTrade;
   const capital = parseFloat(document.getElementById('capital').value);
   const invested = capital * getConfig().posSize / 100;
-
-  // Add to positions
   positions.push({
     id: a.id, sym: a.sym, side: a.type,
     entry: a.price, current: a.price,
-    qty: a.qty, invested,
-    target: a.target, sl: a.sl,
-    pnl: 0, pnlPct: 0,
-    time: a.time
+    qty: a.qty, invested, target: a.target, sl: a.sl,
+    pnl: 0, pnlPct: 0, time: a.time
   });
-
   dismissAlert(String(a.id));
   tradesExecuted++;
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-
   addLog('signal', 'ORDER', `${a.type} EXECUTED: ${a.sym} × ${a.qty.toFixed(4)} @ $${formatPrice(a.price, a.sym)}`);
   addLog('info', 'ORDER', `Target: $${formatPrice(a.target, a.sym)} | Stop: $${formatPrice(a.sl, a.sym)}`);
 }
@@ -1917,8 +1908,7 @@ function dismissAlert(alertId) {
   const idx = alerts.findIndex(a => String(a.id) === String(alertId));
   if (idx !== -1) alerts[idx].dismissed = true;
   renderAlerts();
-  const pending = alerts.filter(a => !a.dismissed).length;
-  document.getElementById('alertBadge').textContent = pending + ' PENDING';
+  document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 }
 
 // --- UPDATE POSITIONS ---
@@ -1928,8 +1918,6 @@ function updatePositions() {
     const dir = pos.side === 'BUY' ? 1 : -1;
     pos.pnl = dir * (pos.current - pos.entry) * pos.qty;
     pos.pnlPct = dir * ((pos.current - pos.entry) / pos.entry) * 100;
-
-    // Check stop loss / take profit
     if (pos.side === 'BUY') {
       if (pos.current >= pos.target) closePosition(pos, 'TARGET');
       else if (pos.current <= pos.sl) closePosition(pos, 'STOP');
@@ -1952,7 +1940,6 @@ function closePosition(pos, reason) {
   addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}$${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
 }
 
-// --- UPDATE POSITIONS TABLE ---
 function updatePositionsTable() {
   const tbody = document.getElementById('posTableBody');
   document.getElementById('posBadge').textContent = positions.length + ' ACTIVE';
@@ -1982,12 +1969,11 @@ function manualClose(posId) {
   if (pos) closePosition(pos, 'MANUAL');
 }
 
-// --- STATS UPDATE ---
+// --- STATS ---
 function updateStats() {
   const capital = parseFloat(document.getElementById('capital').value);
   const target = capital * parseFloat(document.getElementById('targetGain').value) / 100;
   const progress = Math.min((dailyPnl / target) * 100, 100);
-
   document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + '$' + dailyPnl.toFixed(2);
   document.getElementById('statPnl').className = 'stat-value ' + (dailyPnl >= 0 ? 'tag-green' : 'tag-red');
   document.getElementById('statPnlPct').textContent = (dailyPnl >= 0 ? '+' : '') + ((dailyPnl / capital) * 100).toFixed(2) + '%';
@@ -1998,76 +1984,6 @@ function updateStats() {
   document.getElementById('statProgress').textContent = Math.round(progress) + '% progress';
 }
 
-// --- INDICATOR BAR UPDATE ---
-function updateIndicatorBar() {
-  calcIndicators(currentAsset);
-  const rsi = indicators.rsi;
-  const cfg = getConfig();
-
-  // RSI
-  const rsiEl = document.getElementById('indRsi');
-  const rsiSig = document.getElementById('indRsiSig');
-  rsiEl.textContent = rsi.toFixed(1);
-  if (rsi < cfg.rsiOversold) { rsiEl.className = 'indicator-chip-value val-green'; rsiSig.textContent = 'OVERSOLD'; rsiSig.className = 'indicator-chip-signal val-green'; }
-  else if (rsi > cfg.rsiOverbought) { rsiEl.className = 'indicator-chip-value val-red'; rsiSig.textContent = 'OVERBOUGHT'; rsiSig.className = 'indicator-chip-signal val-red'; }
-  else { rsiEl.className = 'indicator-chip-value val-amber'; rsiSig.textContent = 'NEUTRAL'; rsiSig.className = 'indicator-chip-signal val-amber'; }
-
-  // MACD
-  const macdEl = document.getElementById('indMacd');
-  const macdSig = document.getElementById('indMacdSig');
-  macdEl.textContent = indicators.macdHist.toFixed(4);
-  if (indicators.macdHist > 0) { macdEl.className = 'indicator-chip-value val-green'; macdSig.textContent = 'BULL'; macdSig.className = 'indicator-chip-signal val-green'; }
-  else { macdEl.className = 'indicator-chip-value val-red'; macdSig.textContent = 'BEAR'; macdSig.className = 'indicator-chip-signal val-red'; }
-
-  // BB
-  document.getElementById('indBb').textContent = indicators.bbPos.toFixed(0) + '%';
-  if (indicators.bbPos < 15) { document.getElementById('indBbSig').textContent = 'LOWER'; document.getElementById('indBb').className = 'indicator-chip-value val-green'; }
-  else if (indicators.bbPos > 85) { document.getElementById('indBbSig').textContent = 'UPPER'; document.getElementById('indBb').className = 'indicator-chip-value val-red'; }
-  else { document.getElementById('indBbSig').textContent = 'MID'; document.getElementById('indBb').className = 'indicator-chip-value val-purple'; }
-
-  // MA
-  document.getElementById('indMa').textContent = indicators.maSignal === 'bullish' ? '▲ BULL' : '▼ BEAR';
-  document.getElementById('indMa').className = 'indicator-chip-value ' + (indicators.maSignal === 'bullish' ? 'val-green' : 'val-red');
-  document.getElementById('indMaSig').textContent = indicators.maSignal.toUpperCase();
-  document.getElementById('indMaSig').className = 'indicator-chip-signal ' + (indicators.maSignal === 'bullish' ? 'val-green' : 'val-red');
-
-  // Volume
-  document.getElementById('indVol').textContent = indicators.volume.toFixed(2) + '×';
-  if (indicators.volume >= cfg.volSpike) {
-    document.getElementById('indVol').className = 'indicator-chip-value val-green';
-    document.getElementById('indVolSig').textContent = 'SPIKE';
-  } else {
-    document.getElementById('indVol').className = 'indicator-chip-value val-amber';
-    document.getElementById('indVolSig').textContent = 'NORMAL';
-  }
-
-  // S/R
-  document.getElementById('indSr').textContent = indicators.srDistance.toFixed(2) + '%';
-  if (indicators.srLevel === 'level') {
-    document.getElementById('indSr').className = 'indicator-chip-value val-amber';
-    document.getElementById('indSrSig').textContent = 'AT LEVEL';
-  } else {
-    document.getElementById('indSr').className = 'indicator-chip-value val-cyan';
-    document.getElementById('indSrSig').textContent = 'CLEAR';
-  }
-
-  // Overall score
-  const sig = scoreSignal(currentAsset);
-  const scoreEl = document.getElementById('indScore');
-  const scoreSig = document.getElementById('indScoreSig');
-  if (sig) {
-    scoreEl.textContent = sig.score.toFixed(1);
-    scoreSig.textContent = sig.type;
-    scoreEl.className = 'indicator-chip-value ' + (sig.type === 'BUY' ? 'val-green' : 'val-red');
-    scoreSig.className = 'indicator-chip-signal ' + (sig.type === 'BUY' ? 'val-green' : 'val-red');
-  } else {
-    scoreEl.textContent = '—';
-    scoreSig.textContent = 'WATCHING';
-    scoreEl.className = 'indicator-chip-value val-amber';
-    scoreSig.className = 'indicator-chip-signal val-amber';
-  }
-}
-
 // --- RISK BAR ---
 function updateRiskBar() {
   const capital = parseFloat(document.getElementById('capital').value);
@@ -2075,9 +1991,7 @@ function updateRiskBar() {
   const pct = Math.min((invested / capital) * 100, 100);
   document.getElementById('riskBar').style.width = pct + '%';
   document.getElementById('riskPct').textContent = pct.toFixed(0) + '%';
-  // Color gradient position
-  const pos = (pct / 100) * 100;
-  document.getElementById('riskBar').style.backgroundPosition = (100 - pos) + '% 0%';
+  document.getElementById('riskBar').style.backgroundPosition = (100 - pct) + '% 0%';
 }
 
 // --- CHART ---
@@ -2112,27 +2026,19 @@ function drawChart() {
   const hist = priceHistory[currentAsset] || [];
   ctx.clearRect(0, 0, W, H);
 
-  // Background
   ctx.fillStyle = '#080b10';
   ctx.fillRect(0, 0, W, H);
 
-  // Grid
   ctx.strokeStyle = '#1a2230';
   ctx.lineWidth = 1;
-  for (let i = 0; i <= 5; i++) {
-    const y = (H * i) / 5;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-  for (let i = 0; i <= 8; i++) {
-    const x = (W * i) / 8;
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
+  for (let i = 0; i <= 5; i++) { const y = (H * i) / 5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (let i = 0; i <= 8; i++) { const x = (W * i) / 8; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
 
   if (hist.length < 2) {
     ctx.fillStyle = '#2a3a52';
     ctx.font = '12px IBM Plex Mono';
     ctx.textAlign = 'center';
-    ctx.fillText('COLLECTING DATA...', W / 2, H / 2);
+    ctx.fillText(engineRunning ? 'FETCHING DATA...' : 'START ENGINE TO LOAD DATA', W / 2, H / 2);
     return;
   }
 
@@ -2143,24 +2049,21 @@ function drawChart() {
   if (currentView === 'price') {
     data = display.map(h => h.p);
   } else if (currentView === 'rsi') {
-    // Compute RSI series
     data = display.map((_, i) => {
-      const sl = display.slice(Math.max(0,i-14), i+1).map(h => h.p);
+      const sl = display.slice(Math.max(0, i - 14), i + 1).map(h => h.p);
       if (sl.length < 2) return 50;
-      let g=0, l=0;
-      for(let j=1;j<sl.length;j++){const d=sl[j]-sl[j-1];if(d>0)g+=d;else l-=d;}
-      const rs=l===0?100:g/l; return 100-(100/(1+rs));
+      let g = 0, l = 0;
+      for (let j = 1; j < sl.length; j++) { const d = sl[j] - sl[j-1]; if (d > 0) g += d; else l -= d; }
+      const rs = l === 0 ? 100 : g / l; return 100 - (100 / (1 + rs));
     });
     colorTop = '#00ddff'; colorBot = 'rgba(0,221,255,0)';
   } else if (currentView === 'macd') {
-    const fast = parseInt(document.getElementById('macdFast').value)||12;
-    const slow = parseInt(document.getElementById('macdSlow').value)||26;
+    const fast = parseInt(document.getElementById('macdFast').value) || 12;
+    const slow = parseInt(document.getElementById('macdSlow').value) || 26;
     data = display.map((_, i) => {
-      const f = display.slice(Math.max(0,i-fast),i+1).map(h=>h.p);
-      const s = display.slice(Math.max(0,i-slow),i+1).map(h=>h.p);
-      const ef = f.reduce((a,b)=>a+b,0)/f.length;
-      const es = s.reduce((a,b)=>a+b,0)/s.length;
-      return ef - es;
+      const f = display.slice(Math.max(0, i - fast), i + 1).map(h => h.p);
+      const s = display.slice(Math.max(0, i - slow), i + 1).map(h => h.p);
+      return (f.reduce((a, b) => a + b, 0) / f.length) - (s.reduce((a, b) => a + b, 0) / s.length);
     });
     colorTop = '#aa55ff'; colorBot = 'rgba(170,85,255,0)';
   } else if (currentView === 'volume') {
@@ -2174,107 +2077,78 @@ function drawChart() {
   const toY = v => pad + ((maxV - v) / range) * (H - pad * 2);
   const toX = i => (i / (display.length - 1)) * W;
 
-  // Gradient fill
   const grad = ctx.createLinearGradient(0, 0, 0, H);
   grad.addColorStop(0, colorTop.replace(')', ',0.3)').replace('rgb', 'rgba'));
   grad.addColorStop(1, colorBot);
   ctx.beginPath();
   ctx.moveTo(toX(0), H);
   data.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
-  ctx.lineTo(toX(data.length-1), H);
+  ctx.lineTo(toX(data.length - 1), H);
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Line
   ctx.beginPath();
   ctx.strokeStyle = colorTop;
   ctx.lineWidth = 1.5;
   ctx.shadowBlur = 6;
   ctx.shadowColor = colorTop;
-  data.forEach((v, i) => {
-    if (i === 0) ctx.moveTo(toX(i), toY(v));
-    else ctx.lineTo(toX(i), toY(v));
-  });
+  data.forEach((v, i) => { if (i === 0) ctx.moveTo(toX(i), toY(v)); else ctx.lineTo(toX(i), toY(v)); });
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // Bollinger Bands (only on price view)
   if (currentView === 'price' && document.getElementById('bbOn').checked) {
-    const bbP = parseInt(document.getElementById('bbPeriod').value)||20;
-    const bbStdV = parseFloat(document.getElementById('bbStd').value)||2;
+    const bbP = parseInt(document.getElementById('bbPeriod').value) || 20;
+    const bbStdV = parseFloat(document.getElementById('bbStd').value) || 2;
     [1, -1].forEach(dir => {
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(170,85,255,0.4)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.strokeStyle = 'rgba(170,85,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
       display.forEach((_, i) => {
-        const sl = display.slice(Math.max(0,i-bbP),i+1).map(h=>h.p);
-        const mean = sl.reduce((a,b)=>a+b,0)/sl.length;
-        const std = Math.sqrt(sl.reduce((a,b)=>a+(b-mean)**2,0)/sl.length);
+        const sl = display.slice(Math.max(0, i - bbP), i + 1).map(h => h.p);
+        const mean = sl.reduce((a, b) => a + b, 0) / sl.length;
+        const std = Math.sqrt(sl.reduce((a, b) => a + (b - mean) ** 2, 0) / sl.length);
         const bv = mean + dir * bbStdV * std;
-        if (i===0) ctx.moveTo(toX(i), toY(bv));
-        else ctx.lineTo(toX(i), toY(bv));
+        if (i === 0) ctx.moveTo(toX(i), toY(bv)); else ctx.lineTo(toX(i), toY(bv));
       });
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.stroke(); ctx.setLineDash([]);
     });
   }
 
-  // MA lines (price view)
   if (currentView === 'price' && document.getElementById('maOn').checked) {
     [
-      {period: parseInt(document.getElementById('maShort').value)||9, color:'rgba(0,255,136,0.6)'},
-      {period: parseInt(document.getElementById('maLong').value)||21, color:'rgba(0,136,255,0.6)'}
-    ].forEach(({period, color}) => {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
+      { period: parseInt(document.getElementById('maShort').value) || 9,  color: 'rgba(0,255,136,0.6)' },
+      { period: parseInt(document.getElementById('maLong').value)  || 21, color: 'rgba(0,136,255,0.6)' }
+    ].forEach(({ period, color }) => {
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1;
       display.forEach((_, i) => {
-        const sl = display.slice(Math.max(0,i-period),i+1).map(h=>h.p);
-        const ma = sl.reduce((a,b)=>a+b,0)/sl.length;
-        if (i===0) ctx.moveTo(toX(i), toY(ma));
-        else ctx.lineTo(toX(i), toY(ma));
+        const sl = display.slice(Math.max(0, i - period), i + 1).map(h => h.p);
+        const ma = sl.reduce((a, b) => a + b, 0) / sl.length;
+        if (i === 0) ctx.moveTo(toX(i), toY(ma)); else ctx.lineTo(toX(i), toY(ma));
       });
       ctx.stroke();
     });
   }
 
-  // Price labels
   ctx.fillStyle = '#3d5068';
   ctx.font = '9px IBM Plex Mono';
   ctx.textAlign = 'right';
   for (let i = 0; i <= 4; i++) {
     const v = minV + (range * i / 4);
-    const y = toY(v);
-    ctx.fillText(currentView === 'price' ? '$' + v.toFixed(2) : v.toFixed(2), W - 4, y);
+    ctx.fillText(currentView === 'price' ? '$' + v.toFixed(2) : v.toFixed(2), W - 4, toY(v));
   }
 
-  // Current price line
   if (currentView === 'price' && data.length > 0) {
-    const curY = toY(data[data.length-1]);
-    ctx.beginPath();
-    ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = 'rgba(0,221,255,0.4)';
-    ctx.lineWidth = 1;
-    ctx.moveTo(0, curY); ctx.lineTo(W, curY);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    const curY = toY(data[data.length - 1]);
+    ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(0,221,255,0.4)'; ctx.lineWidth = 1;
+    ctx.moveTo(0, curY); ctx.lineTo(W, curY); ctx.stroke(); ctx.setLineDash([]);
   }
 
-  // RSI levels
   if (currentView === 'rsi') {
     [30, 50, 70].forEach(level => {
       const y = toY(level);
-      ctx.beginPath();
-      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.setLineDash([4, 4]);
       ctx.strokeStyle = level === 50 ? 'rgba(255,255,255,0.2)' : 'rgba(255,170,0,0.4)';
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(255,170,0,0.6)';
-      ctx.font = '9px IBM Plex Mono';
-      ctx.textAlign = 'left';
+      ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,170,0,0.6)'; ctx.font = '9px IBM Plex Mono'; ctx.textAlign = 'left';
       ctx.fillText(level.toString(), 4, y - 2);
     });
   }
@@ -2290,8 +2164,8 @@ function renderWatchlist() {
         <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
       </div>
       <div class="wl-right">
-        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">$${formatPrice(assets[sym].price, sym)}</div>
-        <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(3)}%</div>
+        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
+        <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
   `).join('');
@@ -2301,14 +2175,8 @@ function updateWatchlist() {
   Object.keys(assets).forEach(sym => {
     const el = document.getElementById('wl-price-' + sym.replace('/','_'));
     const chgEl = document.getElementById('wl-chg-' + sym.replace('/','_'));
-    if (el) {
-      el.textContent = '$' + formatPrice(assets[sym].price, sym);
-      el.className = 'wl-price ' + getChgClass(assets[sym].change);
-    }
-    if (chgEl) {
-      chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(3)}%`;
-      chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change);
-    }
+    if (el) { el.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
   });
 }
 
@@ -2317,7 +2185,13 @@ function selectAsset(sym) {
   document.getElementById('chartAsset').textContent = sym;
   renderWatchlist();
   drawChart();
+  updateIndicatorBar();
+  updateChartOverlay();
   addLog('info', 'CHART', `Switched to ${sym}`);
+  if (engineRunning) {
+    fetchPrices(sym).then(() => { drawChart(); updateChartOverlay(); }).catch(e => addLog('err', 'API', `Fetch failed ${sym}: ${e.message}`));
+    fetchSignals(sym).then(() => updateIndicatorBar()).catch(() => {});
+  }
 }
 
 // --- TICKER TAPE ---
@@ -2326,7 +2200,7 @@ function updateTicker() {
   tape.innerHTML = Object.keys(assets).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
-      <div class="ticker-price">$${formatPrice(assets[sym].price, sym)}</div>
+      <div class="ticker-price">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
       <div class="ticker-chg ${assets[sym].change >= 0 ? 'up' : 'down'}">${assets[sym].change >= 0 ? '▲' : '▼'}${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
     </div>
   `).join('');
@@ -2340,7 +2214,6 @@ function addLog(type, source, msg) {
   line.className = 'log-line';
   line.innerHTML = `<span class="log-ts">${ts}</span> <span class="log-${type}">[${source}]</span> ${msg}`;
   log.insertBefore(line, log.firstChild);
-  // Keep max 100 lines
   while (log.children.length > 100) log.removeChild(log.lastChild);
 }
 
@@ -2367,18 +2240,18 @@ function getConfig() {
 }
 
 function formatPrice(p, sym) {
+  if (!p) return '—';
   if (sym === 'EUR/USD' || sym === 'GBP/USD') return p.toFixed(4);
   if (p < 10) return p.toFixed(4);
   if (p < 100) return p.toFixed(3);
   return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function getChgClass(chg) {
-  return chg >= 0 ? 'up' : 'down';
-}
+function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 
 // Boot
 init();
+
 </script>
 </body>
 </html>
