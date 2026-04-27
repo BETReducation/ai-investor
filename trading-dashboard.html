@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>APEX TRADER — Day Trading Signal Engine</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://s3.tradingview.com/tv.js"></script>
 <style>
   :root {
     --bg-primary: #050608;
@@ -404,10 +405,13 @@
     overflow: hidden;
   }
 
-  canvas#priceChart {
+  #tvChart {
     width: 100%;
     height: 100%;
-    display: block;
+  }
+
+  #tvChart iframe {
+    display: block !important;
   }
 
   .chart-overlay {
@@ -1082,12 +1086,228 @@
   .tag-red { color: var(--accent-red); font-weight: 600; }
   .tag-amber { color: var(--accent-amber); font-weight: 600; }
   .tag-cyan { color: var(--accent-cyan); }
+
+  /* ── LOGIN OVERLAY ── */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-primary);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    width: 380px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-bright);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(0,136,255,0.12), 0 0 40px rgba(0,255,136,0.04);
+    animation: scaleIn 0.25s ease;
+  }
+
+  .login-header {
+    padding: 28px 24px 18px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+
+  .login-branding {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .login-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .login-tab {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .login-tab.active {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+    background: rgba(0,136,255,0.05);
+  }
+
+  .login-tab:hover:not(.active) {
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+  }
+
+  .login-body { padding: 20px 24px; }
+
+  .login-field { margin-bottom: 14px; }
+
+  .login-field-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+
+  .login-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 9px 10px;
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.15s;
+  }
+
+  .login-input:focus {
+    border-color: var(--accent-blue);
+    background: var(--bg-hover);
+  }
+
+  .login-remember { margin-bottom: 16px; }
+
+  .login-btn {
+    width: 100%;
+    padding: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 2px;
+    background: rgba(0,255,136,0.12);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+    transition: all 0.2s;
+  }
+
+  .login-btn:hover:not(:disabled) {
+    background: rgba(0,255,136,0.2);
+    box-shadow: 0 0 20px rgba(0,255,136,0.15);
+  }
+
+  .login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .login-error {
+    background: rgba(255,51,85,0.1);
+    border: 1px solid rgba(255,51,85,0.3);
+    color: var(--accent-red);
+    font-size: 10px;
+    padding: 8px 10px;
+    border-radius: 2px;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  .login-footer {
+    padding: 10px 24px 14px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    padding: 3px 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .logout-btn:hover {
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+  }
+
+  .save-btn-wrap { padding: 0 16px 12px; }
 </style>
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-branding">
+        <div class="logo-mark" style="width:32px;height:32px;"></div>
+        <div>
+          <div class="logo-text" style="font-size:16px;">APEX TRADER</div>
+          <div class="logo-sub">SIGNAL ENGINE v1.0</div>
+        </div>
+      </div>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchLoginTab('login')">LOGIN</button>
+      <button class="login-tab" id="tabRegister" onclick="switchLoginTab('register')">REGISTER</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="login-body" id="loginForm">
+      <div class="login-error" id="loginError" style="display:none;"></div>
+      <div class="login-field">
+        <div class="login-field-label">USERNAME</div>
+        <input type="text" id="loginUsername" class="login-input" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">PASSWORD</div>
+        <input type="password" id="loginPassword" class="login-input" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-remember">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="loginRemember" style="width:12px;height:12px;accent-color:var(--accent-green);">
+          <span style="font-size:10px;color:var(--text-secondary);letter-spacing:1px;">REMEMBER ME</span>
+        </label>
+      </div>
+      <button class="login-btn" id="loginSubmitBtn" onclick="doLogin()">▶ ACCESS TERMINAL</button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="login-body" id="registerForm" style="display:none;">
+      <div class="login-error" id="registerError" style="display:none;"></div>
+      <div class="login-field">
+        <div class="login-field-label">USERNAME</div>
+        <input type="text" id="regUsername" class="login-input" placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">PASSWORD</div>
+        <input type="password" id="regPassword" class="login-input" placeholder="Minimum 6 characters" autocomplete="new-password">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">CONFIRM PASSWORD</div>
+        <input type="password" id="regConfirm" class="login-input" placeholder="Repeat password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="login-btn" id="registerSubmitBtn" onclick="doRegister()" style="background:rgba(0,136,255,0.12);color:var(--accent-blue);border-color:var(--accent-blue);">+ CREATE ACCOUNT</button>
+    </div>
+
+    <div class="login-footer">
+      <span style="color:var(--text-muted);font-size:8px;letter-spacing:1px;">DEFAULT CREDENTIALS: admin / apex2024</span>
+    </div>
+  </div>
+</div>
+
 <!-- TOP BAR -->
-<div class="topbar">
+<div class="topbar" id="topbar" style="display:none;">
   <div class="topbar-logo">
     <div class="logo-mark"></div>
     <div>
@@ -1105,12 +1325,17 @@
       <div class="status-dot inactive" id="dataDot"></div>
       <span id="dataStatus">SIM DATA</span>
     </div>
+    <div class="status-pill" id="userPill">
+      <span style="color:var(--accent-cyan);font-size:10px;line-height:1;">⬡</span>
+      <span id="usernameDisplay" style="color:var(--text-secondary);font-size:9px;letter-spacing:1px;">USER</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">LOGOUT</button>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 </div>
 
 <!-- MAIN LAYOUT -->
-<div class="layout">
+<div class="layout" id="mainLayout" style="display:none;">
 
   <!-- LEFT PANEL: Config -->
   <div class="panel" id="leftPanel">
@@ -1121,7 +1346,10 @@
 
     <!-- WATCHLIST -->
     <div style="border-bottom:1px solid var(--border);">
-      <div class="section-label" style="padding:8px 16px 0; margin-bottom:0;">WATCHLIST</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;">
+        <div style="font-size:8px;letter-spacing:2px;color:var(--text-muted);">WATCHLIST</div>
+        <div class="panel-badge" id="wlEditBtn" onclick="toggleWatchlistEdit()" style="cursor:pointer;user-select:none;color:var(--accent-blue);border-color:var(--accent-blue);">EDIT</div>
+      </div>
       <div id="watchlist"></div>
     </div>
 
@@ -1312,6 +1540,9 @@
     <div class="engine-control">
       <button class="btn-engine start" id="engineBtn" onclick="toggleEngine()">▶ START ENGINE</button>
     </div>
+    <div class="save-btn-wrap">
+      <button class="btn-engine" id="saveBtn" onclick="savePreferences()" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE SETTINGS</button>
+    </div>
 
     <!-- LOG -->
     <div class="log-area" id="logArea">
@@ -1347,18 +1578,10 @@
 
     <!-- CHART -->
     <div class="chart-area">
-      <canvas id="priceChart"></canvas>
-      <div class="chart-overlay">
-        <div class="chart-asset-name" id="chartAsset">BTC/USDT</div>
-        <div class="chart-price-display" id="chartPrice">$43,250.00</div>
-        <div class="chart-change" id="chartChange">▲ +$320.50 (+0.75%) TODAY</div>
-      </div>
-      <div class="chart-controls">
-        <button class="chart-btn active" onclick="setChartView('price',this)">PRICE</button>
-        <button class="chart-btn" onclick="setChartView('rsi',this)">RSI</button>
-        <button class="chart-btn" onclick="setChartView('macd',this)">MACD</button>
-        <button class="chart-btn" onclick="setChartView('volume',this)">VOL</button>
-      </div>
+      <div id="tvChart"></div>
+      <div id="chartAsset" style="display:none"></div>
+      <div id="chartPrice" style="display:none"></div>
+      <div id="chartChange" style="display:none"></div>
     </div>
 
     <!-- INDICATOR BAR -->
@@ -1481,17 +1704,38 @@
 // APEX TRADER — SIGNAL ENGINE (Live API Mode)
 // ============================================================
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = '';
 
 const symbolMap = {
   'BTC/USDT': 'BTC-USD',
   'ETH/USDT': 'ETH-USD',
   'SOL/USDT': 'SOL-USD',
+  'ADA/USDT': 'ADA-USD',
   'AAPL':     'AAPL',
   'TSLA':     'TSLA',
+  'NVDA':     'NVDA',
   'EUR/USD':  'EURUSD=X',
   'GBP/USD':  'GBPUSD=X',
-  'NVDA':     'NVDA',
+  'USD/JPY':  'JPY=X',
+  'GOLD':     'GC=F',
+  'SILVER':   'SI=F',
+  'COPPER':   'HG=F',
+};
+
+const tvSymbolMap = {
+  'BTC/USDT': 'BINANCE:BTCUSDT',
+  'ETH/USDT': 'BINANCE:ETHUSDT',
+  'SOL/USDT': 'BINANCE:SOLUSDT',
+  'ADA/USDT': 'BINANCE:ADAUSDT',
+  'AAPL':     'NASDAQ:AAPL',
+  'TSLA':     'NASDAQ:TSLA',
+  'NVDA':     'NASDAQ:NVDA',
+  'EUR/USD':  'FX:EURUSD',
+  'GBP/USD':  'FX:GBPUSD',
+  'USD/JPY':  'FX:USDJPY',
+  'GOLD':     'TVC:GOLD',
+  'SILVER':   'TVC:SILVER',
+  'COPPER':   'TVC:COPPER',
 };
 
 const intervalMap = {
@@ -1502,6 +1746,8 @@ const intervalMap = {
 };
 
 // --- STATE ---
+let currentUser = null;
+let dashboardInitialized = false;
 let engineRunning = false;
 let pollTimer = null;
 let currentAsset = 'BTC/USDT';
@@ -1515,20 +1761,29 @@ let tradeWins = 0;
 let signalsToday = 0;
 
 const assets = {
-  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
-  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
-  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto', change: 0 },
-  'AAPL':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
-  'TSLA':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
-  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',  change: 0 },
-  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',  change: 0 },
-  'NVDA':     { price: 0, vol: 1.0, category: 'stock',  change: 0 },
+  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'ADA/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'AAPL':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'TSLA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'NVDA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'USD/JPY':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'GOLD':     { price: 0, vol: 1.0, category: 'commodity', change: 0 },
+  'SILVER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
+  'COPPER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
 };
 
 let priceHistory = {};
 Object.keys(assets).forEach(a => { priceHistory[a] = []; });
 
 let liveCache = {};
+
+let watchlistEnabled = {};
+let watchlistEditMode = false;
+Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
 
 // --- INIT ---
 function init() {
@@ -1539,8 +1794,10 @@ function init() {
   updateTicker();
   setupToggles();
   addLog('info', 'SYSTEM', 'APEX TRADER initialized — Live API Mode');
+  addLog('info', 'AUTH',   `Logged in as: ${(currentUser || 'unknown').toUpperCase()}`);
   addLog('info', 'SYSTEM', 'Backend: ' + API_BASE);
   addLog('info', 'SYSTEM', 'Configure strategy parameters and press START ENGINE');
+  fetchSignals(currentAsset).then(() => updateIndicatorBar()).catch(() => {});
 }
 
 // --- CLOCK ---
@@ -1605,7 +1862,8 @@ function getApiInterval() {
 }
 
 async function apiFetch(path) {
-  const res = await fetch(API_BASE + path);
+  const res = await fetch(API_BASE + path, { credentials: 'include' });
+  if (res.status === 401) { handleSessionExpiry(); throw new Error('Session expired'); }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -1629,13 +1887,14 @@ async function fetchPrices(sym) {
 }
 
 // --- FETCH SIGNALS ---
+// Uses daily candles for indicator bar so values match TradingView's default daily chart view.
+// Engine scan calls fetchSignalsEngine() which uses the trading timeframe.
 async function fetchSignals(sym) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return null;
-  const { period, interval } = getApiInterval();
   const cfg = getConfig();
   const params = new URLSearchParams({
-    symbol: yfSym, period, interval,
+    symbol: yfSym, period: '6mo', interval: '1d',
     rsi_oversold: cfg.rsiOversold,
     rsi_overbought: cfg.rsiOverbought,
     volume_surge: cfg.volSpike,
@@ -1649,14 +1908,14 @@ async function fetchSignals(sym) {
 async function fetchAllAssets() {
   setDataStatus('loading');
   let anyError = false;
-  await Promise.all(Object.keys(assets).map(async sym => {
+  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  await Promise.all(active.map(async sym => {
     try { await fetchPrices(sym); }
     catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
   }));
   updateTicker();
   updateWatchlist();
   updateChartOverlay();
-  drawChart();
   updatePositions();
   updateStats();
   setDataStatus(anyError ? 'error' : 'live');
@@ -1665,12 +1924,13 @@ async function fetchAllAssets() {
 // --- SCAN SIGNALS ---
 async function scanSignals() {
   if (!engineRunning) return;
-  addLog('info', 'SCAN', `Scanning ${Object.keys(assets).length} assets via /api/signals...`);
+  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  addLog('info', 'SCAN', `Scanning ${active.length} assets via /api/signals...`);
   const cfg = getConfig();
   const minConf = cfg.minConf / 100;
   const minInd = cfg.minInd;
 
-  for (const sym of Object.keys(assets)) {
+  for (const sym of active) {
     try {
       const data = await fetchSignals(sym);
       if (!data || data.overall === 'NEUTRAL') continue;
@@ -1712,6 +1972,22 @@ function updateChartOverlay() {
 }
 
 // --- INDICATOR BAR ---
+function clearIndicatorBar() {
+  [
+    ['indRsi',   'indRsiSig',   'NEUTRAL'],
+    ['indMacd',  'indMacdSig',  'NEUTRAL'],
+    ['indBb',    'indBbSig',    'NEUTRAL'],
+    ['indMa',    'indMaSig',    'NEUTRAL'],
+    ['indVol',   'indVolSig',   'NORMAL'],
+    ['indSr',    'indSrSig',    'CLEAR'],
+    ['indScore', 'indScoreSig', 'LOADING'],
+  ].forEach(([valId, sigId, defSig]) => {
+    const v = document.getElementById(valId), s = document.getElementById(sigId);
+    if (v) { v.textContent = '—'; v.className = 'indicator-chip-value val-amber'; }
+    if (s) { s.textContent = defSig; s.className = 'indicator-chip-signal val-amber'; }
+  });
+}
+
 function updateIndicatorBar() {
   const cache = liveCache[currentAsset];
   if (!cache || !cache.indicators) return;
@@ -1994,170 +2270,67 @@ function updateRiskBar() {
   document.getElementById('riskBar').style.backgroundPosition = (100 - pct) + '% 0%';
 }
 
-// --- CHART ---
-let chartCanvas, chartCtx;
+// --- TRADINGVIEW CHART ---
+let tvWidget = null;
+
 function initChart() {
-  chartCanvas = document.getElementById('priceChart');
-  chartCtx = chartCanvas.getContext('2d');
-  resizeChart();
-  window.addEventListener('resize', resizeChart);
+  loadTvChart('BINANCE:BTCUSDT');
 }
 
-function resizeChart() {
-  const container = chartCanvas.parentElement;
-  chartCanvas.width = container.clientWidth;
-  chartCanvas.height = container.clientHeight;
-  drawChart();
+function loadTvChart(tvSym) {
+  const container = document.getElementById('tvChart');
+  container.innerHTML = '';
+  tvWidget = new TradingView.widget({
+    autosize: true,
+    symbol: tvSym,
+    interval: 'D',
+    timezone: 'Etc/UTC',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    toolbar_bg: '#0d1117',
+    enable_publishing: false,
+    allow_symbol_change: true,
+    container_id: 'tvChart',
+    studies: ['Volume@tv-basicstudies'],
+    hide_top_toolbar: false,
+    hide_legend: false,
+    save_image: false,
+    backgroundColor: 'rgba(5,6,8,1)',
+    gridColor: 'rgba(30,42,58,0.8)',
+    withdateranges: true,
+    hide_side_toolbar: false,
+  });
 }
 
-function setChartView(view, btn) {
-  currentView = view;
-  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  drawChart();
-}
-
-function updateChart() { drawChart(); }
-
-function drawChart() {
-  if (!chartCtx) return;
-  const W = chartCanvas.width, H = chartCanvas.height;
-  const ctx = chartCtx;
-  const hist = priceHistory[currentAsset] || [];
-  ctx.clearRect(0, 0, W, H);
-
-  ctx.fillStyle = '#080b10';
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.strokeStyle = '#1a2230';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 5; i++) { const y = (H * i) / 5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-  for (let i = 0; i <= 8; i++) { const x = (W * i) / 8; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-
-  if (hist.length < 2) {
-    ctx.fillStyle = '#2a3a52';
-    ctx.font = '12px IBM Plex Mono';
-    ctx.textAlign = 'center';
-    ctx.fillText(engineRunning ? 'FETCHING DATA...' : 'START ENGINE TO LOAD DATA', W / 2, H / 2);
-    return;
-  }
-
-  const display = hist.slice(-120);
-  let data;
-  let colorTop = '#00ff88', colorBot = 'rgba(0,255,136,0)';
-
-  if (currentView === 'price') {
-    data = display.map(h => h.p);
-  } else if (currentView === 'rsi') {
-    data = display.map((_, i) => {
-      const sl = display.slice(Math.max(0, i - 14), i + 1).map(h => h.p);
-      if (sl.length < 2) return 50;
-      let g = 0, l = 0;
-      for (let j = 1; j < sl.length; j++) { const d = sl[j] - sl[j-1]; if (d > 0) g += d; else l -= d; }
-      const rs = l === 0 ? 100 : g / l; return 100 - (100 / (1 + rs));
-    });
-    colorTop = '#00ddff'; colorBot = 'rgba(0,221,255,0)';
-  } else if (currentView === 'macd') {
-    const fast = parseInt(document.getElementById('macdFast').value) || 12;
-    const slow = parseInt(document.getElementById('macdSlow').value) || 26;
-    data = display.map((_, i) => {
-      const f = display.slice(Math.max(0, i - fast), i + 1).map(h => h.p);
-      const s = display.slice(Math.max(0, i - slow), i + 1).map(h => h.p);
-      return (f.reduce((a, b) => a + b, 0) / f.length) - (s.reduce((a, b) => a + b, 0) / s.length);
-    });
-    colorTop = '#aa55ff'; colorBot = 'rgba(170,85,255,0)';
-  } else if (currentView === 'volume') {
-    data = display.map(h => h.v);
-    colorTop = '#ffaa00'; colorBot = 'rgba(255,170,0,0)';
-  }
-
-  const minV = Math.min(...data), maxV = Math.max(...data);
-  const range = maxV - minV || 1;
-  const pad = 30;
-  const toY = v => pad + ((maxV - v) / range) * (H - pad * 2);
-  const toX = i => (i / (display.length - 1)) * W;
-
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, colorTop.replace(')', ',0.3)').replace('rgb', 'rgba'));
-  grad.addColorStop(1, colorBot);
-  ctx.beginPath();
-  ctx.moveTo(toX(0), H);
-  data.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
-  ctx.lineTo(toX(data.length - 1), H);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.strokeStyle = colorTop;
-  ctx.lineWidth = 1.5;
-  ctx.shadowBlur = 6;
-  ctx.shadowColor = colorTop;
-  data.forEach((v, i) => { if (i === 0) ctx.moveTo(toX(i), toY(v)); else ctx.lineTo(toX(i), toY(v)); });
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-
-  if (currentView === 'price' && document.getElementById('bbOn').checked) {
-    const bbP = parseInt(document.getElementById('bbPeriod').value) || 20;
-    const bbStdV = parseFloat(document.getElementById('bbStd').value) || 2;
-    [1, -1].forEach(dir => {
-      ctx.beginPath(); ctx.strokeStyle = 'rgba(170,85,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-      display.forEach((_, i) => {
-        const sl = display.slice(Math.max(0, i - bbP), i + 1).map(h => h.p);
-        const mean = sl.reduce((a, b) => a + b, 0) / sl.length;
-        const std = Math.sqrt(sl.reduce((a, b) => a + (b - mean) ** 2, 0) / sl.length);
-        const bv = mean + dir * bbStdV * std;
-        if (i === 0) ctx.moveTo(toX(i), toY(bv)); else ctx.lineTo(toX(i), toY(bv));
-      });
-      ctx.stroke(); ctx.setLineDash([]);
-    });
-  }
-
-  if (currentView === 'price' && document.getElementById('maOn').checked) {
-    [
-      { period: parseInt(document.getElementById('maShort').value) || 9,  color: 'rgba(0,255,136,0.6)' },
-      { period: parseInt(document.getElementById('maLong').value)  || 21, color: 'rgba(0,136,255,0.6)' }
-    ].forEach(({ period, color }) => {
-      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1;
-      display.forEach((_, i) => {
-        const sl = display.slice(Math.max(0, i - period), i + 1).map(h => h.p);
-        const ma = sl.reduce((a, b) => a + b, 0) / sl.length;
-        if (i === 0) ctx.moveTo(toX(i), toY(ma)); else ctx.lineTo(toX(i), toY(ma));
-      });
-      ctx.stroke();
-    });
-  }
-
-  ctx.fillStyle = '#3d5068';
-  ctx.font = '9px IBM Plex Mono';
-  ctx.textAlign = 'right';
-  for (let i = 0; i <= 4; i++) {
-    const v = minV + (range * i / 4);
-    ctx.fillText(currentView === 'price' ? '$' + v.toFixed(2) : v.toFixed(2), W - 4, toY(v));
-  }
-
-  if (currentView === 'price' && data.length > 0) {
-    const curY = toY(data[data.length - 1]);
-    ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(0,221,255,0.4)'; ctx.lineWidth = 1;
-    ctx.moveTo(0, curY); ctx.lineTo(W, curY); ctx.stroke(); ctx.setLineDash([]);
-  }
-
-  if (currentView === 'rsi') {
-    [30, 50, 70].forEach(level => {
-      const y = toY(level);
-      ctx.beginPath(); ctx.setLineDash([4, 4]);
-      ctx.strokeStyle = level === 50 ? 'rgba(255,255,255,0.2)' : 'rgba(255,170,0,0.4)';
-      ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(255,170,0,0.6)'; ctx.font = '9px IBM Plex Mono'; ctx.textAlign = 'left';
-      ctx.fillText(level.toString(), 4, y - 2);
-    });
-  }
-}
+function drawChart() { /* replaced by TradingView */ }
+function resizeChart() { /* no-op */ }
+function setChartView(view, btn) { /* no-op */ }
+function updateChart() { /* no-op */ }
 
 // --- WATCHLIST ---
 function renderWatchlist() {
   const wl = document.getElementById('watchlist');
-  wl.innerHTML = Object.keys(assets).map(sym => `
+
+  if (watchlistEditMode) {
+    wl.innerHTML = Object.keys(assets).map(sym => `
+      <div class="watchlist-item" style="cursor:default;padding:7px 16px;">
+        <div class="wl-left">
+          <div class="wl-sym" style="font-size:11px;">${sym}</div>
+          <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()" style="flex-shrink:0;">
+          <input type="checkbox" ${watchlistEnabled[sym] ? 'checked' : ''} onchange="toggleWatchlistItem('${sym}', this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    `).join('');
+    return;
+  }
+
+  const visible = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  wl.innerHTML = visible.length ? visible.map(sym => `
     <div class="watchlist-item ${sym === currentAsset ? 'active' : ''}" onclick="selectAsset('${sym}')">
       <div class="wl-left">
         <div class="wl-sym">${sym}</div>
@@ -2168,36 +2341,54 @@ function renderWatchlist() {
         <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
-  `).join('');
+  `).join('') : '<div class="empty-state">NO ASSETS ENABLED<br><span style="font-size:8px;">Click EDIT to add assets</span></div>';
 }
 
 function updateWatchlist() {
+  if (watchlistEditMode) return;
   Object.keys(assets).forEach(sym => {
-    const el = document.getElementById('wl-price-' + sym.replace('/','_'));
-    const chgEl = document.getElementById('wl-chg-' + sym.replace('/','_'));
-    if (el) { el.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
-    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
+    const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
+    const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
+    if (el)    { el.textContent    = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className    = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`;       chgEl.className = 'wl-chg '   + getChgClass(assets[sym].change); }
   });
+}
+
+function toggleWatchlistEdit() {
+  watchlistEditMode = !watchlistEditMode;
+  const btn = document.getElementById('wlEditBtn');
+  btn.textContent = watchlistEditMode ? 'DONE' : 'EDIT';
+  btn.style.color = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
+  btn.style.borderColor = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
+  renderWatchlist();
+}
+
+function toggleWatchlistItem(sym, enabled) {
+  watchlistEnabled[sym] = enabled;
+  if (!enabled && sym === currentAsset) {
+    const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
+    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next] || 'BINANCE:BTCUSDT'); }
+  }
 }
 
 function selectAsset(sym) {
   currentAsset = sym;
-  document.getElementById('chartAsset').textContent = sym;
+  clearIndicatorBar();
   renderWatchlist();
-  drawChart();
-  updateIndicatorBar();
   updateChartOverlay();
-  addLog('info', 'CHART', `Switched to ${sym}`);
-  if (engineRunning) {
-    fetchPrices(sym).then(() => { drawChart(); updateChartOverlay(); }).catch(e => addLog('err', 'API', `Fetch failed ${sym}: ${e.message}`));
-    fetchSignals(sym).then(() => updateIndicatorBar()).catch(() => {});
-  }
+  const tvSym = tvSymbolMap[sym] || 'BINANCE:BTCUSDT';
+  loadTvChart(tvSym);
+  addLog('info', 'CHART', `Switched to ${sym} → ${tvSym}`);
+  // Show cached data immediately if we already have it, then refresh in the background
+  if (liveCache[sym]) updateIndicatorBar();
+  fetchPrices(sym).then(() => updateChartOverlay()).catch(e => addLog('err', 'API', `Fetch failed ${sym}: ${e.message}`));
+  fetchSignals(sym).then(() => updateIndicatorBar()).catch(() => {});
 }
 
 // --- TICKER TAPE ---
 function updateTicker() {
   const tape = document.getElementById('tickerTape');
-  tape.innerHTML = Object.keys(assets).slice(0, 6).map(sym => `
+  tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
       <div class="ticker-price">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
@@ -2241,7 +2432,8 @@ function getConfig() {
 
 function formatPrice(p, sym) {
   if (!p) return '—';
-  if (sym === 'EUR/USD' || sym === 'GBP/USD') return p.toFixed(4);
+  if (sym === 'EUR/USD' || sym === 'GBP/USD' || sym === 'USD/JPY') return p.toFixed(4);
+  if (sym === 'GOLD' || sym === 'SILVER' || sym === 'COPPER') return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (p < 10) return p.toFixed(4);
   if (p < 100) return p.toFixed(3);
   return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -2249,8 +2441,265 @@ function formatPrice(p, sym) {
 
 function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 
+// ── AUTH ────────────────────────────────────────────────────────────────────
+
+async function checkSession() {
+  if (localStorage.getItem('apexSession')) {
+    try {
+      const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        currentUser = data.username;
+        applyPreferences(data.preferences || {});
+        showDashboard();
+        return;
+      }
+    } catch (e) {}
+    localStorage.removeItem('apexSession');
+  }
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('mainLayout').style.display = 'none';
+}
+
+function showDashboard() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('topbar').style.display = 'flex';
+  document.getElementById('mainLayout').style.display = 'grid';
+  document.getElementById('usernameDisplay').textContent = (currentUser || 'USER').toUpperCase();
+  if (!dashboardInitialized) {
+    dashboardInitialized = true;
+    init();
+  }
+}
+
+function switchLoginTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('registerError').style.display = 'none';
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginSubmitBtn');
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const remember = document.getElementById('loginRemember').checked;
+  const errEl = document.getElementById('loginError');
+
+  errEl.style.display = 'none';
+  if (!username || !password) { showAuthError(errEl, 'Enter username and password'); return; }
+
+  btn.disabled = true; btn.textContent = 'AUTHENTICATING...';
+  try {
+    const res = await fetch(API_BASE + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password, remember }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(errEl, data.error || 'Login failed'); return; }
+    currentUser = data.username;
+    if (remember) localStorage.setItem('apexSession', '1');
+    applyPreferences(data.preferences || {});
+    showDashboard();
+  } catch (e) {
+    showAuthError(errEl, 'Cannot reach server — is it running?');
+  } finally {
+    btn.disabled = false; btn.textContent = '▶ ACCESS TERMINAL';
+  }
+}
+
+async function doRegister() {
+  const btn = document.getElementById('registerSubmitBtn');
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm  = document.getElementById('regConfirm').value;
+  const errEl    = document.getElementById('registerError');
+
+  errEl.style.display = 'none';
+  if (!username || !password) { showAuthError(errEl, 'Enter username and password'); return; }
+  if (password !== confirm)   { showAuthError(errEl, 'Passwords do not match'); return; }
+  if (password.length < 6)    { showAuthError(errEl, 'Password must be at least 6 characters'); return; }
+
+  btn.disabled = true; btn.textContent = 'CREATING ACCOUNT...';
+  try {
+    const res = await fetch(API_BASE + '/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }
+    currentUser = data.username;
+    localStorage.setItem('apexSession', '1');
+    applyPreferences({});
+    showDashboard();
+  } catch (e) {
+    showAuthError(errEl, 'Cannot reach server — is it running?');
+  } finally {
+    btn.disabled = false; btn.textContent = '+ CREATE ACCOUNT';
+  }
+}
+
+function showAuthError(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function logout() {
+  try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  currentUser = null;
+  localStorage.removeItem('apexSession');
+  if (engineRunning) stopEngine();
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  showLogin();
+}
+
+function handleSessionExpiry() {
+  currentUser = null;
+  localStorage.removeItem('apexSession');
+  if (engineRunning) stopEngine();
+  showLogin();
+}
+
+async function savePreferences() {
+  if (!currentUser) { addLog('warn', 'PREFS', 'Not logged in'); return; }
+  const prefs = {
+    capital:      parseFloat(document.getElementById('capital').value),
+    posSize:      parseFloat(document.getElementById('posSize').value),
+    targetGain:   parseFloat(document.getElementById('targetGain').value),
+    stopLoss:     parseFloat(document.getElementById('stopLoss').value),
+    trailDist:    parseFloat(document.getElementById('trailDist').value),
+    fixedSL:      document.getElementById('fixedSL').checked,
+    trailSL:      document.getElementById('trailSL').checked,
+    rsiOn:        document.getElementById('rsiOn').checked,
+    rsiOversold:  parseFloat(document.getElementById('rsiOversold').value),
+    rsiOverbought:parseFloat(document.getElementById('rsiOverbought').value),
+    macdOn:       document.getElementById('macdOn').checked,
+    macdFast:     parseInt(document.getElementById('macdFast').value),
+    macdSlow:     parseInt(document.getElementById('macdSlow').value),
+    macdSig:      parseInt(document.getElementById('macdSig').value),
+    bbOn:         document.getElementById('bbOn').checked,
+    bbPeriod:     parseInt(document.getElementById('bbPeriod').value),
+    bbStd:        parseFloat(document.getElementById('bbStd').value),
+    maOn:         document.getElementById('maOn').checked,
+    maShort:      parseInt(document.getElementById('maShort').value),
+    maLong:       parseInt(document.getElementById('maLong').value),
+    volOn:        document.getElementById('volOn').checked,
+    volSpike:     parseFloat(document.getElementById('volSpike').value),
+    srOn:         document.getElementById('srOn').checked,
+    srTol:        parseFloat(document.getElementById('srTol').value),
+    minInd:       parseFloat(document.getElementById('minInd').value),
+    minConf:      parseFloat(document.getElementById('minConf').value),
+    timeframe:    document.getElementById('timeframe').value,
+    currentAsset,
+    watchlistEnabled: { ...watchlistEnabled },
+  };
+
+  const btn = document.getElementById('saveBtn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'SAVING...';
+  try {
+    const res = await fetch(API_BASE + '/api/save-preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(prefs),
+    });
+    if (res.ok) {
+      addLog('info', 'PREFS', `Settings saved for ${currentUser}`);
+      btn.textContent = '✓ SAVED';
+    } else if (res.status === 401) {
+      btn.textContent = '✕ SESSION EXPIRED';
+      handleSessionExpiry();
+      return;
+    } else {
+      addLog('err', 'PREFS', `Failed to save settings (HTTP ${res.status})`);
+      btn.textContent = '✕ FAILED';
+    }
+  } catch (e) {
+    addLog('err', 'PREFS', 'Save error: ' + e.message);
+    btn.textContent = '✕ ERROR';
+  }
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2200);
+}
+
+function applyPreferences(prefs) {
+  if (!prefs || Object.keys(prefs).length === 0) return;
+
+  const set    = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+  const setChk = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.checked = v; };
+  const setText= (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.textContent = v; };
+
+  set('capital', prefs.capital);
+  set('posSize', prefs.posSize);
+  if (prefs.posSize   !== undefined) setText('posSizeVal', prefs.posSize + '%');
+  set('targetGain', prefs.targetGain);
+  if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
+  set('stopLoss', prefs.stopLoss);
+  if (prefs.stopLoss  !== undefined) setText('slVal', '-' + parseFloat(prefs.stopLoss).toFixed(1) + '%');
+  set('trailDist', prefs.trailDist);
+  if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
+
+  setChk('fixedSL', prefs.fixedSL);
+  setChk('trailSL', prefs.trailSL);
+  if (prefs.trailSL !== undefined) {
+    document.getElementById('trailSLRow').style.opacity      = prefs.trailSL ? '1' : '0.3';
+    document.getElementById('trailSLRow').style.pointerEvents = prefs.trailSL ? 'auto' : 'none';
+  }
+
+  setChk('rsiOn', prefs.rsiOn);
+  set('rsiOversold', prefs.rsiOversold);
+  set('rsiOverbought', prefs.rsiOverbought);
+
+  setChk('macdOn', prefs.macdOn);
+  set('macdFast', prefs.macdFast);
+  set('macdSlow', prefs.macdSlow);
+  set('macdSig',  prefs.macdSig);
+
+  setChk('bbOn', prefs.bbOn);
+  set('bbPeriod', prefs.bbPeriod);
+  set('bbStd',    prefs.bbStd);
+
+  setChk('maOn', prefs.maOn);
+  set('maShort', prefs.maShort);
+  set('maLong',  prefs.maLong);
+
+  setChk('volOn', prefs.volOn);
+  set('volSpike', prefs.volSpike);
+  if (prefs.volSpike !== undefined) setText('volSpikeVal', parseFloat(prefs.volSpike).toFixed(1) + '×');
+
+  setChk('srOn', prefs.srOn);
+  set('srTol', prefs.srTol);
+
+  set('minInd', prefs.minInd);
+  if (prefs.minInd !== undefined) setText('minIndVal', prefs.minInd);
+  set('minConf', prefs.minConf);
+  if (prefs.minConf !== undefined) setText('minConfVal', prefs.minConf + '%');
+
+  if (prefs.timeframe) set('timeframe', prefs.timeframe);
+  if (prefs.currentAsset && assets[prefs.currentAsset]) currentAsset = prefs.currentAsset;
+  if (prefs.watchlistEnabled) {
+    Object.keys(assets).forEach(sym => {
+      watchlistEnabled[sym] = prefs.watchlistEnabled[sym] !== false;
+    });
+  }
+}
+
 // Boot
-init();
+checkSession();
 
 </script>
 </body>
