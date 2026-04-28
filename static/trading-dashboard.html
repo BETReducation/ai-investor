@@ -177,11 +177,53 @@
 
   /* MAIN LAYOUT */
   .layout {
-    display: grid;
-    grid-template-columns: 280px 1fr 300px;
-    grid-template-rows: auto 1fr;
+    display: flex;
     height: calc(100vh - 44px);
-    gap: 0;
+  }
+
+  #leftPanel {
+    width: 280px;
+    min-width: 180px;
+    max-width: 500px;
+    flex-shrink: 0;
+  }
+
+  #rightPanel {
+    width: 300px;
+    min-width: 180px;
+    flex-shrink: 0;
+  }
+
+  .panel-resizer {
+    width: 5px;
+    background: var(--border);
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .panel-resizer:hover,
+  .panel-resizer.dragging {
+    background: var(--accent-blue);
+  }
+
+  .panel-resizer::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 32px;
+    background: var(--accent-blue);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .panel-resizer:hover::after {
+    opacity: 0.6;
   }
 
   /* PANELS */
@@ -226,10 +268,19 @@
 
   /* CENTER PANEL */
   .center-panel {
+    flex: 1;
+    min-width: 0;
     background: var(--bg-secondary);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  /* let grouped inputs share available width rather than use fixed px */
+  .input-group input[type="number"] {
+    flex: 1;
+    min-width: 0;
+    width: auto;
   }
 
   /* SECTION LABELS */
@@ -1241,6 +1292,7 @@
   }
 
   .save-btn-wrap { padding: 0 16px 12px; }
+
 </style>
 </head>
 <body>
@@ -1432,9 +1484,9 @@
       <div class="control-row" style="margin-left:8px;">
         <div class="control-label">Fast / Slow / Sig</div>
         <div class="input-group">
-          <input type="number" id="macdFast" value="12" min="3" max="20" style="width:38px;font-size:10px;">
-          <input type="number" id="macdSlow" value="26" min="10" max="50" style="width:38px;font-size:10px;">
-          <input type="number" id="macdSig" value="9" min="3" max="15" style="width:38px;font-size:10px;">
+          <input type="number" id="macdFast" value="12" min="3" max="99" title="Fast period">
+          <input type="number" id="macdSlow" value="26" min="10" max="99" title="Slow period">
+          <input type="number" id="macdSig" value="9" min="3" max="20" title="Signal period">
         </div>
       </div>
       <div class="sep"></div>
@@ -1449,8 +1501,8 @@
       <div class="control-row" style="margin-left:8px;">
         <div class="control-label">Period / StdDev</div>
         <div class="input-group">
-          <input type="number" id="bbPeriod" value="20" min="5" max="50" style="width:45px;font-size:10px;">
-          <input type="number" id="bbStd" value="2" min="1" max="4" step="0.5" style="width:45px;font-size:10px;">
+          <input type="number" id="bbPeriod" value="20" min="5" max="50" title="Period">
+          <input type="number" id="bbStd" value="2" min="1" max="4" step="0.5" title="Std dev">
         </div>
       </div>
       <div class="sep"></div>
@@ -1465,8 +1517,8 @@
       <div class="control-row" style="margin-left:8px;">
         <div class="control-label">Short / Long</div>
         <div class="input-group">
-          <input type="number" id="maShort" value="9" min="3" max="20" style="width:45px;font-size:10px;">
-          <input type="number" id="maLong" value="21" min="10" max="50" style="width:45px;font-size:10px;">
+          <input type="number" id="maShort" value="9" min="3" max="99" title="Short EMA">
+          <input type="number" id="maLong" value="21" min="10" max="200" title="Long EMA">
         </div>
       </div>
       <div class="sep"></div>
@@ -1549,6 +1601,9 @@
       <div class="log-line"><span class="log-ts">00:00:00</span> <span class="log-info">[SYSTEM]</span> APEX TRADER initialized. Configure strategy and start engine.</div>
     </div>
   </div>
+
+  <!-- Drag handle: resize left panel -->
+  <div class="panel-resizer" id="leftResizer"></div>
 
   <!-- CENTER PANEL: Chart + Indicators -->
   <div class="center-panel">
@@ -1897,6 +1952,18 @@ async function fetchSignals(sym) {
     symbol: yfSym, period: '6mo', interval: '1d',
     rsi_oversold: cfg.rsiOversold,
     rsi_overbought: cfg.rsiOverbought,
+    rsi_on: cfg.rsiOn ? 1 : 0,
+    macd_on: cfg.macdOn ? 1 : 0,
+    macd_fast: cfg.macdFast,
+    macd_slow: cfg.macdSlow,
+    macd_signal: cfg.macdSig,
+    bb_on: cfg.bbOn ? 1 : 0,
+    bb_length: cfg.bbPeriod,
+    bb_std: cfg.bbStd,
+    ma_on: cfg.maOn ? 1 : 0,
+    ema_short: cfg.maShort,
+    ema_long: cfg.maLong,
+    vol_on: cfg.volOn ? 1 : 0,
     volume_surge: cfg.volSpike,
   });
   const data = await apiFetch(`/api/signals?${params}`);
@@ -2003,32 +2070,58 @@ function updateIndicatorBar() {
     else                              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEUTRAL';    sig.className = 'indicator-chip-signal val-amber'; }
   }
 
+  const cx = ind.crossovers || {};
+  const cfg2 = getConfig();
+  const macdLookback = 5;
+  const maLookback   = 10;
+
+  // MACD: show histogram value; colour by whether a recent cross exists
   const macdHist = ind.macd && ind.macd.histogram;
   if (macdHist != null) {
     const el = document.getElementById('indMacd'), sig = document.getElementById('indMacdSig');
     el.textContent = macdHist.toFixed(4);
-    if (macdHist > 0) { el.className = 'indicator-chip-value val-green'; sig.textContent = 'BULL'; sig.className = 'indicator-chip-signal val-green'; }
-    else              { el.className = 'indicator-chip-value val-red';   sig.textContent = 'BEAR'; sig.className = 'indicator-chip-signal val-red'; }
+    const macdBars = cx.macd_bars_since_cross != null ? cx.macd_bars_since_cross : 999;
+    const macdDir  = cx.macd_direction || 0;
+    if (macdBars <= macdLookback) {
+      // recent crossover — signal is active
+      if (macdDir > 0) { el.className = 'indicator-chip-value val-green'; sig.textContent = 'X-BULL'; sig.className = 'indicator-chip-signal val-green'; }
+      else             { el.className = 'indicator-chip-value val-red';   sig.textContent = 'X-BEAR'; sig.className = 'indicator-chip-signal val-red'; }
+    } else {
+      // no recent cross — show histogram direction as informational (amber)
+      if (macdHist > 0) { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'POS'; sig.className = 'indicator-chip-signal val-amber'; }
+      else              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEG'; sig.className = 'indicator-chip-signal val-amber'; }
+    }
   }
 
   const pctB = ind.bollinger_bands && ind.bollinger_bands.percent_b;
   if (pctB != null) {
     const bbPos = pctB * 100;
     document.getElementById('indBb').textContent = bbPos.toFixed(0) + '%';
-    if (bbPos < 20)      { document.getElementById('indBb').className = 'indicator-chip-value val-green';  document.getElementById('indBbSig').textContent = 'LOWER'; }
-    else if (bbPos > 80) { document.getElementById('indBb').className = 'indicator-chip-value val-red';    document.getElementById('indBbSig').textContent = 'UPPER'; }
+    if (bbPos < 5)       { document.getElementById('indBb').className = 'indicator-chip-value val-green';  document.getElementById('indBbSig').textContent = 'LOWER'; }
+    else if (bbPos > 95) { document.getElementById('indBb').className = 'indicator-chip-value val-red';    document.getElementById('indBbSig').textContent = 'UPPER'; }
     else                 { document.getElementById('indBb').className = 'indicator-chip-value val-purple'; document.getElementById('indBbSig').textContent = 'MID';   }
   }
 
+  // MA: show alignment state but only colour green/red if a recent cross exists
   const close = ind.price && ind.price.close;
-  const ma20 = ind.moving_averages && ind.moving_averages.ma_20;
-  const ma50 = ind.moving_averages && ind.moving_averages.ma_50;
-  if (close && ma20 && ma50) {
-    const bull = close > ma20 && ma20 > ma50;
-    document.getElementById('indMa').textContent = bull ? '▲ BULL' : '▼ BEAR';
-    document.getElementById('indMa').className = 'indicator-chip-value ' + (bull ? 'val-green' : 'val-red');
-    document.getElementById('indMaSig').textContent = bull ? 'BULLISH' : 'BEARISH';
-    document.getElementById('indMaSig').className = 'indicator-chip-signal ' + (bull ? 'val-green' : 'val-red');
+  const ma20  = ind.moving_averages && ind.moving_averages.ma_20;
+  const ma50  = ind.moving_averages && ind.moving_averages.ma_50;
+  if (ma20 && ma50) {
+    const maBars = cx.ma_bars_since_cross != null ? cx.ma_bars_since_cross : 999;
+    const maDir  = cx.ma_direction || 0;
+    const elMa = document.getElementById('indMa'), sigMa = document.getElementById('indMaSig');
+    if (maBars <= maLookback) {
+      // recent golden/death cross — active signal
+      if (maDir > 0) { elMa.textContent = '▲ CROSS'; elMa.className = 'indicator-chip-value val-green'; sigMa.textContent = 'GOLDEN'; sigMa.className = 'indicator-chip-signal val-green'; }
+      else           { elMa.textContent = '▼ CROSS'; elMa.className = 'indicator-chip-value val-red';   sigMa.textContent = 'DEATH';  sigMa.className = 'indicator-chip-signal val-red'; }
+    } else {
+      // no recent cross — show alignment as informational (amber)
+      const bull = close && close > ma20 && ma20 > ma50;
+      elMa.textContent = bull ? '▲' : '▼';
+      elMa.className = 'indicator-chip-value val-amber';
+      sigMa.textContent = 'ALIGNED';
+      sigMa.className = 'indicator-chip-signal val-amber';
+    }
   }
 
   const volRatio = ind.volume && ind.volume.ratio;
@@ -2420,8 +2513,15 @@ function getConfig() {
     rsiOversold: parseFloat(document.getElementById('rsiOversold').value),
     rsiOverbought: parseFloat(document.getElementById('rsiOverbought').value),
     macdOn: document.getElementById('macdOn').checked,
+    macdFast: parseInt(document.getElementById('macdFast').value),
+    macdSlow: parseInt(document.getElementById('macdSlow').value),
+    macdSig: parseInt(document.getElementById('macdSig').value),
     bbOn: document.getElementById('bbOn').checked,
+    bbPeriod: parseInt(document.getElementById('bbPeriod').value),
+    bbStd: parseFloat(document.getElementById('bbStd').value),
     maOn: document.getElementById('maOn').checked,
+    maShort: parseInt(document.getElementById('maShort').value),
+    maLong: parseInt(document.getElementById('maLong').value),
     volOn: document.getElementById('volOn').checked,
     volSpike: parseFloat(document.getElementById('volSpike').value),
     srOn: document.getElementById('srOn').checked,
@@ -2469,7 +2569,7 @@ function showLogin() {
 function showDashboard() {
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('topbar').style.display = 'flex';
-  document.getElementById('mainLayout').style.display = 'grid';
+  document.getElementById('mainLayout').style.display = 'flex';
   document.getElementById('usernameDisplay').textContent = (currentUser || 'USER').toUpperCase();
   if (!dashboardInitialized) {
     dashboardInitialized = true;
@@ -2700,6 +2800,37 @@ function applyPreferences(prefs) {
 
 // Boot
 checkSession();
+
+// ── Panel resizer ────────────────────────────────────────────────────────────
+(function () {
+  const resizer = document.getElementById('leftResizer');
+  const leftPanel = document.getElementById('leftPanel');
+  if (!resizer || !leftPanel) return;
+  let startX, startW;
+
+  resizer.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = leftPanel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(500, Math.max(180, startW + e.clientX - startX));
+      leftPanel.style.width = w + 'px';
+    }
+    function onUp() {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 
 </script>
 </body>

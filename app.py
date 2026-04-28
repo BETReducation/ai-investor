@@ -231,7 +231,13 @@ def signals():
         return jsonify({"error": "symbol parameter is required"}), 400
 
     thresholds = {}
-    for key in ["rsi_oversold", "rsi_overbought", "volume_surge", "macd_threshold", "bb_oversold", "bb_overbought"]:
+    float_keys = [
+        "rsi_oversold", "rsi_overbought", "volume_surge",
+        "macd_threshold", "bb_oversold", "bb_overbought",
+        "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
+        "ema_short", "ema_long", "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
+    ]
+    for key in float_keys:
         val = request.args.get(key)
         if val is not None:
             try:
@@ -239,9 +245,27 @@ def signals():
             except ValueError:
                 return jsonify({"error": f"Invalid value for threshold '{key}'"}), 400
 
+    calc_params = {}
+    int_calc_keys = {"macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}
+    float_calc_keys = {"bb_std": 2.0}
+    for key, default in int_calc_keys.items():
+        val = request.args.get(key)
+        if val is not None:
+            try:
+                calc_params[key] = int(val)
+            except ValueError:
+                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+    for key, default in float_calc_keys.items():
+        val = request.args.get(key)
+        if val is not None:
+            try:
+                calc_params[key] = float(val)
+            except ValueError:
+                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+
     try:
         df = _fetch_ohlcv(symbol, period, interval)
-        indicator_data = calculate_all(df)
+        indicator_data = calculate_all(df, **calc_params)
         signal_result = score_signals(indicator_data, thresholds or None)
         return jsonify({
             "symbol": symbol.upper(),
