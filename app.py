@@ -6,6 +6,8 @@ import pandas as pd
 import bcrypt
 import json
 import os
+import psycopg2
+import psycopg2.extras
 
 from api.indicators import calculate_all
 from api.signals import score_signals
@@ -31,7 +33,28 @@ CORS(app, supports_credentials=True, origins=_allowed_origins)
 login_manager = LoginManager(app)
 login_manager.session_protection = "basic"
 
-USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
+USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+
+def _db_conn():
+    url = DATABASE_URL
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    return psycopg2.connect(url)
+
+
+def _ensure_table() -> None:
+    if not DATABASE_URL:
+        return
+    with _db_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                username      TEXT PRIMARY KEY,
+                password_hash TEXT NOT NULL,
+                preferences   JSONB NOT NULL DEFAULT '{}'
+            )
+        """)
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
@@ -59,6 +82,16 @@ def unauthorized():
 # ── User-store helpers ───────────────────────────────────────────────────────
 
 def _load_users() -> dict:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT username, password_hash, preferences FROM users")
+            return {
+                row["username"]: {
+                    "password_hash": row["password_hash"],
+                    "preferences":   row["preferences"] or {},
+                }
+                for row in cur.fetchall()
+            }
     if not os.path.exists(USERS_FILE):
         return {}
     with open(USERS_FILE, "r") as f:
@@ -66,11 +99,44 @@ def _load_users() -> dict:
 
 
 def _save_users(users: dict) -> None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            for username, data in users.items():
+                cur.execute("""
+                    INSERT INTO users (username, password_hash, preferences)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (username) DO UPDATE
+                        SET password_hash = EXCLUDED.password_hash,
+                            preferences   = EXCLUDED.preferences
+                """, (username, data["password_hash"], json.dumps(data.get("preferences", {}))))
+        return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
 
 
+def _save_preferences(username: str, preferences: dict) -> None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET preferences = %s WHERE username = %s",
+                (json.dumps(preferences), username)
+            )
+        return
+    users = _load_users()
+    users[username]["preferences"] = preferences
+    _save_users(users)
+
+
 def _ensure_default_user() -> None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM users LIMIT 1")
+            if cur.fetchone():
+                return
+        pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
+        _save_users({"admin": {"password_hash": pw_hash, "preferences": {}}})
+        print("\n  ✓ Created default user  →  username: admin  |  password: apex2024\n")
+        return
     if os.path.exists(USERS_FILE):
         return
     pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
@@ -164,8 +230,7 @@ def save_preferences():
     users = _load_users()
     if current_user.id not in users:
         return jsonify({"error": "User not found"}), 404
-    users[current_user.id]["preferences"] = prefs
-    _save_users(users)
+    _save_preferences(current_user.id, prefs)
     return jsonify({"success": True})
 
 
@@ -292,6 +357,7 @@ def signals():
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 
+_ensure_table()
 _ensure_default_user()
 
 if __name__ == "__main__":
