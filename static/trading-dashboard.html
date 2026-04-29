@@ -2731,6 +2731,7 @@ function initChart() {
 function loadTvChart(tvSym) {
   const container = document.getElementById('tvChart');
   container.innerHTML = '';
+  const mobile = window.innerWidth <= 768;
   tvWidget = new TradingView.widget({
     autosize: true,
     symbol: tvSym,
@@ -2749,8 +2750,8 @@ function loadTvChart(tvSym) {
     save_image: false,
     backgroundColor: 'rgba(5,6,8,1)',
     gridColor: 'rgba(30,42,58,0.8)',
-    withdateranges: true,
-    hide_side_toolbar: false,
+    withdateranges: !mobile,
+    hide_side_toolbar: mobile,
   });
 }
 
