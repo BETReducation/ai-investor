@@ -1411,22 +1411,35 @@
     }
     .center-panel.mobile-active { display: flex; }
 
-    /* compact stats row — horizontal scroll */
+    /* compact stats row — horizontal scroll, never shrink */
     .stats-row {
       overflow-x: auto;
       flex-wrap: nowrap;
+      flex-shrink: 0;
       scrollbar-width: none;
     }
     .stats-row::-webkit-scrollbar { display: none; }
     .stat-cell { min-width: 90px; padding: 8px 10px; }
 
-    /* chart fills remaining space */
-    .chart-area { flex: 1; min-height: 0; }
-    #tvChart     { height: 100% !important; }
+    /* chart fills remaining space, strictly contained */
+    .chart-area {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #tvChart {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    #tvChart iframe {
+      max-height: 100% !important;
+    }
 
-    /* indicator bar — horizontal scroll */
+    /* indicator bar — horizontal scroll, never shrink */
     .indicator-bar {
       flex-wrap: nowrap;
+      flex-shrink: 0;
       overflow-x: auto;
       scrollbar-width: none;
       padding: 6px 8px;
@@ -1447,7 +1460,7 @@
       height: 52px;
       background: var(--bg-panel);
       border-top: 1px solid var(--border);
-      z-index: 200;
+      z-index: 10000; /* above TradingView iframe */
     }
     .mobile-nav-btn {
       flex: 1;
