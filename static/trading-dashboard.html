@@ -1293,6 +1293,78 @@
 
   .save-btn-wrap { padding: 0 16px 12px; }
 
+  /* STRATEGY BUILDER */
+  .condition-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--border-bright);
+    border-radius: 2px;
+    padding: 10px;
+    transition: border-color 0.15s;
+  }
+  .condition-card:hover { border-color: var(--border-bright); }
+  .condition-card.met   { border-left-color: var(--accent-green); }
+  .condition-card.unmet { border-left-color: var(--text-muted); }
+
+  .strat-type-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .strat-type-btn {
+    padding: 5px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .strat-type-btn.strat-buy.active  { background: rgba(0,255,136,0.15); color: var(--accent-green); }
+  .strat-type-btn.strat-sell.active { background: rgba(255,51,85,0.15);  color: var(--accent-red);   }
+  .strat-type-btn:not(.active):hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+  .template-btn {
+    padding: 4px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .template-btn:hover {
+    border-color: var(--accent-purple);
+    color: var(--accent-purple);
+    background: rgba(170,85,255,0.08);
+  }
+
+  .add-cond-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    background: rgba(0,136,255,0.06);
+    border: 1px dashed var(--border-bright);
+    color: var(--accent-blue);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .add-cond-btn:hover { background: rgba(0,136,255,0.12); border-color: var(--accent-blue); }
+
 </style>
 </head>
 <body>
@@ -1453,125 +1525,63 @@
       </div>
     </div>
 
-    <!-- INDICATOR SETTINGS -->
+    <!-- STRATEGY BUILDER -->
     <div class="section">
-      <div class="section-label">INDICATORS</div>
+      <div class="section-label">SIGNAL STRATEGY</div>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-cyan);font-weight:600;">RSI</span>
-          <span style="color:var(--text-muted);font-size:9px;">Oversold/Overbought</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="rsiOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      <!-- Saved strategies dropdown -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <select id="strategySelect" onchange="loadSavedStrategy(this.value)"
+          style="flex:1;font-size:10px;padding:4px 6px;">
+          <option value="">— New Strategy —</option>
+        </select>
+        <button onclick="deleteCurrentStrategy()" title="Delete selected strategy"
+          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 8px;border-radius:2px;line-height:1;transition:all 0.15s;font-family:'IBM Plex Mono',monospace;"
+          onmouseover="this.style.borderColor='var(--accent-red)';this.style.color='var(--accent-red)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">×</button>
       </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Oversold <span>(buy)</span></div>
-        <input type="number" id="rsiOversold" value="35" min="10" max="50" style="width:60px">
-      </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Overbought <span>(sell)</span></div>
-        <input type="number" id="rsiOverbought" value="65" min="50" max="90" style="width:60px">
-      </div>
-      <div class="sep"></div>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-purple);font-weight:600;">MACD</span>
-          <span style="color:var(--text-muted);font-size:9px;">Cross Signal</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="macdOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Fast / Slow / Sig</div>
-        <div class="input-group">
-          <input type="number" id="macdFast" value="12" min="3" max="99" title="Fast period">
-          <input type="number" id="macdSlow" value="26" min="10" max="99" title="Slow period">
-          <input type="number" id="macdSig" value="9" min="3" max="20" title="Signal period">
+      <!-- Strategy name + BUY / SELL type -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="text" id="strategyName" placeholder="My Strategy" style="flex:1;font-size:10px;">
+        <div class="strat-type-toggle">
+          <button id="stratBuyBtn"  class="strat-type-btn strat-buy active" onclick="setStratType('BUY')">BUY</button>
+          <button id="stratSellBtn" class="strat-type-btn strat-sell"       onclick="setStratType('SELL')">SELL</button>
         </div>
       </div>
-      <div class="sep"></div>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-amber);font-weight:600;">BB</span>
-          <span style="color:var(--text-muted);font-size:9px;">Bollinger Bands</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="bbOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      <!-- Match logic -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
+        <span>Fire when</span>
+        <select id="stratMatch" style="width:auto;font-size:10px;padding:3px 6px;">
+          <option value="all">ALL conditions</option>
+          <option value="any">ANY condition</option>
+        </select>
+        <span>are met</span>
       </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Period / StdDev</div>
-        <div class="input-group">
-          <input type="number" id="bbPeriod" value="20" min="5" max="50" title="Period">
-          <input type="number" id="bbStd" value="2" min="1" max="4" step="0.5" title="Std dev">
-        </div>
-      </div>
-      <div class="sep"></div>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-green);font-weight:600;">MA</span>
-          <span style="color:var(--text-muted);font-size:9px;">Moving Averages</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="maOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Short / Long</div>
-        <div class="input-group">
-          <input type="number" id="maShort" value="9" min="3" max="99" title="Short EMA">
-          <input type="number" id="maLong" value="21" min="10" max="200" title="Long EMA">
-        </div>
-      </div>
-      <div class="sep"></div>
+      <!-- Conditions list -->
+      <div id="conditionsList" style="display:flex;flex-direction:column;gap:6px;"></div>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-red);font-weight:600;">VOL</span>
-          <span style="color:var(--text-muted);font-size:9px;">Volume Filter</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="volOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="range-row" style="margin-left:8px;">
-        <div class="range-header">
-          <div class="control-label">Min Vol Spike</div>
-          <div class="range-value tag-amber" id="volSpikeVal">1.5×</div>
-        </div>
-        <input type="range" id="volSpike" min="1.1" max="5" step="0.1" value="1.5" oninput="document.getElementById('volSpikeVal').textContent=parseFloat(this.value).toFixed(1)+'×'">
-      </div>
-      <div class="sep"></div>
+      <!-- Add condition -->
+      <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
 
-      <div class="toggle-row">
-        <div class="toggle-label" style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--accent-blue);font-weight:600;">S/R</span>
-          <span style="color:var(--text-muted);font-size:9px;">Support / Resistance</span>
-        </div>
-        <label class="toggle"><input type="checkbox" id="srOn" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      <!-- Quick-start templates -->
+      <div class="section-label" style="margin-top:14px;">QUICK START TEMPLATES</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+        <button class="template-btn" onclick="loadTemplate('oversold_bounce')">Oversold Bounce</button>
+        <button class="template-btn" onclick="loadTemplate('overbought_sell')">Overbought Sell</button>
+        <button class="template-btn" onclick="loadTemplate('macd_breakout')">MACD Breakout</button>
+        <button class="template-btn" onclick="loadTemplate('volume_pop')">Volume Pop</button>
       </div>
-      <div class="control-row" style="margin-left:8px;">
-        <div class="control-label">Bounce Tolerance</div>
-        <div class="input-group">
-          <input type="number" id="srTol" value="0.3" min="0.1" max="2" step="0.1" style="width:55px;">
-          <span class="input-suffix">%</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- SIGNAL REQUIREMENTS -->
-    <div class="section">
-      <div class="section-label">SIGNAL THRESHOLD</div>
-      <div class="range-row">
-        <div class="range-header">
-          <div class="control-label">Min Indicators to Fire</div>
-          <div class="range-value tag-green" id="minIndVal">3</div>
-        </div>
-        <input type="range" id="minInd" min="1" max="5" value="3" oninput="document.getElementById('minIndVal').textContent=this.value">
-      </div>
-      <div class="range-row">
-        <div class="range-header">
-          <div class="control-label">Min Confidence</div>
-          <div class="range-value tag-cyan" id="minConfVal">65%</div>
-        </div>
-        <input type="range" id="minConf" min="40" max="95" value="65" oninput="document.getElementById('minConfVal').textContent=this.value+'%'">
-      </div>
+      <!-- Live condition status for current asset -->
+      <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
+
+      <!-- Save strategy -->
+      <button id="saveStratBtn" onclick="saveStrategy()"
+        style="width:100%;margin-top:10px;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;border-radius:2px;transition:all 0.15s;"
+        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE STRATEGY</button>
     </div>
 
     <!-- TIMEFRAME -->
@@ -1836,6 +1846,38 @@ Object.keys(assets).forEach(a => { priceHistory[a] = []; });
 
 let liveCache = {};
 
+// ── Strategy builder state ────────────────────────────────────────────────────
+let strategyConditions = [];
+let strategyType  = 'BUY';
+let strategyMatch = 'all';
+let savedStrategies = [];
+
+const CONDITION_DEFS = {
+  rsi_below:        { label: 'RSI Oversold',                  desc: 'RSI drops below a threshold — the asset may be due for a bounce',              inputLabel: 'RSI below',         defaultVal: 30,  min: 5,   max: 50,  step: 1,   suffix: '' },
+  rsi_above:        { label: 'RSI Overbought',                desc: 'RSI rises above a threshold — the asset may be due for a pullback',             inputLabel: 'RSI above',         defaultVal: 70,  min: 50,  max: 95,  step: 1,   suffix: '' },
+  bb_lower:         { label: 'Near Lower Bollinger Band',     desc: 'Price is close to the lower band — potential support or reversal zone',         inputLabel: 'BB position below', defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '%' },
+  bb_upper:         { label: 'Near Upper Bollinger Band',     desc: 'Price is close to the upper band — potential resistance or reversal zone',      inputLabel: 'BB position above', defaultVal: 90,  min: 70,  max: 99,  step: 1,   suffix: '%' },
+  bb_broke_lower:   { label: 'Closed Below Lower BB',         desc: 'The candle closed below the lower Bollinger Band — strong oversell signal',     inputLabel: null,                defaultVal: 0 },
+  bb_broke_upper:   { label: 'Closed Above Upper BB',         desc: 'The candle closed above the upper Bollinger Band — strong overbuy signal',      inputLabel: null,                defaultVal: 0 },
+  macd_bull_cross:  { label: 'MACD Bullish Cross',            desc: 'MACD line recently crossed above signal line — bullish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
+  macd_bear_cross:  { label: 'MACD Bearish Cross',            desc: 'MACD line recently crossed below signal line — bearish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
+  volume_spike:     { label: 'Volume Spike',                  desc: 'Current trading volume is significantly above the 20-bar average',              inputLabel: 'At least',          defaultVal: 1.5, min: 1.1, max: 5,   step: 0.1, suffix: '× avg' },
+  ma_golden:        { label: 'Golden Cross',                  desc: 'Short MA crossed above long MA recently — classic bullish breakout signal',     inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
+  ma_death:         { label: 'Death Cross',                   desc: 'Short MA crossed below long MA recently — classic bearish breakdown signal',    inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
+  price_above_ma20: { label: 'Price Above MA20',              desc: 'Current price is above the 20-day moving average — uptrend confirmation',       inputLabel: null,                defaultVal: 0 },
+  price_below_ma20: { label: 'Price Below MA20',              desc: 'Current price is below the 20-day moving average — downtrend confirmation',     inputLabel: null,                defaultVal: 0 },
+  price_above_ma50: { label: 'Price Above MA50',              desc: 'Current price is above the 50-day moving average — strong uptrend',             inputLabel: null,                defaultVal: 0 },
+  price_below_ma50: { label: 'Price Below MA50',              desc: 'Current price is below the 50-day moving average — strong downtrend',           inputLabel: null,                defaultVal: 0 },
+  price_dip:        { label: 'Price Dip from Recent High',    desc: 'Price has dropped by this percentage from a recent peak (last 30 bars)',        inputLabel: 'Drop more than',    defaultVal: 20,  min: 5,   max: 80,  step: 1,   suffix: '%' },
+};
+
+const STRATEGY_TEMPLATES = {
+  oversold_bounce: { name: 'Oversold Bounce', type: 'BUY',  match: 'all', conditions: [{ type: 'rsi_below',       value: 30  }, { type: 'bb_lower',        value: 15  }] },
+  overbought_sell: { name: 'Overbought Sell', type: 'SELL', match: 'all', conditions: [{ type: 'rsi_above',       value: 70  }, { type: 'bb_upper',        value: 85  }] },
+  macd_breakout:   { name: 'MACD Breakout',   type: 'BUY',  match: 'all', conditions: [{ type: 'macd_bull_cross', value: 3   }, { type: 'price_above_ma20', value: 0  }] },
+  volume_pop:      { name: 'Volume Pop',      type: 'BUY',  match: 'all', conditions: [{ type: 'volume_spike',    value: 2.0 }, { type: 'macd_bull_cross', value: 5   }] },
+};
+
 let watchlistEnabled = {};
 let watchlistEditMode = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
@@ -1852,7 +1894,9 @@ function init() {
   addLog('info', 'AUTH',   `Logged in as: ${(currentUser || 'unknown').toUpperCase()}`);
   addLog('info', 'SYSTEM', 'Backend: ' + API_BASE);
   addLog('info', 'SYSTEM', 'Configure strategy parameters and press START ENGINE');
-  fetchSignals(currentAsset).then(() => updateIndicatorBar()).catch(() => {});
+  renderStrategyDropdown();
+  renderConditions();
+  fetchSignals(currentAsset).then(() => { updateIndicatorBar(); updateStrategyStatus(); }).catch(() => {});
 }
 
 // --- CLOCK ---
@@ -1866,6 +1910,191 @@ function setupToggles() {
   document.getElementById('trailSL').addEventListener('change', function() {
     document.getElementById('trailSLRow').style.opacity = this.checked ? '1' : '0.3';
     document.getElementById('trailSLRow').style.pointerEvents = this.checked ? 'auto' : 'none';
+  });
+}
+
+// ── Strategy Builder ─────────────────────────────────────────────────────────
+
+function setStratType(type) {
+  strategyType = type;
+  document.getElementById('stratBuyBtn').classList.toggle('active',  type === 'BUY');
+  document.getElementById('stratSellBtn').classList.toggle('active', type === 'SELL');
+}
+
+function addCondition(type) {
+  const t = type || Object.keys(CONDITION_DEFS)[0];
+  const def = CONDITION_DEFS[t] || {};
+  strategyConditions.push({ type: t, value: def.defaultVal ?? 0 });
+  renderConditions();
+}
+
+function removeCondition(i) {
+  strategyConditions.splice(i, 1);
+  renderConditions();
+  updateStrategyStatus();
+}
+
+function updateCondition(i, field, val) {
+  if (!strategyConditions[i]) return;
+  strategyConditions[i][field] = field === 'value' ? parseFloat(val) : val;
+  if (field === 'type') {
+    const def = CONDITION_DEFS[val] || {};
+    strategyConditions[i].value = def.defaultVal ?? 0;
+    renderConditions();
+  }
+  updateStrategyStatus();
+}
+
+function renderConditions() {
+  const list = document.getElementById('conditionsList');
+  if (!list) return;
+  if (strategyConditions.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Add one below or pick a Quick Start template</span></div>`;
+    return;
+  }
+  list.innerHTML = strategyConditions.map((cond, i) => {
+    const def = CONDITION_DEFS[cond.type] || {};
+    const opts = Object.keys(CONDITION_DEFS).map(k =>
+      `<option value="${k}" ${k === cond.type ? 'selected' : ''}>${CONDITION_DEFS[k].label}</option>`
+    ).join('');
+    const inputRow = def.inputLabel ? `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+        <span style="font-size:9px;color:var(--text-muted);white-space:nowrap;">${def.inputLabel}:</span>
+        <input type="number" value="${cond.value}" min="${def.min ?? 0}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
+          onchange="updateCondition(${i},'value',this.value)"
+          style="width:62px;font-size:11px;">
+        ${def.suffix ? `<span style="font-size:9px;color:var(--text-muted);">${def.suffix}</span>` : ''}
+      </div>` : '';
+    return `
+      <div class="condition-card unmet" id="cond-${i}">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <select onchange="updateCondition(${i},'type',this.value)" style="flex:1;font-size:10px;padding:4px 6px;">${opts}</select>
+          <span id="cond-dot-${i}" style="font-size:13px;color:var(--text-muted);transition:color 0.2s;" title="Not yet evaluated">●</span>
+          <button onclick="removeCondition(${i})"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:0 2px;line-height:1;transition:color 0.15s;"
+            onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">×</button>
+        </div>
+        <div style="font-size:9px;color:var(--text-secondary);line-height:1.5;margin-top:5px;">${def.desc || ''}</div>
+        ${inputRow}
+      </div>`;
+  }).join('');
+}
+
+function loadTemplate(name) {
+  const tpl = STRATEGY_TEMPLATES[name];
+  if (!tpl) return;
+  document.getElementById('strategyName').value = tpl.name;
+  document.getElementById('stratMatch').value   = tpl.match;
+  strategyMatch = tpl.match;
+  strategyConditions = tpl.conditions.map(c => ({ ...c }));
+  setStratType(tpl.type);
+  renderConditions();
+  updateStrategyStatus();
+  addLog('info', 'STRAT', `Loaded template: ${tpl.name}`);
+}
+
+function renderStrategyDropdown() {
+  const sel = document.getElementById('strategySelect');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— New Strategy —</option>' +
+    savedStrategies.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  if (savedStrategies.find(s => s.name === current)) sel.value = current;
+}
+
+function loadSavedStrategy(name) {
+  if (!name) return;
+  const s = savedStrategies.find(s => s.name === name);
+  if (!s) return;
+  document.getElementById('strategyName').value = s.name;
+  document.getElementById('stratMatch').value   = s.match;
+  strategyMatch = s.match;
+  strategyConditions = s.conditions.map(c => ({ ...c }));
+  setStratType(s.type);
+  renderConditions();
+  updateStrategyStatus();
+  addLog('info', 'STRAT', `Loaded: ${s.name}`);
+}
+
+async function deleteCurrentStrategy() {
+  const name = document.getElementById('strategySelect').value;
+  if (!name) { addLog('warn', 'STRAT', 'Select a saved strategy to delete'); return; }
+  savedStrategies = savedStrategies.filter(s => s.name !== name);
+  renderStrategyDropdown();
+  document.getElementById('strategySelect').value = '';
+  document.getElementById('strategyName').value = '';
+  strategyConditions = [];
+  renderConditions();
+  updateStrategyStatus();
+  addLog('warn', 'STRAT', `Deleted: ${name}`);
+  await savePreferences();
+}
+
+function evaluateCondition(cond, cache, sym) {
+  const ind = cache.indicators || {};
+  const cx  = ind.crossovers || {};
+  const val = parseFloat(cond.value);
+  switch (cond.type) {
+    case 'rsi_below':        return ind.rsi != null && ind.rsi < val;
+    case 'rsi_above':        return ind.rsi != null && ind.rsi > val;
+    case 'bb_lower':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 < val;
+    case 'bb_upper':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 > val;
+    case 'bb_broke_lower':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b < 0;
+    case 'bb_broke_upper':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b > 1;
+    case 'macd_bull_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction > 0;
+    case 'macd_bear_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction < 0;
+    case 'volume_spike':     return ind.volume?.ratio != null && ind.volume.ratio >= val;
+    case 'ma_golden':        return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction > 0;
+    case 'ma_death':         return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction < 0;
+    case 'price_above_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close > ind.moving_averages.ma_20);
+    case 'price_below_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close < ind.moving_averages.ma_20);
+    case 'price_above_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close > ind.moving_averages.ma_50);
+    case 'price_below_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close < ind.moving_averages.ma_50);
+    case 'price_dip': {
+      const hist = (priceHistory[sym] || []).slice(-30).map(h => h.p).filter(Boolean);
+      if (hist.length < 2) return false;
+      const high = Math.max(...hist);
+      const cur  = hist[hist.length - 1];
+      return high > 0 && ((high - cur) / high * 100) >= val;
+    }
+    default: return false;
+  }
+}
+
+function evaluateStrategy(sym) {
+  const cache = liveCache[sym];
+  if (!cache || strategyConditions.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], results: [] };
+  const match = document.getElementById('stratMatch')?.value || strategyMatch;
+  const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
+  const matched = results.filter(r => r.met);
+  const fired   = match === 'all' ? matched.length === strategyConditions.length : matched.length > 0;
+  return { fired, matchedCount: matched.length, matchedConditions: matched, results };
+}
+
+function updateStrategyStatus() {
+  const statusEl = document.getElementById('stratLiveStatus');
+  if (!statusEl) return;
+  if (strategyConditions.length === 0) { statusEl.style.display = 'none'; return; }
+  const cache = liveCache[currentAsset];
+  if (!cache) { statusEl.style.display = 'none'; return; }
+
+  const result = evaluateStrategy(currentAsset);
+  statusEl.style.display = 'block';
+  const total   = strategyConditions.length;
+  const matched = result.matchedCount;
+  const color   = result.fired ? 'var(--accent-green)' : (matched > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
+  statusEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <span style="letter-spacing:1px;color:var(--text-muted);">LIVE · ${currentAsset}</span>
+      <span style="font-weight:700;color:${color};">${result.fired ? '▶ STRATEGY FIRING' : (matched > 0 ? '◐ PARTIAL MATCH' : '⏸ NO MATCH')}</span>
+    </div>
+    <div style="color:var(--text-secondary);">${matched} of ${total} condition${total !== 1 ? 's' : ''} met</div>`;
+
+  result.results.forEach((r, i) => {
+    const dot  = document.getElementById(`cond-dot-${i}`);
+    const card = document.getElementById(`cond-${i}`);
+    if (dot)  dot.style.color = r.met ? 'var(--accent-green)' : 'var(--text-muted)';
+    if (card) { card.classList.toggle('met', r.met); card.classList.toggle('unmet', !r.met); }
   });
 }
 
@@ -1992,29 +2221,34 @@ async function fetchAllAssets() {
 async function scanSignals() {
   if (!engineRunning) return;
   const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
-  addLog('info', 'SCAN', `Scanning ${active.length} assets via /api/signals...`);
-  const cfg = getConfig();
-  const minConf = cfg.minConf / 100;
-  const minInd = cfg.minInd;
+  addLog('info', 'SCAN', `Scanning ${active.length} assets...`);
+
+  if (strategyConditions.length === 0) {
+    addLog('warn', 'STRAT', 'No conditions set — add conditions to your strategy and restart');
+    updateIndicatorBar();
+    updateStats();
+    return;
+  }
 
   for (const sym of active) {
     try {
-      const data = await fetchSignals(sym);
-      if (!data || data.overall === 'NEUTRAL') continue;
-      const overall = data.overall;
-      const score = overall === 'BUY' ? (data.buy_score || 0) : (data.sell_score || 0);
-      const confidence = (data.confidence || 0) / 100;
-      const reasons = (data.signals || [])
-        .filter(s => s.type === overall && s.weight > 0)
-        .map(s => s.indicator.toUpperCase());
-      if (score >= minInd && confidence >= minConf) {
-        fireAlert(sym, { type: overall, score, confidence, reasons });
+      await fetchSignals(sym);
+      const result = evaluateStrategy(sym);
+      if (result.fired) {
+        const reasons = result.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
+        fireAlert(sym, {
+          type: strategyType,
+          score: result.matchedCount,
+          confidence: result.matchedCount / strategyConditions.length,
+          reasons,
+        });
       }
     } catch (e) {
-      addLog('err', 'API', `Signal scan failed ${sym}: ${e.message}`);
+      addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
     }
   }
   updateIndicatorBar();
+  updateStrategyStatus();
   updateStats();
 }
 
@@ -2145,6 +2379,7 @@ function updateIndicatorBar() {
     scoreEl.className = 'indicator-chip-value val-amber';
     scoreSig.className = 'indicator-chip-signal val-amber';
   }
+  updateStrategyStatus();
 }
 
 // --- FIRE ALERT ---
@@ -2504,29 +2739,18 @@ function addLog(type, source, msg) {
 // --- HELPERS ---
 function getConfig() {
   return {
-    capital: parseFloat(document.getElementById('capital').value),
-    posSize: parseFloat(document.getElementById('posSize').value),
+    capital:    parseFloat(document.getElementById('capital').value),
+    posSize:    parseFloat(document.getElementById('posSize').value),
     targetGain: parseFloat(document.getElementById('targetGain').value),
-    stopLoss: parseFloat(document.getElementById('stopLoss').value),
-    trailDist: parseFloat(document.getElementById('trailDist').value),
-    rsiOn: document.getElementById('rsiOn').checked,
-    rsiOversold: parseFloat(document.getElementById('rsiOversold').value),
-    rsiOverbought: parseFloat(document.getElementById('rsiOverbought').value),
-    macdOn: document.getElementById('macdOn').checked,
-    macdFast: parseInt(document.getElementById('macdFast').value),
-    macdSlow: parseInt(document.getElementById('macdSlow').value),
-    macdSig: parseInt(document.getElementById('macdSig').value),
-    bbOn: document.getElementById('bbOn').checked,
-    bbPeriod: parseInt(document.getElementById('bbPeriod').value),
-    bbStd: parseFloat(document.getElementById('bbStd').value),
-    maOn: document.getElementById('maOn').checked,
-    maShort: parseInt(document.getElementById('maShort').value),
-    maLong: parseInt(document.getElementById('maLong').value),
-    volOn: document.getElementById('volOn').checked,
-    volSpike: parseFloat(document.getElementById('volSpike').value),
-    srOn: document.getElementById('srOn').checked,
-    minInd: parseFloat(document.getElementById('minInd').value),
-    minConf: parseFloat(document.getElementById('minConf').value),
+    stopLoss:   parseFloat(document.getElementById('stopLoss').value),
+    trailDist:  parseFloat(document.getElementById('trailDist').value),
+    // Indicator defaults — strategy builder evaluates conditions client-side
+    rsiOn: 1, rsiOversold: 30, rsiOverbought: 70,
+    macdOn: 1, macdFast: 12, macdSlow: 26, macdSig: 9,
+    bbOn: 1, bbPeriod: 20, bbStd: 2.0,
+    maOn: 1, maShort: 9, maLong: 21,
+    volOn: 1, volSpike: 1.5,
+    srOn: false, minInd: 1, minConf: 0,
   };
 }
 
@@ -2674,6 +2898,35 @@ function handleSessionExpiry() {
   showLogin();
 }
 
+async function saveStrategy() {
+  const btn = document.getElementById('saveStratBtn');
+  const name = (document.getElementById('strategyName').value || '').trim();
+  if (!name) {
+    document.getElementById('strategyName').focus();
+    document.getElementById('strategyName').style.borderColor = 'var(--accent-red)';
+    setTimeout(() => document.getElementById('strategyName').style.borderColor = '', 1500);
+    return;
+  }
+  const strategy = {
+    name,
+    type:       strategyType,
+    match:      document.getElementById('stratMatch').value,
+    conditions: JSON.parse(JSON.stringify(strategyConditions)),
+  };
+  const idx = savedStrategies.findIndex(s => s.name === name);
+  if (idx >= 0) savedStrategies[idx] = strategy;
+  else          savedStrategies.push(strategy);
+  renderStrategyDropdown();
+  document.getElementById('strategySelect').value = name;
+
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'SAVING...';
+  await savePreferences();
+  btn.textContent = '✓ SAVED';
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+  addLog('info', 'STRAT', `Saved strategy: ${name}`);
+}
+
 async function savePreferences() {
   if (!currentUser) { addLog('warn', 'PREFS', 'Not logged in'); return; }
   const prefs = {
@@ -2684,28 +2937,14 @@ async function savePreferences() {
     trailDist:    parseFloat(document.getElementById('trailDist').value),
     fixedSL:      document.getElementById('fixedSL').checked,
     trailSL:      document.getElementById('trailSL').checked,
-    rsiOn:        document.getElementById('rsiOn').checked,
-    rsiOversold:  parseFloat(document.getElementById('rsiOversold').value),
-    rsiOverbought:parseFloat(document.getElementById('rsiOverbought').value),
-    macdOn:       document.getElementById('macdOn').checked,
-    macdFast:     parseInt(document.getElementById('macdFast').value),
-    macdSlow:     parseInt(document.getElementById('macdSlow').value),
-    macdSig:      parseInt(document.getElementById('macdSig').value),
-    bbOn:         document.getElementById('bbOn').checked,
-    bbPeriod:     parseInt(document.getElementById('bbPeriod').value),
-    bbStd:        parseFloat(document.getElementById('bbStd').value),
-    maOn:         document.getElementById('maOn').checked,
-    maShort:      parseInt(document.getElementById('maShort').value),
-    maLong:       parseInt(document.getElementById('maLong').value),
-    volOn:        document.getElementById('volOn').checked,
-    volSpike:     parseFloat(document.getElementById('volSpike').value),
-    srOn:         document.getElementById('srOn').checked,
-    srTol:        parseFloat(document.getElementById('srTol').value),
-    minInd:       parseFloat(document.getElementById('minInd').value),
-    minConf:      parseFloat(document.getElementById('minConf').value),
     timeframe:    document.getElementById('timeframe').value,
     currentAsset,
     watchlistEnabled: { ...watchlistEnabled },
+    strategyName:       document.getElementById('strategyName').value,
+    strategyType,
+    strategyMatch:      document.getElementById('stratMatch').value,
+    strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
+    savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
   };
 
   const btn = document.getElementById('saveBtn');
@@ -2743,14 +2982,14 @@ function applyPreferences(prefs) {
   const setChk = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.checked = v; };
   const setText= (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.textContent = v; };
 
-  set('capital', prefs.capital);
-  set('posSize', prefs.posSize);
+  set('capital',    prefs.capital);
+  set('posSize',    prefs.posSize);
   if (prefs.posSize   !== undefined) setText('posSizeVal', prefs.posSize + '%');
   set('targetGain', prefs.targetGain);
   if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
-  set('stopLoss', prefs.stopLoss);
+  set('stopLoss',   prefs.stopLoss);
   if (prefs.stopLoss  !== undefined) setText('slVal', '-' + parseFloat(prefs.stopLoss).toFixed(1) + '%');
-  set('trailDist', prefs.trailDist);
+  set('trailDist',  prefs.trailDist);
   if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
 
   setChk('fixedSL', prefs.fixedSL);
@@ -2760,41 +2999,29 @@ function applyPreferences(prefs) {
     document.getElementById('trailSLRow').style.pointerEvents = prefs.trailSL ? 'auto' : 'none';
   }
 
-  setChk('rsiOn', prefs.rsiOn);
-  set('rsiOversold', prefs.rsiOversold);
-  set('rsiOverbought', prefs.rsiOverbought);
-
-  setChk('macdOn', prefs.macdOn);
-  set('macdFast', prefs.macdFast);
-  set('macdSlow', prefs.macdSlow);
-  set('macdSig',  prefs.macdSig);
-
-  setChk('bbOn', prefs.bbOn);
-  set('bbPeriod', prefs.bbPeriod);
-  set('bbStd',    prefs.bbStd);
-
-  setChk('maOn', prefs.maOn);
-  set('maShort', prefs.maShort);
-  set('maLong',  prefs.maLong);
-
-  setChk('volOn', prefs.volOn);
-  set('volSpike', prefs.volSpike);
-  if (prefs.volSpike !== undefined) setText('volSpikeVal', parseFloat(prefs.volSpike).toFixed(1) + '×');
-
-  setChk('srOn', prefs.srOn);
-  set('srTol', prefs.srTol);
-
-  set('minInd', prefs.minInd);
-  if (prefs.minInd !== undefined) setText('minIndVal', prefs.minInd);
-  set('minConf', prefs.minConf);
-  if (prefs.minConf !== undefined) setText('minConfVal', prefs.minConf + '%');
-
   if (prefs.timeframe) set('timeframe', prefs.timeframe);
   if (prefs.currentAsset && assets[prefs.currentAsset]) currentAsset = prefs.currentAsset;
   if (prefs.watchlistEnabled) {
     Object.keys(assets).forEach(sym => {
       watchlistEnabled[sym] = prefs.watchlistEnabled[sym] !== false;
     });
+  }
+
+  // Restore strategy
+  if (prefs.strategyName)       set('strategyName', prefs.strategyName);
+  if (prefs.strategyType)       setStratType(prefs.strategyType);
+  if (prefs.strategyMatch)      { set('stratMatch', prefs.strategyMatch); strategyMatch = prefs.strategyMatch; }
+  if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length > 0) {
+    strategyConditions = prefs.strategyConditions.map(c => ({ ...c }));
+    renderConditions();
+  }
+  if (Array.isArray(prefs.savedStrategies)) {
+    savedStrategies = prefs.savedStrategies;
+    renderStrategyDropdown();
+    const loadedName = prefs.strategyName || '';
+    if (loadedName && savedStrategies.find(s => s.name === loadedName)) {
+      document.getElementById('strategySelect').value = loadedName;
+    }
   }
 }
 
