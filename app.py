@@ -12,11 +12,21 @@ from api.signals import score_signals
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "apex-trader-dev-key-change-in-production")
+
+_is_production = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("PRODUCTION")
+_allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
+_allowed_origins = (
+    [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
+    if _allowed_origins_env
+    else ["http://localhost:5000", "http://127.0.0.1:5000"]
+)
+
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=bool(_is_production),
 )
-CORS(app, supports_credentials=True, origins=["http://localhost:5000", "http://127.0.0.1:5000"])
+CORS(app, supports_credentials=True, origins=_allowed_origins)
 
 login_manager = LoginManager(app)
 login_manager.session_protection = "basic"
@@ -286,4 +296,4 @@ _ensure_default_user()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, port=port)
+    app.run(debug=not _is_production, port=port)
