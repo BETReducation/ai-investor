@@ -8,6 +8,7 @@ import json
 import os
 import psycopg2
 import psycopg2.extras
+from datetime import timedelta
 
 from api.indicators import calculate_all
 from api.signals import score_signals
@@ -27,6 +28,10 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(_is_production),
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+    REMEMBER_COOKIE_DURATION=timedelta(days=30),
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SECURE=bool(_is_production),
 )
 CORS(app, supports_credentials=True, origins=_allowed_origins)
 
@@ -186,7 +191,7 @@ def api_register():
     users[username] = {"password_hash": pw_hash, "preferences": {}}
     _save_users(users)
 
-    login_user(User(username), remember=data.get("remember", False))
+    login_user(User(username), remember=True)
     return jsonify({"success": True, "username": username, "preferences": {}})
 
 
@@ -195,8 +200,6 @@ def api_login():
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
-    remember = bool(data.get("remember", False))
-
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
 
@@ -208,7 +211,7 @@ def api_login():
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    login_user(User(username), remember=remember)
+    login_user(User(username), remember=True)
     return jsonify({
         "success": True,
         "username": username,
