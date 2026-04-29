@@ -1365,6 +1365,115 @@
   }
   .add-cond-btn:hover { background: rgba(0,136,255,0.12); border-color: var(--accent-blue); }
 
+  /* ── MOBILE ─────────────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+
+    body { overflow: hidden; }
+
+    .topbar {
+      padding: 0 12px;
+      height: 40px;
+    }
+    .topbar-logo .logo-sub { display: none; }
+    .topbar-ticker-tape    { display: none; }
+    .topbar-status         { gap: 8px; }
+    .topbar-status > *:not(#engineBtn):not(#engineDot):not(#engineStatus) { display: none; }
+
+    .layout {
+      flex-direction: column;
+      height: calc(100vh - 40px - 52px); /* topbar + mobile nav */
+      overflow: hidden;
+    }
+
+    /* hide resizer handles on mobile */
+    .panel-resizer { display: none; }
+
+    /* each panel becomes a full-screen tab */
+    #leftPanel, #rightPanel {
+      width: 100% !important;
+      min-width: unset !important;
+      max-width: unset !important;
+      height: 100%;
+      flex-shrink: 0;
+      display: none;
+      border: none;
+      overflow-y: auto;
+    }
+    #leftPanel.mobile-active,
+    #rightPanel.mobile-active  { display: block; }
+
+    .center-panel {
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .center-panel.mobile-active { display: flex; }
+
+    /* compact stats row — horizontal scroll */
+    .stats-row {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
+    }
+    .stats-row::-webkit-scrollbar { display: none; }
+    .stat-cell { min-width: 90px; padding: 8px 10px; }
+
+    /* chart fills remaining space */
+    .chart-area { flex: 1; min-height: 0; }
+    #tvChart     { height: 100% !important; }
+
+    /* indicator bar — horizontal scroll */
+    .indicator-bar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 6px 8px;
+    }
+    .indicator-bar::-webkit-scrollbar { display: none; }
+    .indicator-chip { min-width: 72px; }
+
+    /* positions table — horizontal scroll */
+    .positions-table { font-size: 9px; }
+    .positions-table th,
+    .positions-table td { padding: 5px 6px; white-space: nowrap; }
+
+    /* ── MOBILE NAV BAR ── */
+    .mobile-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 52px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      z-index: 200;
+    }
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 1px;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .mobile-nav-btn.active       { color: var(--accent-blue); }
+    .mobile-nav-btn.alert-active { color: var(--accent-amber); }
+  }
+
+  /* hide mobile nav on desktop */
+  .mobile-nav { display: none; }
+
 </style>
 </head>
 <body>
@@ -3058,6 +3167,98 @@ checkSession();
   });
 })();
 
+</script>
+
+<!-- MOBILE NAV BAR -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" id="mNavChart" onclick="mobileTab('chart')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    CHART
+  </button>
+  <button class="mobile-nav-btn" id="mNavStrategy" onclick="mobileTab('strategy')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    STRATEGY
+  </button>
+  <button class="mobile-nav-btn" id="mNavAlerts" onclick="mobileTab('alerts')">
+    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    ALERTS
+  </button>
+</nav>
+
+<script>
+(function () {
+  var currentTab = 'chart';
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function mobileTab(tab) {
+    if (!isMobile()) return;
+    currentTab = tab;
+    var center   = document.querySelector('.center-panel');
+    var left     = document.getElementById('leftPanel');
+    var right    = document.getElementById('rightPanel');
+    var btnChart = document.getElementById('mNavChart');
+    var btnStrat = document.getElementById('mNavStrategy');
+    var btnAlert = document.getElementById('mNavAlerts');
+
+    center.classList.toggle('mobile-active', tab === 'chart');
+    left.classList.toggle('mobile-active',   tab === 'strategy');
+    right.classList.toggle('mobile-active',  tab === 'alerts');
+
+    btnChart.classList.toggle('active', tab === 'chart');
+    btnStrat.classList.toggle('active', tab === 'strategy');
+    btnAlert.classList.toggle('active', tab === 'alerts');
+    btnAlert.classList.remove('alert-active');
+  }
+
+  function applyLayout() {
+    var center = document.querySelector('.center-panel');
+    var left   = document.getElementById('leftPanel');
+    var right  = document.getElementById('rightPanel');
+    if (!center || !left || !right) return;
+    if (isMobile()) {
+      center.classList.toggle('mobile-active',   currentTab === 'chart');
+      left.classList.toggle('mobile-active',     currentTab === 'strategy');
+      right.classList.toggle('mobile-active',    currentTab === 'alerts');
+    } else {
+      center.classList.remove('mobile-active');
+      left.classList.remove('mobile-active');
+      right.classList.remove('mobile-active');
+    }
+  }
+
+  window.mobileTab = mobileTab;
+
+  /* flash the alerts tab when a new alert fires */
+  var _origFireAlert = window.fireAlert;
+  window.addEventListener('load', function () {
+    var orig = window.fireAlert;
+    if (orig) {
+      window.fireAlert = function () {
+        orig.apply(this, arguments);
+        if (isMobile() && currentTab !== 'alerts') {
+          document.getElementById('mNavAlerts').classList.add('alert-active');
+        }
+      };
+    }
+  });
+
+  window.addEventListener('resize', applyLayout);
+
+  /* initialise once the main layout is revealed (after login) */
+  var observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      if (m.target.id === 'mainLayout' && m.target.style.display !== 'none') {
+        applyLayout();
+      }
+    });
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var layout = document.getElementById('mainLayout');
+    if (layout) observer.observe(layout, { attributes: true, attributeFilter: ['style'] });
+    applyLayout();
+  });
+})();
 </script>
 </body>
 </html>
