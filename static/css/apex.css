@@ -169,7 +169,7 @@
   /* MAIN LAYOUT */
   .layout {
     display: flex;
-    height: calc(100vh - 44px);
+    height: calc(100vh - 44px - 28px);
   }
 
   #leftPanel {
@@ -1372,7 +1372,7 @@
 
     .layout {
       flex-direction: column;
-      height: calc(100vh - 40px - 52px); /* topbar + mobile nav */
+      height: calc(100vh - 40px - 52px - 28px); /* topbar + mobile nav + disclaimer */
       overflow: hidden;
     }
 
@@ -1480,8 +1480,13 @@
     .mobile-nav { display: none; }
   }
 
-  /* DISCLAIMER BANNER */
+  /* DISCLAIMER BANNER — fixed to bottom of viewport, always visible */
   .disclaimer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
     padding: 5px 16px;
@@ -1490,7 +1495,6 @@
     letter-spacing: 0.5px;
     line-height: 1.6;
     text-align: center;
-    flex-shrink: 0;
   }
 
   .disclaimer-bar strong {
