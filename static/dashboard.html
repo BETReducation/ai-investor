@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX TRADER — Strategy Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/apex.css">
+<script src="https://s3.tradingview.com/tv.js"></script>
+</head>
+<body>
+
+<!-- SIGN-IN MODAL (optional — dashboard works without login) -->
+<div id="loginOverlay" class="login-overlay" style="display:none;">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-branding">
+        <div class="logo-mark" style="width:32px;height:32px;"></div>
+        <div>
+          <div class="logo-text" style="font-size:16px;">APEX TRADER</div>
+          <div class="logo-sub">STRATEGY LAB</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('loginOverlay').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;">✕</button>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchLoginTab('login')">LOGIN</button>
+      <button class="login-tab" id="tabRegister" onclick="switchLoginTab('register')">REGISTER</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="login-body" id="loginForm">
+      <div class="login-error" id="loginError" style="display:none;"></div>
+      <div class="login-field">
+        <div class="login-field-label">USERNAME</div>
+        <input type="text" id="loginUsername" class="login-input" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">PASSWORD</div>
+        <input type="password" id="loginPassword" class="login-input" placeholder="Enter password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-remember">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="loginRemember" checked style="width:12px;height:12px;accent-color:var(--accent-green);">
+          <span style="font-size:10px;color:var(--text-secondary);letter-spacing:1px;">REMEMBER ME</span>
+        </label>
+      </div>
+      <button class="login-btn" id="loginSubmitBtn" onclick="doLogin()">▶ SIGN IN</button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="login-body" id="registerForm" style="display:none;">
+      <div class="login-error" id="registerError" style="display:none;"></div>
+      <div class="login-field">
+        <div class="login-field-label">USERNAME</div>
+        <input type="text" id="regUsername" class="login-input" placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">PASSWORD</div>
+        <input type="password" id="regPassword" class="login-input" placeholder="Minimum 6 characters" autocomplete="new-password">
+      </div>
+      <div class="login-field">
+        <div class="login-field-label">CONFIRM PASSWORD</div>
+        <input type="password" id="regConfirm" class="login-input" placeholder="Repeat password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="login-btn" id="registerSubmitBtn" onclick="doRegister()" style="background:rgba(0,136,255,0.12);color:var(--accent-blue);border-color:var(--accent-blue);">+ CREATE ACCOUNT</button>
+    </div>
+
+    <div class="login-footer">
+      <a href="#" onclick="document.getElementById('loginOverlay').style.display='none';return false;" style="color:var(--text-muted);font-size:10px;letter-spacing:1px;text-decoration:none;">Continue without account →</a>
+    </div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar" id="topbar">
+  <div class="topbar-logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text">APEX TRADER</div>
+      <div class="logo-sub">STRATEGY LAB</div>
+    </div>
+  </div>
+  <div class="topbar-ticker-tape" id="tickerTape"></div>
+  <div class="topbar-status">
+    <div class="status-pill">
+      <div class="status-dot inactive" id="engineDot"></div>
+      <span id="engineStatus">LAB IDLE</span>
+    </div>
+    <div class="status-pill">
+      <div class="status-dot inactive" id="dataDot"></div>
+      <span id="dataStatus">SIM DATA</span>
+    </div>
+    <div class="status-pill" id="userPill">
+      <span style="color:var(--accent-cyan);font-size:10px;line-height:1;">⬡</span>
+      <span id="usernameDisplay" style="color:var(--text-secondary);font-size:9px;letter-spacing:1px;">GUEST</span>
+    </div>
+    <button class="signin-btn" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">SIGN IN</button>
+    <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;">LOGOUT</button>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout" id="mainLayout">
+
+  <!-- LEFT PANEL: Config -->
+  <div class="panel" id="leftPanel">
+    <div class="panel-header">
+      <div class="panel-title">STRATEGY CONFIG</div>
+      <div class="panel-badge">DAY TRADE</div>
+    </div>
+
+    <!-- WATCHLIST -->
+    <div style="border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;">
+        <div style="font-size:8px;letter-spacing:2px;color:var(--text-muted);">WATCHLIST</div>
+        <div class="panel-badge" id="wlEditBtn" onclick="toggleWatchlistEdit()" style="cursor:pointer;user-select:none;color:var(--accent-blue);border-color:var(--accent-blue);">EDIT</div>
+      </div>
+      <div id="watchlist"></div>
+    </div>
+
+    <!-- CAPITAL -->
+    <div class="section">
+      <div class="section-label">CAPITAL & RISK</div>
+      <div class="control-row">
+        <div class="control-label">Capital <span>(USD)</span></div>
+        <div class="input-group">
+          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px">
+        </div>
+      </div>
+      <div class="range-row">
+        <div class="range-header">
+          <div class="control-label">Position Size</div>
+          <div class="range-value" id="posSizeVal">20%</div>
+        </div>
+        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'">
+      </div>
+      <div class="range-row">
+        <div class="range-header">
+          <div class="control-label">Target Gain <span>(per trade)</span></div>
+          <div class="range-value tag-green" id="targetVal">1.0%</div>
+        </div>
+        <input type="range" id="targetGain" min="0.5" max="5" step="0.1" value="1.0" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+      <div class="sep"></div>
+      <div class="toggle-row">
+        <div class="toggle-label">Fixed Stop-Loss</div>
+        <label class="toggle"><input type="checkbox" id="fixedSL" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="fixedSLRow">
+        <div class="range-header">
+          <div class="control-label">Stop-Loss %</div>
+          <div class="range-value tag-red" id="slVal">-0.5%</div>
+        </div>
+        <input type="range" id="stopLoss" min="0.1" max="3" step="0.1" value="0.5" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Trailing Stop-Loss</div>
+        <label class="toggle"><input type="checkbox" id="trailSL"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="trailSLRow" style="opacity:0.3;pointer-events:none;">
+        <div class="range-header">
+          <div class="control-label">Trail Distance %</div>
+          <div class="range-value tag-amber" id="trailVal">0.3%</div>
+        </div>
+        <input type="range" id="trailDist" min="0.1" max="2" step="0.1" value="0.3" oninput="document.getElementById('trailVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+    </div>
+
+    <!-- STRATEGY BUILDER -->
+    <div class="section">
+      <div class="section-label">SIGNAL STRATEGY</div>
+
+      <!-- Saved strategies dropdown -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <select id="strategySelect" onchange="loadSavedStrategy(this.value)"
+          style="flex:1;font-size:10px;padding:4px 6px;">
+          <option value="">— New Strategy —</option>
+        </select>
+        <button onclick="deleteCurrentStrategy()" title="Delete selected strategy"
+          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 8px;border-radius:2px;line-height:1;transition:all 0.15s;font-family:'IBM Plex Mono',monospace;"
+          onmouseover="this.style.borderColor='var(--accent-red)';this.style.color='var(--accent-red)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">×</button>
+      </div>
+
+      <!-- Strategy name + BUY / SELL type -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="text" id="strategyName" placeholder="My Strategy" style="flex:1;font-size:10px;">
+        <div class="strat-type-toggle">
+          <button id="stratBuyBtn"  class="strat-type-btn strat-buy active" onclick="setStratType('BUY')">BUY</button>
+          <button id="stratSellBtn" class="strat-type-btn strat-sell"       onclick="setStratType('SELL')">SELL</button>
+        </div>
+      </div>
+
+      <!-- Match logic -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
+        <span>Fire when</span>
+        <select id="stratMatch" style="width:auto;font-size:10px;padding:3px 6px;">
+          <option value="all">ALL conditions</option>
+          <option value="any">ANY condition</option>
+        </select>
+        <span>are met</span>
+      </div>
+
+      <!-- Conditions list -->
+      <div id="conditionsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+
+      <!-- Add condition -->
+      <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
+
+      <!-- Quick-start templates -->
+      <div class="section-label" style="margin-top:14px;">QUICK START TEMPLATES</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+        <button class="template-btn" onclick="loadTemplate('oversold_bounce')">Oversold Bounce</button>
+        <button class="template-btn" onclick="loadTemplate('overbought_sell')">Overbought Sell</button>
+        <button class="template-btn" onclick="loadTemplate('macd_breakout')">MACD Breakout</button>
+        <button class="template-btn" onclick="loadTemplate('volume_pop')">Volume Pop</button>
+      </div>
+
+      <!-- Live condition status for current asset -->
+      <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
+
+      <!-- Save strategy -->
+      <button id="saveStratBtn" onclick="saveStrategy()"
+        style="width:100%;margin-top:10px;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;border-radius:2px;transition:all 0.15s;"
+        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE STRATEGY</button>
+    </div>
+
+    <!-- TIMEFRAME -->
+    <div class="section">
+      <div class="section-label">TIMEFRAME</div>
+      <div class="control-row">
+        <div class="control-label">Candle Period</div>
+        <select id="timeframe" style="width:auto;">
+          <option value="1m">1 MIN</option>
+          <option value="5m" selected>5 MIN</option>
+          <option value="15m">15 MIN</option>
+          <option value="1h">1 HOUR</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ENGINE BUTTON -->
+    <div class="engine-control">
+      <button class="btn-engine start" id="engineBtn" onclick="toggleEngine()">▶ RUN STRATEGY</button>
+    </div>
+    <div class="save-btn-wrap">
+      <button class="btn-engine" id="saveBtn" onclick="savePreferences()" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE SETTINGS</button>
+    </div>
+
+    <!-- LOG -->
+    <div class="log-area" id="logArea">
+      <div class="log-line"><span class="log-ts">00:00:00</span> <span class="log-info">[SYSTEM]</span> APEX TRADER Strategy Lab initialized. Configure a strategy and press RUN.</div>
+    </div>
+  </div>
+
+  <!-- Drag handle: resize left panel -->
+  <div class="panel-resizer" id="leftResizer"></div>
+
+  <!-- CENTER PANEL: Chart + Indicators -->
+  <div class="center-panel">
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-cell">
+        <div class="stat-label">DAILY P&L</div>
+        <div class="stat-value tag-green" id="statPnl">+$0.00</div>
+        <div class="stat-sub" id="statPnlPct">+0.00%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">SIGNALS TODAY</div>
+        <div class="stat-value tag-cyan" id="statSignals">0</div>
+        <div class="stat-sub">buy / sell</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">TRADES EXEC.</div>
+        <div class="stat-value" id="statTrades">0</div>
+        <div class="stat-sub" id="statWinRate">—% win rate</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">STRATEGY TARGET</div>
+        <div class="stat-value tag-amber" id="statTarget">$0.00</div>
+        <div class="stat-sub" id="statProgress">0% progress</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-area">
+      <div id="tvChart"></div>
+      <div id="chartAsset" style="display:none"></div>
+      <div id="chartPrice" style="display:none"></div>
+      <div id="chartChange" style="display:none"></div>
+    </div>
+
+    <!-- INDICATOR BAR -->
+    <div class="indicator-bar" id="indicatorBar">
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">RSI(14)</div>
+        <div class="indicator-chip-value val-amber" id="indRsi">—</div>
+        <div class="indicator-chip-signal val-amber" id="indRsiSig">NEUTRAL</div>
+      </div>
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">MACD</div>
+        <div class="indicator-chip-value val-cyan" id="indMacd">—</div>
+        <div class="indicator-chip-signal val-cyan" id="indMacdSig">NEUTRAL</div>
+      </div>
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">BB POSITION</div>
+        <div class="indicator-chip-value val-purple" id="indBb">—</div>
+        <div class="indicator-chip-signal val-purple" id="indBbSig">NEUTRAL</div>
+      </div>
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">MA CROSS</div>
+        <div class="indicator-chip-value val-green" id="indMa">—</div>
+        <div class="indicator-chip-signal val-green" id="indMaSig">NEUTRAL</div>
+      </div>
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">VOLUME</div>
+        <div class="indicator-chip-value val-amber" id="indVol">—</div>
+        <div class="indicator-chip-signal val-amber" id="indVolSig">NORMAL</div>
+      </div>
+      <div class="indicator-chip">
+        <div class="indicator-chip-label">S/R LEVEL</div>
+        <div class="indicator-chip-value val-blue" id="indSr">—</div>
+        <div class="indicator-chip-signal val-blue" id="indSrSig">CLEAR</div>
+      </div>
+      <div class="indicator-chip" style="min-width:80px;">
+        <div class="indicator-chip-label">SIGNAL SCORE</div>
+        <div class="indicator-chip-value" id="indScore" style="font-size:16px;">—</div>
+        <div class="indicator-chip-signal" id="indScoreSig">WAITING</div>
+      </div>
+    </div>
+
+    <!-- POSITIONS TABLE -->
+    <div style="border-top:1px solid var(--border); flex-shrink:0;">
+      <div class="panel-header" style="background:var(--bg-secondary);">
+        <div class="panel-title">OPEN POSITIONS</div>
+        <div class="panel-badge" id="posBadge">0 ACTIVE</div>
+      </div>
+      <table class="positions-table" id="posTable">
+        <thead>
+          <tr>
+            <th>ASSET</th>
+            <th>SIDE</th>
+            <th>ENTRY</th>
+            <th>CURRENT</th>
+            <th>SIZE</th>
+            <th>TARGET</th>
+            <th>STOP</th>
+            <th>P&L</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="posTableBody">
+          <tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:12px;font-size:10px;letter-spacing:1px;">NO OPEN POSITIONS</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Alerts -->
+  <div class="panel" id="rightPanel">
+    <div class="panel-header">
+      <div class="panel-title">STRATEGY OUTPUT</div>
+      <div class="panel-badge" id="alertBadge">0 PENDING</div>
+    </div>
+
+    <!-- RISK METER -->
+    <div class="risk-meter">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="section-label" style="margin-bottom:0;">RISK EXPOSURE</div>
+        <div style="font-size:11px;font-weight:600;color:var(--accent-green);" id="riskPct">0%</div>
+      </div>
+      <div class="risk-bar-track">
+        <div class="risk-bar-fill" id="riskBar" style="width:0%;background-position:0% 0%;"></div>
+      </div>
+      <div class="risk-labels">
+        <span>LOW</span><span>MED</span><span>HIGH</span>
+      </div>
+    </div>
+
+    <div class="alert-list" id="alertList">
+      <div class="empty-state" id="emptyAlerts">
+        LAB IDLE<br>
+        <span style="color:var(--text-muted);font-size:8px;">Run strategy to begin scanning</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">CONFIRM ORDER</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-order-summary" id="modalSummary"></div>
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.8;margin-top:8px;" id="modalWarning"></div>
+      <div class="modal-footer">
+        <button class="btn-confirm" id="modalConfirm" onclick="confirmTrade()">CONFIRM TRADE</button>
+        <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// APEX TRADER — STRATEGY LAB (Live API Mode)
+// ============================================================
+
+const API_BASE = '';
+
+const symbolMap = {
+  'BTC/USDT': 'BTC-USD',
+  'ETH/USDT': 'ETH-USD',
+  'SOL/USDT': 'SOL-USD',
+  'ADA/USDT': 'ADA-USD',
+  'AAPL':     'AAPL',
+  'TSLA':     'TSLA',
+  'NVDA':     'NVDA',
+  'EUR/USD':  'EURUSD=X',
+  'GBP/USD':  'GBPUSD=X',
+  'USD/JPY':  'JPY=X',
+  'GOLD':     'GC=F',
+  'SILVER':   'SI=F',
+  'COPPER':   'HG=F',
+};
+
+const tvSymbolMap = {
+  'BTC/USDT': 'BINANCE:BTCUSDT',
+  'ETH/USDT': 'BINANCE:ETHUSDT',
+  'SOL/USDT': 'BINANCE:SOLUSDT',
+  'ADA/USDT': 'BINANCE:ADAUSDT',
+  'AAPL':     'NASDAQ:AAPL',
+  'TSLA':     'NASDAQ:TSLA',
+  'NVDA':     'NASDAQ:NVDA',
+  'EUR/USD':  'FX:EURUSD',
+  'GBP/USD':  'FX:GBPUSD',
+  'USD/JPY':  'FX:USDJPY',
+  'GOLD':     'TVC:GOLD',
+  'SILVER':   'TVC:SILVER',
+  'COPPER':   'TVC:COPPER',
+};
+
+const intervalMap = {
+  '1m':  { period: '1d',  interval: '1m'  },
+  '5m':  { period: '5d',  interval: '5m'  },
+  '15m': { period: '1mo', interval: '15m' },
+  '1h':  { period: '3mo', interval: '1h'  },
+};
+
+// --- STATE ---
+let currentUser = null;
+let dashboardInitialized = false;
+let engineRunning = false;
+let pollTimer = null;
+let currentAsset = 'BTC/USDT';
+let currentView = 'price';
+let pendingTrade = null;
+let positions = [];
+let alerts = [];
+let dailyPnl = 0;
+let tradesExecuted = 0;
+let tradeWins = 0;
+let signalsToday = 0;
+
+const assets = {
+  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'ADA/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
+  'AAPL':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'TSLA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'NVDA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
+  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'USD/JPY':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
+  'GOLD':     { price: 0, vol: 1.0, category: 'commodity', change: 0 },
+  'SILVER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
+  'COPPER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
+};
+
+let priceHistory = {};
+Object.keys(assets).forEach(a => { priceHistory[a] = []; });
+
+let liveCache = {};
+
+// ── Strategy builder state ────────────────────────────────────────────────────
+let strategyConditions = [];
+let strategyType  = 'BUY';
+let strategyMatch = 'all';
+let savedStrategies = [];
+
+const CONDITION_DEFS = {
+  rsi_below:        { label: 'RSI Oversold',                  desc: 'RSI drops below a threshold — the asset may be due for a bounce',              inputLabel: 'RSI below',         defaultVal: 30,  min: 5,   max: 50,  step: 1,   suffix: '' },
+  rsi_above:        { label: 'RSI Overbought',                desc: 'RSI rises above a threshold — the asset may be due for a pullback',             inputLabel: 'RSI above',         defaultVal: 70,  min: 50,  max: 95,  step: 1,   suffix: '' },
+  bb_lower:         { label: 'Near Lower Bollinger Band',     desc: 'Price is close to the lower band — potential support or reversal zone',         inputLabel: 'BB position below', defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '%' },
+  bb_upper:         { label: 'Near Upper Bollinger Band',     desc: 'Price is close to the upper band — potential resistance or reversal zone',      inputLabel: 'BB position above', defaultVal: 90,  min: 70,  max: 99,  step: 1,   suffix: '%' },
+  bb_broke_lower:   { label: 'Closed Below Lower BB',         desc: 'The candle closed below the lower Bollinger Band — strong oversell signal',     inputLabel: null,                defaultVal: 0 },
+  bb_broke_upper:   { label: 'Closed Above Upper BB',         desc: 'The candle closed above the upper Bollinger Band — strong overbuy signal',      inputLabel: null,                defaultVal: 0 },
+  macd_bull_cross:  { label: 'MACD Bullish Cross',            desc: 'MACD line recently crossed above signal line — bullish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
+  macd_bear_cross:  { label: 'MACD Bearish Cross',            desc: 'MACD line recently crossed below signal line — bearish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
+  volume_spike:     { label: 'Volume Spike',                  desc: 'Current trading volume is significantly above the 20-bar average',              inputLabel: 'At least',          defaultVal: 1.5, min: 1.1, max: 5,   step: 0.1, suffix: '× avg' },
+  ma_golden:        { label: 'Golden Cross',                  desc: 'Short MA crossed above long MA recently — classic bullish breakout signal',     inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
+  ma_death:         { label: 'Death Cross',                   desc: 'Short MA crossed below long MA recently — classic bearish breakdown signal',    inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
+  price_above_ma20: { label: 'Price Above MA20',              desc: 'Current price is above the 20-day moving average — uptrend confirmation',       inputLabel: null,                defaultVal: 0 },
+  price_below_ma20: { label: 'Price Below MA20',              desc: 'Current price is below the 20-day moving average — downtrend confirmation',     inputLabel: null,                defaultVal: 0 },
+  price_above_ma50: { label: 'Price Above MA50',              desc: 'Current price is above the 50-day moving average — strong uptrend',             inputLabel: null,                defaultVal: 0 },
+  price_below_ma50: { label: 'Price Below MA50',              desc: 'Current price is below the 50-day moving average — strong downtrend',           inputLabel: null,                defaultVal: 0 },
+  price_dip:        { label: 'Price Dip from Recent High',    desc: 'Price has dropped by this percentage from a recent peak (last 30 bars)',        inputLabel: 'Drop more than',    defaultVal: 20,  min: 5,   max: 80,  step: 1,   suffix: '%' },
+};
+
+const STRATEGY_TEMPLATES = {
+  oversold_bounce: { name: 'Oversold Bounce', type: 'BUY',  match: 'all', conditions: [{ type: 'rsi_below',       value: 30  }, { type: 'bb_lower',        value: 15  }] },
+  overbought_sell: { name: 'Overbought Sell', type: 'SELL', match: 'all', conditions: [{ type: 'rsi_above',       value: 70  }, { type: 'bb_upper',        value: 85  }] },
+  macd_breakout:   { name: 'MACD Breakout',   type: 'BUY',  match: 'all', conditions: [{ type: 'macd_bull_cross', value: 3   }, { type: 'price_above_ma20', value: 0  }] },
+  volume_pop:      { name: 'Volume Pop',      type: 'BUY',  match: 'all', conditions: [{ type: 'volume_spike',    value: 2.0 }, { type: 'macd_bull_cross', value: 5   }] },
+};
+
+let watchlistEnabled = {};
+let watchlistEditMode = false;
+Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
+
+// --- INIT ---
+function init() {
+  renderWatchlist();
+  updateClock();
+  setInterval(updateClock, 1000);
+  initChart();
+  updateTicker();
+  setupToggles();
+  addLog('info', 'SYSTEM', 'APEX TRADER Strategy Lab — Live API Mode');
+  if (currentUser) addLog('info', 'AUTH', `Signed in as: ${currentUser.toUpperCase()}`);
+  else             addLog('info', 'AUTH', 'Guest mode — sign in to save preferences');
+  addLog('info', 'SYSTEM', 'Backend: ' + API_BASE);
+  addLog('info', 'SYSTEM', 'Configure strategy parameters and press RUN STRATEGY');
+  renderStrategyDropdown();
+  renderConditions();
+  fetchSignals(currentAsset).then(() => { updateIndicatorBar(); updateStrategyStatus(); }).catch(() => {});
+}
+
+// --- CLOCK ---
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
+}
+
+// --- TOGGLES ---
+function setupToggles() {
+  document.getElementById('trailSL').addEventListener('change', function() {
+    document.getElementById('trailSLRow').style.opacity = this.checked ? '1' : '0.3';
+    document.getElementById('trailSLRow').style.pointerEvents = this.checked ? 'auto' : 'none';
+  });
+}
+
+// ── Strategy Builder ─────────────────────────────────────────────────────────
+
+function setStratType(type) {
+  strategyType = type;
+  document.getElementById('stratBuyBtn').classList.toggle('active',  type === 'BUY');
+  document.getElementById('stratSellBtn').classList.toggle('active', type === 'SELL');
+}
+
+function addCondition(type) {
+  const t = type || Object.keys(CONDITION_DEFS)[0];
+  const def = CONDITION_DEFS[t] || {};
+  strategyConditions.push({ type: t, value: def.defaultVal ?? 0 });
+  renderConditions();
+}
+
+function removeCondition(i) {
+  strategyConditions.splice(i, 1);
+  renderConditions();
+  updateStrategyStatus();
+}
+
+function updateCondition(i, field, val) {
+  if (!strategyConditions[i]) return;
+  strategyConditions[i][field] = field === 'value' ? parseFloat(val) : val;
+  if (field === 'type') {
+    const def = CONDITION_DEFS[val] || {};
+    strategyConditions[i].value = def.defaultVal ?? 0;
+    renderConditions();
+  }
+  updateStrategyStatus();
+}
+
+function renderConditions() {
+  const list = document.getElementById('conditionsList');
+  if (!list) return;
+  if (strategyConditions.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Add one below or pick a Quick Start template</span></div>`;
+    return;
+  }
+  list.innerHTML = strategyConditions.map((cond, i) => {
+    const def = CONDITION_DEFS[cond.type] || {};
+    const opts = Object.keys(CONDITION_DEFS).map(k =>
+      `<option value="${k}" ${k === cond.type ? 'selected' : ''}>${CONDITION_DEFS[k].label}</option>`
+    ).join('');
+    const inputRow = def.inputLabel ? `
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+        <span style="font-size:9px;color:var(--text-muted);white-space:nowrap;">${def.inputLabel}:</span>
+        <input type="number" value="${cond.value}" min="${def.min ?? 0}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
+          onchange="updateCondition(${i},'value',this.value)"
+          style="width:62px;font-size:11px;">
+        ${def.suffix ? `<span style="font-size:9px;color:var(--text-muted);">${def.suffix}</span>` : ''}
+      </div>` : '';
+    return `
+      <div class="condition-card unmet" id="cond-${i}">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <select onchange="updateCondition(${i},'type',this.value)" style="flex:1;font-size:10px;padding:4px 6px;">${opts}</select>
+          <span id="cond-dot-${i}" style="font-size:13px;color:var(--text-muted);transition:color 0.2s;" title="Not yet evaluated">●</span>
+          <button onclick="removeCondition(${i})"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:0 2px;line-height:1;transition:color 0.15s;"
+            onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">×</button>
+        </div>
+        <div style="font-size:9px;color:var(--text-secondary);line-height:1.5;margin-top:5px;">${def.desc || ''}</div>
+        ${inputRow}
+      </div>`;
+  }).join('');
+}
+
+function loadTemplate(name) {
+  const tpl = STRATEGY_TEMPLATES[name];
+  if (!tpl) return;
+  document.getElementById('strategyName').value = tpl.name;
+  document.getElementById('stratMatch').value   = tpl.match;
+  strategyMatch = tpl.match;
+  strategyConditions = tpl.conditions.map(c => ({ ...c }));
+  setStratType(tpl.type);
+  renderConditions();
+  updateStrategyStatus();
+  addLog('info', 'STRAT', `Loaded template: ${tpl.name}`);
+}
+
+function renderStrategyDropdown() {
+  const sel = document.getElementById('strategySelect');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— New Strategy —</option>' +
+    savedStrategies.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  if (savedStrategies.find(s => s.name === current)) sel.value = current;
+}
+
+function loadSavedStrategy(name) {
+  if (!name) return;
+  const s = savedStrategies.find(s => s.name === name);
+  if (!s) return;
+  document.getElementById('strategyName').value = s.name;
+  document.getElementById('stratMatch').value   = s.match;
+  strategyMatch = s.match;
+  strategyConditions = s.conditions.map(c => ({ ...c }));
+  setStratType(s.type);
+  renderConditions();
+  updateStrategyStatus();
+  addLog('info', 'STRAT', `Loaded: ${s.name}`);
+}
+
+async function deleteCurrentStrategy() {
+  const name = document.getElementById('strategySelect').value;
+  if (!name) { addLog('warn', 'STRAT', 'Select a saved strategy to delete'); return; }
+  savedStrategies = savedStrategies.filter(s => s.name !== name);
+  renderStrategyDropdown();
+  document.getElementById('strategySelect').value = '';
+  document.getElementById('strategyName').value = '';
+  strategyConditions = [];
+  renderConditions();
+  updateStrategyStatus();
+  addLog('warn', 'STRAT', `Deleted: ${name}`);
+  await savePreferences();
+}
+
+function evaluateCondition(cond, cache, sym) {
+  const ind = cache.indicators || {};
+  const cx  = ind.crossovers || {};
+  const val = parseFloat(cond.value);
+  switch (cond.type) {
+    case 'rsi_below':        return ind.rsi != null && ind.rsi < val;
+    case 'rsi_above':        return ind.rsi != null && ind.rsi > val;
+    case 'bb_lower':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 < val;
+    case 'bb_upper':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 > val;
+    case 'bb_broke_lower':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b < 0;
+    case 'bb_broke_upper':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b > 1;
+    case 'macd_bull_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction > 0;
+    case 'macd_bear_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction < 0;
+    case 'volume_spike':     return ind.volume?.ratio != null && ind.volume.ratio >= val;
+    case 'ma_golden':        return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction > 0;
+    case 'ma_death':         return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction < 0;
+    case 'price_above_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close > ind.moving_averages.ma_20);
+    case 'price_below_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close < ind.moving_averages.ma_20);
+    case 'price_above_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close > ind.moving_averages.ma_50);
+    case 'price_below_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close < ind.moving_averages.ma_50);
+    case 'price_dip': {
+      const hist = (priceHistory[sym] || []).slice(-30).map(h => h.p).filter(Boolean);
+      if (hist.length < 2) return false;
+      const high = Math.max(...hist);
+      const cur  = hist[hist.length - 1];
+      return high > 0 && ((high - cur) / high * 100) >= val;
+    }
+    default: return false;
+  }
+}
+
+function evaluateStrategy(sym) {
+  const cache = liveCache[sym];
+  if (!cache || strategyConditions.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], results: [] };
+  const match = document.getElementById('stratMatch')?.value || strategyMatch;
+  const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
+  const matched = results.filter(r => r.met);
+  const fired   = match === 'all' ? matched.length === strategyConditions.length : matched.length > 0;
+  return { fired, matchedCount: matched.length, matchedConditions: matched, results };
+}
+
+function updateStrategyStatus() {
+  const statusEl = document.getElementById('stratLiveStatus');
+  if (!statusEl) return;
+  if (strategyConditions.length === 0) { statusEl.style.display = 'none'; return; }
+  const cache = liveCache[currentAsset];
+  if (!cache) { statusEl.style.display = 'none'; return; }
+
+  const result = evaluateStrategy(currentAsset);
+  statusEl.style.display = 'block';
+  const total   = strategyConditions.length;
+  const matched = result.matchedCount;
+  const color   = result.fired ? 'var(--accent-green)' : (matched > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
+  statusEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <span style="letter-spacing:1px;color:var(--text-muted);">LIVE · ${currentAsset}</span>
+      <span style="font-weight:700;color:${color};">${result.fired ? '▶ STRATEGY FIRING' : (matched > 0 ? '◐ PARTIAL MATCH' : '⏸ NO MATCH')}</span>
+    </div>
+    <div style="color:var(--text-secondary);">${matched} of ${total} condition${total !== 1 ? 's' : ''} met</div>`;
+
+  result.results.forEach((r, i) => {
+    const dot  = document.getElementById(`cond-dot-${i}`);
+    const card = document.getElementById(`cond-${i}`);
+    if (dot)  dot.style.color = r.met ? 'var(--accent-green)' : 'var(--text-muted)';
+    if (card) { card.classList.toggle('met', r.met); card.classList.toggle('unmet', !r.met); }
+  });
+}
+
+// --- ENGINE ---
+function toggleEngine() {
+  if (!engineRunning) startEngine();
+  else stopEngine();
+}
+
+async function startEngine() {
+  engineRunning = true;
+  document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
+  document.getElementById('engineBtn').className = 'btn-engine stop';
+  document.getElementById('engineDot').className = 'status-dot';
+  document.getElementById('engineStatus').textContent = 'LAB RUNNING';
+  document.getElementById('emptyAlerts').style.display = 'none';
+
+  const cfg = getConfig();
+  addLog('signal', 'LAB', `Strategy scan started — ${Object.keys(assets).length} assets | Live API`);
+  addLog('info', 'LAB', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
+  addLog('info', 'LAB', `Min signals: ${cfg.minInd} | Min confidence: ${cfg.minConf}% | Poll: 30s`);
+
+  await fetchAllAssets();
+  await scanSignals();
+
+  pollTimer = setInterval(async () => {
+    if (!engineRunning) return;
+    await fetchAllAssets();
+    await scanSignals();
+  }, 30000);
+}
+
+function stopEngine() {
+  engineRunning = false;
+  clearInterval(pollTimer);
+  pollTimer = null;
+  document.getElementById('engineBtn').textContent = '▶ RUN STRATEGY';
+  document.getElementById('engineBtn').className = 'btn-engine start';
+  document.getElementById('engineDot').className = 'status-dot inactive';
+  document.getElementById('engineStatus').textContent = 'LAB IDLE';
+  setDataStatus('offline');
+  addLog('warn', 'LAB', 'Strategy scan stopped');
+}
+
+// --- API HELPERS ---
+function getApiInterval() {
+  const tf = document.getElementById('timeframe').value;
+  return intervalMap[tf] || { period: '3mo', interval: '1d' };
+}
+
+async function apiFetch(path) {
+  const res = await fetch(API_BASE + path, { credentials: 'include' });
+  if (res.status === 401) { handleSessionExpiry(); throw new Error('Session expired'); }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// --- FETCH PRICES ---
+async function fetchPrices(sym) {
+  const yfSym = symbolMap[sym];
+  if (!yfSym) return;
+  const { period, interval } = getApiInterval();
+  const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+  if (!data.data || data.data.length === 0) return;
+
+  priceHistory[sym] = data.data.map((row, i) => ({ t: i, p: row.Close, v: row.Volume || 1 }));
+
+  const rows = data.data;
+  const latest = rows[rows.length - 1];
+  const prev = rows.length > 1 ? rows[rows.length - 2] : latest;
+  assets[sym].price = latest.Close;
+  assets[sym].vol = latest.Volume || 1;
+  assets[sym].change = prev.Close ? (latest.Close - prev.Close) / prev.Close : 0;
+}
+
+// --- FETCH SIGNALS ---
+// Uses daily candles for indicator bar so values match TradingView's default daily chart view.
+// Engine scan calls fetchSignalsEngine() which uses the trading timeframe.
+async function fetchSignals(sym) {
+  const yfSym = symbolMap[sym];
+  if (!yfSym) return null;
+  const cfg = getConfig();
+  const params = new URLSearchParams({
+    symbol: yfSym, period: '6mo', interval: '1d',
+    rsi_oversold: cfg.rsiOversold,
+    rsi_overbought: cfg.rsiOverbought,
+    rsi_on: cfg.rsiOn ? 1 : 0,
+    macd_on: cfg.macdOn ? 1 : 0,
+    macd_fast: cfg.macdFast,
+    macd_slow: cfg.macdSlow,
+    macd_signal: cfg.macdSig,
+    bb_on: cfg.bbOn ? 1 : 0,
+    bb_length: cfg.bbPeriod,
+    bb_std: cfg.bbStd,
+    ma_on: cfg.maOn ? 1 : 0,
+    ema_short: cfg.maShort,
+    ema_long: cfg.maLong,
+    vol_on: cfg.volOn ? 1 : 0,
+    volume_surge: cfg.volSpike,
+  });
+  const data = await apiFetch(`/api/signals?${params}`);
+  liveCache[sym] = data;
+  return data;
+}
+
+// --- FETCH ALL ASSETS ---
+async function fetchAllAssets() {
+  setDataStatus('loading');
+  let anyError = false;
+  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  await Promise.all(active.map(async sym => {
+    try { await fetchPrices(sym); }
+    catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
+  }));
+  updateTicker();
+  updateWatchlist();
+  updateChartOverlay();
+  updatePositions();
+  updateStats();
+  setDataStatus(anyError ? 'error' : 'live');
+}
+
+// --- SCAN SIGNALS ---
+async function scanSignals() {
+  if (!engineRunning) return;
+  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  addLog('info', 'SCAN', `Scanning ${active.length} assets...`);
+
+  if (strategyConditions.length === 0) {
+    addLog('warn', 'STRAT', 'No conditions set — add conditions to your strategy and restart');
+    updateIndicatorBar();
+    updateStats();
+    return;
+  }
+
+  for (const sym of active) {
+    try {
+      await fetchSignals(sym);
+      const result = evaluateStrategy(sym);
+      if (result.fired) {
+        const reasons = result.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
+        fireAlert(sym, {
+          type: strategyType,
+          score: result.matchedCount,
+          confidence: result.matchedCount / strategyConditions.length,
+          reasons,
+        });
+      }
+    } catch (e) {
+      addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
+    }
+  }
+  updateIndicatorBar();
+  updateStrategyStatus();
+  updateStats();
+}
+
+// --- DATA STATUS ---
+function setDataStatus(state) {
+  const dot = document.getElementById('dataDot');
+  const label = document.getElementById('dataStatus');
+  if (state === 'live')         { dot.className = 'status-dot';          label.textContent = 'LIVE DATA';   }
+  else if (state === 'loading') { dot.className = 'status-dot';          label.textContent = 'FETCHING...'; }
+  else if (state === 'error')   { dot.className = 'status-dot inactive'; label.textContent = 'API ERROR';   }
+  else                          { dot.className = 'status-dot inactive'; label.textContent = 'OFFLINE';     }
+}
+
+// --- CHART OVERLAY ---
+function updateChartOverlay() {
+  const a = assets[currentAsset];
+  if (!a || !a.price) return;
+  const chgPct = a.change * 100;
+  document.getElementById('chartPrice').textContent = '$' + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
+  document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
+}
+
+// --- INDICATOR BAR ---
+function clearIndicatorBar() {
+  [
+    ['indRsi',   'indRsiSig',   'NEUTRAL'],
+    ['indMacd',  'indMacdSig',  'NEUTRAL'],
+    ['indBb',    'indBbSig',    'NEUTRAL'],
+    ['indMa',    'indMaSig',    'NEUTRAL'],
+    ['indVol',   'indVolSig',   'NORMAL'],
+    ['indSr',    'indSrSig',    'CLEAR'],
+    ['indScore', 'indScoreSig', 'LOADING'],
+  ].forEach(([valId, sigId, defSig]) => {
+    const v = document.getElementById(valId), s = document.getElementById(sigId);
+    if (v) { v.textContent = '—'; v.className = 'indicator-chip-value val-amber'; }
+    if (s) { s.textContent = defSig; s.className = 'indicator-chip-signal val-amber'; }
+  });
+}
+
+function updateIndicatorBar() {
+  const cache = liveCache[currentAsset];
+  if (!cache || !cache.indicators) return;
+  const ind = cache.indicators;
+  const cfg = getConfig();
+
+  const rsi = ind.rsi;
+  if (rsi != null) {
+    const el = document.getElementById('indRsi'), sig = document.getElementById('indRsiSig');
+    el.textContent = rsi.toFixed(1);
+    if (rsi < cfg.rsiOversold)        { el.className = 'indicator-chip-value val-green'; sig.textContent = 'OVERSOLD';   sig.className = 'indicator-chip-signal val-green'; }
+    else if (rsi > cfg.rsiOverbought) { el.className = 'indicator-chip-value val-red';   sig.textContent = 'OVERBOUGHT'; sig.className = 'indicator-chip-signal val-red'; }
+    else                              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEUTRAL';    sig.className = 'indicator-chip-signal val-amber'; }
+  }
+
+  const cx = ind.crossovers || {};
+  const cfg2 = getConfig();
+  const macdLookback = 5;
+  const maLookback   = 10;
+
+  // MACD: show histogram value; colour by whether a recent cross exists
+  const macdHist = ind.macd && ind.macd.histogram;
+  if (macdHist != null) {
+    const el = document.getElementById('indMacd'), sig = document.getElementById('indMacdSig');
+    el.textContent = macdHist.toFixed(4);
+    const macdBars = cx.macd_bars_since_cross != null ? cx.macd_bars_since_cross : 999;
+    const macdDir  = cx.macd_direction || 0;
+    if (macdBars <= macdLookback) {
+      // recent crossover — signal is active
+      if (macdDir > 0) { el.className = 'indicator-chip-value val-green'; sig.textContent = 'X-BULL'; sig.className = 'indicator-chip-signal val-green'; }
+      else             { el.className = 'indicator-chip-value val-red';   sig.textContent = 'X-BEAR'; sig.className = 'indicator-chip-signal val-red'; }
+    } else {
+      // no recent cross — show histogram direction as informational (amber)
+      if (macdHist > 0) { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'POS'; sig.className = 'indicator-chip-signal val-amber'; }
+      else              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEG'; sig.className = 'indicator-chip-signal val-amber'; }
+    }
+  }
+
+  const pctB = ind.bollinger_bands && ind.bollinger_bands.percent_b;
+  if (pctB != null) {
+    const bbPos = pctB * 100;
+    document.getElementById('indBb').textContent = bbPos.toFixed(0) + '%';
+    if (bbPos < 5)       { document.getElementById('indBb').className = 'indicator-chip-value val-green';  document.getElementById('indBbSig').textContent = 'LOWER'; }
+    else if (bbPos > 95) { document.getElementById('indBb').className = 'indicator-chip-value val-red';    document.getElementById('indBbSig').textContent = 'UPPER'; }
+    else                 { document.getElementById('indBb').className = 'indicator-chip-value val-purple'; document.getElementById('indBbSig').textContent = 'MID';   }
+  }
+
+  // MA: show alignment state but only colour green/red if a recent cross exists
+  const close = ind.price && ind.price.close;
+  const ma20  = ind.moving_averages && ind.moving_averages.ma_20;
+  const ma50  = ind.moving_averages && ind.moving_averages.ma_50;
+  if (ma20 && ma50) {
+    const maBars = cx.ma_bars_since_cross != null ? cx.ma_bars_since_cross : 999;
+    const maDir  = cx.ma_direction || 0;
+    const elMa = document.getElementById('indMa'), sigMa = document.getElementById('indMaSig');
+    if (maBars <= maLookback) {
+      // recent golden/death cross — active signal
+      if (maDir > 0) { elMa.textContent = '▲ CROSS'; elMa.className = 'indicator-chip-value val-green'; sigMa.textContent = 'GOLDEN'; sigMa.className = 'indicator-chip-signal val-green'; }
+      else           { elMa.textContent = '▼ CROSS'; elMa.className = 'indicator-chip-value val-red';   sigMa.textContent = 'DEATH';  sigMa.className = 'indicator-chip-signal val-red'; }
+    } else {
+      // no recent cross — show alignment as informational (amber)
+      const bull = close && close > ma20 && ma20 > ma50;
+      elMa.textContent = bull ? '▲' : '▼';
+      elMa.className = 'indicator-chip-value val-amber';
+      sigMa.textContent = 'ALIGNED';
+      sigMa.className = 'indicator-chip-signal val-amber';
+    }
+  }
+
+  const volRatio = ind.volume && ind.volume.ratio;
+  if (volRatio != null) {
+    document.getElementById('indVol').textContent = volRatio.toFixed(2) + '×';
+    if (volRatio >= cfg.volSpike) { document.getElementById('indVol').className = 'indicator-chip-value val-green';  document.getElementById('indVolSig').textContent = 'SPIKE';  }
+    else                          { document.getElementById('indVol').className = 'indicator-chip-value val-amber'; document.getElementById('indVolSig').textContent = 'NORMAL'; }
+  }
+
+  const overall = cache.overall;
+  const score = Math.max(cache.buy_score || 0, cache.sell_score || 0);
+  const scoreEl = document.getElementById('indScore'), scoreSig = document.getElementById('indScoreSig');
+  if (overall !== 'NEUTRAL' && score > 0) {
+    scoreEl.textContent = score.toFixed(1);
+    scoreSig.textContent = overall;
+    scoreEl.className = 'indicator-chip-value ' + (overall === 'BUY' ? 'val-green' : 'val-red');
+    scoreSig.className = 'indicator-chip-signal ' + (overall === 'BUY' ? 'val-green' : 'val-red');
+  } else {
+    scoreEl.textContent = score > 0 ? score.toFixed(1) : '—';
+    scoreSig.textContent = 'NEUTRAL';
+    scoreEl.className = 'indicator-chip-value val-amber';
+    scoreSig.className = 'indicator-chip-signal val-amber';
+  }
+  updateStrategyStatus();
+}
+
+// --- FIRE ALERT ---
+function fireAlert(sym, sig) {
+  if (alerts.find(a => a.sym === sym && a.type === sig.type && !a.dismissed)) return;
+
+  signalsToday++;
+  const price = assets[sym].price;
+  if (!price) return;
+  const cfg = getConfig();
+  const capital = parseFloat(document.getElementById('capital').value);
+  const posSize = cfg.posSize / 100;
+  const qty = (capital * posSize) / price;
+  const target = price * (1 + (sig.type === 'BUY' ? 1 : -1) * cfg.targetGain / 100);
+  const sl = price * (1 + (sig.type === 'BUY' ? -1 : 1) * cfg.stopLoss / 100);
+  const conf = Math.round(sig.confidence * 100);
+
+  const alert = {
+    id: Date.now() + Math.random(),
+    sym, type: sig.type, price, target, sl, qty, conf,
+    reasons: sig.reasons, time: new Date().toTimeString().split(' ')[0],
+    dismissed: false
+  };
+  alerts.unshift(alert);
+  if (alerts.length > 20) alerts = alerts.slice(0, 20);
+
+  renderAlerts();
+  document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
+
+  const col = sig.type === 'BUY' ? 'signal' : 'err';
+  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ $${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
+  addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
+}
+
+// --- RENDER ALERTS ---
+function renderAlerts() {
+  const list = document.getElementById('alertList');
+  const pending = alerts.filter(a => !a.dismissed);
+  if (pending.length === 0) {
+    list.innerHTML = '<div class="empty-state" id="emptyAlerts" style="display:block;">NO PENDING SIGNALS<br><span style="color:var(--text-muted);font-size:8px;">Engine is scanning...</span></div>';
+    return;
+  }
+  list.innerHTML = pending.map(a => `
+    <div class="alert-card ${a.type.toLowerCase()} new" id="alert-${a.id}">
+      <div class="alert-card-header">
+        <span class="alert-type ${a.type.toLowerCase()}">${a.type}</span>
+        <span class="alert-asset">${a.sym}</span>
+        <span class="alert-time">${a.time}</span>
+      </div>
+      <div class="alert-body">
+        <div class="alert-price-row">
+          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">$${formatPrice(a.price, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">$${formatPrice(a.target, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">$${formatPrice(a.sl, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">QTY</div><div class="alert-price-val">${a.qty.toFixed(4)}</div></div>
+        </div>
+        <div class="alert-reasons">${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}</div>
+        <div class="alert-confidence">
+          <div class="confidence-label">CONFIDENCE</div>
+          <div class="confidence-bar"><div class="confidence-fill" style="width:${a.conf}%"></div></div>
+          <div class="confidence-pct">${a.conf}%</div>
+        </div>
+        <div class="alert-actions">
+          <button class="btn-execute ${a.type === 'BUY' ? 'btn-buy' : 'btn-sell-exec'}" onclick="openModal('${a.id}')">
+            ${a.type === 'BUY' ? '▲ EXECUTE BUY' : '▼ EXECUTE SELL'}
+          </button>
+          <button class="btn-skip" onclick="dismissAlert('${a.id}')">SKIP</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- MODAL ---
+function openModal(alertId) {
+  const a = alerts.find(x => String(x.id) === String(alertId));
+  if (!a) return;
+  pendingTrade = a;
+  const capital = parseFloat(document.getElementById('capital').value);
+  const posSize = getConfig().posSize;
+  const invested = capital * posSize / 100;
+  const profit = Math.abs(a.target - a.price) * a.qty;
+  const risk = Math.abs(a.price - a.sl) * a.qty;
+
+  document.getElementById('modalTitle').textContent = `CONFIRM ${a.type} ORDER — ${a.sym}`;
+  document.getElementById('modalSummary').innerHTML = `
+    <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
+    <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
+    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">$${formatPrice(a.price, a.sym)}</div></div>
+    <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
+    <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">$${invested.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">$${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
+    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">$${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
+    <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+$${profit.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-$${risk.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
+  `;
+  document.getElementById('modalWarning').innerHTML =
+    `⚠ SIMULATION MODE: No real order will be placed. Always verify signals independently before live trading.`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+  pendingTrade = null;
+}
+
+function confirmTrade() {
+  if (!pendingTrade) return;
+  const a = pendingTrade;
+  const capital = parseFloat(document.getElementById('capital').value);
+  const invested = capital * getConfig().posSize / 100;
+  positions.push({
+    id: a.id, sym: a.sym, side: a.type,
+    entry: a.price, current: a.price,
+    qty: a.qty, invested, target: a.target, sl: a.sl,
+    pnl: 0, pnlPct: 0, time: a.time
+  });
+  dismissAlert(String(a.id));
+  tradesExecuted++;
+  closeModal();
+  updatePositionsTable();
+  updateRiskBar();
+  addLog('signal', 'ORDER', `${a.type} EXECUTED: ${a.sym} × ${a.qty.toFixed(4)} @ $${formatPrice(a.price, a.sym)}`);
+  addLog('info', 'ORDER', `Target: $${formatPrice(a.target, a.sym)} | Stop: $${formatPrice(a.sl, a.sym)}`);
+}
+
+// --- DISMISS ALERT ---
+function dismissAlert(alertId) {
+  const idx = alerts.findIndex(a => String(a.id) === String(alertId));
+  if (idx !== -1) alerts[idx].dismissed = true;
+  renderAlerts();
+  document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
+}
+
+// --- UPDATE POSITIONS ---
+function updatePositions() {
+  positions.forEach(pos => {
+    pos.current = assets[pos.sym]?.price || pos.current;
+    const dir = pos.side === 'BUY' ? 1 : -1;
+    pos.pnl = dir * (pos.current - pos.entry) * pos.qty;
+    pos.pnlPct = dir * ((pos.current - pos.entry) / pos.entry) * 100;
+    if (pos.side === 'BUY') {
+      if (pos.current >= pos.target) closePosition(pos, 'TARGET');
+      else if (pos.current <= pos.sl) closePosition(pos, 'STOP');
+    } else {
+      if (pos.current <= pos.target) closePosition(pos, 'TARGET');
+      else if (pos.current >= pos.sl) closePosition(pos, 'STOP');
+    }
+  });
+  updatePositionsTable();
+  updateRiskBar();
+}
+
+function closePosition(pos, reason) {
+  const idx = positions.indexOf(pos);
+  if (idx === -1) return;
+  positions.splice(idx, 1);
+  dailyPnl += pos.pnl;
+  if (pos.pnl > 0) tradeWins++;
+  const col = pos.pnl > 0 ? 'signal' : 'err';
+  addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}$${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
+}
+
+function updatePositionsTable() {
+  const tbody = document.getElementById('posTableBody');
+  document.getElementById('posBadge').textContent = positions.length + ' ACTIVE';
+  if (positions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:12px;font-size:10px;letter-spacing:1px;">NO OPEN POSITIONS</td></tr>';
+    return;
+  }
+  tbody.innerHTML = positions.map(pos => {
+    const pnlCls = pos.pnl >= 0 ? 'pos' : 'neg';
+    const pnlStr = (pos.pnl >= 0 ? '+' : '') + '$' + pos.pnl.toFixed(2);
+    return `<tr>
+      <td style="color:var(--text-primary);font-weight:600;">${pos.sym}</td>
+      <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side}</td>
+      <td>$${formatPrice(pos.entry, pos.sym)}</td>
+      <td style="color:var(--accent-cyan);">$${formatPrice(pos.current, pos.sym)}</td>
+      <td>$${pos.invested.toFixed(0)}</td>
+      <td style="color:var(--accent-green);">$${formatPrice(pos.target, pos.sym)}</td>
+      <td style="color:var(--accent-red);">$${formatPrice(pos.sl, pos.sym)}</td>
+      <td class="pos-pnl ${pnlCls}">${pnlStr} (${pos.pnlPct.toFixed(2)}%)</td>
+      <td><button onclick="manualClose('${pos.id}')" style="background:rgba(255,51,85,0.1);border:1px solid var(--accent-red);color:var(--accent-red);padding:3px 7px;font-family:inherit;font-size:9px;cursor:pointer;border-radius:2px;">CLOSE</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function manualClose(posId) {
+  const pos = positions.find(p => String(p.id) === String(posId));
+  if (pos) closePosition(pos, 'MANUAL');
+}
+
+// --- STATS ---
+function updateStats() {
+  const capital = parseFloat(document.getElementById('capital').value);
+  const target = capital * parseFloat(document.getElementById('targetGain').value) / 100;
+  const progress = Math.min((dailyPnl / target) * 100, 100);
+  document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + '$' + dailyPnl.toFixed(2);
+  document.getElementById('statPnl').className = 'stat-value ' + (dailyPnl >= 0 ? 'tag-green' : 'tag-red');
+  document.getElementById('statPnlPct').textContent = (dailyPnl >= 0 ? '+' : '') + ((dailyPnl / capital) * 100).toFixed(2) + '%';
+  document.getElementById('statSignals').textContent = signalsToday;
+  document.getElementById('statTrades').textContent = tradesExecuted;
+  document.getElementById('statWinRate').textContent = tradesExecuted > 0 ? Math.round(tradeWins / tradesExecuted * 100) + '% win rate' : '—% win rate';
+  document.getElementById('statTarget').textContent = '+$' + target.toFixed(2);
+  document.getElementById('statProgress').textContent = Math.round(progress) + '% progress';
+}
+
+// --- RISK BAR ---
+function updateRiskBar() {
+  const capital = parseFloat(document.getElementById('capital').value);
+  const invested = positions.reduce((s, p) => s + p.invested, 0);
+  const pct = Math.min((invested / capital) * 100, 100);
+  document.getElementById('riskBar').style.width = pct + '%';
+  document.getElementById('riskPct').textContent = pct.toFixed(0) + '%';
+  document.getElementById('riskBar').style.backgroundPosition = (100 - pct) + '% 0%';
+}
+
+// --- TRADINGVIEW CHART ---
+let tvWidget = null;
+
+function initChart() {
+  loadTvChart('BINANCE:BTCUSDT');
+}
+
+function loadTvChart(tvSym) {
+  const container = document.getElementById('tvChart');
+  container.innerHTML = '';
+  const mobile = window.innerWidth <= 768;
+  tvWidget = new TradingView.widget({
+    autosize: true,
+    symbol: tvSym,
+    interval: 'D',
+    timezone: 'Etc/UTC',
+    theme: 'dark',
+    style: '1',
+    locale: 'en',
+    toolbar_bg: '#0d1117',
+    enable_publishing: false,
+    allow_symbol_change: true,
+    container_id: 'tvChart',
+    studies: ['Volume@tv-basicstudies'],
+    hide_top_toolbar: false,
+    hide_legend: false,
+    save_image: false,
+    backgroundColor: 'rgba(5,6,8,1)',
+    gridColor: 'rgba(30,42,58,0.8)',
+    withdateranges: !mobile,
+    hide_side_toolbar: mobile,
+  });
+}
+
+function drawChart() { /* replaced by TradingView */ }
+function resizeChart() { /* no-op */ }
+function setChartView(view, btn) { /* no-op */ }
+function updateChart() { /* no-op */ }
+
+// --- WATCHLIST ---
+function renderWatchlist() {
+  const wl = document.getElementById('watchlist');
+
+  if (watchlistEditMode) {
+    wl.innerHTML = Object.keys(assets).map(sym => `
+      <div class="watchlist-item" style="cursor:default;padding:7px 16px;">
+        <div class="wl-left">
+          <div class="wl-sym" style="font-size:11px;">${sym}</div>
+          <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
+        </div>
+        <label class="toggle" onclick="event.stopPropagation()" style="flex-shrink:0;">
+          <input type="checkbox" ${watchlistEnabled[sym] ? 'checked' : ''} onchange="toggleWatchlistItem('${sym}', this.checked)">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    `).join('');
+    return;
+  }
+
+  const visible = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+  wl.innerHTML = visible.length ? visible.map(sym => `
+    <div class="watchlist-item ${sym === currentAsset ? 'active' : ''}" onclick="selectAsset('${sym}')">
+      <div class="wl-left">
+        <div class="wl-sym">${sym}</div>
+        <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
+      </div>
+      <div class="wl-right">
+        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
+        <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">NO ASSETS ENABLED<br><span style="font-size:8px;">Click EDIT to add assets</span></div>';
+}
+
+function updateWatchlist() {
+  if (watchlistEditMode) return;
+  Object.keys(assets).forEach(sym => {
+    const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
+    const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
+    if (el)    { el.textContent    = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className    = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`;       chgEl.className = 'wl-chg '   + getChgClass(assets[sym].change); }
+  });
+}
+
+function toggleWatchlistEdit() {
+  watchlistEditMode = !watchlistEditMode;
+  const btn = document.getElementById('wlEditBtn');
+  btn.textContent = watchlistEditMode ? 'DONE' : 'EDIT';
+  btn.style.color = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
+  btn.style.borderColor = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
+  renderWatchlist();
+}
+
+function toggleWatchlistItem(sym, enabled) {
+  watchlistEnabled[sym] = enabled;
+  if (!enabled && sym === currentAsset) {
+    const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
+    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next] || 'BINANCE:BTCUSDT'); }
+  }
+}
+
+function selectAsset(sym) {
+  currentAsset = sym;
+  clearIndicatorBar();
+  renderWatchlist();
+  updateChartOverlay();
+  const tvSym = tvSymbolMap[sym] || 'BINANCE:BTCUSDT';
+  loadTvChart(tvSym);
+  addLog('info', 'CHART', `Switched to ${sym} → ${tvSym}`);
+  // Show cached data immediately if we already have it, then refresh in the background
+  if (liveCache[sym]) updateIndicatorBar();
+  fetchPrices(sym).then(() => updateChartOverlay()).catch(e => addLog('err', 'API', `Fetch failed ${sym}: ${e.message}`));
+  fetchSignals(sym).then(() => updateIndicatorBar()).catch(() => {});
+}
+
+// --- TICKER TAPE ---
+function updateTicker() {
+  const tape = document.getElementById('tickerTape');
+  tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
+    <div class="ticker-item">
+      <div class="ticker-sym">${sym.split('/')[0]}</div>
+      <div class="ticker-price">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
+      <div class="ticker-chg ${assets[sym].change >= 0 ? 'up' : 'down'}">${assets[sym].change >= 0 ? '▲' : '▼'}${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
+    </div>
+  `).join('');
+}
+
+// --- LOG ---
+function addLog(type, source, msg) {
+  const log = document.getElementById('logArea');
+  const ts = new Date().toTimeString().split(' ')[0];
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-ts">${ts}</span> <span class="log-${type}">[${source}]</span> ${msg}`;
+  log.insertBefore(line, log.firstChild);
+  while (log.children.length > 100) log.removeChild(log.lastChild);
+}
+
+// --- HELPERS ---
+function getConfig() {
+  return {
+    capital:    parseFloat(document.getElementById('capital').value),
+    posSize:    parseFloat(document.getElementById('posSize').value),
+    targetGain: parseFloat(document.getElementById('targetGain').value),
+    stopLoss:   parseFloat(document.getElementById('stopLoss').value),
+    trailDist:  parseFloat(document.getElementById('trailDist').value),
+    // Indicator defaults — strategy builder evaluates conditions client-side
+    rsiOn: 1, rsiOversold: 30, rsiOverbought: 70,
+    macdOn: 1, macdFast: 12, macdSlow: 26, macdSig: 9,
+    bbOn: 1, bbPeriod: 20, bbStd: 2.0,
+    maOn: 1, maShort: 9, maLong: 21,
+    volOn: 1, volSpike: 1.5,
+    srOn: false, minInd: 1, minConf: 0,
+  };
+}
+
+function formatPrice(p, sym) {
+  if (!p) return '—';
+  if (sym === 'EUR/USD' || sym === 'GBP/USD' || sym === 'USD/JPY') return p.toFixed(4);
+  if (sym === 'GOLD' || sym === 'SILVER' || sym === 'COPPER') return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (p < 10) return p.toFixed(4);
+  if (p < 100) return p.toFixed(3);
+  return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
+
+// ── AUTH ────────────────────────────────────────────────────────────────────
+
+async function checkSession() {
+  if (localStorage.getItem('apexSession')) {
+    try {
+      const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        currentUser = data.username;
+        applyPreferences(data.preferences || {});
+      } else {
+        localStorage.removeItem('apexSession');
+      }
+    } catch (e) {
+      localStorage.removeItem('apexSession');
+    }
+  }
+  showDashboard();
+}
+
+function updateUserDisplay() {
+  document.getElementById('usernameDisplay').textContent = (currentUser || 'GUEST').toUpperCase();
+  document.getElementById('signInBtn').style.display = currentUser ? 'none' : 'inline-block';
+  document.getElementById('logoutBtn').style.display  = currentUser ? 'inline-block' : 'none';
+}
+
+function showDashboard() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  updateUserDisplay();
+  if (!dashboardInitialized) {
+    dashboardInitialized = true;
+    init();
+  }
+}
+
+function switchLoginTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+  document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('registerError').style.display = 'none';
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginSubmitBtn');
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const remember = document.getElementById('loginRemember').checked;
+  const errEl = document.getElementById('loginError');
+
+  errEl.style.display = 'none';
+  if (!username || !password) { showAuthError(errEl, 'Enter username and password'); return; }
+
+  btn.disabled = true; btn.textContent = 'AUTHENTICATING...';
+  try {
+    const res = await fetch(API_BASE + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password, remember }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(errEl, data.error || 'Login failed'); return; }
+    currentUser = data.username;
+    if (remember) localStorage.setItem('apexSession', '1');
+    applyPreferences(data.preferences || {});
+    showDashboard();
+  } catch (e) {
+    showAuthError(errEl, 'Cannot reach server — is it running?');
+  } finally {
+    btn.disabled = false; btn.textContent = '▶ SIGN IN';
+  }
+}
+
+async function doRegister() {
+  const btn = document.getElementById('registerSubmitBtn');
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm  = document.getElementById('regConfirm').value;
+  const errEl    = document.getElementById('registerError');
+
+  errEl.style.display = 'none';
+  if (!username || !password) { showAuthError(errEl, 'Enter username and password'); return; }
+  if (password !== confirm)   { showAuthError(errEl, 'Passwords do not match'); return; }
+  if (password.length < 6)    { showAuthError(errEl, 'Password must be at least 6 characters'); return; }
+
+  btn.disabled = true; btn.textContent = 'CREATING ACCOUNT...';
+  try {
+    const res = await fetch(API_BASE + '/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }
+    currentUser = data.username;
+    localStorage.setItem('apexSession', '1');
+    applyPreferences({});
+    showDashboard();
+  } catch (e) {
+    showAuthError(errEl, 'Cannot reach server — is it running?');
+  } finally {
+    btn.disabled = false; btn.textContent = '+ CREATE ACCOUNT';
+  }
+}
+
+function showAuthError(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function logout() {
+  try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  currentUser = null;
+  localStorage.removeItem('apexSession');
+  if (engineRunning) stopEngine();
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  updateUserDisplay();
+  addLog('info', 'AUTH', 'Signed out — continuing as guest');
+}
+
+function handleSessionExpiry() {
+  currentUser = null;
+  localStorage.removeItem('apexSession');
+  if (engineRunning) stopEngine();
+  updateUserDisplay();
+  addLog('warn', 'AUTH', 'Session expired — sign in to save preferences');
+}
+
+async function saveStrategy() {
+  const btn = document.getElementById('saveStratBtn');
+  const name = (document.getElementById('strategyName').value || '').trim();
+  if (!name) {
+    document.getElementById('strategyName').focus();
+    document.getElementById('strategyName').style.borderColor = 'var(--accent-red)';
+    setTimeout(() => document.getElementById('strategyName').style.borderColor = '', 1500);
+    return;
+  }
+  const strategy = {
+    name,
+    type:       strategyType,
+    match:      document.getElementById('stratMatch').value,
+    conditions: JSON.parse(JSON.stringify(strategyConditions)),
+  };
+  const idx = savedStrategies.findIndex(s => s.name === name);
+  if (idx >= 0) savedStrategies[idx] = strategy;
+  else          savedStrategies.push(strategy);
+  renderStrategyDropdown();
+  document.getElementById('strategySelect').value = name;
+
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'SAVING...';
+  await savePreferences();
+  btn.textContent = '✓ SAVED';
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+  addLog('info', 'STRAT', `Saved strategy: ${name}`);
+}
+
+async function savePreferences() {
+  if (!currentUser) { addLog('warn', 'PREFS', 'Not logged in'); return; }
+  const prefs = {
+    capital:      parseFloat(document.getElementById('capital').value),
+    posSize:      parseFloat(document.getElementById('posSize').value),
+    targetGain:   parseFloat(document.getElementById('targetGain').value),
+    stopLoss:     parseFloat(document.getElementById('stopLoss').value),
+    trailDist:    parseFloat(document.getElementById('trailDist').value),
+    fixedSL:      document.getElementById('fixedSL').checked,
+    trailSL:      document.getElementById('trailSL').checked,
+    timeframe:    document.getElementById('timeframe').value,
+    currentAsset,
+    watchlistEnabled: { ...watchlistEnabled },
+    strategyName:       document.getElementById('strategyName').value,
+    strategyType,
+    strategyMatch:      document.getElementById('stratMatch').value,
+    strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
+    savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
+  };
+
+  const btn = document.getElementById('saveBtn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'SAVING...';
+  try {
+    const res = await fetch(API_BASE + '/api/save-preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(prefs),
+    });
+    if (res.ok) {
+      addLog('info', 'PREFS', `Settings saved for ${currentUser}`);
+      btn.textContent = '✓ SAVED';
+    } else if (res.status === 401) {
+      btn.textContent = '✕ SESSION EXPIRED';
+      handleSessionExpiry();
+      return;
+    } else {
+      addLog('err', 'PREFS', `Failed to save settings (HTTP ${res.status})`);
+      btn.textContent = '✕ FAILED';
+    }
+  } catch (e) {
+    addLog('err', 'PREFS', 'Save error: ' + e.message);
+    btn.textContent = '✕ ERROR';
+  }
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2200);
+}
+
+function applyPreferences(prefs) {
+  if (!prefs || Object.keys(prefs).length === 0) return;
+
+  const set    = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+  const setChk = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.checked = v; };
+  const setText= (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.textContent = v; };
+
+  set('capital',    prefs.capital);
+  set('posSize',    prefs.posSize);
+  if (prefs.posSize   !== undefined) setText('posSizeVal', prefs.posSize + '%');
+  set('targetGain', prefs.targetGain);
+  if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
+  set('stopLoss',   prefs.stopLoss);
+  if (prefs.stopLoss  !== undefined) setText('slVal', '-' + parseFloat(prefs.stopLoss).toFixed(1) + '%');
+  set('trailDist',  prefs.trailDist);
+  if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
+
+  setChk('fixedSL', prefs.fixedSL);
+  setChk('trailSL', prefs.trailSL);
+  if (prefs.trailSL !== undefined) {
+    document.getElementById('trailSLRow').style.opacity      = prefs.trailSL ? '1' : '0.3';
+    document.getElementById('trailSLRow').style.pointerEvents = prefs.trailSL ? 'auto' : 'none';
+  }
+
+  if (prefs.timeframe) set('timeframe', prefs.timeframe);
+  if (prefs.currentAsset && assets[prefs.currentAsset]) currentAsset = prefs.currentAsset;
+  if (prefs.watchlistEnabled) {
+    Object.keys(assets).forEach(sym => {
+      watchlistEnabled[sym] = prefs.watchlistEnabled[sym] !== false;
+    });
+  }
+
+  // Restore strategy
+  if (prefs.strategyName)       set('strategyName', prefs.strategyName);
+  if (prefs.strategyType)       setStratType(prefs.strategyType);
+  if (prefs.strategyMatch)      { set('stratMatch', prefs.strategyMatch); strategyMatch = prefs.strategyMatch; }
+  if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length > 0) {
+    strategyConditions = prefs.strategyConditions.map(c => ({ ...c }));
+    renderConditions();
+  }
+  if (Array.isArray(prefs.savedStrategies)) {
+    savedStrategies = prefs.savedStrategies;
+    renderStrategyDropdown();
+    const loadedName = prefs.strategyName || '';
+    if (loadedName && savedStrategies.find(s => s.name === loadedName)) {
+      document.getElementById('strategySelect').value = loadedName;
+    }
+  }
+}
+
+// Boot
+checkSession();
+
+// ── Panel resizer ────────────────────────────────────────────────────────────
+(function () {
+  const resizer = document.getElementById('leftResizer');
+  const leftPanel = document.getElementById('leftPanel');
+  if (!resizer || !leftPanel) return;
+  let startX, startW;
+
+  resizer.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = leftPanel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(500, Math.max(180, startW + e.clientX - startX));
+      leftPanel.style.width = w + 'px';
+    }
+    function onUp() {
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
+
+</script>
+
+<!-- MOBILE NAV BAR -->
+<nav class="mobile-nav" id="mobileNav">
+  <button class="mobile-nav-btn active" id="mNavChart" onclick="mobileTab('chart')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    CHART
+  </button>
+  <button class="mobile-nav-btn" id="mNavStrategy" onclick="mobileTab('strategy')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    STRATEGY
+  </button>
+  <button class="mobile-nav-btn" id="mNavAlerts" onclick="mobileTab('alerts')">
+    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    ALERTS
+  </button>
+</nav>
+
+<script>
+(function () {
+  var currentTab = 'chart';
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function mobileTab(tab) {
+    if (!isMobile()) return;
+    currentTab = tab;
+    var center   = document.querySelector('.center-panel');
+    var left     = document.getElementById('leftPanel');
+    var right    = document.getElementById('rightPanel');
+    var btnChart = document.getElementById('mNavChart');
+    var btnStrat = document.getElementById('mNavStrategy');
+    var btnAlert = document.getElementById('mNavAlerts');
+
+    center.classList.toggle('mobile-active', tab === 'chart');
+    left.classList.toggle('mobile-active',   tab === 'strategy');
+    right.classList.toggle('mobile-active',  tab === 'alerts');
+
+    btnChart.classList.toggle('active', tab === 'chart');
+    btnStrat.classList.toggle('active', tab === 'strategy');
+    btnAlert.classList.toggle('active', tab === 'alerts');
+    btnAlert.classList.remove('alert-active');
+  }
+
+  function applyLayout() {
+    var center = document.querySelector('.center-panel');
+    var left   = document.getElementById('leftPanel');
+    var right  = document.getElementById('rightPanel');
+    if (!center || !left || !right) return;
+    if (isMobile()) {
+      center.classList.toggle('mobile-active',   currentTab === 'chart');
+      left.classList.toggle('mobile-active',     currentTab === 'strategy');
+      right.classList.toggle('mobile-active',    currentTab === 'alerts');
+    } else {
+      center.classList.remove('mobile-active');
+      left.classList.remove('mobile-active');
+      right.classList.remove('mobile-active');
+    }
+  }
+
+  window.mobileTab = mobileTab;
+
+  /* flash the alerts tab when a new alert fires */
+  var _origFireAlert = window.fireAlert;
+  window.addEventListener('load', function () {
+    var orig = window.fireAlert;
+    if (orig) {
+      window.fireAlert = function () {
+        orig.apply(this, arguments);
+        if (isMobile() && currentTab !== 'alerts') {
+          document.getElementById('mNavAlerts').classList.add('alert-active');
+        }
+      };
+    }
+  });
+
+  window.addEventListener('resize', applyLayout);
+
+  /* initialise once the main layout is revealed (after login) */
+  var observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      if (m.target.id === 'mainLayout' && m.target.style.display !== 'none') {
+        applyLayout();
+      }
+    });
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var layout = document.getElementById('mainLayout');
+    if (layout) observer.observe(layout, { attributes: true, attributeFilter: ['style'] });
+    applyLayout();
+  });
+})();
+</script>
+
+<!-- EDUCATIONAL DISCLAIMER -->
+<div class="disclaimer-bar">
+  <strong>EDUCATIONAL USE ONLY</strong> &nbsp;|&nbsp;
+  Apex Trader is an educational tool. It is not investment advice. Backtested performance does not predict future results. All investment decisions are your own. Past returns shown are historical and would have been reduced by fees, taxes, and slippage that this simulator may not fully reflect.
+</div>
+
+</body>
+</html>

@@ -6,8 +6,11 @@ import pandas as pd
 import bcrypt
 import json
 import os
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    psycopg2 = None
 from datetime import timedelta
 
 from api.indicators import calculate_all
@@ -167,7 +170,7 @@ def _fetch_ohlcv(symbol: str, period: str = "3mo", interval: str = "1d") -> pd.D
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "trading-dashboard.html")
+    return send_from_directory("static", "dashboard.html")
 
 
 # ── Auth endpoints ───────────────────────────────────────────────────────────
@@ -248,10 +251,9 @@ def load_preferences():
     })
 
 
-# ── Market data endpoints (login required) ───────────────────────────────────
+# ── Market data endpoints (public) ───────────────────────────────────────────
 
 @app.route("/api/prices", methods=["GET"])
-@login_required
 def prices():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "3mo")
@@ -280,7 +282,6 @@ def prices():
 
 
 @app.route("/api/indicators", methods=["GET"])
-@login_required
 def indicators():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "6mo")
@@ -299,7 +300,6 @@ def indicators():
 
 
 @app.route("/api/signals", methods=["GET"])
-@login_required
 def signals():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "6mo")
