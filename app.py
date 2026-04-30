@@ -15,6 +15,8 @@ from datetime import timedelta
 
 from api.indicators import calculate_all
 from api.signals import score_signals
+from api.backtest import run_backtest
+from api.metrics import calculate_metrics
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "apex-trader-dev-key-change-in-production")
@@ -356,6 +358,79 @@ def signals():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Failed to generate signals: {str(e)}"}), 500
+
+
+# ── Backtest endpoint (public) ───────────────────────────────────────────────
+
+@app.route("/api/backtest", methods=["GET"])
+def backtest():
+    symbol = request.args.get("symbol", "").strip()
+    period = request.args.get("period", "2y")
+    interval = request.args.get("interval", "1d")
+
+    if not symbol:
+        return jsonify({"error": "symbol parameter is required"}), 400
+
+    try:
+        stop_loss_pct   = float(request.args.get("stop_loss",     2.0))
+        take_profit_pct = float(request.args.get("take_profit",   4.0))
+        min_confidence  = float(request.args.get("min_confidence", 60.0))
+    except (ValueError, TypeError) as e:
+        return jsonify({"error": f"Invalid parameter: {e}"}), 400
+
+    thresholds = {}
+    for key in [
+        "rsi_oversold", "rsi_overbought", "volume_surge",
+        "bb_oversold", "bb_overbought",
+        "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
+        "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
+    ]:
+        val = request.args.get(key)
+        if val is not None:
+            try:
+                thresholds[key] = float(val)
+            except ValueError:
+                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+
+    calc_params = {}
+    for key in {"macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}:
+        val = request.args.get(key)
+        if val is not None:
+            try:
+                calc_params[key] = int(val)
+            except ValueError:
+                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+    val = request.args.get("bb_std")
+    if val is not None:
+        try:
+            calc_params["bb_std"] = float(val)
+        except ValueError:
+            return jsonify({"error": "Invalid value for 'bb_std'"}), 400
+
+    try:
+        df = _fetch_ohlcv(symbol, period, interval)
+        trades, equity_curve, bah_curve = run_backtest(
+            df,
+            thresholds=thresholds or None,
+            calc_params=calc_params or None,
+            stop_loss_pct=stop_loss_pct,
+            take_profit_pct=take_profit_pct,
+            min_confidence=min_confidence,
+        )
+        metrics = calculate_metrics(trades, equity_curve)
+        return jsonify({
+            "symbol":       symbol.upper(),
+            "period":       period,
+            "interval":     interval,
+            "metrics":      metrics,
+            "trades":       trades,
+            "equity_curve": equity_curve,
+            "bah_curve":    bah_curve,
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Backtest failed: {str(e)}"}), 500
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX TRADER — Strategy Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/apex.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  /* ── Layout ── */
+  .lab-layout {
+    display: flex;
+    height: calc(100vh - 44px - 28px);
+    overflow: hidden;
+  }
+
+  .lab-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+  }
+
+  .lab-main {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-secondary);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Sidebar controls ── */
+  .sidebar-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .ctrl-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ctrl-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .ctrl-name {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .ctrl-val {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .slider-row {
+    margin-bottom: 10px;
+  }
+
+  .slider-row .slider-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    outline: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--bg-panel);
+  }
+
+  /* Symbol / select inputs */
+  .lab-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 8px;
+    width: 100%;
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.15s;
+    margin-bottom: 8px;
+  }
+
+  .lab-input:focus { border-color: var(--accent-blue); background: var(--bg-hover); }
+
+  select.lab-input option { background: var(--bg-card); }
+
+  /* Indicator toggle rows */
+  .ind-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .ind-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+
+  .toggle {
+    position: relative;
+    width: 32px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toggle input { display: none; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .toggle input:checked ~ .toggle-track { background: var(--accent-green); opacity: 0.4; }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); background: var(--accent-green); }
+
+  /* Run button */
+  .btn-run {
+    width: 100%;
+    padding: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 2px;
+    background: rgba(0,255,136,0.1);
+    color: var(--accent-green);
+    border: 1px solid var(--accent-green);
+    transition: all 0.2s;
+    margin-top: 4px;
+  }
+
+  .btn-run:hover:not(:disabled) {
+    background: rgba(0,255,136,0.2);
+    box-shadow: 0 0 20px rgba(0,255,136,0.15);
+  }
+
+  .btn-run:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Idle / error state ── */
+  .lab-idle {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .lab-idle svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.2;
+    stroke: var(--accent-green);
+    fill: none;
+    stroke-width: 1.2;
+  }
+
+  /* ── Metrics grid ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .metric-cell {
+    background: var(--bg-panel);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .metric-label {
+    font-size: 8px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  .metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+
+  .metric-value.pos { color: var(--accent-green); }
+  .metric-value.neg { color: var(--accent-red); }
+  .metric-value.neu { color: var(--accent-amber); }
+
+  .metric-sub {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  /* ── Chart area ── */
+  .chart-section {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .chart-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 280px;
+  }
+
+  /* ── Trade log ── */
+  .tradelog-section {
+    padding: 0 0 40px;
+    flex: 1;
+  }
+
+  .tradelog-header {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    z-index: 5;
+  }
+
+  .tradelog-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+  }
+
+  .trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .trade-table th {
+    padding: 7px 20px;
+    text-align: left;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+    background: var(--bg-panel);
+    position: sticky;
+    top: 38px;
+    z-index: 4;
+  }
+
+  .trade-table td {
+    padding: 7px 20px;
+    border-bottom: 1px solid rgba(30,42,58,0.5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trade-table tr:hover td { background: var(--bg-hover); }
+
+  .ret-pos { color: var(--accent-green); font-weight: 600; }
+  .ret-neg { color: var(--accent-red);   font-weight: 600; }
+
+  .reason-tag {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .reason-sl  { background: rgba(255,51,85,0.12);   color: var(--accent-red);   border: 1px solid rgba(255,51,85,0.2); }
+  .reason-tp  { background: rgba(0,255,136,0.12);   color: var(--accent-green); border: 1px solid rgba(0,255,136,0.2); }
+  .reason-sig { background: rgba(0,136,255,0.12);   color: var(--accent-blue);  border: 1px solid rgba(0,136,255,0.2); }
+  .reason-end { background: rgba(122,143,168,0.1);  color: var(--text-muted);   border: 1px solid var(--border); }
+
+  /* ── Loading spinner ── */
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent-green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .lab-layout { flex-direction: column; height: auto; }
+    .lab-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar" id="topbar">
+  <div class="topbar-logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text">APEX TRADER</div>
+      <div class="logo-sub">STRATEGY LAB</div>
+    </div>
+  </div>
+  <div style="flex:1;"></div>
+  <div class="topbar-status">
+    <a href="/" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--text-muted);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent-blue)';this.style.color='var(--accent-blue)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">‹ DASHBOARD</a>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="lab-layout">
+
+  <!-- ── LEFT: Controls ── -->
+  <div class="lab-sidebar">
+    <div class="sidebar-header">BACKTEST PARAMETERS</div>
+
+    <!-- Symbol + Period + Interval -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">ASSET</div>
+      <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. AAPL, BTC-USD" value="AAPL" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+
+      <div class="ctrl-label" style="margin-top:6px;">PERIOD</div>
+      <select id="btPeriod" class="lab-input">
+        <option value="1y">1 Year</option>
+        <option value="2y" selected>2 Years</option>
+        <option value="5y">5 Years</option>
+        <option value="max">Max</option>
+      </select>
+
+      <div class="ctrl-label" style="margin-top:2px;">INTERVAL</div>
+      <select id="btInterval" class="lab-input" style="margin-bottom:0;">
+        <option value="1d" selected>Daily (1d)</option>
+        <option value="1wk">Weekly (1wk)</option>
+      </select>
+    </div>
+
+    <!-- Risk controls -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">RISK MANAGEMENT</div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="ctrl-name">Stop Loss</span>
+          <span class="ctrl-val" id="slVal">2.0%</span>
+        </div>
+        <input type="range" id="stopLoss" min="0.5" max="10" step="0.5" value="2.0"
+               oninput="document.getElementById('slVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="ctrl-name">Take Profit</span>
+          <span class="ctrl-val" id="tpVal">4.0%</span>
+        </div>
+        <input type="range" id="takeProfit" min="1" max="20" step="0.5" value="4.0"
+               oninput="document.getElementById('tpVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+
+      <div class="slider-row" style="margin-bottom:0;">
+        <div class="slider-header">
+          <span class="ctrl-name">Min Confidence</span>
+          <span class="ctrl-val" id="confVal">60%</span>
+        </div>
+        <input type="range" id="minConf" min="50" max="90" step="5" value="60"
+               oninput="document.getElementById('confVal').textContent=this.value+'%'">
+      </div>
+    </div>
+
+    <!-- RSI thresholds -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">RSI THRESHOLDS</div>
+
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="ctrl-name">Oversold entry</span>
+          <span class="ctrl-val" id="rsiOsVal">30</span>
+        </div>
+        <input type="range" id="rsiOversold" min="15" max="45" step="1" value="30"
+               oninput="document.getElementById('rsiOsVal').textContent=this.value">
+      </div>
+
+      <div class="slider-row" style="margin-bottom:0;">
+        <div class="slider-header">
+          <span class="ctrl-name">Overbought exit</span>
+          <span class="ctrl-val" id="rsiObVal">70</span>
+        </div>
+        <input type="range" id="rsiOverbought" min="55" max="85" step="1" value="70"
+               oninput="document.getElementById('rsiObVal').textContent=this.value">
+      </div>
+    </div>
+
+    <!-- Indicator toggles -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">INDICATORS</div>
+      <div class="ind-row">
+        <span class="ind-label">RSI (14)</span>
+        <label class="toggle"><input type="checkbox" id="togRsi" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-row">
+        <span class="ind-label">MACD (12/26/9)</span>
+        <label class="toggle"><input type="checkbox" id="togMacd" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-row">
+        <span class="ind-label">Bollinger Bands</span>
+        <label class="toggle"><input type="checkbox" id="togBb" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-row">
+        <span class="ind-label">MA Cross</span>
+        <label class="toggle"><input type="checkbox" id="togMa" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-row" style="margin-bottom:0;">
+        <span class="ind-label">Volume</span>
+        <label class="toggle"><input type="checkbox" id="togVol" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+    </div>
+
+    <!-- Run button -->
+    <div style="padding:14px 16px;">
+      <button class="btn-run" id="runBtn" onclick="runBacktest()">▶ RUN BACKTEST</button>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Results ── -->
+  <div class="lab-main" id="labMain">
+
+    <!-- Idle state -->
+    <div class="lab-idle" id="idleState">
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="4,36 16,20 24,28 34,12 44,18"/>
+        <circle cx="44" cy="18" r="2.5" fill="var(--accent-green)" stroke="none"/>
+      </svg>
+      <div style="color:var(--text-secondary);font-size:11px;letter-spacing:2px;">NO RESULTS YET</div>
+      <div style="font-size:9px;line-height:2;">Configure a strategy and press <strong style="color:var(--accent-green);">RUN BACKTEST</strong></div>
+    </div>
+
+    <!-- Loading state -->
+    <div class="lab-idle" id="loadingState" style="display:none;">
+      <div class="spinner"></div>
+      <div style="color:var(--text-secondary);font-size:10px;letter-spacing:1px;">RUNNING BACKTEST…</div>
+      <div id="loadingMsg" style="font-size:9px;color:var(--text-muted);">Fetching data and computing indicators</div>
+    </div>
+
+    <!-- Error state -->
+    <div class="lab-idle" id="errorState" style="display:none;">
+      <div style="font-size:22px;color:var(--accent-red);">✕</div>
+      <div style="color:var(--accent-red);font-size:10px;letter-spacing:1px;">BACKTEST FAILED</div>
+      <div id="errorMsg" style="font-size:9px;color:var(--text-muted);max-width:320px;line-height:1.8;"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsPanel" style="display:none;">
+
+      <!-- Context bar -->
+      <div style="padding:8px 20px;border-bottom:1px solid var(--border);display:flex;gap:20px;align-items:center;background:var(--bg-panel);flex-shrink:0;">
+        <span id="ctxSymbol" style="font-size:13px;font-weight:700;color:var(--accent-green);letter-spacing:2px;"></span>
+        <span id="ctxPeriod"  style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+        <span id="ctxTrades"  style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+        <span style="flex:1;"></span>
+        <span id="ctxWarning" style="font-size:8px;color:var(--accent-amber);letter-spacing:0.5px;"></span>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric-cell">
+          <div class="metric-label">TOTAL RETURN</div>
+          <div class="metric-value" id="mReturn">—</div>
+          <div class="metric-sub" id="mReturnSub">vs buy &amp; hold</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">WIN RATE</div>
+          <div class="metric-value" id="mWinRate">—</div>
+          <div class="metric-sub" id="mWinSub">—</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">PROFIT FACTOR</div>
+          <div class="metric-value" id="mPF">—</div>
+          <div class="metric-sub">&gt;1.5 considered good</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">SHARPE RATIO</div>
+          <div class="metric-value" id="mSharpe">—</div>
+          <div class="metric-sub">&gt;1.0 considered good</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">MAX DRAWDOWN</div>
+          <div class="metric-value" id="mDD">—</div>
+          <div class="metric-sub">peak-to-trough</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">AVG TRADE</div>
+          <div class="metric-value" id="mAvg">—</div>
+          <div class="metric-sub" id="mAvgSub">per trade</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">BEST TRADE</div>
+          <div class="metric-value pos" id="mBest">—</div>
+          <div class="metric-sub">single trade return</div>
+        </div>
+        <div class="metric-cell">
+          <div class="metric-label">WORST TRADE</div>
+          <div class="metric-value neg" id="mWorst">—</div>
+          <div class="metric-sub">single trade return</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <span class="chart-title">EQUITY CURVE — HISTORICAL SIMULATION</span>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--accent-green);"></div>
+              Strategy
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:rgba(122,143,168,0.6);"></div>
+              Buy &amp; Hold
+            </div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="equityChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Trade log -->
+      <div class="tradelog-section">
+        <div class="tradelog-header">
+          <span class="tradelog-title">TRADE LOG</span>
+          <span id="tradeCount" style="font-size:9px;color:var(--accent-amber);letter-spacing:1px;"></span>
+        </div>
+        <table class="trade-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ENTRY DATE</th>
+              <th>EXIT DATE</th>
+              <th>ENTRY PRICE</th>
+              <th>EXIT PRICE</th>
+              <th>RETURN</th>
+              <th>EXIT REASON</th>
+            </tr>
+          </thead>
+          <tbody id="tradeBody"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /resultsPanel -->
+  </div><!-- /lab-main -->
+</div><!-- /lab-layout -->
+
+<!-- EDUCATIONAL DISCLAIMER -->
+<div class="disclaimer-bar">
+  <strong>EDUCATIONAL USE ONLY</strong> &nbsp;|&nbsp;
+  Apex Trader is an educational tool. It is not investment advice. Backtested performance does not predict future results. All investment decisions are your own. Past returns shown are historical and would have been reduced by fees, taxes, and slippage that this simulator may not fully reflect.
+</div>
+
+<script>
+// ── Clock ────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-GB', { hour12: false });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── Chart instance ────────────────────────────────────────────────────────────
+let equityChart = null;
+
+function buildChart(labels, stratData, bahData, trades) {
+  const ctx = document.getElementById('equityChart').getContext('2d');
+
+  // Strategy gradient fill
+  const stratGrad = ctx.createLinearGradient(0, 0, 0, 280);
+  stratGrad.addColorStop(0,   'rgba(0,255,136,0.18)');
+  stratGrad.addColorStop(0.6, 'rgba(0,255,136,0.04)');
+  stratGrad.addColorStop(1,   'rgba(0,255,136,0)');
+
+  // Map trade entries/exits to scatter points
+  const equityMap = {};
+  labels.forEach((d, i) => { equityMap[d] = stratData[i]; });
+
+  const buyPoints  = [];
+  const sellPoints = [];
+  trades.forEach(t => {
+    const ey = equityMap[t.entry_date] ?? null;
+    const xy = equityMap[t.exit_date]  ?? null;
+    if (ey !== null) buyPoints.push({ x: t.entry_date, y: ey });
+    if (xy !== null) sellPoints.push({ x: t.exit_date,  y: xy });
+  });
+
+  if (equityChart) equityChart.destroy();
+
+  equityChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Strategy',
+          data: stratData,
+          borderColor: '#00ff88',
+          backgroundColor: stratGrad,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: '#00ff88',
+          fill: true,
+          tension: 0.15,
+          order: 2,
+        },
+        {
+          label: 'Buy & Hold',
+          data: bahData,
+          borderColor: 'rgba(122,143,168,0.5)',
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          pointHoverRadius: 3,
+          fill: false,
+          tension: 0.1,
+          order: 3,
+        },
+        {
+          label: 'Entry',
+          data: buyPoints,
+          type: 'scatter',
+          backgroundColor: '#00ff88',
+          borderColor: '#050608',
+          borderWidth: 1,
+          pointRadius: 5,
+          pointStyle: 'triangle',
+          rotation: 0,
+          order: 1,
+        },
+        {
+          label: 'Exit',
+          data: sellPoints,
+          type: 'scatter',
+          backgroundColor: '#ff3355',
+          borderColor: '#050608',
+          borderWidth: 1,
+          pointRadius: 5,
+          pointStyle: 'triangle',
+          rotation: 180,
+          order: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 600 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1117',
+          borderColor: '#2a3a52',
+          borderWidth: 1,
+          titleColor: '#7a8fa8',
+          bodyColor: '#e2e8f0',
+          titleFont: { family: 'IBM Plex Mono', size: 10 },
+          bodyFont:  { family: 'IBM Plex Mono', size: 10 },
+          padding: 10,
+          callbacks: {
+            title: (items) => items[0]?.label ?? '',
+            label: (item) => {
+              if (item.dataset.label === 'Entry') return '  ▲ Entry';
+              if (item.dataset.label === 'Exit')  return '  ▼ Exit';
+              const pct = ((item.parsed.y - 1) * 100).toFixed(2);
+              const sign = pct >= 0 ? '+' : '';
+              return `  ${item.dataset.label}: ${sign}${pct}%`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(30,42,58,0.4)', drawTicks: false },
+          border: { color: 'rgba(30,42,58,0.6)' },
+          ticks: {
+            color: '#3d5068',
+            maxTicksLimit: 10,
+            maxRotation: 0,
+            font: { family: 'IBM Plex Mono', size: 9 },
+            callback: (val, i, ticks) => {
+              const label = ticks[i]?.label ?? '';
+              // Show only YYYY-MM from the date string
+              return label ? label.slice(0, 7) : '';
+            },
+          },
+        },
+        y: {
+          grid: { color: 'rgba(30,42,58,0.4)', drawTicks: false },
+          border: { color: 'rgba(30,42,58,0.6)' },
+          ticks: {
+            color: '#3d5068',
+            font: { family: 'IBM Plex Mono', size: 9 },
+            callback: (v) => {
+              const pct = ((v - 1) * 100).toFixed(0);
+              return (pct >= 0 ? '+' : '') + pct + '%';
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function pctStr(v, decimals = 2) {
+  const sign = v >= 0 ? '+' : '';
+  return `${sign}${v.toFixed(decimals)}%`;
+}
+
+function colorClass(v) {
+  return v > 0 ? 'pos' : v < 0 ? 'neg' : 'neu';
+}
+
+function reasonClass(r) {
+  if (r === 'Stop Loss')   return 'reason-sl';
+  if (r === 'Take Profit') return 'reason-tp';
+  if (r === 'Signal')      return 'reason-sig';
+  return 'reason-end';
+}
+
+function setState(id) {
+  ['idleState','loadingState','errorState','resultsPanel'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? (id === 'resultsPanel' ? 'block' : 'flex') : 'none';
+  });
+}
+
+// ── Run backtest ──────────────────────────────────────────────────────────────
+async function runBacktest() {
+  const symbol   = document.getElementById('btSymbol').value.trim().toUpperCase();
+  const period   = document.getElementById('btPeriod').value;
+  const interval = document.getElementById('btInterval').value;
+  const sl       = document.getElementById('stopLoss').value;
+  const tp       = document.getElementById('takeProfit').value;
+  const conf     = document.getElementById('minConf').value;
+
+  const rsiOs = document.getElementById('rsiOversold').value;
+  const rsiOb = document.getElementById('rsiOverbought').value;
+
+  const rsiOn  = document.getElementById('togRsi').checked  ? 1 : 0;
+  const macdOn = document.getElementById('togMacd').checked ? 1 : 0;
+  const bbOn   = document.getElementById('togBb').checked   ? 1 : 0;
+  const maOn   = document.getElementById('togMa').checked   ? 1 : 0;
+  const volOn  = document.getElementById('togVol').checked  ? 1 : 0;
+
+  if (!symbol) {
+    document.getElementById('btSymbol').focus();
+    document.getElementById('btSymbol').style.borderColor = 'var(--accent-red)';
+    setTimeout(() => document.getElementById('btSymbol').style.borderColor = '', 1500);
+    return;
+  }
+
+  document.getElementById('runBtn').disabled = true;
+  setState('loadingState');
+
+  const params = new URLSearchParams({
+    symbol, period, interval,
+    stop_loss: sl, take_profit: tp, min_confidence: conf,
+    rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    rsi_on: rsiOn, macd_on: macdOn, bb_on: bbOn, ma_on: maOn, vol_on: volOn,
+  });
+
+  try {
+    const res  = await fetch(`/api/backtest?${params}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      document.getElementById('errorMsg').textContent = data.error || 'Unknown error';
+      setState('errorState');
+      return;
+    }
+
+    renderResults(data);
+  } catch (e) {
+    document.getElementById('errorMsg').textContent = 'Cannot reach server — ' + e.message;
+    setState('errorState');
+  } finally {
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+function renderResults(data) {
+  const { symbol, period, metrics, trades, equity_curve, bah_curve } = data;
+
+  // Context bar
+  document.getElementById('ctxSymbol').textContent = symbol;
+  document.getElementById('ctxPeriod').textContent = `Period: ${period}  ·  Daily bars`;
+  document.getElementById('ctxTrades').textContent = `${metrics.num_trades} trade${metrics.num_trades !== 1 ? 's' : ''}`;
+
+  const noTradeWarn = metrics.num_trades === 0
+    ? 'No signals fired — try lowering Min Confidence or enabling more indicators'
+    : '';
+  document.getElementById('ctxWarning').textContent = noTradeWarn;
+
+  // Buy-and-hold total return for comparison
+  const bahReturn = bah_curve.length
+    ? ((bah_curve[bah_curve.length - 1].equity - 1) * 100)
+    : 0;
+
+  // Metrics
+  const m = metrics;
+
+  const setMetric = (id, val, cls) => {
+    const el = document.getElementById(id);
+    el.textContent = val;
+    el.className   = 'metric-value' + (cls ? ' ' + cls : '');
+  };
+
+  setMetric('mReturn',  pctStr(m.total_return_pct), colorClass(m.total_return_pct));
+  document.getElementById('mReturnSub').textContent = `B&H: ${pctStr(bahReturn)}`;
+
+  setMetric('mWinRate', m.win_rate.toFixed(1) + '%',
+    m.win_rate >= 55 ? 'pos' : m.win_rate >= 45 ? 'neu' : 'neg');
+  document.getElementById('mWinSub').textContent =
+    `${trades.filter(t => t.return_pct > 0).length}W / ${trades.filter(t => t.return_pct <= 0).length}L`;
+
+  setMetric('mPF',     m.profit_factor.toFixed(2), m.profit_factor >= 1.5 ? 'pos' : m.profit_factor >= 1 ? 'neu' : 'neg');
+  setMetric('mSharpe', m.sharpe_ratio.toFixed(2),  m.sharpe_ratio >= 1 ? 'pos' : m.sharpe_ratio >= 0 ? 'neu' : 'neg');
+  setMetric('mDD',    '-' + m.max_drawdown_pct.toFixed(2) + '%', m.max_drawdown_pct > 20 ? 'neg' : m.max_drawdown_pct > 10 ? 'neu' : 'pos');
+  setMetric('mAvg',   pctStr(m.avg_trade_pct), colorClass(m.avg_trade_pct));
+  setMetric('mBest',  pctStr(m.best_trade_pct));
+  setMetric('mWorst', pctStr(m.worst_trade_pct));
+
+  // Chart
+  const labels   = equity_curve.map(p => p.date.slice(0, 10));
+  const stratVals = equity_curve.map(p => p.equity);
+  const bahLabels = bah_curve.map(p => p.date.slice(0, 10));
+  const bahVals   = bah_curve.map(p => p.equity);
+
+  // Align bah to strategy labels (bah may differ by one warmup bar)
+  const bahMap = {};
+  bahLabels.forEach((d, i) => { bahMap[d] = bahVals[i]; });
+  const bahAligned = labels.map(d => bahMap[d] ?? null);
+
+  buildChart(labels, stratVals, bahAligned, trades);
+
+  // Trade log
+  document.getElementById('tradeCount').textContent = `${trades.length} TRADE${trades.length !== 1 ? 'S' : ''}`;
+
+  const tbody = document.getElementById('tradeBody');
+  if (trades.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
+  } else {
+    tbody.innerHTML = trades.map((t, i) => `
+      <tr>
+        <td style="color:var(--text-muted);">${i + 1}</td>
+        <td>${t.entry_date.slice(0, 10)}</td>
+        <td>${t.exit_date.slice(0, 10)}</td>
+        <td>${fmtPrice(t.entry_price)}</td>
+        <td>${fmtPrice(t.exit_price)}</td>
+        <td class="${t.return_pct >= 0 ? 'ret-pos' : 'ret-neg'}">${pctStr(t.return_pct)}</td>
+        <td><span class="reason-tag ${reasonClass(t.exit_reason)}">${t.exit_reason.toUpperCase()}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  setState('resultsPanel');
+}
+
+function fmtPrice(p) {
+  return p >= 100 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+}
+
+// Allow Enter key in symbol field
+document.getElementById('btSymbol').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runBacktest();
+});
+</script>
+</body>
+</html>
