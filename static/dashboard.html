@@ -56,6 +56,10 @@
         <input type="text" id="regUsername" class="login-input" placeholder="Choose a username" autocomplete="username">
       </div>
       <div class="login-field">
+        <div class="login-field-label">EMAIL ADDRESS</div>
+        <input type="email" id="regEmail" class="login-input" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="login-field">
         <div class="login-field-label">PASSWORD</div>
         <input type="password" id="regPassword" class="login-input" placeholder="Minimum 6 characters" autocomplete="new-password">
       </div>
@@ -91,7 +95,7 @@
       <div class="status-dot inactive" id="dataDot"></div>
       <span id="dataStatus">SIM DATA</span>
     </div>
-    <div class="status-pill" id="userPill">
+    <div class="status-pill" id="userPill" style="cursor:default;" onclick="userPillClick()" title="View profile">
       <span style="color:var(--accent-cyan);font-size:10px;line-height:1;">⬡</span>
       <span id="usernameDisplay" style="color:var(--text-secondary);font-size:9px;letter-spacing:1px;">GUEST</span>
     </div>
@@ -1484,6 +1488,14 @@ function updateUserDisplay() {
   document.getElementById('usernameDisplay').textContent = (currentUser || 'GUEST').toUpperCase();
   document.getElementById('signInBtn').style.display = currentUser ? 'none' : 'inline-block';
   document.getElementById('logoutBtn').style.display  = currentUser ? 'inline-block' : 'none';
+  const pill = document.getElementById('userPill');
+  pill.style.cursor = currentUser ? 'pointer' : 'default';
+  pill.title = currentUser ? 'View profile' : '';
+}
+
+function userPillClick() {
+  if (currentUser) window.location.href = '/profile';
+  else document.getElementById('loginOverlay').style.display = 'flex';
 }
 
 function showDashboard() {
@@ -1542,12 +1554,14 @@ async function doLogin() {
 async function doRegister() {
   const btn = document.getElementById('registerSubmitBtn');
   const username = document.getElementById('regUsername').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   const confirm  = document.getElementById('regConfirm').value;
   const errEl    = document.getElementById('registerError');
 
   errEl.style.display = 'none';
   if (!username || !password) { showAuthError(errEl, 'Enter username and password'); return; }
+  if (!email)                 { showAuthError(errEl, 'Email address required'); return; }
   if (password !== confirm)   { showAuthError(errEl, 'Passwords do not match'); return; }
   if (password.length < 6)    { showAuthError(errEl, 'Password must be at least 6 characters'); return; }
 
@@ -1557,7 +1571,7 @@ async function doRegister() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, email, password }),
     });
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }

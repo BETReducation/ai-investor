@@ -13,6 +13,7 @@ try:
 except ImportError:
     psycopg2 = None
 from datetime import timedelta
+from werkzeug.utils import secure_filename
 
 from api.indicators import calculate_all
 from api.signals import score_signals
@@ -31,6 +32,7 @@ _allowed_origins = (
 )
 
 app.config.update(
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(_is_production),
@@ -46,6 +48,9 @@ login_manager.session_protection = "basic"
 
 USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads", "avatars")
+ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def _db_conn():
@@ -68,6 +73,7 @@ def _ensure_table() -> None:
             )
         """)
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'basic'")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
@@ -119,12 +125,13 @@ def tier_required(min_tier: str):
 def _load_users() -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT username, password_hash, preferences, tier FROM users")
+            cur.execute("SELECT username, password_hash, preferences, tier, profile FROM users")
             return {
                 row["username"]: {
                     "password_hash": row["password_hash"],
                     "preferences":   row["preferences"] or {},
                     "tier":          row.get("tier", "basic"),
+                    "profile":       row.get("profile") or {},
                 }
                 for row in cur.fetchall()
             }
@@ -139,13 +146,14 @@ def _save_users(users: dict) -> None:
         with _db_conn() as conn, conn.cursor() as cur:
             for username, data in users.items():
                 cur.execute("""
-                    INSERT INTO users (username, password_hash, preferences, tier)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO users (username, password_hash, preferences, tier, profile)
+                    VALUES (%s, %s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE
                         SET password_hash = EXCLUDED.password_hash,
                             preferences   = EXCLUDED.preferences,
-                            tier          = EXCLUDED.tier
-                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic")))
+                            tier          = EXCLUDED.tier,
+                            profile       = EXCLUDED.profile
+                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic"), json.dumps(data.get("profile", {}))))
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
@@ -202,6 +210,11 @@ def index():
     return send_from_directory("static", "dashboard.html")
 
 
+@app.route("/profile")
+def profile_page():
+    return send_from_directory("static", "profile.html")
+
+
 # ── Auth endpoints ───────────────────────────────────────────────────────────
 
 @app.route("/api/register", methods=["POST"])
@@ -209,9 +222,12 @@ def api_register():
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
+    email    = data.get("email", "").strip()
 
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
+    if not email:
+        return jsonify({"error": "Email address required"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
@@ -220,7 +236,18 @@ def api_register():
         return jsonify({"error": "Username already taken"}), 409
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode("utf-8")
-    users[username] = {"password_hash": pw_hash, "preferences": {}, "tier": "basic"}
+    users[username] = {
+        "password_hash": pw_hash,
+        "preferences": {},
+        "tier": "basic",
+        "profile": {
+            "email": email,
+            "display_name": username,
+            "bio": "",
+            "investor_type": "beginner",
+            "profile_picture": "",
+        },
+    }
     _save_users(users)
 
     login_user(User(username, "basic"), remember=True)
@@ -308,6 +335,89 @@ def load_preferences():
         "username": current_user.id,
         "preferences": user_data.get("preferences", {}),
     })
+
+
+@app.route("/api/profile", methods=["GET"])
+@login_required
+def api_get_profile():
+    users = _load_users()
+    user_data = users.get(current_user.id, {})
+    profile = user_data.get("profile", {})
+    return jsonify({
+        "username":       current_user.id,
+        "tier":           user_data.get("tier", "basic"),
+        "email":          profile.get("email", ""),
+        "display_name":   profile.get("display_name", current_user.id),
+        "bio":            profile.get("bio", ""),
+        "investor_type":  profile.get("investor_type", "beginner"),
+        "profile_picture": profile.get("profile_picture", ""),
+    })
+
+
+@app.route("/api/profile/update", methods=["POST"])
+@login_required
+def api_update_profile():
+    data = request.get_json() or {}
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    profile = users[current_user.id].get("profile", {})
+    for field in ("email", "display_name", "bio", "investor_type"):
+        if field in data:
+            profile[field] = str(data[field]).strip()
+    users[current_user.id]["profile"] = profile
+    _save_users(users)
+    return jsonify({"success": True, "profile": profile})
+
+
+@app.route("/api/profile/avatar", methods=["POST"])
+@login_required
+def api_upload_avatar():
+    if "avatar" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["avatar"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
+    filename = secure_filename(f"{current_user.id}.{ext}")
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
+    avatar_url = f"/static/uploads/avatars/{filename}"
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    profile = users[current_user.id].get("profile", {})
+    profile["profile_picture"] = avatar_url
+    users[current_user.id]["profile"] = profile
+    _save_users(users)
+    return jsonify({"success": True, "avatar_url": avatar_url})
+
+
+@app.route("/api/subscription/cancel", methods=["POST"])
+@login_required
+def api_cancel_subscription():
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    users[current_user.id]["tier"] = "basic"
+    _save_users(users)
+    return jsonify({"success": True, "message": "Subscription cancelled. You have been moved to the Basic (free) plan."})
+
+
+@app.route("/api/account/cancel", methods=["POST"])
+@login_required
+def api_cancel_account():
+    username = current_user.id
+    if username == "admin":
+        return jsonify({"error": "Cannot delete the admin account"}), 403
+    users = _load_users()
+    if username not in users:
+        return jsonify({"error": "User not found"}), 404
+    del users[username]
+    _save_users(users)
+    logout_user()
+    return jsonify({"success": True})
 
 
 # ── Market data endpoints (public) ───────────────────────────────────────────
