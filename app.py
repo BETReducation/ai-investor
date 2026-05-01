@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from functools import wraps
 import yfinance as yf
 import pandas as pd
 import bcrypt
@@ -62,25 +63,31 @@ def _ensure_table() -> None:
             CREATE TABLE IF NOT EXISTS users (
                 username      TEXT PRIMARY KEY,
                 password_hash TEXT NOT NULL,
-                preferences   JSONB NOT NULL DEFAULT '{}'
+                preferences   JSONB NOT NULL DEFAULT '{}',
+                tier          TEXT NOT NULL DEFAULT 'basic'
             )
         """)
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'basic'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
+
+TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
 
 
 # ── User model ───────────────────────────────────────────────────────────────
 
 class User(UserMixin):
-    def __init__(self, username: str):
+    def __init__(self, username: str, tier: str = "basic"):
         self.id = username
+        self.tier = tier
 
 
 @login_manager.user_loader
 def load_user(username: str):
-    if username in _load_users():
-        return User(username)
+    users = _load_users()
+    if username in users:
+        return User(username, users[username].get("tier", "basic"))
     return None
 
 
@@ -89,16 +96,35 @@ def unauthorized():
     return jsonify({"error": "Authentication required"}), 401
 
 
+def tier_required(min_tier: str):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return jsonify({"error": "Login required", "tier_required": min_tier}), 401
+            user_rank = TIER_RANKS.get(getattr(current_user, "tier", "basic"), 0)
+            if user_rank < TIER_RANKS.get(min_tier, 0):
+                return jsonify({
+                    "error": "Subscription upgrade required",
+                    "tier_required": min_tier,
+                    "current_tier": getattr(current_user, "tier", "basic"),
+                }), 403
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
+
 # ── User-store helpers ───────────────────────────────────────────────────────
 
 def _load_users() -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT username, password_hash, preferences FROM users")
+            cur.execute("SELECT username, password_hash, preferences, tier FROM users")
             return {
                 row["username"]: {
                     "password_hash": row["password_hash"],
                     "preferences":   row["preferences"] or {},
+                    "tier":          row.get("tier", "basic"),
                 }
                 for row in cur.fetchall()
             }
@@ -113,12 +139,13 @@ def _save_users(users: dict) -> None:
         with _db_conn() as conn, conn.cursor() as cur:
             for username, data in users.items():
                 cur.execute("""
-                    INSERT INTO users (username, password_hash, preferences)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO users (username, password_hash, preferences, tier)
+                    VALUES (%s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE
                         SET password_hash = EXCLUDED.password_hash,
-                            preferences   = EXCLUDED.preferences
-                """, (username, data["password_hash"], json.dumps(data.get("preferences", {}))))
+                            preferences   = EXCLUDED.preferences,
+                            tier          = EXCLUDED.tier
+                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic")))
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
@@ -144,14 +171,14 @@ def _ensure_default_user() -> None:
             if cur.fetchone():
                 return
         pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
-        _save_users({"admin": {"password_hash": pw_hash, "preferences": {}}})
-        print("\n  ✓ Created default user  →  username: admin  |  password: apex2024\n")
+        _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
+        print("\n  ✓ Created default user  →  username: admin  |  password: apex2024  |  tier: power_user\n")
         return
     if os.path.exists(USERS_FILE):
         return
     pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
-    _save_users({"admin": {"password_hash": pw_hash, "preferences": {}}})
-    print("\n  ✓ Created default user  →  username: admin  |  password: apex2024\n")
+    _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
+    print("\n  ✓ Created default user  →  username: admin  |  password: apex2024  |  tier: power_user\n")
 
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
@@ -193,11 +220,11 @@ def api_register():
         return jsonify({"error": "Username already taken"}), 409
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode("utf-8")
-    users[username] = {"password_hash": pw_hash, "preferences": {}}
+    users[username] = {"password_hash": pw_hash, "preferences": {}, "tier": "basic"}
     _save_users(users)
 
-    login_user(User(username), remember=True)
-    return jsonify({"success": True, "username": username, "preferences": {}})
+    login_user(User(username, "basic"), remember=True)
+    return jsonify({"success": True, "username": username, "tier": "basic", "preferences": {}})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -216,10 +243,11 @@ def api_login():
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    login_user(User(username), remember=True)
+    login_user(User(username, user_data.get("tier", "basic")), remember=True)
     return jsonify({
         "success": True,
         "username": username,
+        "tier": user_data.get("tier", "basic"),
         "preferences": user_data.get("preferences", {}),
     })
 
@@ -229,6 +257,35 @@ def api_login():
 def api_logout():
     logout_user()
     return jsonify({"success": True})
+
+
+@app.route("/api/me", methods=["GET"])
+def api_me():
+    if not current_user.is_authenticated:
+        return jsonify({"authenticated": False, "username": None, "tier": "basic"})
+    return jsonify({
+        "authenticated": True,
+        "username": current_user.id,
+        "tier": getattr(current_user, "tier", "basic"),
+    })
+
+
+@app.route("/api/admin/set-tier", methods=["POST"])
+@login_required
+def admin_set_tier():
+    if current_user.id != "admin":
+        return jsonify({"error": "Admin only"}), 403
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    new_tier = data.get("tier", "").strip()
+    if new_tier not in TIER_RANKS:
+        return jsonify({"error": f"Invalid tier. Valid options: {list(TIER_RANKS.keys())}"}), 400
+    users = _load_users()
+    if username not in users:
+        return jsonify({"error": "User not found"}), 404
+    users[username]["tier"] = new_tier
+    _save_users(users)
+    return jsonify({"success": True, "username": username, "tier": new_tier})
 
 
 @app.route("/api/save-preferences", methods=["POST"])
@@ -302,6 +359,7 @@ def indicators():
 
 
 @app.route("/api/signals", methods=["GET"])
+@tier_required("signal_tester")
 def signals():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "6mo")
@@ -326,7 +384,7 @@ def signals():
                 return jsonify({"error": f"Invalid value for threshold '{key}'"}), 400
 
     calc_params = {}
-    int_calc_keys = {"macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}
+    int_calc_keys = {"rsi_length": 14, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}
     float_calc_keys = {"bb_std": 2.0}
     for key, default in int_calc_keys.items():
         val = request.args.get(key)
@@ -393,7 +451,7 @@ def backtest():
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
 
     calc_params = {}
-    for key in {"macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}:
+    for key in ["rsi_length", "macd_fast", "macd_slow", "macd_signal", "bb_length", "ema_short", "ema_long"]:
         val = request.args.get(key)
         if val is not None:
             try:

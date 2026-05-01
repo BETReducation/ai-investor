@@ -36,6 +36,7 @@ def calculate_volume_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_all(
     df: pd.DataFrame,
+    rsi_length: int = 14,
     macd_fast: int = 12,
     macd_slow: int = 26,
     macd_signal: int = 9,
@@ -44,7 +45,7 @@ def calculate_all(
     ema_short: int = 9,
     ema_long: int = 21,
 ) -> dict:
-    rsi = calculate_rsi(df)
+    rsi = calculate_rsi(df, length=rsi_length)
     macd = calculate_macd(df, fast=macd_fast, slow=macd_slow, signal=macd_signal)
     bbands = calculate_bollinger_bands(df, length=bb_length, std=bb_std)
     mas = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)

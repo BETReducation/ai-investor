@@ -360,7 +360,19 @@
   </div>
 
   <!-- RIGHT PANEL: Alerts -->
-  <div class="panel" id="rightPanel">
+  <div class="panel" id="rightPanel" style="position:relative;">
+
+    <!-- Tier lock overlay — hidden when user has signal_tester+ -->
+    <div id="tierLock" style="display:none;position:absolute;inset:0;background:rgba(5,6,8,0.88);backdrop-filter:blur(3px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;">
+      <div style="font-size:24px;line-height:1;">&#128274;</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent-amber);">SIGNAL TESTER REQUIRED</div>
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.9;max-width:240px;">Live signal generation requires a <strong style="color:var(--text-secondary);">Signal Tester</strong> plan (£5/mo). Strategy Lab backtesting is free for all users.</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        <button onclick="document.getElementById('loginOverlay').style.display='flex'" style="padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:600;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);cursor:pointer;border-radius:2px;">LOGIN / UPGRADE</button>
+        <a href="/static/strategy-lab.html" style="font-size:9px;color:var(--text-muted);text-decoration:underline;letter-spacing:1px;">Go to free backtester →</a>
+      </div>
+    </div>
+
     <div class="panel-header">
       <div class="panel-title">STRATEGY OUTPUT</div>
       <div class="panel-badge" id="alertBadge">0 PENDING</div>
@@ -394,14 +406,14 @@
 <div class="modal-overlay" id="modal" style="display:none;" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title" id="modalTitle">CONFIRM ORDER</div>
+      <div class="modal-title" id="modalTitle">REVIEW SIGNAL</div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body">
       <div class="modal-order-summary" id="modalSummary"></div>
       <div style="font-size:9px;color:var(--text-muted);line-height:1.8;margin-top:8px;" id="modalWarning"></div>
       <div class="modal-footer">
-        <button class="btn-confirm" id="modalConfirm" onclick="confirmTrade()">CONFIRM TRADE</button>
+        <button class="btn-confirm" id="modalConfirm" onclick="confirmTrade()">LOG SIMULATION</button>
         <button class="btn-cancel" onclick="closeModal()">CANCEL</button>
       </div>
     </div>
@@ -526,6 +538,40 @@ let watchlistEnabled = {};
 let watchlistEditMode = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
 
+// --- TIER SYSTEM ---
+const TIER_RANKS = { basic: 0, signal_tester: 1, power_user: 2 };
+let userTier = 'basic';
+let userAuthenticated = false;
+
+function hasAccess(minTier) {
+  return (TIER_RANKS[userTier] || 0) >= (TIER_RANKS[minTier] || 0);
+}
+
+async function checkTier() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    const data = await res.json();
+    userAuthenticated = data.authenticated || false;
+    userTier = data.tier || 'basic';
+  } catch (_) {
+    userTier = 'basic';
+    userAuthenticated = false;
+  }
+  applyTierUI();
+}
+
+function applyTierUI() {
+  const lock = document.getElementById('tierLock');
+  const btn  = document.getElementById('engineBtn');
+  if (hasAccess('signal_tester')) {
+    lock.style.display = 'none';
+    if (btn) btn.disabled = false;
+  } else {
+    lock.style.display = 'flex';
+    if (btn) btn.disabled = true;
+  }
+}
+
 // --- INIT ---
 function init() {
   renderWatchlist();
@@ -534,6 +580,7 @@ function init() {
   initChart();
   updateTicker();
   setupToggles();
+  checkTier();
   addLog('info', 'SYSTEM', 'APEX TRADER Strategy Lab — Live API Mode');
   if (currentUser) addLog('info', 'AUTH', `Signed in as: ${currentUser.toUpperCase()}`);
   else             addLog('info', 'AUTH', 'Guest mode — sign in to save preferences');
@@ -750,6 +797,8 @@ function toggleEngine() {
 }
 
 async function startEngine() {
+  await checkTier();
+  if (!hasAccess('signal_tester')) return;
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine stop';
@@ -1089,7 +1138,7 @@ function renderAlerts() {
         </div>
         <div class="alert-actions">
           <button class="btn-execute ${a.type === 'BUY' ? 'btn-buy' : 'btn-sell-exec'}" onclick="openModal('${a.id}')">
-            ${a.type === 'BUY' ? '▲ EXECUTE BUY' : '▼ EXECUTE SELL'}
+            ${a.type === 'BUY' ? '▲ SIMULATE BUY' : '▼ SIMULATE SELL'}
           </button>
           <button class="btn-skip" onclick="dismissAlert('${a.id}')">SKIP</button>
         </div>
@@ -1109,7 +1158,7 @@ function openModal(alertId) {
   const profit = Math.abs(a.target - a.price) * a.qty;
   const risk = Math.abs(a.price - a.sl) * a.qty;
 
-  document.getElementById('modalTitle').textContent = `CONFIRM ${a.type} ORDER — ${a.sym}`;
+  document.getElementById('modalTitle').textContent = `REVIEW ${a.type} SIGNAL — ${a.sym}`;
   document.getElementById('modalSummary').innerHTML = `
     <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
     <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
@@ -1148,7 +1197,7 @@ function confirmTrade() {
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-  addLog('signal', 'ORDER', `${a.type} EXECUTED: ${a.sym} × ${a.qty.toFixed(4)} @ $${formatPrice(a.price, a.sym)}`);
+  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ $${formatPrice(a.price, a.sym)}`);
   addLog('info', 'ORDER', `Target: $${formatPrice(a.target, a.sym)} | Stop: $${formatPrice(a.sl, a.sym)}`);
 }
 
@@ -1477,6 +1526,9 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Login failed'); return; }
     currentUser = data.username;
+    userTier = data.tier || 'basic';
+    userAuthenticated = true;
+    applyTierUI();
     if (remember) localStorage.setItem('apexSession', '1');
     applyPreferences(data.preferences || {});
     showDashboard();
@@ -1510,6 +1562,9 @@ async function doRegister() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }
     currentUser = data.username;
+    userTier = data.tier || 'basic';
+    userAuthenticated = true;
+    applyTierUI();
     localStorage.setItem('apexSession', '1');
     applyPreferences({});
     showDashboard();

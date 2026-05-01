@@ -134,13 +134,74 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
 
   .ind-label {
     font-size: 10px;
     color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    flex: 1;
+    padding: 2px 0;
   }
+
+  .ind-label:hover { color: var(--accent-blue); }
+
+  .ind-chevron {
+    font-size: 7px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .ind-params {
+    display: none;
+    background: rgba(13,17,23,0.6);
+    border-left: 2px solid var(--accent-blue);
+    margin: 0 0 6px 4px;
+    padding: 6px 8px;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .ind-params.open { display: block; }
+
+  .param-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+
+  .param-row:last-child { margin-bottom: 0; }
+
+  .param-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+
+  .param-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 6px;
+    width: 60px;
+    text-align: right;
+    outline: none;
+    border-radius: 2px;
+    -moz-appearance: textfield;
+  }
+
+  .param-input::-webkit-inner-spin-button,
+  .param-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .param-input:focus { border-color: var(--accent-blue); }
 
   .toggle {
     position: relative;
@@ -473,51 +534,116 @@
       </div>
     </div>
 
-    <!-- RSI thresholds -->
+    <!-- Indicators with expandable params -->
     <div class="ctrl-section">
-      <div class="ctrl-label">RSI THRESHOLDS</div>
+      <div class="ctrl-label">INDICATORS — click name to configure</div>
 
-      <div class="slider-row">
-        <div class="slider-header">
-          <span class="ctrl-name">Oversold entry</span>
-          <span class="ctrl-val" id="rsiOsVal">30</span>
-        </div>
-        <input type="range" id="rsiOversold" min="15" max="45" step="1" value="30"
-               oninput="document.getElementById('rsiOsVal').textContent=this.value">
-      </div>
-
-      <div class="slider-row" style="margin-bottom:0;">
-        <div class="slider-header">
-          <span class="ctrl-name">Overbought exit</span>
-          <span class="ctrl-val" id="rsiObVal">70</span>
-        </div>
-        <input type="range" id="rsiOverbought" min="55" max="85" step="1" value="70"
-               oninput="document.getElementById('rsiObVal').textContent=this.value">
-      </div>
-    </div>
-
-    <!-- Indicator toggles -->
-    <div class="ctrl-section">
-      <div class="ctrl-label">INDICATORS</div>
+      <!-- RSI -->
       <div class="ind-row">
-        <span class="ind-label">RSI (14)</span>
+        <span class="ind-label" onclick="toggleIndSettings('rsi')">
+          <span id="rsiLabel">RSI (14)</span>
+          <span class="ind-chevron" id="rsiChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togRsi" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
+      <div class="ind-params" id="rsiParams">
+        <div class="param-row">
+          <span class="param-label">Length</span>
+          <input type="number" class="param-input" id="rsiLength" value="14" min="2" max="200"
+                 oninput="document.getElementById('rsiLabel').textContent='RSI ('+this.value+')'">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Oversold level</span>
+          <input type="number" class="param-input" id="rsiOversold" value="30" min="10" max="45">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Overbought level</span>
+          <input type="number" class="param-input" id="rsiOverbought" value="70" min="55" max="90">
+        </div>
+      </div>
+
+      <!-- MACD -->
       <div class="ind-row">
-        <span class="ind-label">MACD (12/26/9)</span>
+        <span class="ind-label" onclick="toggleIndSettings('macd')">
+          <span id="macdLabel">MACD (12/26/9)</span>
+          <span class="ind-chevron" id="macdChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togMacd" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
+      <div class="ind-params" id="macdParams">
+        <div class="param-row">
+          <span class="param-label">Fast period</span>
+          <input type="number" class="param-input" id="macdFast" value="12" min="2" max="50"
+                 oninput="updateMacdLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Slow period</span>
+          <input type="number" class="param-input" id="macdSlow" value="26" min="5" max="200"
+                 oninput="updateMacdLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Signal period</span>
+          <input type="number" class="param-input" id="macdSignal" value="9" min="1" max="50"
+                 oninput="updateMacdLabel()">
+        </div>
+      </div>
+
+      <!-- Bollinger Bands -->
       <div class="ind-row">
-        <span class="ind-label">Bollinger Bands</span>
+        <span class="ind-label" onclick="toggleIndSettings('bb')">
+          <span id="bbLabel">Bollinger Bands (20, 2.0)</span>
+          <span class="ind-chevron" id="bbChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togBb" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
+      <div class="ind-params" id="bbParams">
+        <div class="param-row">
+          <span class="param-label">Length</span>
+          <input type="number" class="param-input" id="bbLength" value="20" min="2" max="200"
+                 oninput="updateBbLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Std dev multiplier</span>
+          <input type="number" class="param-input" id="bbStd" value="2.0" min="0.5" max="4.0" step="0.1"
+                 oninput="updateBbLabel()">
+        </div>
+      </div>
+
+      <!-- MA Cross -->
       <div class="ind-row">
-        <span class="ind-label">MA Cross</span>
+        <span class="ind-label" onclick="toggleIndSettings('ma')">
+          <span id="maLabel">MA Cross (EMA 9/21)</span>
+          <span class="ind-chevron" id="maChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togMa" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
+      <div class="ind-params" id="maParams">
+        <div class="param-row">
+          <span class="param-label">EMA short period</span>
+          <input type="number" class="param-input" id="emaShort" value="9" min="2" max="50"
+                 oninput="updateMaLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">EMA long period</span>
+          <input type="number" class="param-input" id="emaLong" value="21" min="5" max="200"
+                 oninput="updateMaLabel()">
+        </div>
+      </div>
+
+      <!-- Volume -->
       <div class="ind-row" style="margin-bottom:0;">
-        <span class="ind-label">Volume</span>
+        <span class="ind-label" onclick="toggleIndSettings('vol')">
+          <span id="volLabel">Volume (surge ×1.5)</span>
+          <span class="ind-chevron" id="volChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togVol" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="volParams" style="margin-bottom:0;">
+        <div class="param-row">
+          <span class="param-label">Surge multiplier</span>
+          <input type="number" class="param-input" id="volSurge" value="1.5" min="1.0" max="10.0" step="0.1"
+                 oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
+        </div>
       </div>
     </div>
 
@@ -840,6 +966,33 @@ function setState(id) {
   });
 }
 
+// ── Label updaters ────────────────────────────────────────────────────────────
+function updateMacdLabel() {
+  const f = document.getElementById('macdFast').value;
+  const s = document.getElementById('macdSlow').value;
+  const g = document.getElementById('macdSignal').value;
+  document.getElementById('macdLabel').textContent = `MACD (${f}/${s}/${g})`;
+}
+
+function updateBbLabel() {
+  const l = document.getElementById('bbLength').value;
+  const d = parseFloat(document.getElementById('bbStd').value).toFixed(1);
+  document.getElementById('bbLabel').textContent = `Bollinger Bands (${l}, ${d})`;
+}
+
+function updateMaLabel() {
+  const s = document.getElementById('emaShort').value;
+  const l = document.getElementById('emaLong').value;
+  document.getElementById('maLabel').textContent = `MA Cross (EMA ${s}/${l})`;
+}
+
+function toggleIndSettings(id) {
+  const panel = document.getElementById(id + 'Params');
+  const chevron = document.getElementById(id + 'Chevron');
+  const open = panel.classList.toggle('open');
+  if (chevron) chevron.style.transform = open ? 'rotate(90deg)' : '';
+}
+
 // ── Run backtest ──────────────────────────────────────────────────────────────
 async function runBacktest() {
   const symbol   = document.getElementById('btSymbol').value.trim().toUpperCase();
@@ -849,8 +1002,17 @@ async function runBacktest() {
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
 
-  const rsiOs = document.getElementById('rsiOversold').value;
-  const rsiOb = document.getElementById('rsiOverbought').value;
+  const rsiLength = parseInt(document.getElementById('rsiLength').value)     || 14;
+  const rsiOs     = parseInt(document.getElementById('rsiOversold').value)   || 30;
+  const rsiOb     = parseInt(document.getElementById('rsiOverbought').value) || 70;
+  const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
+  const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
+  const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
+  const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
+  const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
+  const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
+  const emaLong   = parseInt(document.getElementById('emaLong').value)       || 21;
+  const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
 
   const rsiOn  = document.getElementById('togRsi').checked  ? 1 : 0;
   const macdOn = document.getElementById('togMacd').checked ? 1 : 0;
@@ -871,7 +1033,11 @@ async function runBacktest() {
   const params = new URLSearchParams({
     symbol, period, interval,
     stop_loss: sl, take_profit: tp, min_confidence: conf,
-    rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    rsi_length: rsiLength, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
+    bb_length: bbLength, bb_std: bbStd,
+    ema_short: emaShort, ema_long: emaLong,
+    volume_surge: volSurge,
     rsi_on: rsiOn, macd_on: macdOn, bb_on: bbOn, ma_on: maOn, vol_on: volOn,
   });
 
