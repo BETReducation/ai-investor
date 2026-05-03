@@ -1368,7 +1368,7 @@
     .topbar-logo .logo-sub { display: none; }
     .topbar-ticker-tape    { display: none; }
     .topbar-status         { gap: 8px; }
-    .topbar-status > *:not(#engineBtn):not(#engineDot):not(#engineStatus) { display: none; }
+    .topbar-status > *:not(#engineBtn):not(#engineDot):not(#engineStatus):not(.theme-toggle):not(#clock) { display: none; }
 
     .layout {
       flex-direction: column;
@@ -1518,5 +1518,59 @@
 
   .signin-btn:hover {
     background: rgba(0,255,136,0.1);
+  }
+
+  /* ── THEME TOGGLE BUTTON ── */
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 14px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+  }
+
+  /* ── LIGHT THEME ── */
+  [data-theme="light"] {
+    --bg-primary: #f5f7fa;
+    --bg-secondary: #eef0f5;
+    --bg-panel: #f0f2f7;
+    --bg-card: #ffffff;
+    --bg-hover: #e4e8f0;
+    --border: #d0d8e8;
+    --border-bright: #b8c4d8;
+    --text-primary: #0f1c2e;
+    --text-secondary: #3d5470;
+    --text-muted: #7a90aa;
+    --accent-green: #00874a;
+    --accent-green-dim: #006638;
+    --accent-red: #d0122b;
+    --accent-red-dim: #a80f22;
+    --accent-blue: #0066cc;
+    --accent-blue-dim: #0050a0;
+    --accent-amber: #c07800;
+    --accent-cyan: #007799;
+    --accent-purple: #7722cc;
+    --signal-buy: #00874a;
+    --signal-sell: #d0122b;
+    --signal-hold: #c07800;
+  }
+
+  [data-theme="light"] body::before {
+    display: none;
   }
 
