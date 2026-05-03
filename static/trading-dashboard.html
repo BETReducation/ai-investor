@@ -2781,15 +2781,16 @@ function loadTvChart(tvSym) {
   const container = document.getElementById('tvChart');
   container.innerHTML = '';
   const mobile = window.innerWidth <= 768;
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
   tvWidget = new TradingView.widget({
     autosize: true,
     symbol: tvSym,
     interval: 'D',
     timezone: 'Etc/UTC',
-    theme: 'dark',
+    theme: dark ? 'dark' : 'light',
     style: '1',
     locale: 'en',
-    toolbar_bg: '#0d1117',
+    toolbar_bg: dark ? '#0d1117' : '#eef0f5',
     enable_publishing: false,
     allow_symbol_change: true,
     container_id: 'tvChart',
@@ -2797,12 +2798,16 @@ function loadTvChart(tvSym) {
     hide_top_toolbar: false,
     hide_legend: false,
     save_image: false,
-    backgroundColor: 'rgba(5,6,8,1)',
-    gridColor: 'rgba(30,42,58,0.8)',
+    backgroundColor: dark ? 'rgba(5,6,8,1)' : 'rgba(245,247,250,1)',
+    gridColor: dark ? 'rgba(30,42,58,0.8)' : 'rgba(208,216,232,0.8)',
     withdateranges: !mobile,
     hide_side_toolbar: mobile,
   });
 }
+
+document.addEventListener('apex-theme-change', function() {
+  loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
+});
 
 function drawChart() { /* replaced by TradingView */ }
 function resizeChart() { /* no-op */ }

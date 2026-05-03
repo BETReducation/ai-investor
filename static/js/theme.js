@@ -9,6 +9,7 @@
     document.documentElement.setAttribute('data-theme', theme);
     var btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = theme === 'dark' ? '☀' : '☾';
+    document.dispatchEvent(new CustomEvent('apex-theme-change', { detail: { theme: theme } }));
   }
 
   function toggle() {
