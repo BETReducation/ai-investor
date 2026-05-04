@@ -234,16 +234,148 @@
         onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE STRATEGY</button>
     </div>
 
+    <!-- INDICATOR SETTINGS -->
+    <div class="section">
+      <div class="section-label" style="cursor:pointer;user-select:none;" onclick="toggleSection('indSettingsBody','indSettingsArrow')">
+        INDICATOR SETTINGS <span id="indSettingsArrow" style="float:right;font-size:10px;">▾</span>
+      </div>
+      <div id="indSettingsBody" style="display:none;">
+        <div class="ind-group">
+          <div class="ind-group-label">RSI</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_rsi_length" value="14" min="2" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">MACD</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Fast</span><input type="number" id="cfg_macd_fast" value="12" min="2" max="50"></div>
+            <div class="ind-param"><span class="ind-param-label">Slow</span><input type="number" id="cfg_macd_slow" value="26" min="5" max="200"></div>
+            <div class="ind-param"><span class="ind-param-label">Signal</span><input type="number" id="cfg_macd_sig" value="9" min="1" max="50"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Bollinger Bands</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_bb_length" value="20" min="5" max="100"></div>
+            <div class="ind-param"><span class="ind-param-label">Std Dev</span><input type="number" id="cfg_bb_std" value="2.0" min="0.5" max="4" step="0.1"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">EMA</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Short</span><input type="number" id="cfg_ema_short" value="9" min="2" max="50"></div>
+            <div class="ind-param"><span class="ind-param-label">Long</span><input type="number" id="cfg_ema_long" value="21" min="5" max="200"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Stochastic</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">K</span><input type="number" id="cfg_stoch_k" value="14" min="3" max="50"></div>
+            <div class="ind-param"><span class="ind-param-label">D</span><input type="number" id="cfg_stoch_d" value="3" min="1" max="20"></div>
+            <div class="ind-param"><span class="ind-param-label">Smooth</span><input type="number" id="cfg_stoch_smooth" value="3" min="1" max="10"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Stochastic RSI</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Length</span><input type="number" id="cfg_stochrsi_length" value="14" min="3" max="50"></div>
+            <div class="ind-param"><span class="ind-param-label">K</span><input type="number" id="cfg_stochrsi_k" value="3" min="1" max="20"></div>
+            <div class="ind-param"><span class="ind-param-label">D</span><input type="number" id="cfg_stochrsi_d" value="3" min="1" max="20"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">CCI</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_cci_length" value="20" min="5" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Williams %R</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_willr_length" value="14" min="2" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">ADX</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_adx_length" value="14" min="2" max="50"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">ATR</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_atr_length" value="14" min="1" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">MFI</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_mfi_length" value="14" min="2" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Supertrend</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">ATR Len</span><input type="number" id="cfg_st_length" value="10" min="1" max="50"></div>
+            <div class="ind-param"><span class="ind-param-label">Multiplier</span><input type="number" id="cfg_st_mult" value="3.0" min="0.5" max="10" step="0.1"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Aroon</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_aroon_length" value="25" min="5" max="100"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">Parabolic SAR</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Start AF</span><input type="number" id="cfg_psar_start" value="0.02" min="0.005" max="0.1" step="0.005"></div>
+            <div class="ind-param"><span class="ind-param-label">Increment</span><input type="number" id="cfg_psar_inc" value="0.02" min="0.005" max="0.1" step="0.005"></div>
+            <div class="ind-param"><span class="ind-param-label">Max AF</span><input type="number" id="cfg_psar_max" value="0.2" min="0.05" max="0.5" step="0.05"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">WMA / HMA</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">WMA Period</span><input type="number" id="cfg_wma_length" value="20" min="2" max="200"></div>
+            <div class="ind-param"><span class="ind-param-label">HMA Period</span><input type="number" id="cfg_hma_length" value="20" min="2" max="200"></div>
+          </div>
+        </div>
+        <div class="ind-group">
+          <div class="ind-group-label">ROC</div>
+          <div class="ind-params">
+            <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_roc_length" value="12" min="1" max="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- TIMEFRAME -->
     <div class="section">
       <div class="section-label">TIMEFRAME</div>
       <div class="control-row">
         <div class="control-label">Candle Period</div>
         <select id="timeframe" style="width:auto;">
-          <option value="1m">1 MIN</option>
-          <option value="5m" selected>5 MIN</option>
-          <option value="15m">15 MIN</option>
-          <option value="1h">1 HOUR</option>
+          <optgroup label="Minutes">
+            <option value="1m">1 MIN</option>
+            <option value="2m">2 MIN</option>
+            <option value="5m" selected>5 MIN</option>
+            <option value="15m">15 MIN</option>
+            <option value="30m">30 MIN</option>
+            <option value="60m">60 MIN</option>
+            <option value="90m">90 MIN</option>
+          </optgroup>
+          <optgroup label="Hours / Days">
+            <option value="1h">1 HOUR</option>
+            <option value="1d">1 DAY</option>
+            <option value="5d">5 DAY</option>
+          </optgroup>
+          <optgroup label="Weeks / Months">
+            <option value="1wk">1 WEEK</option>
+            <option value="1mo">1 MONTH</option>
+            <option value="3mo">3 MONTH</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -467,9 +599,18 @@ const tvSymbolMap = {
 
 const intervalMap = {
   '1m':  { period: '1d',  interval: '1m'  },
+  '2m':  { period: '5d',  interval: '2m'  },
   '5m':  { period: '5d',  interval: '5m'  },
   '15m': { period: '1mo', interval: '15m' },
+  '30m': { period: '1mo', interval: '30m' },
+  '60m': { period: '3mo', interval: '60m' },
+  '90m': { period: '1mo', interval: '90m' },
   '1h':  { period: '3mo', interval: '1h'  },
+  '1d':  { period: '1y',  interval: '1d'  },
+  '5d':  { period: '2y',  interval: '5d'  },
+  '1wk': { period: '2y',  interval: '1wk' },
+  '1mo': { period: '5y',  interval: '1mo' },
+  '3mo': { period: 'max', interval: '3mo' },
 };
 
 // --- STATE ---
@@ -513,24 +654,132 @@ let strategyConditions = [];
 let strategyType  = 'BUY';
 let strategyMatch = 'all';
 let savedStrategies = [];
+let condExpanded  = {};
 
 const CONDITION_DEFS = {
-  rsi_below:        { label: 'RSI Oversold',                  desc: 'RSI drops below a threshold — the asset may be due for a bounce',              inputLabel: 'RSI below',         defaultVal: 30,  min: 5,   max: 50,  step: 1,   suffix: '' },
-  rsi_above:        { label: 'RSI Overbought',                desc: 'RSI rises above a threshold — the asset may be due for a pullback',             inputLabel: 'RSI above',         defaultVal: 70,  min: 50,  max: 95,  step: 1,   suffix: '' },
-  bb_lower:         { label: 'Near Lower Bollinger Band',     desc: 'Price is close to the lower band — potential support or reversal zone',         inputLabel: 'BB position below', defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '%' },
-  bb_upper:         { label: 'Near Upper Bollinger Band',     desc: 'Price is close to the upper band — potential resistance or reversal zone',      inputLabel: 'BB position above', defaultVal: 90,  min: 70,  max: 99,  step: 1,   suffix: '%' },
-  bb_broke_lower:   { label: 'Closed Below Lower BB',         desc: 'The candle closed below the lower Bollinger Band — strong oversell signal',     inputLabel: null,                defaultVal: 0 },
-  bb_broke_upper:   { label: 'Closed Above Upper BB',         desc: 'The candle closed above the upper Bollinger Band — strong overbuy signal',      inputLabel: null,                defaultVal: 0 },
-  macd_bull_cross:  { label: 'MACD Bullish Cross',            desc: 'MACD line recently crossed above signal line — bullish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
-  macd_bear_cross:  { label: 'MACD Bearish Cross',            desc: 'MACD line recently crossed below signal line — bearish momentum building',      inputLabel: 'Within (bars)',     defaultVal: 5,   min: 1,   max: 30,  step: 1,   suffix: '' },
-  volume_spike:     { label: 'Volume Spike',                  desc: 'Current trading volume is significantly above the 20-bar average',              inputLabel: 'At least',          defaultVal: 1.5, min: 1.1, max: 5,   step: 0.1, suffix: '× avg' },
-  ma_golden:        { label: 'Golden Cross',                  desc: 'Short MA crossed above long MA recently — classic bullish breakout signal',     inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
-  ma_death:         { label: 'Death Cross',                   desc: 'Short MA crossed below long MA recently — classic bearish breakdown signal',    inputLabel: 'Within (bars)',     defaultVal: 10,  min: 1,   max: 30,  step: 1,   suffix: '' },
-  price_above_ma20: { label: 'Price Above MA20',              desc: 'Current price is above the 20-day moving average — uptrend confirmation',       inputLabel: null,                defaultVal: 0 },
-  price_below_ma20: { label: 'Price Below MA20',              desc: 'Current price is below the 20-day moving average — downtrend confirmation',     inputLabel: null,                defaultVal: 0 },
-  price_above_ma50: { label: 'Price Above MA50',              desc: 'Current price is above the 50-day moving average — strong uptrend',             inputLabel: null,                defaultVal: 0 },
-  price_below_ma50: { label: 'Price Below MA50',              desc: 'Current price is below the 50-day moving average — strong downtrend',           inputLabel: null,                defaultVal: 0 },
-  price_dip:        { label: 'Price Dip from Recent High',    desc: 'Price has dropped by this percentage from a recent peak (last 30 bars)',        inputLabel: 'Drop more than',    defaultVal: 20,  min: 5,   max: 80,  step: 1,   suffix: '%' },
+  // ── RSI ─────────────────────────────────────────────────────────────────────
+  rsi_below:        { label: 'RSI Oversold',             group: 'RSI',         desc: 'RSI drops below a threshold — the asset may be due for a bounce',                    inputLabel: 'RSI below',       defaultVal: 30,   min: 5,    max: 50,  step: 1,   suffix: '' },
+  rsi_above:        { label: 'RSI Overbought',           group: 'RSI',         desc: 'RSI rises above a threshold — the asset may be due for a pullback',                  inputLabel: 'RSI above',       defaultVal: 70,   min: 50,   max: 95,  step: 1,   suffix: '' },
+  // ── Stochastic ──────────────────────────────────────────────────────────────
+  stoch_k_below:    { label: 'Stoch K Oversold',         group: 'Stochastic',  desc: 'Stochastic K line below threshold — oversold region, potential reversal zone',       inputLabel: 'Stoch K below',   defaultVal: 20,   min: 5,    max: 40,  step: 1,   suffix: '' },
+  stoch_k_above:    { label: 'Stoch K Overbought',       group: 'Stochastic',  desc: 'Stochastic K line above threshold — overbought region, potential reversal zone',     inputLabel: 'Stoch K above',   defaultVal: 80,   min: 60,   max: 95,  step: 1,   suffix: '' },
+  stoch_bull_cross: { label: 'Stoch Bull Cross (K>D)',   group: 'Stochastic',  desc: 'Stochastic K crossed above D recently — bullish momentum signal',                    inputLabel: 'Within (bars)',   defaultVal: 3,    min: 1,    max: 20,  step: 1,   suffix: '' },
+  stoch_bear_cross: { label: 'Stoch Bear Cross (K<D)',   group: 'Stochastic',  desc: 'Stochastic K crossed below D recently — bearish momentum signal',                    inputLabel: 'Within (bars)',   defaultVal: 3,    min: 1,    max: 20,  step: 1,   suffix: '' },
+  // ── Stochastic RSI ──────────────────────────────────────────────────────────
+  stochrsi_below:   { label: 'StochRSI K Oversold',      group: 'StochRSI',    desc: 'Stochastic RSI K below threshold — combines RSI sensitivity with Stoch range',      inputLabel: 'K below',         defaultVal: 20,   min: 5,    max: 40,  step: 1,   suffix: '' },
+  stochrsi_above:   { label: 'StochRSI K Overbought',    group: 'StochRSI',    desc: 'Stochastic RSI K above threshold — overbought on a double-smoothed oscillator',      inputLabel: 'K above',         defaultVal: 80,   min: 60,   max: 95,  step: 1,   suffix: '' },
+  // ── MACD ────────────────────────────────────────────────────────────────────
+  macd_bull_cross:  { label: 'MACD Bull Cross',          group: 'MACD',        desc: 'MACD line recently crossed above signal line — bullish momentum building',            inputLabel: 'Within (bars)',   defaultVal: 5,    min: 1,    max: 30,  step: 1,   suffix: '' },
+  macd_bear_cross:  { label: 'MACD Bear Cross',          group: 'MACD',        desc: 'MACD line recently crossed below signal line — bearish momentum building',            inputLabel: 'Within (bars)',   defaultVal: 5,    min: 1,    max: 30,  step: 1,   suffix: '' },
+  macd_above_zero:  { label: 'MACD Above Zero',          group: 'MACD',        desc: 'MACD histogram is positive — bullish momentum in progress',                           inputLabel: null,              defaultVal: 0 },
+  macd_below_zero:  { label: 'MACD Below Zero',          group: 'MACD',        desc: 'MACD histogram is negative — bearish momentum in progress',                           inputLabel: null,              defaultVal: 0 },
+  // ── CCI ─────────────────────────────────────────────────────────────────────
+  cci_below:        { label: 'CCI Oversold (<−100)',      group: 'CCI',         desc: 'CCI below threshold — price significantly below its typical level, oversold',        inputLabel: 'CCI below',       defaultVal: -100, min: -300, max: -50, step: 5,   suffix: '' },
+  cci_above:        { label: 'CCI Overbought (>100)',     group: 'CCI',         desc: 'CCI above threshold — price significantly above its typical level, overbought',      inputLabel: 'CCI above',       defaultVal: 100,  min: 50,   max: 300, step: 5,   suffix: '' },
+  // ── Williams %R ─────────────────────────────────────────────────────────────
+  willr_below:      { label: 'Williams %R Oversold',     group: 'Williams %R', desc: 'Williams %R below threshold (e.g. −80) — deeply oversold, look for reversal',       inputLabel: '%R below',        defaultVal: -80,  min: -95,  max: -60, step: 1,   suffix: '' },
+  willr_above:      { label: 'Williams %R Overbought',   group: 'Williams %R', desc: 'Williams %R above threshold (e.g. −20) — deeply overbought, look for reversal',     inputLabel: '%R above',        defaultVal: -20,  min: -40,  max: -5,  step: 1,   suffix: '' },
+  // ── Bollinger Bands ─────────────────────────────────────────────────────────
+  bb_lower:         { label: 'Near Lower BB',            group: 'Bollinger',   desc: 'Price near the lower Bollinger Band (%B) — potential support or oversold zone',      inputLabel: '%B below',        defaultVal: 10,   min: 1,    max: 30,  step: 1,   suffix: '%' },
+  bb_upper:         { label: 'Near Upper BB',            group: 'Bollinger',   desc: 'Price near the upper Bollinger Band (%B) — potential resistance or overbought zone', inputLabel: '%B above',        defaultVal: 90,   min: 70,   max: 99,  step: 1,   suffix: '%' },
+  bb_broke_lower:   { label: 'Broke Below Lower BB',     group: 'Bollinger',   desc: 'Candle closed below the lower Bollinger Band — strong oversell / breakout down',     inputLabel: null,              defaultVal: 0 },
+  bb_broke_upper:   { label: 'Broke Above Upper BB',     group: 'Bollinger',   desc: 'Candle closed above the upper Bollinger Band — strong overbuy / breakout up',        inputLabel: null,              defaultVal: 0 },
+  // ── ADX ─────────────────────────────────────────────────────────────────────
+  adx_above:        { label: 'ADX Strong Trend',         group: 'ADX',         desc: 'ADX above threshold — a strong directional trend is in place (25+ = strong)',        inputLabel: 'ADX above',       defaultVal: 25,   min: 10,   max: 60,  step: 1,   suffix: '' },
+  adx_di_bull:      { label: 'ADX Bullish (+DI > −DI)',  group: 'ADX',         desc: 'Positive DI is above negative DI — trend is directionally bullish',                  inputLabel: null,              defaultVal: 0 },
+  adx_di_bear:      { label: 'ADX Bearish (−DI > +DI)',  group: 'ADX',         desc: 'Negative DI is above positive DI — trend is directionally bearish',                  inputLabel: null,              defaultVal: 0 },
+  // ── ATR ─────────────────────────────────────────────────────────────────────
+  atr_expanding:    { label: 'ATR Expanding (Volatility)', group: 'ATR',        desc: 'ATR is rising above its own 10-bar average — volatility is increasing',              inputLabel: null,              defaultVal: 0 },
+  // ── MFI ─────────────────────────────────────────────────────────────────────
+  mfi_below:        { label: 'MFI Oversold',             group: 'MFI',         desc: 'Money Flow Index below threshold — selling pressure, potential reversal up',         inputLabel: 'MFI below',       defaultVal: 20,   min: 5,    max: 40,  step: 1,   suffix: '' },
+  mfi_above:        { label: 'MFI Overbought',           group: 'MFI',         desc: 'Money Flow Index above threshold — buying pressure exhausted, potential reversal',   inputLabel: 'MFI above',       defaultVal: 80,   min: 60,   max: 95,  step: 1,   suffix: '' },
+  // ── Supertrend ──────────────────────────────────────────────────────────────
+  supertrend_bull:  { label: 'Supertrend Bullish',       group: 'Supertrend',  desc: 'Supertrend indicator is green — price is above the Supertrend line',                 inputLabel: null,              defaultVal: 0 },
+  supertrend_bear:  { label: 'Supertrend Bearish',       group: 'Supertrend',  desc: 'Supertrend indicator is red — price is below the Supertrend line',                   inputLabel: null,              defaultVal: 0 },
+  // ── Aroon ───────────────────────────────────────────────────────────────────
+  aroon_up_above:   { label: 'Aroon Up Dominant',        group: 'Aroon',       desc: 'Aroon Up above threshold — a new high was recently set, bullish',                   inputLabel: 'Aroon Up above',  defaultVal: 70,   min: 50,   max: 99,  step: 1,   suffix: '' },
+  aroon_down_above: { label: 'Aroon Down Dominant',      group: 'Aroon',       desc: 'Aroon Down above threshold — a new low was recently set, bearish',                  inputLabel: 'Aroon Dn above',  defaultVal: 70,   min: 50,   max: 99,  step: 1,   suffix: '' },
+  // ── Parabolic SAR ───────────────────────────────────────────────────────────
+  psar_bull:        { label: 'Parabolic SAR Bullish',    group: 'Parabolic SAR', desc: 'Price is above the SAR dots — uptrend confirmed by Parabolic SAR',               inputLabel: null,              defaultVal: 0 },
+  psar_bear:        { label: 'Parabolic SAR Bearish',    group: 'Parabolic SAR', desc: 'Price is below the SAR dots — downtrend confirmed by Parabolic SAR',              inputLabel: null,              defaultVal: 0 },
+  // ── VWAP ────────────────────────────────────────────────────────────────────
+  price_above_vwap: { label: 'Price Above VWAP',         group: 'VWAP',        desc: 'Price is above the Volume Weighted Average Price — institutional bullish bias',      inputLabel: null,              defaultVal: 0 },
+  price_below_vwap: { label: 'Price Below VWAP',         group: 'VWAP',        desc: 'Price is below the Volume Weighted Average Price — institutional bearish bias',      inputLabel: null,              defaultVal: 0 },
+  // ── ROC ─────────────────────────────────────────────────────────────────────
+  roc_positive:     { label: 'ROC Positive (Momentum ↑)', group: 'ROC',        desc: 'Rate of Change is positive — price is higher than N bars ago, momentum up',         inputLabel: null,              defaultVal: 0 },
+  roc_negative:     { label: 'ROC Negative (Momentum ↓)', group: 'ROC',        desc: 'Rate of Change is negative — price is lower than N bars ago, momentum down',        inputLabel: null,              defaultVal: 0 },
+  // ── Moving Averages ─────────────────────────────────────────────────────────
+  ma_golden:        { label: 'Golden Cross',             group: 'MA',          desc: 'MA20 crossed above MA50 recently — classic bullish breakout signal',                 inputLabel: 'Within (bars)',   defaultVal: 10,   min: 1,    max: 30,  step: 1,   suffix: '' },
+  ma_death:         { label: 'Death Cross',              group: 'MA',          desc: 'MA20 crossed below MA50 recently — classic bearish breakdown signal',                inputLabel: 'Within (bars)',   defaultVal: 10,   min: 1,    max: 30,  step: 1,   suffix: '' },
+  price_above_ma20: { label: 'Price Above MA20',         group: 'MA',          desc: 'Current price is above the 20-period moving average — uptrend confirmation',        inputLabel: null,              defaultVal: 0 },
+  price_below_ma20: { label: 'Price Below MA20',         group: 'MA',          desc: 'Current price is below the 20-period moving average — downtrend confirmation',      inputLabel: null,              defaultVal: 0 },
+  price_above_ma50: { label: 'Price Above MA50',         group: 'MA',          desc: 'Current price is above the 50-period moving average — strong uptrend',             inputLabel: null,              defaultVal: 0 },
+  price_below_ma50: { label: 'Price Below MA50',         group: 'MA',          desc: 'Current price is below the 50-period moving average — strong downtrend',           inputLabel: null,              defaultVal: 0 },
+  // ── Volume ──────────────────────────────────────────────────────────────────
+  volume_spike:     { label: 'Volume Spike',             group: 'Volume',      desc: 'Current volume is significantly above the 20-bar average — strong participation',   inputLabel: 'At least',        defaultVal: 1.5,  min: 1.1,  max: 5,   step: 0.1, suffix: '× avg' },
+  // ── Price ───────────────────────────────────────────────────────────────────
+  price_dip:        { label: 'Price Dip from High',      group: 'Price',       desc: 'Price has dropped by this % from a recent peak (last 30 bars) — potential bounce',  inputLabel: 'Drop more than',  defaultVal: 20,   min: 5,    max: 80,  step: 1,   suffix: '%' },
+};
+
+// Per-indicator parameter definitions, keyed by CONDITION_DEFS group name.
+// These inputs appear inside each condition card and override the global indicator settings.
+const INDICATOR_PARAMS = {
+  'RSI': [
+    { id: 'period', label: 'Period', default: 14, min: 2, max: 200, step: 1, apiKey: 'rsi_length' },
+  ],
+  'Stochastic': [
+    { id: 'k',      label: 'K Period', default: 14, min: 1, max: 50,  step: 1, apiKey: 'stoch_k'      },
+    { id: 'd',      label: 'D Period', default: 3,  min: 1, max: 20,  step: 1, apiKey: 'stoch_d'      },
+    { id: 'smooth', label: 'Smooth',   default: 3,  min: 1, max: 20,  step: 1, apiKey: 'stoch_smooth' },
+  ],
+  'StochRSI': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1,   apiKey: 'stochrsi_length' },
+    { id: 'k',      label: 'K',      default: 3,  min: 1, max: 20,  step: 1,   apiKey: 'stochrsi_k'     },
+    { id: 'd',      label: 'D',      default: 3,  min: 1, max: 20,  step: 1,   apiKey: 'stochrsi_d'     },
+  ],
+  'MACD': [
+    { id: 'fast',   label: 'Fast',   default: 12, min: 2,  max: 100, step: 1, apiKey: 'macd_fast'   },
+    { id: 'slow',   label: 'Slow',   default: 26, min: 5,  max: 200, step: 1, apiKey: 'macd_slow'   },
+    { id: 'signal', label: 'Signal', default: 9,  min: 2,  max: 50,  step: 1, apiKey: 'macd_signal' },
+  ],
+  'CCI': [
+    { id: 'length', label: 'Length', default: 20, min: 5, max: 200, step: 1, apiKey: 'cci_length' },
+  ],
+  'Williams %R': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1, apiKey: 'willr_length' },
+  ],
+  'Bollinger': [
+    { id: 'length', label: 'Length',  default: 20,  min: 5,   max: 200, step: 1,   apiKey: 'bb_length' },
+    { id: 'std',    label: 'Std Dev', default: 2.0, min: 0.5, max: 5,   step: 0.1, apiKey: 'bb_std'    },
+  ],
+  'ADX': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1, apiKey: 'adx_length' },
+  ],
+  'ATR': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1, apiKey: 'atr_length' },
+  ],
+  'MFI': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1, apiKey: 'mfi_length' },
+  ],
+  'Supertrend': [
+    { id: 'length', label: 'Length',     default: 10,  min: 2,   max: 100, step: 1,   apiKey: 'supertrend_length' },
+    { id: 'mult',   label: 'Multiplier', default: 3.0, min: 0.5, max: 10,  step: 0.1, apiKey: 'supertrend_mult'   },
+  ],
+  'Aroon': [
+    { id: 'length', label: 'Length', default: 14, min: 2, max: 100, step: 1, apiKey: 'aroon_length' },
+  ],
+  'Parabolic SAR': [
+    { id: 'start', label: 'Start', default: 0.02, min: 0.001, max: 0.1,  step: 0.001, apiKey: 'psar_start' },
+    { id: 'inc',   label: 'Inc',   default: 0.02, min: 0.001, max: 0.1,  step: 0.001, apiKey: 'psar_inc'   },
+    { id: 'max',   label: 'Max',   default: 0.2,  min: 0.05,  max: 0.5,  step: 0.01,  apiKey: 'psar_max'   },
+  ],
+  'ROC': [
+    { id: 'length', label: 'Length', default: 12, min: 1, max: 200, step: 1, apiKey: 'roc_length' },
+  ],
+  'MA': [
+    { id: 'short', label: 'Short MA', default: 20, min: 2, max: 200, step: 1, apiKey: 'ema_short' },
+    { id: 'long',  label: 'Long MA',  default: 50, min: 5, max: 500, step: 1, apiKey: 'ema_long'  },
+  ],
 };
 
 const STRATEGY_TEMPLATES = {
@@ -597,6 +846,16 @@ function init() {
   fetchSignals(currentAsset).then(() => { updateIndicatorBar(); updateStrategyStatus(); }).catch(() => {});
 }
 
+// --- SECTION TOGGLE ---
+function toggleSection(bodyId, arrowId) {
+  const body  = document.getElementById(bodyId);
+  const arrow = arrowId ? document.getElementById(arrowId) : null;
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display  = open ? 'none' : 'block';
+  if (arrow) arrow.textContent = open ? '▸' : '▾';
+}
+
 // --- CLOCK ---
 function updateClock() {
   const now = new Date();
@@ -622,7 +881,9 @@ function setStratType(type) {
 function addCondition(type) {
   const t = type || Object.keys(CONDITION_DEFS)[0];
   const def = CONDITION_DEFS[t] || {};
-  strategyConditions.push({ type: t, value: def.defaultVal ?? 0 });
+  const initParams = {};
+  (INDICATOR_PARAMS[def.group] || []).forEach(p => { initParams[p.id] = p.default; });
+  strategyConditions.push({ type: t, value: def.defaultVal ?? 0, params: initParams });
   renderConditions();
 }
 
@@ -638,42 +899,98 @@ function updateCondition(i, field, val) {
   if (field === 'type') {
     const def = CONDITION_DEFS[val] || {};
     strategyConditions[i].value = def.defaultVal ?? 0;
+    const initParams = {};
+    (INDICATOR_PARAMS[def.group] || []).forEach(p => { initParams[p.id] = p.default; });
+    strategyConditions[i].params = initParams;
     renderConditions();
   }
   updateStrategyStatus();
+}
+
+function updateConditionParam(i, paramId, val) {
+  if (!strategyConditions[i]) return;
+  if (!strategyConditions[i].params) strategyConditions[i].params = {};
+  const def = CONDITION_DEFS[strategyConditions[i].type] || {};
+  const paramDef = (INDICATOR_PARAMS[def.group] || []).find(p => p.id === paramId);
+  strategyConditions[i].params[paramId] = paramDef ? parseFloat(val) : val;
+  updateStrategyStatus();
+}
+
+function toggleCondExpand(i) {
+  condExpanded[i] = !condExpanded[i];
+  const body = document.getElementById(`cond-body-${i}`);
+  const chev = document.getElementById(`cond-chev-${i}`);
+  if (body) body.style.display = condExpanded[i] ? 'block' : 'none';
+  if (chev) chev.classList.toggle('open', condExpanded[i]);
+}
+
+// Build per-condition indicator parameter inputs
+function _buildCondParams(i, cond) {
+  const def = CONDITION_DEFS[cond.type] || {};
+  const paramDefs = INDICATOR_PARAMS[def.group] || [];
+  if (paramDefs.length === 0) return '';
+  const inputs = paramDefs.map(p => {
+    const val = (cond.params && cond.params[p.id] !== undefined) ? cond.params[p.id] : p.default;
+    return `<span class="cond-param-label">${p.label}</span>
+      <input type="number" value="${val}" min="${p.min}" max="${p.max}" step="${p.step}"
+        onchange="updateConditionParam(${i},'${p.id}',this.value)"
+        style="width:50px;font-size:10px;padding:2px 4px;">`;
+  }).join('');
+  return `<div class="cond-params-row">${inputs}</div>`;
+}
+
+// Build grouped <optgroup> options for the type selector
+function _condOpts(selected) {
+  const groups = {};
+  Object.entries(CONDITION_DEFS).forEach(([k, d]) => {
+    const g = d.group || 'Other';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ k, label: d.label });
+  });
+  return Object.entries(groups).map(([g, items]) =>
+    `<optgroup label="${g}">${items.map(({k, label}) =>
+      `<option value="${k}" ${k === selected ? 'selected' : ''}>${label}</option>`
+    ).join('')}</optgroup>`
+  ).join('');
 }
 
 function renderConditions() {
   const list = document.getElementById('conditionsList');
   if (!list) return;
   if (strategyConditions.length === 0) {
+    condExpanded = {};
     list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Add one below or pick a Quick Start template</span></div>`;
     return;
   }
+  strategyConditions.forEach((_, i) => { if (condExpanded[i] === undefined) condExpanded[i] = true; });
+
   list.innerHTML = strategyConditions.map((cond, i) => {
-    const def = CONDITION_DEFS[cond.type] || {};
-    const opts = Object.keys(CONDITION_DEFS).map(k =>
-      `<option value="${k}" ${k === cond.type ? 'selected' : ''}>${CONDITION_DEFS[k].label}</option>`
-    ).join('');
+    const def   = CONDITION_DEFS[cond.type] || {};
+    const open  = condExpanded[i] !== false;
+    const opts  = _condOpts(cond.type);
     const inputRow = def.inputLabel ? `
-      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-        <span style="font-size:9px;color:var(--text-muted);white-space:nowrap;">${def.inputLabel}:</span>
-        <input type="number" value="${cond.value}" min="${def.min ?? 0}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
-          onchange="updateCondition(${i},'value',this.value)"
-          style="width:62px;font-size:11px;">
-        ${def.suffix ? `<span style="font-size:9px;color:var(--text-muted);">${def.suffix}</span>` : ''}
+      <div class="cond-input-row">
+        <span class="cond-input-label">${def.inputLabel}:</span>
+        <input type="number" value="${cond.value}" min="${def.min ?? -9999}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
+          onchange="updateCondition(${i},'value',this.value)" style="width:62px;font-size:11px;">
+        ${def.suffix ? `<span class="cond-input-label">${def.suffix}</span>` : ''}
       </div>` : '';
     return `
       <div class="condition-card unmet" id="cond-${i}">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <select onchange="updateCondition(${i},'type',this.value)" style="flex:1;font-size:10px;padding:4px 6px;">${opts}</select>
-          <span id="cond-dot-${i}" style="font-size:13px;color:var(--text-muted);transition:color 0.2s;" title="Not yet evaluated">●</span>
-          <button onclick="removeCondition(${i})"
-            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:0 2px;line-height:1;transition:color 0.15s;"
-            onmouseover="this.style.color='var(--accent-red)'" onmouseout="this.style.color='var(--text-muted)'">×</button>
+        <div class="cond-header" onclick="toggleCondExpand(${i})">
+          <span class="cond-name">${def.label || cond.type}</span>
+          <svg id="cond-chev-${i}" class="cond-chevron ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+          <span class="cond-dot" id="cond-dot-${i}" title="Not yet evaluated">●</span>
+          <button class="cond-remove" onclick="removeCondition(${i});event.stopPropagation()">×</button>
         </div>
-        <div style="font-size:9px;color:var(--text-secondary);line-height:1.5;margin-top:5px;">${def.desc || ''}</div>
-        ${inputRow}
+        <div class="cond-body" id="cond-body-${i}" style="display:${open ? 'block' : 'none'};">
+          <select onchange="updateCondition(${i},'type',this.value)" style="width:100%;font-size:10px;padding:4px 6px;margin-bottom:3px;">${opts}</select>
+          <div class="cond-desc">${def.desc || ''}</div>
+          ${_buildCondParams(i, cond)}
+          ${inputRow}
+        </div>
       </div>`;
   }).join('');
 }
@@ -733,27 +1050,73 @@ function evaluateCondition(cond, cache, sym) {
   const cx  = ind.crossovers || {};
   const val = parseFloat(cond.value);
   switch (cond.type) {
+    // RSI
     case 'rsi_below':        return ind.rsi != null && ind.rsi < val;
     case 'rsi_above':        return ind.rsi != null && ind.rsi > val;
+    // Stochastic
+    case 'stoch_k_below':    return ind.stochastic?.k != null && ind.stochastic.k < val;
+    case 'stoch_k_above':    return ind.stochastic?.k != null && ind.stochastic.k > val;
+    case 'stoch_bull_cross': return (cx.stoch_bars_since_cross ?? 999) <= val && cx.stoch_direction > 0;
+    case 'stoch_bear_cross': return (cx.stoch_bars_since_cross ?? 999) <= val && cx.stoch_direction < 0;
+    // StochRSI
+    case 'stochrsi_below':   return ind.stochrsi?.k != null && ind.stochrsi.k < val;
+    case 'stochrsi_above':   return ind.stochrsi?.k != null && ind.stochrsi.k > val;
+    // MACD
+    case 'macd_bull_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction > 0;
+    case 'macd_bear_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction < 0;
+    case 'macd_above_zero':  return ind.macd?.macd != null && ind.macd.macd > 0;
+    case 'macd_below_zero':  return ind.macd?.macd != null && ind.macd.macd < 0;
+    // CCI
+    case 'cci_below':        return ind.cci != null && ind.cci < val;
+    case 'cci_above':        return ind.cci != null && ind.cci > val;
+    // Williams %R
+    case 'willr_below':      return ind.willr != null && ind.willr < val;
+    case 'willr_above':      return ind.willr != null && ind.willr > val;
+    // Bollinger Bands
     case 'bb_lower':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 < val;
     case 'bb_upper':         return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b * 100 > val;
     case 'bb_broke_lower':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b < 0;
     case 'bb_broke_upper':   return ind.bollinger_bands?.percent_b != null && ind.bollinger_bands.percent_b > 1;
-    case 'macd_bull_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction > 0;
-    case 'macd_bear_cross':  return (cx.macd_bars_since_cross ?? 999) <= val && cx.macd_direction < 0;
-    case 'volume_spike':     return ind.volume?.ratio != null && ind.volume.ratio >= val;
+    // ADX
+    case 'adx_above':        return ind.adx?.adx != null && ind.adx.adx > val;
+    case 'adx_di_bull':      return ind.adx?.dmp != null && ind.adx?.dmn != null && ind.adx.dmp > ind.adx.dmn;
+    case 'adx_di_bear':      return ind.adx?.dmp != null && ind.adx?.dmn != null && ind.adx.dmn > ind.adx.dmp;
+    // ATR
+    case 'atr_expanding':    return ind.atr_expanding === true;
+    // MFI
+    case 'mfi_below':        return ind.mfi != null && ind.mfi < val;
+    case 'mfi_above':        return ind.mfi != null && ind.mfi > val;
+    // Supertrend
+    case 'supertrend_bull':  return ind.supertrend?.is_bull === true;
+    case 'supertrend_bear':  return ind.supertrend?.is_bull === false;
+    // Aroon
+    case 'aroon_up_above':   return ind.aroon?.up != null && ind.aroon.up > val;
+    case 'aroon_down_above': return ind.aroon?.down != null && ind.aroon.down > val;
+    // Parabolic SAR
+    case 'psar_bull':        return ind.psar?.is_bull === true;
+    case 'psar_bear':        return ind.psar?.is_bull === false;
+    // VWAP
+    case 'price_above_vwap': return ind.price?.close != null && ind.vwap != null && ind.price.close > ind.vwap;
+    case 'price_below_vwap': return ind.price?.close != null && ind.vwap != null && ind.price.close < ind.vwap;
+    // ROC
+    case 'roc_positive':     return ind.roc != null && ind.roc > 0;
+    case 'roc_negative':     return ind.roc != null && ind.roc < 0;
+    // Moving Averages
     case 'ma_golden':        return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction > 0;
     case 'ma_death':         return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction < 0;
     case 'price_above_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close > ind.moving_averages.ma_20);
     case 'price_below_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close < ind.moving_averages.ma_20);
     case 'price_above_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close > ind.moving_averages.ma_50);
     case 'price_below_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close < ind.moving_averages.ma_50);
+    // Volume
+    case 'volume_spike':     return ind.volume?.ratio != null && ind.volume.ratio >= val;
+    // Price
     case 'price_dip': {
       const hist = (priceHistory[sym] || []).slice(-30).map(h => h.p).filter(Boolean);
       if (hist.length < 2) return false;
-      const high = Math.max(...hist);
+      const peak = Math.max(...hist);
       const cur  = hist[hist.length - 1];
-      return high > 0 && ((high - cur) / high * 100) >= val;
+      return peak > 0 && ((peak - cur) / peak * 100) >= val;
     }
     default: return false;
   }
@@ -877,24 +1240,40 @@ async function fetchSignals(sym) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return null;
   const cfg = getConfig();
+
+  // Collect per-condition param overrides (last condition wins per apiKey)
+  const condOverrides = {};
+  strategyConditions.forEach(cond => {
+    const def = CONDITION_DEFS[cond.type] || {};
+    const paramDefs = INDICATOR_PARAMS[def.group] || [];
+    paramDefs.forEach(p => {
+      if (p.apiKey && cond.params && cond.params[p.id] !== undefined) {
+        condOverrides[p.apiKey] = cond.params[p.id];
+      }
+    });
+  });
+
   const params = new URLSearchParams({
     symbol: yfSym, period: '6mo', interval: '1d',
-    rsi_oversold: cfg.rsiOversold,
-    rsi_overbought: cfg.rsiOverbought,
-    rsi_on: cfg.rsiOn ? 1 : 0,
+    rsi_oversold: cfg.rsiOversold, rsi_overbought: cfg.rsiOverbought,
+    rsi_on: cfg.rsiOn ? 1 : 0, rsi_length: cfg.rsiLength,
     macd_on: cfg.macdOn ? 1 : 0,
-    macd_fast: cfg.macdFast,
-    macd_slow: cfg.macdSlow,
-    macd_signal: cfg.macdSig,
-    bb_on: cfg.bbOn ? 1 : 0,
-    bb_length: cfg.bbPeriod,
-    bb_std: cfg.bbStd,
-    ma_on: cfg.maOn ? 1 : 0,
-    ema_short: cfg.maShort,
-    ema_long: cfg.maLong,
-    vol_on: cfg.volOn ? 1 : 0,
-    volume_surge: cfg.volSpike,
+    macd_fast: cfg.macdFast, macd_slow: cfg.macdSlow, macd_signal: cfg.macdSig,
+    bb_on: cfg.bbOn ? 1 : 0, bb_length: cfg.bbPeriod, bb_std: cfg.bbStd,
+    ma_on: cfg.maOn ? 1 : 0, ema_short: cfg.maShort, ema_long: cfg.maLong,
+    vol_on: cfg.volOn ? 1 : 0, volume_surge: cfg.volSpike,
+    stoch_k: cfg.stochK, stoch_d: cfg.stochD, stoch_smooth: cfg.stochSmooth,
+    stochrsi_length: cfg.stochrsiLength, stochrsi_k: cfg.stochrsiK, stochrsi_d: cfg.stochrsiD,
+    cci_length: cfg.cciLength, willr_length: cfg.willrLength,
+    adx_length: cfg.adxLength, atr_length: cfg.atrLength, mfi_length: cfg.mfiLength,
+    supertrend_length: cfg.stLength, supertrend_mult: cfg.stMult,
+    aroon_length: cfg.aroonLength,
+    psar_start: cfg.psarStart, psar_inc: cfg.psarInc, psar_max: cfg.psarMax,
+    wma_length: cfg.wmaLength, hma_length: cfg.hmaLength, roc_length: cfg.rocLength,
   });
+  // Apply per-condition param overrides on top of global settings
+  Object.entries(condOverrides).forEach(([k, v]) => params.set(k, v));
+
   const data = await apiFetch(`/api/signals?${params}`);
   liveCache[sym] = data;
   return data;
@@ -1443,6 +1822,15 @@ function addLog(type, source, msg) {
 }
 
 // --- HELPERS ---
+function _cfgNum(id, fallback) {
+  const el = document.getElementById(id);
+  return el ? parseFloat(el.value) || fallback : fallback;
+}
+function _cfgInt(id, fallback) {
+  const el = document.getElementById(id);
+  return el ? parseInt(el.value) || fallback : fallback;
+}
+
 function getConfig() {
   return {
     capital:    parseFloat(document.getElementById('capital').value),
@@ -1450,13 +1838,39 @@ function getConfig() {
     targetGain: parseFloat(document.getElementById('targetGain').value),
     stopLoss:   parseFloat(document.getElementById('stopLoss').value),
     trailDist:  parseFloat(document.getElementById('trailDist').value),
-    // Indicator defaults — strategy builder evaluates conditions client-side
+    // Signal scoring
     rsiOn: 1, rsiOversold: 30, rsiOverbought: 70,
-    macdOn: 1, macdFast: 12, macdSlow: 26, macdSig: 9,
-    bbOn: 1, bbPeriod: 20, bbStd: 2.0,
-    maOn: 1, maShort: 9, maLong: 21,
-    volOn: 1, volSpike: 1.5,
+    macdOn: 1, bbOn: 1, maOn: 1, volOn: 1, volSpike: 1.5,
     srOn: false, minInd: 1, minConf: 0,
+    // Indicator parameters (read from settings panel)
+    rsiLength:       _cfgInt('cfg_rsi_length', 14),
+    macdFast:        _cfgInt('cfg_macd_fast',  12),
+    macdSlow:        _cfgInt('cfg_macd_slow',  26),
+    macdSig:         _cfgInt('cfg_macd_sig',    9),
+    bbPeriod:        _cfgInt('cfg_bb_length',  20),
+    bbStd:           _cfgNum('cfg_bb_std',    2.0),
+    maShort:         _cfgInt('cfg_ema_short',   9),
+    maLong:          _cfgInt('cfg_ema_long',   21),
+    stochK:          _cfgInt('cfg_stoch_k',    14),
+    stochD:          _cfgInt('cfg_stoch_d',     3),
+    stochSmooth:     _cfgInt('cfg_stoch_smooth',3),
+    stochrsiLength:  _cfgInt('cfg_stochrsi_length', 14),
+    stochrsiK:       _cfgInt('cfg_stochrsi_k',  3),
+    stochrsiD:       _cfgInt('cfg_stochrsi_d',  3),
+    cciLength:       _cfgInt('cfg_cci_length',  20),
+    willrLength:     _cfgInt('cfg_willr_length',14),
+    adxLength:       _cfgInt('cfg_adx_length',  14),
+    atrLength:       _cfgInt('cfg_atr_length',  14),
+    mfiLength:       _cfgInt('cfg_mfi_length',  14),
+    stLength:        _cfgInt('cfg_st_length',   10),
+    stMult:          _cfgNum('cfg_st_mult',    3.0),
+    aroonLength:     _cfgInt('cfg_aroon_length',25),
+    psarStart:       _cfgNum('cfg_psar_start', 0.02),
+    psarInc:         _cfgNum('cfg_psar_inc',   0.02),
+    psarMax:         _cfgNum('cfg_psar_max',    0.2),
+    wmaLength:       _cfgInt('cfg_wma_length',  20),
+    hmaLength:       _cfgInt('cfg_hma_length',  20),
+    rocLength:       _cfgInt('cfg_roc_length',  12),
   };
 }
 

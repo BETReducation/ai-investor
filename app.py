@@ -76,6 +76,39 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
+
+_INT_CALC_KEYS = {
+    "rsi_length": 14, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9,
+    "bb_length": 20, "ema_short": 9, "ema_long": 21,
+    "stoch_k": 14, "stoch_d": 3, "stoch_smooth": 3,
+    "stochrsi_length": 14, "stochrsi_k": 3, "stochrsi_d": 3,
+    "cci_length": 20, "willr_length": 14, "adx_length": 14,
+    "atr_length": 14, "mfi_length": 14, "aroon_length": 25,
+    "supertrend_length": 10, "wma_length": 20, "hma_length": 20, "roc_length": 12,
+}
+_FLOAT_CALC_KEYS = {
+    "bb_std": 2.0, "supertrend_mult": 3.0,
+    "psar_start": 0.02, "psar_inc": 0.02, "psar_max": 0.2,
+}
+
+
+def _extract_calc_params(args) -> dict:
+    params = {}
+    for key in _INT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = int(val)
+            except ValueError:
+                pass
+    for key in _FLOAT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = float(val)
+            except ValueError:
+                pass
+    return params
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
@@ -465,7 +498,8 @@ def indicators():
         return jsonify({"error": "symbol parameter is required"}), 400
     try:
         df = _fetch_ohlcv(symbol, period, interval)
-        result = calculate_all(df)
+        calc_params = _extract_calc_params(request.args)
+        result = calculate_all(df, **calc_params)
         return jsonify({"symbol": symbol.upper(), "period": period, "interval": interval, **result})
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -498,23 +532,7 @@ def signals():
             except ValueError:
                 return jsonify({"error": f"Invalid value for threshold '{key}'"}), 400
 
-    calc_params = {}
-    int_calc_keys = {"rsi_length": 14, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9, "bb_length": 20, "ema_short": 9, "ema_long": 21}
-    float_calc_keys = {"bb_std": 2.0}
-    for key, default in int_calc_keys.items():
-        val = request.args.get(key)
-        if val is not None:
-            try:
-                calc_params[key] = int(val)
-            except ValueError:
-                return jsonify({"error": f"Invalid value for '{key}'"}), 400
-    for key, default in float_calc_keys.items():
-        val = request.args.get(key)
-        if val is not None:
-            try:
-                calc_params[key] = float(val)
-            except ValueError:
-                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+    calc_params = _extract_calc_params(request.args)
 
     try:
         df = _fetch_ohlcv(symbol, period, interval)
@@ -565,20 +583,7 @@ def backtest():
             except ValueError:
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
 
-    calc_params = {}
-    for key in ["rsi_length", "macd_fast", "macd_slow", "macd_signal", "bb_length", "ema_short", "ema_long"]:
-        val = request.args.get(key)
-        if val is not None:
-            try:
-                calc_params[key] = int(val)
-            except ValueError:
-                return jsonify({"error": f"Invalid value for '{key}'"}), 400
-    val = request.args.get("bb_std")
-    if val is not None:
-        try:
-            calc_params["bb_std"] = float(val)
-        except ValueError:
-            return jsonify({"error": "Invalid value for 'bb_std'"}), 400
+    calc_params = _extract_calc_params(request.args)
 
     try:
         df = _fetch_ohlcv(symbol, period, interval)

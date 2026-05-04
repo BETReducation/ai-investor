@@ -1290,8 +1290,136 @@
     border: 1px solid var(--border);
     border-left: 2px solid var(--border-bright);
     border-radius: 2px;
-    padding: 10px;
+    padding: 8px 10px;
     transition: border-color 0.15s;
+  }
+
+  /* Accordion condition card */
+  .cond-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cond-name {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cond-chevron {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    transition: transform 0.2s;
+    stroke: var(--text-muted);
+  }
+  .cond-chevron.open { transform: rotate(180deg); }
+  .cond-dot {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .cond-dot.met    { color: var(--accent-green); }
+  .cond-dot.unmet  { color: var(--text-muted); }
+  .cond-remove {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .cond-remove:hover { color: var(--accent-red); }
+  .cond-body {
+    padding-top: 7px;
+  }
+  .cond-desc {
+    font-size: 9px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+  .cond-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .cond-input-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .cond-params-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    margin: 5px 0 2px;
+    padding: 5px 7px;
+    background: rgba(0,0,0,0.18);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .cond-param-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+  .cond-params-row input[type="number"] {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 2px;
+    font-family: var(--font-mono);
+  }
+
+  /* Indicator settings groups */
+  .ind-group {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ind-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .ind-group-label {
+    font-size: 9px;
+    color: var(--accent-cyan);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .ind-params {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+  }
+  .ind-param {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .ind-param-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .ind-param input {
+    width: 46px !important;
+    font-size: 10px;
+    padding: 3px 5px !important;
   }
   .condition-card:hover { border-color: var(--border-bright); }
   .condition-card.met   { border-left-color: var(--accent-green); }

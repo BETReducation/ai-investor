@@ -23,6 +23,7 @@ def run_backtest(
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
 
+    rsi_length  = int(cp.get("rsi_length",  14))
     macd_fast   = int(cp.get("macd_fast",   12))
     macd_slow   = int(cp.get("macd_slow",   26))
     macd_signal = int(cp.get("macd_signal",  9))
@@ -32,7 +33,7 @@ def run_backtest(
     ema_long    = int(cp.get("ema_long",    21))
 
     # ── Compute full indicator series upfront (O(n), not O(n²)) ──────────
-    rsi_s   = calculate_rsi(df)
+    rsi_s   = calculate_rsi(df, length=rsi_length)
     macd_df = calculate_macd(df, fast=macd_fast, slow=macd_slow, signal=macd_signal)
     bb_df   = calculate_bollinger_bands(df, length=bb_length, std=bb_std)
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
