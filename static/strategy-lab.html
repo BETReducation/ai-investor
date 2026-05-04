@@ -555,6 +555,14 @@
                  oninput="document.getElementById('rsiLabel').textContent='RSI ('+this.value+')'">
         </div>
         <div class="param-row">
+          <span class="param-label">Smoothing</span>
+          <select class="param-input" id="rsiSmoothing" style="width:100%;">
+            <option value="wilder">Wilder (default)</option>
+            <option value="ema">EMA</option>
+            <option value="sma">SMA (Cutler)</option>
+          </select>
+        </div>
+        <div class="param-row">
           <span class="param-label">Oversold level</span>
           <input type="number" class="param-input" id="rsiOversold" value="30" min="10" max="45">
         </div>
@@ -1004,8 +1012,9 @@ async function runBacktest() {
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
 
-  const rsiLength = parseInt(document.getElementById('rsiLength').value)     || 14;
-  const rsiOs     = parseInt(document.getElementById('rsiOversold').value)   || 30;
+  const rsiLength   = parseInt(document.getElementById('rsiLength').value)     || 14;
+  const rsiSmoothing = document.getElementById('rsiSmoothing').value || 'wilder';
+  const rsiOs       = parseInt(document.getElementById('rsiOversold').value)   || 30;
   const rsiOb     = parseInt(document.getElementById('rsiOverbought').value) || 70;
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
@@ -1035,7 +1044,7 @@ async function runBacktest() {
   const params = new URLSearchParams({
     symbol, period, interval,
     stop_loss: sl, take_profit: tp, min_confidence: conf,
-    rsi_length: rsiLength, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
     bb_length: bbLength, bb_std: bbStd,
     ema_short: emaShort, ema_long: emaLong,

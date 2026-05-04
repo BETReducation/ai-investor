@@ -244,6 +244,13 @@
           <div class="ind-group-label">RSI</div>
           <div class="ind-params">
             <div class="ind-param"><span class="ind-param-label">Period</span><input type="number" id="cfg_rsi_length" value="14" min="2" max="100"></div>
+            <div class="ind-param"><span class="ind-param-label">Smoothing</span>
+              <select id="cfg_rsi_smoothing" style="font-size:10px;padding:2px 4px;background:var(--panel-bg);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;width:100%;">
+                <option value="wilder">Wilder (default)</option>
+                <option value="ema">EMA</option>
+                <option value="sma">SMA (Cutler)</option>
+              </select>
+            </div>
           </div>
         </div>
         <div class="ind-group">
@@ -725,7 +732,8 @@ const CONDITION_DEFS = {
 // These inputs appear inside each condition card and override the global indicator settings.
 const INDICATOR_PARAMS = {
   'RSI': [
-    { id: 'period', label: 'Period', default: 14, min: 2, max: 200, step: 1, apiKey: 'rsi_length' },
+    { id: 'period',    label: 'Period',    type: 'number', default: 14,       min: 2, max: 200, step: 1, apiKey: 'rsi_length'    },
+    { id: 'smoothing', label: 'Smoothing', type: 'select', default: 'wilder', options: ['wilder','ema','sma'],  apiKey: 'rsi_smoothing' },
   ],
   'Stochastic': [
     { id: 'k',      label: 'K Period', default: 14, min: 1, max: 50,  step: 1, apiKey: 'stoch_k'      },
@@ -912,7 +920,7 @@ function updateConditionParam(i, paramId, val) {
   if (!strategyConditions[i].params) strategyConditions[i].params = {};
   const def = CONDITION_DEFS[strategyConditions[i].type] || {};
   const paramDef = (INDICATOR_PARAMS[def.group] || []).find(p => p.id === paramId);
-  strategyConditions[i].params[paramId] = paramDef ? parseFloat(val) : val;
+  strategyConditions[i].params[paramId] = (paramDef && paramDef.type === 'select') ? val : parseFloat(val);
   updateStrategyStatus();
 }
 
@@ -931,6 +939,14 @@ function _buildCondParams(i, cond) {
   if (paramDefs.length === 0) return '';
   const inputs = paramDefs.map(p => {
     const val = (cond.params && cond.params[p.id] !== undefined) ? cond.params[p.id] : p.default;
+    if (p.type === 'select') {
+      const opts = (p.options || []).map(o =>
+        `<option value="${o}" ${o === val ? 'selected' : ''}>${o.charAt(0).toUpperCase()+o.slice(1)}</option>`
+      ).join('');
+      return `<span class="cond-param-label">${p.label}</span>
+        <select onchange="updateConditionParam(${i},'${p.id}',this.value)"
+          style="font-size:10px;padding:2px 4px;background:var(--panel-bg);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;">${opts}</select>`;
+    }
     return `<span class="cond-param-label">${p.label}</span>
       <input type="number" value="${val}" min="${p.min}" max="${p.max}" step="${p.step}"
         onchange="updateConditionParam(${i},'${p.id}',this.value)"
@@ -1256,7 +1272,7 @@ async function fetchSignals(sym) {
   const params = new URLSearchParams({
     symbol: yfSym, period: '6mo', interval: '1d',
     rsi_oversold: cfg.rsiOversold, rsi_overbought: cfg.rsiOverbought,
-    rsi_on: cfg.rsiOn ? 1 : 0, rsi_length: cfg.rsiLength,
+    rsi_on: cfg.rsiOn ? 1 : 0, rsi_length: cfg.rsiLength, rsi_smoothing: cfg.rsiSmoothing,
     macd_on: cfg.macdOn ? 1 : 0,
     macd_fast: cfg.macdFast, macd_slow: cfg.macdSlow, macd_signal: cfg.macdSig,
     bb_on: cfg.bbOn ? 1 : 0, bb_length: cfg.bbPeriod, bb_std: cfg.bbStd,
@@ -1844,6 +1860,7 @@ function getConfig() {
     srOn: false, minInd: 1, minConf: 0,
     // Indicator parameters (read from settings panel)
     rsiLength:       _cfgInt('cfg_rsi_length', 14),
+    rsiSmoothing:    (document.getElementById('cfg_rsi_smoothing')?.value || 'wilder'),
     macdFast:        _cfgInt('cfg_macd_fast',  12),
     macdSlow:        _cfgInt('cfg_macd_slow',  26),
     macdSig:         _cfgInt('cfg_macd_sig',    9),

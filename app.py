@@ -108,6 +108,9 @@ def _extract_calc_params(args) -> dict:
                 params[key] = float(val)
             except ValueError:
                 pass
+    smoothing = args.get("rsi_smoothing", "").strip().lower()
+    if smoothing in ("wilder", "ema", "sma"):
+        params["rsi_smoothing"] = smoothing
     return params
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 

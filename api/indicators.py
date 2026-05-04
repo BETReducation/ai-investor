@@ -4,8 +4,25 @@ import pandas_ta as ta
 
 # ── Legacy wrappers (used by backtest.py) ─────────────────────────────────────
 
-def calculate_rsi(df: pd.DataFrame, length: int = 14) -> pd.Series:
-    return ta.rsi(df["Close"], length=length)
+def _rsi_series(close: pd.Series, length: int = 14, smoothing: str = "wilder") -> pd.Series:
+    delta = close.diff()
+    gain  = delta.clip(lower=0)
+    loss  = (-delta).clip(lower=0)
+    if smoothing == "ema":
+        avg_gain = gain.ewm(span=length, adjust=False).mean()
+        avg_loss = loss.ewm(span=length, adjust=False).mean()
+    elif smoothing == "sma":
+        avg_gain = gain.rolling(length).mean()
+        avg_loss = loss.rolling(length).mean()
+    else:  # wilder / rma (default — matches TradingView)
+        avg_gain = gain.ewm(alpha=1 / length, adjust=False).mean()
+        avg_loss = loss.ewm(alpha=1 / length, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0, float("nan"))
+    return 100 - (100 / (1 + rs))
+
+
+def calculate_rsi(df: pd.DataFrame, length: int = 14, smoothing: str = "wilder") -> pd.Series:
+    return _rsi_series(df["Close"], length=length, smoothing=smoothing)
 
 
 def calculate_macd(df: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
@@ -72,6 +89,7 @@ def calculate_all(
     df: pd.DataFrame,
     # Core (existing)
     rsi_length: int = 14,
+    rsi_smoothing: str = "wilder",
     macd_fast: int = 12,
     macd_slow: int = 26,
     macd_signal: int = 9,
@@ -114,7 +132,7 @@ def calculate_all(
     vol   = df["Volume"]
 
     # ── Core ──────────────────────────────────────────────────────────────────
-    rsi_s   = ta.rsi(close, length=rsi_length)
+    rsi_s   = _rsi_series(close, length=rsi_length, smoothing=rsi_smoothing)
     macd_df = ta.macd(close, fast=macd_fast, slow=macd_slow, signal=macd_signal)
     bb_df   = ta.bbands(close, length=bb_length, std=bb_std)
 
