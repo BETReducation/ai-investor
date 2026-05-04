@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX TRADER — Portfolio Balancer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/apex.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="/static/js/theme.js"></script>
+<style>
+/* ── Hero ───────────────────────────────────────────────────────────────────── */
+.pb-hero {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 28px 16px;
+}
+.pb-hero-eyebrow {
+  font-size: 8px; color: var(--accent-green);
+  letter-spacing: 3px; margin-bottom: 6px;
+}
+.pb-hero-title {
+  font-size: 17px; font-weight: 700;
+  color: var(--text-primary); letter-spacing: 2px; margin-bottom: 8px;
+}
+.pb-hero-desc {
+  font-size: 10px; color: var(--text-secondary);
+  line-height: 1.75; max-width: 820px; margin-bottom: 12px;
+}
+.pb-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.pb-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 2px;
+  font-size: 8px; letter-spacing: 1px; font-weight: 700; border: 1px solid;
+}
+
+/* ── Scenarios strip ────────────────────────────────────────────────────────── */
+.scenarios-strip {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.scenarios-eyebrow {
+  font-size: 8px; color: var(--text-muted);
+  letter-spacing: 2px; white-space: nowrap; margin-right: 4px;
+}
+.btn-scene {
+  padding: 4px 11px; border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 0.5px; cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.btn-scene:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.btn-reset-all {
+  margin-left: auto; padding: 4px 11px; border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; cursor: pointer; letter-spacing: 0.5px;
+  border: 1px solid var(--border);
+  background: rgba(255,51,85,0.07); color: var(--accent-red);
+  transition: all 0.15s;
+}
+.btn-reset-all:hover { background: rgba(255,51,85,0.18); }
+
+/* ── Main grid ──────────────────────────────────────────────────────────────── */
+.pb-grid {
+  display: grid;
+  grid-template-columns: 268px 1fr 272px;
+  min-height: calc(100vh - 190px);
+}
+.pb-col { overflow-y: auto; padding: 14px; }
+.pb-col-left  { background: var(--bg-panel); border-right: 1px solid var(--border); }
+.pb-col-center{ background: var(--bg-primary); }
+.pb-col-right { background: var(--bg-panel); border-left: 1px solid var(--border); }
+
+/* ── Category accordion ─────────────────────────────────────────────────────── */
+.cat-block { margin-bottom: 5px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+.cat-hdr {
+  display: flex; align-items: center;
+  padding: 7px 9px; cursor: pointer; user-select: none;
+  background: var(--bg-card); transition: background 0.15s; gap: 7px;
+}
+.cat-hdr:hover { background: var(--bg-hover); }
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cat-hdr-info { flex: 1; min-width: 0; }
+.cat-hdr-name { font-size: 9px; font-weight: 700; color: var(--text-secondary); letter-spacing: 1px; }
+.cat-hdr-desc { font-size: 8px; color: var(--text-muted); margin-top: 1px; }
+.cat-hdr-pct  { text-align: right; flex-shrink: 0; }
+.cat-hdr-pct-num  { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+.cat-hdr-pct-drift{ font-size: 8px; }
+.cat-chev {
+  width: 13px; height: 13px; color: var(--text-muted);
+  transition: transform 0.2s; flex-shrink: 0;
+}
+.cat-chev.open { transform: rotate(180deg); }
+.cat-body { display: none; background: var(--bg-secondary); border-top: 1px solid var(--border); }
+.cat-body.open { display: block; }
+
+/* ── Asset rows ─────────────────────────────────────────────────────────────── */
+.asset-row {
+  display: grid; grid-template-columns: 1fr 72px 42px;
+  align-items: center; gap: 4px;
+  padding: 4px 9px; border-bottom: 1px solid var(--border);
+}
+.asset-row:last-child { border-bottom: none; }
+.asset-name { font-size: 9px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.asset-slider { width: 100%; height: 3px; accent-color: var(--accent-blue); cursor: pointer; }
+.asset-pct { font-size: 9px; text-align: right; font-weight: 600; white-space: nowrap; }
+.asset-pct.up { color: var(--accent-green); }
+.asset-pct.dn { color: var(--accent-red); }
+.asset-pct.fl { color: var(--text-muted); }
+
+/* ── Chart ──────────────────────────────────────────────────────────────────── */
+.chart-wrap { position: relative; max-width: 290px; margin: 0 auto 14px; }
+.chart-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center; pointer-events: none;
+}
+.chart-center-val { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.chart-center-lbl { font-size: 8px; color: var(--text-muted); letter-spacing: 1px; margin-top: 1px; }
+.chart-center-pct { font-size: 12px; font-weight: 700; margin-top: 2px; }
+
+/* ── Allocation table ───────────────────────────────────────────────────────── */
+.alloc-tbl { width: 100%; border-collapse: collapse; font-size: 9px; margin-top: 6px; }
+.alloc-tbl th { color: var(--text-muted); letter-spacing: 1px; text-align: left; padding: 2px 4px; border-bottom: 1px solid var(--border); }
+.alloc-tbl td { padding: 4px 4px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+.alloc-tbl tr:last-child td { border-bottom: none; }
+.drift-pos { color: var(--accent-green); }
+.drift-neg { color: var(--accent-red); }
+.drift-bar-wrap { background: var(--bg-secondary); height: 4px; border-radius: 2px; overflow: hidden; position: relative; }
+.drift-bar-fill { height: 100%; border-radius: 2px; transition: width 0.35s; }
+
+/* ── Right panel ────────────────────────────────────────────────────────────── */
+.sec-lbl {
+  font-size: 8px; color: var(--text-muted); letter-spacing: 2px;
+  margin-bottom: 7px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.stat-box {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 2px;
+  padding: 11px 13px; margin-bottom: 10px;
+}
+.stat-lbl { font-size: 8px; color: var(--text-muted); letter-spacing: 2px; margin-bottom: 3px; }
+.stat-val { font-size: 17px; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; }
+.stat-sub { font-size: 10px; margin-top: 2px; }
+.stat-sub.up { color: var(--accent-green); }
+.stat-sub.dn { color: var(--accent-red); }
+.stat-sub.fl { color: var(--text-muted); }
+
+/* ── Compare rows ───────────────────────────────────────────────────────────── */
+.cmp-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 6px; border-bottom: 1px solid var(--border);
+  font-size: 9px; border-radius: 1px; transition: background 0.1s;
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-row.highlight { background: var(--bg-hover); }
+.cmp-name { color: var(--text-secondary); display: flex; align-items: center; gap: 5px; }
+.cmp-val  { font-weight: 700; color: var(--text-primary); }
+.cmp-gain { font-size: 9px; margin-left: 4px; }
+
+/* ── Trade list ─────────────────────────────────────────────────────────────── */
+.trade-row {
+  display: flex; align-items: center;
+  padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 9px;
+}
+.trade-row:last-child { border-bottom: none; }
+.trade-badge {
+  font-size: 8px; font-weight: 700; letter-spacing: 1px;
+  padding: 1px 5px; border-radius: 1px; flex-shrink: 0;
+}
+.trade-badge.buy  { background: rgba(0,200,122,0.12); color: var(--accent-green); }
+.trade-badge.sell { background: rgba(255,51,85,0.12);  color: var(--accent-red);   }
+.trade-asset { flex: 1; color: var(--text-secondary); margin: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trade-amt   { font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+
+.btn-rebal {
+  width: 100%; padding: 9px; margin-top: 9px;
+  background: rgba(0,136,255,0.1); border: 1px solid var(--accent-blue);
+  color: var(--accent-blue); font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; font-weight: 700;
+  cursor: pointer; border-radius: 2px; transition: all 0.15s;
+}
+.btn-rebal:hover { background: rgba(0,136,255,0.22); }
+
+/* ── Event log ──────────────────────────────────────────────────────────────── */
+.evt-log { max-height: 100px; overflow-y: auto; scrollbar-width: thin; }
+.evt-row { display: flex; gap: 6px; font-size: 8px; padding: 2px 0; border-bottom: 1px solid var(--border); }
+.evt-time { color: var(--text-muted); flex-shrink: 0; }
+.evt-tag  { color: var(--accent-cyan); flex-shrink: 0; white-space: nowrap; }
+.evt-msg  { color: var(--text-secondary); }
+
+/* ── Education ──────────────────────────────────────────────────────────────── */
+.edu-section { padding: 20px 28px; background: var(--bg-primary); border-top: 1px solid var(--border); }
+.edu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.edu-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 2px; padding: 15px;
+}
+.edu-num   { font-size: 22px; font-weight: 700; color: var(--accent-blue); opacity: 0.25; margin-bottom: 5px; line-height: 1; }
+.edu-title { font-size: 9px; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; margin-bottom: 6px; }
+.edu-body  { font-size: 9px; color: var(--text-secondary); line-height: 1.65; }
+
+.pb-footer {
+  padding: 8px 28px; font-size: 8px; color: var(--text-muted);
+  letter-spacing: 1px; border-top: 1px solid var(--border); text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .pb-grid { grid-template-columns: 1fr; }
+  .edu-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar">
+  <div class="topbar-logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text">APEX TRADER</div>
+      <div class="logo-sub">PORTFOLIO BALANCER</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a href="/" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;text-decoration:none;">HOME</a>
+    <a href="/signal-config" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;text-decoration:none;">STRATEGY LAB</a>
+    <a href="/static/strategy-lab.html" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;text-decoration:none;">BACKTESTER</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="status-pill">
+      <div class="status-dot active"></div>
+      <span>EDUCATIONAL MODE</span>
+    </div>
+    <button onclick="toggleTheme()" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;border-radius:2px;letter-spacing:1px;">THEME</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="pb-hero">
+  <div class="pb-hero-eyebrow">EDUCATIONAL TOOL — NOT INVESTMENT ADVICE</div>
+  <div class="pb-hero-title">PORTFOLIO BALANCER</div>
+  <div class="pb-hero-desc">
+    A balanced portfolio divides capital equally across five uncorrelated asset classes. When one class surges,
+    its share of the portfolio grows beyond 20% — <strong style="color:var(--text-primary);">rebalancing means selling the winner and buying the
+    laggards</strong>, mechanically enforcing "buy low, sell high" without any market timing. Use the sliders below
+    to simulate price moves across 25 assets. Then press <strong style="color:var(--accent-blue);">REBALANCE PORTFOLIO</strong> to see exactly
+    what you'd buy and sell — and compare it against putting everything in a single asset class.
+  </div>
+  <div class="pb-badges" id="heroBadges"></div>
+</div>
+
+<!-- SCENARIOS -->
+<div class="scenarios-strip">
+  <span class="scenarios-eyebrow">SIMULATE A SCENARIO:</span>
+  <button class="btn-scene" onclick="applyScene('crypto_bull')">🚀 Crypto Bull Run</button>
+  <button class="btn-scene" onclick="applyScene('stock_crash')">📉 Stock Market Crash</button>
+  <button class="btn-scene" onclick="applyScene('gold_rush')">⚡ Gold Rush</button>
+  <button class="btn-scene" onclick="applyScene('balanced_growth')">📈 Balanced Growth</button>
+  <button class="btn-scene" onclick="applyScene('chaos')">🌀 Full Chaos</button>
+  <button class="btn-reset-all" onclick="resetAll()">↺ RESET</button>
+</div>
+
+<!-- GRID -->
+<div class="pb-grid">
+
+  <!-- LEFT: Asset sliders -->
+  <div class="pb-col pb-col-left" id="assetPanel"></div>
+
+  <!-- CENTER: Chart + allocation -->
+  <div class="pb-col pb-col-center">
+    <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;">LIVE ALLOCATION — TARGET 20% PER CATEGORY</div>
+
+    <div class="chart-wrap">
+      <canvas id="pieChart" width="290" height="290"></canvas>
+      <div class="chart-center">
+        <div class="chart-center-val" id="ctrVal">£100,000</div>
+        <div class="chart-center-lbl">TOTAL VALUE</div>
+        <div class="chart-center-pct" id="ctrPct"></div>
+      </div>
+    </div>
+
+    <table class="alloc-tbl" id="allocTbl"></table>
+  </div>
+
+  <!-- RIGHT: Stats + compare + rebalance -->
+  <div class="pb-col pb-col-right">
+
+    <div class="stat-box">
+      <div class="stat-lbl">BALANCED PORTFOLIO VALUE</div>
+      <div class="stat-val" id="rStatVal">£100,000</div>
+      <div class="stat-sub fl" id="rStatGain">+£0 · ±0.00%</div>
+    </div>
+
+    <div class="sec-lbl">VS 100% CONCENTRATED</div>
+    <div style="font-size:8px;color:var(--text-muted);margin-bottom:6px;line-height:1.5;">
+      What if you had put all £100,000 into one asset class instead?
+    </div>
+    <div id="cmpPanel"></div>
+
+    <div class="sec-lbl" style="margin-top:14px;">REBALANCE TRADES</div>
+    <div id="tradePan" style="font-size:9px;color:var(--text-muted);padding:3px 0;min-height:40px;">
+      Adjust prices or apply a scenario to see required trades
+    </div>
+    <button class="btn-rebal" onclick="doRebalance()">⟳ REBALANCE PORTFOLIO</button>
+
+    <div class="sec-lbl" style="margin-top:14px;">EVENT LOG</div>
+    <div class="evt-log" id="evtLog">
+      <div class="evt-row"><span class="evt-msg" style="color:var(--text-muted);">No events yet</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- EDUCATION -->
+<div class="edu-section">
+  <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:14px;">WHY REBALANCING WORKS</div>
+  <div class="edu-grid">
+    <div class="edu-card">
+      <div class="edu-num">01</div>
+      <div class="edu-title">SYSTEMATIC PROFIT-TAKING</div>
+      <div class="edu-body">When an asset class rises sharply, it takes up more than its 20% share. Rebalancing forces you to sell it at elevated prices and rotate into underperformers — mechanically implementing "sell high, buy low" without needing to predict the market. Try the Crypto Bull Run scenario, then rebalance, then simulate a crash.</div>
+    </div>
+    <div class="edu-card">
+      <div class="edu-num">02</div>
+      <div class="edu-title">UNCORRELATED ASSET CLASSES</div>
+      <div class="edu-body">Crypto, stocks, property, metals and bonds rarely crash simultaneously. When stocks collapse, bonds and gold often rise. A five-way split means a 70% crash in one class only destroys 14% of a balanced portfolio — versus 70% of a concentrated one. Try the Stock Market Crash scenario to see this in action.</div>
+    </div>
+    <div class="edu-card">
+      <div class="edu-num">03</div>
+      <div class="edu-title">COMPOUNDING THE REBALANCE</div>
+      <div class="edu-body">The real power comes from repeating this over many cycles. Apply Crypto Bull Run → Rebalance → simulate a crash. The balanced portfolio locked in gains at the top. The concentrated investor rides it all the way back down. Over decades, this compounding effect of disciplined rebalancing can significantly outperform emotional concentration.</div>
+    </div>
+  </div>
+</div>
+
+<div class="pb-footer">
+  This tool is for educational purposes only. It does not constitute investment advice. All figures are simulated with a virtual £100,000. Past performance does not predict future results.
+</div>
+
+<script>
+/* ══ DATA ════════════════════════════════════════════════════════════════════ */
+
+const PORTFOLIO_START = 100000;
+
+const CATS = [
+  {
+    id: 'safe', label: 'Safe', short: 'SAFE', color: '#00c87a',
+    desc: 'Bonds, Gilts & Cash Savings',
+    assets: [
+      { id: 's_tbills',  label: 'US T-Bills'  },
+      { id: 's_gilts',   label: 'UK Gilts'    },
+      { id: 's_euro',    label: 'Euro Bonds'  },
+      { id: 's_corp',    label: 'Corp Bonds'  },
+      { id: 's_cash',    label: 'Cash Savings'},
+    ]
+  },
+  {
+    id: 'hard', label: 'Hard Assets', short: 'HARD', color: '#f59e0b',
+    desc: 'Property, Land & Infrastructure',
+    assets: [
+      { id: 'h_ukres',  label: 'UK Residential'},
+      { id: 'h_comre',  label: 'Commercial RE' },
+      { id: 'h_agri',   label: 'Agri Land'     },
+      { id: 'h_infra',  label: 'Infrastructure'},
+      { id: 'h_reits',  label: 'REITs'         },
+    ]
+  },
+  {
+    id: 'stocks', label: 'Stocks & Shares', short: 'STKS', color: '#3b82f6',
+    desc: 'Global Equities & Index Funds',
+    assets: [
+      { id: 'k_sp500',  label: 'S&P 500'      },
+      { id: 'k_nas',    label: 'NASDAQ 100'   },
+      { id: 'k_ftse',   label: 'FTSE 100'     },
+      { id: 'k_em',     label: 'Emerging Mkts'},
+      { id: 'k_sc',     label: 'Global Sm Cap'},
+    ]
+  },
+  {
+    id: 'metals', label: 'Metals', short: 'MTLS', color: '#d4a017',
+    desc: 'Precious & Industrial Metals',
+    assets: [
+      { id: 'm_gold',  label: 'Gold'     },
+      { id: 'm_silv',  label: 'Silver'   },
+      { id: 'm_plat',  label: 'Platinum' },
+      { id: 'm_copp',  label: 'Copper'   },
+      { id: 'm_pall',  label: 'Palladium'},
+    ]
+  },
+  {
+    id: 'crypto', label: 'Crypto', short: 'CRPT', color: '#a855f7',
+    desc: 'Digital Assets — High Risk / Reward',
+    assets: [
+      { id: 'c_btc', label: 'Bitcoin'  },
+      { id: 'c_eth', label: 'Ethereum' },
+      { id: 'c_ada', label: 'Cardano'  },
+      { id: 'c_xrp', label: 'XRP'      },
+      { id: 'c_sol', label: 'Solana'   },
+    ]
+  },
+];
+
+const ALL_ASSETS = CATS.flatMap(c => c.assets.map(a => ({ ...a, catId: c.id })));
+const ASSET_INITIAL = PORTFOLIO_START / ALL_ASSETS.length; // £4,000
+
+/* ══ STATE ═══════════════════════════════════════════════════════════════════ */
+
+let mults     = {};   // price-change multiplier per asset (1.0 = flat)
+let baseVals  = {};   // base value per asset — resets on each rebalance
+let expanded  = {};   // category accordion open state
+let evtLog    = [];
+let roundNum  = 0;
+let pieChart  = null;
+
+function initState() {
+  ALL_ASSETS.forEach(a => { mults[a.id] = 1.0; baseVals[a.id] = ASSET_INITIAL; });
+  CATS.forEach((c, i) => { expanded[c.id] = i === 0; });
+}
+
+/* ══ CALCULATIONS ════════════════════════════════════════════════════════════ */
+
+function calcPortfolio() {
+  const assetVals = {}, catVals = {};
+  let total = 0;
+  CATS.forEach(cat => {
+    catVals[cat.id] = 0;
+    cat.assets.forEach(a => {
+      const v = baseVals[a.id] * mults[a.id];
+      assetVals[a.id] = v;
+      catVals[cat.id] += v;
+      total += v;
+    });
+  });
+  const catPcts = {};
+  CATS.forEach(c => { catPcts[c.id] = total ? (catVals[c.id] / total) * 100 : 0; });
+  return { assetVals, catVals, catPcts, total };
+}
+
+function calcTrades(p) {
+  const target = p.total / ALL_ASSETS.length;
+  return ALL_ASSETS
+    .map(a => ({ ...a, diff: target - p.assetVals[a.id] }))
+    .filter(t => Math.abs(t.diff) > 1)
+    .sort((a, b) => a.diff - b.diff);
+}
+
+function calcConc(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  const perAsset = PORTFOLIO_START / cat.assets.length;
+  return cat.assets.reduce((s, a) => s + perAsset * mults[a.id], 0);
+}
+
+function fmt(n) {
+  return '£' + Math.abs(n).toLocaleString('en-GB', { maximumFractionDigits: 0 });
+}
+function fmtS(n, dec = 2) {
+  return (n >= 0 ? '+' : '−') + fmt(Math.abs(n)).slice(1) + (dec === 0 ? '' : '');
+}
+function fmtP(p, dec = 1) { return (p >= 0 ? '+' : '') + p.toFixed(dec) + '%'; }
+
+/* ══ BUILD UI ════════════════════════════════════════════════════════════════ */
+
+function buildPanel() {
+  // Hero badges
+  document.getElementById('heroBadges').innerHTML = CATS.map(c =>
+    `<div class="pb-badge" style="background:${c.color}18;border-color:${c.color}44;color:${c.color};">
+      <span style="width:6px;height:6px;border-radius:50%;background:${c.color};display:inline-block;"></span>
+      ${c.short} — 20%
+    </div>`).join('');
+
+  // Category blocks
+  const panel = document.getElementById('assetPanel');
+  panel.innerHTML = '';
+  CATS.forEach(cat => {
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+
+    // Header
+    block.innerHTML = `
+      <div class="cat-hdr" onclick="toggleCat('${cat.id}')">
+        <div class="cat-dot" style="background:${cat.color};"></div>
+        <div class="cat-hdr-info">
+          <div class="cat-hdr-name">${cat.label.toUpperCase()}</div>
+          <div class="cat-hdr-desc">${cat.desc}</div>
+        </div>
+        <div class="cat-hdr-pct">
+          <div class="cat-hdr-pct-num" id="cpct-${cat.id}">20.0%</div>
+          <div class="cat-hdr-pct-drift fl" id="cdrift-${cat.id}">±0.0%</div>
+        </div>
+        <svg class="cat-chev ${expanded[cat.id] ? 'open' : ''}" id="cchev-${cat.id}"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="cat-body ${expanded[cat.id] ? 'open' : ''}" id="cbody-${cat.id}">
+        ${cat.assets.map(a => `
+          <div class="asset-row">
+            <div class="asset-name">${a.label}</div>
+            <input type="range" class="asset-slider" id="sl-${a.id}"
+                   min="-90" max="500" value="0" step="1"
+                   oninput="onSlider('${a.id}',this.value)">
+            <span class="asset-pct fl" id="ap-${a.id}">±0%</span>
+          </div>`).join('')}
+      </div>`;
+    panel.appendChild(block);
+  });
+}
+
+function toggleCat(id) {
+  expanded[id] = !expanded[id];
+  document.getElementById(`cbody-${id}`)?.classList.toggle('open', expanded[id]);
+  document.getElementById(`cchev-${id}`)?.classList.toggle('open', expanded[id]);
+}
+
+/* ══ EVENT HANDLERS ══════════════════════════════════════════════════════════ */
+
+function onSlider(id, val) {
+  const pct = parseFloat(val);
+  mults[id] = 1 + pct / 100;
+  const el = document.getElementById(`ap-${id}`);
+  if (el) {
+    el.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(0) + '%';
+    el.className = `asset-pct ${pct > 0 ? 'up' : pct < 0 ? 'dn' : 'fl'}`;
+  }
+  updateUI();
+}
+
+function doRebalance() {
+  const p = calcPortfolio();
+  const trades = calcTrades(p);
+  if (trades.length === 0) return;
+  roundNum++;
+  const gain = p.total - PORTFOLIO_START;
+  addEvt('REBALANCE #' + roundNum,
+    `Portfolio ${fmtP((gain/PORTFOLIO_START)*100)} · ${fmt(p.total)} locked — all 25 positions equalised`);
+
+  const newBase = p.total / ALL_ASSETS.length;
+  ALL_ASSETS.forEach(a => {
+    baseVals[a.id] = newBase;
+    mults[a.id] = 1.0;
+    const sl = document.getElementById(`sl-${a.id}`);
+    const ap = document.getElementById(`ap-${a.id}`);
+    if (sl) sl.value = 0;
+    if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
+  });
+  updateUI();
+}
+
+function resetAll() {
+  initState();
+  ALL_ASSETS.forEach(a => {
+    const sl = document.getElementById(`sl-${a.id}`);
+    const ap = document.getElementById(`ap-${a.id}`);
+    if (sl) sl.value = 0;
+    if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
+  });
+  addEvt('RESET', 'All positions reset — virtual portfolio returned to £100,000 baseline');
+  updateUI();
+}
+
+/* ══ SCENARIOS ═══════════════════════════════════════════════════════════════ */
+
+const SCENES = {
+  crypto_bull: {
+    tag: 'CRYPTO BULL RUN',
+    msg: 'Crypto surges — watch the portfolio drift and then rebalance to lock in profits',
+    ch: { c_btc:420, c_eth:360, c_ada:480, c_xrp:290, c_sol:440,
+          s_tbills:2, s_gilts:1, s_euro:1, s_corp:3, s_cash:1,
+          h_ukres:6, h_comre:4, h_agri:5, h_infra:3, h_reits:7,
+          k_sp500:9, k_nas:13, k_ftse:5, k_em:7, k_sc:10,
+          m_gold:12, m_silv:9, m_plat:7, m_copp:8, m_pall:6 }
+  },
+  stock_crash: {
+    tag: 'STOCK MARKET CRASH',
+    msg: 'Equities collapse — notice how bonds and gold cushion the blow',
+    ch: { k_sp500:-45, k_nas:-56, k_ftse:-38, k_em:-50, k_sc:-52,
+          s_tbills:6, s_gilts:9, s_euro:5, s_corp:-10, s_cash:2,
+          h_ukres:-6, h_comre:-16, h_agri:3, h_infra:-4, h_reits:-22,
+          m_gold:20, m_silv:14, m_plat:-4, m_copp:-22, m_pall:-12,
+          c_btc:-32, c_eth:-42, c_ada:-52, c_xrp:-36, c_sol:-48 }
+  },
+  gold_rush: {
+    tag: 'GOLD RUSH',
+    msg: 'Inflation fears drive metals to record highs while bonds suffer',
+    ch: { m_gold:85, m_silv:65, m_plat:42, m_copp:32, m_pall:55,
+          s_tbills:-3, s_gilts:-6, s_euro:-4, s_corp:-5, s_cash:0,
+          h_ukres:12, h_comre:9, h_agri:16, h_infra:6, h_reits:8,
+          k_sp500:-7, k_nas:-11, k_ftse:-5, k_em:-4, k_sc:-9,
+          c_btc:22, c_eth:18, c_ada:-4, c_xrp:-8, c_sol:12 }
+  },
+  balanced_growth: {
+    tag: 'BALANCED GROWTH',
+    msg: 'All asset classes rise steadily — a rising tide lifts all boats',
+    ch: { s_tbills:4, s_gilts:5, s_euro:4, s_corp:6, s_cash:3,
+          h_ukres:18, h_comre:14, h_agri:20, h_infra:12, h_reits:16,
+          k_sp500:22, k_nas:28, k_ftse:14, k_em:18, k_sc:24,
+          m_gold:15, m_silv:12, m_plat:10, m_copp:18, m_pall:11,
+          c_btc:45, c_eth:38, c_ada:30, c_xrp:25, c_sol:42 }
+  },
+  chaos: { tag: 'FULL CHAOS', msg: 'Random market movement — discipline and rebalancing beats emotion', ch: null }
+};
+
+function applyScene(name) {
+  const s = SCENES[name];
+  let ch = s.ch;
+  if (!ch) {
+    ch = {};
+    ALL_ASSETS.forEach(a => { ch[a.id] = Math.round((Math.random() - 0.35) * 200); });
+  }
+  ALL_ASSETS.forEach(a => {
+    const pct = ch[a.id] ?? 0;
+    mults[a.id] = 1 + pct / 100;
+    const sl = document.getElementById(`sl-${a.id}`);
+    const ap = document.getElementById(`ap-${a.id}`);
+    if (sl) sl.value = Math.max(-90, Math.min(500, pct));
+    if (ap) {
+      ap.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(0) + '%';
+      ap.className = `asset-pct ${pct > 0 ? 'up' : pct < 0 ? 'dn' : 'fl'}`;
+    }
+  });
+  // Expand all categories so user can see the changes
+  CATS.forEach(cat => {
+    expanded[cat.id] = true;
+    document.getElementById(`cbody-${cat.id}`)?.classList.add('open');
+    document.getElementById(`cchev-${cat.id}`)?.classList.add('open');
+  });
+  addEvt(s.tag, s.msg);
+  updateUI();
+}
+
+/* ══ UPDATE UI ═══════════════════════════════════════════════════════════════ */
+
+function updateUI() {
+  const p = calcPortfolio();
+  const gain    = p.total - PORTFOLIO_START;
+  const gainPct = (gain / PORTFOLIO_START) * 100;
+
+  // Chart center
+  document.getElementById('ctrVal').textContent = fmt(p.total);
+  const ctrPct = document.getElementById('ctrPct');
+  ctrPct.textContent = fmtP(gainPct);
+  ctrPct.style.color = gain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+  // Right: stat box
+  document.getElementById('rStatVal').textContent = fmt(p.total);
+  const gainEl = document.getElementById('rStatGain');
+  gainEl.textContent = (gain >= 0 ? '+' : '−') + fmt(Math.abs(gain)) + ' · ' + fmtP(gainPct);
+  gainEl.className = `stat-sub ${gain > 0 ? 'up' : gain < 0 ? 'dn' : 'fl'}`;
+
+  // Pie chart
+  if (pieChart) {
+    pieChart.data.datasets[0].data = CATS.map(c => p.catPcts[c.id]);
+    pieChart.update('none');
+  }
+
+  // Category headers
+  CATS.forEach(cat => {
+    const pct   = p.catPcts[cat.id];
+    const drift = pct - 20;
+    const pctEl   = document.getElementById(`cpct-${cat.id}`);
+    const driftEl = document.getElementById(`cdrift-${cat.id}`);
+    if (pctEl)   pctEl.textContent = pct.toFixed(1) + '%';
+    if (driftEl) {
+      driftEl.textContent = fmtP(drift);
+      driftEl.className = `cat-hdr-pct-drift ${Math.abs(drift) < 0.2 ? 'fl' : drift > 0 ? 'up' : 'dn'}`;
+    }
+  });
+
+  // Allocation table
+  document.getElementById('allocTbl').innerHTML = `
+    <thead><tr>
+      <th></th><th>CATEGORY</th>
+      <th style="text-align:right;">ALLOC</th>
+      <th style="text-align:right;">DRIFT</th>
+      <th style="text-align:right;">VALUE</th>
+    </tr></thead>
+    <tbody>${CATS.map(cat => {
+      const pct   = p.catPcts[cat.id];
+      const drift = pct - 20;
+      const barW  = Math.min(100, (pct / 40) * 100);
+      return `<tr>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cat.color};"></span></td>
+        <td>${cat.label}</td>
+        <td style="text-align:right;font-weight:700;color:var(--text-primary);">${pct.toFixed(1)}%</td>
+        <td style="text-align:right;" class="${Math.abs(drift)<0.1?'':'drift-'+(drift>0?'pos':'neg')}">${fmtP(drift)}</td>
+        <td style="text-align:right;">${fmt(p.catVals[cat.id])}</td>
+      </tr>
+      <tr><td colspan="5" style="padding:0 4px 5px;">
+        <div class="drift-bar-wrap">
+          <div class="drift-bar-fill" style="width:${barW}%;background:${cat.color};opacity:0.65;"></div>
+        </div>
+      </td></tr>`;
+    }).join('')}</tbody>`;
+
+  // Comparison panel
+  document.getElementById('cmpPanel').innerHTML =
+    [...CATS].sort((a, b) => calcConc(b.id) - calcConc(a.id)).map(cat => {
+      const cv   = calcConc(cat.id);
+      const cg   = cv - PORTFOLIO_START;
+      const cgP  = (cg / PORTFOLIO_START) * 100;
+      return `<div class="cmp-row">
+        <span class="cmp-name">
+          <span style="width:7px;height:7px;border-radius:50%;background:${cat.color};display:inline-block;"></span>
+          100% ${cat.short}
+        </span>
+        <span>
+          <span class="cmp-val">${fmt(cv)}</span>
+          <span class="cmp-gain" style="color:${cg>=0?'var(--accent-green)':'var(--accent-red)'};">${fmtP(cgP)}</span>
+        </span>
+      </div>`;
+    }).join('') +
+    `<div class="cmp-row highlight" style="margin-top:3px;border:1px solid var(--accent-blue);border-radius:2px;">
+      <span class="cmp-name" style="font-weight:700;color:var(--accent-blue);">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--accent-blue);display:inline-block;"></span>
+        ⟳ BALANCED
+      </span>
+      <span>
+        <span class="cmp-val" style="color:var(--accent-blue);">${fmt(p.total)}</span>
+        <span class="cmp-gain" style="color:${gain>=0?'var(--accent-green)':'var(--accent-red)'};">${fmtP(gainPct)}</span>
+      </span>
+    </div>`;
+
+  // Trade list
+  const trades = calcTrades(p);
+  const tradePan = document.getElementById('tradePan');
+  if (trades.length === 0) {
+    tradePan.innerHTML = `<div style="color:var(--accent-green);padding:5px 0;">✓ Portfolio balanced — no trades needed</div>`;
+  } else {
+    tradePan.innerHTML = trades.map(t => {
+      const cat = CATS.find(c => c.id === t.catId);
+      return `<div class="trade-row">
+        <span class="trade-badge ${t.diff > 0 ? 'buy' : 'sell'}">${t.diff > 0 ? 'BUY' : 'SELL'}</span>
+        <span class="trade-asset" style="color:${cat?.color};">${t.label}</span>
+        <span class="trade-amt">${fmt(Math.abs(t.diff))}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+/* ══ EVENT LOG ═══════════════════════════════════════════════════════════════ */
+
+function addEvt(tag, msg) {
+  const t = new Date().toTimeString().slice(0, 8);
+  evtLog.unshift({ t, tag, msg });
+  const el = document.getElementById('evtLog');
+  if (!el) return;
+  el.innerHTML = evtLog.slice(0, 30).map(e =>
+    `<div class="evt-row">
+      <span class="evt-time">${e.t}</span>
+      <span class="evt-tag">${e.tag}</span>
+      <span class="evt-msg">${e.msg}</span>
+    </div>`).join('');
+}
+
+/* ══ CHART ════════════════════════════════════════════════════════════════════ */
+
+function initChart() {
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  pieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: CATS.map(c => c.label),
+      datasets: [{
+        data: [20, 20, 20, 20, 20],
+        backgroundColor: CATS.map(c => c.color + 'bb'),
+        borderColor:     CATS.map(c => c.color),
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '60%',
+      animation: { duration: 280 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `  ${ctx.label}: ${ctx.parsed.toFixed(1)}%  (target 20.0%)`
+          },
+          bodyFont: { family: "'IBM Plex Mono', monospace", size: 11 },
+          backgroundColor: 'rgba(10,14,20,0.96)',
+          borderColor: 'rgba(30,42,58,1)',
+          borderWidth: 1,
+          padding: 10,
+        }
+      }
+    }
+  });
+}
+
+/* ══ INIT ════════════════════════════════════════════════════════════════════ */
+
+initState();
+buildPanel();
+initChart();
+updateUI();
+addEvt('READY', 'Virtual portfolio loaded — £4,000 per asset × 25 assets = £100,000');
+</script>
+</body>
+</html>

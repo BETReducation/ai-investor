@@ -250,6 +250,10 @@ def index():
 def signal_config():
     return send_from_directory("static", "signal_config.html")
 
+@app.route("/portfolio-balancer")
+def portfolio_balancer():
+    return send_from_directory("static", "portfolio-balancer.html")
+
 
 @app.route("/profile")
 def profile_page():
