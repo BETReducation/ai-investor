@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apex Trader — AI-Powered Trading Signals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --radius: 12px; --radius-sm: 6px; }
+  [data-theme="dark"] {
+    --bg:#0b0f1a; --surface:#111827; --surface2:#1a2235;
+    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+    --text:#e2e8f4; --muted:#6b7a99; --accent:#4da6ff;
+    --accent-dim:rgba(77,166,255,0.10); --accent-text:#0b0f1a;
+    --coral:#f07a5a; --teal:#4dd9c0; --shadow:0 4px 24px rgba(0,0,0,0.4);
+  }
+  [data-theme="light"] {
+    --bg:#f0f4fb; --surface:#ffffff; --surface2:#e8eef8;
+    --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.14);
+    --text:#0f172a; --muted:#5a6a88; --accent:#1a7fe8;
+    --accent-dim:rgba(26,127,232,0.10); --accent-text:#ffffff;
+    --coral:#e05a3a; --teal:#0aab8a; --shadow:0 4px 24px rgba(0,0,0,0.10);
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; font-size:15px; line-height:1.6; transition:background 0.3s,color 0.3s; }
+
+  /* ── NAV ── */
+  nav { position:sticky; top:0; z-index:100; background:rgba(11,15,26,0.85); backdrop-filter:blur(14px); border-bottom:1px solid var(--border); padding:0 2rem; display:flex; align-items:center; gap:2rem; height:56px; transition:background 0.3s; }
+  [data-theme="light"] nav { background:rgba(240,244,251,0.88); }
+  .nav-logo { font-family:'Outfit',sans-serif; font-weight:800; font-size:17px; color:var(--accent); letter-spacing:-0.01em; text-decoration:none; }
+  .nav-logo span { font-weight:300; color:var(--muted); font-size:13px; margin-left:4px; }
+  .nav-links { display:flex; gap:0; margin-left:auto; align-items:center; }
+  .nav-links a { font-size:13px; color:var(--muted); text-decoration:none; padding:0 14px; height:56px; display:flex; align-items:center; transition:color 0.15s; }
+  .nav-links a:hover { color:var(--text); }
+  .nav-links a.cta { color:var(--accent); font-weight:600; }
+  .nav-links a.cta:hover { color:var(--text); }
+  .theme-toggle { width:36px; height:36px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; margin-left:8px; transition:all 0.15s; flex-shrink:0; }
+  .theme-toggle:hover { color:var(--accent); border-color:var(--accent); }
+  .theme-toggle svg { width:16px; height:16px; }
+
+  /* ── HERO ── */
+  .hero { padding:80px 2rem 60px; max-width:760px; margin:0 auto; }
+  .hero-tag { display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:0.08em; text-transform:uppercase; background:var(--accent-dim); border:1px solid rgba(77,166,255,0.2); border-radius:4px; padding:4px 10px; margin-bottom:24px; }
+  [data-theme="light"] .hero-tag { border-color:rgba(26,127,232,0.2); }
+  .hero h1 { font-family:'Outfit',sans-serif; font-weight:800; font-size:clamp(34px,6vw,56px); line-height:1.05; letter-spacing:-0.03em; color:var(--text); margin-bottom:20px; }
+  .hero h1 span { color:var(--accent); }
+  .hero p { font-size:16px; color:var(--muted); max-width:520px; line-height:1.7; margin-bottom:36px; }
+  .hero-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:40px; }
+  .btn-primary { font-family:'Outfit',sans-serif; font-weight:700; font-size:14px; padding:12px 28px; border-radius:var(--radius-sm); background:var(--accent); color:var(--accent-text); border:none; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; transition:opacity 0.15s; letter-spacing:-0.01em; }
+  .btn-primary:hover { opacity:0.88; }
+  .btn-secondary { font-family:'Space Grotesk',sans-serif; font-size:13px; color:var(--muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 0.15s; }
+  .btn-secondary:hover { color:var(--text); }
+  .hero-badges { display:flex; gap:10px; flex-wrap:wrap; }
+  .hero-badge { font-size:12px; font-family:'JetBrains Mono',monospace; padding:6px 14px; border-radius:4px; border:1px solid var(--border2); color:var(--muted); letter-spacing:0.02em; }
+
+  /* ── SECTIONS ── */
+  .section { max-width:760px; margin:0 auto; padding:0 2rem 80px; }
+  .section-label { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .section-title { font-family:'Outfit',sans-serif; font-weight:700; font-size:26px; letter-spacing:-0.02em; margin-bottom:6px; }
+  .section-desc { font-size:14px; color:var(--muted); margin-bottom:28px; max-width:500px; }
+  .divider { border:none; border-top:1px solid var(--border); margin:0 auto 60px; max-width:716px; }
+
+  /* ── CARDS ── */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .guide-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); text-decoration:none; color:inherit; transition:border-color 0.15s,transform 0.15s; display:block; }
+  .guide-card:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .guide-icon { width:32px; height:32px; border-radius:8px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  .guide-icon svg { width:16px; height:16px; stroke:var(--accent); }
+  .guide-card h3 { font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; margin-bottom:6px; }
+  .guide-card p { font-size:13px; color:var(--muted); line-height:1.6; }
+  .guide-card .card-link { font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-top:14px; display:block; }
+
+  /* ── STAT STRIP ── */
+  .stat-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:0; }
+  .stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px 20px; }
+  .stat-label { font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+  .stat-value { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:500; color:var(--accent); letter-spacing:-0.02em; }
+  .stat-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+
+  /* ── STEPS ── */
+  .steps { display:flex; flex-direction:column; gap:0; }
+  .step { display:flex; gap:20px; padding:20px 0; border-bottom:1px solid var(--border); }
+  .step:last-child { border-bottom:none; }
+  .step-num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:0.06em; min-width:28px; padding-top:2px; }
+  .step-body h4 { font-family:'Outfit',sans-serif; font-weight:700; font-size:15px; margin-bottom:4px; }
+  .step-body p { font-size:13px; color:var(--muted); line-height:1.6; }
+
+  /* ── CTA CARD ── */
+  .cta-card { background:var(--surface); border:1px solid rgba(77,166,255,0.2); border-radius:var(--radius); padding:36px 32px; text-align:center; box-shadow:var(--shadow); }
+  [data-theme="light"] .cta-card { border-color:rgba(26,127,232,0.2); }
+  .cta-card h2 { font-family:'Outfit',sans-serif; font-weight:800; font-size:28px; letter-spacing:-0.02em; margin-bottom:10px; }
+  .cta-card p { font-size:14px; color:var(--muted); margin-bottom:28px; max-width:380px; margin-left:auto; margin-right:auto; }
+
+  /* ── FOOTER ── */
+  footer { border-top:1px solid var(--border); padding:24px 2rem; max-width:760px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+  footer span { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+
+  @media (max-width:600px) {
+    .guide-grid { grid-template-columns:1fr; }
+    .stat-strip { grid-template-columns:1fr 1fr; }
+    nav { padding:0 1rem; }
+    .nav-links a { padding:0 10px; font-size:12px; }
+    .hero, .section { padding-left:1rem; padding-right:1rem; }
+    .cta-card { padding:28px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">APEX<span>Trader</span></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How it works</a>
+    <a href="/signal-config" class="cta">Launch app &rarr;</a>
+    <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">
+      <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">AI-powered trading signals</div>
+  <h1>Trade smarter,<br>stay <span>ahead</span>.</h1>
+  <p>Technical signals, backtesting, and strategy analysis — built for traders who want data-driven decisions without the noise.</p>
+  <div class="hero-actions">
+    <a href="/signal-config" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Launch the app
+    </a>
+    <a href="#features" class="btn-secondary">See features &darr;</a>
+  </div>
+  <div class="hero-badges">
+    <div class="hero-badge">Signal engine</div>
+    <div class="hero-badge">Backtesting</div>
+    <div class="hero-badge">RSI · MACD · Bollinger</div>
+    <div class="hero-badge">Multi-timeframe</div>
+    <div class="hero-badge">Strategy lab</div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- STATS -->
+<section class="section">
+  <div class="stat-strip">
+    <div class="stat-card">
+      <div class="stat-label">Indicators</div>
+      <div class="stat-value">10+</div>
+      <div class="stat-sub">RSI, MACD, EMA, Bollinger &amp; more</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Timeframes</div>
+      <div class="stat-value">12</div>
+      <div class="stat-sub">1 min to monthly</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Signal scoring</div>
+      <div class="stat-value">Live</div>
+      <div class="stat-sub">Composite buy / sell score</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">What's inside</div>
+  <div class="section-title">Every tool you need</div>
+  <div class="section-desc">From live signal scoring to historical backtesting — all in one place.</div>
+  <div class="guide-grid">
+    <a href="/signal-config" class="guide-card">
+      <div class="guide-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <h3>Signal Engine</h3>
+      <p>Composite buy and sell scores built from RSI, MACD, EMA crossovers, Bollinger Bands, and volume — weighted to your thresholds.</p>
+      <span class="card-link">Open signals &rarr;</span>
+    </a>
+    <a href="/signal-config" class="guide-card">
+      <div class="guide-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <h3>Backtest Engine</h3>
+      <p>Replay your strategy against historical OHLCV data. See win rate, P&amp;L, max drawdown, and trade-by-trade breakdown.</p>
+      <span class="card-link">Run backtest &rarr;</span>
+    </a>
+    <a href="/signal-config" class="guide-card">
+      <div class="guide-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+      </div>
+      <h3>Strategy Lab</h3>
+      <p>Fine-tune every indicator threshold with live sliders. Lock or unlock parameters and watch signals update in real time.</p>
+      <span class="card-link">Configure &rarr;</span>
+    </a>
+    <a href="/profile" class="guide-card">
+      <div class="guide-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <h3>User Profiles</h3>
+      <p>Save your preferred signal configurations, track your tier, and keep your strategy settings persistent across sessions.</p>
+      <span class="card-link">Your profile &rarr;</span>
+    </a>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="section-label">Getting started</div>
+  <div class="section-title">How it works</div>
+  <div class="section-desc">Up and running in three steps.</div>
+  <div class="card">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h4>Pick a symbol &amp; timeframe</h4>
+          <p>Enter any ticker — stocks, crypto, ETFs. Choose your timeframe from 1-minute intraday all the way out to monthly charts.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h4>Configure your signal thresholds</h4>
+          <p>Use the strategy lab sliders to set RSI overbought/oversold levels, MACD sensitivity, Bollinger Band width, and EMA periods to match your trading style.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h4>Read the signal &amp; backtest</h4>
+          <p>Get a composite buy/sell score with individual indicator breakdowns. Run a backtest to validate your setup against historical data before going live.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA -->
+<section class="section">
+  <div class="cta-card">
+    <h2>Ready to trade with an edge?</h2>
+    <p>Open the app, configure your signals, and run your first backtest in under a minute.</p>
+    <a href="/signal-config" class="btn-primary" style="display:inline-flex;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Launch Apex Trader
+    </a>
+  </div>
+</section>
+
+<footer style="margin-bottom:0; padding-bottom:40px;">
+  <span>APEX TRADER</span>
+  <span>For informational use only — not financial advice</span>
+</footer>
+
+<script>
+  const btn = document.getElementById('theme-btn');
+  const sun = document.getElementById('icon-sun');
+  const moon = document.getElementById('icon-moon');
+  const html = document.documentElement;
+
+  function applyTheme(t) {
+    html.setAttribute('data-theme', t);
+    localStorage.setItem('apex-theme', t);
+    if (t === 'dark') { sun.style.display=''; moon.style.display='none'; }
+    else { sun.style.display='none'; moon.style.display=''; }
+  }
+
+  applyTheme(localStorage.getItem('apex-theme') || 'dark');
+  btn.addEventListener('click', () => applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+</script>
+</body>
+</html>

@@ -207,7 +207,12 @@ def _fetch_ohlcv(symbol: str, period: str = "3mo", interval: str = "1d") -> pd.D
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "dashboard.html")
+    return send_from_directory("static", "index.html")
+
+
+@app.route("/signal-config")
+def signal_config():
+    return send_from_directory("static", "signal_config.html")
 
 
 @app.route("/profile")
