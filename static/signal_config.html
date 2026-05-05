@@ -100,13 +100,33 @@
       <span style="color:var(--accent-cyan);font-size:10px;line-height:1;">⬡</span>
       <span id="usernameDisplay" style="color:var(--text-secondary);font-size:9px;letter-spacing:1px;">GUEST</span>
     </div>
-    <a href="/static/strategy-lab.html" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent-cyan)'" onmouseout="this.style.borderColor='var(--border)'">STRATEGY LAB ›</a>
     <button class="signin-btn" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">SIGN IN</button>
     <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;">LOGOUT</button>
     <button class="theme-toggle" id="themeToggle" onclick="toggleApexTheme()" title="Toggle light/dark mode">☀</button>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 </div>
+
+<!-- NAVIGATION -->
+<nav class="apex-nav">
+  <a href="/signal-config" class="apex-nav-item active">
+    <span class="nav-dot"></span>SIGNAL CONFIG
+  </a>
+  <a href="/backtester" class="apex-nav-item">
+    <span class="nav-dot"></span>BACKTESTER
+  </a>
+  <div class="apex-nav-sep"></div>
+  <a href="/portfolio-balancer" class="apex-nav-item">
+    <span class="nav-dot"></span>PORTFOLIO BALANCER
+    <span class="nav-tag" style="color:var(--accent-green);border-color:rgba(0,200,122,.3);">EDU</span>
+  </a>
+  <div class="apex-nav-spacer"></div>
+  <div class="apex-nav-right">
+    <a href="/profile" class="apex-nav-item">
+      <span class="nav-dot"></span>PROFILE
+    </a>
+  </div>
+</nav>
 
 <!-- MAIN LAYOUT -->
 <div class="layout" id="mainLayout">
@@ -119,13 +139,26 @@
     </div>
 
     <!-- WATCHLIST -->
-    <div style="border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;">
-        <div style="font-size:8px;letter-spacing:2px;color:var(--text-muted);">WATCHLIST</div>
-        <div class="panel-badge" id="wlEditBtn" onclick="toggleWatchlistEdit()" style="cursor:pointer;user-select:none;color:var(--accent-blue);border-color:var(--accent-blue);">EDIT</div>
+    <div class="wl-section">
+      <div class="wl-trigger" id="wlTrigger" onclick="toggleWatchlistDropdown()">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <span class="wl-trigger-label">WATCHLIST</span>
+          <span class="wl-trigger-current" id="wlCurrentLabel">—</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span class="wl-trigger-count" id="wlCountLabel">0 selected</span>
+          <svg class="wl-chev" id="wlChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
       </div>
-      <div id="watchlist"></div>
+      <div class="wl-dropdown" id="wlDropdown" style="display:none;">
+        <div class="wl-dropdown-header">
+          <span class="wl-dropdown-info" id="wlDropdownInfo">0 of 0 assets selected</span>
+          <button class="wl-done-btn" onclick="toggleWatchlistDropdown()">✓ DONE</button>
+        </div>
+        <div class="wl-check-list" id="wlCheckList"></div>
+      </div>
     </div>
+    <div class="wl-active-list" id="watchlist"></div>
 
     <!-- CAPITAL -->
     <div class="section">
@@ -798,7 +831,7 @@ const STRATEGY_TEMPLATES = {
 };
 
 let watchlistEnabled = {};
-let watchlistEditMode = false;
+let wlDropdownOpen = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
 
 // --- TIER SYSTEM ---
@@ -943,14 +976,18 @@ function _buildCondParams(i, cond) {
       const opts = (p.options || []).map(o =>
         `<option value="${o}" ${o === val ? 'selected' : ''}>${o.charAt(0).toUpperCase()+o.slice(1)}</option>`
       ).join('');
-      return `<span class="cond-param-label">${p.label}</span>
+      return `<div class="cond-param">
+        <span class="cond-param-label">${p.label}</span>
         <select onchange="updateConditionParam(${i},'${p.id}',this.value)"
-          style="font-size:10px;padding:2px 4px;background:var(--panel-bg);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;">${opts}</select>`;
+          style="font-size:10px;padding:2px 4px;background:var(--panel-bg);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;">${opts}</select>
+      </div>`;
     }
-    return `<span class="cond-param-label">${p.label}</span>
+    return `<div class="cond-param">
+      <span class="cond-param-label">${p.label}</span>
       <input type="number" value="${val}" min="${p.min}" max="${p.max}" step="${p.step}"
         onchange="updateConditionParam(${i},'${p.id}',this.value)"
-        style="width:50px;font-size:10px;padding:2px 4px;">`;
+        style="width:50px;font-size:10px;padding:2px 4px;">
+    </div>`;
   }).join('');
   return `<div class="cond-params-row">${inputs}</div>`;
 }
@@ -1739,25 +1776,17 @@ function updateChart() { /* no-op */ }
 
 // --- WATCHLIST ---
 function renderWatchlist() {
+  const enabledCount = Object.keys(assets).filter(s => watchlistEnabled[s]).length;
+
+  // Trigger bar
+  const cl = document.getElementById('wlCurrentLabel');
+  const cc = document.getElementById('wlCountLabel');
+  if (cl) cl.textContent = currentAsset || '—';
+  if (cc) cc.textContent = enabledCount + ' selected';
+
+  // Active scrollable list
   const wl = document.getElementById('watchlist');
-
-  if (watchlistEditMode) {
-    wl.innerHTML = Object.keys(assets).map(sym => `
-      <div class="watchlist-item" style="cursor:default;padding:7px 16px;">
-        <div class="wl-left">
-          <div class="wl-sym" style="font-size:11px;">${sym}</div>
-          <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
-        </div>
-        <label class="toggle" onclick="event.stopPropagation()" style="flex-shrink:0;">
-          <input type="checkbox" ${watchlistEnabled[sym] ? 'checked' : ''} onchange="toggleWatchlistItem('${sym}', this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-    `).join('');
-    return;
-  }
-
+  if (!wl) return;
   const visible = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
   wl.innerHTML = visible.length ? visible.map(sym => `
     <div class="watchlist-item ${sym === currentAsset ? 'active' : ''}" onclick="selectAsset('${sym}')">
@@ -1770,26 +1799,67 @@ function renderWatchlist() {
         <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
-  `).join('') : '<div class="empty-state">NO ASSETS ENABLED<br><span style="font-size:8px;">Click EDIT to add assets</span></div>';
+  `).join('') : '<div class="empty-state">NO ASSETS SELECTED<br><span style="font-size:8px;">Click WATCHLIST ▼ to add assets</span></div>';
 }
 
 function updateWatchlist() {
-  if (watchlistEditMode) return;
   Object.keys(assets).forEach(sym => {
     const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
     const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
-    if (el)    { el.textContent    = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className    = 'wl-price ' + getChgClass(assets[sym].change); }
-    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`;       chgEl.className = 'wl-chg '   + getChgClass(assets[sym].change); }
+    if (el)    { el.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
+    // also refresh price column inside dropdown if open
+    if (wlDropdownOpen) {
+      const dp = document.getElementById('wl-dp-' + sym.replace('/','_'));
+      if (dp) { dp.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
+    }
   });
 }
 
-function toggleWatchlistEdit() {
-  watchlistEditMode = !watchlistEditMode;
-  const btn = document.getElementById('wlEditBtn');
-  btn.textContent = watchlistEditMode ? 'DONE' : 'EDIT';
-  btn.style.color = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
-  btn.style.borderColor = watchlistEditMode ? 'var(--accent-green)' : 'var(--accent-blue)';
-  renderWatchlist();
+function renderWlDropdown() {
+  const total = Object.keys(assets).length;
+  const enabledCount = Object.keys(assets).filter(s => watchlistEnabled[s]).length;
+  const info = document.getElementById('wlDropdownInfo');
+  if (info) info.textContent = `${enabledCount} of ${total} assets selected`;
+
+  const list = document.getElementById('wlCheckList');
+  if (!list) return;
+  list.innerHTML = Object.keys(assets).map(sym => {
+    const a = assets[sym];
+    const checked = watchlistEnabled[sym];
+    const isActive = sym === currentAsset;
+    const price = a.price ? '$' + formatPrice(a.price, sym) : '—';
+    return `
+      <div class="wl-check-item${isActive ? ' is-active' : ''}" onclick="wlRowClick('${sym}', event)">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()"
+               onchange="toggleWatchlistItem('${sym}', this.checked)">
+        <span class="wl-check-sym">${sym}</span>
+        <span class="wl-check-cat">${a.category.toUpperCase()}</span>
+        <span class="wl-check-price ${getChgClass(a.change)}" id="wl-dp-${sym.replace('/','_')}">${price}</span>
+      </div>`;
+  }).join('');
+}
+
+function toggleWatchlistDropdown() {
+  wlDropdownOpen = !wlDropdownOpen;
+  const dd   = document.getElementById('wlDropdown');
+  const chev = document.getElementById('wlChev');
+  if (dd)   dd.style.display = wlDropdownOpen ? 'flex' : 'none';
+  if (chev) chev.classList.toggle('open', wlDropdownOpen);
+  if (wlDropdownOpen) renderWlDropdown();
+  else renderWatchlist();  // refresh active list when closing
+}
+
+function wlRowClick(sym, event) {
+  if (event.target.type === 'checkbox') return;
+  if (!watchlistEnabled[sym]) {
+    watchlistEnabled[sym] = true;
+    const cb = event.currentTarget.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = true;
+    _wlUpdateCount();
+  }
+  selectAsset(sym);
+  toggleWatchlistDropdown();
 }
 
 function toggleWatchlistItem(sym, enabled) {
@@ -1798,7 +1868,24 @@ function toggleWatchlistItem(sym, enabled) {
     const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
     if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next] || 'BINANCE:BTCUSDT'); }
   }
+  _wlUpdateCount();
 }
+
+function _wlUpdateCount() {
+  const n = Object.keys(assets).filter(s => watchlistEnabled[s]).length;
+  const total = Object.keys(assets).length;
+  const cc   = document.getElementById('wlCountLabel');
+  const info = document.getElementById('wlDropdownInfo');
+  if (cc)   cc.textContent   = n + ' selected';
+  if (info) info.textContent = `${n} of ${total} assets selected`;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!wlDropdownOpen) return;
+  const section = document.getElementById('wlTrigger')?.closest('.wl-section');
+  if (section && !section.contains(e.target)) toggleWatchlistDropdown();
+});
 
 function selectAsset(sym) {
   currentAsset = sym;

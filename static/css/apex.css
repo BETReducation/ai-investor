@@ -169,7 +169,7 @@
   /* MAIN LAYOUT */
   .layout {
     display: flex;
-    height: calc(100vh - 44px - 28px);
+    height: calc(100vh - 44px - 38px - 28px); /* topbar + apex-nav + disclaimer */
   }
 
   #leftPanel {
@@ -792,8 +792,96 @@
   .pos-pnl.neg { color: var(--accent-red); }
 
   /* WATCHLIST */
+  .wl-section { position: relative; border-bottom: 1px solid var(--border); }
+
+  .wl-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px 8px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s;
+  }
+  .wl-trigger:hover { background: var(--bg-hover); }
+
+  .wl-trigger-label { font-size: 8px; letter-spacing: 2px; color: var(--text-muted); }
+  .wl-trigger-current { font-size: 10px; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; }
+  .wl-trigger-count {
+    font-size: 8px; color: var(--accent-blue); letter-spacing: 1px;
+    padding: 1px 6px; border: 1px solid rgba(0,136,255,.3); border-radius: 2px;
+  }
+
+  .wl-chev {
+    width: 13px; height: 13px; color: var(--text-muted);
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .wl-chev.open { transform: rotate(180deg); }
+
+  .wl-dropdown {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    z-index: 200;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-bright);
+    border-top: 2px solid var(--accent-blue);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    max-height: 340px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wl-dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px 7px 14px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .wl-dropdown-info { font-size: 8px; color: var(--text-muted); letter-spacing: 1px; }
+
+  .wl-done-btn {
+    padding: 3px 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    background: rgba(0,200,122,.1); color: var(--accent-green);
+    border: 1px solid var(--accent-green); border-radius: 2px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .wl-done-btn:hover { background: rgba(0,200,122,.22); }
+
+  .wl-check-list { overflow-y: auto; flex: 1; scrollbar-width: thin; }
+
+  .wl-check-item {
+    display: grid;
+    grid-template-columns: 16px 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .wl-check-item:last-child { border-bottom: none; }
+  .wl-check-item:hover { background: var(--bg-hover); }
+  .wl-check-item.is-active { background: rgba(0,136,255,.06); }
+
+  .wl-check-item input[type="checkbox"] {
+    width: 12px; height: 12px;
+    accent-color: var(--accent-blue);
+    cursor: pointer; flex-shrink: 0;
+  }
+  .wl-check-sym { font-size: 11px; font-weight: 600; color: var(--text-primary); letter-spacing: 1px; }
+  .wl-check-cat { font-size: 8px; color: var(--text-muted); letter-spacing: 1px; text-align: right; }
+  .wl-check-price { font-size: 9px; text-align: right; font-variant-numeric: tabular-nums; min-width: 60px; }
+
+  /* Active asset list — scrollable so it never dominates the panel */
+  .wl-active-list { max-height: 220px; overflow-y: auto; scrollbar-width: thin; }
+
   .watchlist-item {
-    padding: 8px 16px;
+    padding: 7px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -1363,13 +1451,19 @@
   .cond-params-row {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 10px;
+    align-items: flex-start;
+    gap: 6px 10px;
     margin: 5px 0 2px;
     padding: 5px 7px;
     background: rgba(0,0,0,0.18);
     border: 1px solid var(--border);
     border-radius: 2px;
+  }
+  .cond-param {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
   }
   .cond-param-label {
     font-size: 9px;
@@ -1524,7 +1618,7 @@
 
     .layout {
       flex-direction: column;
-      height: calc(100vh - 40px - 52px - 28px); /* topbar + mobile nav + disclaimer */
+      height: calc(100vh - 40px - 38px - 52px - 28px); /* topbar + apex-nav + mobile nav + disclaimer */
       overflow: hidden;
     }
 
@@ -1748,5 +1842,90 @@
     background-color: var(--bg-card);
     border-color: var(--border-bright);
     color: var(--text-primary);
+  }
+
+  /* ─── Apex Site Navigation ──────────────────────────────────────────────── */
+  .apex-nav {
+    display: flex;
+    align-items: stretch;
+    height: 38px;
+    background: var(--bg-panel);
+    border-bottom: 2px solid var(--border);
+    padding: 0 8px;
+    position: sticky;
+    top: 44px;
+    z-index: 90;
+    gap: 0;
+  }
+
+  .apex-nav-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 18px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+
+  .apex-nav-item:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+  }
+
+  .apex-nav-item.active {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+    background: rgba(0, 136, 255, 0.05);
+  }
+
+  .apex-nav-item .nav-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--border-bright);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .apex-nav-item.active .nav-dot  { background: var(--accent-blue); }
+  .apex-nav-item:hover .nav-dot   { background: var(--text-secondary); }
+
+  .apex-nav-item .nav-tag {
+    font-size: 7px;
+    letter-spacing: 1px;
+    padding: 1px 5px;
+    border-radius: 1px;
+    border: 1px solid;
+    line-height: 1.4;
+  }
+
+  .apex-nav-sep {
+    width: 1px;
+    background: var(--border);
+    margin: 9px 2px;
+    flex-shrink: 0;
+  }
+
+  .apex-nav-spacer { flex: 1; }
+
+  .apex-nav-right {
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* light-mode nav */
+  [data-theme="light"] .apex-nav {
+    background: var(--bg-card);
+    border-bottom-color: var(--border-bright);
+  }
+  [data-theme="light"] .apex-nav-item.active {
+    background: rgba(0, 136, 255, 0.06);
   }
 

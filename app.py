@@ -254,6 +254,76 @@ def signal_config():
 def portfolio_balancer():
     return send_from_directory("static", "portfolio-balancer.html")
 
+@app.route("/backtester")
+def backtester():
+    return send_from_directory("static", "strategy-lab.html")
+
+
+# ── Portfolio Balancer — live price feed ──────────────────────────────────────
+
+_PB_TICKERS = {
+    # Safe (bonds & cash proxies)
+    's_tbills': 'SHY',    # iShares 1-3yr Treasury Bond ETF
+    's_gilts':  'IGLT.L', # iShares UK Gilts UCITS ETF
+    's_euro':   'IBTE.L', # iShares € Govt Bond 1-3yr UCITS ETF
+    's_corp':   'LQD',    # iShares iBoxx IG Corp Bond ETF
+    's_cash':   'ERNS.L', # iShares GBP Ultrashort Bond ETF (cash proxy)
+    # Hard Assets (property / land / infrastructure proxies)
+    'h_ukres':  'IUKP.L', # iShares UK Property UCITS ETF
+    'h_comre':  'REM',    # iShares Mortgage Real Estate ETF
+    'h_agri':   'MOO',    # VanEck Agribusiness ETF
+    'h_infra':  'IGF',    # iShares Global Infrastructure ETF
+    'h_reits':  'VNQ',    # Vanguard Real Estate ETF
+    # Stocks & Shares
+    'k_sp500':  'SPY',    # SPDR S&P 500 ETF Trust
+    'k_nas':    'QQQ',    # Invesco QQQ Trust (NASDAQ 100)
+    'k_ftse':   'ISF.L',  # iShares Core FTSE 100 UCITS ETF
+    'k_em':     'EEM',    # iShares MSCI Emerging Markets ETF
+    'k_sc':     'VSS',    # Vanguard FTSE All-World ex-US Small-Cap ETF
+    # Metals (ETFs — more reliable than futures via yfinance)
+    'm_gold':   'GLD',    # SPDR Gold Shares ETF
+    'm_silv':   'SLV',    # iShares Silver Trust ETF
+    'm_plat':   'PPLT',   # Aberdeen Physical Platinum ETF
+    'm_copp':   'CPER',   # United States Copper Index Fund
+    'm_pall':   'PALL',   # Aberdeen Physical Palladium ETF
+    # Crypto
+    'c_btc':    'BTC-USD',
+    'c_eth':    'ETH-USD',
+    'c_ada':    'ADA-USD',
+    'c_xrp':    'XRP-USD',
+    'c_sol':    'SOL-USD',
+}
+
+
+@app.route("/api/portfolio-prices")
+def portfolio_prices():
+    """Return current prices for all 25 portfolio balancer assets."""
+    unique = list(set(_PB_TICKERS.values()))
+    price_map = {}
+    try:
+        raw = yf.download(unique, period='5d', interval='1d',
+                          progress=False, auto_adjust=True, threads=True)
+        close = raw['Close'] if isinstance(raw.columns, pd.MultiIndex) else raw
+        for ticker in unique:
+            try:
+                s = close[ticker].dropna() if ticker in close.columns else pd.Series(dtype=float)
+                if len(s):
+                    price_map[ticker] = float(s.iloc[-1])
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    result = {}
+    for asset_id, ticker in _PB_TICKERS.items():
+        price = price_map.get(ticker)
+        result[asset_id] = {
+            'ticker': ticker,
+            'price':  round(price, 6) if price is not None else None,
+            'live':   price is not None,
+        }
+    return jsonify({'prices': result, 'ts': pd.Timestamp.now().isoformat()})
+
 
 @app.route("/profile")
 def profile_page():
