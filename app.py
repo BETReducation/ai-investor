@@ -354,7 +354,7 @@ def api_register():
     users[username] = {
         "password_hash": pw_hash,
         "preferences": {},
-        "tier": "basic",
+        "tier": "signal_tester",
         "profile": {
             "email": email,
             "display_name": username,
@@ -365,8 +365,8 @@ def api_register():
     }
     _save_users(users)
 
-    login_user(User(username, "basic"), remember=True)
-    return jsonify({"success": True, "username": username, "tier": "basic", "preferences": {}})
+    login_user(User(username, "signal_tester"), remember=True)
+    return jsonify({"success": True, "username": username, "tier": "signal_tester", "preferences": {}})
 
 
 @app.route("/api/login", methods=["POST"])
