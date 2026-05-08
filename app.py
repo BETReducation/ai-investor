@@ -74,6 +74,7 @@ def _ensure_table() -> None:
         """)
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'basic'")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
+        cur.execute("UPDATE users SET tier = 'power_user' WHERE tier IN ('basic', 'signal_tester')")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -354,7 +355,7 @@ def api_register():
     users[username] = {
         "password_hash": pw_hash,
         "preferences": {},
-        "tier": "signal_tester",
+        "tier": "power_user",
         "profile": {
             "email": email,
             "display_name": username,
@@ -365,8 +366,8 @@ def api_register():
     }
     _save_users(users)
 
-    login_user(User(username, "signal_tester"), remember=True)
-    return jsonify({"success": True, "username": username, "tier": "signal_tester", "preferences": {}})
+    login_user(User(username, "power_user"), remember=True)
+    return jsonify({"success": True, "username": username, "tier": "power_user", "preferences": {}})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -585,7 +586,7 @@ def indicators():
 
 
 @app.route("/api/signals", methods=["GET"])
-@tier_required("signal_tester")
+@login_required
 def signals():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "6mo")

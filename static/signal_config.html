@@ -859,7 +859,7 @@ async function checkTier() {
 function applyTierUI() {
   const lock = document.getElementById('tierLock');
   const btn  = document.getElementById('engineBtn');
-  if (hasAccess('signal_tester')) {
+  if (userAuthenticated) {
     lock.style.display = 'none';
     if (btn) btn.disabled = false;
   } else {
@@ -1220,7 +1220,7 @@ function toggleEngine() {
 
 async function startEngine() {
   await checkTier();
-  if (!hasAccess('signal_tester')) return;
+  if (!userAuthenticated) return;
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine stop';
@@ -1992,19 +1992,32 @@ function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
 async function checkSession() {
-  if (localStorage.getItem('apexSession')) {
-    try {
-      const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        currentUser = data.username;
-        applyPreferences(data.preferences || {});
-      } else {
-        localStorage.removeItem('apexSession');
-      }
-    } catch (e) {
+  try {
+    const res = await fetch(API_BASE + '/api/me', { credentials: 'include' });
+    const data = await res.json();
+    if (data.authenticated) {
+      currentUser = data.username;
+      userTier = data.tier || 'basic';
+      userAuthenticated = true;
+      localStorage.setItem('apexSession', '1');
+      try {
+        const prefRes = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
+        if (prefRes.ok) {
+          const prefData = await prefRes.json();
+          applyPreferences(prefData.preferences || {});
+        }
+      } catch (e) {}
+    } else {
+      currentUser = null;
+      userAuthenticated = false;
+      userTier = 'basic';
       localStorage.removeItem('apexSession');
     }
+  } catch (e) {
+    currentUser = null;
+    userAuthenticated = false;
+    userTier = 'basic';
+    localStorage.removeItem('apexSession');
   }
   showDashboard();
 }
