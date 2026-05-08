@@ -336,6 +336,11 @@
     color: var(--text-muted);
   }
 
+  .metric-cell-fin {
+    background: var(--bg-panel);
+    border-top: 2px solid rgba(0,136,255,0.35);
+  }
+
   /* ── Chart area ── */
   .chart-section {
     padding: 16px 20px 12px;
@@ -534,6 +539,12 @@
         <option value="1d" selected>Daily (1d)</option>
         <option value="1wk">Weekly (1wk)</option>
       </select>
+    </div>
+
+    <!-- Capital -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">STARTING CAPITAL</div>
+      <input type="number" id="btCapital" class="lab-input" value="10000" min="100" step="100" style="margin-bottom:0;">
     </div>
 
     <!-- Risk controls -->
@@ -776,6 +787,28 @@
           <div class="metric-value neg" id="mWorst">—</div>
           <div class="metric-sub">single trade return</div>
         </div>
+
+        <!-- Financial row -->
+        <div class="metric-cell metric-cell-fin">
+          <div class="metric-label">TOTAL NET GAIN / LOSS</div>
+          <div class="metric-value" id="fNetPnl">—</div>
+          <div class="metric-sub" id="fNetPnlSub">on starting capital</div>
+        </div>
+        <div class="metric-cell metric-cell-fin">
+          <div class="metric-label">BEST SINGLE GAIN</div>
+          <div class="metric-value pos" id="fBestGain">—</div>
+          <div class="metric-sub" id="fBestGainSub">largest winning trade</div>
+        </div>
+        <div class="metric-cell metric-cell-fin">
+          <div class="metric-label">WORST SINGLE LOSS</div>
+          <div class="metric-value neg" id="fWorstLoss">—</div>
+          <div class="metric-sub" id="fWorstLossSub">largest losing trade</div>
+        </div>
+        <div class="metric-cell metric-cell-fin">
+          <div class="metric-label">AVG GAIN / LOSS PER TRADE</div>
+          <div class="metric-value" id="fAvgPnl">—</div>
+          <div class="metric-sub" id="fAvgPnlSub">mean trade P&amp;L</div>
+        </div>
       </div>
 
       <!-- Chart -->
@@ -813,6 +846,7 @@
               <th>ENTRY PRICE</th>
               <th>EXIT PRICE</th>
               <th>RETURN</th>
+              <th>£ P&amp;L</th>
               <th>EXIT REASON</th>
             </tr>
           </thead>
@@ -843,8 +877,18 @@ updateClock();
 // ── Chart instance ────────────────────────────────────────────────────────────
 let equityChart = null;
 
-function buildChart(labels, stratData, bahData, trades) {
+function fmtChartMoney(v) {
+  if (v >= 1000000) return '£' + (v / 1000000).toFixed(2) + 'M';
+  if (v >= 1000)    return '£' + (v / 1000).toFixed(1) + 'k';
+  return '£' + v.toFixed(0);
+}
+
+function buildChart(labels, stratData, bahData, trades, capital) {
   const ctx = document.getElementById('equityChart').getContext('2d');
+
+  // Scale normalised equity (1.0 = start) to £ values
+  const stratScaled = stratData.map(v => v * capital);
+  const bahScaled   = bahData.map(v => v !== null ? v * capital : null);
 
   // Strategy gradient fill
   const stratGrad = ctx.createLinearGradient(0, 0, 0, 280);
@@ -852,9 +896,9 @@ function buildChart(labels, stratData, bahData, trades) {
   stratGrad.addColorStop(0.6, 'rgba(0,255,136,0.04)');
   stratGrad.addColorStop(1,   'rgba(0,255,136,0)');
 
-  // Map trade entries/exits to scatter points
+  // Map trade entries/exits to scatter points (in £)
   const equityMap = {};
-  labels.forEach((d, i) => { equityMap[d] = stratData[i]; });
+  labels.forEach((d, i) => { equityMap[d] = stratScaled[i]; });
 
   const buyPoints  = [];
   const sellPoints = [];
@@ -874,7 +918,7 @@ function buildChart(labels, stratData, bahData, trades) {
       datasets: [
         {
           label: 'Strategy',
-          data: stratData,
+          data: stratScaled,
           borderColor: '#00ff88',
           backgroundColor: stratGrad,
           borderWidth: 1.5,
@@ -887,7 +931,7 @@ function buildChart(labels, stratData, bahData, trades) {
         },
         {
           label: 'Buy & Hold',
-          data: bahData,
+          data: bahScaled,
           borderColor: 'rgba(122,143,168,0.5)',
           backgroundColor: 'transparent',
           borderWidth: 1,
@@ -945,9 +989,9 @@ function buildChart(labels, stratData, bahData, trades) {
             label: (item) => {
               if (item.dataset.label === 'Entry') return '  ▲ Entry';
               if (item.dataset.label === 'Exit')  return '  ▼ Exit';
-              const pct = ((item.parsed.y - 1) * 100).toFixed(2);
+              const pct = ((item.parsed.y / capital - 1) * 100).toFixed(2);
               const sign = pct >= 0 ? '+' : '';
-              return `  ${item.dataset.label}: ${sign}${pct}%`;
+              return `  ${item.dataset.label}: ${fmtChartMoney(item.parsed.y)} (${sign}${pct}%)`;
             },
           },
         },
@@ -963,7 +1007,6 @@ function buildChart(labels, stratData, bahData, trades) {
             font: { family: 'IBM Plex Mono', size: 9 },
             callback: (val, i, ticks) => {
               const label = ticks[i]?.label ?? '';
-              // Show only YYYY-MM from the date string
               return label ? label.slice(0, 7) : '';
             },
           },
@@ -974,10 +1017,7 @@ function buildChart(labels, stratData, bahData, trades) {
           ticks: {
             color: '#3d5068',
             font: { family: 'IBM Plex Mono', size: 9 },
-            callback: (v) => {
-              const pct = ((v - 1) * 100).toFixed(0);
-              return (pct >= 0 ? '+' : '') + pct + '%';
-            },
+            callback: (v) => fmtChartMoney(v),
           },
         },
       },
@@ -1103,8 +1143,18 @@ async function runBacktest() {
   }
 }
 
+function fmtMoney(capital, pct) {
+  const val = capital * pct / 100;
+  const abs = Math.abs(val);
+  const sign = val >= 0 ? '+' : '−';
+  if (abs >= 1000000) return sign + '£' + (abs / 1000000).toFixed(2) + 'M';
+  if (abs >= 1000)    return sign + '£' + (abs / 1000).toFixed(1) + 'k';
+  return sign + '£' + abs.toFixed(0);
+}
+
 function renderResults(data) {
   const { symbol, period, metrics, trades, equity_curve, bah_curve } = data;
+  const capital = parseFloat(document.getElementById('btCapital').value) || 10000;
 
   // Context bar
   document.getElementById('ctxSymbol').textContent = symbol;
@@ -1130,8 +1180,12 @@ function renderResults(data) {
     el.className   = 'metric-value' + (cls ? ' ' + cls : '');
   };
 
+  const finalValue = capital * (1 + m.total_return_pct / 100);
+  const bahFinalValue = capital * (1 + bahReturn / 100);
+
   setMetric('mReturn',  pctStr(m.total_return_pct), colorClass(m.total_return_pct));
-  document.getElementById('mReturnSub').textContent = `B&H: ${pctStr(bahReturn)}`;
+  document.getElementById('mReturnSub').textContent =
+    `${fmtMoney(capital, m.total_return_pct)}  ·  Final: ${fmtChartMoney(finalValue)}`;
 
   setMetric('mWinRate', m.win_rate.toFixed(1) + '%',
     m.win_rate >= 55 ? 'pos' : m.win_rate >= 45 ? 'neu' : 'neg');
@@ -1141,12 +1195,37 @@ function renderResults(data) {
   setMetric('mPF',     m.profit_factor.toFixed(2), m.profit_factor >= 1.5 ? 'pos' : m.profit_factor >= 1 ? 'neu' : 'neg');
   setMetric('mSharpe', m.sharpe_ratio.toFixed(2),  m.sharpe_ratio >= 1 ? 'pos' : m.sharpe_ratio >= 0 ? 'neu' : 'neg');
   setMetric('mDD',    '-' + m.max_drawdown_pct.toFixed(2) + '%', m.max_drawdown_pct > 20 ? 'neg' : m.max_drawdown_pct > 10 ? 'neu' : 'pos');
+  document.getElementById('mDD').nextElementSibling.textContent =
+    `max loss: ${fmtMoney(capital, -m.max_drawdown_pct)}`;
   setMetric('mAvg',   pctStr(m.avg_trade_pct), colorClass(m.avg_trade_pct));
+  document.getElementById('mAvgSub').textContent = fmtMoney(capital, m.avg_trade_pct) + ' per trade';
   setMetric('mBest',  pctStr(m.best_trade_pct));
+  document.getElementById('mBest').nextElementSibling.textContent = fmtMoney(capital, m.best_trade_pct);
   setMetric('mWorst', pctStr(m.worst_trade_pct));
+  document.getElementById('mWorst').nextElementSibling.textContent = fmtMoney(capital, m.worst_trade_pct);
+
+  // Financial row
+  const wins  = trades.filter(t => t.return_pct > 0);
+  const losses = trades.filter(t => t.return_pct <= 0);
+
+  setMetric('fNetPnl', fmtMoney(capital, m.total_return_pct), colorClass(m.total_return_pct));
+  document.getElementById('fNetPnlSub').textContent =
+    `B&H would be: ${fmtMoney(capital, bahReturn)}`;
+
+  setMetric('fBestGain', fmtMoney(capital, m.best_trade_pct), 'pos');
+  document.getElementById('fBestGainSub').textContent =
+    wins.length ? `from ${wins.length} winning trade${wins.length !== 1 ? 's' : ''}` : 'no winning trades';
+
+  setMetric('fWorstLoss', fmtMoney(capital, m.worst_trade_pct), 'neg');
+  document.getElementById('fWorstLossSub').textContent =
+    losses.length ? `from ${losses.length} losing trade${losses.length !== 1 ? 's' : ''}` : 'no losing trades';
+
+  setMetric('fAvgPnl', fmtMoney(capital, m.avg_trade_pct), colorClass(m.avg_trade_pct));
+  document.getElementById('fAvgPnlSub').textContent =
+    `across ${trades.length} trade${trades.length !== 1 ? 's' : ''}`;
 
   // Chart
-  const labels   = equity_curve.map(p => p.date.slice(0, 10));
+  const labels    = equity_curve.map(p => p.date.slice(0, 10));
   const stratVals = equity_curve.map(p => p.equity);
   const bahLabels = bah_curve.map(p => p.date.slice(0, 10));
   const bahVals   = bah_curve.map(p => p.equity);
@@ -1156,16 +1235,27 @@ function renderResults(data) {
   bahLabels.forEach((d, i) => { bahMap[d] = bahVals[i]; });
   const bahAligned = labels.map(d => bahMap[d] ?? null);
 
-  buildChart(labels, stratVals, bahAligned, trades);
+  buildChart(labels, stratVals, bahAligned, trades, capital);
 
-  // Trade log
+  // Trade log — compute compounding £ P&L per trade
+  let runningEquity = capital;
+  const tradePnls = trades.map(t => {
+    const pnl = runningEquity * t.return_pct / 100;
+    runningEquity = runningEquity * (1 + t.return_pct / 100);
+    return pnl;
+  });
+
   document.getElementById('tradeCount').textContent = `${trades.length} TRADE${trades.length !== 1 ? 'S' : ''}`;
 
   const tbody = document.getElementById('tradeBody');
   if (trades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
   } else {
-    tbody.innerHTML = trades.map((t, i) => `
+    tbody.innerHTML = trades.map((t, i) => {
+      const pnl = tradePnls[i];
+      const pnlSign = pnl >= 0 ? '+' : '−';
+      const pnlStr  = pnlSign + '£' + Math.abs(pnl).toFixed(0);
+      return `
       <tr>
         <td style="color:var(--text-muted);">${i + 1}</td>
         <td>${t.entry_date.slice(0, 10)}</td>
@@ -1173,9 +1263,10 @@ function renderResults(data) {
         <td>${fmtPrice(t.entry_price)}</td>
         <td>${fmtPrice(t.exit_price)}</td>
         <td class="${t.return_pct >= 0 ? 'ret-pos' : 'ret-neg'}">${pctStr(t.return_pct)}</td>
+        <td class="${pnl >= 0 ? 'ret-pos' : 'ret-neg'}">${pnlStr}</td>
         <td><span class="reason-tag ${reasonClass(t.exit_reason)}">${t.exit_reason.toUpperCase()}</span></td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   }
 
   setState('resultsPanel');
