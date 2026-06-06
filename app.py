@@ -21,7 +21,7 @@ from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = os.environ.get("SECRET_KEY", "apex-trader-dev-key-change-in-production")
+app.secret_key = os.environ.get("SECRET_KEY", "winvestor-dev-key-change-in-production")
 
 _is_production = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("PRODUCTION")
 _allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")

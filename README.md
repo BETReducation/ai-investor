@@ -1,2 +1,2 @@
-# AI Investor — APEX TRADER Signal Engine
+# AI Investor — WINVESTOR Signal Engine
 # ai-investor
