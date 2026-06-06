@@ -617,8 +617,11 @@ function emitSparks(x, y, vx, vy) {
   const speed = Math.sqrt(vx * vx + vy * vy);
   if (speed < 1) return;
 
-  // Number of sparks scales with speed: 1 at crawl, up to 18 at max
-  const count = Math.min(Math.floor(speed * 0.9), 18);
+  // Number of sparks scales with speed: 1 at crawl, up to 14 at max
+  const count = Math.min(Math.floor(speed * 0.7), 14);
+
+  // Hard cap on total spark pool to keep frame budget bounded
+  if (sparks.length > 180) sparks.splice(0, sparks.length - 180);
 
   for (let i = 0; i < count; i++) {
     // Base direction: opposite to movement (trail behind cursor)
@@ -643,46 +646,45 @@ function emitSparks(x, y, vx, vy) {
 function drawSparks() {
   sCtx.clearRect(0, 0, sW, sH);
 
-  for (let i = sparks.length - 1; i >= 0; i--) {
-    const s = sparks[i];
-
-    // Streak line from previous to current position
-    const len = Math.sqrt((s.x - s.px) ** 2 + (s.y - s.py) ** 2);
-    sCtx.save();
-    sCtx.globalAlpha = s.life * 0.9;
-    sCtx.strokeStyle = s.colour;
-    sCtx.lineWidth = s.r * (0.5 + s.life * 0.8);
+  if (sparks.length > 0) {
+    // Additive blending gives glow effect without expensive shadowBlur
+    sCtx.globalCompositeOperation = 'lighter';
     sCtx.lineCap = 'round';
-    sCtx.shadowColor = s.colour;
-    sCtx.shadowBlur = 4 + s.life * 6;
-    sCtx.beginPath();
-    sCtx.moveTo(s.px, s.py);
-    sCtx.lineTo(s.x, s.y);
-    sCtx.stroke();
-    sCtx.restore();
 
-    // Bright hot core dot at tip
-    sCtx.save();
-    sCtx.globalAlpha = s.life;
-    sCtx.fillStyle = '#ffffff';
-    sCtx.shadowColor = s.colour;
-    sCtx.shadowBlur = 8;
-    sCtx.beginPath();
-    sCtx.arc(s.x, s.y, s.r * 0.55, 0, Math.PI * 2);
-    sCtx.fill();
-    sCtx.restore();
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i];
 
-    // Update
-    s.px = s.x;
-    s.py = s.y;
-    s.x += s.vx;
-    s.y += s.vy;
-    s.vy += 0.04; // gentle gravity
-    s.vx *= 0.97; // air resistance
-    s.vy *= 0.97;
-    s.life -= s.decay;
+      // Streak line
+      sCtx.globalAlpha = s.life * 0.85;
+      sCtx.strokeStyle = s.colour;
+      sCtx.lineWidth = s.r * (0.4 + s.life * 0.9);
+      sCtx.beginPath();
+      sCtx.moveTo(s.px, s.py);
+      sCtx.lineTo(s.x, s.y);
+      sCtx.stroke();
 
-    if (s.life <= 0) sparks.splice(i, 1);
+      // Bright tip dot (white, additive = blooms to colour)
+      sCtx.globalAlpha = s.life * 0.7;
+      sCtx.fillStyle = '#ffffff';
+      sCtx.beginPath();
+      sCtx.arc(s.x, s.y, s.r * 0.6, 0, Math.PI * 2);
+      sCtx.fill();
+
+      // Update physics
+      s.px = s.x;
+      s.py = s.y;
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.04;
+      s.vx *= 0.97;
+      s.vy *= 0.97;
+      s.life -= s.decay;
+
+      if (s.life <= 0) sparks.splice(i, 1);
+    }
+
+    sCtx.globalCompositeOperation = 'source-over';
+    sCtx.globalAlpha = 1;
   }
 
   requestAnimationFrame(drawSparks);
