@@ -259,6 +259,10 @@ def portfolio_balancer():
 def backtester():
     return send_from_directory("static", "strategy-lab.html")
 
+@app.route("/stories")
+def stories():
+    return send_from_directory("static", "stories.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 

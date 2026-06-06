@@ -1,301 +1,591 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apex Trader — AI-Powered Trading Signals</title>
+<title>Apex Trader — What are you here for today?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --radius: 12px; --radius-sm: 6px; }
-  [data-theme="dark"] {
-    --bg:#0b0f1a; --surface:#111827; --surface2:#1a2235;
-    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-    --text:#e2e8f4; --muted:#6b7a99; --accent:#4da6ff;
-    --accent-dim:rgba(77,166,255,0.10); --accent-text:#0b0f1a;
-    --coral:#f07a5a; --teal:#4dd9c0; --shadow:0 4px 24px rgba(0,0,0,0.4);
-  }
-  [data-theme="light"] {
-    --bg:#f0f4fb; --surface:#ffffff; --surface2:#e8eef8;
-    --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.14);
-    --text:#0f172a; --muted:#5a6a88; --accent:#1a7fe8;
-    --accent-dim:rgba(26,127,232,0.10); --accent-text:#ffffff;
-    --coral:#e05a3a; --teal:#0aab8a; --shadow:0 4px 24px rgba(0,0,0,0.10);
-  }
-  html { scroll-behavior: smooth; }
-  body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; font-size:15px; line-height:1.6; transition:background 0.3s,color 0.3s; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── NAV ── */
-  nav { position:sticky; top:0; z-index:100; background:rgba(11,15,26,0.85); backdrop-filter:blur(14px); border-bottom:1px solid var(--border); padding:0 2rem; display:flex; align-items:center; gap:2rem; height:56px; transition:background 0.3s; }
-  [data-theme="light"] nav { background:rgba(240,244,251,0.88); }
-  .nav-logo { font-family:'Outfit',sans-serif; font-weight:800; font-size:17px; color:var(--accent); letter-spacing:-0.01em; text-decoration:none; }
-  .nav-logo span { font-weight:300; color:var(--muted); font-size:13px; margin-left:4px; }
-  .nav-links { display:flex; gap:0; margin-left:auto; align-items:center; }
-  .nav-links a { font-size:13px; color:var(--muted); text-decoration:none; padding:0 14px; height:56px; display:flex; align-items:center; transition:color 0.15s; }
-  .nav-links a:hover { color:var(--text); }
-  .nav-links a.cta { color:var(--accent); font-weight:600; }
-  .nav-links a.cta:hover { color:var(--text); }
-  .theme-toggle { width:36px; height:36px; border-radius:8px; border:1px solid var(--border2); background:var(--surface2); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; margin-left:8px; transition:all 0.15s; flex-shrink:0; }
-  .theme-toggle:hover { color:var(--accent); border-color:var(--accent); }
-  .theme-toggle svg { width:16px; height:16px; }
+:root {
+  --mouse-x: 50vw;
+  --mouse-y: 50vh;
+  --spotlight-size: 520px;
+}
 
-  /* ── HERO ── */
-  .hero { padding:80px 2rem 60px; max-width:760px; margin:0 auto; }
-  .hero-tag { display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:0.08em; text-transform:uppercase; background:var(--accent-dim); border:1px solid rgba(77,166,255,0.2); border-radius:4px; padding:4px 10px; margin-bottom:24px; }
-  [data-theme="light"] .hero-tag { border-color:rgba(26,127,232,0.2); }
-  .hero h1 { font-family:'Outfit',sans-serif; font-weight:800; font-size:clamp(34px,6vw,56px); line-height:1.05; letter-spacing:-0.03em; color:var(--text); margin-bottom:20px; }
-  .hero h1 span { color:var(--accent); }
-  .hero p { font-size:16px; color:var(--muted); max-width:520px; line-height:1.7; margin-bottom:36px; }
-  .hero-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:40px; }
-  .btn-primary { font-family:'Outfit',sans-serif; font-weight:700; font-size:14px; padding:12px 28px; border-radius:var(--radius-sm); background:var(--accent); color:var(--accent-text); border:none; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; transition:opacity 0.15s; letter-spacing:-0.01em; }
-  .btn-primary:hover { opacity:0.88; }
-  .btn-secondary { font-family:'Space Grotesk',sans-serif; font-size:13px; color:var(--muted); text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:color 0.15s; }
-  .btn-secondary:hover { color:var(--text); }
-  .hero-badges { display:flex; gap:10px; flex-wrap:wrap; }
-  .hero-badge { font-size:12px; font-family:'JetBrains Mono',monospace; padding:6px 14px; border-radius:4px; border:1px solid var(--border2); color:var(--muted); letter-spacing:0.02em; }
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Space Grotesk', sans-serif;
+  background: #05060f;
+  cursor: none;
+}
 
-  /* ── SECTIONS ── */
-  .section { max-width:760px; margin:0 auto; padding:0 2rem 80px; }
-  .section-label { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
-  .section-title { font-family:'Outfit',sans-serif; font-weight:700; font-size:26px; letter-spacing:-0.02em; margin-bottom:6px; }
-  .section-desc { font-size:14px; color:var(--muted); margin-bottom:28px; max-width:500px; }
-  .divider { border:none; border-top:1px solid var(--border); margin:0 auto 60px; max-width:716px; }
+/* ── CUSTOM CURSOR ── */
+.cursor {
+  position: fixed;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+  mix-blend-mode: difference;
+}
+.cursor-ring {
+  position: fixed;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.35);
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: transform 0.18s ease, width 0.25s ease, height 0.25s ease, opacity 0.2s ease;
+}
+.cursor.hover { width: 10px; height: 10px; }
+.cursor-ring.hover { width: 64px; height: 64px; border-color: rgba(255,255,255,0.5); }
 
-  /* ── CARDS ── */
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; box-shadow:var(--shadow); }
-  .guide-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .guide-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); text-decoration:none; color:inherit; transition:border-color 0.15s,transform 0.15s; display:block; }
-  .guide-card:hover { border-color:var(--accent); transform:translateY(-1px); }
-  .guide-icon { width:32px; height:32px; border-radius:8px; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
-  .guide-icon svg { width:16px; height:16px; stroke:var(--accent); }
-  .guide-card h3 { font-family:'Outfit',sans-serif; font-size:15px; font-weight:700; margin-bottom:6px; }
-  .guide-card p { font-size:13px; color:var(--muted); line-height:1.6; }
-  .guide-card .card-link { font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-top:14px; display:block; }
+/* ── BACKGROUND CANVAS (animated particles) ── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
 
-  /* ── STAT STRIP ── */
-  .stat-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-bottom:0; }
-  .stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px 20px; }
-  .stat-label { font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
-  .stat-value { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:500; color:var(--accent); letter-spacing:-0.02em; }
-  .stat-sub { font-size:11px; color:var(--muted); margin-top:3px; }
+/* ── SPOTLIGHT OVERLAY ── */
+#spotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    var(--spotlight-size) circle at var(--mouse-x) var(--mouse-y),
+    transparent 0%,
+    transparent 30%,
+    rgba(5, 6, 15, 0.55) 60%,
+    rgba(5, 6, 15, 0.93) 100%
+  );
+  transition: background 0.05s linear;
+}
 
-  /* ── STEPS ── */
-  .steps { display:flex; flex-direction:column; gap:0; }
-  .step { display:flex; gap:20px; padding:20px 0; border-bottom:1px solid var(--border); }
-  .step:last-child { border-bottom:none; }
-  .step-num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:0.06em; min-width:28px; padding-top:2px; }
-  .step-body h4 { font-family:'Outfit',sans-serif; font-weight:700; font-size:15px; margin-bottom:4px; }
-  .step-body p { font-size:13px; color:var(--muted); line-height:1.6; }
+/* Glow halo under the spotlight */
+#spotlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    300px circle at var(--mouse-x) var(--mouse-y),
+    rgba(160, 100, 255, 0.10) 0%,
+    transparent 70%
+  );
+}
 
-  /* ── CTA CARD ── */
-  .cta-card { background:var(--surface); border:1px solid rgba(77,166,255,0.2); border-radius:var(--radius); padding:36px 32px; text-align:center; box-shadow:var(--shadow); }
-  [data-theme="light"] .cta-card { border-color:rgba(26,127,232,0.2); }
-  .cta-card h2 { font-family:'Outfit',sans-serif; font-weight:800; font-size:28px; letter-spacing:-0.02em; margin-bottom:10px; }
-  .cta-card p { font-size:14px; color:var(--muted); margin-bottom:28px; max-width:380px; margin-left:auto; margin-right:auto; }
+/* ── GRID ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  z-index: 1;
+}
 
-  /* ── FOOTER ── */
-  footer { border-top:1px solid var(--border); padding:24px 2rem; max-width:760px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
-  footer span { font-size:12px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+/* ── QUADRANT BASE ── */
+.quad {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.055);
+  transition: border-color 0.35s ease;
+  padding: 3rem 2.5rem;
+}
 
-  @media (max-width:600px) {
-    .guide-grid { grid-template-columns:1fr; }
-    .stat-strip { grid-template-columns:1fr 1fr; }
-    nav { padding:0 1rem; }
-    .nav-links a { padding:0 10px; font-size:12px; }
-    .hero, .section { padding-left:1rem; padding-right:1rem; }
-    .cta-card { padding:28px 20px; }
-  }
+.quad::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.quad:hover { border-color: rgba(255,255,255,0.15); }
+.quad:hover::before { opacity: 1; }
+
+/* Grid-line background pattern */
+.quad::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+/* ── INDIVIDUAL QUADRANT COLOURS ── */
+
+/* TL: Learn — deep purple */
+.quad-tl {
+  background: linear-gradient(135deg, #0d0718 0%, #0a0520 50%, #07040f 100%);
+}
+.quad-tl::before {
+  background: radial-gradient(ellipse at 30% 40%, rgba(124,58,237,0.18) 0%, transparent 65%);
+}
+.quad-tl .quad-accent { color: #a78bfa; }
+.quad-tl .quad-glow { background: rgba(124,58,237,0.12); box-shadow: 0 0 60px rgba(124,58,237,0.25); }
+.quad-tl:hover { background: linear-gradient(135deg, #0f0820 0%, #0d071e 50%, #09050f 100%); }
+.quad-tl .corner-glow { background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 65%); }
+
+/* TR: Backtest — electric teal */
+.quad-tr {
+  background: linear-gradient(225deg, #031018 0%, #020c16 50%, #04070d 100%);
+}
+.quad-tr::before {
+  background: radial-gradient(ellipse at 70% 40%, rgba(20,184,166,0.16) 0%, transparent 65%);
+}
+.quad-tr .quad-accent { color: #2dd4bf; }
+.quad-tr .quad-glow { background: rgba(20,184,166,0.10); box-shadow: 0 0 60px rgba(20,184,166,0.22); }
+.quad-tr:hover { background: linear-gradient(225deg, #031318 0%, #020f16 50%, #04080e 100%); }
+.quad-tr .corner-glow { background: radial-gradient(circle, rgba(20,184,166,0.22) 0%, transparent 65%); }
+
+/* BL: Entertainment — emerald green */
+.quad-bl {
+  background: linear-gradient(45deg, #030f0a 0%, #030e09 50%, #040c08 100%);
+}
+.quad-bl::before {
+  background: radial-gradient(ellipse at 30% 70%, rgba(16,185,129,0.15) 0%, transparent 65%);
+}
+.quad-bl .quad-accent { color: #34d399; }
+.quad-bl .quad-glow { background: rgba(16,185,129,0.09); box-shadow: 0 0 60px rgba(16,185,129,0.20); }
+.quad-bl:hover { background: linear-gradient(45deg, #040f0a 0%, #040e09 50%, #050d08 100%); }
+.quad-bl .corner-glow { background: radial-gradient(circle, rgba(16,185,129,0.20) 0%, transparent 65%); }
+
+/* BR: Portfolio — metallic gold */
+.quad-br {
+  background: linear-gradient(315deg, #0f0c04 0%, #0d0a03 50%, #080600 100%);
+}
+.quad-br::before {
+  background: radial-gradient(ellipse at 70% 70%, rgba(245,158,11,0.14) 0%, transparent 65%);
+}
+.quad-br .quad-accent { color: #fbbf24; }
+.quad-br .quad-glow { background: rgba(245,158,11,0.08); box-shadow: 0 0 60px rgba(245,158,11,0.18); }
+.quad-br:hover { background: linear-gradient(315deg, #100d04 0%, #0e0b03 50%, #090701 100%); }
+.quad-br .corner-glow { background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 65%); }
+
+/* ── CORNER GLOW (decorative) ── */
+.corner-glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+.quad-tl .corner-glow { top: -80px; left: -80px; }
+.quad-tr .corner-glow { top: -80px; right: -80px; }
+.quad-bl .corner-glow { bottom: -80px; left: -80px; }
+.quad-br .corner-glow { bottom: -80px; right: -80px; }
+.quad:hover .corner-glow { opacity: 1; }
+
+/* ── QUAD ICON ── */
+.quad-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 2;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
+}
+.quad:hover .quad-icon { transform: scale(1.08); border-color: rgba(255,255,255,0.2); }
+.quad-icon svg { width: 22px; height: 22px; }
+
+/* ── QUAD TEXT ── */
+.quad-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 2;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+.quad:hover .quad-label { opacity: 1; }
+
+.quad-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(18px, 2.2vw, 28px);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: #e8eaf6;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  max-width: 280px;
+  transition: color 0.3s ease;
+}
+.quad:hover .quad-title { color: #ffffff; }
+
+.quad-sub {
+  font-size: 12px;
+  color: rgba(180,185,210,0.5);
+  margin-top: 10px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  max-width: 220px;
+  line-height: 1.5;
+  transition: color 0.3s ease;
+}
+.quad:hover .quad-sub { color: rgba(180,185,210,0.8); }
+
+/* Arrow */
+.quad-arrow {
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  z-index: 2;
+}
+.quad:hover .quad-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+.quad-arrow svg { width: 14px; height: 14px; }
+
+/* ── CENTRE QUESTION ── */
+.centre-badge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  text-align: center;
+  pointer-events: none;
+}
+
+.centre-inner {
+  background: rgba(8, 9, 20, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 100px;
+  padding: 14px 36px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 8px 40px rgba(0,0,0,0.6),
+    0 0 80px rgba(120,80,255,0.08);
+}
+
+.centre-question {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: clamp(13px, 1.4vw, 18px);
+  letter-spacing: -0.01em;
+  color: rgba(220,225,245,0.9);
+  white-space: nowrap;
+}
+
+.centre-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a78bfa, #2dd4bf);
+  margin-right: 10px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ── LOGO ── */
+.logo {
+  position: fixed;
+  top: 24px;
+  left: 28px;
+  z-index: 30;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: rgba(220,225,245,0.9);
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+.logo span {
+  font-weight: 300;
+  font-size: 12px;
+  color: rgba(140,148,180,0.7);
+  margin-left: 4px;
+}
+
+/* ── DIVIDER LINES ── */
+.divider-h, .divider-v {
+  position: fixed;
+  z-index: 4;
+  pointer-events: none;
+  background: rgba(255,255,255,0.07);
+}
+.divider-h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.divider-v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+/* ── ENTRY ANIMATION ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.quad { animation: fadeUp 0.7s ease both; }
+.quad-tl { animation-delay: 0.05s; }
+.quad-tr { animation-delay: 0.12s; }
+.quad-bl { animation-delay: 0.19s; }
+.quad-br { animation-delay: 0.26s; }
+.centre-badge { animation: fadeUp 0.9s 0.4s ease both; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .quad-title { font-size: 16px; }
+  .quad-sub { display: none; }
+  .quad { padding: 1.5rem 1.2rem; }
+  .centre-inner { padding: 11px 22px; }
+  .centre-question { font-size: 12px; }
+  .quad-icon { width: 42px; height: 42px; margin-bottom: 14px; }
+  .quad-icon svg { width: 18px; height: 18px; }
+  .corner-glow { width: 160px; height: 160px; }
+}
 </style>
 </head>
 <body>
 
-<nav>
-  <a href="/" class="nav-logo">APEX<span>Trader</span></a>
-  <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="#how-it-works">How it works</a>
-    <a href="/signal-config" class="cta">Open Lab &rarr;</a>
-    <button class="theme-toggle" id="theme-btn" aria-label="Toggle theme">
-      <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+<!-- Custom cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+
+<!-- Particle canvas -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Spotlight overlay -->
+<div id="spotlight"></div>
+
+<!-- Subtle divider lines -->
+<div class="divider-h"></div>
+<div class="divider-v"></div>
+
+<!-- Logo -->
+<div class="logo">APEX<span>Trader</span></div>
+
+<!-- 4 quadrants -->
+<div class="grid">
+
+  <!-- TL: Learn -->
+  <a href="/signal-config" class="quad quad-tl">
+    <div class="corner-glow"></div>
+    <div class="quad-icon quad-glow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
       </svg>
-      <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+    </div>
+    <div class="quad-label quad-accent">Education</div>
+    <div class="quad-title">Learn how to Invest &amp; Trade</div>
+    <div class="quad-sub">Signals, indicators, and market mechanics — explained interactively</div>
+    <div class="quad-arrow quad-accent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
       </svg>
-    </button>
-  </div>
-</nav>
-
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-tag">Technical analysis education</div>
-  <h1>Understand the market,<br>learn the <span>signals</span>.</h1>
-  <p>An interactive Lab for learning how technical indicators work — experiment with real market data, see how signals form, and build your understanding at your own pace.</p>
-  <div class="hero-actions">
-    <a href="/signal-config" class="btn-primary">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Open the Lab
-    </a>
-    <a href="#features" class="btn-secondary">See the tools &darr;</a>
-  </div>
-  <div class="hero-badges">
-    <div class="hero-badge">RSI · MACD · Bollinger</div>
-    <div class="hero-badge">EMA crossovers</div>
-    <div class="hero-badge">Backtesting</div>
-    <div class="hero-badge">Multi-timeframe</div>
-    <div class="hero-badge">Strategy lab</div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- STATS -->
-<section class="section">
-  <div class="stat-strip">
-    <div class="stat-card">
-      <div class="stat-label">Indicators to explore</div>
-      <div class="stat-value">10+</div>
-      <div class="stat-sub">RSI, MACD, EMA, Bollinger &amp; more</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Timeframes</div>
-      <div class="stat-value">12</div>
-      <div class="stat-sub">1 min to monthly — see how each changes</div>
+  </a>
+
+  <!-- TR: Backtest -->
+  <a href="/backtester" class="quad quad-tr">
+    <div class="corner-glow"></div>
+    <div class="quad-icon quad-glow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">Adjustable parameters</div>
-      <div class="stat-value">Free</div>
-      <div class="stat-sub">Tweak every threshold, see the effect live</div>
+    <div class="quad-label quad-accent">Backtester</div>
+    <div class="quad-title">To test my trading theories</div>
+    <div class="quad-sub">Run your strategies against real historical market data</div>
+    <div class="quad-arrow quad-accent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
     </div>
-  </div>
-</section>
+  </a>
 
-<hr class="divider">
+  <!-- BL: Stories -->
+  <a href="/stories" class="quad quad-bl">
+    <div class="corner-glow"></div>
+    <div class="quad-icon quad-glow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+      </svg>
+    </div>
+    <div class="quad-label quad-accent">Stories &amp; Podcasts</div>
+    <div class="quad-title">To be entertained</div>
+    <div class="quad-sub">Videos, blogs &amp; podcast episodes from the trading floor</div>
+    <div class="quad-arrow quad-accent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </div>
+  </a>
 
-<!-- FEATURES -->
-<section class="section" id="features">
-  <div class="section-label">What's inside</div>
-  <div class="section-title">Four ways to learn</div>
-  <div class="section-desc">Each tool is designed to help you understand how and why technical indicators behave the way they do.</div>
-  <div class="guide-grid">
-    <a href="/signal-config" class="guide-card">
-      <div class="guide-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-      </div>
-      <h3>Signal Breakdown</h3>
-      <p>See how RSI, MACD, EMA crossovers, Bollinger Bands, and volume each contribute to an overall reading — and learn what each one is actually telling you.</p>
-      <span class="card-link">Explore signals &rarr;</span>
-    </a>
-    <a href="/signal-config" class="guide-card">
-      <div class="guide-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-      </div>
-      <h3>Historical Backtesting</h3>
-      <p>Apply a set of rules to past market data and see what would have happened — a powerful way to understand the strengths and limits of any indicator.</p>
-      <span class="card-link">Try backtesting &rarr;</span>
-    </a>
-    <a href="/signal-config" class="guide-card">
-      <div class="guide-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
-          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-        </svg>
-      </div>
-      <h3>Parameter Lab</h3>
-      <p>Adjust RSI periods, MACD fast/slow lengths, Bollinger Band width, and EMA settings with live sliders — and immediately see how changing each one shifts the output.</p>
-      <span class="card-link">Start experimenting &rarr;</span>
-    </a>
-    <a href="/profile" class="guide-card">
-      <div class="guide-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-      </div>
-      <h3>Save Your Progress</h3>
-      <p>Create a profile to save your configurations between sessions — so you can pick up where you left off as you work through different indicators and timeframes.</p>
-      <span class="card-link">Your profile &rarr;</span>
-    </a>
-  </div>
-</section>
+  <!-- BR: Portfolio -->
+  <a href="/portfolio-balancer" class="quad quad-br">
+    <div class="corner-glow"></div>
+    <div class="quad-icon quad-glow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+      </svg>
+    </div>
+    <div class="quad-label quad-accent">Portfolio</div>
+    <div class="quad-title">To manage my portfolio</div>
+    <div class="quad-sub">Rebalance, analyse and optimise your holdings</div>
+    <div class="quad-arrow quad-accent">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </div>
+  </a>
 
-<hr class="divider">
+</div>
 
-<!-- HOW IT WORKS -->
-<section class="section" id="how-it-works">
-  <div class="section-label">Getting started</div>
-  <div class="section-title">Learn in three steps</div>
-  <div class="section-desc">No experience needed — each step builds on the last.</div>
-  <div class="card">
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
-        <div class="step-body">
-          <h4>Choose a market &amp; timeframe</h4>
-          <p>Pick any ticker — stocks, ETFs, or crypto — then select a timeframe. Watching how the same indicator behaves on a 5-minute chart versus a weekly chart is one of the most valuable lessons here.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <div class="step-body">
-          <h4>Adjust the parameters &amp; observe</h4>
-          <p>Use the sliders to change RSI lookback periods, MACD fast/slow settings, Bollinger Band width, and EMA lengths. The goal isn't to find the "right" settings — it's to understand what each parameter controls and why it matters.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <div class="step-body">
-          <h4>Run a backtest &amp; reflect</h4>
-          <p>Apply your configuration to historical data and review the results — win rate, drawdown, trade frequency. Use this not as a prediction of future performance, but as a window into how a particular rule set has behaved in the past.</p>
-        </div>
-      </div>
+<!-- Centre question -->
+<div class="centre-badge">
+  <div class="centre-inner">
+    <div class="centre-question">
+      <span class="centre-dot"></span>What are you here for today?
     </div>
   </div>
-</section>
-
-<hr class="divider">
-
-<!-- CTA -->
-<section class="section">
-  <div class="cta-card">
-    <h2>Ready to start learning?</h2>
-    <p>Open the Lab, pick a market, and start exploring how indicators respond to real data — no prior experience required.</p>
-    <a href="/signal-config" class="btn-primary" style="display:inline-flex;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Open the Lab
-    </a>
-  </div>
-</section>
-
-<footer style="margin-bottom:0; padding-bottom:40px;">
-  <span>APEX TRADER</span>
-  <span>For educational purposes only — not financial advice</span>
-</footer>
+</div>
 
 <script>
-  const btn = document.getElementById('theme-btn');
-  const sun = document.getElementById('icon-sun');
-  const moon = document.getElementById('icon-moon');
-  const html = document.documentElement;
+// ── Mouse tracking ──
+const root = document.documentElement;
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+let ringX = mouseX, ringY = mouseY;
 
-  function applyTheme(t) {
-    html.setAttribute('data-theme', t);
-    localStorage.setItem('apex-theme', t);
-    if (t === 'dark') { sun.style.display=''; moon.style.display='none'; }
-    else { sun.style.display='none'; moon.style.display=''; }
-  }
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  root.style.setProperty('--mouse-x', e.clientX + 'px');
+  root.style.setProperty('--mouse-y', e.clientY + 'px');
+  cursor.style.left = e.clientX + 'px';
+  cursor.style.top = e.clientY + 'px';
+});
 
-  applyTheme(localStorage.getItem('apex-theme') || 'dark');
-  btn.addEventListener('click', () => applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+// Smooth ring follow
+(function animRing() {
+  ringX += (mouseX - ringX) * 0.12;
+  ringY += (mouseY - ringY) * 0.12;
+  ring.style.left = ringX + 'px';
+  ring.style.top = ringY + 'px';
+  requestAnimationFrame(animRing);
+})();
+
+// Cursor expand on hover
+document.querySelectorAll('a').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.classList.add('hover'); ring.classList.add('hover'); });
+  el.addEventListener('mouseleave', () => { cursor.classList.remove('hover'); ring.classList.remove('hover'); });
+});
+
+// ── Particle canvas ──
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const COLOURS = ['#7c3aed', '#14b8a6', '#10b981', '#d97706', '#6366f1'];
+
+function mkParticle() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.4 + 0.3,
+    vx: (Math.random() - 0.5) * 0.18,
+    vy: (Math.random() - 0.5) * 0.18,
+    c: COLOURS[Math.floor(Math.random() * COLOURS.length)],
+    a: Math.random() * 0.4 + 0.1
+  };
+}
+
+particles = Array.from({ length: 120 }, mkParticle);
+
+function drawParticles() {
+  ctx.clearRect(0, 0, W, H);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.c;
+    ctx.globalAlpha = p.a;
+    ctx.fill();
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  });
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
 </script>
 </body>
 </html>
