@@ -414,6 +414,9 @@ html, body {
 <!-- Spotlight overlay -->
 <div id="spotlight"></div>
 
+<!-- Spark canvas (above spotlight, below cursor) -->
+<canvas id="spark-canvas" style="position:fixed;inset:0;z-index:15;pointer-events:none;"></canvas>
+
 <!-- Subtle divider lines -->
 <div class="divider-h"></div>
 <div class="divider-v"></div>
@@ -516,14 +519,19 @@ const cursor = document.getElementById('cursor');
 const ring = document.getElementById('cursor-ring');
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
 let ringX = mouseX, ringY = mouseY;
+let prevMouseX = mouseX, prevMouseY = mouseY;
+let mouseVX = 0, mouseVY = 0;
 
 document.addEventListener('mousemove', e => {
+  mouseVX = e.clientX - mouseX;
+  mouseVY = e.clientY - mouseY;
   mouseX = e.clientX;
   mouseY = e.clientY;
   root.style.setProperty('--mouse-x', e.clientX + 'px');
   root.style.setProperty('--mouse-y', e.clientY + 'px');
   cursor.style.left = e.clientX + 'px';
   cursor.style.top = e.clientY + 'px';
+  emitSparks(e.clientX, e.clientY, mouseVX, mouseVY);
 });
 
 // Smooth ring follow
@@ -586,6 +594,100 @@ function drawParticles() {
   requestAnimationFrame(drawParticles);
 }
 drawParticles();
+
+// ── Spark engine ──
+const sparkCanvas = document.getElementById('spark-canvas');
+const sCtx = sparkCanvas.getContext('2d');
+let sW, sH;
+
+function resizeSpark() { sW = sparkCanvas.width = window.innerWidth; sH = sparkCanvas.height = window.innerHeight; }
+resizeSpark();
+window.addEventListener('resize', resizeSpark);
+
+const SPARK_COLOURS = [
+  '#ffffff', '#e8d5ff', '#a78bfa', '#7c3aed',  // white → purple
+  '#2dd4bf', '#34d399',                          // teal / green
+  '#fbbf24', '#f59e0b',                          // gold
+  '#f9a8d4', '#fb7185',                          // pink accent
+];
+
+const sparks = [];
+
+function emitSparks(x, y, vx, vy) {
+  const speed = Math.sqrt(vx * vx + vy * vy);
+  if (speed < 1) return;
+
+  // Number of sparks scales with speed: 1 at crawl, up to 18 at max
+  const count = Math.min(Math.floor(speed * 0.9), 18);
+
+  for (let i = 0; i < count; i++) {
+    // Base direction: opposite to movement (trail behind cursor)
+    const angle = Math.atan2(-vy, -vx) + (Math.random() - 0.5) * 2.2;
+    const mag   = (Math.random() * 0.6 + 0.2) * speed * 0.55;
+
+    sparks.push({
+      x, y,
+      vx: Math.cos(angle) * mag,
+      vy: Math.sin(angle) * mag,
+      life: 1.0,
+      // Faster mouse = longer-lived sparks
+      decay: 0.03 + Math.random() * 0.04 - Math.min(speed * 0.0008, 0.02),
+      r: Math.random() * 1.6 + 0.5,
+      colour: SPARK_COLOURS[Math.floor(Math.random() * SPARK_COLOURS.length)],
+      // Each spark is a short line — keep its last position for the streak
+      px: x, py: y,
+    });
+  }
+}
+
+function drawSparks() {
+  sCtx.clearRect(0, 0, sW, sH);
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+
+    // Streak line from previous to current position
+    const len = Math.sqrt((s.x - s.px) ** 2 + (s.y - s.py) ** 2);
+    sCtx.save();
+    sCtx.globalAlpha = s.life * 0.9;
+    sCtx.strokeStyle = s.colour;
+    sCtx.lineWidth = s.r * (0.5 + s.life * 0.8);
+    sCtx.lineCap = 'round';
+    sCtx.shadowColor = s.colour;
+    sCtx.shadowBlur = 4 + s.life * 6;
+    sCtx.beginPath();
+    sCtx.moveTo(s.px, s.py);
+    sCtx.lineTo(s.x, s.y);
+    sCtx.stroke();
+    sCtx.restore();
+
+    // Bright hot core dot at tip
+    sCtx.save();
+    sCtx.globalAlpha = s.life;
+    sCtx.fillStyle = '#ffffff';
+    sCtx.shadowColor = s.colour;
+    sCtx.shadowBlur = 8;
+    sCtx.beginPath();
+    sCtx.arc(s.x, s.y, s.r * 0.55, 0, Math.PI * 2);
+    sCtx.fill();
+    sCtx.restore();
+
+    // Update
+    s.px = s.x;
+    s.py = s.y;
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vy += 0.04; // gentle gravity
+    s.vx *= 0.97; // air resistance
+    s.vy *= 0.97;
+    s.life -= s.decay;
+
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+
+  requestAnimationFrame(drawSparks);
+}
+drawSparks();
 </script>
 </body>
 </html>
