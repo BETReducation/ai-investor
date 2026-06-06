@@ -587,11 +587,10 @@ function resizeSpark() { sW = sparkCanvas.width = window.innerWidth; sH = sparkC
 resizeSpark();
 window.addEventListener('resize', resizeSpark);
 
-const SPARK_COLOURS = [
-  '#ffffff', '#e8d5ff', '#a78bfa', '#7c3aed',  // white → purple
-  '#2dd4bf', '#34d399',                          // teal / green
-  '#fbbf24', '#f59e0b',                          // gold
-  '#f9a8d4', '#fb7185',                          // pink accent
+const BTC_COLOURS = [
+  '#f7931a', '#ffb347', '#ffd700',  // classic bitcoin orange / gold
+  '#ffffff', '#ffe0a0',              // white / warm white
+  '#fbbf24', '#f59e0b',              // amber
 ];
 
 const sparks = [];
@@ -600,28 +599,24 @@ function emitSparks(x, y, vx, vy) {
   const speed = Math.sqrt(vx * vx + vy * vy);
   if (speed < 1) return;
 
-  // Number of sparks scales with speed: 1 at crawl, up to 14 at max
   const count = Math.min(Math.floor(speed * 0.7), 14);
-
-  // Hard cap on total spark pool to keep frame budget bounded
-  if (sparks.length > 180) sparks.splice(0, sparks.length - 180);
+  if (sparks.length > 160) sparks.splice(0, sparks.length - 160);
 
   for (let i = 0; i < count; i++) {
-    // Base direction: opposite to movement (trail behind cursor)
-    const angle = Math.atan2(-vy, -vx) + (Math.random() - 0.5) * 2.2;
-    const mag   = (Math.random() * 0.6 + 0.2) * speed * 0.55;
+    const angle = Math.atan2(-vy, -vx) + (Math.random() - 0.5) * 2.4;
+    const mag   = (Math.random() * 0.55 + 0.2) * speed * 0.5;
+    const size  = Math.random() * 10 + 7; // 7–17 px
 
     sparks.push({
       x, y,
       vx: Math.cos(angle) * mag,
       vy: Math.sin(angle) * mag,
       life: 1.0,
-      // Faster mouse = longer-lived sparks
-      decay: 0.03 + Math.random() * 0.04 - Math.min(speed * 0.0008, 0.02),
-      r: Math.random() * 1.6 + 0.5,
-      colour: SPARK_COLOURS[Math.floor(Math.random() * SPARK_COLOURS.length)],
-      // Each spark is a short line — keep its last position for the streak
-      px: x, py: y,
+      decay: 0.025 + Math.random() * 0.035 - Math.min(speed * 0.0006, 0.015),
+      size,
+      rot: Math.random() * Math.PI * 2,         // initial rotation
+      rotV: (Math.random() - 0.5) * 0.18,       // spin speed
+      colour: BTC_COLOURS[Math.floor(Math.random() * BTC_COLOURS.length)],
     });
   }
 }
@@ -629,45 +624,33 @@ function emitSparks(x, y, vx, vy) {
 function drawSparks() {
   sCtx.clearRect(0, 0, sW, sH);
 
-  if (sparks.length > 0) {
-    // Additive blending gives glow effect without expensive shadowBlur
-    sCtx.globalCompositeOperation = 'lighter';
-    sCtx.lineCap = 'round';
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
 
-    for (let i = sparks.length - 1; i >= 0; i--) {
-      const s = sparks[i];
+    sCtx.save();
+    sCtx.globalAlpha = s.life * 0.92;
+    sCtx.translate(s.x, s.y);
+    sCtx.rotate(s.rot);
 
-      // Streak line
-      sCtx.globalAlpha = s.life * 0.85;
-      sCtx.strokeStyle = s.colour;
-      sCtx.lineWidth = s.r * (0.4 + s.life * 0.9);
-      sCtx.beginPath();
-      sCtx.moveTo(s.px, s.py);
-      sCtx.lineTo(s.x, s.y);
-      sCtx.stroke();
+    // Bitcoin ₿ symbol
+    sCtx.font = `900 ${s.size}px "Arial Black", Arial, sans-serif`;
+    sCtx.textAlign = 'center';
+    sCtx.textBaseline = 'middle';
+    sCtx.fillStyle = s.colour;
+    sCtx.fillText('₿', 0, 0);
 
-      // Bright tip dot (white, additive = blooms to colour)
-      sCtx.globalAlpha = s.life * 0.7;
-      sCtx.fillStyle = '#ffffff';
-      sCtx.beginPath();
-      sCtx.arc(s.x, s.y, s.r * 0.6, 0, Math.PI * 2);
-      sCtx.fill();
+    sCtx.restore();
 
-      // Update physics
-      s.px = s.x;
-      s.py = s.y;
-      s.x += s.vx;
-      s.y += s.vy;
-      s.vy += 0.04;
-      s.vx *= 0.97;
-      s.vy *= 0.97;
-      s.life -= s.decay;
+    // Physics
+    s.x  += s.vx;
+    s.y  += s.vy;
+    s.vy += 0.05;   // gravity
+    s.vx *= 0.97;
+    s.vy *= 0.97;
+    s.rot += s.rotV;
+    s.life -= s.decay;
 
-      if (s.life <= 0) sparks.splice(i, 1);
-    }
-
-    sCtx.globalCompositeOperation = 'source-over';
-    sCtx.globalAlpha = 1;
+    if (s.life <= 0) sparks.splice(i, 1);
   }
 
   requestAnimationFrame(drawSparks);
