@@ -50,6 +50,155 @@
     transform-origin: center center;
   }
 
+  /* ══════════════════════════════════════
+     MOBILE LAYOUT  (portrait ≤ 768px)
+     Stage becomes a compact video player
+     at the top; caption + nav sit below.
+  ══════════════════════════════════════ */
+  @media (max-width: 768px) {
+    html, body {
+      overflow: hidden;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      height: 100vh;
+    }
+
+    /* stage-wrap becomes just a fixed-height strip */
+    #stage-wrap {
+      width: 100vw;
+      height: 56.25vw;   /* exact 16:9 */
+      flex-shrink: 0;
+      display: block;
+      background: var(--bg);
+    }
+
+    /* video player strip — full width, 16:9 height */
+    #stage {
+      width: 100vw !important;
+      height: 56.25vw !important;
+      transform: none !important;   /* JS scale disabled on mobile */
+      transform-origin: top left;
+    }
+
+    /* hide in-stage captions, progress, nav on mobile (moved outside) */
+    .caption        { display: none !important; }
+    #progress-bar   { display: none !important; }
+    #nav-dots       { display: none !important; }
+    #controls       { display: none !important; }
+
+    /* mobile step badge — slightly larger */
+    .step-badge { font-size: 7px; top: 4vw; left: 4vw; padding: 2px 6px; }
+
+    /* ── mobile chrome below the stage ── */
+    #mobile-ui {
+      display: flex !important;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;   /* allow flex shrink */
+      overflow: hidden;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+    }
+
+    /* scene title + step label */
+    #mobile-step {
+      font-size: 9px;
+      letter-spacing: 3px;
+      color: var(--cyan);
+      padding: 14px 20px 0;
+      opacity: 0.8;
+    }
+
+    /* caption text — large and readable */
+    #mobile-caption {
+      flex: 1;
+      padding: 10px 20px 16px;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      /* vertically top-align text, don't stretch */
+      align-self: stretch;
+    }
+
+    /* progress bar — horizontal track */
+    #mobile-progress-track {
+      height: 3px;
+      background: var(--border);
+      margin: 10px 20px 0;
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #mobile-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+      width: 0%;
+      transition: width 0.8s ease;
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    /* dot row + controls row */
+    #mobile-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 0 6px;
+      flex-shrink: 0;
+    }
+    #mobile-dots .nav-dot { width: 8px; height: 8px; cursor: pointer; }
+
+    #mobile-controls {
+      display: flex;
+      gap: 0;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+    .mob-btn {
+      flex: 1;
+      padding: 16px 0;
+      background: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mob-btn:last-child { border-right: none; }
+    .mob-btn:active { background: rgba(255,255,255,.05); color: var(--cyan); }
+    #mob-play-btn { color: var(--green); }
+
+    /* safe area padding for notched phones */
+    #mobile-controls { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+    /* swipe gesture hint overlay — shown briefly on first load */
+    #swipe-hint {
+      position: absolute;
+      bottom: 56.25vw;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      padding: 8px;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeUp 0.5s ease 1.5s forwards, blink 2s ease 2.5s 3;
+    }
+  }
+
+  /* desktop — hide mobile UI */
+  #mobile-ui { display: none; }
+  #swipe-hint { display: none; }
+
   /* scanlines */
   #stage::after {
     content: '';
@@ -1327,6 +1476,20 @@
 </div><!-- /stage -->
 </div><!-- /stage-wrap -->
 
+<!-- ── Mobile UI (hidden on desktop via CSS) ── -->
+<div id="swipe-hint">SWIPE ← → TO NAVIGATE</div>
+<div id="mobile-ui">
+  <div id="mobile-step">INTRODUCTION</div>
+  <div id="mobile-caption">Meet Jamie — a 20-something who wants to invest smarter, not harder. They've heard about algorithmic trading and want to try it themselves.</div>
+  <div id="mobile-progress-track"><div id="mobile-progress-fill"></div></div>
+  <div id="mobile-dots"></div>
+  <div id="mobile-controls">
+    <button class="mob-btn" onclick="prevScene()">◀ PREV</button>
+    <button class="mob-btn" id="mob-play-btn" onclick="togglePlay()">⏸ PAUSE</button>
+    <button class="mob-btn" onclick="nextScene()">NEXT ▶</button>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════
 // Scene management
@@ -1358,15 +1521,32 @@ function prevScene() {
 
 function updateUI() {
   const pct = ((current) / (SCENES.length - 1)) * 100;
-  document.getElementById('progress-bar').style.width = pct + '%';
+  // desktop progress
+  const pb = document.getElementById('progress-bar');
+  if (pb) pb.style.width = pct + '%';
+  // all nav dots (desktop + mobile)
   document.querySelectorAll('.nav-dot').forEach((d, i) => {
-    d.classList.toggle('on', i === current);
+    d.classList.toggle('on', i === current % SCENES.length);
   });
+  // mobile caption + step
+  const data = MOBILE_DATA[current];
+  if (data) {
+    const stepEl = document.getElementById('mobile-step');
+    const capEl  = document.getElementById('mobile-caption');
+    const fillEl = document.getElementById('mobile-progress-fill');
+    if (stepEl) stepEl.textContent = data.step;
+    if (capEl)  capEl.innerHTML = data.caption;
+    if (fillEl) fillEl.style.width = pct + '%';
+  }
 }
 
 function togglePlay() {
   playing = !playing;
-  document.getElementById('playBtn').textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+  const label = playing ? '⏸ PAUSE' : '▶ PLAY';
+  const pb = document.getElementById('playBtn');
+  const mb = document.getElementById('mob-play-btn');
+  if (pb) pb.textContent = label;
+  if (mb) mb.textContent = label;
   if (playing) scheduleNext();
   else clearTimeout(timer);
 }
@@ -1619,9 +1799,16 @@ function animateCursor2() {
 }
 
 
-// ── scale stage to viewport ──
+// ── mobile detection ──
+function isMobile() { return window.innerWidth <= 768; }
+
+// ── scale stage to viewport (desktop only) ──
 function scaleStage() {
   const stage = document.getElementById('stage');
+  if (isMobile()) {
+    stage.style.transform = '';
+    return;
+  }
   const scaleX = window.innerWidth  / 1280;
   const scaleY = window.innerHeight / 720;
   const scale  = Math.min(scaleX, scaleY);
@@ -1629,6 +1816,46 @@ function scaleStage() {
 }
 scaleStage();
 window.addEventListener('resize', scaleStage);
+
+// ── mobile caption data ──
+const MOBILE_DATA = [
+  { step: 'INTRODUCTION',            caption: '<strong style="color:var(--cyan)">Welcome to Winvestor.</strong> This guide walks you through building your very first trading signal — step by step. No experience needed.' },
+  { step: 'INTRODUCTION',            caption: 'Meet <strong style="color:var(--green)">Jamie</strong> — a 20-something who wants to invest smarter, not just save. They\'ve heard about algorithmic trading and want to try it themselves, starting with <strong>$10,000</strong>.' },
+  { step: 'STEP 1 — OPEN THE PLATFORM', caption: 'Jamie opens <strong style="color:var(--cyan)">Winvestor Strategy Lab</strong>. The platform lets you build, test and run your own trading signals without writing any code. First stop: <strong style="color:var(--green)">Signal Config</strong>.' },
+  { step: 'STEP 2 — CHOOSE YOUR ASSET', caption: '<strong style="color:var(--cyan)">Step 1:</strong> Pick your stock. Jamie selects <strong style="color:var(--green)">AAPL (Apple Inc.)</strong> — a stock they\'re familiar with. Buy & hold AAPL returned <strong style="color:var(--amber)">+31.4%</strong> over the last 2 years. Can Jamie\'s signal do better?' },
+  { step: 'STEP 3 — BUILD YOUR SIGNAL', caption: '<strong style="color:var(--cyan)">Step 2:</strong> Choose a strategy. Jamie picks <strong style="color:var(--green)">Oversold Bounce</strong> — it buys when the <strong>RSI drops below 30</strong> (stock is oversold and likely to bounce), then sells at +1% gain or -0.5% stop-loss.' },
+  { step: 'STEP 4 — RUN THE BACKTEST', caption: '<strong style="color:var(--cyan)">Step 3:</strong> Navigate to the <strong>Backtester</strong> and hit RUN. The engine replays <strong>730 trading days</strong> of real AAPL data — testing every time the signal would have fired, and tracking the result.' },
+  { step: 'STEP 5 — YOUR RESULTS ★',  caption: '<strong style="color:var(--green)">Jamie\'s strategy returned +47.2%</strong> vs Buy &amp; Hold\'s +31.4% — outperforming by <strong style="color:var(--cyan)">+15.6 percentage points</strong>. 47 trades, 62% win rate, avg gain +0.82% per trade. Now it\'s your turn. 🚀' },
+];
+
+// ── build mobile dots ──
+const mobileDotsWrap = document.getElementById('mobile-dots');
+if (mobileDotsWrap) {
+  SCENES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'nav-dot' + (i === 0 ? ' on' : '');
+    d.onclick = () => { showScene(i); if (playing) scheduleNext(); };
+    mobileDotsWrap.appendChild(d);
+  });
+}
+
+// ── swipe support ──
+(function() {
+  let startX = 0, startY = 0;
+  const el = document.getElementById('stage');
+  if (!el) return;
+  el.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
+    if (dx < 0) nextScene(); else prevScene();
+    if (playing) scheduleNext();
+  }, { passive: true });
+})();
 
 // ── kick off ──
 updateUI();
