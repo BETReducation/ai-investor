@@ -66,24 +66,25 @@
       height: 100dvh;
     }
 
-    /* stage-wrap: true 16:9 strip, pushed below notch */
+    /* stage-wrap: 1.5× zoomed strip pushed below notch.
+       84.375vw = 1.5 × 56.25vw (1.5× the natural 16:9 height at full width).
+       overflow:hidden clips the right ~33% that goes off-screen — all key
+       content lives in the left 2/3 of each scene design. */
     #stage-wrap {
       width: 100vw;
+      overflow: hidden;
       padding-top: env(safe-area-inset-top, 0px);
-      /* 56.25vw = exact 16:9 at full width */
-      height: calc(56.25vw + env(safe-area-inset-top, 0px));
+      height: calc(84.375vw + env(safe-area-inset-top, 0px));
       flex-shrink: 0;
       display: block;
       background: var(--bg);
-      overflow: hidden;
     }
 
-    /* Stage stays its native 1280×720 — JS scales it to fill width */
+    /* Stage stays its native 1280×720 — JS sets scale(1.5 × vw/1280) */
     #stage {
       width: 1280px !important;
       height: 720px !important;
       transform-origin: top left !important;
-      /* JS sets: transform: scale(vw/1280) — do NOT override with none */
     }
 
     /* hide in-stage elements moved outside */
@@ -116,7 +117,7 @@
       font-size: 9px;
       letter-spacing: 3px;
       color: var(--cyan);
-      padding: 10px 18px 0;
+      padding: 8px 18px 0;
       opacity: 0.8;
       flex-shrink: 0;
     }
@@ -126,19 +127,15 @@
       flex: 1;
       min-height: 0;
       padding: 0 18px;
-      font-size: 14px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.55;
       color: var(--text);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      /* centre short text in the available space */
       display: flex;
       align-items: center;
     }
-    /* inner wrapper keeps text left-aligned while being flex-centred */
-    #mobile-caption-inner {
-      width: 100%;
-    }
+    #mobile-caption-inner { width: 100%; }
 
     /* slim progress bar */
     #mobile-progress-track {
@@ -1823,8 +1820,9 @@ function isMobile() { return window.innerWidth <= 768; }
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    // Scale to fill viewport width exactly (true 16:9 strip)
-    const scale = window.innerWidth / 1280;
+    // 1.5× zoom: fills ~40% of screen height. Right ~33% of each scene
+    // is clipped (overflow:hidden on stage-wrap) — main content is left-aligned.
+    const scale = (window.innerWidth / 1280) * 1.5;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = 'top left';
     return;
