@@ -71,7 +71,7 @@
       top: env(safe-area-inset-top, 0px);
       left: 0 !important;
       width: 100vw !important;
-      height: 101.25vw !important;   /* 1.8 × 56.25vw */
+      height: 90vw !important;       /* 1.6 × 56.25vw */
       overflow: hidden !important;
       background: var(--bg);
       display: block !important;
@@ -105,7 +105,7 @@
     /* Fixed panel below the stage strip */
     #mobile-ui {
       position: fixed !important;
-      top: calc(101.25vw + env(safe-area-inset-top, 0px));
+      top: calc(90vw + env(safe-area-inset-top, 0px));
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
@@ -198,10 +198,42 @@
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
+    /* ── Scene 0 (title): left-align so content isn't clipped at right
+          at 1.6× zoom the visible design-x window is 0-799px;
+          centred content (logo at x=500-780, h1 at x=290-990) would clip right.
+          Shifting to flush-left with padding keeps everything visible. ── */
+    #s0 {
+      align-items: flex-start !important;
+      padding-left: 60px !important;
+    }
+    #s0 h1 {
+      font-size: 28px !important;
+      text-align: left !important;
+      max-width: 680px !important;
+    }
+    #s0 .sub  { text-align: left !important; }
+    #s0 .start-hint { align-self: flex-start !important; }
+
+    /* ── Scene 6 (results): card is 880px wide centred around x=640;
+          right column (+31.4%) clips off screen.
+          Stack comparison columns vertically + narrow card to fit. ── */
+    .result-card {
+      left: 50px !important;
+      width: 680px !important;
+      padding: 24px 28px !important;
+    }
+    .result-vs {
+      flex-direction: column !important;
+      gap: 12px !important;
+      align-items: center !important;
+    }
+    .vs-divider { display: none !important; }
+    .vs-value   { font-size: 36px !important; }
+
     /* swipe hint */
     #swipe-hint {
       position: fixed;
-      top: calc(46vw - 28px + env(safe-area-inset-top, 0px));
+      top: calc(45vw - 28px + env(safe-area-inset-top, 0px));
       left: 0; right: 0;
       text-align: center;
       font-size: 10px;
@@ -1825,9 +1857,9 @@ function isMobile() { return window.innerWidth <= 768; }
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    // 1.8× zoom: fills ~47% of screen height. Right ~38% clipped.
-    // position:absolute top:0 left:0 + transform-origin:0 0 anchors to top-left.
-    const scale = (window.innerWidth / 1280) * 1.8;
+    // 1.6× zoom: fills ~45% of screen height. Visible design-x = 0–799px.
+    // transform-origin 0 0 anchors scale to top-left — no horizontal shift.
+    const scale = (window.innerWidth / 1280) * 1.6;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = '0 0';
     return;
