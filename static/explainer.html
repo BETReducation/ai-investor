@@ -56,40 +56,36 @@
      at the top; caption + nav sit below.
   ══════════════════════════════════════ */
   @media (max-width: 768px) {
+    /* Use plain block — no flex on html/body so nothing can centre the stage */
     html, body {
+      display: block !important;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
       background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      /* Use the smallest possible viewport so URL bar never causes overflow */
-      height: 100svh;
-      height: 100dvh;
     }
 
-    /* stage-wrap: 1.8× zoomed strip pushed below notch.
-       101.25vw = 1.8 × 56.25vw (~20% taller than previous 84.375vw).
-       overflow:hidden clips the right edge — key content is left-aligned. */
+    /* Fixed video strip — explicit top/left so no layout engine can shift it */
     #stage-wrap {
-      width: 100vw;
-      overflow: hidden;
-      padding-top: env(safe-area-inset-top, 0px);
-      height: calc(101.25vw + env(safe-area-inset-top, 0px));
-      flex-shrink: 0;
-      /* Use flex-start to guarantee stage is pinned to top-left.
-         display:block can still inherit justify-content:center on iOS Safari. */
-      display: flex !important;
-      justify-content: flex-start !important;
-      align-items: flex-start !important;
+      position: fixed !important;
+      top: env(safe-area-inset-top, 0px);
+      left: 0 !important;
+      width: 100vw !important;
+      height: 101.25vw !important;   /* 1.8 × 56.25vw */
+      overflow: hidden !important;
       background: var(--bg);
+      display: block !important;
+      z-index: 10;
     }
 
-    /* Stage: native 1280×720, anchored to left edge, scaled by JS */
+    /* Stage anchored to top-left corner of wrap — scaled by JS */
     #stage {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
       width: 1280px !important;
       height: 720px !important;
-      transform-origin: top left !important;
-      flex-shrink: 0 !important;
-      margin: 0 !important;
+      transform-origin: 0 0 !important;
     }
 
     /* hide in-stage elements moved outside */
@@ -106,15 +102,19 @@
       letter-spacing: 2px;
     }
 
-    /* ── mobile chrome below stage ── */
+    /* Fixed panel below the stage strip */
     #mobile-ui {
+      position: fixed !important;
+      top: calc(101.25vw + env(safe-area-inset-top, 0px));
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       display: flex !important;
       flex-direction: column;
-      flex: 1;
-      min-height: 0;
       overflow: hidden;
       background: var(--bg);
       border-top: 1px solid var(--border);
+      z-index: 10;
     }
 
     /* step label */
@@ -1826,10 +1826,10 @@ function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
     // 1.8× zoom: fills ~47% of screen height. Right ~38% clipped.
-    // transform-origin: top left keeps content anchored to left edge.
+    // position:absolute top:0 left:0 + transform-origin:0 0 anchors to top-left.
     const scale = (window.innerWidth / 1280) * 1.8;
     stage.style.transform = `scale(${scale})`;
-    stage.style.transformOrigin = 'top left';
+    stage.style.transformOrigin = '0 0';
     return;
   }
   const scaleX = window.innerWidth  / 1280;
