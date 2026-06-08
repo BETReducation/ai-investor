@@ -65,13 +65,16 @@
       background: var(--bg);
     }
 
-    /* Fixed video strip — height controlled by JS via --mob-strip-h (75% of vh) */
+    /* Fixed video strip — 66dvh uses the *dynamic* viewport height on iOS Safari,
+       which correctly excludes address bar, toolbars, and home indicator area.
+       JS reads back the rendered height via getBoundingClientRect() so the
+       scale calculation is always in sync with what CSS actually rendered. */
     #stage-wrap {
       position: fixed !important;
       top: env(safe-area-inset-top, 0px);
       left: 0 !important;
       width: 100vw !important;
-      height: var(--mob-strip-h, 90vw) !important;
+      height: 66dvh !important;
       overflow: hidden !important;
       background: var(--bg);
       display: block !important;
@@ -106,7 +109,7 @@
     /* Fixed panel below the stage strip */
     #mobile-ui {
       position: fixed !important;
-      top: calc(var(--mob-strip-h, 90vw) + env(safe-area-inset-top, 0px));
+      top: calc(66dvh + env(safe-area-inset-top, 0px));
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
@@ -235,7 +238,7 @@
     /* swipe hint */
     #swipe-hint {
       position: fixed;
-      top: calc(var(--mob-strip-h, 90vw) * 0.5 - 14px + env(safe-area-inset-top, 0px));
+      top: calc(33dvh - 14px + env(safe-area-inset-top, 0px));
       left: 0; right: 0;
       text-align: center;
       font-size: 10px;
@@ -1886,10 +1889,11 @@ function panStage() {
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    // Strip = 66% of screen height. Scale stage to exactly fill that height.
-    // Horizontal position is handled per-scene by panStage().
-    const stripH = Math.round(window.innerHeight * 0.66);
-    document.documentElement.style.setProperty('--mob-strip-h', stripH + 'px');
+    // CSS sets #stage-wrap to 66dvh — dvh is the *dynamic* viewport height on
+    // iOS Safari (excludes browser chrome). We read the actual rendered height
+    // so the scale is always in sync with what CSS drew, not window.innerHeight.
+    const wrap = document.getElementById('stage-wrap');
+    const stripH = wrap.getBoundingClientRect().height || window.innerHeight * 0.66;
     const scale = stripH / 720;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = '0 0';
