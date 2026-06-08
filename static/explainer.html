@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>WINVESTOR — How to Build Your First Signal</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -61,17 +61,17 @@
       background: var(--bg);
       display: flex;
       flex-direction: column;
-      /* svh = "small viewport height" — excludes browser chrome on iOS/Android */
+      /* Use the smallest possible viewport so URL bar never causes overflow */
       height: 100svh;
-      height: 100dvh;   /* dynamic — fallback for older browsers */
-      padding-top:    env(safe-area-inset-top,    0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      height: 100dvh;
     }
 
-    /* stage-wrap: fixed-height video strip */
+    /* stage-wrap: fixed-height video strip, pushed below status bar / notch */
     #stage-wrap {
       width: 100vw;
-      height: 46vw;   /* slightly shorter than true 16:9 (56.25vw) so chrome has room */
+      /* 46vw for video + safe-area top so notch doesn't cover the animation */
+      padding-top: env(safe-area-inset-top, 0px);
+      height: calc(46vw + env(safe-area-inset-top, 0px));
       flex-shrink: 0;
       display: block;
       background: var(--bg);
@@ -190,6 +190,10 @@
     .mob-btn:last-child { border-right: none; }
     .mob-btn:active { background: rgba(255,255,255,.05); color: var(--cyan); }
     #mob-play-btn { color: var(--green); }
+    /* last button row: pad for home indicator */
+    #mobile-controls {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
 
     /* swipe hint */
     #swipe-hint {
