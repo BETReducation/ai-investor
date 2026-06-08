@@ -98,11 +98,11 @@
     #nav-dots       { display: none !important; }
     #controls       { display: none !important; }
 
-    /* step badge inside stage — compact */
+    /* step badge inside stage */
     .step-badge {
-      font-size: 7px;
+      font-size: 11px;
       top: 3vw; left: 3vw;
-      padding: 2px 5px;
+      padding: 4px 10px;
       letter-spacing: 2px;
     }
 
@@ -218,14 +218,26 @@
     #s0 .sub  { text-align: left !important; max-width: 400px !important; }
     #s0 .start-hint { align-self: flex-start !important; }
 
-    /* ── Scene 6 (results): card is 880px wide centred around x=640.
-          At 75%-height zoom visible window = ~444px design-x.
-          Narrow card to 380px at left:40px so it sits entirely in view.
-          Stack comparison columns vertically to fit portrait layout. ── */
+    /* ── Scene 4 (backtester): resize panel so the full chart fits the visible
+          design-x window (~565px at default scale) without panning.
+          Canvas CSS size scales the displayed chart; JS still draws at 1160px
+          internal resolution (just appears proportionally smaller). ── */
+    #s5 .backtest-screen {
+      left: 0px !important;
+      top: 40px !important;
+      width: 550px !important;
+    }
+    #s5 .chart-area   { height: 123px !important; }
+    #s5 #btCanvas     { width: 550px !important; height: 123px !important; }
+    #s5 .results-panel { height: 88px !important; }
+
+    /* ── Scene 5 (results): widen card to fill more of the visible area.
+          At scale ~0.69, left:20 + width:540 puts the right edge at design
+          x=560 → visual x=386px, just inside the 390px viewport. ── */
     .result-card {
-      left: 40px !important;
-      width: 380px !important;
-      padding: 20px 22px !important;
+      left: 20px !important;
+      width: 540px !important;
+      padding: 20px 24px !important;
     }
     .result-vs {
       flex-direction: column !important;
@@ -233,7 +245,7 @@
       align-items: center !important;
     }
     .vs-divider { display: none !important; }
-    .vs-value   { font-size: 32px !important; }
+    .vs-value   { font-size: 36px !important; }
 
     /* swipe hint */
     #swipe-hint {
@@ -1860,15 +1872,14 @@ function animateCursor2() {
 function isMobile() { return window.innerWidth <= 768; }
 
 // ── per-scene design-x focal point (the column we want centred in viewport) ──
-// Derived from actual element positions in each scene:
-//  s0: left-aligned title (no pan needed)
+//  s0: left-aligned title → no pan (left=0)
 //  s1: Jamie (x160) + speech bubble (x320–620) → centre ~390
-//  s2: Browser left panel (x114–354) → centre ~300
-//  s3: Config (x80–400) + AAPL card (x440–800) → centre ~340
-//  s4: Config (x60–440) + RSI card (x480–900) → centre ~420
-//  s5: Backtester header + chart left third → centre ~340
-//  s6: Result card (x40–420, left-aligned) → no pan needed
-const SCENE_FOCAL_X = [0, 390, 300, 340, 420, 340, 0];
+//  s2: Browser — show left config panel prominently → no pan (left=0)
+//  s3: Config panel (x80–400) left-prominent; AAPL card peeks right → no pan
+//  s4: Config panel (x60–440) left-prominent; RSI card peeks right → no pan
+//  s5: Backtester CSS-resized to 550px, starts at x=0 → no pan
+//  s6: Result card CSS-widened to 540px at x=20 → no pan
+const SCENE_FOCAL_X = [0, 390, 0, 0, 0, 0, 0];
 
 function panStage() {
   if (!isMobile()) return;
