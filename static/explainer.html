@@ -66,23 +66,24 @@
       height: 100dvh;
     }
 
-    /* stage-wrap: fixed-height video strip, pushed below status bar / notch */
+    /* stage-wrap: true 16:9 strip, pushed below notch */
     #stage-wrap {
       width: 100vw;
-      /* 46vw for video + safe-area top so notch doesn't cover the animation */
       padding-top: env(safe-area-inset-top, 0px);
-      height: calc(46vw + env(safe-area-inset-top, 0px));
+      /* 56.25vw = exact 16:9 at full width */
+      height: calc(56.25vw + env(safe-area-inset-top, 0px));
       flex-shrink: 0;
       display: block;
       background: var(--bg);
+      overflow: hidden;
     }
 
-    /* stage fills the strip exactly */
+    /* Stage stays its native 1280×720 — JS scales it to fill width */
     #stage {
-      width: 100vw !important;
-      height: 46vw !important;
-      transform: none !important;
-      transform-origin: top left;
+      width: 1280px !important;
+      height: 720px !important;
+      transform-origin: top left !important;
+      /* JS sets: transform: scale(vw/1280) — do NOT override with none */
     }
 
     /* hide in-stage elements moved outside */
@@ -1818,17 +1819,21 @@ function animateCursor2() {
 // ── mobile detection ──
 function isMobile() { return window.innerWidth <= 768; }
 
-// ── scale stage to viewport (desktop only) ──
+// ── scale stage to viewport ──
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    stage.style.transform = '';
+    // Scale to fill viewport width exactly (true 16:9 strip)
+    const scale = window.innerWidth / 1280;
+    stage.style.transform = `scale(${scale})`;
+    stage.style.transformOrigin = 'top left';
     return;
   }
   const scaleX = window.innerWidth  / 1280;
   const scaleY = window.innerHeight / 720;
   const scale  = Math.min(scaleX, scaleY);
   stage.style.transform = `scale(${scale})`;
+  stage.style.transformOrigin = 'center center';
 }
 scaleStage();
 window.addEventListener('resize', scaleStage);
