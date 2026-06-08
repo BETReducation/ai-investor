@@ -66,25 +66,30 @@
       height: 100dvh;
     }
 
-    /* stage-wrap: 1.5× zoomed strip pushed below notch.
-       84.375vw = 1.5 × 56.25vw (1.5× the natural 16:9 height at full width).
-       overflow:hidden clips the right ~33% that goes off-screen — all key
-       content lives in the left 2/3 of each scene design. */
+    /* stage-wrap: 1.8× zoomed strip pushed below notch.
+       101.25vw = 1.8 × 56.25vw (~20% taller than previous 84.375vw).
+       overflow:hidden clips the right edge — key content is left-aligned. */
     #stage-wrap {
       width: 100vw;
       overflow: hidden;
       padding-top: env(safe-area-inset-top, 0px);
-      height: calc(84.375vw + env(safe-area-inset-top, 0px));
+      height: calc(101.25vw + env(safe-area-inset-top, 0px));
       flex-shrink: 0;
-      display: block;
+      /* Use flex-start to guarantee stage is pinned to top-left.
+         display:block can still inherit justify-content:center on iOS Safari. */
+      display: flex !important;
+      justify-content: flex-start !important;
+      align-items: flex-start !important;
       background: var(--bg);
     }
 
-    /* Stage stays its native 1280×720 — JS sets scale(1.5 × vw/1280) */
+    /* Stage: native 1280×720, anchored to left edge, scaled by JS */
     #stage {
       width: 1280px !important;
       height: 720px !important;
       transform-origin: top left !important;
+      flex-shrink: 0 !important;
+      margin: 0 !important;
     }
 
     /* hide in-stage elements moved outside */
@@ -1820,9 +1825,9 @@ function isMobile() { return window.innerWidth <= 768; }
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    // 1.5× zoom: fills ~40% of screen height. Right ~33% of each scene
-    // is clipped (overflow:hidden on stage-wrap) — main content is left-aligned.
-    const scale = (window.innerWidth / 1280) * 1.5;
+    // 1.8× zoom: fills ~47% of screen height. Right ~38% clipped.
+    // transform-origin: top left keeps content anchored to left edge.
+    const scale = (window.innerWidth / 1280) * 1.8;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = 'top left';
     return;
