@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WINVESTOR — How to Build Your First Signal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #050608;
+    --panel:   #0d1117;
+    --card:    #111620;
+    --border:  #1e2a3a;
+    --text:    #e2e8f0;
+    --muted:   #7a8fa8;
+    --green:   #00ff88;
+    --red:     #ff3355;
+    --blue:    #0088ff;
+    --amber:   #ffaa00;
+    --cyan:    #00ddff;
+    --purple:  #aa55ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    font-family: 'IBM Plex Mono', monospace;
+    overflow: hidden;
+  }
+
+  /* ── 16:9 stage — scales to viewport ── */
+  #stage-wrap {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+
+  #stage {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: var(--bg);
+    overflow: hidden;
+    transform-origin: center center;
+  }
+
+  /* scanlines */
+  #stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      rgba(0,0,0,.08) 3px,
+      rgba(0,0,0,.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── scene layer ── */
+  .scene {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+  .scene.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ── caption bar ── */
+  .caption {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,.82);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.3s;
+    max-width: 900px;
+    text-align: center;
+    white-space: normal;
+  }
+  .scene.active .caption { opacity: 1; }
+
+  /* ── step badge ── */
+  .step-badge {
+    position: absolute;
+    top: 24px;
+    left: 32px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    border: 1px solid rgba(0,221,255,.3);
+    padding: 4px 10px;
+    border-radius: 2px;
+    background: rgba(0,221,255,.05);
+  }
+
+  /* ── progress bar ── */
+  #progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    width: 0%;
+    z-index: 1000;
+    transition: width 0.8s ease;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  /* ── nav dots ── */
+  #nav-dots {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 1000;
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+  .nav-dot.on { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+  /* ── play/pause/next controls ── */
+  #controls {
+    position: absolute;
+    top: 18px;
+    right: 24px;
+    display: flex;
+    gap: 8px;
+    z-index: 1000;
+  }
+  .ctrl-btn {
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ════════════════════════════════════
+     SCENE 0 — Title card
+  ════════════════════════════════════ */
+  #s0 {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  #s0 .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+  #s0 .logo-hex {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--green), var(--cyan));
+    clip-path: polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #000;
+  }
+  #s0 .logo-text {
+    font-size: 22px; font-weight: 700; letter-spacing: 6px; color: var(--text);
+  }
+  #s0 .logo-sub {
+    font-size: 10px; letter-spacing: 4px; color: var(--muted); margin-top: 3px;
+  }
+  #s0 h1 {
+    font-size: 36px; font-weight: 700; color: var(--text);
+    letter-spacing: 2px; text-align: center; line-height: 1.3;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.7s forwards;
+    max-width: 700px;
+  }
+  #s0 h1 span { color: var(--green); }
+  #s0 .sub {
+    margin-top: 20px;
+    font-size: 13px; color: var(--muted); letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 1.1s forwards;
+  }
+  #s0 .start-hint {
+    margin-top: 48px;
+    font-size: 10px; color: var(--cyan); letter-spacing: 3px;
+    opacity: 0;
+    animation: blink 1.4s ease 1.8s infinite;
+    border: 1px solid rgba(0,221,255,.3);
+    padding: 6px 20px; border-radius: 2px;
+  }
+
+  /* ════════════════════════════════════
+     SCENE 1 — Meet Jamie
+  ════════════════════════════════════ */
+  #s1 { background: var(--bg); }
+  #s1 .bg-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,136,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,136,255,.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .jamie-wrap {
+    position: absolute;
+    bottom: 110px;
+    left: 160px;
+    opacity: 0;
+    transform: translateX(-60px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .scene.active .jamie-wrap { opacity: 1; transform: translateX(0); }
+
+  .speech-bubble {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--blue);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+    max-width: 320px;
+    white-space: normal;
+    box-shadow: 0 0 20px rgba(0,136,255,.2);
+    opacity: 0;
+    transition: opacity 0.5s ease 0.8s;
+  }
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; left: 28px;
+    width: 0; height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid var(--blue);
+  }
+  .scene.active .speech-bubble { opacity: 1; }
+
+  /* ════════════════════════════════════
+     SCENE 2 — Open Winvestor
+  ════════════════════════════════════ */
+  .browser-mockup {
+    position: absolute;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 20px 60px rgba(0,0,0,.7);
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+  }
+  .scene.active .browser-mockup { opacity: 1; transform: scale(1); }
+
+  .browser-bar {
+    height: 36px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .browser-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .bd-r { background: #ff5f57; }
+  .bd-y { background: #ffbd2e; }
+  .bd-g { background: #28c840; }
+  .browser-url {
+    flex: 1;
+    margin: 0 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .browser-url span { color: var(--cyan); }
+
+  /* ── mini Winvestor UI inside browser ── */
+  .mini-topbar {
+    height: 40px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .mini-logo { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: var(--text); }
+  .mini-logo-sub { font-size: 8px; letter-spacing: 2px; color: var(--muted); }
+  .mini-nav {
+    height: 32px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+  }
+  .mini-nav-item {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    cursor: default;
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+  }
+  .mini-nav-item.active {
+    color: var(--cyan);
+    border-bottom-color: var(--cyan);
+  }
+
+  /* ════════════════════════════════════
+     SCENE 3 — Signal Config
+  ════════════════════════════════════ */
+  .config-screen {
+    position: absolute;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+  }
+  .scene.active .config-screen { opacity: 1; transform: translateY(0); }
+
+  .cfg-header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cfg-title { font-size: 10px; letter-spacing: 3px; color: var(--cyan); }
+  .cfg-badge {
+    font-size: 8px; letter-spacing: 2px;
+    border: 1px solid rgba(0,255,136,.3);
+    color: var(--green);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .cfg-section { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .cfg-section-label {
+    font-size: 8px; letter-spacing: 3px; color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .ticker-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--card);
+    cursor: default;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .ticker-pill.selected {
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,221,255,.2);
+    color: var(--cyan);
+  }
+  .ticker-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+  .ticker-pill.selected .ticker-dot { background: var(--cyan); box-shadow: 0 0 4px var(--cyan); }
+
+  .cfg-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .cfg-val { color: var(--text); font-weight: 500; }
+  .cfg-val.green { color: var(--green); }
+  .cfg-val.red { color: var(--red); }
+  .cfg-val.blue { color: var(--blue); }
+
+  .template-chip {
+    display: inline-block;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 4px 10px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin: 3px 3px 0 0;
+    cursor: default;
+    transition: all 0.3s;
+  }
+  .template-chip.selected {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,255,136,.06);
+    box-shadow: 0 0 8px rgba(0,255,136,.15);
+  }
+
+  .condition-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    margin-bottom: 4px;
+    font-size: 9px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.3s;
+  }
+  .condition-row.show { opacity: 1; transform: translateX(0); }
+  .condition-row.met { border-color: var(--green); background: rgba(0,255,136,.04); }
+  .cond-indicator {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    min-width: 28px;
+  }
+  .cond-desc { color: var(--muted); flex: 1; }
+  .cond-status {
+    font-size: 8px;
+    padding: 1px 6px;
+    border-radius: 2px;
+    background: rgba(0,255,136,.1);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,.2);
+  }
+
+  /* ════════════════════════════════════
+     SCENE 4 — Backtester page
+  ════════════════════════════════════ */
+  .backtest-screen {
+    position: absolute;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7);
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+  }
+  .scene.active .backtest-screen { opacity: 1; transform: scale(1); }
+
+  /* ── chart canvas area ── */
+  .chart-area {
+    position: relative;
+    background: var(--bg);
+  }
+  .chart-area canvas { display: block; }
+
+  /* ── results panel ── */
+  .results-panel {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 1px;
+  }
+  .result-cell {
+    flex: 1;
+    padding: 12px 16px;
+    border-right: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .result-cell:last-child { border-right: none; }
+  .result-cell.show { opacity: 1; transform: translateY(0); }
+  .result-label { font-size: 8px; letter-spacing: 2px; color: var(--muted); margin-bottom: 4px; }
+  .result-value { font-size: 22px; font-weight: 700; }
+  .result-value.green { color: var(--green); text-shadow: 0 0 20px rgba(0,255,136,.4); }
+  .result-value.amber { color: var(--amber); }
+  .result-value.blue  { color: var(--blue); }
+  .result-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  /* ════════════════════════════════════
+     SCENE 5 — Result celebration
+  ════════════════════════════════════ */
+  .result-card {
+    position: absolute;
+    background: var(--panel);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 32px 40px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(0,255,136,.15), 0 20px 60px rgba(0,0,0,.7);
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.7s ease 0.4s, transform 0.7s cubic-bezier(0.175,0.885,0.32,1.275) 0.4s;
+  }
+  .scene.active .result-card { opacity: 1; transform: scale(1); }
+
+  .result-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    margin: 24px 0;
+  }
+  .vs-col { text-align: center; }
+  .vs-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); margin-bottom: 8px; }
+  .vs-value { font-size: 48px; font-weight: 700; line-height: 1; }
+  .vs-value.win { color: var(--green); text-shadow: 0 0 30px rgba(0,255,136,.5); }
+  .vs-value.lose { color: var(--amber); }
+  .vs-divider {
+    font-size: 18px; color: var(--muted); font-weight: 300;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .vs-badge {
+    font-size: 10px; letter-spacing: 2px;
+    border: 1px solid rgba(0,255,136,.4);
+    color: var(--green);
+    padding: 3px 10px;
+    border-radius: 2px;
+    background: rgba(0,255,136,.06);
+    margin-top: 4px;
+  }
+
+  .confetti-wrap {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .confetti-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    opacity: 0;
+    animation: confettiFall linear forwards;
+  }
+
+  /* ════════════════════════════════════
+     CURSOR ANIMATION
+  ════════════════════════════════════ */
+  .cursor {
+    position: absolute;
+    width: 18px; height: 26px;
+    pointer-events: none;
+    z-index: 500;
+    opacity: 0;
+    transition: opacity 0.3s;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  }
+  .cursor.show { opacity: 1; }
+
+  /* highlight ring when clicking */
+  .cursor-click {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--cyan);
+    pointer-events: none;
+    z-index: 499;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+    transition: opacity 0.15s, transform 0.3s;
+  }
+  .cursor-click.pop {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+
+  /* ════════════════════════════════════
+     KEYFRAMES
+  ════════════════════════════════════ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes blink {
+    0%,100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+  }
+  @keyframes confettiFall {
+    0%   { opacity: 1; transform: translateY(-20px) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(200px) rotate(720deg); }
+  }
+  @keyframes chartDraw {
+    from { stroke-dashoffset: 1000; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-30px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes popIn {
+    0%   { opacity: 0; transform: scale(0.7); }
+    70%  { transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes jamie-idle {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-4px); }
+  }
+  @keyframes jamie-celebrate {
+    0%   { transform: translateY(0) rotate(0deg); }
+    20%  { transform: translateY(-20px) rotate(-8deg); }
+    40%  { transform: translateY(-10px) rotate(8deg); }
+    60%  { transform: translateY(-18px) rotate(-5deg); }
+    80%  { transform: translateY(-8px) rotate(5deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+  }
+
+  /* ── typing cursor ── */
+  .typing::after {
+    content: '|';
+    animation: blink 0.7s infinite;
+    color: var(--cyan);
+  }
+
+  /* ── highlight box ── */
+  .highlight-box {
+    position: absolute;
+    border: 2px solid var(--cyan);
+    border-radius: 4px;
+    box-shadow: 0 0 16px rgba(0,221,255,.35);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s, box-shadow 0.4s;
+    z-index: 200;
+  }
+  .highlight-box.on { opacity: 1; }
+
+  /* ── tooltip ── */
+  .tooltip {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--cyan);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--cyan);
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,221,255,.2);
+    pointer-events: none;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .tooltip.on { opacity: 1; transform: translateY(0); }
+  .tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px; left: 14px;
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid var(--cyan);
+  }
+</style>
+</head>
+<body>
+
+<div id="stage-wrap">
+<div id="stage">
+
+  <!-- progress -->
+  <div id="progress-bar"></div>
+
+  <!-- nav dots -->
+  <div id="nav-dots"></div>
+
+  <!-- controls -->
+  <div id="controls">
+    <button class="ctrl-btn" id="prevBtn" onclick="prevScene()">◀ PREV</button>
+    <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">⏸ PAUSE</button>
+    <button class="ctrl-btn" id="nextBtn" onclick="nextScene()">NEXT ▶</button>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 0 — Title
+  ══════════════════════════════ -->
+  <div class="scene active" id="s0">
+    <div class="logo-row">
+      <div class="logo-hex">W</div>
+      <div>
+        <div class="logo-text">WINVESTOR</div>
+        <div class="logo-sub">STRATEGY LAB</div>
+      </div>
+    </div>
+    <h1>How to Build Your<br><span>First Trading Signal</span></h1>
+    <div class="sub">A step-by-step guide for new investors</div>
+    <div class="start-hint">▶ PRESS PLAY TO BEGIN</div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 1 — Meet Jamie
+  ══════════════════════════════ -->
+  <div class="scene" id="s1">
+    <div class="bg-grid"></div>
+    <div class="step-badge">INTRODUCTION</div>
+
+    <!-- Jamie character -->
+    <div class="jamie-wrap" id="jamie1" style="bottom:100px; left:160px;">
+      <svg id="jamie-svg" width="140" height="220" viewBox="0 0 140 220" style="animation: jamie-idle 3s ease-in-out infinite;">
+        <!-- body shadow -->
+        <ellipse cx="70" cy="215" rx="38" ry="6" fill="rgba(0,0,0,.3)"/>
+        <!-- legs -->
+        <rect x="50" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <rect x="74" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <!-- shoes -->
+        <ellipse cx="58" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <ellipse cx="82" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <!-- torso / sweater -->
+        <rect x="36" y="90" width="68" height="72" rx="10" fill="#1a3a5c"/>
+        <!-- collar detail -->
+        <path d="M58 90 L70 108 L82 90" fill="none" stroke="#0088ff" stroke-width="2" stroke-linejoin="round"/>
+        <!-- left arm with laptop -->
+        <rect x="14" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <!-- right arm -->
+        <rect x="100" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <!-- laptop -->
+        <rect x="10" y="108" width="60" height="36" rx="4" fill="#0d1117"/>
+        <rect x="12" y="110" width="56" height="30" rx="3" fill="#050608"/>
+        <!-- laptop screen glow -->
+        <rect x="13" y="111" width="54" height="28" rx="2" fill="none" stroke="rgba(0,221,255,.3)" stroke-width="0.5"/>
+        <!-- chart on screen -->
+        <polyline points="16,133 22,128 28,130 34,122 40,125 46,116 52,119 58,112 64,115" fill="none" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- laptop base -->
+        <rect x="8" y="143" width="64" height="5" rx="2" fill="#0d1117"/>
+        <!-- neck -->
+        <rect x="62" y="70" width="16" height="22" rx="8" fill="#f0c098"/>
+        <!-- head -->
+        <ellipse cx="70" cy="55" rx="30" ry="32" fill="#f0c098"/>
+        <!-- hair -->
+        <path d="M40 42 Q45 20 70 22 Q95 20 100 42 Q95 30 70 28 Q45 30 40 42Z" fill="#2d1b00"/>
+        <rect x="40" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <rect x="92" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <!-- eyes -->
+        <ellipse cx="58" cy="52" rx="5" ry="5.5" fill="white"/>
+        <ellipse cx="82" cy="52" rx="5" ry="5.5" fill="white"/>
+        <circle cx="59.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="83.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="60.5" cy="52" r="1" fill="white"/>
+        <circle cx="84.5" cy="52" r="1" fill="white"/>
+        <!-- eyebrows -->
+        <path d="M52 44 Q58 41 64 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M76 44 Q82 41 88 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <!-- smile -->
+        <path d="M60 66 Q70 75 80 66" fill="none" stroke="#c0856a" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- name tag -->
+        <rect x="42" y="110" width="56" height="18" rx="2" fill="rgba(0,136,255,.15)" stroke="rgba(0,136,255,.4)" stroke-width="0.5"/>
+        <text x="70" y="122" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#0088ff" letter-spacing="2">JAMIE</text>
+      </svg>
+    </div>
+
+    <!-- speech bubble -->
+    <div class="speech-bubble" style="left:320px; bottom:270px;">
+      <span style="color:var(--cyan);font-size:10px;letter-spacing:2px;">JAMIE THINKS...</span><br><br>
+      "Everyone keeps talking about algo trading.<br>
+      I want to build my own strategy — but<br>
+      <span style="color:var(--green);">where do I even start?</span>"
+    </div>
+
+    <!-- decorative elements -->
+    <div style="position:absolute;right:80px;top:80px;font-size:12px;color:var(--muted);letter-spacing:1px;opacity:0.6;animation:fadeUp 1s ease 1.2s both;">
+      <div style="color:var(--green);font-size:10px;letter-spacing:3px;margin-bottom:8px;">CURRENT PORTFOLIO</div>
+      <div style="color:var(--muted);margin-bottom:4px;">Cash savings account</div>
+      <div style="color:var(--text);">$10,000 <span style="color:var(--muted);font-size:10px;">starting capital</span></div>
+    </div>
+
+    <!-- thought bubbles -->
+    <div style="position:absolute;right:160px;top:180px;opacity:0;animation:fadeUp 0.8s ease 1.5s forwards;">
+      <span style="font-size:24px;filter:grayscale(0.5);">📈</span>
+    </div>
+    <div style="position:absolute;right:260px;top:140px;opacity:0;animation:fadeUp 0.8s ease 1.8s forwards;">
+      <span style="font-size:20px;filter:grayscale(0.5);">🤔</span>
+    </div>
+    <div style="position:absolute;right:200px;top:240px;opacity:0;animation:fadeUp 0.8s ease 2.1s forwards;">
+      <span style="font-size:18px;">💡</span>
+    </div>
+
+    <div class="caption">
+      Meet Jamie — a 20-something who wants to invest smarter, not harder.
+      They've heard about algorithmic trading and want to try it themselves.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 2 — Discover Winvestor
+  ══════════════════════════════ -->
+  <div class="scene" id="s2">
+    <div class="bg-grid" style="position:absolute;inset:0;background-image:linear-gradient(rgba(0,136,255,.03) 1px, transparent 1px),linear-gradient(90deg, rgba(0,136,255,.03) 1px, transparent 1px);background-size:60px 60px;"></div>
+    <div class="step-badge">STEP 1 OF 5 — OPEN THE PLATFORM</div>
+
+    <!-- browser window -->
+    <div class="browser-mockup" style="left:100px;top:60px;width:1080px;height:540px;">
+      <div class="browser-bar">
+        <div class="browser-dot bd-r"></div>
+        <div class="browser-dot bd-y"></div>
+        <div class="browser-dot bd-g"></div>
+        <div class="browser-url">
+          <span>winvestor.app</span><span style="color:var(--muted)">/signal-config</span>
+        </div>
+      </div>
+      <!-- mini topbar -->
+      <div class="mini-topbar">
+        <div style="width:20px;height:20px;background:linear-gradient(135deg,var(--green),var(--cyan));clip-path:polygon(50% 0%,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000;flex-shrink:0;">W</div>
+        <div>
+          <div class="mini-logo">WINVESTOR</div>
+          <div class="mini-logo-sub">STRATEGY LAB</div>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="font-size:8px;color:var(--muted);letter-spacing:2px;border:1px solid var(--border);padding:3px 8px;border-radius:2px;">● LAB IDLE</div>
+        <div style="font-size:8px;color:var(--muted);letter-spacing:2px;border:1px solid var(--border);padding:3px 8px;border-radius:2px;margin-left:6px;">◉ SIM DATA</div>
+      </div>
+      <!-- nav -->
+      <div class="mini-nav">
+        <div class="mini-nav-item active">● SIGNAL CONFIG</div>
+        <div class="mini-nav-item">○ BACKTESTER</div>
+        <div class="mini-nav-item">○ PORTFOLIO BALANCER</div>
+        <div style="flex:1;"></div>
+        <div class="mini-nav-item">○ PROFILE</div>
+      </div>
+      <!-- content hint -->
+      <div style="display:flex;height:calc(100% - 112px);">
+        <!-- left panel -->
+        <div style="width:240px;border-right:1px solid var(--border);padding:14px;background:var(--panel);">
+          <div style="font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">STRATEGY CONFIG</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">WATCHLIST</div>
+          <div style="border:1px solid var(--border);padding:6px 10px;font-size:10px;color:var(--muted);margin-bottom:8px;border-radius:2px;">— Select Assets —</div>
+          <div style="font-size:9px;color:var(--muted);margin-bottom:6px;margin-top:12px;">CAPITAL & RISK</div>
+          <div style="font-size:9px;color:var(--text);margin-bottom:4px;">Capital: <span style="color:var(--text);">$10,000</span></div>
+          <div style="font-size:9px;color:var(--text);margin-bottom:4px;">Position: <span style="color:var(--blue);">20%</span></div>
+          <div style="font-size:9px;color:var(--text);">Target Gain: <span style="color:var(--green);">1.0%</span></div>
+          <div style="font-size:9px;color:var(--muted);margin-top:14px;margin-bottom:6px;">SIGNAL STRATEGY</div>
+          <div style="border:1px solid rgba(0,136,255,.2);padding:6px;font-size:9px;color:var(--blue);border-radius:2px;background:rgba(0,136,255,.05);">+ ADD CONDITION</div>
+        </div>
+        <!-- right panel placeholder -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--bg);">
+          <div style="font-size:11px;letter-spacing:3px;color:var(--muted);">SELECT AN ASSET TO BEGIN</div>
+          <div style="font-size:9px;color:var(--border);">Configure your strategy on the left →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- cursor animation -->
+    <div class="cursor show" id="cursor2" style="left:400px;top:280px;">
+      <svg width="18" height="26" viewBox="0 0 18 26" fill="none">
+        <path d="M1 1L1 20L5.5 15.5L8 23L10.5 22L8 14.5H14L1 1Z" fill="white" stroke="#333" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="caption">
+      Jamie opens <span style="color:var(--cyan);">Winvestor</span> — the platform to build, test and run custom trading signals.
+      First stop: the <span style="color:var(--green);">Signal Config</span> page.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 3 — Pick Asset (AAPL)
+  ══════════════════════════════ -->
+  <div class="scene" id="s3">
+    <div class="step-badge">STEP 2 OF 5 — CHOOSE YOUR ASSET</div>
+
+    <!-- config panel focus -->
+    <div class="config-screen" style="left:80px;top:70px;width:320px;height:560px;">
+      <div class="cfg-header">
+        <div class="cfg-title">STRATEGY CONFIG</div>
+        <div class="cfg-badge">DAY TRADE</div>
+      </div>
+
+      <div class="cfg-section">
+        <div class="cfg-section-label">WATCHLIST — SELECT ASSET</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div class="ticker-pill selected" id="pill-aapl">
+            <div class="ticker-dot"></div>
+            <span>AAPL</span>
+            <span style="font-size:8px;color:var(--muted);margin-left:4px;">APPLE INC.</span>
+          </div>
+          <div class="ticker-pill" id="pill-tsla">
+            <div class="ticker-dot"></div>
+            <span>TSLA</span>
+            <span style="font-size:8px;color:var(--muted);margin-left:4px;">TESLA INC.</span>
+          </div>
+          <div class="ticker-pill" id="pill-nvda">
+            <div class="ticker-dot"></div>
+            <span>NVDA</span>
+            <span style="font-size:8px;color:var(--muted);margin-left:4px;">NVIDIA CORP.</span>
+          </div>
+          <div class="ticker-pill" id="pill-msft">
+            <div class="ticker-dot"></div>
+            <span>MSFT</span>
+            <span style="font-size:8px;color:var(--muted);margin-left:4px;">MICROSOFT</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cfg-section" style="opacity:0.4;">
+        <div class="cfg-section-label">CAPITAL & RISK</div>
+        <div class="cfg-row"><span>Capital</span><span class="cfg-val">$10,000</span></div>
+        <div class="cfg-row"><span>Position Size</span><span class="cfg-val blue">20%</span></div>
+        <div class="cfg-row"><span>Target Gain</span><span class="cfg-val green">1.0%</span></div>
+        <div class="cfg-row"><span>Stop-Loss</span><span class="cfg-val red">-0.5%</span></div>
+      </div>
+    </div>
+
+    <!-- tooltip pointing at AAPL -->
+    <div class="tooltip on" style="left:420px;top:152px;">
+      ← Jamie picks <strong>AAPL</strong> — a stock they know
+    </div>
+
+    <!-- info card for AAPL -->
+    <div style="position:absolute;left:440px;top:120px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:360px;opacity:0;animation:fadeUp 0.7s ease 1s both;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:40px;height:40px;background:linear-gradient(135deg,rgba(0,136,255,.2),rgba(0,221,255,.1));border:1px solid rgba(0,136,255,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;"></div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);">AAPL</div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:1px;">APPLE INC. · NASDAQ</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:var(--green);">$211.40</div>
+          <div style="font-size:9px;color:var(--green);">▲ +1.2% today</div>
+        </div>
+      </div>
+      <div style="height:80px;position:relative;overflow:hidden;margin-bottom:12px;">
+        <svg width="320" height="80" viewBox="0 0 320 80" style="position:absolute;inset:0;">
+          <defs>
+            <linearGradient id="aaplGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(0,136,255,.3)"/>
+              <stop offset="100%" stop-color="rgba(0,136,255,0)"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,70 L20,62 L40,65 L60,55 L80,50 L100,45 L120,40 L140,35 L160,42 L180,30 L200,25 L220,20 L240,28 L260,18 L280,15 L320,10" fill="none" stroke="#0088ff" stroke-width="2" stroke-dasharray="400" stroke-dashoffset="400" style="animation:chartDraw 1.5s ease 1.2s forwards;"/>
+          <path d="M0,70 L20,62 L40,65 L60,55 L80,50 L100,45 L120,40 L140,35 L160,42 L180,30 L200,25 L220,20 L240,28 L260,18 L280,15 L320,10 L320,80 L0,80Z" fill="url(#aaplGrad)" opacity="0" style="animation:fadeUp 0.5s ease 2.7s forwards;"/>
+        </svg>
+      </div>
+      <div style="display:flex;gap:16px;">
+        <div><div style="font-size:8px;color:var(--muted);letter-spacing:2px;">2Y RETURN</div><div style="font-size:14px;color:var(--amber);font-weight:700;">+31.4%</div></div>
+        <div><div style="font-size:8px;color:var(--muted);letter-spacing:2px;">MKT CAP</div><div style="font-size:14px;color:var(--text);font-weight:700;">$3.2T</div></div>
+        <div><div style="font-size:8px;color:var(--muted);letter-spacing:2px;">SECTOR</div><div style="font-size:14px;color:var(--text);font-weight:700;">TECH</div></div>
+      </div>
+    </div>
+
+    <!-- speech bubble bottom right -->
+    <div style="position:absolute;right:80px;bottom:120px;background:var(--card);border:1px solid var(--green);border-radius:12px;padding:14px 18px;font-size:12px;color:var(--text);max-width:280px;opacity:0;animation:popIn 0.5s ease 1.6s forwards;box-shadow:0 0 20px rgba(0,255,136,.1);">
+      "I know Apple — solid company, huge brand. Let's use <span style="color:var(--green);">AAPL</span> as my test case."
+    </div>
+
+    <!-- jamie small -->
+    <div style="position:absolute;right:340px;bottom:90px;opacity:0;animation:fadeUp 0.6s ease 1.8s forwards;">
+      <svg width="70" height="110" viewBox="0 0 140 220" style="animation:jamie-idle 3s ease-in-out infinite;">
+        <ellipse cx="70" cy="215" rx="38" ry="6" fill="rgba(0,0,0,.3)"/>
+        <rect x="50" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <rect x="74" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <ellipse cx="58" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <ellipse cx="82" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <rect x="36" y="90" width="68" height="72" rx="10" fill="#1a3a5c"/>
+        <path d="M58 90 L70 108 L82 90" fill="none" stroke="#0088ff" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="14" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <rect x="100" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <rect x="10" y="108" width="60" height="36" rx="4" fill="#0d1117"/>
+        <rect x="12" y="110" width="56" height="30" rx="3" fill="#050608"/>
+        <polyline points="16,133 22,128 28,130 34,122 40,125 46,116 52,119 58,112 64,115" fill="none" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="8" y="143" width="64" height="5" rx="2" fill="#0d1117"/>
+        <rect x="62" y="70" width="16" height="22" rx="8" fill="#f0c098"/>
+        <ellipse cx="70" cy="55" rx="30" ry="32" fill="#f0c098"/>
+        <path d="M40 42 Q45 20 70 22 Q95 20 100 42 Q95 30 70 28 Q45 30 40 42Z" fill="#2d1b00"/>
+        <rect x="40" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <rect x="92" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <ellipse cx="58" cy="52" rx="5" ry="5.5" fill="white"/>
+        <ellipse cx="82" cy="52" rx="5" ry="5.5" fill="white"/>
+        <circle cx="59.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="83.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="60.5" cy="52" r="1" fill="white"/>
+        <circle cx="84.5" cy="52" r="1" fill="white"/>
+        <path d="M52 44 Q58 41 64 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M76 44 Q82 41 88 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M60 66 Q70 75 80 66" fill="none" stroke="#c0856a" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="caption">
+      <span style="color:var(--cyan);">Step 1:</span> Pick your asset. Jamie selects <span style="color:var(--green);">AAPL (Apple Inc.)</span> — a stock they're familiar with and want to trade over the last 2 years.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 4 — Build Strategy (RSI)
+  ══════════════════════════════ -->
+  <div class="scene" id="s4">
+    <div class="step-badge">STEP 3 OF 5 — BUILD YOUR SIGNAL</div>
+
+    <!-- strategy builder panel -->
+    <div class="config-screen" style="left:60px;top:60px;width:380px;height:580px;">
+      <div class="cfg-header">
+        <div class="cfg-title">SIGNAL STRATEGY</div>
+        <div class="cfg-badge" style="color:var(--green);border-color:rgba(0,255,136,.3);">BUY SIGNAL</div>
+      </div>
+
+      <div class="cfg-section">
+        <div class="cfg-section-label">QUICK START TEMPLATES</div>
+        <div>
+          <div class="template-chip selected" id="tmpl-oversold">OVERSOLD BOUNCE</div>
+          <div class="template-chip" id="tmpl-macd">MACD BREAKOUT</div>
+          <div class="template-chip" id="tmpl-vol">VOLUME POP</div>
+          <div class="template-chip" id="tmpl-ob">OVERBOUGHT SELL</div>
+        </div>
+      </div>
+
+      <div class="cfg-section">
+        <div class="cfg-section-label">BUY CONDITIONS</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px;">Fire when <span style="color:var(--text);">ALL</span> conditions are met</div>
+
+        <div class="condition-row" id="cond1">
+          <div class="cond-indicator">RSI</div>
+          <div class="cond-desc">RSI(14) is below <span style="color:var(--amber);">30</span></div>
+          <div class="cond-status">OVERSOLD</div>
+        </div>
+        <div class="condition-row" id="cond2">
+          <div class="cond-indicator">RSI</div>
+          <div class="cond-desc">RSI(14) is rising (momentum)</div>
+          <div class="cond-status">RISING</div>
+        </div>
+        <div class="condition-row" id="cond3">
+          <div class="cond-indicator">EMA</div>
+          <div class="cond-desc">Price above EMA(50) support</div>
+          <div class="cond-status">ABOVE</div>
+        </div>
+
+        <div style="font-size:9px;color:var(--muted);margin-top:14px;margin-bottom:6px;">SELL CONDITIONS — Fire when ANY met</div>
+        <div class="condition-row" id="cond4">
+          <div class="cond-indicator">TP</div>
+          <div class="cond-desc">Target gain reached <span style="color:var(--green);">+1.0%</span></div>
+          <div class="cond-status" style="color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.08);">TAKE PROFIT</div>
+        </div>
+        <div class="condition-row" id="cond5">
+          <div class="cond-indicator">SL</div>
+          <div class="cond-desc">Stop-loss triggered <span style="color:var(--red);">-0.5%</span></div>
+          <div class="cond-status" style="color:var(--red);border-color:rgba(255,51,85,.3);background:rgba(255,51,85,.08);">STOP LOSS</div>
+        </div>
+      </div>
+
+      <div class="cfg-section" style="border-bottom:none;">
+        <button style="width:100%;padding:8px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,.08);border:1px solid var(--blue);color:var(--blue);cursor:default;border-radius:2px;">↓ SAVE STRATEGY</button>
+      </div>
+    </div>
+
+    <!-- indicator explanation card -->
+    <div style="position:absolute;left:480px;top:80px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:420px;opacity:0;animation:fadeUp 0.7s ease 0.8s both;">
+      <div style="font-size:10px;letter-spacing:3px;color:var(--cyan);margin-bottom:14px;">WHAT IS RSI?</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.7;margin-bottom:16px;">
+        The <span style="color:var(--cyan);">Relative Strength Index</span> measures how overbought or oversold a stock is, on a scale of 0–100.
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <div style="flex:1;border:1px solid rgba(255,51,85,.3);border-radius:3px;padding:10px;background:rgba(255,51,85,.05);">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--red);margin-bottom:4px;">RSI &gt; 70</div>
+          <div style="font-size:11px;color:var(--muted);">Overbought — may sell off soon</div>
+        </div>
+        <div style="flex:1;border:1px solid rgba(0,255,136,.3);border-radius:3px;padding:10px;background:rgba(0,255,136,.05);">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--green);margin-bottom:4px;">RSI &lt; 30</div>
+          <div style="font-size:11px;color:var(--muted);">Oversold — may bounce upward</div>
+        </div>
+      </div>
+      <!-- mini RSI chart -->
+      <div style="font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:6px;">RSI — AAPL (last 60 days)</div>
+      <svg width="380" height="80" viewBox="0 0 380 80" style="display:block;">
+        <line x1="0" y1="20" x2="380" y2="20" stroke="rgba(255,51,85,.2)" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="0" y1="60" x2="380" y2="60" stroke="rgba(0,255,136,.2)" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="2" y="18" font-family="IBM Plex Mono" font-size="7" fill="rgba(255,51,85,.6)">70</text>
+        <text x="2" y="62" font-family="IBM Plex Mono" font-size="7" fill="rgba(0,255,136,.6)">30</text>
+        <polyline points="30,45 50,35 70,40 90,25 110,18 130,22 150,35 170,55 190,65 210,68 230,62 250,50 270,40 290,30 310,28 330,35 350,42 370,38" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="800" stroke-dashoffset="800" style="animation:chartDraw 2s ease 1s forwards;"/>
+        <!-- oversold zone highlight -->
+        <circle cx="210" cy="68" r="5" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0" style="animation:popIn 0.4s ease 2.5s forwards;"/>
+        <circle cx="230" cy="62" r="5" fill="none" stroke="var(--green)" stroke-width="1.5" opacity="0" style="animation:popIn 0.4s ease 2.7s forwards;"/>
+      </svg>
+      <div style="font-size:10px;color:var(--green);margin-top:8px;opacity:0;animation:fadeUp 0.5s ease 2.8s forwards;">
+        ✓ Jamie's signal will trigger here — buying on the oversold bounce
+      </div>
+    </div>
+
+    <!-- jamie thinking pose indicator -->
+    <div style="position:absolute;right:80px;bottom:100px;opacity:0;animation:fadeUp 0.6s ease 1.4s forwards;">
+      <svg width="70" height="110" viewBox="0 0 140 220" style="transform:scaleX(-1);animation:jamie-idle 2.5s ease-in-out infinite;">
+        <ellipse cx="70" cy="215" rx="38" ry="6" fill="rgba(0,0,0,.3)"/>
+        <rect x="50" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <rect x="74" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <ellipse cx="58" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <ellipse cx="82" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <rect x="36" y="90" width="68" height="72" rx="10" fill="#1a3a5c"/>
+        <path d="M58 90 L70 108 L82 90" fill="none" stroke="#0088ff" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="14" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <rect x="100" y="95" width="26" height="14" rx="7" fill="#1a3a5c"/>
+        <rect x="62" y="70" width="16" height="22" rx="8" fill="#f0c098"/>
+        <ellipse cx="70" cy="55" rx="30" ry="32" fill="#f0c098"/>
+        <path d="M40 42 Q45 20 70 22 Q95 20 100 42 Q95 30 70 28 Q45 30 40 42Z" fill="#2d1b00"/>
+        <rect x="40" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <rect x="92" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <ellipse cx="58" cy="52" rx="5" ry="5.5" fill="white"/>
+        <ellipse cx="82" cy="52" rx="5" ry="5.5" fill="white"/>
+        <circle cx="59.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="83.5" cy="53" r="3" fill="#2d1b00"/>
+        <circle cx="60.5" cy="52" r="1" fill="white"/>
+        <circle cx="84.5" cy="52" r="1" fill="white"/>
+        <path d="M52 44 Q58 41 64 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M76 44 Q82 41 88 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M62 64 Q70 70 78 64" fill="none" stroke="#c0856a" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="caption">
+      <span style="color:var(--cyan);">Step 2:</span> Use the <span style="color:var(--green);">Oversold Bounce</span> quick-start template. It fires a BUY when RSI drops below 30 (oversold) and starts to recover — a classic entry signal.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 5 — Run Backtest
+  ══════════════════════════════ -->
+  <div class="scene" id="s5">
+    <div class="step-badge">STEP 4 OF 5 — RUN THE BACKTEST</div>
+
+    <!-- backtester screen -->
+    <div class="backtest-screen" style="left:60px;top:60px;width:1160px;height:420px;">
+      <!-- header bar -->
+      <div style="background:var(--bg);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:16px;">
+        <div style="font-size:10px;letter-spacing:3px;color:var(--cyan);">BACKTESTER</div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:2px;">AAPL · OVERSOLD BOUNCE · 2Y</div>
+        <div style="flex:1;"></div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--muted);" id="bt-status">● RUNNING BACKTEST...</div>
+        <div style="font-size:9px;letter-spacing:2px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);color:var(--green);padding:4px 14px;border-radius:2px;cursor:default;">▶ RUN</div>
+      </div>
+      <!-- chart zone -->
+      <div class="chart-area" style="height:260px;">
+        <canvas id="btCanvas" width="1160" height="260"></canvas>
+      </div>
+      <!-- results row -->
+      <div class="results-panel" style="height:100px;">
+        <div class="result-cell" id="rc1">
+          <div class="result-label">MY STRATEGY RETURN</div>
+          <div class="result-value green" id="rcVal1">+0%</div>
+          <div class="result-sub">Oversold Bounce · AAPL · 2Y</div>
+        </div>
+        <div class="result-cell" id="rc2">
+          <div class="result-label">BUY & HOLD RETURN</div>
+          <div class="result-value amber" id="rcVal2">+0%</div>
+          <div class="result-sub">Apple Inc. · 2 year period</div>
+        </div>
+        <div class="result-cell" id="rc3">
+          <div class="result-label">TOTAL TRADES</div>
+          <div class="result-value blue" id="rcVal3">0</div>
+          <div class="result-sub">Win rate: — · Avg gain: —</div>
+        </div>
+        <div class="result-cell" id="rc4">
+          <div class="result-label">MAX DRAWDOWN</div>
+          <div class="result-value" id="rcVal4" style="color:var(--muted);">—</div>
+          <div class="result-sub" id="rcSub4">Running simulation...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- running indicator -->
+    <div id="bt-loading" style="position:absolute;left:60px;top:492px;font-size:10px;color:var(--muted);letter-spacing:2px;animation:pulse 1s infinite;">
+      SIMULATING 730 TRADING DAYS...
+    </div>
+
+    <div class="caption" id="s5-caption">
+      <span style="color:var(--cyan);">Step 3:</span> Navigate to the <span style="color:var(--green);">Backtester</span> and hit RUN. The engine replays 2 years of real AAPL data — testing every time the signal would have fired.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 6 — Results + Celebrate
+  ══════════════════════════════ -->
+  <div class="scene" id="s6">
+    <div class="confetti-wrap" id="confettiWrap"></div>
+
+    <div class="step-badge" style="color:var(--green);border-color:rgba(0,255,136,.3);background:rgba(0,255,136,.05);">
+      STEP 5 OF 5 — YOUR RESULTS
+    </div>
+
+    <!-- result card -->
+    <div class="result-card" style="left:200px;top:80px;width:880px;">
+      <div style="font-size:10px;letter-spacing:4px;color:var(--green);margin-bottom:8px;">BACKTEST COMPLETE</div>
+      <div style="font-size:26px;font-weight:700;color:var(--text);letter-spacing:1px;">Your strategy <span style="color:var(--green);">beat buy &amp; hold</span></div>
+
+      <div class="result-vs">
+        <div class="vs-col">
+          <div class="vs-label">OVERSOLD BOUNCE STRATEGY</div>
+          <div class="vs-value win" id="animVal1">+0%</div>
+          <div style="font-size:10px;color:var(--green);margin-top:6px;">$10,000 → $14,720</div>
+          <div style="margin-top:8px;" class="vs-badge">★ WINNER</div>
+        </div>
+        <div class="vs-divider">
+          <div style="font-size:28px;color:var(--border);">vs</div>
+        </div>
+        <div class="vs-col">
+          <div class="vs-label">BUY &amp; HOLD AAPL</div>
+          <div class="vs-value lose" id="animVal2">+0%</div>
+          <div style="font-size:10px;color:var(--amber);margin-top:6px;">$10,000 → $13,140</div>
+        </div>
+      </div>
+
+      <!-- stats row -->
+      <div style="display:flex;gap:1px;border:1px solid var(--border);border-radius:3px;overflow:hidden;margin-bottom:20px;">
+        <div style="flex:1;padding:12px 16px;background:var(--card);">
+          <div style="font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">TOTAL TRADES</div>
+          <div style="font-size:16px;font-weight:700;color:var(--blue);">47</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;background:var(--card);border-left:1px solid var(--border);">
+          <div style="font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">WIN RATE</div>
+          <div style="font-size:16px;font-weight:700;color:var(--green);">62%</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;background:var(--card);border-left:1px solid var(--border);">
+          <div style="font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">AVG GAIN/TRADE</div>
+          <div style="font-size:16px;font-weight:700;color:var(--green);">+0.82%</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;background:var(--card);border-left:1px solid var(--border);">
+          <div style="font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">MAX DRAWDOWN</div>
+          <div style="font-size:16px;font-weight:700;color:var(--amber);">-8.3%</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;background:var(--card);border-left:1px solid var(--border);">
+          <div style="font-size:8px;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">ALPHA vs B&amp;H</div>
+          <div style="font-size:16px;font-weight:700;color:var(--cyan);">+15.6pp</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;">
+        In a simulated 2-year period, Jamie's Oversold Bounce strategy on AAPL generated
+        <span style="color:var(--green);font-weight:600;">+47.2%</span> — outperforming
+        simply buying and holding Apple stock by <span style="color:var(--cyan);font-weight:600;">15.6 percentage points</span>.
+        <br><br>
+        <span style="color:var(--muted);font-size:9px;letter-spacing:1px;">Past performance does not guarantee future results. This is a simulation for educational purposes.</span>
+      </div>
+    </div>
+
+    <!-- Jamie celebrating -->
+    <div id="jamie-celebrate-wrap" style="position:absolute;left:72px;bottom:50px;opacity:0;animation:fadeUp 0.5s ease 0.8s both;">
+      <svg width="100" height="160" viewBox="0 0 140 220" style="animation:jamie-celebrate 1.5s ease 1s both;">
+        <ellipse cx="70" cy="215" rx="38" ry="6" fill="rgba(0,0,0,.3)"/>
+        <rect x="50" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <rect x="74" y="158" width="16" height="50" rx="8" fill="#2a3d52"/>
+        <ellipse cx="58" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <ellipse cx="82" cy="208" rx="13" ry="7" fill="#1a2535"/>
+        <rect x="36" y="90" width="68" height="72" rx="10" fill="#1a3a5c"/>
+        <path d="M58 90 L70 108 L82 90" fill="none" stroke="#0088ff" stroke-width="2" stroke-linejoin="round"/>
+        <!-- arms raised -->
+        <rect x="0" y="85" width="40" height="12" rx="6" fill="#1a3a5c" transform="rotate(-40 0 85)"/>
+        <rect x="100" y="85" width="40" height="12" rx="6" fill="#1a3a5c" transform="rotate(40 140 85)"/>
+        <rect x="62" y="70" width="16" height="22" rx="8" fill="#f0c098"/>
+        <ellipse cx="70" cy="55" rx="30" ry="32" fill="#f0c098"/>
+        <path d="M40 42 Q45 20 70 22 Q95 20 100 42 Q95 30 70 28 Q45 30 40 42Z" fill="#2d1b00"/>
+        <rect x="40" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <rect x="92" y="35" width="8" height="16" rx="4" fill="#2d1b00"/>
+        <ellipse cx="58" cy="52" rx="5" ry="5.5" fill="white"/>
+        <ellipse cx="82" cy="52" rx="5" ry="5.5" fill="white"/>
+        <circle cx="59.5" cy="54" r="3" fill="#2d1b00"/>
+        <circle cx="83.5" cy="54" r="3" fill="#2d1b00"/>
+        <circle cx="60.5" cy="53" r="1" fill="white"/>
+        <circle cx="84.5" cy="53" r="1" fill="white"/>
+        <path d="M52 44 Q58 41 64 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <path d="M76 44 Q82 41 88 44" fill="none" stroke="#2d1b00" stroke-width="2" stroke-linecap="round"/>
+        <!-- big smile -->
+        <path d="M55 63 Q70 80 85 63" fill="none" stroke="#c0856a" stroke-width="3" stroke-linecap="round"/>
+        <!-- star eyes -->
+        <text x="53" y="57" font-size="10" fill="#ffaa00">★</text>
+        <text x="77" y="57" font-size="10" fill="#ffaa00">★</text>
+      </svg>
+    </div>
+
+    <div style="position:absolute;left:185px;bottom:55px;background:var(--card);border:1px solid var(--green);border-radius:12px;border-bottom-left-radius:3px;padding:12px 16px;font-size:12px;color:var(--text);max-width:260px;opacity:0;animation:popIn 0.5s ease 1.5s forwards;box-shadow:0 0 20px rgba(0,255,136,.15);">
+      "I did it! My strategy<br>actually <span style="color:var(--green);">beat the market!</span> 🚀"
+    </div>
+
+    <div class="caption">
+      Jamie's first signal outperformed buy &amp; hold by <span style="color:var(--cyan);">+15.6pp</span>.
+      Now it's your turn — <span style="color:var(--green);">open the Signal Config page and build yours.</span>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+</div><!-- /stage-wrap -->
+
+<script>
+// ══════════════════════════════════════
+// Scene management
+// ══════════════════════════════════════
+const SCENES = ['s0','s1','s2','s3','s4','s5','s6'];
+const DURATIONS = [5000, 7000, 6000, 8000, 9000, 10000, 12000]; // ms per scene
+let current = 0;
+let playing = true;
+let timer = null;
+let sceneStartTime = null;
+
+function showScene(idx) {
+  SCENES.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (i === idx) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+  current = idx;
+  updateUI();
+  onSceneEnter(idx);
+}
+
+function nextScene() {
+  if (current < SCENES.length - 1) showScene(current + 1);
+}
+function prevScene() {
+  if (current > 0) showScene(current - 1);
+}
+
+function updateUI() {
+  const pct = ((current) / (SCENES.length - 1)) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.querySelectorAll('.nav-dot').forEach((d, i) => {
+    d.classList.toggle('on', i === current);
+  });
+}
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('playBtn').textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+  if (playing) scheduleNext();
+  else clearTimeout(timer);
+}
+
+function scheduleNext() {
+  clearTimeout(timer);
+  if (!playing) return;
+  timer = setTimeout(() => {
+    if (current < SCENES.length - 1) {
+      nextScene();
+      scheduleNext();
+    } else {
+      playing = false;
+      document.getElementById('playBtn').textContent = '▶ PLAY';
+    }
+  }, DURATIONS[current]);
+}
+
+// ── build nav dots ──
+const dotsWrap = document.getElementById('nav-dots');
+SCENES.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'nav-dot' + (i === 0 ? ' on' : '');
+  d.onclick = () => { showScene(i); if (playing) scheduleNext(); };
+  dotsWrap.appendChild(d);
+});
+
+// ══════════════════════════════════════
+// Scene-specific enter logic
+// ══════════════════════════════════════
+function onSceneEnter(idx) {
+  if (idx === 2) setTimeout(animateCursor2, 400);
+  if (idx === 4) animateConditions();
+  if (idx === 5) runBacktestAnimation();
+  if (idx === 6) {
+    spawnConfetti();
+    animateCounter('animVal1', 0, 47.2, '%', 2500, 600, '+');
+    animateCounter('animVal2', 0, 31.4, '%', 2000, 800, '+');
+  }
+}
+
+// ── conditions fade in ──
+function animateConditions() {
+  ['cond1','cond2','cond3','cond4','cond5'].forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('show');
+    }, 600 + i * 350);
+  });
+}
+
+// ── backtest chart animation ──
+function runBacktestAnimation() {
+  const canvas = document.getElementById('btCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // generate price paths
+  function genPath(seed, drift, vol, steps) {
+    const pts = [];
+    let v = 0;
+    for (let i = 0; i < steps; i++) {
+      const r = (Math.sin(seed + i * 0.3) + Math.sin(seed * 0.7 + i * 0.7) + Math.sin(i * 0.1)) / 3;
+      v += drift + r * vol;
+      pts.push(v);
+    }
+    return pts;
+  }
+
+  const STEPS = 260;
+  const rawBH = genPath(42, 0.15, 1.8, STEPS);
+  const rawStrat = genPath(42, 0.22, 1.4, STEPS);
+
+  // normalise to 0–H range
+  function normalise(pts, H, pad) {
+    const mn = Math.min(...pts), mx = Math.max(...pts);
+    return pts.map(v => pad + (1 - (v - mn) / (mx - mn)) * (H - pad * 2));
+  }
+
+  const bhY   = normalise(rawBH,   H, 20);
+  const stratY = normalise(rawStrat, H, 20);
+  const xStep = W / STEPS;
+
+  let frame = 0;
+  let signalFrames = [];
+  // sprinkle trade markers every ~12 frames on strat
+  for (let i = 20; i < STEPS - 10; i += 12 + Math.floor(Math.abs(Math.sin(i)) * 8)) {
+    signalFrames.push(i);
+  }
+
+  // grid lines
+  function drawGrid() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(30,42,58,0.6)';
+    ctx.lineWidth = 1;
+    for (let y = 20; y < H; y += 40) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    for (let x = 0; x < W; x += 80) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+  }
+
+  function drawFrame(n) {
+    drawGrid();
+    const pts = Math.min(n, STEPS);
+
+    // buy & hold line
+    ctx.beginPath();
+    ctx.strokeStyle = '#ffaa00';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    for (let i = 0; i < pts; i++) {
+      const x = i * xStep;
+      if (i === 0) ctx.moveTo(x, bhY[i]);
+      else ctx.lineTo(x, bhY[i]);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // strategy line
+    ctx.beginPath();
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < pts; i++) {
+      const x = i * xStep;
+      if (i === 0) ctx.moveTo(x, stratY[i]);
+      else ctx.lineTo(x, stratY[i]);
+    }
+    ctx.stroke();
+
+    // fill under strategy
+    ctx.beginPath();
+    for (let i = 0; i < pts; i++) {
+      const x = i * xStep;
+      if (i === 0) ctx.moveTo(x, stratY[i]);
+      else ctx.lineTo(x, stratY[i]);
+    }
+    ctx.lineTo((pts - 1) * xStep, H);
+    ctx.lineTo(0, H);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, 'rgba(0,255,136,0.12)');
+    grad.addColorStop(1, 'rgba(0,255,136,0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // trade signals (small triangles)
+    signalFrames.forEach(sf => {
+      if (sf < pts) {
+        const x = sf * xStep;
+        const y = stratY[sf];
+        ctx.beginPath();
+        ctx.moveTo(x, y + 12);
+        ctx.lineTo(x - 5, y + 20);
+        ctx.lineTo(x + 5, y + 20);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(0,221,255,0.8)';
+        ctx.fill();
+      }
+    });
+
+    // legend
+    ctx.font = '10px IBM Plex Mono';
+    ctx.fillStyle = '#00ff88';
+    ctx.fillText('● MY STRATEGY', 16, 16);
+    ctx.fillStyle = '#ffaa00';
+    ctx.fillText('- - BUY & HOLD', 160, 16);
+    ctx.fillStyle = 'rgba(0,221,255,0.7)';
+    ctx.fillText('▼ TRADE ENTRY', 310, 16);
+  }
+
+  let animFrame;
+  function tick() {
+    frame += 3;
+    drawFrame(frame);
+    if (frame < STEPS) {
+      animFrame = requestAnimationFrame(tick);
+    } else {
+      // show results after chart completes
+      setTimeout(() => {
+        ['rc1','rc2','rc3','rc4'].forEach((id, i) => {
+          setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('show');
+          }, i * 200);
+        });
+        animateCounter('rcVal1', 0, 47.2, '%', 2000, 0, '+');
+        animateCounter('rcVal2', 0, 31.4, '%', 1800, 200, '+');
+        animateCounter('rcVal3', 0, 47, '', 1000, 400);
+        document.getElementById('rcVal4').textContent = '-8.3%';
+        document.getElementById('rcVal4').style.color = 'var(--amber)';
+        document.getElementById('rcSub4').textContent = 'Worst peak-to-trough';
+        document.getElementById('bt-loading').style.display = 'none';
+        document.getElementById('bt-status').textContent = '✓ BACKTEST COMPLETE';
+        document.getElementById('bt-status').style.color = 'var(--green)';
+      }, 600);
+    }
+  }
+  setTimeout(() => requestAnimationFrame(tick), 800);
+}
+
+// ── counter animation ──
+function animateCounter(id, from, to, suffix, duration, delay, prefix) {
+  prefix = prefix || '';
+  setTimeout(() => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const start = performance.now();
+    function step(now) {
+      const pct = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - pct, 3);
+      const val = from + (to - from) * ease;
+      el.textContent = prefix + val.toFixed(1) + suffix;
+      if (pct < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }, delay);
+}
+
+// ── confetti ──
+function spawnConfetti() {
+  const wrap = document.getElementById('confettiWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const colors = ['#00ff88','#00ddff','#0088ff','#aa55ff','#ffaa00','#ff3355'];
+  for (let i = 0; i < 80; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti-dot';
+    d.style.left = (Math.random() * 100) + '%';
+    d.style.top = (Math.random() * 30 - 10) + '%';
+    d.style.background = colors[Math.floor(Math.random() * colors.length)];
+    d.style.width = (4 + Math.random() * 6) + 'px';
+    d.style.height = (4 + Math.random() * 6) + 'px';
+    d.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    d.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    d.style.animationDelay = (Math.random() * 1.5) + 's';
+    wrap.appendChild(d);
+  }
+}
+
+// ── cursor animation for scene 2 ──
+function animateCursor2() {
+  const c = document.getElementById('cursor2');
+  if (!c) return;
+  c.style.transition = 'left 1s ease, top 0.8s ease';
+  setTimeout(() => { c.style.left = '540px'; c.style.top = '140px'; }, 500);
+  setTimeout(() => { c.style.left = '700px'; c.style.top = '108px'; }, 1800);
+}
+
+
+// ── scale stage to viewport ──
+function scaleStage() {
+  const stage = document.getElementById('stage');
+  const scaleX = window.innerWidth  / 1280;
+  const scaleY = window.innerHeight / 720;
+  const scale  = Math.min(scaleX, scaleY);
+  stage.style.transform = `scale(${scale})`;
+}
+scaleStage();
+window.addEventListener('resize', scaleStage);
+
+// ── kick off ──
+updateUI();
+scheduleNext();
+</script>
+</body>
+</html>
