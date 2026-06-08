@@ -61,74 +61,89 @@
       background: var(--bg);
       display: flex;
       flex-direction: column;
-      height: 100dvh;
-      height: 100vh;
+      /* svh = "small viewport height" — excludes browser chrome on iOS/Android */
+      height: 100svh;
+      height: 100dvh;   /* dynamic — fallback for older browsers */
+      padding-top:    env(safe-area-inset-top,    0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* stage-wrap becomes just a fixed-height strip */
+    /* stage-wrap: fixed-height video strip */
     #stage-wrap {
       width: 100vw;
-      height: 56.25vw;   /* exact 16:9 */
+      height: 46vw;   /* slightly shorter than true 16:9 (56.25vw) so chrome has room */
       flex-shrink: 0;
       display: block;
       background: var(--bg);
     }
 
-    /* video player strip — full width, 16:9 height */
+    /* stage fills the strip exactly */
     #stage {
       width: 100vw !important;
-      height: 56.25vw !important;
-      transform: none !important;   /* JS scale disabled on mobile */
+      height: 46vw !important;
+      transform: none !important;
       transform-origin: top left;
     }
 
-    /* hide in-stage captions, progress, nav on mobile (moved outside) */
+    /* hide in-stage elements moved outside */
     .caption        { display: none !important; }
     #progress-bar   { display: none !important; }
     #nav-dots       { display: none !important; }
     #controls       { display: none !important; }
 
-    /* mobile step badge — slightly larger */
-    .step-badge { font-size: 7px; top: 4vw; left: 4vw; padding: 2px 6px; }
+    /* step badge inside stage — compact */
+    .step-badge {
+      font-size: 7px;
+      top: 3vw; left: 3vw;
+      padding: 2px 5px;
+      letter-spacing: 2px;
+    }
 
-    /* ── mobile chrome below the stage ── */
+    /* ── mobile chrome below stage ── */
     #mobile-ui {
       display: flex !important;
       flex-direction: column;
       flex: 1;
-      min-height: 0;   /* allow flex shrink */
+      min-height: 0;
       overflow: hidden;
       background: var(--bg);
       border-top: 1px solid var(--border);
     }
 
-    /* scene title + step label */
+    /* step label */
     #mobile-step {
       font-size: 9px;
       letter-spacing: 3px;
       color: var(--cyan);
-      padding: 14px 20px 0;
+      padding: 10px 18px 0;
       opacity: 0.8;
+      flex-shrink: 0;
     }
 
-    /* caption text — large and readable */
+    /* caption — vertically centred in remaining space, scrolls if very long */
     #mobile-caption {
       flex: 1;
-      padding: 10px 20px 16px;
-      font-size: 15px;
-      line-height: 1.65;
+      min-height: 0;
+      padding: 0 18px;
+      font-size: 14px;
+      line-height: 1.6;
       color: var(--text);
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      /* vertically top-align text, don't stretch */
-      align-self: stretch;
+      /* centre short text in the available space */
+      display: flex;
+      align-items: center;
+    }
+    /* inner wrapper keeps text left-aligned while being flex-centred */
+    #mobile-caption-inner {
+      width: 100%;
     }
 
-    /* progress bar — horizontal track */
+    /* slim progress bar */
     #mobile-progress-track {
-      height: 3px;
+      height: 2px;
       background: var(--border);
-      margin: 10px 20px 0;
+      margin: 6px 18px 0;
       border-radius: 2px;
       overflow: hidden;
       flex-shrink: 0;
@@ -138,29 +153,29 @@
       background: linear-gradient(90deg, var(--green), var(--cyan));
       width: 0%;
       transition: width 0.8s ease;
-      box-shadow: 0 0 6px var(--green);
+      box-shadow: 0 0 4px var(--green);
     }
 
-    /* dot row + controls row */
+    /* nav dots */
     #mobile-dots {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 12px 0 6px;
+      gap: 8px;
+      padding: 8px 0 4px;
       flex-shrink: 0;
     }
-    #mobile-dots .nav-dot { width: 8px; height: 8px; cursor: pointer; }
+    #mobile-dots .nav-dot { width: 7px; height: 7px; cursor: pointer; }
 
+    /* controls row */
     #mobile-controls {
       display: flex;
-      gap: 0;
       flex-shrink: 0;
       border-top: 1px solid var(--border);
     }
     .mob-btn {
       flex: 1;
-      padding: 16px 0;
+      padding: 13px 0;
       background: none;
       border: none;
       border-right: 1px solid var(--border);
@@ -176,19 +191,16 @@
     .mob-btn:active { background: rgba(255,255,255,.05); color: var(--cyan); }
     #mob-play-btn { color: var(--green); }
 
-    /* safe area padding for notched phones */
-    #mobile-controls { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
-    /* swipe gesture hint overlay — shown briefly on first load */
+    /* swipe hint */
     #swipe-hint {
-      position: absolute;
-      bottom: 56.25vw;
+      position: fixed;
+      top: calc(46vw - 28px + env(safe-area-inset-top, 0px));
       left: 0; right: 0;
       text-align: center;
       font-size: 10px;
       letter-spacing: 2px;
       color: var(--cyan);
-      padding: 8px;
+      padding: 6px;
       pointer-events: none;
       opacity: 0;
       animation: fadeUp 0.5s ease 1.5s forwards, blink 2s ease 2.5s 3;
@@ -1480,7 +1492,7 @@
 <div id="swipe-hint">SWIPE ← → TO NAVIGATE</div>
 <div id="mobile-ui">
   <div id="mobile-step">INTRODUCTION</div>
-  <div id="mobile-caption">Meet Jamie — a 20-something who wants to invest smarter, not harder. They've heard about algorithmic trading and want to try it themselves.</div>
+  <div id="mobile-caption"><div id="mobile-caption-inner">Meet Jamie — a 20-something who wants to invest smarter, not harder. They've heard about algorithmic trading and want to try it themselves.</div></div>
   <div id="mobile-progress-track"><div id="mobile-progress-fill"></div></div>
   <div id="mobile-dots"></div>
   <div id="mobile-controls">
@@ -1532,7 +1544,7 @@ function updateUI() {
   const data = MOBILE_DATA[current];
   if (data) {
     const stepEl = document.getElementById('mobile-step');
-    const capEl  = document.getElementById('mobile-caption');
+    const capEl  = document.getElementById('mobile-caption-inner');
     const fillEl = document.getElementById('mobile-progress-fill');
     if (stepEl) stepEl.textContent = data.step;
     if (capEl)  capEl.innerHTML = data.caption;
