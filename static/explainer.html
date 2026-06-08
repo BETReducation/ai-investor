@@ -78,14 +78,15 @@
       z-index: 10;
     }
 
-    /* Stage anchored to top-left corner of wrap — scaled by JS */
+    /* Stage anchored to top of wrap — left panned per-scene by JS */
     #stage {
       position: absolute !important;
       top: 0 !important;
-      left: 0 !important;
+      left: 0;              /* NO !important — JS inline style overrides this */
       width: 1280px !important;
       height: 720px !important;
       transform-origin: 0 0 !important;
+      transition: left 0.55s cubic-bezier(0.4, 0, 0.2, 1); /* smooth pan */
     }
 
     /* hide in-stage elements moved outside */
@@ -1562,6 +1563,7 @@ function showScene(idx) {
   current = idx;
   updateUI();
   onSceneEnter(idx);
+  panStage(); // slide viewport to focal content for this scene
 }
 
 function nextScene() {
@@ -1854,17 +1856,44 @@ function animateCursor2() {
 // ── mobile detection ──
 function isMobile() { return window.innerWidth <= 768; }
 
+// ── per-scene design-x focal point (the column we want centred in viewport) ──
+// Derived from actual element positions in each scene:
+//  s0: left-aligned title (no pan needed)
+//  s1: Jamie (x160) + speech bubble (x320–620) → centre ~390
+//  s2: Browser left panel (x114–354) → centre ~300
+//  s3: Config (x80–400) + AAPL card (x440–800) → centre ~340
+//  s4: Config (x60–440) + RSI card (x480–900) → centre ~420
+//  s5: Backtester header + chart left third → centre ~340
+//  s6: Result card (x40–420, left-aligned) → no pan needed
+const SCENE_FOCAL_X = [0, 390, 300, 340, 420, 340, 0];
+
+function panStage() {
+  if (!isMobile()) return;
+  const stage = document.getElementById('stage');
+  const vw    = window.innerWidth;
+  // Read scale from the live inline transform
+  const m = (stage.style.transform || '').match(/scale\(([^)]+)\)/);
+  const scale = m ? parseFloat(m[1]) : vw / 1280;
+  const focalX = SCENE_FOCAL_X[current] ?? 0;
+  // Pan so design focalX sits at viewport centre (vw/2)
+  let left = vw / 2 - focalX * scale;
+  left = Math.min(0, left);                        // never show black on the left
+  left = Math.max(-(1280 * scale - vw), left);     // never scroll past right edge
+  stage.style.left = left + 'px';
+}
+
 // ── scale stage to viewport ──
 function scaleStage() {
   const stage = document.getElementById('stage');
   if (isMobile()) {
-    // Strip = 75% of screen height. Scale stage to exactly fill that height.
-    // transform-origin 0 0 anchors to top-left — no horizontal shift possible.
+    // Strip = 66% of screen height. Scale stage to exactly fill that height.
+    // Horizontal position is handled per-scene by panStage().
     const stripH = Math.round(window.innerHeight * 0.66);
     document.documentElement.style.setProperty('--mob-strip-h', stripH + 'px');
     const scale = stripH / 720;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = '0 0';
+    panStage();
     return;
   }
   const scaleX = window.innerWidth  / 1280;
