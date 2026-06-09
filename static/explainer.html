@@ -215,29 +215,75 @@
       text-align: left !important;
       max-width: 420px !important;  /* hard cap to visible design-x window */
     }
-    #s0 .sub  { text-align: left !important; max-width: 400px !important; }
+    #s0 .sub  { text-align: left !important; max-width: 400px !important; font-size: 20px !important; }
     #s0 .start-hint { align-self: flex-start !important; }
 
-    /* ── Scene 4 (backtester): resize panel so the full chart fits the visible
-          design-x window (~565px at default scale) without panning.
-          Canvas CSS size scales the displayed chart; JS still draws at 1160px
-          internal resolution (just appears proportionally smaller). ── */
-    #s5 .backtest-screen {
-      left: 0px !important;
-      top: 40px !important;
-      width: 550px !important;
+    /* ── Scene 1 (intro): speech bubble larger & shifted so badge doesn't clip ── */
+    #s1 .speech-bubble {
+      font-size: 17px !important;
+      left: 210px !important;
+      max-width: 340px !important;
+      line-height: 1.55 !important;
     }
-    #s5 .chart-area   { height: 123px !important; }
-    #s5 #btCanvas     { width: 550px !important; height: 123px !important; }
-    #s5 .results-panel { height: 88px !important; }
 
-    /* ── Scene 5 (results): widen card to fill more of the visible area.
-          At scale ~0.69, left:20 + width:540 puts the right edge at design
-          x=560 → visual x=386px, just inside the 390px viewport. ── */
+    /* ── Scene 2 (step 1): hide browser chrome + right panel; show only the
+          signal config panel, full-width in the mockup ── */
+    #s2 .browser-bar,
+    #s2 .mini-topbar,
+    #s2 .mini-nav    { display: none !important; }
+    #s2-right-panel  { display: none !important; }
+    #s2 .browser-mockup {
+      top: 50px !important;
+      width: 280px !important;
+      height: 580px !important;
+      /* left is set dynamically by panStage() so it's centered */
+    }
+    #s2-browser-content { height: 100% !important; }
+    #s2-left-panel {
+      width: 100% !important;
+      border-right: none !important;
+    }
+    #cursor2 { display: none !important; }
+
+    /* ── Scene 3 (step 2): stack config + AAPL card at same mobile position;
+          JS alternating fade shows one at a time ── */
+    #s3-tooltip { display: none !important; }
+    #s3-left, #s3-right {
+      top: 60px !important;
+      width: 310px !important;
+      height: auto !important;
+      /* left set by panStage() */
+    }
+    #s3-right svg { width: 270px !important; height: auto !important; }
+
+    /* ── Scene 4 (step 3): same alternating-fade treatment for strategy +
+          RSI card ── */
+    #s4-left, #s4-right {
+      top: 60px !important;
+      width: 360px !important;
+      height: auto !important;
+      /* left set by panStage() */
+    }
+    #s4-right svg { width: 320px !important; height: auto !important; }
+
+    /* ── Scene 5 (step 4): 2×2 results grid instead of single row ── */
+    #s5 .results-panel {
+      flex-wrap: wrap !important;
+      height: auto !important;
+    }
+    #s5 .result-cell {
+      flex: 0 0 calc(50% - 0.5px) !important;
+      box-sizing: border-box !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    #s5 .result-cell:nth-child(odd)  { border-right: 1px solid var(--border) !important; }
+    #s5 .result-cell:nth-child(even) { border-left: none !important; }
+
+    /* ── Scene 6 (step 5): tighten padding so card doesn't risk bottom clip;
+          left & width set dynamically by panStage() for perfect centering ── */
     .result-card {
-      left: 20px !important;
-      width: 540px !important;
-      padding: 20px 24px !important;
+      top: 30px !important;
+      padding: 14px 16px !important;
     }
     .result-vs {
       flex-direction: column !important;
@@ -245,7 +291,16 @@
       align-items: center !important;
     }
     .vs-divider { display: none !important; }
-    .vs-value   { font-size: 36px !important; }
+    .vs-value   { font-size: 34px !important; }
+
+    /* ── Scene 4 (backtester): resize panel so chart fits visible window.
+          left is set dynamically by panStage() so it's centered. ── */
+    #s5 .backtest-screen {
+      top: 40px !important;
+      width: 550px !important;
+    }
+    #s5 .chart-area   { height: 123px !important; }
+    #s5 #btCanvas     { width: 550px !important; height: 123px !important; }
 
     /* swipe hint */
     #swipe-hint {
@@ -1087,9 +1142,9 @@
         <div class="mini-nav-item">○ PROFILE</div>
       </div>
       <!-- content hint -->
-      <div style="display:flex;height:calc(100% - 112px);">
+      <div id="s2-browser-content" style="display:flex;height:calc(100% - 112px);">
         <!-- left panel -->
-        <div style="width:240px;border-right:1px solid var(--border);padding:14px;background:var(--panel);">
+        <div id="s2-left-panel" style="width:240px;border-right:1px solid var(--border);padding:14px;background:var(--panel);">
           <div style="font-size:8px;letter-spacing:3px;color:var(--muted);margin-bottom:10px;">STRATEGY CONFIG</div>
           <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">WATCHLIST</div>
           <div style="border:1px solid var(--border);padding:6px 10px;font-size:10px;color:var(--muted);margin-bottom:8px;border-radius:2px;">— Select Assets —</div>
@@ -1101,7 +1156,7 @@
           <div style="border:1px solid rgba(0,136,255,.2);padding:6px;font-size:9px;color:var(--blue);border-radius:2px;background:rgba(0,136,255,.05);">+ ADD CONDITION</div>
         </div>
         <!-- right panel placeholder -->
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--bg);">
+        <div id="s2-right-panel" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--bg);">
           <div style="font-size:11px;letter-spacing:3px;color:var(--muted);">SELECT AN ASSET TO BEGIN</div>
           <div style="font-size:9px;color:var(--border);">Configure your strategy on the left →</div>
         </div>
@@ -1128,7 +1183,7 @@
     <div class="step-badge">STEP 2 OF 5 — CHOOSE YOUR ASSET</div>
 
     <!-- config panel focus -->
-    <div class="config-screen" style="left:80px;top:70px;width:320px;height:560px;">
+    <div id="s3-left" class="config-screen" style="left:80px;top:70px;width:320px;height:560px;">
       <div class="cfg-header">
         <div class="cfg-title">STRATEGY CONFIG</div>
         <div class="cfg-badge">DAY TRADE</div>
@@ -1170,12 +1225,12 @@
     </div>
 
     <!-- tooltip pointing at AAPL -->
-    <div class="tooltip on" style="left:420px;top:152px;">
+    <div id="s3-tooltip" class="tooltip on" style="left:420px;top:152px;">
       ← Jamie picks <strong>AAPL</strong> — a stock they know
     </div>
 
     <!-- info card for AAPL -->
-    <div style="position:absolute;left:440px;top:120px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:360px;opacity:0;animation:fadeUp 0.7s ease 1s both;">
+    <div id="s3-right" style="position:absolute;left:440px;top:120px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:360px;opacity:0;animation:fadeUp 0.7s ease 1s both;">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <div style="width:40px;height:40px;background:linear-gradient(135deg,rgba(0,136,255,.2),rgba(0,221,255,.1));border:1px solid rgba(0,136,255,.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;"></div>
         <div>
@@ -1256,7 +1311,7 @@
     <div class="step-badge">STEP 3 OF 5 — BUILD YOUR SIGNAL</div>
 
     <!-- strategy builder panel -->
-    <div class="config-screen" style="left:60px;top:60px;width:380px;height:580px;">
+    <div id="s4-left" class="config-screen" style="left:60px;top:60px;width:380px;height:580px;">
       <div class="cfg-header">
         <div class="cfg-title">SIGNAL STRATEGY</div>
         <div class="cfg-badge" style="color:var(--green);border-color:rgba(0,255,136,.3);">BUY SIGNAL</div>
@@ -1311,7 +1366,7 @@
     </div>
 
     <!-- indicator explanation card -->
-    <div style="position:absolute;left:480px;top:80px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:420px;opacity:0;animation:fadeUp 0.7s ease 0.8s both;">
+    <div id="s4-right" style="position:absolute;left:480px;top:80px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:20px;width:420px;opacity:0;animation:fadeUp 0.7s ease 0.8s both;">
       <div style="font-size:10px;letter-spacing:3px;color:var(--cyan);margin-bottom:14px;">WHAT IS RSI?</div>
       <div style="font-size:12px;color:var(--text);line-height:1.7;margin-bottom:16px;">
         The <span style="color:var(--cyan);">Relative Strength Index</span> measures how overbought or oversold a stock is, on a scale of 0–100.
@@ -1575,6 +1630,7 @@ let timer = null;
 
 function showScene(idx) {
   clearTimeout(timer);
+  if (isMobile()) stopAlternatingFade();
   SCENES.forEach((id, i) => {
     const el = document.getElementById(id);
     if (i === idx) el.classList.add('active');
@@ -1639,12 +1695,14 @@ function scheduleLoop() {
 
 // Reset and replay the JS-driven animation for a scene.
 function restartSceneAnimation(idx) {
+  if (idx === 3 && isMobile()) startAlternatingFade('s3-left', 's3-right');
   if (idx === 4) {
     ['cond1','cond2','cond3','cond4','cond5'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('show');
     });
     animateConditions();
+    if (isMobile()) startAlternatingFade('s4-left', 's4-right');
   }
   if (idx === 5) {
     // Reset result cells
@@ -1694,7 +1752,11 @@ SCENES.forEach((_, i) => {
 // ══════════════════════════════════════
 function onSceneEnter(idx) {
   if (idx === 2) setTimeout(animateCursor2, 400);
-  if (idx === 4) animateConditions();
+  if (idx === 3 && isMobile()) startAlternatingFade('s3-left', 's3-right');
+  if (idx === 4) {
+    animateConditions();
+    if (isMobile()) startAlternatingFade('s4-left', 's4-right');
+  }
   if (idx === 5) runBacktestAnimation();
   if (idx === 6) {
     spawnConfetti();
@@ -1904,6 +1966,44 @@ function spawnConfetti() {
   }
 }
 
+// ── alternating fade for scenes 3 & 4 on mobile ──
+let _altFadeTimer = null;
+
+function startAlternatingFade(leftId, rightId) {
+  clearTimeout(_altFadeTimer);
+  const lEl = document.getElementById(leftId);
+  const rEl = document.getElementById(rightId);
+  if (!lEl || !rEl) return;
+
+  // Cancel any CSS fade-in animation on the right panel so we control opacity
+  rEl.style.animation = 'none';
+  lEl.style.transition = 'opacity 0.7s ease';
+  rEl.style.transition = 'opacity 0.7s ease';
+
+  // Start: left visible, right hidden
+  lEl.style.opacity = '1';
+  rEl.style.opacity = '0';
+
+  let showingLeft = true;
+
+  function cycle() {
+    const l = document.getElementById(leftId);
+    const r = document.getElementById(rightId);
+    if (!l || !r) return;
+    showingLeft = !showingLeft;
+    l.style.opacity = showingLeft ? '1' : '0';
+    r.style.opacity = showingLeft ? '0' : '1';
+    _altFadeTimer = setTimeout(cycle, 3200);
+  }
+
+  _altFadeTimer = setTimeout(cycle, 3200);
+}
+
+function stopAlternatingFade() {
+  clearTimeout(_altFadeTimer);
+  _altFadeTimer = null;
+}
+
 // ── cursor animation for scene 2 ──
 function animateCursor2() {
   const c = document.getElementById('cursor2');
@@ -1925,7 +2025,7 @@ function isMobile() { return window.innerWidth <= 768; }
 //  s4: Config panel (x60–440) left-prominent; RSI card peeks right → no pan
 //  s5: Backtester CSS-resized to 550px, starts at x=0 → no pan
 //  s6: Result card CSS-widened to 540px at x=20 → no pan
-const SCENE_FOCAL_X = [0, 390, 0, 0, 0, 0, 0];
+const SCENE_FOCAL_X = [0, 0, 0, 0, 0, 0, 0];
 
 function panStage() {
   if (!isMobile()) return;
@@ -1940,6 +2040,58 @@ function panStage() {
   left = Math.min(0, left);                        // never show black on the left
   left = Math.max(-(1280 * scale - vw), left);     // never scroll past right edge
   stage.style.left = left + 'px';
+
+  // ── Per-scene element centering (mobile only) ──
+  // visible design width at current pan position
+  const visW = vw / scale;
+
+  if (current === 2) {
+    // Scene 2: center the browser mockup (only left panel visible)
+    const mockup = document.querySelector('#s2 .browser-mockup');
+    if (mockup) {
+      const mW = 280;
+      mockup.style.left = Math.max(20, Math.round((visW - mW) / 2)) + 'px';
+    }
+  }
+
+  if (current === 3) {
+    // Scene 3: center both panels at the same position (alternating fade)
+    const pW = 310;
+    const pLeft = Math.max(20, Math.round((visW - pW) / 2));
+    const l3 = document.getElementById('s3-left');
+    const r3 = document.getElementById('s3-right');
+    if (l3) { l3.style.left = pLeft + 'px'; l3.style.width = pW + 'px'; }
+    if (r3) { r3.style.left = pLeft + 'px'; r3.style.width = pW + 'px'; }
+  }
+
+  if (current === 4) {
+    // Scene 4: center both panels at the same position
+    const pW = 360;
+    const pLeft = Math.max(20, Math.round((visW - pW) / 2));
+    const l4 = document.getElementById('s4-left');
+    const r4 = document.getElementById('s4-right');
+    if (l4) { l4.style.left = pLeft + 'px'; l4.style.width = pW + 'px'; }
+    if (r4) { r4.style.left = pLeft + 'px'; r4.style.width = pW + 'px'; }
+  }
+
+  if (current === 5) {
+    // Scene 5: center the backtest screen
+    const bsEl = document.querySelector('#s5 .backtest-screen');
+    if (bsEl) {
+      const bsW = 550;
+      bsEl.style.left = Math.max(0, Math.round((visW - bsW) / 2)) + 'px';
+    }
+  }
+
+  if (current === 6) {
+    // Scene 6: center the result card
+    const rcEl = document.querySelector('#s6 .result-card');
+    if (rcEl) {
+      const rcW = 500;
+      rcEl.style.left  = Math.max(10, Math.round((visW - rcW) / 2)) + 'px';
+      rcEl.style.width = rcW + 'px';
+    }
+  }
 }
 
 // ── scale stage to viewport ──
