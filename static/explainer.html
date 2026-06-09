@@ -1245,7 +1245,7 @@
     </div>
 
     <div class="caption">
-      <span style="color:var(--cyan);">Step 2:</span> Pick your asset. Jamie selects <span style="color:var(--green);">AAPL (Apple Inc.)</span> — a stock they're familiar with and want to trade over the last 2 years.
+      <span style="color:var(--cyan);">Step 2:</span> Pick your asset. Jamie selects <span style="color:var(--green);">AAPL (Apple Inc.)</span> — a stock they're familiar with. Buy &amp; hold AAPL returned <span style="color:var(--amber);">+31.4%</span> over the last 2 years. Can Jamie's signal do better?
     </div>
   </div>
 
@@ -1563,13 +1563,18 @@
 // Scene management
 // ══════════════════════════════════════
 const SCENES = ['s0','s1','s2','s3','s4','s5','s6'];
-const DURATIONS = [5000, 7000, 6000, 8000, 9000, 10000, 12000]; // ms per scene
+// How long before the within-scene animation loops (ms). Only scenes 4, 5, 6
+// have meaningful JS animations worth replaying; earlier scenes are CSS-only
+// and just stay at their completed state until the user clicks NEXT.
+const DURATIONS = [5000, 7000, 6000, 8000, 9000, 10000, 12000];
+const LOOP_SCENES = new Set([4, 5, 6]); // scenes with repeating JS animations
+
 let current = 0;
 let playing = true;
 let timer = null;
-let sceneStartTime = null;
 
 function showScene(idx) {
+  clearTimeout(timer);
   SCENES.forEach((id, i) => {
     const el = document.getElementById(id);
     if (i === idx) el.classList.add('active');
@@ -1578,7 +1583,8 @@ function showScene(idx) {
   current = idx;
   updateUI();
   onSceneEnter(idx);
-  panStage(); // slide viewport to focal content for this scene
+  panStage();
+  scheduleLoop(); // start within-scene loop if this is a JS-animated scene
 }
 
 function nextScene() {
@@ -1616,22 +1622,62 @@ function togglePlay() {
   const mb = document.getElementById('mob-play-btn');
   if (pb) pb.textContent = label;
   if (mb) mb.textContent = label;
-  if (playing) scheduleNext();
+  if (playing) scheduleLoop();
   else clearTimeout(timer);
 }
 
-function scheduleNext() {
+// Loop the current scene's JS animation — never auto-advances to the next scene.
+// CSS-only scenes (0–3) have no meaningful JS to replay so we skip them.
+function scheduleLoop() {
   clearTimeout(timer);
-  if (!playing) return;
+  if (!playing || !LOOP_SCENES.has(current)) return;
   timer = setTimeout(() => {
-    if (current < SCENES.length - 1) {
-      nextScene();
-      scheduleNext();
-    } else {
-      playing = false;
-      document.getElementById('playBtn').textContent = '▶ PLAY';
-    }
+    restartSceneAnimation(current);
+    scheduleLoop();
   }, DURATIONS[current]);
+}
+
+// Reset and replay the JS-driven animation for a scene.
+function restartSceneAnimation(idx) {
+  if (idx === 4) {
+    ['cond1','cond2','cond3','cond4','cond5'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('show');
+    });
+    animateConditions();
+  }
+  if (idx === 5) {
+    // Reset result cells
+    ['rc1','rc2','rc3','rc4'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('show');
+    });
+    // Reset counter values
+    const rcVal3 = document.getElementById('rcVal3');
+    if (rcVal3) rcVal3.textContent = '0';
+    const rcVal4 = document.getElementById('rcVal4');
+    if (rcVal4) { rcVal4.textContent = '—'; rcVal4.style.color = 'var(--muted)'; }
+    const rcSub4 = document.getElementById('rcSub4');
+    if (rcSub4) rcSub4.textContent = 'Running simulation...';
+    const btStatus = document.getElementById('bt-status');
+    if (btStatus) { btStatus.textContent = '● RUNNING BACKTEST...'; btStatus.style.color = ''; }
+    const btLoading = document.getElementById('bt-loading');
+    if (btLoading) btLoading.style.display = '';
+    ['rcVal1','rcVal2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '+0%';
+    });
+    runBacktestAnimation();
+  }
+  if (idx === 6) {
+    const v1 = document.getElementById('animVal1');
+    const v2 = document.getElementById('animVal2');
+    if (v1) v1.textContent = '+0%';
+    if (v2) v2.textContent = '+0%';
+    spawnConfetti();
+    animateCounter('animVal1', 0, 47.2, '%', 2500, 600, '+');
+    animateCounter('animVal2', 0, 31.4, '%', 2000, 800, '+');
+  }
 }
 
 // ── build nav dots ──
@@ -1639,7 +1685,7 @@ const dotsWrap = document.getElementById('nav-dots');
 SCENES.forEach((_, i) => {
   const d = document.createElement('div');
   d.className = 'nav-dot' + (i === 0 ? ' on' : '');
-  d.onclick = () => { showScene(i); if (playing) scheduleNext(); };
+  d.onclick = () => showScene(i);
   dotsWrap.appendChild(d);
 });
 
@@ -1937,7 +1983,7 @@ if (mobileDotsWrap) {
   SCENES.forEach((_, i) => {
     const d = document.createElement('div');
     d.className = 'nav-dot' + (i === 0 ? ' on' : '');
-    d.onclick = () => { showScene(i); if (playing) scheduleNext(); };
+    d.onclick = () => showScene(i);
     mobileDotsWrap.appendChild(d);
   });
 }
@@ -1956,13 +2002,12 @@ if (mobileDotsWrap) {
     const dy = e.changedTouches[0].clientY - startY;
     if (Math.abs(dx) < Math.abs(dy) || Math.abs(dx) < 40) return;
     if (dx < 0) nextScene(); else prevScene();
-    if (playing) scheduleNext();
   }, { passive: true });
 })();
 
 // ── kick off ──
 updateUI();
-scheduleNext();
+scheduleLoop(); // scene 0 is CSS-only so this is a no-op; JS scenes loop when reached
 </script>
 </body>
 </html>
