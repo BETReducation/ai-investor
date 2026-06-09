@@ -98,13 +98,8 @@
     #nav-dots       { display: none !important; }
     #controls       { display: none !important; }
 
-    /* step badge inside stage */
-    .step-badge {
-      font-size: 11px;
-      top: 3vw; left: 3vw;
-      padding: 4px 10px;
-      letter-spacing: 2px;
-    }
+    /* step badge — hidden on mobile (shown in commentary panel below) */
+    .step-badge { display: none !important; }
 
     /* Fixed panel below the stage strip */
     #mobile-ui {
@@ -216,14 +211,14 @@
       max-width: 420px !important;  /* hard cap to visible design-x window */
     }
     #s0 .sub  { text-align: left !important; max-width: 400px !important; font-size: 20px !important; }
-    #s0 .start-hint { align-self: flex-start !important; }
 
-    /* ── Scene 1 (intro): speech bubble larger & shifted so badge doesn't clip ── */
+    /* ── Scene 1 (intro): move speech bubble above Jamie's head ── */
     #s1 .speech-bubble {
       font-size: 17px !important;
       left: 210px !important;
       max-width: 340px !important;
       line-height: 1.55 !important;
+      bottom: 430px !important;   /* lifts bubble clear of Jamie's head */
     }
 
     /* ── Scene 2 (step 1): hide browser chrome + right panel; show only the
@@ -233,9 +228,9 @@
     #s2 .mini-nav    { display: none !important; }
     #s2-right-panel  { display: none !important; }
     #s2 .browser-mockup {
-      top: 50px !important;
+      top: 80px !important;
       width: 280px !important;
-      height: 580px !important;
+      height: 520px !important;
       /* left is set dynamically by panStage() so it's centered */
     }
     #s2-browser-content { height: 100% !important; }
@@ -246,10 +241,10 @@
     #cursor2 { display: none !important; }
 
     /* ── Scene 3 (step 2): stack config + AAPL card at same mobile position;
-          JS alternating fade shows one at a time ── */
+          JS alternating fade shows one at a time. top centres panel in visible area ── */
     #s3-tooltip { display: none !important; }
     #s3-left, #s3-right {
-      top: 60px !important;
+      top: 130px !important;
       width: 310px !important;
       height: auto !important;
       /* left set by panStage() */
@@ -259,7 +254,7 @@
     /* ── Scene 4 (step 3): same alternating-fade treatment for strategy +
           RSI card ── */
     #s4-left, #s4-right {
-      top: 60px !important;
+      top: 100px !important;
       width: 360px !important;
       height: auto !important;
       /* left set by panStage() */
@@ -293,14 +288,16 @@
     .vs-divider { display: none !important; }
     .vs-value   { font-size: 34px !important; }
 
-    /* ── Scene 4 (backtester): resize panel so chart fits visible window.
-          left is set dynamically by panStage() so it's centered. ── */
+    /* ── Scene 4 (backtester): squarer chart, moved down to fill vertical space.
+          top/left set dynamically by panStage() for centering. ── */
     #s5 .backtest-screen {
-      top: 40px !important;
-      width: 550px !important;
+      width: 480px !important;
+      /* top overridden by panStage() JS */
     }
-    #s5 .chart-area   { height: 123px !important; }
-    #s5 #btCanvas     { width: 550px !important; height: 123px !important; }
+    #s5 .chart-area   { height: 200px !important; }
+    #s5 #btCanvas     { width: 480px !important; height: 200px !important; }
+    /* keep bt-loading indicator visible below the screen */
+    #bt-loading { font-size: 8px !important; letter-spacing: 1px !important; }
 
     /* swipe hint */
     #swipe-hint {
@@ -487,14 +484,6 @@
     font-size: 13px; color: var(--muted); letter-spacing: 2px;
     opacity: 0;
     animation: fadeUp 0.8s ease 1.1s forwards;
-  }
-  #s0 .start-hint {
-    margin-top: 48px;
-    font-size: 10px; color: var(--cyan); letter-spacing: 3px;
-    opacity: 0;
-    animation: blink 1.4s ease 1.8s infinite;
-    border: 1px solid rgba(0,221,255,.3);
-    padding: 6px 20px; border-radius: 2px;
   }
 
   /* ════════════════════════════════════
@@ -1009,7 +998,6 @@
     </div>
     <h1>How to Build Your<br><span>First Trading Signal</span></h1>
     <div class="sub">A step-by-step guide for new investors</div>
-    <div class="start-hint">▶ PRESS PLAY TO BEGIN</div>
   </div>
 
   <!-- ══════════════════════════════
@@ -1639,7 +1627,7 @@ function showScene(idx) {
   current = idx;
   updateUI();
   onSceneEnter(idx);
-  panStage();
+  scaleStage(); // re-scales with per-scene zoom, then calls panStage() internally
   scheduleLoop(); // start within-scene loop if this is a JS-animated scene
 }
 
@@ -2075,11 +2063,24 @@ function panStage() {
   }
 
   if (current === 5) {
-    // Scene 5: center the backtest screen
+    // Scene 5: center the backtest screen horizontally and vertically
     const bsEl = document.querySelector('#s5 .backtest-screen');
     if (bsEl) {
-      const bsW = 550;
+      const bsW = 480;
       bsEl.style.left = Math.max(0, Math.round((visW - bsW) / 2)) + 'px';
+      // visH: how many design-px are visible vertically at this scale
+      const strip = document.getElementById('stage-wrap');
+      const stripH = strip ? strip.getBoundingClientRect().height : window.innerHeight * 0.66;
+      const visH = stripH / scale;
+      // Estimate screen height: header(35) + chart(200) + results-2x2(~160)
+      const bsH = 395;
+      bsEl.style.top = Math.max(30, Math.round((visH - bsH) / 2)) + 'px';
+      // Move bt-loading below the screen
+      const btLoad = document.getElementById('bt-loading');
+      if (btLoad) {
+        const bsTop = parseInt(bsEl.style.top) || 30;
+        btLoad.style.top = (bsTop + bsH + 8) + 'px';
+      }
     }
   }
 
@@ -2094,6 +2095,10 @@ function panStage() {
   }
 }
 
+// Per-scene zoom multiplier on mobile.
+// Scenes 2/3/4 get a 1.3× boost so panels fill more of the screen.
+const MOB_SCENE_ZOOM = [1, 1, 1.3, 1.3, 1.3, 1, 1];
+
 // ── scale stage to viewport ──
 function scaleStage() {
   const stage = document.getElementById('stage');
@@ -2103,7 +2108,9 @@ function scaleStage() {
     // so the scale is always in sync with what CSS drew, not window.innerHeight.
     const wrap = document.getElementById('stage-wrap');
     const stripH = wrap.getBoundingClientRect().height || window.innerHeight * 0.66;
-    const scale = stripH / 720;
+    const baseScale = stripH / 720;
+    const zoom = MOB_SCENE_ZOOM[current] || 1;
+    const scale = baseScale * zoom;
     stage.style.transform = `scale(${scale})`;
     stage.style.transformOrigin = '0 0';
     panStage();
