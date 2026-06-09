@@ -6,6 +6,7 @@
 <title>WINVESTOR — How to Build Your First Signal</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ── Dark mode (default) ── */
   :root {
     --bg:      #050608;
     --panel:   #0d1117;
@@ -20,6 +21,57 @@
     --cyan:    #00ddff;
     --purple:  #aa55ff;
   }
+
+  /* ── Light mode — toggled via <html class="light"> ── */
+  html.light {
+    --bg:      #f4f7fb;
+    --panel:   #ffffff;
+    --card:    #e9eef6;
+    --border:  #bfcbdb;
+    --text:    #1a2535;
+    --muted:   #526070;
+    --green:   #007a3d;
+    --red:     #c81030;
+    --blue:    #0060cc;
+    --amber:   #a86500;
+    --cyan:    #006e8a;
+    --purple:  #6622bb;
+  }
+
+  /* Backgrounds that are hardcoded #000 need light-mode overrides */
+  html.light body,
+  html.light #stage-wrap { background: var(--bg) !important; }
+
+  /* Caption bar — near-white backdrop in light mode */
+  html.light .caption {
+    background: rgba(244,247,251,.94) !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,.12);
+  }
+
+  /* Scanlines are invisible on a light bg — hide them */
+  html.light #stage::after { display: none !important; }
+
+  /* Control buttons */
+  html.light .ctrl-btn {
+    background: rgba(0,0,0,.04) !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Mobile button active state */
+  html.light .mob-btn:active {
+    background: rgba(0,0,0,.06) !important;
+    color: var(--cyan) !important;
+  }
+
+  /* Grid lines in scene 1 — darker so visible on light bg */
+  html.light #s1 .bg-grid {
+    background-image:
+      linear-gradient(rgba(0,96,204,.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,96,204,.09) 1px, transparent 1px) !important;
+  }
+
+  /* Mobile UI panel — use card bg so it reads as a distinct panel */
+  html.light #mobile-ui { background: var(--panel) !important; }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -983,6 +1035,7 @@
     <button class="ctrl-btn" id="prevBtn" onclick="prevScene()">◀ PREV</button>
     <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">⏸ PAUSE</button>
     <button class="ctrl-btn" id="nextBtn" onclick="nextScene()">NEXT ▶</button>
+    <button class="ctrl-btn" id="themeBtn" onclick="toggleTheme()" style="border-color:rgba(0,221,255,.35);">☀ LIGHT</button>
   </div>
 
   <!-- ══════════════════════════════
@@ -1598,6 +1651,7 @@
     <button class="mob-btn" onclick="prevScene()">◀ PREV</button>
     <button class="mob-btn" id="mob-play-btn" onclick="togglePlay()">⏸ PAUSE</button>
     <button class="mob-btn" onclick="nextScene()">NEXT ▶</button>
+    <button class="mob-btn" id="mobThemeBtn" onclick="toggleTheme()" style="color:var(--cyan);border-left:1px solid var(--border);">☀</button>
   </div>
 </div>
 
@@ -1669,6 +1723,27 @@ function togglePlay() {
   if (playing) scheduleLoop();
   else clearTimeout(timer);
 }
+
+// ── Light / Dark theme toggle ──
+function applyTheme(mode) {
+  const isLight = mode === 'light';
+  document.documentElement.classList.toggle('light', isLight);
+  localStorage.setItem('explainer-theme', mode);
+  // Desktop button shows what clicking will switch TO
+  const tb  = document.getElementById('themeBtn');
+  const mtb = document.getElementById('mobThemeBtn');
+  if (tb)  tb.textContent  = isLight ? '☾ DARK'  : '☀ LIGHT';
+  if (mtb) mtb.textContent = isLight ? '☾' : '☀';
+}
+function toggleTheme() {
+  const goLight = !document.documentElement.classList.contains('light');
+  applyTheme(goLight ? 'light' : 'dark');
+}
+// Restore saved preference on load
+(function() {
+  const saved = localStorage.getItem('explainer-theme');
+  if (saved) applyTheme(saved);
+})();
 
 // Loop the current scene's JS animation — never auto-advances to the next scene.
 // CSS-only scenes (0–3) have no meaningful JS to replay so we skip them.
