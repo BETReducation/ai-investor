@@ -249,6 +249,37 @@
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
+    /* ── Floating theme toggle pill ── */
+    #mob-theme-pill {
+      display: flex !important;
+      align-items: center;
+      gap: 5px;
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 10px);
+      right: 14px;
+      z-index: 200;
+      background: var(--panel);
+      border: 1.5px solid var(--cyan);
+      color: var(--cyan);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,.25), 0 0 8px rgba(0,221,255,.15);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    #mob-theme-pill:active {
+      background: var(--cyan);
+      color: var(--bg);
+    }
+    html.light #mob-theme-pill {
+      box-shadow: 0 2px 12px rgba(0,0,0,.15), 0 0 8px rgba(0,110,138,.15);
+    }
+
     /* ── Scene 0 (title): left-align so content isn't clipped at right.
           At 75%-height zoom (scale ≈ 0.88) the visible design-x window is ~444px.
           Centred content (logo x=500-780, h1 x=290-990) clips badly.
@@ -370,6 +401,7 @@
   /* desktop — hide mobile UI */
   #mobile-ui { display: none; }
   #swipe-hint { display: none; }
+  #mob-theme-pill { display: none !important; }
 
   /* scanlines */
   #stage::after {
@@ -1642,6 +1674,9 @@
 
 <!-- ── Mobile UI (hidden on desktop via CSS) ── -->
 <div id="swipe-hint">SWIPE ← → TO NAVIGATE</div>
+<!-- Floating theme toggle — sits at top-right of the animation strip on mobile -->
+<button id="mob-theme-pill" onclick="toggleTheme()" aria-label="Toggle light/dark mode">☀ LIGHT</button>
+
 <div id="mobile-ui">
   <div id="mobile-step">INTRODUCTION</div>
   <div id="mobile-caption"><div id="mobile-caption-inner">Meet Jamie — a 20-something who wants to invest smarter, not harder. They've heard about algorithmic trading and want to try it themselves.</div></div>
@@ -1651,7 +1686,6 @@
     <button class="mob-btn" onclick="prevScene()">◀ PREV</button>
     <button class="mob-btn" id="mob-play-btn" onclick="togglePlay()">⏸ PAUSE</button>
     <button class="mob-btn" onclick="nextScene()">NEXT ▶</button>
-    <button class="mob-btn" id="mobThemeBtn" onclick="toggleTheme()" style="color:var(--cyan);border-left:1px solid var(--border);">☀</button>
   </div>
 </div>
 
@@ -1729,11 +1763,10 @@ function applyTheme(mode) {
   const isLight = mode === 'light';
   document.documentElement.classList.toggle('light', isLight);
   localStorage.setItem('explainer-theme', mode);
-  // Desktop button shows what clicking will switch TO
-  const tb  = document.getElementById('themeBtn');
-  const mtb = document.getElementById('mobThemeBtn');
-  if (tb)  tb.textContent  = isLight ? '☾ DARK'  : '☀ LIGHT';
-  if (mtb) mtb.textContent = isLight ? '☾' : '☀';
+  const tb   = document.getElementById('themeBtn');
+  const pill = document.getElementById('mob-theme-pill');
+  if (tb)   tb.textContent   = isLight ? '☾ DARK'  : '☀ LIGHT';
+  if (pill) pill.textContent = isLight ? '☾ DARK'  : '☀ LIGHT';
 }
 function toggleTheme() {
   const goLight = !document.documentElement.classList.contains('light');
