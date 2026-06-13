@@ -263,6 +263,18 @@ def backtester():
 def stories():
     return send_from_directory("static", "stories.html")
 
+@app.route("/education-hub")
+def education_hub():
+    return send_from_directory("static", "EducationHub.html")
+
+@app.route("/stories-podcasts")
+def stories_podcasts():
+    return send_from_directory("static", "StoriesPodcasts.html")
+
+@app.route("/competitions-partnerships")
+def competitions_partnerships():
+    return send_from_directory("static", "CompetitionsPartnerships.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 

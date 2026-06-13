@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Winvestor — What are you here for today?</title>
+<!-- Force dark mode for first-time visitors -->
+<script>if (!localStorage.getItem('apex-theme')) localStorage.setItem('apex-theme', 'dark');</script>
+<script src="/static/js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -383,6 +386,112 @@ html, body {
   .quad-icon svg { width: 18px; height: 18px; }
   .corner-glow { width: 160px; height: 160px; }
 }
+
+/* ── THEME TOGGLE ── */
+.theme-btn {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  z-index: 30;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(220,225,245,0.8);
+  font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: none;
+  transition: background 0.2s, border-color 0.2s;
+  backdrop-filter: blur(8px);
+}
+.theme-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.25); }
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] html,
+[data-theme="light"] body {
+  background: #f0f2f9;
+}
+
+[data-theme="light"] #bg-canvas { opacity: 0.2; }
+
+[data-theme="light"] #spotlight {
+  background: radial-gradient(
+    var(--spotlight-size) circle at var(--mouse-x) var(--mouse-y),
+    transparent 0%,
+    transparent 30%,
+    rgba(230,232,245,0.45) 60%,
+    rgba(230,232,245,0.88) 100%
+  ) !important;
+}
+[data-theme="light"] #spotlight::before {
+  background: radial-gradient(
+    300px circle at var(--mouse-x) var(--mouse-y),
+    rgba(120,70,230,0.07) 0%,
+    transparent 70%
+  );
+}
+
+[data-theme="light"] .divider-h,
+[data-theme="light"] .divider-v { background: rgba(0,0,0,0.08); }
+
+[data-theme="light"] .logo { color: rgba(20,25,50,0.85); }
+[data-theme="light"] .logo span { color: rgba(80,90,130,0.5); }
+
+/* Quadrant bases */
+[data-theme="light"] .quad { border-color: rgba(0,0,0,0.07); }
+[data-theme="light"] .quad:hover { border-color: rgba(0,0,0,0.14); }
+
+[data-theme="light"] .quad-tl { background: linear-gradient(135deg, #f5f0ff 0%, #ede5ff 50%, #e8e0ff 100%); }
+[data-theme="light"] .quad-tl::before { background: radial-gradient(ellipse at 30% 40%, rgba(124,58,237,0.12) 0%, transparent 65%); }
+[data-theme="light"] .quad-tl:hover { background: linear-gradient(135deg, #ede5ff 0%, #e5d9ff 50%, #dfd3ff 100%); }
+
+[data-theme="light"] .quad-tr { background: linear-gradient(225deg, #e8f8f7 0%, #d8f4f2 50%, #e4f9f8 100%); }
+[data-theme="light"] .quad-tr::before { background: radial-gradient(ellipse at 70% 40%, rgba(20,184,166,0.14) 0%, transparent 65%); }
+[data-theme="light"] .quad-tr:hover { background: linear-gradient(225deg, #d8f4f2 0%, #c8f0ed 50%, #d4f6f4 100%); }
+
+[data-theme="light"] .quad-bl { background: linear-gradient(45deg, #e8f8f0 0%, #d8f4e8 50%, #e0f6ec 100%); }
+[data-theme="light"] .quad-bl::before { background: radial-gradient(ellipse at 30% 70%, rgba(16,185,129,0.14) 0%, transparent 65%); }
+[data-theme="light"] .quad-bl:hover { background: linear-gradient(45deg, #d8f4e8 0%, #c8f0de 50%, #d0f2e4 100%); }
+
+[data-theme="light"] .quad-br { background: linear-gradient(315deg, #fdf8e8 0%, #fef3c7 50%, #fdf6d4 100%); }
+[data-theme="light"] .quad-br::before { background: radial-gradient(ellipse at 70% 70%, rgba(245,158,11,0.16) 0%, transparent 65%); }
+[data-theme="light"] .quad-br:hover { background: linear-gradient(315deg, #fef3c7 0%, #fde68a 50%, #fef0b0 100%); }
+
+/* Text inside quads */
+[data-theme="light"] .quad-title { color: #1a1d2e; }
+[data-theme="light"] .quad:hover .quad-title { color: #0d0f1c; }
+[data-theme="light"] .quad-sub { color: rgba(40,50,80,0.55); }
+[data-theme="light"] .quad:hover .quad-sub { color: rgba(40,50,80,0.8); }
+
+/* Icon borders */
+[data-theme="light"] .quad-icon { border-color: rgba(0,0,0,0.1); background: rgba(255,255,255,0.7); }
+[data-theme="light"] .quad:hover .quad-icon { border-color: rgba(0,0,0,0.2); }
+
+/* Arrow circle */
+[data-theme="light"] .quad-arrow { border-color: rgba(0,0,0,0.12); }
+
+/* Grid lines inside quads */
+[data-theme="light"] .quad::after {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+}
+
+/* Centre badge */
+[data-theme="light"] .centre-inner {
+  background: rgba(240,242,250,0.88);
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.04), 0 8px 40px rgba(0,0,0,0.12), 0 0 80px rgba(120,80,255,0.06);
+}
+[data-theme="light"] .centre-question { color: rgba(20,25,50,0.88); }
+
+/* Theme button in light mode */
+[data-theme="light"] .theme-btn {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.12);
+  color: #1a1d2e;
+}
+[data-theme="light"] .theme-btn:hover { background: rgba(0,0,0,0.1); }
 </style>
 </head>
 <body>
@@ -407,11 +516,14 @@ html, body {
 <!-- Logo -->
 <div class="logo">Win<span>vestor</span></div>
 
+<!-- Theme toggle -->
+<button class="theme-btn" id="themeToggle" onclick="toggleApexTheme()" title="Toggle light/dark mode">☀</button>
+
 <!-- 4 quadrants -->
 <div class="grid">
 
-  <!-- TL: Learn -->
-  <a href="/signal-config" class="quad quad-tl">
+  <!-- TL: Education Hub -->
+  <a href="/education-hub" class="quad quad-tl">
     <div class="corner-glow"></div>
     <div class="quad-icon quad-glow">
       <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -419,7 +531,7 @@ html, body {
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
       </svg>
     </div>
-    <div class="quad-label quad-accent">Education</div>
+    <div class="quad-label quad-accent">Education Hub</div>
     <div class="quad-title">Learn how to Invest &amp; Trade</div>
     <div class="quad-sub">Signals, indicators, and market mechanics — explained interactively</div>
     <div class="quad-arrow quad-accent">
@@ -429,17 +541,17 @@ html, body {
     </div>
   </a>
 
-  <!-- TR: Backtest -->
-  <a href="/backtester" class="quad quad-tr">
+  <!-- TR: Signals, Backtesting & Portfolio Management -->
+  <a href="/signal-config" class="quad quad-tr">
     <div class="corner-glow"></div>
     <div class="quad-icon quad-glow">
       <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
       </svg>
     </div>
-    <div class="quad-label quad-accent">Backtester</div>
-    <div class="quad-title">To test my trading theories</div>
-    <div class="quad-sub">Run your strategies against real historical market data</div>
+    <div class="quad-label quad-accent">Signals &amp; Backtesting</div>
+    <div class="quad-title">Signals, Backtesting &amp; Portfolio Management</div>
+    <div class="quad-sub">Run strategies against real data and optimise your holdings</div>
     <div class="quad-arrow quad-accent">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -447,8 +559,8 @@ html, body {
     </div>
   </a>
 
-  <!-- BL: Stories -->
-  <a href="/stories" class="quad quad-bl">
+  <!-- BL: Stories & Podcasts -->
+  <a href="/stories-podcasts" class="quad quad-bl">
     <div class="corner-glow"></div>
     <div class="quad-icon quad-glow">
       <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -465,18 +577,17 @@ html, body {
     </div>
   </a>
 
-  <!-- BR: Portfolio -->
-  <a href="/portfolio-balancer" class="quad quad-br">
+  <!-- BR: Competitions & Partnerships -->
+  <a href="/competitions-partnerships" class="quad quad-br">
     <div class="corner-glow"></div>
     <div class="quad-icon quad-glow">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+        <circle cx="12" cy="8" r="6"/><path d="M8 14l-4 7h16l-4-7"/><line x1="9" y1="10" x2="12" y2="13"/><line x1="15" y1="10" x2="12" y2="13"/>
       </svg>
     </div>
-    <div class="quad-label quad-accent">Portfolio</div>
-    <div class="quad-title">To manage my portfolio</div>
-    <div class="quad-sub">Rebalance, analyse and optimise your holdings</div>
+    <div class="quad-label quad-accent">Competitions &amp; Partnerships</div>
+    <div class="quad-title">Compete &amp; Collaborate</div>
+    <div class="quad-sub">Trading competitions, partner tools &amp; community challenges</div>
     <div class="quad-arrow quad-accent">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
