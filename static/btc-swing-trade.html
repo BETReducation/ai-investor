@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Swing Trade Thesis</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede9;
+    --text: #1a1a1a; --muted: #6b6b6b;
+    --border: rgba(0,0,0,0.12); --radius: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1c; --bg2: #242424; --bg3: #2c2c2c;
+      --text: #e8e8e6; --muted: #888;
+      --border: rgba(255,255,255,0.1);
+    }
+  }
+  body {
+    background: var(--bg3);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 24px;
+  }
+  #stage {
+    width: 680px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  #screen { width: 100%; height: 420px; position: relative; overflow: hidden; }
+  .scene { position: absolute; inset: 0; padding: 36px 40px; display: flex; flex-direction: column; justify-content: center; opacity: 0; transition: opacity 0.5s; }
+  .scene.active { opacity: 1; }
+  .big-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .big-title { font-size: 28px; font-weight: 500; color: var(--text); line-height: 1.25; margin-bottom: 10px; }
+  .big-sub { font-size: 14px; color: var(--muted); line-height: 1.65; max-width: 480px; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; margin-right: 6px; margin-top: 4px; }
+  .pill-green { background: #EAF3DE; color: #3B6D11; }
+  .pill-red { background: #FCEBEB; color: #A32D2D; }
+  .pill-blue { background: #E6F1FB; color: #185FA5; }
+  .pill-amber { background: #FAEEDA; color: #854F0B; }
+  .signal-row { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .sig { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateX(-18px); transition: opacity 0.4s, transform 0.4s; }
+  .sig.show { opacity: 1; transform: none; }
+  .sig-icon { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .sig-text { font-size: 13px; color: var(--muted); }
+  .sig-text strong { color: var(--text); }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .stat { background: var(--bg2); border-radius: 8px; padding: 12px 14px; opacity: 0; transform: translateY(12px); transition: opacity 0.4s, transform 0.4s; }
+  .stat.show { opacity: 1; transform: none; }
+  .stat-l { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .stat-v { font-size: 22px; font-weight: 500; color: var(--text); }
+  .stat-s { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .result-box { border: 0.5px solid #9FE1CB; background: #E1F5EE; border-radius: 10px; padding: 18px 20px; margin-top: 16px; opacity: 0; transform: scale(0.97); transition: opacity 0.5s, transform 0.5s; }
+  .result-box.show { opacity: 1; transform: none; }
+  .result-box .rn { font-size: 34px; font-weight: 500; color: #0F6E56; }
+  .result-box p { font-size: 13px; color: #085041; margin-top: 6px; line-height: 1.6; }
+  .psych-row { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+  .psy { display: flex; gap: 10px; align-items: flex-start; opacity: 0; transform: translateX(-14px); transition: opacity 0.4s, transform 0.4s; }
+  .psy.show { opacity: 1; transform: none; }
+  .psy-num { font-size: 11px; font-weight: 500; background: var(--bg2); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; color: var(--muted); }
+  .psy-t { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .psy-t strong { color: var(--text); }
+  .chart-wrap { position: relative; flex: 1; margin-top: 10px; min-height: 0; }
+  #controls { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 0.5px solid var(--border); background: var(--bg2); }
+  #playBtn { background: none; border: 0.5px solid var(--border); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text); flex-shrink: 0; }
+  #playBtn:hover { background: var(--bg3); }
+  #scrub { flex: 1; cursor: pointer; accent-color: #378ADD; }
+  #sceneLabel { font-size: 11px; color: var(--muted); min-width: 80px; text-align: right; }
+  #progressBar { position: absolute; bottom: 0; left: 0; height: 2px; background: #378ADD; transition: width 0.1s linear; width: 0; z-index: 2; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="screen">
+    <div id="progressBar"></div>
+
+    <div class="scene active" id="sc0">
+      <div class="big-label">BTC swing trade</div>
+      <div class="big-title">A rules-based<br>signal system</div>
+      <div class="big-sub">Four technical conditions must all fire at once. One or two signals is noise. All four together is a trade.</div>
+      <div style="margin-top:18px">
+        <span class="pill pill-blue">Bollinger Bands</span>
+        <span class="pill pill-amber">Support level</span>
+        <span class="pill pill-red">RSI &lt; 20</span>
+        <span class="pill pill-green">Volume spike</span>
+      </div>
+    </div>
+
+    <div class="scene" id="sc1">
+      <div class="big-label">The four signals</div>
+      <div class="big-title">All four must align</div>
+      <div class="signal-row">
+        <div class="sig" id="sig0"><div class="sig-icon" style="background:#E6F1FB">📉</div><div class="sig-text"><strong>Below lower Bollinger Band</strong> — price statistically extended to the downside</div></div>
+        <div class="sig" id="sig1"><div class="sig-icon" style="background:#FAEEDA">🏛</div><div class="sig-text"><strong>Major support level</strong> — $60,000 structural floor, tested multiple times</div></div>
+        <div class="sig" id="sig2"><div class="sig-icon" style="background:#FCEBEB">📊</div><div class="sig-text"><strong>RSI below 20</strong> — deeply oversold, not just the standard 30 threshold</div></div>
+        <div class="sig" id="sig3"><div class="sig-icon" style="background:#EAF3DE">📈</div><div class="sig-text"><strong>Volume spike (2×+)</strong> — panic selling or capitulation, not a quiet drift down</div></div>
+      </div>
+    </div>
+
+    <div class="scene" id="sc2">
+      <div class="big-label">5 June 2026</div>
+      <div class="big-title">The signal fires</div>
+      <div class="big-sub">Every condition hits simultaneously for the first time in weeks.</div>
+      <div class="stat-row">
+        <div class="stat" id="st0"><div class="stat-l">Price</div><div class="stat-v">$60k</div><div class="stat-s">Major support ✓</div></div>
+        <div class="stat" id="st1"><div class="stat-l">RSI</div><div class="stat-v" style="color:#E24B4A">&lt;20</div><div class="stat-s">Deeply oversold ✓</div></div>
+        <div class="stat" id="st2"><div class="stat-l">Volume</div><div class="stat-v" style="color:#BA7517">2×</div><div class="stat-s">vs 20-day avg ✓</div></div>
+      </div>
+      <div style="margin-top:14px;font-size:13px;color:var(--muted);opacity:0;transition:opacity 0.5s" id="buyline">
+        Price also closed below the lower Bollinger Band — all four confirmed. <strong style="color:#1D9E75">Signal fires. Buy.</strong>
+      </div>
+    </div>
+
+    <div class="scene" id="sc3">
+      <div class="big-label">The chart</div>
+      <div class="big-title" style="font-size:20px;margin-bottom:12px">BTC price · 27 May → 15 Jun 2026</div>
+      <div class="chart-wrap" id="chartWrap">
+        <canvas id="mainCanvas" style="width:100%;height:100%;display:block"></canvas>
+      </div>
+    </div>
+
+    <div class="scene" id="sc4">
+      <div class="big-label">Risk management</div>
+      <div class="big-title">Set before entry.<br>No decisions after.</div>
+      <div class="signal-row" style="margin-top:14px">
+        <div class="sig" id="rm0"><div class="sig-icon" style="background:#EAF3DE;font-size:15px;font-weight:600;color:#3B6D11">+10%</div><div class="sig-text"><strong>Take profit at $66,000</strong> — fixed target, no second-guessing when it arrives</div></div>
+        <div class="sig" id="rm1"><div class="sig-icon" style="background:#FCEBEB;font-size:15px;font-weight:600;color:#A32D2D">−5%</div><div class="sig-text"><strong>Stop loss at $57,000</strong> — protects against the setup being wrong</div></div>
+        <div class="sig" id="rm2"><div class="sig-icon" style="background:#E6F1FB;font-size:15px;font-weight:600;color:#185FA5">2:1</div><div class="sig-text"><strong>Risk/reward ratio</strong> — gain 10% or lose 5%. The math works if the signal fires accurately</div></div>
+      </div>
+    </div>
+
+    <div class="scene" id="sc5">
+      <div class="big-label">15 June 2026 — 10 days later</div>
+      <div class="big-title">Target hit. Exit clean.</div>
+      <div class="result-box" id="resultBox">
+        <div class="rn">+10%</div>
+        <p>$60,000 → $66,000 in 10 days. The stop loss was never threatened. Entry low and exit high were both hit perfectly. Textbook.</p>
+      </div>
+      <div class="stat-row" style="margin-top:12px">
+        <div class="stat" id="rs0"><div class="stat-l">Entry</div><div class="stat-v">$60k</div><div class="stat-s">5 Jun 2026</div></div>
+        <div class="stat" id="rs1"><div class="stat-l">Exit</div><div class="stat-v" style="color:#0F6E56">$66k</div><div class="stat-s">15 Jun 2026</div></div>
+        <div class="stat" id="rs2"><div class="stat-l">Duration</div><div class="stat-v">10 days</div><div class="stat-s">Clean exit</div></div>
+      </div>
+    </div>
+
+    <div class="scene" id="sc6">
+      <div class="big-label">The edge</div>
+      <div class="big-title">System beats emotion</div>
+      <div class="psych-row">
+        <div class="psy" id="py0"><div class="psy-num">1</div><div class="psy-t">All four signals firing means the crowd is <strong>panicking</strong>. You're buying their fear.</div></div>
+        <div class="psy" id="py1"><div class="psy-num">2</div><div class="psy-t">Take profit and stop are set <strong>before entry</strong>. Nothing to decide while in the trade.</div></div>
+        <div class="psy" id="py2"><div class="psy-num">3</div><div class="psy-t">"If it goes higher, I don't care." <strong>Capturing the thesis is the win</strong>, not maximising every dollar.</div></div>
+        <div class="psy" id="py3"><div class="psy-num">4</div><div class="psy-t">The Iran ceasefire may explain the bounce — but you <strong>didn't need to know why</strong>. The signal told you to buy.</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="controls">
+    <button id="playBtn" aria-label="Play or pause">
+      <i class="ti ti-player-play" id="playIcon" style="font-size:14px"></i>
+    </button>
+    <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <span id="sceneLabel">Scene 1 / 7</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  const SCENES = 7;
+  const DURATIONS = [3500,4500,4000,5500,4000,3500,5000];
+  const TOTAL_MS = DURATIONS.reduce((a,b)=>a+b,0);
+
+  let elapsed=0, playing=false, rafId=null, lastTs=null, currentScene=0;
+
+  const sceneEls = Array.from({length:SCENES},(_,i)=>document.getElementById('sc'+i));
+  const playBtn  = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const scrub    = document.getElementById('scrub');
+  const label    = document.getElementById('sceneLabel');
+  const bar      = document.getElementById('progressBar');
+
+  function setScene(idx) {
+    sceneEls.forEach((el,i)=>el.classList.toggle('active',i===idx));
+    label.textContent='Scene '+(idx+1)+' / '+SCENES;
+    currentScene=idx;
+    if(idx===1) animSignals();
+    if(idx===2) animStats();
+    if(idx===3) setTimeout(drawChart,200);
+    if(idx===4) animRM();
+    if(idx===5) animResult();
+    if(idx===6) animPsych();
+  }
+
+  function animSignals(){['sig0','sig1','sig2','sig3'].forEach((id,i)=>setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*350+200));}
+  function animStats(){
+    ['st0','st1','st2'].forEach((id,i)=>setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*300+200));
+    setTimeout(()=>{const el=document.getElementById('buyline');if(el)el.style.opacity='1';},1400);
+  }
+  function animRM(){['rm0','rm1','rm2'].forEach((id,i)=>setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*350+200));}
+  function animResult(){
+    setTimeout(()=>{const el=document.getElementById('resultBox');if(el)el.classList.add('show');},200);
+    ['rs0','rs1','rs2'].forEach((id,i)=>{const el=document.getElementById(id);if(el){el.classList.remove('show');el.style.transitionDelay=(i*0.15)+'s';}});
+    setTimeout(()=>['rs0','rs1','rs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('show');}),600);
+  }
+  function animPsych(){['py0','py1','py2','py3'].forEach((id,i)=>setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.add('show');},i*350+200));}
+
+  let chartDone=false;
+  function drawChart(){
+    if(chartDone)return; chartDone=true;
+    const wrap=document.getElementById('chartWrap');
+    const canvas=document.getElementById('mainCanvas');
+    const W=wrap.clientWidth||600, H=wrap.clientHeight||210;
+    canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    const ctx=canvas.getContext('2d'); ctx.scale(devicePixelRatio,devicePixelRatio);
+    const isDark=matchMedia('(prefers-color-scheme:dark)').matches;
+    const prices=[68400,67800,67100,66200,65500,64800,63900,62700,61400,60000,60800,61900,62700,63400,63900,64200,64800,65300,65800,66000];
+    const N=prices.length, pad={l:44,r:16,t:20,b:28};
+    const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+    const minP=55000, maxP=71000;
+    const toX=i=>pad.l+(i/(N-1))*cW;
+    const toY=v=>pad.t+(1-(v-minP)/(maxP-minP))*cH;
+    const sma=prices.map((_,i)=>{if(i<4)return null;const s=prices.slice(i-4,i+1);return s.reduce((a,b)=>a+b,0)/5;});
+    const dev=sma.map((m,i)=>{if(!m)return null;const s=prices.slice(i-4,i+1);return Math.sqrt(s.reduce((a,b)=>a+Math.pow(b-m,2),0)/5);});
+    const bbU=sma.map((m,i)=>m?m+2*dev[i]:null);
+    const bbL=sma.map((m,i)=>m?m-2*dev[i]:null);
+    const gridCol=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
+    const textCol=isDark?'#777':'#999';
+    const lineCol='#378ADD';
+
+    function drawGrid(){
+      ctx.strokeStyle=gridCol; ctx.lineWidth=0.5;
+      [58000,60000,62000,64000,66000,68000,70000].forEach(v=>{
+        const y=toY(v);
+        ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+        ctx.fillStyle=textCol; ctx.font='10px -apple-system,sans-serif'; ctx.textAlign='right';
+        ctx.fillText('$'+(v/1000).toFixed(0)+'k',pad.l-5,y+3);
+      });
+      const labels=['27 May','29','31','2 Jun','4','6','8','10','12','14','15'];
+      const indices=[0,2,4,6,8,10,12,14,16,18,19];
+      labels.forEach((d,i)=>{
+        const x=toX(indices[i]);
+        ctx.fillStyle=textCol; ctx.font='9px -apple-system,sans-serif'; ctx.textAlign='center';
+        ctx.fillText(d,x,H-8);
+      });
+    }
+
+    function drawBB(progress){
+      const count=Math.floor(progress*N);
+      ctx.setLineDash([4,3]); ctx.lineWidth=1;
+      ctx.strokeStyle=isDark?'rgba(200,200,200,0.22)':'rgba(100,100,100,0.2)';
+      ['bbU','bbL'].forEach(key=>{
+        const arr=key==='bbU'?bbU:bbL;
+        ctx.beginPath(); let s=false;
+        for(let i=0;i<count;i++){if(!arr[i])continue;if(!s){ctx.moveTo(toX(i),toY(arr[i]));s=true;}else ctx.lineTo(toX(i),toY(arr[i]));}
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
+
+    function drawHLine(y,color,dash,alpha){
+      ctx.globalAlpha=alpha; ctx.strokeStyle=color; ctx.lineWidth=1;
+      ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha=1;
+    }
+
+    function drawPrice(progress){
+      const count=Math.max(1,Math.floor(progress*N));
+      ctx.strokeStyle=lineCol; ctx.lineWidth=2.5;
+      ctx.beginPath();
+      for(let i=0;i<count;i++){i===0?ctx.moveTo(toX(i),toY(prices[i])):ctx.lineTo(toX(i),toY(prices[i]));}
+      ctx.stroke();
+    }
+
+    function drawLabels(p3,p4,p5){
+      ctx.font='bold 10px -apple-system,sans-serif';
+      if(p3>0){
+        ctx.globalAlpha=p3; ctx.fillStyle='#BA7517'; ctx.textAlign='left';
+        ctx.fillText('$60k support',pad.l+6,toY(60000)-5); ctx.globalAlpha=1;
+      }
+      if(p4>0){
+        ctx.globalAlpha=p4; ctx.fillStyle='#D85A30'; ctx.textAlign='left';
+        ctx.fillText('+10% target $66k',pad.l+6,toY(66000)-5); ctx.globalAlpha=1;
+      }
+      if(p5>0){
+        const bx=toX(9),by=toY(60000),sx=toX(19),sy=toY(66000);
+        ctx.globalAlpha=p5;
+        ctx.fillStyle='#1D9E75'; ctx.beginPath(); ctx.arc(bx,by,6,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1D9E75'; ctx.textAlign='left'; ctx.fillText('BUY $60k',bx+10,by+4);
+        ctx.fillStyle='#D85A30'; ctx.beginPath(); ctx.arc(sx,sy,6,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#D85A30'; ctx.textAlign='right'; ctx.fillText('SELL $66k',sx-10,sy+4);
+        ctx.globalAlpha=1;
+      }
+    }
+
+    let start=null;
+    const DUR=2800;
+    function frame(ts){
+      if(!start)start=ts;
+      const p=Math.min((ts-start)/DUR,1);
+      const p1=Math.min(p/0.6,1);
+      const p2=Math.max(0,Math.min((p-0.3)/0.5,1));
+      const p3=Math.max(0,Math.min((p-0.55)/0.3,1));
+      const p4=Math.max(0,Math.min((p-0.7)/0.3,1));
+      const p5=Math.max(0,Math.min((p-0.85)/0.15,1));
+      ctx.clearRect(0,0,W,H);
+      drawGrid();
+      drawBB(p1);
+      drawHLine(toY(60000),'#BA7517',[6,4],p2*0.8);
+      drawHLine(toY(57000),'#E24B4A',[3,5],p3*0.4);
+      drawHLine(toY(66000),'#D85A30',[5,4],p4*0.8);
+      drawPrice(p1);
+      drawLabels(p2,p4,p5);
+      if(p<1)requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function tick(ts){
+    if(!playing)return;
+    if(lastTs!==null) elapsed=Math.min(elapsed+(ts-lastTs),TOTAL_MS);
+    lastTs=ts;
+    let acc=0,sc=0;
+    for(let i=0;i<SCENES;i++){
+      if(elapsed<acc+DURATIONS[i]){sc=i;break;}
+      acc+=DURATIONS[i];
+      if(i===SCENES-1)sc=SCENES-1;
+    }
+    if(sc!==currentScene)setScene(sc);
+    bar.style.width=(elapsed/TOTAL_MS*100).toFixed(2)+'%';
+    scrub.value=Math.round(elapsed/TOTAL_MS*1000);
+    if(elapsed>=TOTAL_MS){playing=false;setPlayIcon(false);lastTs=null;return;}
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function setPlayIcon(p){playIcon.className=p?'ti ti-player-pause':'ti ti-player-play';playIcon.style.fontSize='14px';}
+  function play(){if(elapsed>=TOTAL_MS){elapsed=0;setScene(0);}playing=true;lastTs=null;setPlayIcon(true);rafId=requestAnimationFrame(tick);}
+  function pause(){playing=false;lastTs=null;setPlayIcon(false);if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
+
+  playBtn.addEventListener('click',()=>playing?pause():play());
+  scrub.addEventListener('input',()=>{
+    pause(); elapsed=(scrub.value/1000)*TOTAL_MS;
+    bar.style.width=(elapsed/TOTAL_MS*100).toFixed(2)+'%';
+    let acc=0,sc=0;
+    for(let i=0;i<SCENES;i++){if(elapsed<acc+DURATIONS[i]){sc=i;break;}acc+=DURATIONS[i];if(i===SCENES-1)sc=SCENES-1;}
+    setScene(sc);
+  });
+  setTimeout(play,600);
+})();
+</script>
+</body>
+</html>
