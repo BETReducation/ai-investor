@@ -275,6 +275,10 @@ def stories_podcasts():
 def competitions_partnerships():
     return send_from_directory("static", "CompetitionsPartnerships.html")
 
+@app.route("/btc-swing-trade")
+def btc_swing_trade():
+    return send_from_directory("static", "btc-swing-trade.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 
