@@ -187,14 +187,17 @@ nav {
 }
 
 .nav-logo {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 20px;
-  color: #fff;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
   text-decoration: none;
+  flex-shrink: 0;
 }
-.nav-logo .logo-dot { color: var(--green); }
+.nav-logo img {
+  height: 48px;
+  width: auto;
+  border-radius: 8px;
+  display: block;
+}
 
 .nav-links {
   display: flex;
@@ -889,7 +892,9 @@ section.alt-bg { background: var(--bg2); }
 
 <!-- NAV -->
 <nav>
-  <a href="/" class="nav-logo">Win<span class="logo-dot">.</span>vestor</a>
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy">
+  </a>
   <ul class="nav-links">
     <li><a href="/signal-config">Signals</a></li>
     <li><a href="/backtester">Backtester</a></li>
@@ -1188,7 +1193,7 @@ section.alt-bg { background: var(--bg2); }
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo">Win<span style="color:var(--green)">.</span>vestor</div>
+    <div class="footer-logo"><img id="footerLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
     <div class="footer-links">
       <a href="/signal-config">Signals</a>
       <a href="/backtester">Backtester</a>
@@ -1268,19 +1273,33 @@ statNums.forEach(el => statsIO.observe(el));
 })();
 
 // Theme toggle
+const LOGO_LIGHT = '/static/logos/GCA logo light.png';
+const LOGO_DARK  = '/static/logos/GCA logo.jpeg';
+
+function updateLogos(theme) {
+  const src = theme === 'dark' ? LOGO_DARK : LOGO_LIGHT;
+  ['navLogo', 'footerLogo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.src = src;
+  });
+}
+
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('apex-theme', next);
   updateToggleIcon(next);
+  updateLogos(next);
 }
 function updateToggleIcon(theme) {
   const btn = document.getElementById('themeToggle');
   if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
 }
-// Set initial icon
-updateToggleIcon(document.documentElement.getAttribute('data-theme') || 'light');
+// Set initial icon and logo
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+updateLogos(_initialTheme);
 
 // Nav background on scroll
 const nav = document.querySelector('nav');
