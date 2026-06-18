@@ -1259,15 +1259,15 @@ statNums.forEach(el => statsIO.observe(el));
     const res = await fetch('/api/me', { credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
-      const signIn = document.getElementById('navSignIn');
-      const appBtn = document.getElementById('navAppBtn');
-      if (signIn) {
-        signIn.textContent = data.username;
-        signIn.href = '/profile';
-        signIn.style.color = 'var(--green)';
-        signIn.style.borderColor = 'var(--green)';
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) {
+          signIn.textContent = data.username;
+          signIn.href = '/profile';
+          signIn.style.color = 'var(--green)';
+          signIn.style.borderColor = 'var(--green)';
+        }
       }
-      if (appBtn) appBtn.textContent = 'Go to App';
     }
   } catch { /* not logged in, keep defaults */ }
 })();
