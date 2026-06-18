@@ -247,6 +247,10 @@ def index():
     return send_from_directory("static", "index.html")
 
 
+@app.route("/login")
+def login_page():
+    return send_from_directory("static", "login.html")
+
 @app.route("/signal-config")
 def signal_config():
     return send_from_directory("static", "signal_config.html")

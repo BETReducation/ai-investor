@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Winvestor — Sign In</title>
+<script>
+  var _t = localStorage.getItem('apex-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #060812;
+  --bg2:     #090c18;
+  --bg3:     #0d1020;
+  --border:  rgba(255,255,255,0.09);
+  --border2: rgba(255,255,255,0.16);
+  --text:    #e8eaf6;
+  --muted:   #8892b0;
+  --green:   #00d4aa;
+  --green2:  #00b891;
+  --input-bg: rgba(255,255,255,0.05);
+  --input-border: rgba(255,255,255,0.10);
+  --input-focus: rgba(0,212,170,0.40);
+  --card-bg: rgba(13,16,32,0.90);
+}
+
+[data-theme="light"] {
+  --bg:      #f5f7ff;
+  --bg2:     #edf0fa;
+  --bg3:     #e4e8f5;
+  --border:  rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text:    #1a1d2e;
+  --muted:   #556080;
+  --green:   #00a882;
+  --green2:  #008f6e;
+  --input-bg: rgba(255,255,255,0.80);
+  --input-border: rgba(0,0,0,0.14);
+  --input-focus: rgba(0,168,130,0.40);
+  --card-bg: rgba(255,255,255,0.92);
+}
+
+html, body {
+  min-height: 100%;
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Background grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,170,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,170,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+[data-theme="light"] body::before {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+}
+
+/* Radial glow */
+body::after {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px; height: 500px;
+  background: radial-gradient(ellipse, rgba(0,212,170,0.08) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LAYOUT ── */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* ── CARD ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 44px 44px 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.25),
+    0 0 60px rgba(0,212,170,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── LOGO ── */
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.logo a {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.logo .dot { color: var(--green); }
+.logo-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+  border: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  padding: 9px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+}
+.tab.active {
+  background: var(--card-bg);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* ── FORM ── */
+.field { margin-bottom: 16px; }
+.field-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+  display: block;
+}
+.field input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field input::placeholder { color: var(--muted); opacity: 0.6; }
+.field input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.remember input { width: auto; accent-color: var(--green); cursor: pointer; }
+
+/* ── SUBMIT BUTTON ── */
+.submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--green);
+  color: #03130f;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 0 30px rgba(0,212,170,0.20);
+}
+.submit-btn:hover { background: var(--green2); box-shadow: 0 0 40px rgba(0,212,170,0.35); transform: translateY(-1px); }
+.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ── ERROR / SUCCESS ── */
+.msg {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+.msg.error { background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.25); color: #f87171; }
+.msg.success { background: rgba(0,212,170,0.10); border: 1px solid rgba(0,212,170,0.25); color: var(--green); }
+
+/* ── BACK LINK ── */
+.back {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.back a { color: var(--green); text-decoration: none; font-weight: 600; }
+.back a:hover { text-decoration: underline; }
+
+/* ── THEME TOGGLE ── */
+.theme-row {
+  position: fixed;
+  top: 20px; right: 24px;
+  z-index: 10;
+}
+.theme-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  backdrop-filter: blur(8px);
+}
+.theme-btn:hover { background: var(--bg3); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="theme-row">
+  <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+</div>
+
+<div class="page">
+  <div class="card">
+
+    <div class="logo">
+      <a href="/">Win<span class="dot">.</span>vestor</a>
+      <div class="logo-sub">Your Investing Education Hub</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">LOGIN</button>
+      <button class="tab" id="tabRegister" onclick="switchTab('register')">REGISTER</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginPanel">
+      <div class="msg error" id="loginError"></div>
+      <div class="field">
+        <label class="field-label" for="loginUsername">Username</label>
+        <input type="text" id="loginUsername" placeholder="Enter username" autocomplete="username">
+      </div>
+      <div class="field">
+        <label class="field-label" for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <label class="remember">
+        <input type="checkbox" id="loginRemember" checked> Keep me signed in
+      </label>
+      <button class="submit-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerPanel" style="display:none;">
+      <div class="msg error" id="registerError"></div>
+      <div class="msg success" id="registerSuccess"></div>
+      <div class="field">
+        <label class="field-label" for="regUsername">Username</label>
+        <input type="text" id="regUsername" placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="field">
+        <label class="field-label" for="regEmail">Email</label>
+        <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="field-label" for="regPassword">Password</label>
+        <input type="password" id="regPassword" placeholder="At least 6 characters" autocomplete="new-password">
+      </div>
+      <div class="field" style="margin-bottom:22px;">
+        <label class="field-label" for="regConfirm">Confirm Password</label>
+        <input type="password" id="regConfirm" placeholder="Repeat password" autocomplete="new-password"
+               onkeydown="if(event.key==='Enter') doRegister()">
+      </div>
+      <button class="submit-btn" id="registerBtn" onclick="doRegister()"
+              style="background:rgba(124,58,237,0.85);color:#fff;box-shadow:0 0 30px rgba(124,58,237,0.20);">
+        Create Account
+      </button>
+    </div>
+
+    <div class="back">← <a href="/">Back to homepage</a></div>
+  </div>
+</div>
+
+<script>
+// ── Theme ──
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('apex-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'light' ? '🌙' : '☀️';
+}
+document.getElementById('themeToggle').textContent =
+  (document.documentElement.getAttribute('data-theme') === 'dark') ? '☀️' : '🌙';
+
+// ── Tabs ──
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('loginPanel').style.display    = isLogin ? '' : 'none';
+  document.getElementById('registerPanel').style.display = isLogin ? 'none' : '';
+  document.getElementById('tabLogin').classList.toggle('active', isLogin);
+  document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+}
+
+// ── Redirect after auth ──
+function getRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('next') || '/signal-config';
+}
+
+// ── Login ──
+async function doLogin() {
+  const btn      = document.getElementById('loginBtn');
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const remember = document.getElementById('loginRemember').checked;
+  const errEl    = document.getElementById('loginError');
+
+  errEl.style.display = 'none';
+  if (!username || !password) { showError(errEl, 'Please enter your username and password.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, password, remember }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(errEl, data.error || 'Login failed. Check your credentials.'); return; }
+    if (remember) localStorage.setItem('apexSession', '1');
+    window.location.href = getRedirect();
+  } catch {
+    showError(errEl, 'Cannot reach server — please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+// ── Register ──
+async function doRegister() {
+  const btn      = document.getElementById('registerBtn');
+  const username = document.getElementById('regUsername').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm  = document.getElementById('regConfirm').value;
+  const errEl    = document.getElementById('registerError');
+  const okEl     = document.getElementById('registerSuccess');
+
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (!username || !password) { showError(errEl, 'Username and password are required.'); return; }
+  if (!email)                 { showError(errEl, 'Email address is required.'); return; }
+  if (password !== confirm)   { showError(errEl, 'Passwords do not match.'); return; }
+  if (password.length < 6)    { showError(errEl, 'Password must be at least 6 characters.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(errEl, data.error || 'Registration failed.'); return; }
+    localStorage.setItem('apexSession', '1');
+    okEl.textContent = 'Account created! Redirecting…';
+    okEl.style.display = 'block';
+    setTimeout(() => { window.location.href = getRedirect(); }, 1000);
+  } catch {
+    showError(errEl, 'Cannot reach server — please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Account';
+  }
+}
+
+function showError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+</script>
+</body>
+</html>
