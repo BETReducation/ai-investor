@@ -228,13 +228,29 @@ def _ensure_default_user() -> None:
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
 
-def _fetch_ohlcv(symbol: str, period: str = "3mo", interval: str = "1d") -> pd.DataFrame:
+def _fetch_ohlcv(
+    symbol: str,
+    period: str = "3mo",
+    interval: str = "1d",
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> pd.DataFrame:
     if interval not in VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
-    if period not in VALID_PERIODS:
-        raise ValueError(f"Invalid period: {period}")
     ticker = yf.Ticker(symbol.upper())
-    df = ticker.history(period=period, interval=interval, auto_adjust=True)
+    if start_date:
+        import datetime as _dt
+        try:
+            _dt.date.fromisoformat(start_date)
+            if end_date:
+                _dt.date.fromisoformat(end_date)
+        except ValueError:
+            raise ValueError("start_date / end_date must be YYYY-MM-DD")
+        df = ticker.history(start=start_date, end=end_date or None, interval=interval, auto_adjust=True)
+    else:
+        if period not in VALID_PERIODS:
+            raise ValueError(f"Invalid period: {period}")
+        df = ticker.history(period=period, interval=interval, auto_adjust=True)
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol}")
     return df
@@ -657,9 +673,11 @@ def signals():
 
 @app.route("/api/backtest", methods=["GET"])
 def backtest():
-    symbol = request.args.get("symbol", "").strip()
-    period = request.args.get("period", "2y")
-    interval = request.args.get("interval", "1d")
+    symbol     = request.args.get("symbol", "").strip()
+    period     = request.args.get("period", "2y")
+    interval   = request.args.get("interval", "1d")
+    start_date = request.args.get("start_date", "").strip() or None
+    end_date   = request.args.get("end_date", "").strip() or None
 
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
@@ -688,7 +706,7 @@ def backtest():
     calc_params = _extract_calc_params(request.args)
 
     try:
-        df = _fetch_ohlcv(symbol, period, interval)
+        df = _fetch_ohlcv(symbol, period, interval, start_date=start_date, end_date=end_date)
         trades, equity_curve, bah_curve = run_backtest(
             df,
             thresholds=thresholds or None,
@@ -698,9 +716,10 @@ def backtest():
             min_confidence=min_confidence,
         )
         metrics = calculate_metrics(trades, equity_curve)
+        period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
         return jsonify({
             "symbol":       symbol.upper(),
-            "period":       period,
+            "period":       period_label,
             "interval":     interval,
             "metrics":      metrics,
             "trades":       trades,

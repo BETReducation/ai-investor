@@ -528,12 +528,30 @@
       <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. AAPL, BTC-USD" value="AAPL" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
 
       <div class="ctrl-label" style="margin-top:6px;">PERIOD</div>
-      <select id="btPeriod" class="lab-input">
-        <option value="1y">1 Year</option>
-        <option value="2y" selected>2 Years</option>
-        <option value="5y">5 Years</option>
-        <option value="max">Max</option>
-      </select>
+      <div style="display:flex;gap:4px;margin-bottom:4px;">
+        <button id="modePreset" onclick="setPeriodMode('preset')"
+          style="flex:1;padding:3px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">PRESET</button>
+        <button id="modeCustom" onclick="setPeriodMode('custom')"
+          style="flex:1;padding:3px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">CUSTOM</button>
+      </div>
+      <div id="presetPanel">
+        <select id="btPeriod" class="lab-input">
+          <option value="1mo">1 Month</option>
+          <option value="3mo">3 Months</option>
+          <option value="6mo">6 Months</option>
+          <option value="1y">1 Year</option>
+          <option value="2y" selected>2 Years</option>
+          <option value="5y">5 Years</option>
+          <option value="max">Max</option>
+        </select>
+      </div>
+      <div id="customPanel" style="display:none;">
+        <div class="ctrl-label" style="margin-top:0;">START DATE</div>
+        <input type="date" id="btStartDate" class="lab-input" style="margin-bottom:4px;">
+        <div class="ctrl-label">END DATE</div>
+        <input type="date" id="btEndDate" class="lab-input" placeholder="Leave blank for today">
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;letter-spacing:.5px;">Leave end date blank to use today</div>
+      </div>
 
       <div class="ctrl-label" style="margin-top:2px;">INTERVAL</div>
       <select id="btInterval" class="lab-input" style="margin-bottom:0;">
@@ -1049,6 +1067,29 @@ function setState(id) {
   });
 }
 
+// ── Period mode toggle ────────────────────────────────────────────────────────
+function setPeriodMode(mode) {
+  const isCustom = mode === 'custom';
+  document.getElementById('presetPanel').style.display = isCustom ? 'none' : '';
+  document.getElementById('customPanel').style.display = isCustom ? '' : 'none';
+  document.getElementById('modePreset').style.background = isCustom ? 'var(--bg-secondary)' : 'var(--accent-green)';
+  document.getElementById('modePreset').style.color = isCustom ? 'var(--text-secondary)' : '#000';
+  document.getElementById('modeCustom').style.background = isCustom ? 'var(--accent-green)' : 'var(--bg-secondary)';
+  document.getElementById('modeCustom').style.color = isCustom ? '#000' : 'var(--text-secondary)';
+}
+
+// Set default end date to today and start date to 1 year ago
+(function initDateDefaults() {
+  const today = new Date();
+  const oneYearAgo = new Date(today);
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const fmt = d => d.toISOString().slice(0, 10);
+  document.getElementById('btEndDate').value = fmt(today);
+  document.getElementById('btStartDate').value = fmt(oneYearAgo);
+  document.getElementById('btEndDate').max = fmt(today);
+  document.getElementById('btStartDate').max = fmt(today);
+})();
+
 // ── Label updaters ────────────────────────────────────────────────────────────
 function updateMacdLabel() {
   const f = document.getElementById('macdFast').value;
@@ -1079,8 +1120,11 @@ function toggleIndSettings(id) {
 // ── Run backtest ──────────────────────────────────────────────────────────────
 async function runBacktest() {
   const symbol   = document.getElementById('btSymbol').value.trim().toUpperCase();
-  const period   = document.getElementById('btPeriod').value;
-  const interval = document.getElementById('btInterval').value;
+  const isCustom   = document.getElementById('customPanel').style.display !== 'none';
+  const period     = isCustom ? '2y' : document.getElementById('btPeriod').value;
+  const startDate  = isCustom ? document.getElementById('btStartDate').value : '';
+  const endDate    = isCustom ? document.getElementById('btEndDate').value : '';
+  const interval   = document.getElementById('btInterval').value;
   const sl       = document.getElementById('stopLoss').value;
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
@@ -1111,11 +1155,20 @@ async function runBacktest() {
     return;
   }
 
+  if (isCustom && !startDate) {
+    document.getElementById('btStartDate').focus();
+    document.getElementById('btStartDate').style.borderColor = 'var(--accent-red)';
+    setTimeout(() => document.getElementById('btStartDate').style.borderColor = '', 1500);
+    return;
+  }
+
   document.getElementById('runBtn').disabled = true;
   setState('loadingState');
 
   const params = new URLSearchParams({
     symbol, period, interval,
+    ...(startDate && { start_date: startDate }),
+    ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, min_confidence: conf,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
