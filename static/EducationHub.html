@@ -32,8 +32,6 @@
 /* ── LIGHT MODE OVERRIDES ── */
 [data-theme="light"] body { background: var(--bg); }
 
-[data-theme="light"] .cursor { background: rgba(0,0,0,0.8); }
-[data-theme="light"] .cursor-ring { border-color: rgba(0,0,0,0.2); }
 
 [data-theme="light"] .logo { color: rgba(30,35,60,0.8); }
 [data-theme="light"] .logo span { color: rgba(80,90,130,0.5); }
@@ -88,33 +86,8 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
-  cursor: none;
 }
 
-/* ── CURSOR ── */
-.cursor {
-  position: fixed;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.85);
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%,-50%);
-  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease;
-  mix-blend-mode: difference;
-}
-.cursor-ring {
-  position: fixed;
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.3);
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%,-50%);
-  transition: transform 0.18s ease, width 0.25s ease, height 0.25s ease;
-}
-.cursor.hover { width: 8px; height: 8px; }
-.cursor-ring.hover { width: 56px; height: 56px; border-color: rgba(167,139,250,0.5); }
 
 /* ── BACK LINK ── */
 .back-link {
@@ -281,7 +254,7 @@ section {
   padding: 20px 12px;
   text-decoration: none;
   text-align: center;
-  cursor: none;
+  cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: border-color 0.3s, background 0.3s, transform 0.25s;
@@ -600,7 +573,7 @@ section {
   color: var(--text-primary);
   font-size: 15px;
   display: flex; align-items: center; justify-content: center;
-  cursor: none;
+  cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
   backdrop-filter: blur(8px);
 }
@@ -614,8 +587,6 @@ section {
 </head>
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursor-ring"></div>
 <canvas id="bg-canvas"></canvas>
 
 <a href="/" class="back-link">
@@ -885,23 +856,6 @@ section {
 </section>
 
 <script>
-// ── Custom cursor ──
-const cursor = document.getElementById('cursor');
-const ring = document.getElementById('cursor-ring');
-let mx = -100, my = -100, rx = -100, ry = -100;
-
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-(function animateCursor() {
-  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animateCursor);
-})();
-
-document.querySelectorAll('a, button, .nav-tile').forEach(el => {
-  el.addEventListener('mouseenter', () => { cursor.classList.add('hover'); ring.classList.add('hover'); });
-  el.addEventListener('mouseleave', () => { cursor.classList.remove('hover'); ring.classList.remove('hover'); });
-});
 
 // ── Particle background ──
 const canvas = document.getElementById('bg-canvas');

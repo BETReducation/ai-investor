@@ -43,13 +43,10 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
-  cursor: none;
   transition: background 0.3s;
 }
 
 /* ── LIGHT MODE ── */
-[data-theme="light"] .cursor { background: rgba(0,0,0,0.8); }
-[data-theme="light"] .cursor-ring { border-color: rgba(0,0,0,0.2); }
 [data-theme="light"] .logo { color: rgba(30,35,60,0.8); }
 [data-theme="light"] .logo span { color: rgba(80,90,130,0.5); }
 [data-theme="light"] #bg-canvas { opacity: 0.18; }
@@ -71,22 +68,6 @@ body {
 [data-theme="light"] .filter-btn:hover, [data-theme="light"] .filter-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
 [data-theme="light"] .footer-cta a { color: #fff; }
 
-/* ── CURSOR ── */
-.cursor {
-  position: fixed; width: 14px; height: 14px; border-radius: 50%;
-  background: rgba(255,255,255,0.85); pointer-events: none; z-index: 9999;
-  transform: translate(-50%,-50%);
-  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease;
-  mix-blend-mode: difference;
-}
-.cursor-ring {
-  position: fixed; width: 40px; height: 40px; border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.3); pointer-events: none; z-index: 9998;
-  transform: translate(-50%,-50%);
-  transition: transform 0.18s ease, width 0.25s ease, height 0.25s ease;
-}
-.cursor.hover { width: 8px; height: 8px; }
-.cursor-ring.hover { width: 56px; height: 56px; border-color: rgba(52,211,153,0.5); }
 
 /* ── NAV ── */
 .back-link {
@@ -597,8 +578,6 @@ section { position: relative; z-index: 1; }
 </head>
 <body>
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursor-ring"></div>
 <canvas id="bg-canvas"></canvas>
 
 <a href="/" class="back-link">
@@ -1013,22 +992,6 @@ section { position: relative; z-index: 1; }
 </section>
 
 <script>
-// ── Cursor ──
-const cursor = document.getElementById('cursor');
-const ring   = document.getElementById('cursor-ring');
-let mx = -100, my = -100, rx = -100, ry = -100;
-document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-(function animCursor() {
-  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-  requestAnimationFrame(animCursor);
-})();
-document.querySelectorAll('a, button, .partner-card, .video-card, .podcast-card, .blog-card').forEach(el => {
-  el.addEventListener('mouseenter', () => { cursor.classList.add('hover'); ring.classList.add('hover'); });
-  el.addEventListener('mouseleave', () => { cursor.classList.remove('hover'); ring.classList.remove('hover'); });
-});
-
 // ── Particles ──
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
