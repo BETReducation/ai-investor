@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpha — Winvestor</title>
+<script>
+  var _t = localStorage.getItem('apex-theme') || 'light';
+  localStorage.setItem('apex-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#060812; --bg2:#090c18; --bg3:#0d1020;
+  --card:rgba(255,255,255,0.035); --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.12);
+  --text:#e8eaf6; --muted:#8892b0; --green:#00d4aa; --green2:#00b891;
+  --purple:#7c3aed; --purple2:#a78bfa; --teal:#2dd4bf; --gold:#fbbf24;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; line-height: 1.6; }
+[data-theme="light"] { --bg:#f5f7ff; --bg2:#edf0fa; --bg3:#e4e8f5; --card:rgba(0,0,0,0.03); --border:rgba(0,0,0,0.08); --border2:rgba(0,0,0,0.14); --text:#1a1d2e; --muted:#556080; --green:#00a882; --green2:#008f6e; --purple:#6d28d9; --purple2:#7c3aed; --teal:#0d9488; --gold:#d97706; }
+[data-theme="light"] body { background: var(--bg); color: var(--text); }
+[data-theme="light"] nav { background: rgba(245,247,255,0.88); border-bottom-color: rgba(0,0,0,0.09); }
+[data-theme="light"] footer { border-top-color: rgba(0,0,0,0.09); }
+[data-theme="light"] .hub-card { background: rgba(255,255,255,0.70); border-color: rgba(0,0,0,0.09); }
+[data-theme="light"] .hub-card:hover { background: rgba(255,255,255,0.95); border-color: rgba(0,0,0,0.18); }
+[data-theme="light"] .hero-title { color: #0d0f1c; }
+[data-theme="light"] .section-title { color: #0d0f1c; }
+[data-theme="light"] .card-title { color: #0d0f1c; }
+[data-theme="light"] .notify-box { background: rgba(255,255,255,0.70); border-color: rgba(0,0,0,0.09); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; height: 68px; background: rgba(6,8,18,0.82); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); border-bottom: 1px solid var(--border); transition: background 0.3s; }
+.nav-logo { display: flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+.nav-logo img { height: 48px; width: auto; border-radius: 8px; display: block; }
+.nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+.nav-links li { position: relative; list-style: none; }
+.nav-links > li > a { display: flex; align-items: center; gap: 3px; color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; white-space: nowrap; }
+.nav-links > li > a:hover { color: var(--text); }
+.nav-chevron { font-size: 9px; opacity: 0.55; transition: transform 0.2s; }
+.has-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+.nav-dropdown { display: none; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 6px 0; min-width: 175px; list-style: none; z-index: 300; box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+.has-dropdown:hover .nav-dropdown { display: block; }
+.nav-dropdown li a { display: block; padding: 9px 18px; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none; transition: color 0.15s, background 0.15s; }
+.nav-dropdown li a:hover { color: var(--green); background: rgba(0,212,170,0.06); }
+.nav-cta { display: flex; align-items: center; gap: 12px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text); padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; text-decoration: none; transition: border-color 0.2s, background 0.2s; }
+.btn-ghost:hover { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.06); }
+.btn-primary { background: var(--green); color: #03130f; padding: 9px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; text-decoration: none; transition: background 0.2s, transform 0.15s; white-space: nowrap; }
+.btn-primary:hover { background: var(--green2); transform: translateY(-1px); }
+.theme-toggle { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border2); background: var(--card); color: var(--muted); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+.theme-toggle:hover { background: var(--border); color: var(--text); }
+@media (max-width: 900px) { .nav-links { display: none; } }
+/* PAGE */
+.page-hero { padding: 140px 5% 80px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(38px, 6vw, 68px); letter-spacing: -0.03em; line-height: 1.08; color: #fff; margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 560px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 80px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 1100px; margin: 0 auto; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(28px, 3.5vw, 44px); letter-spacing: -0.03em; line-height: 1.12; color: #fff; margin-bottom: 12px; text-align: center; }
+.section-desc { font-size: 16px; color: var(--muted); max-width: 520px; line-height: 1.7; margin: 0 auto 48px; text-align: center; }
+.hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.hub-grid.cols2 { grid-template-columns: repeat(2, 1fr); max-width: 720px; margin: 0 auto; }
+@media (max-width: 900px) { .hub-grid { grid-template-columns: 1fr; } .hub-grid.cols2 { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 14px; transition: border-color 0.25s, background 0.25s, transform 0.25s; position: relative; overflow: hidden; }
+.hub-card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.4s; background: radial-gradient(ellipse at 30% 0%, rgba(124,58,237,0.10) 0%, transparent 60%); }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.hub-card:hover::before { opacity: 1; }
+.card-icon { font-size: 36px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 20px; color: #fff; }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.65; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: gap 0.2s; color: var(--purple2); }
+.hub-card:hover .card-link { gap: 10px; }
+.notify-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 56px 40px; text-align: center; max-width: 560px; margin: 0 auto; }
+.notify-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 26px; color: #fff; margin-bottom: 10px; }
+[data-theme="light"] .notify-title { color: #0d0f1c; }
+.notify-desc { font-size: 15px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+.notify-form { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.notify-input { flex: 1; min-width: 200px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 11px 16px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.notify-input:focus { border-color: var(--purple2); }
+.notify-btn { background: var(--purple2); color: #03130f; border: none; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+.notify-btn:hover { opacity: 0.88; }
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <a href="/tools/signals" class="btn-primary" id="navAppBtn">Go to App</a>
+  </div>
+</nav>
+
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Expert Insights</div>
+    <h1 class="hero-title">Raw <span class="accent">Alpha</span></h1>
+    <p class="hero-sub">Unfiltered market insight from four analysts, each with a distinct edge. Find the perspective that sharpens your own thinking.</p>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+    <div class="hub-grid reveal" style="grid-template-columns:repeat(3,1fr);">
+      <a href="/alpha/connor" class="hub-card">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">Connor</div>
+        <div class="card-desc">Macro-focused analysis. Connor tracks global flows, central bank policy and cross-asset correlations to find structural trades others miss.</div>
+        <div class="card-link">Read Connor's Alpha <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+      <a href="/alpha/dave" class="hub-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Dave</div>
+        <div class="card-desc">Technical precision. Dave uses price action, volume analysis and multi-timeframe confluence to identify high-probability setups across equities and crypto.</div>
+        <div class="card-link">Read Dave's Alpha <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+      <a href="/alpha/gary" class="hub-card">
+        <div class="card-icon">💡</div>
+        <div class="card-title">Gary</div>
+        <div class="card-desc">Fundamental deep dives. Gary analyses company financials, sector tailwinds and valuation to surface long-term investment opportunities.</div>
+        <div class="card-link">Read Gary's Alpha <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+      <a href="/alpha/tom" class="hub-card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Tom</div>
+        <div class="card-desc">Crypto-native edge. Tom covers on-chain data, DeFi flows, tokenomics and the emerging narratives shaping the next market cycle.</div>
+        <div class="card-link">Read Tom's Alpha <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+      <a href="/alpha/podcast" class="hub-card">
+        <div class="card-icon">🎙️</div>
+        <div class="card-title">Podcast</div>
+        <div class="card-desc">The team in conversation. Market breakdowns, investment debates, interview guests and unfiltered takes on what's moving markets right now.</div>
+        <div class="card-link">Listen Now <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2025 Winvestor. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+const LOGO_LIGHT = '/static/logos/GCA logo light.png';
+const LOGO_DARK  = '/static/logos/GCA logo.jpeg';
+function updateLogos(theme) {
+  const src = theme === 'dark' ? LOGO_DARK : LOGO_LIGHT;
+  ['navLogo', 'footerLogo'].forEach(id => { const el = document.getElementById(id); if (el) el.src = src; });
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('apex-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme); updateLogos(_initialTheme);
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  nav.style.background = window.scrollY > 40
+    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
+    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
+});
+</script>
+</body>
+</html>

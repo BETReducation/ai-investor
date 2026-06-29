@@ -299,6 +299,62 @@ def competitions_partnerships():
 def btc_swing_trade():
     return send_from_directory("static", "btc-swing-trade.html")
 
+# ── New nav routes ────────────────────────────────────────────────────────────
+
+@app.route("/learn")
+def learn(): return send_from_directory("static", "learn.html")
+
+@app.route("/learn/beginner")
+def learn_beginner(): return send_from_directory("static", "EducationHub.html")
+
+@app.route("/learn/intermediate")
+def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
+
+@app.route("/learn/pro")
+def learn_pro(): return send_from_directory("static", "learn-pro.html")
+
+@app.route("/tools")
+def tools(): return send_from_directory("static", "tools.html")
+
+@app.route("/tools/signals")
+def tools_signals(): return send_from_directory("static", "signal_config.html")
+
+@app.route("/tools/portfolio")
+def tools_portfolio(): return send_from_directory("static", "portfolio-balancer.html")
+
+@app.route("/arena")
+def arena(): return send_from_directory("static", "arena.html")
+
+@app.route("/arena/market-xi")
+def arena_market_xi(): return send_from_directory("static", "arena-market-xi.html")
+
+@app.route("/arena/competitions")
+def arena_competitions(): return send_from_directory("static", "arena-competitions.html")
+
+@app.route("/arena/predictions")
+def arena_predictions(): return send_from_directory("static", "arena-predictions.html")
+
+@app.route("/alpha")
+def alpha(): return send_from_directory("static", "alpha.html")
+
+@app.route("/alpha/connor")
+def alpha_connor(): return send_from_directory("static", "alpha-connor.html")
+
+@app.route("/alpha/dave")
+def alpha_dave(): return send_from_directory("static", "alpha-dave.html")
+
+@app.route("/alpha/gary")
+def alpha_gary(): return send_from_directory("static", "alpha-gary.html")
+
+@app.route("/alpha/tom")
+def alpha_tom(): return send_from_directory("static", "alpha-tom.html")
+
+@app.route("/alpha/podcast")
+def alpha_podcast(): return send_from_directory("static", "StoriesPodcasts.html")
+
+@app.route("/partners")
+def partners(): return send_from_directory("static", "partners.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 

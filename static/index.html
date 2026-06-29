@@ -214,6 +214,44 @@ nav {
 }
 .nav-links a:hover { color: var(--text); }
 
+/* ── DROPDOWN NAV ── */
+.nav-links li { position: relative; list-style: none; }
+.nav-links > li > a {
+  display: flex; align-items: center; gap: 3px;
+  color: var(--muted); text-decoration: none;
+  font-size: 14px; font-weight: 500;
+  transition: color 0.2s; white-space: nowrap;
+}
+.nav-links > li > a:hover { color: var(--text); }
+.nav-chevron { font-size: 9px; opacity: 0.55; transition: transform 0.2s; }
+.has-dropdown:hover .nav-chevron { transform: rotate(180deg); }
+
+.nav-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 6px 0;
+  min-width: 175px;
+  list-style: none;
+  z-index: 300;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+.has-dropdown:hover .nav-dropdown { display: block; }
+.nav-dropdown li a {
+  display: block; padding: 9px 18px;
+  color: var(--muted); font-size: 13px; font-weight: 500;
+  white-space: nowrap; text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-dropdown li a:hover { color: var(--green); background: rgba(0,212,170,0.06); }
+
+@media (max-width: 900px) { .nav-links { display: none; } }
+
 .nav-cta {
   display: flex;
   align-items: center;
@@ -896,16 +934,47 @@ section.alt-bg { background: var(--bg2); }
     <img id="navLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy">
   </a>
   <ul class="nav-links">
-    <li><a href="/signal-config">Signals</a></li>
-    <li><a href="/backtester">Backtester</a></li>
-    <li><a href="/portfolio-balancer">Portfolio</a></li>
-    <li><a href="/education-hub">Learn</a></li>
-    <li><a href="/stories-podcasts">Stories</a></li>
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
   </ul>
   <div class="nav-cta">
     <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
     <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
-    <a href="/signal-config" class="btn-primary" id="navAppBtn">Go to App</a>
+    <a href="/tools/signals" class="btn-primary" id="navAppBtn">Go to App</a>
   </div>
 </nav>
 
@@ -1195,12 +1264,13 @@ section.alt-bg { background: var(--bg2); }
   <div class="footer-inner">
     <div class="footer-logo"><img id="footerLogo" src="/static/logos/GCA logo light.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
     <div class="footer-links">
-      <a href="/signal-config">Signals</a>
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
       <a href="/backtester">Backtester</a>
-      <a href="/portfolio-balancer">Portfolio</a>
-      <a href="/education-hub">Learn</a>
-      <a href="/stories-podcasts">Stories</a>
-      <a href="/competitions-partnerships">Compete</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
     </div>
     <div class="footer-copy">© 2025 Winvestor. All rights reserved.</div>
   </div>
