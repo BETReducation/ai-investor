@@ -194,10 +194,10 @@ nav {
 .footer-cta a:hover { background: var(--green2); transform: translateY(-2px); }
 
 /* ── ANIMATIONS ── */
-.reveal { opacity: 0; transform: translateY(28px); filter: blur(6px); transition: opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1), filter 0.7s cubic-bezier(.22,1,.36,1); }
-.reveal.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
+
+
+
+
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
@@ -292,13 +292,13 @@ nav {
 <!-- ── HUB CARDS ── -->
 <section class="cards-section">
   <div class="cards-inner">
-    <div class="cards-header reveal">
+    <div class="cards-header">
       <h2 class="cards-title">Pick your level</h2>
       <p class="cards-desc">Every track is built to meet you where you are and take you further than you expected.</p>
     </div>
     <div class="hub-grid">
 
-      <a href="/learn/beginner" class="hub-card reveal" data-accent="green">
+      <a href="/learn/beginner" class="hub-card" data-accent="green">
         <div class="card-icon">🚀</div>
         <div class="card-level">Beginner</div>
         <div class="card-title">Getting Started</div>
@@ -312,7 +312,7 @@ nav {
         <span class="card-link">Start learning →</span>
       </a>
 
-      <a href="/learn/intermediate" class="hub-card reveal reveal-delay-1" data-accent="purple">
+      <a href="/learn/intermediate" class="hub-card" data-accent="purple">
         <div class="card-icon">📐</div>
         <div class="card-level">Intermediate</div>
         <div class="card-title">Build Your Edge</div>
@@ -326,7 +326,7 @@ nav {
         <span class="card-link">Level up →</span>
       </a>
 
-      <a href="/learn/pro" class="hub-card reveal reveal-delay-2" data-accent="teal">
+      <a href="/learn/pro" class="hub-card" data-accent="teal">
         <div class="card-icon">🎯</div>
         <div class="card-level">Pro</div>
         <div class="card-title">Master the Market</div>
@@ -346,7 +346,7 @@ nav {
 
 <!-- ── FOOTER CTA ── -->
 <section class="footer-cta">
-  <div class="reveal">
+  <div>
     <h2>Ready to start learning?</h2>
     <p>Pick a level and begin your journey — every expert was once a beginner.</p>
     <a href="/learn/beginner">Start with Beginner →</a>
@@ -381,13 +381,6 @@ function drawParticles() {
 }
 resize(); initParticles(); drawParticles();
 window.addEventListener('resize', () => { resize(); initParticles(); });
-
-// Scroll reveal
-const reveals = document.querySelectorAll('.reveal');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-}, { threshold: 0.08 });
-reveals.forEach(el => observer.observe(el));
 
 // Auth
 (async function checkAuth() {
