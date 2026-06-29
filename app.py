@@ -350,7 +350,7 @@ def alpha_gary(): return send_from_directory("static", "alpha-gary.html")
 def alpha_tom(): return send_from_directory("static", "alpha-tom.html")
 
 @app.route("/alpha/podcast")
-def alpha_podcast(): return send_from_directory("static", "StoriesPodcasts.html")
+def alpha_podcast(): return send_from_directory("static", "alpha-podcast.html")
 
 @app.route("/partners")
 def partners(): return send_from_directory("static", "partners.html")
