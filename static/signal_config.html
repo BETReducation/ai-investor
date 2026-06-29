@@ -186,7 +186,6 @@
   </div>
   <div class="site-nav-cta">
     <button class="theme-toggle" id="themeToggle" onclick="toggleGCATheme()" title="Toggle light/dark mode">🌙</button>
-    <div class="clock" id="clock" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:1px;">--:--:--</div>
     <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;">GUEST</span>
     <button class="site-btn-ghost" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">Sign In</button>
     <button class="site-btn-ghost" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
@@ -936,8 +935,6 @@ function applyTierUI() {
 // --- INIT ---
 function init() {
   renderWatchlist();
-  updateClock();
-  setInterval(updateClock, 1000);
   initChart();
   updateTicker();
   setupToggles();
@@ -962,11 +959,6 @@ function toggleSection(bodyId, arrowId) {
   if (arrow) arrow.textContent = open ? '▸' : '▾';
 }
 
-// --- CLOCK ---
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
-}
 
 // --- TOGGLES ---
 function setupToggles() {
