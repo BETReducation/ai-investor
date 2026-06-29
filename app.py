@@ -305,7 +305,7 @@ def btc_swing_trade():
 def learn(): return send_from_directory("static", "learn.html")
 
 @app.route("/learn/beginner")
-def learn_beginner(): return send_from_directory("static", "EducationHub.html")
+def learn_beginner(): return send_from_directory("static", "learn-beginner.html")
 
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
