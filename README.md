@@ -1,2 +1,2 @@
-# AI Investor — WINVESTOR Signal Engine
+# AI Investor — Growth Capital Academy
 # ai-investor

@@ -1,5 +1,5 @@
 (function () {
-  var KEY = 'apex-theme';
+  var KEY = 'gca-theme';
 
   function preferred() {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -9,7 +9,7 @@
     document.documentElement.setAttribute('data-theme', theme);
     var btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = theme === 'dark' ? '☀' : '☾';
-    document.dispatchEvent(new CustomEvent('apex-theme-change', { detail: { theme: theme } }));
+    document.dispatchEvent(new CustomEvent('gca-theme-change', { detail: { theme: theme } }));
   }
 
   function toggle() {
@@ -21,7 +21,7 @@
 
   apply(localStorage.getItem(KEY) || preferred());
 
-  window.toggleApexTheme = toggle;
+  window.toggleGCATheme = toggle;
 
   document.addEventListener('DOMContentLoaded', function () {
     apply(localStorage.getItem(KEY) || preferred());
