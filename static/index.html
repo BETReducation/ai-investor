@@ -507,6 +507,80 @@ nav {
   pointer-events: none;
 }
 
+/* ── PORTFOLIO DONUT (hero mockup) ── */
+.mockup-portfolio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 48px;
+  background: var(--bg3);
+  padding: 20px;
+}
+.portfolio-donut-wrap {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+.portfolio-donut {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--green) 0% 40%,
+    var(--purple) 40% 65%,
+    #0088ff 65% 85%,
+    var(--gold) 85% 100%
+  );
+}
+.portfolio-donut-center {
+  position: absolute;
+  inset: 26%;
+  border-radius: 50%;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+}
+.portfolio-donut-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text);
+}
+.portfolio-donut-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.portfolio-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.portfolio-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.portfolio-legend-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.portfolio-legend-pct {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 /* Fade out bottom edge of iframe */
 .mockup-fade {
   position: absolute;
@@ -1018,10 +1092,24 @@ section.alt-bg { background: var(--bg2); }
         <div class="mockup-dot"></div>
         <div class="mockup-dot"></div>
         <div class="mockup-dot"></div>
-        <div class="mockup-url">growthcapitalacademy.com / dashboard</div>
+        <div class="mockup-url">growthcapitalacademy.com / portfolio</div>
       </div>
       <div class="mockup-iframe-wrap">
-        <iframe src="/static/dashboard.html" title="Growth Capital Academy Dashboard" scrolling="no" tabindex="-1" aria-hidden="true"></iframe>
+        <div class="mockup-portfolio">
+          <div class="portfolio-donut-wrap">
+            <div class="portfolio-donut"></div>
+            <div class="portfolio-donut-center">
+              <div class="portfolio-donut-title">Your Mix</div>
+              <div class="portfolio-donut-sub">4 asset types</div>
+            </div>
+          </div>
+          <div class="portfolio-legend">
+            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--green)"></span>Stocks <span class="portfolio-legend-pct">40%</span></div>
+            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--purple)"></span>Crypto <span class="portfolio-legend-pct">25%</span></div>
+            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:#0088ff"></span>Bonds <span class="portfolio-legend-pct">20%</span></div>
+            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--gold)"></span>Cash <span class="portfolio-legend-pct">15%</span></div>
+          </div>
+        </div>
         <div class="mockup-fade"></div>
       </div>
     </div>
@@ -1031,22 +1119,22 @@ section.alt-bg { background: var(--bg2); }
       <div class="chip">
         <div class="chip-icon green">↑</div>
         <div>
-          <div class="chip-label">BTC Signal</div>
-          <div class="chip-value">+8.4% today</div>
+          <div class="chip-label">Stocks</div>
+          <div class="chip-value">40% of mix</div>
         </div>
       </div>
       <div class="chip">
         <div class="chip-icon purple">⚡</div>
         <div>
-          <div class="chip-label">Active Signals</div>
-          <div class="chip-value">24 Live</div>
+          <div class="chip-label">Crypto</div>
+          <div class="chip-value">25% of mix</div>
         </div>
       </div>
       <div class="chip">
         <div class="chip-icon gold">★</div>
         <div>
-          <div class="chip-label">Backtest Win Rate</div>
-          <div class="chip-value">73.2%</div>
+          <div class="chip-label">Cash &amp; Bonds</div>
+          <div class="chip-value">35% of mix</div>
         </div>
       </div>
     </div>
