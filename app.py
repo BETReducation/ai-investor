@@ -566,6 +566,9 @@ def api_get_profile():
     })
 
 
+PRESET_AVATARS = {"preset:beginner", "preset:intermediate", "preset:pro"}
+
+
 @app.route("/api/profile/update", methods=["POST"])
 @login_required
 def api_update_profile():
@@ -577,6 +580,11 @@ def api_update_profile():
     for field in ("email", "display_name", "bio", "investor_type"):
         if field in data:
             profile[field] = str(data[field]).strip()
+    if "profile_picture" in data:
+        value = str(data["profile_picture"]).strip()
+        if value not in PRESET_AVATARS:
+            return jsonify({"error": "Invalid avatar selection"}), 400
+        profile["profile_picture"] = value
     users[current_user.id]["profile"] = profile
     _save_users(users)
     return jsonify({"success": True, "profile": profile})

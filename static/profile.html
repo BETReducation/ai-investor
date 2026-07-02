@@ -3,274 +3,286 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GROWTH CAPITAL ACADEMY — Profile</title>
+<title>Profile — Growth Capital Academy</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/gca.css">
-<script src="/static/js/theme.js"></script>
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  .profile-page {
-    min-height: calc(100vh - 44px);
-    padding: 32px 20px 60px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .profile-container {
-    width: 100%;
-    max-width: 820px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.page-hero { padding: 100px 5% 40px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.content-section { padding: 0 5% 80px; }
+.content-inner { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-  /* Hero */
-  .profile-hero {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 28px 28px;
-  }
-  .avatar-wrap { position: relative; flex-shrink: 0; cursor: pointer; }
-  .avatar-circle {
-    width: 88px; height: 88px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--border-bright);
-    background: var(--bg-card);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px; color: var(--text-muted);
-    overflow: hidden;
-  }
-  .avatar-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .avatar-overlay {
-    position: absolute; inset: 0; border-radius: 50%;
-    background: rgba(0,0,0,0.65);
-    display: none; align-items: center; justify-content: center;
-    flex-direction: column; gap: 2px;
-    font-size: 8px; letter-spacing: 1px; color: var(--text-primary); text-align: center;
-  }
-  .avatar-wrap:hover .avatar-overlay { display: flex; }
-  .profile-hero-info { flex: 1; min-width: 0; }
-  .hero-display-name {
-    font-size: 20px; font-weight: 700; letter-spacing: 2px;
-    color: var(--text-primary); margin-bottom: 3px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .hero-username {
-    font-size: 10px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 12px;
-  }
-  .tier-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 12px; border-radius: 2px;
-    font-size: 9px; font-weight: 700; letter-spacing: 2px;
-  }
-  .tier-pill.basic    { background: rgba(61,80,104,0.25); border: 1px solid var(--text-muted); color: var(--text-secondary); }
-  .tier-pill.signal_tester { background: rgba(0,136,255,0.1); border: 1px solid var(--accent-blue); color: var(--accent-blue); }
-  .tier-pill.power_user    { background: rgba(255,170,0,0.1); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
+/* Profile hero card */
+.profile-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; position: relative; }
+.profile-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
+.profile-hero-left { display: flex; align-items: center; gap: 24px; }
+.profile-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 26px; color: var(--text); margin-bottom: 4px; }
+.profile-email { font-size: 14px; color: var(--muted); }
+.profile-meta-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.hero-username { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+.tier-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.tier-pill.basic { background: rgba(136,146,176,0.14); border: 1px solid rgba(136,146,176,0.3); color: var(--muted); }
+.tier-pill.signal_tester { background: rgba(0,136,255,0.1); border: 1px solid #0088ff; color: #0088ff; }
+.tier-pill.power_user { background: rgba(251,191,36,0.12); border: 1px solid var(--gold); color: var(--gold); }
 
-  /* Sections */
-  .profile-section { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-  .section-hdr {
-    background: var(--bg-secondary); border-bottom: 1px solid var(--border);
-    padding: 9px 20px;
-    font-size: 8px; letter-spacing: 3px; color: var(--text-muted); font-weight: 700;
-  }
-  .section-body { padding: 22px 22px; }
+/* Avatar */
+.avatar-wrap { position: relative; flex-shrink: 0; }
+.avatar-circle { width: 96px; height: 96px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--bg3); border: 2px solid var(--border2); font-size: 34px; font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--muted); }
+.avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-preset { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.preset-beginner { background: linear-gradient(135deg, #00d4aa, #00b891); }
+.preset-intermediate { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+.preset-pro { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+.avatar-emoji { font-size: 38px; line-height: 1; }
+.avatar-edit-badge { position: absolute; bottom: 0; right: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--purple2); color: #03130f; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 2px solid var(--bg2); transition: transform 0.15s; }
+.avatar-edit-badge:hover { transform: scale(1.08); }
+.avatar-picker { display: none; position: absolute; top: 110%; left: 0; z-index: 50; width: 260px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; padding: 18px; box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+.avatar-picker-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; color: var(--text); margin-bottom: 12px; }
+.avatar-picker-upload { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: border-color 0.2s; }
+.avatar-picker-upload:hover { border-color: var(--purple2); }
+.avatar-picker-divider { font-size: 11px; color: var(--muted); text-align: center; margin: 14px 0 10px; }
+.avatar-picker-presets { display: flex; justify-content: space-between; gap: 8px; }
+.avatar-preset-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; font-family: inherit; color: var(--muted); font-size: 10px; padding: 6px 4px; border-radius: 10px; transition: background 0.15s, color 0.15s; }
+.avatar-preset-btn:hover { background: var(--bg3); color: var(--text); }
+.avatar-preset-btn .avatar-preset { width: 44px; height: 44px; }
+.avatar-preset-btn .avatar-emoji { font-size: 20px; }
 
-  /* Form */
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group.span2 { grid-column: 1 / -1; }
-  .form-label { font-size: 8px; letter-spacing: 2px; color: var(--text-muted); font-weight: 700; }
-  .form-input {
-    background: var(--bg-card); border: 1px solid var(--border);
-    color: var(--text-primary); font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; padding: 8px 10px; outline: none; border-radius: 2px;
-    transition: border-color 0.15s; width: 100%;
-  }
-  .form-input:focus { border-color: var(--accent-blue); }
-  .form-input:disabled { opacity: 0.45; cursor: not-allowed; }
-  .form-textarea { resize: vertical; min-height: 72px; }
-  .form-actions { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
-  .form-hint { font-size: 9px; color: var(--text-muted); }
+/* Card headers */
+.card-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 10px; }
+.card-header-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); display: flex; align-items: center; gap: 10px; }
+.card-header-title .icon { font-size: 20px; }
+.card-header-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; margin-top: -12px; }
 
-  /* Buttons */
-  .btn { padding: 8px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 2px; cursor: pointer; border-radius: 2px; transition: all 0.15s; }
-  .btn-blue { background: rgba(0,136,255,0.1); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
-  .btn-blue:hover { background: rgba(0,136,255,0.2); }
-  .btn-blue:disabled { opacity: 0.45; cursor: not-allowed; }
-  .btn-amber { background: rgba(255,170,0,0.08); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
-  .btn-amber:hover { background: rgba(255,170,0,0.18); }
-  .btn-red { background: rgba(255,51,85,0.08); color: var(--accent-red); border: 1px solid var(--accent-red); }
-  .btn-red:hover { background: rgba(255,51,85,0.18); }
-  .btn-muted { background: none; color: var(--text-muted); border: 1px solid var(--border); }
-  .btn-muted:hover { border-color: var(--text-secondary); color: var(--text-secondary); }
+/* Form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.span2 { grid-column: 1 / -1; }
+.form-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.form-input { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: 'Space Grotesk', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+.form-input:focus { border-color: var(--purple2); }
+.form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.form-textarea { resize: vertical; min-height: 90px; font-family: 'Space Grotesk', sans-serif; }
+.form-actions { display: flex; gap: 14px; align-items: center; margin-top: 20px; }
+.form-hint { font-size: 12px; color: var(--muted); }
 
-  /* Plan cards */
-  .plan-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .plan-card {
-    border: 1px solid var(--border); border-radius: 4px;
-    padding: 18px 16px; background: var(--bg-secondary);
-    position: relative; transition: border-color 0.15s;
-  }
-  .plan-card.active-basic    { border-color: var(--text-muted); }
-  .plan-card.active-signal   { border-color: var(--accent-blue); background: rgba(0,136,255,0.04); }
-  .plan-card.active-power    { border-color: var(--accent-amber); background: rgba(255,170,0,0.04); }
-  .plan-badge {
-    position: absolute; top: -9px; right: 10px;
-    font-size: 8px; font-weight: 700; letter-spacing: 1px;
-    padding: 2px 8px; border-radius: 2px;
-  }
-  .plan-badge.blue  { background: var(--accent-blue); color: #050608; }
-  .plan-badge.amber { background: var(--accent-amber); color: #050608; }
-  .plan-badge.gray  { background: var(--text-muted); color: #050608; }
-  .plan-name  { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text-primary); margin-bottom: 4px; }
-  .plan-price { font-size: 18px; font-weight: 700; color: var(--accent-green); margin-bottom: 12px; }
-  .plan-price small { font-size: 9px; color: var(--text-muted); font-weight: 400; }
-  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 5px; font-size: 9px; color: var(--text-secondary); margin-bottom: 14px; }
-  .plan-features li { display: flex; gap: 6px; align-items: flex-start; }
-  .feat-tick { color: var(--accent-green); flex-shrink: 0; }
-  .feat-lock { color: var(--text-muted); flex-shrink: 0; }
-  .feat-lock + span { color: var(--text-muted); }
+/* Buttons */
+.btn-save { background: var(--green); color: #03130f; border: none; padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.btn-save:hover { opacity: 0.88; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger { background: transparent; color: #ff4757; border: 1px solid rgba(255,71,87,0.4); padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; }
+.btn-danger:hover { background: rgba(255,71,87,0.1); }
+.btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  /* Payment methods */
-  .payment-empty { text-align: center; padding: 28px 0; color: var(--text-muted); font-size: 10px; }
-  .payment-empty .icon { font-size: 24px; margin-bottom: 8px; }
-  .add-method-note { font-size: 9px; color: var(--text-muted); margin-top: 8px; }
+/* Plans */
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.plan-card { border: 1px solid var(--border); border-radius: 16px; padding: 22px 18px; background: var(--bg3); position: relative; transition: border-color 0.2s; }
+.plan-card.active { border-color: var(--purple2); background: rgba(124,58,237,0.06); }
+.plan-badge { position: absolute; top: -10px; right: 14px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 100px; background: var(--purple2); color: #03130f; }
+.plan-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 8px; letter-spacing: 0.02em; }
+.plan-price { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--green); margin-bottom: 14px; }
+.plan-price small { font-size: 11px; color: var(--muted); font-weight: 400; }
+.plan-features { list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 12px; color: var(--muted); }
+.plan-features li { display: flex; gap: 7px; align-items: flex-start; }
+.feat-tick { color: var(--green); flex-shrink: 0; }
+.feat-lock { color: var(--muted); opacity: 0.5; flex-shrink: 0; }
 
-  /* Billing table */
-  .billing-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-  .billing-table th { padding: 8px 12px; font-size: 8px; letter-spacing: 2px; color: var(--text-muted); border-bottom: 1px solid var(--border); text-align: left; font-weight: 700; }
-  .billing-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,42,58,0.4); color: var(--text-secondary); }
-  .billing-table tr:last-child td { border-bottom: none; }
-  .billing-empty { text-align: center; padding: 28px; color: var(--text-muted); font-size: 10px; }
-  .badge-paid { display: inline-block; padding: 2px 7px; border-radius: 2px; font-size: 8px; font-weight: 700; letter-spacing: 1px; background: rgba(0,255,136,0.1); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.25); }
+/* Payment empty state */
+.payment-empty { text-align: center; padding: 28px 0; color: var(--muted); font-size: 13px; }
+.payment-empty .icon { font-size: 26px; margin-bottom: 10px; }
+.add-method-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
 
-  /* Danger zone */
-  .danger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .danger-item { padding: 18px; border: 1px solid rgba(255,51,85,0.18); border-radius: 4px; background: rgba(255,51,85,0.03); }
-  .danger-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--accent-red); margin-bottom: 6px; }
-  .danger-desc { font-size: 9px; color: var(--text-muted); line-height: 1.8; margin-bottom: 14px; }
+/* Billing table */
+.billing-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.billing-table th { padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); text-align: left; font-weight: 600; }
+.billing-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--muted); }
+.billing-table tr:last-child td { border-bottom: none; }
+.billing-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+.badge-paid { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; background: rgba(0,212,170,0.12); color: var(--green); border: 1px solid rgba(0,212,170,0.25); }
 
-  /* Toast */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px;
-    padding: 10px 18px; border-radius: 2px;
-    font-size: 10px; letter-spacing: 1px;
-    z-index: 9900; pointer-events: none;
-    opacity: 0; transition: opacity 0.2s;
-  }
-  #toast.show { opacity: 1; }
-  #toast.ok  { background: var(--bg-panel); border: 1px solid var(--accent-green); color: var(--accent-green); }
-  #toast.err { background: var(--bg-panel); border: 1px solid var(--accent-red); color: var(--accent-red); }
+/* Danger zone */
+.danger-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.danger-item { padding: 20px; border: 1px solid rgba(255,71,87,0.25); border-radius: 14px; background: rgba(255,71,87,0.04); }
+.danger-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: #ff4757; margin-bottom: 8px; letter-spacing: 0.02em; }
+.danger-desc { font-size: 13px; color: var(--muted); line-height: 1.65; margin-bottom: 16px; }
 
-  /* Confirm modal */
-  #confirmOverlay {
-    position: fixed; inset: 0; background: rgba(5,6,8,0.85);
-    z-index: 8000; display: none; align-items: center; justify-content: center;
-  }
-  .confirm-box {
-    background: var(--bg-panel); border: 1px solid var(--border-bright);
-    border-radius: 4px; padding: 28px; max-width: 360px; width: 90%; text-align: center;
-  }
-  .confirm-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--accent-amber); margin-bottom: 10px; }
-  .confirm-desc { font-size: 10px; color: var(--text-muted); line-height: 1.8; margin-bottom: 20px; }
-  .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+@media (max-width: 700px) {
+  .form-grid, .plan-grid, .danger-grid { grid-template-columns: 1fr; }
+  .profile-hero { flex-direction: column; }
+}
 
-  /* Not logged in screen */
-  #notLoggedIn {
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    min-height: calc(100vh - 44px); gap: 14px; text-align: center;
-  }
-  .not-auth-icon { font-size: 36px; margin-bottom: 6px; }
-  .not-auth-title { font-size: 13px; letter-spacing: 2px; color: var(--text-secondary); }
-  .not-auth-sub { font-size: 10px; color: var(--text-muted); }
+/* Toast */
+#toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; z-index: 9900; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+#toast.show { opacity: 1; }
+#toast.ok { background: var(--bg2); border: 1px solid var(--green); color: var(--green); }
+#toast.err { background: var(--bg2); border: 1px solid #ff4757; color: #ff4757; }
 
-  @media (max-width: 640px) {
-    .form-grid, .plan-grid, .danger-grid { grid-template-columns: 1fr; }
-    .profile-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
-  }
+/* Confirm modal */
+#confirmOverlay { display: none; position: fixed; inset: 0; background: rgba(6,8,18,0.75); z-index: 8000; align-items: center; justify-content: center; }
+.confirm-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; max-width: 380px; width: 90%; text-align: center; }
+.confirm-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; color: var(--gold); margin-bottom: 10px; }
+.confirm-desc { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 22px; }
+.confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* Not logged in */
+#notLoggedIn { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 14px; text-align: center; padding: 120px 20px 80px; }
+.not-auth-icon { font-size: 40px; }
+.not-auth-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.not-auth-sub { font-size: 14px; color: var(--muted); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
-<div class="topbar" id="topbar">
-  <div class="topbar-logo">
-    <div class="logo-mark"></div>
-    <div>
-      <div class="logo-text">GROWTH CAPITAL ACADEMY</div>
-      <div class="logo-sub">STRATEGY LAB</div>
-    </div>
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+  </ul>
   </div>
-  <div class="topbar-status">
-    <a href="/" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--text-muted);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:all 0.15s;" onmouseover="this.style.color='var(--accent-cyan)';this.style.borderColor='var(--accent-cyan)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border)'">← DASHBOARD</a>
-    <a href="/static/strategy-lab.html" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent-cyan)'" onmouseout="this.style.borderColor='var(--border)'">STRATEGY LAB ›</a>
-    <div class="status-pill" id="userPill">
-      <span style="color:var(--accent-cyan);font-size:10px;line-height:1;">⬡</span>
-      <span id="usernameDisplay" style="color:var(--text-secondary);font-size:9px;letter-spacing:1px;">LOADING...</span>
-    </div>
-    <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;">LOGOUT</button>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleGCATheme()" title="Toggle light/dark mode">☀</button>
-    <div class="clock" id="clock">--:--:--</div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
   </div>
-</div>
+</nav>
 
 <!-- NOT LOGGED IN -->
 <div id="notLoggedIn">
-  <div class="not-auth-icon">&#128274;</div>
-  <div class="not-auth-title">LOGIN REQUIRED</div>
+  <div class="not-auth-icon">🔒</div>
+  <div class="not-auth-title">Login Required</div>
   <div class="not-auth-sub">Please sign in to view your profile.</div>
-  <a href="/" class="btn btn-blue" style="margin-top:8px;text-decoration:none;display:inline-block;">GO TO DASHBOARD</a>
+  <a href="/login" class="btn-ghost" style="margin-top:6px;">Sign In</a>
 </div>
 
 <!-- PROFILE PAGE -->
-<div class="profile-page" id="profilePage" style="display:none;">
-  <div class="profile-container">
+<div id="profilePage" style="display:none;">
 
-    <!-- HERO -->
-    <div class="profile-hero">
-      <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()" title="Change profile picture">
-        <div class="avatar-circle" id="avatarCircle">
-          <span id="avatarInitial">?</span>
-          <img id="avatarImg" src="" style="display:none;" alt="Avatar">
-        </div>
-        <div class="avatar-overlay">
-          <span style="font-size:16px;">📷</span>
-          <span>CHANGE</span>
-        </div>
-        <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="handleAvatarChange(this)">
-      </div>
-      <div class="profile-hero-info">
-        <div class="hero-display-name" id="heroDisplayName">—</div>
-        <div class="hero-username" id="heroUsername">@—</div>
-        <span class="tier-pill basic" id="heroPill">BASIC</span>
-      </div>
+  <div class="page-hero" style="padding-bottom:24px;">
+    <div class="hero-grid"></div>
+    <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+      <div class="section-badge">Account</div>
     </div>
+  </div>
 
-    <!-- PERSONAL DETAILS -->
-    <div class="profile-section">
-      <div class="section-hdr">PERSONAL DETAILS</div>
-      <div class="section-body">
+  <section class="content-section">
+    <div class="content-inner">
+
+      <!-- HERO CARD -->
+      <div class="profile-card">
+        <div class="profile-hero">
+          <div class="profile-hero-left">
+            <div class="avatar-wrap" id="avatarWrap">
+              <div class="avatar-circle" id="avatarCircle"><span id="avatarInitial">?</span></div>
+              <div class="avatar-edit-badge" onclick="toggleAvatarPicker(event)" title="Change profile picture">✎</div>
+              <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="handleAvatarChange(this)">
+              <div class="avatar-picker" id="avatarPicker">
+                <div class="avatar-picker-title">Choose a profile picture</div>
+                <button class="avatar-picker-upload" onclick="document.getElementById('avatarInput').click()">📷 Upload Photo</button>
+                <div class="avatar-picker-divider">or pick an avatar</div>
+                <div class="avatar-picker-presets">
+                  <button class="avatar-preset-btn" onclick="selectPresetAvatar('beginner')">
+                    <span class="avatar-preset preset-beginner"><span class="avatar-emoji">🌱</span></span>
+                    <span>Beginner</span>
+                  </button>
+                  <button class="avatar-preset-btn" onclick="selectPresetAvatar('intermediate')">
+                    <span class="avatar-preset preset-intermediate"><span class="avatar-emoji">📊</span></span>
+                    <span>Intermediate</span>
+                  </button>
+                  <button class="avatar-preset-btn" onclick="selectPresetAvatar('pro')">
+                    <span class="avatar-preset preset-pro"><span class="avatar-emoji">🏆</span></span>
+                    <span>Pro</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="profile-title">Profile</div>
+              <div class="profile-email" id="heroEmail">—</div>
+              <div class="profile-meta-row">
+                <span class="tier-pill basic" id="heroPill">BASIC</span>
+                <span class="hero-username" id="heroUsername">@—</span>
+              </div>
+            </div>
+          </div>
+          <a href="#" class="btn-ghost" onclick="logout(); return false;">Log Out</a>
+        </div>
+      </div>
+
+      <!-- PERSONAL DETAILS -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">📝</span>Personal Details</div>
+        </div>
         <div class="form-grid">
           <div class="form-group">
-            <div class="form-label">USERNAME</div>
+            <div class="form-label">Username</div>
             <input type="text" id="fieldUsername" class="form-input" disabled>
           </div>
           <div class="form-group">
-            <div class="form-label">DISPLAY NAME</div>
+            <div class="form-label">Display Name</div>
             <input type="text" id="fieldDisplayName" class="form-input" placeholder="Your display name" maxlength="60">
           </div>
           <div class="form-group">
-            <div class="form-label">EMAIL ADDRESS</div>
+            <div class="form-label">Email Address</div>
             <input type="email" id="fieldEmail" class="form-input" placeholder="you@example.com" maxlength="120">
           </div>
           <div class="form-group">
-            <div class="form-label">INVESTOR TYPE</div>
+            <div class="form-label">Investor Type</div>
             <select id="fieldInvestorType" class="form-input">
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
@@ -278,28 +290,26 @@
             </select>
           </div>
           <div class="form-group span2">
-            <div class="form-label">BIO</div>
+            <div class="form-label">Bio</div>
             <textarea id="fieldBio" class="form-input form-textarea" placeholder="A short description about yourself and your investment goals..." maxlength="280"></textarea>
           </div>
         </div>
-        <div class="form-actions" style="margin-top:16px;">
-          <button class="btn btn-blue" id="saveProfileBtn" onclick="saveProfile()">↓ SAVE CHANGES</button>
+        <div class="form-actions">
+          <button class="btn-save" id="saveProfileBtn" onclick="saveProfile()">Save Changes</button>
           <span class="form-hint" id="saveProfileHint"></span>
         </div>
       </div>
-    </div>
 
-    <!-- SUBSCRIPTION -->
-    <div class="profile-section">
-      <div class="section-hdr">SUBSCRIPTION</div>
-      <div class="section-body">
-        <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:18px;">Current plan highlighted below. Contact us to upgrade.</div>
+      <!-- SUBSCRIPTION -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">💎</span>Subscription</div>
+        </div>
+        <div class="card-header-sub">Current plan highlighted below. Contact us to upgrade.</div>
         <div class="plan-grid">
-
-          <!-- Basic -->
           <div class="plan-card" id="planBasic">
             <div class="plan-name">BASIC</div>
-            <div class="plan-price">FREE <small>/month</small></div>
+            <div class="plan-price">Free <small>/month</small></div>
             <ul class="plan-features">
               <li><span class="feat-tick">✓</span><span>Strategy backtesting</span></li>
               <li><span class="feat-tick">✓</span><span>Historical analysis</span></li>
@@ -307,8 +317,6 @@
               <li><span class="feat-lock">✕</span><span>Social package</span></li>
             </ul>
           </div>
-
-          <!-- Signal Tester -->
           <div class="plan-card" id="planSignal">
             <div class="plan-name">SIGNAL TESTER</div>
             <div class="plan-price">£5 <small>/month</small></div>
@@ -319,8 +327,6 @@
               <li><span class="feat-lock">✕</span><span>Social package</span></li>
             </ul>
           </div>
-
-          <!-- Power User -->
           <div class="plan-card" id="planPower">
             <div class="plan-name">POWER USER</div>
             <div class="plan-price">£20 <small>/month</small></div>
@@ -331,37 +337,36 @@
               <li><span class="feat-tick">✓</span><span>X (Twitter) posting</span></li>
             </ul>
           </div>
-
         </div>
-        <div style="margin-top:14px;font-size:9px;color:var(--text-muted);">
-          To upgrade your plan, <a href="mailto:support@growthcapitalacademy.com" style="color:var(--accent-blue);text-decoration:none;">contact support</a> — full billing integration coming soon.
+        <div style="margin-top:18px;font-size:12px;color:var(--muted);">
+          To upgrade your plan, <a href="mailto:support@growthcapitalacademy.com" style="color:var(--purple2);text-decoration:none;">contact support</a> — full billing integration coming soon.
         </div>
       </div>
-    </div>
 
-    <!-- PAYMENT OPTIONS -->
-    <div class="profile-section">
-      <div class="section-hdr">PAYMENT OPTIONS</div>
-      <div class="section-body">
+      <!-- PAYMENT OPTIONS -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">💳</span>Payment Options</div>
+        </div>
         <div class="payment-empty">
           <div class="icon">💳</div>
           <div>No payment methods saved</div>
           <div class="add-method-note">Stripe billing integration coming soon. You will be able to add a card or bank account here.</div>
         </div>
       </div>
-    </div>
 
-    <!-- PURCHASE HISTORY -->
-    <div class="profile-section">
-      <div class="section-hdr">PURCHASE HISTORY</div>
-      <div class="section-body" style="padding:0;">
+      <!-- PURCHASE HISTORY -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🧾</span>Purchase History</div>
+        </div>
         <table class="billing-table">
           <thead>
             <tr>
-              <th>DATE</th>
-              <th>DESCRIPTION</th>
-              <th>AMOUNT</th>
-              <th>STATUS</th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody id="billingBody">
@@ -369,38 +374,54 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- DANGER ZONE -->
-    <div class="profile-section" style="border-color:rgba(255,51,85,0.2);">
-      <div class="section-hdr" style="color:var(--accent-red);border-color:rgba(255,51,85,0.2);">DANGER ZONE</div>
-      <div class="section-body">
+      <!-- DANGER ZONE -->
+      <div class="profile-card" style="border-color:rgba(255,71,87,0.25);">
+        <div class="card-header-row">
+          <div class="card-header-title" style="color:#ff4757;"><span class="icon">⚠️</span>Danger Zone</div>
+        </div>
         <div class="danger-grid">
           <div class="danger-item">
-            <div class="danger-title">CANCEL SUBSCRIPTION</div>
+            <div class="danger-title">Cancel Subscription</div>
             <div class="danger-desc">Downgrade your account to the free Basic plan immediately. You will lose access to Signal Tester and Power User features.</div>
-            <button class="btn btn-red" id="cancelSubBtn" onclick="confirmCancelSub()">CANCEL SUBSCRIPTION</button>
+            <button class="btn-danger" id="cancelSubBtn" onclick="confirmCancelSub()">Cancel Subscription</button>
           </div>
           <div class="danger-item">
-            <div class="danger-title">DELETE ACCOUNT</div>
+            <div class="danger-title">Delete Account</div>
             <div class="danger-desc">Permanently delete your account and all associated data. This action cannot be undone. You will be logged out immediately.</div>
-            <button class="btn btn-red" id="deleteAccountBtn" onclick="confirmDeleteAccount()">DELETE ACCOUNT</button>
+            <button class="btn-danger" id="deleteAccountBtn" onclick="confirmDeleteAccount()">Delete Account</button>
           </div>
         </div>
       </div>
-    </div>
 
-  </div>
+    </div>
+  </section>
 </div>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
 
 <!-- CONFIRM DIALOG -->
 <div id="confirmOverlay" onclick="if(event.target===this)closeConfirm()">
   <div class="confirm-box">
-    <div class="confirm-title" id="confirmTitle">CONFIRM ACTION</div>
+    <div class="confirm-title" id="confirmTitle">Confirm Action</div>
     <div class="confirm-desc" id="confirmDesc">Are you sure?</div>
     <div class="confirm-actions">
-      <button class="btn btn-red" id="confirmOkBtn" onclick="runConfirmedAction()">CONFIRM</button>
-      <button class="btn btn-muted" onclick="closeConfirm()">CANCEL</button>
+      <button class="btn-danger" id="confirmOkBtn" onclick="runConfirmedAction()">Confirm</button>
+      <button class="btn-ghost" onclick="closeConfirm()">Cancel</button>
     </div>
   </div>
 </div>
@@ -413,14 +434,23 @@ let profileUsername = null;
 let profileTier = 'basic';
 let pendingAction = null;
 
+const AVATAR_PRESETS = {
+  beginner:     { emoji: '🌱', cls: 'preset-beginner' },
+  intermediate: { emoji: '📊', cls: 'preset-intermediate' },
+  pro:          { emoji: '🏆', cls: 'preset-pro' },
+};
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  setInterval(() => {
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toTimeString().split(' ')[0];
-  }, 1000);
   await boot();
+  document.addEventListener('click', (e) => {
+    const picker = document.getElementById('avatarPicker');
+    const wrap = document.getElementById('avatarWrap');
+    if (picker.style.display === 'flex' && wrap && !wrap.contains(e.target)) {
+      picker.style.display = 'none';
+    }
+  });
 });
 
 async function boot() {
@@ -434,9 +464,7 @@ async function boot() {
     profileUsername = data.username;
     profileTier = data.tier || 'basic';
     populateProfile(data);
-    document.getElementById('profilePage').style.display = 'flex';
-    document.getElementById('usernameDisplay').textContent = (data.display_name || data.username).toUpperCase();
-    document.getElementById('logoutBtn').style.display = 'inline-block';
+    document.getElementById('profilePage').style.display = 'block';
   } catch (e) {
     document.getElementById('notLoggedIn').style.display = 'flex';
   }
@@ -445,12 +473,12 @@ async function boot() {
 // ── Populate ──────────────────────────────────────────────────────────────────
 
 function populateProfile(data) {
-  document.getElementById('heroDisplayName').textContent = data.display_name || data.username;
+  document.getElementById('heroEmail').textContent = data.email || ('@' + data.username);
   document.getElementById('heroUsername').textContent = '@' + data.username;
 
   const pill = document.getElementById('heroPill');
-  const tierLabels = { basic: 'BASIC', signal_tester: 'SIGNAL TESTER', power_user: 'POWER USER' };
-  pill.textContent = tierLabels[data.tier] || data.tier.toUpperCase();
+  const tierLabels = { basic: 'Basic', signal_tester: 'Signal Tester', power_user: 'Power User' };
+  pill.textContent = tierLabels[data.tier] || data.tier;
   pill.className = 'tier-pill ' + (data.tier || 'basic');
 
   document.getElementById('fieldUsername').value   = data.username;
@@ -464,26 +492,29 @@ function populateProfile(data) {
   updateDangerZone(data.tier);
 }
 
-function setAvatarDisplay(url, name) {
-  const img     = document.getElementById('avatarImg');
-  const initial = document.getElementById('avatarInitial');
-  if (url) {
-    img.src = url;
-    img.style.display = 'block';
-    initial.style.display = 'none';
+function setAvatarDisplay(value, name) {
+  const circle = document.getElementById('avatarCircle');
+  circle.innerHTML = '';
+  if (value && value.indexOf('preset:') === 0) {
+    const p = AVATAR_PRESETS[value.slice(7)] || AVATAR_PRESETS.beginner;
+    circle.innerHTML = '<span class="avatar-preset ' + p.cls + '"><span class="avatar-emoji">' + p.emoji + '</span></span>';
+  } else if (value) {
+    const img = document.createElement('img');
+    img.src = value;
+    img.alt = 'Avatar';
+    circle.appendChild(img);
   } else {
-    img.style.display = 'none';
-    initial.style.display = '';
-    initial.textContent = (name || '?')[0].toUpperCase();
+    const span = document.createElement('span');
+    span.textContent = (name || '?')[0].toUpperCase();
+    circle.appendChild(span);
   }
 }
 
 function highlightCurrentPlan(tier) {
-  document.getElementById('planBasic').className  = 'plan-card' + (tier === 'basic'         ? ' active-basic'  : '');
-  document.getElementById('planSignal').className = 'plan-card' + (tier === 'signal_tester' ? ' active-signal' : '');
-  document.getElementById('planPower').className  = 'plan-card' + (tier === 'power_user'    ? ' active-power'  : '');
+  document.getElementById('planBasic').className  = 'plan-card' + (tier === 'basic'         ? ' active' : '');
+  document.getElementById('planSignal').className = 'plan-card' + (tier === 'signal_tester' ? ' active' : '');
+  document.getElementById('planPower').className  = 'plan-card' + (tier === 'power_user'    ? ' active' : '');
 
-  const badges = { basic: ['gray','CURRENT'], signal_tester: ['blue','CURRENT'], power_user: ['amber','CURRENT'] };
   ['Basic','Signal','Power'].forEach(n => {
     const el = document.getElementById('plan'+n).querySelector('.plan-badge');
     if (el) el.remove();
@@ -492,9 +523,8 @@ function highlightCurrentPlan(tier) {
   const card = document.getElementById('plan' + mapping[tier]);
   if (card) {
     const b = document.createElement('div');
-    const [cls, label] = badges[tier];
-    b.className = 'plan-badge ' + cls;
-    b.textContent = label;
+    b.className = 'plan-badge';
+    b.textContent = 'CURRENT';
     card.appendChild(b);
   }
 }
@@ -513,7 +543,7 @@ async function saveProfile() {
   const btn  = document.getElementById('saveProfileBtn');
   const hint = document.getElementById('saveProfileHint');
   btn.disabled = true;
-  btn.textContent = 'SAVING...';
+  btn.textContent = 'Saving...';
   hint.textContent = '';
 
   const payload = {
@@ -531,18 +561,40 @@ async function saveProfile() {
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'Save failed', 'err'); return; }
-    document.getElementById('heroDisplayName').textContent = payload.display_name || profileUsername;
-    document.getElementById('usernameDisplay').textContent = (payload.display_name || profileUsername).toUpperCase();
+    document.getElementById('heroEmail').textContent = payload.email || ('@' + profileUsername);
     showToast('Profile saved', 'ok');
   } catch (e) {
     showToast('Cannot reach server', 'err');
   } finally {
     btn.disabled = false;
-    btn.textContent = '↓ SAVE CHANGES';
+    btn.textContent = 'Save Changes';
   }
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
+
+function toggleAvatarPicker(e) {
+  e.stopPropagation();
+  const picker = document.getElementById('avatarPicker');
+  picker.style.display = picker.style.display === 'flex' ? 'none' : 'flex';
+}
+
+async function selectPresetAvatar(tier) {
+  try {
+    const res  = await fetch('/api/profile/update', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_picture: 'preset:' + tier }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'Failed to update avatar', 'err'); return; }
+    setAvatarDisplay('preset:' + tier, document.getElementById('fieldDisplayName').value || profileUsername);
+    document.getElementById('avatarPicker').style.display = 'none';
+    showToast('Profile picture updated', 'ok');
+  } catch (e) {
+    showToast('Cannot reach server', 'err');
+  }
+}
 
 async function handleAvatarChange(input) {
   const file = input.files[0];
@@ -556,6 +608,7 @@ async function handleAvatarChange(input) {
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'Upload failed', 'err'); return; }
     setAvatarDisplay(data.avatar_url, document.getElementById('fieldDisplayName').value || profileUsername);
+    document.getElementById('avatarPicker').style.display = 'none';
     showToast('Profile picture updated', 'ok');
   } catch (e) {
     showToast('Upload failed', 'err');
@@ -567,22 +620,22 @@ async function handleAvatarChange(input) {
 
 function confirmCancelSub() {
   pendingAction = 'cancel_sub';
-  document.getElementById('confirmTitle').textContent = 'CANCEL SUBSCRIPTION?';
+  document.getElementById('confirmTitle').textContent = 'Cancel Subscription?';
   document.getElementById('confirmDesc').textContent  = 'You will be moved to the free Basic plan immediately and lose access to Signal Tester / Power User features.';
   document.getElementById('confirmOverlay').style.display = 'flex';
 }
 
 function confirmDeleteAccount() {
   pendingAction = 'delete_account';
-  document.getElementById('confirmTitle').textContent = 'DELETE ACCOUNT?';
+  document.getElementById('confirmTitle').textContent = 'Delete Account?';
   document.getElementById('confirmDesc').textContent  = 'This will permanently delete your account and all your data. This cannot be undone.';
-  document.getElementById('confirmOkBtn').textContent = 'DELETE';
+  document.getElementById('confirmOkBtn').textContent = 'Delete';
   document.getElementById('confirmOverlay').style.display = 'flex';
 }
 
 function closeConfirm() {
   document.getElementById('confirmOverlay').style.display = 'none';
-  document.getElementById('confirmOkBtn').textContent = 'CONFIRM';
+  document.getElementById('confirmOkBtn').textContent = 'Confirm';
   pendingAction = null;
 }
 
@@ -601,7 +654,7 @@ async function doCancelSub() {
     highlightCurrentPlan('basic');
     updateDangerZone('basic');
     const pill = document.getElementById('heroPill');
-    pill.textContent = 'BASIC'; pill.className = 'tier-pill basic';
+    pill.textContent = 'Basic'; pill.className = 'tier-pill basic';
     showToast('Subscription cancelled — now on Basic plan', 'ok');
   } catch (e) {
     showToast('Cannot reach server', 'err');
@@ -638,6 +691,41 @@ function showToast(msg, type) {
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.className = ''; }, 3000);
 }
+
+// ── Nav auth state (matches rest of site) ──────────────────────────────────────
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  nav.style.background = window.scrollY > 40
+    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
+    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
+});
 </script>
 </body>
 </html>
