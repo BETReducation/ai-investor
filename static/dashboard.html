@@ -1334,7 +1334,7 @@ function loadTvChart(tvSym) {
   });
 }
 
-document.addEventListener('apex-theme-change', function() {
+document.addEventListener('gca-theme-change', function() {
   loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
 });
 
@@ -1475,7 +1475,7 @@ function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
 async function checkSession() {
-  if (localStorage.getItem('apexSession')) {
+  if (localStorage.getItem('gcaSession')) {
     try {
       const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
       if (res.ok) {
@@ -1483,10 +1483,10 @@ async function checkSession() {
         currentUser = data.username;
         applyPreferences(data.preferences || {});
       } else {
-        localStorage.removeItem('apexSession');
+        localStorage.removeItem('gcaSession');
       }
     } catch (e) {
-      localStorage.removeItem('apexSession');
+      localStorage.removeItem('gcaSession');
     }
   }
   showDashboard();
@@ -1549,7 +1549,7 @@ async function doLogin() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    if (remember) localStorage.setItem('apexSession', '1');
+    if (remember) localStorage.setItem('gcaSession', '1');
     applyPreferences(data.preferences || {});
     showDashboard();
   } catch (e) {
@@ -1587,7 +1587,7 @@ async function doRegister() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    localStorage.setItem('apexSession', '1');
+    localStorage.setItem('gcaSession', '1');
     applyPreferences({});
     showDashboard();
   } catch (e) {
@@ -1605,7 +1605,7 @@ function showAuthError(el, msg) {
 async function logout() {
   try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
   currentUser = null;
-  localStorage.removeItem('apexSession');
+  localStorage.removeItem('gcaSession');
   if (engineRunning) stopEngine();
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
@@ -1616,7 +1616,7 @@ async function logout() {
 
 function handleSessionExpiry() {
   currentUser = null;
-  localStorage.removeItem('apexSession');
+  localStorage.removeItem('gcaSession');
   if (engineRunning) stopEngine();
   updateUserDisplay();
   addLog('warn', 'AUTH', 'Session expired — sign in to save preferences');

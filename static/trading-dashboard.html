@@ -2806,7 +2806,7 @@ function loadTvChart(tvSym) {
   });
 }
 
-document.addEventListener('apex-theme-change', function() {
+document.addEventListener('gca-theme-change', function() {
   loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
 });
 
@@ -2947,7 +2947,7 @@ function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
 async function checkSession() {
-  if (localStorage.getItem('apexSession')) {
+  if (localStorage.getItem('gcaSession')) {
     try {
       const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
       if (res.ok) {
@@ -2958,7 +2958,7 @@ async function checkSession() {
         return;
       }
     } catch (e) {}
-    localStorage.removeItem('apexSession');
+    localStorage.removeItem('gcaSession');
   }
   showLogin();
 }
@@ -3011,7 +3011,7 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Login failed'); return; }
     currentUser = data.username;
-    if (remember) localStorage.setItem('apexSession', '1');
+    if (remember) localStorage.setItem('gcaSession', '1');
     applyPreferences(data.preferences || {});
     showDashboard();
   } catch (e) {
@@ -3044,7 +3044,7 @@ async function doRegister() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }
     currentUser = data.username;
-    localStorage.setItem('apexSession', '1');
+    localStorage.setItem('gcaSession', '1');
     applyPreferences({});
     showDashboard();
   } catch (e) {
@@ -3062,7 +3062,7 @@ function showAuthError(el, msg) {
 async function logout() {
   try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
   currentUser = null;
-  localStorage.removeItem('apexSession');
+  localStorage.removeItem('gcaSession');
   if (engineRunning) stopEngine();
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
@@ -3072,7 +3072,7 @@ async function logout() {
 
 function handleSessionExpiry() {
   currentUser = null;
-  localStorage.removeItem('apexSession');
+  localStorage.removeItem('gcaSession');
   if (engineRunning) stopEngine();
   showLogin();
 }
