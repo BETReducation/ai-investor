@@ -50,6 +50,28 @@
 .notify-input:focus { border-color: var(--purple2); }
 .notify-btn { background: var(--purple2); color: #03130f; border: none; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
 .notify-btn:hover { opacity: 0.88; }
+.lesson-list { display: flex; flex-direction: column; gap: 18px; max-width: 820px; margin: 0 auto; }
+.lesson-item { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; display: flex; gap: 24px; align-items: flex-start; transition: border-color 0.25s, transform 0.25s; }
+.lesson-item:hover { border-color: var(--border2); transform: translateY(-2px); }
+.lesson-num { flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--purple2); }
+.lesson-body { flex: 1; min-width: 0; }
+.lesson-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.lesson-icon { font-size: 21px; }
+.lesson-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; color: var(--text); }
+.lesson-desc { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.benefit-tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); color: var(--green); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 100px; }
+.benefit-tag::before { content: '✓'; font-weight: 800; }
+.fine-print { max-width: 820px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .lesson-item { flex-direction: column; } .cta-grid { grid-template-columns: 1fr; } }
+.tab-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; flex-wrap: wrap; }
+.tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.tab-btn:hover { border-color: var(--border2); color: var(--text); }
+.tab-btn.active { background: #c4b5fd; border-color: #c4b5fd; color: #03130f; }
+[data-theme="light"] .tab-btn.active { background: #a78bfa; border-color: #a78bfa; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp 0.4s ease both; }
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -119,43 +141,237 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
     <div class="section-badge">Learn / Intermediate</div>
     <h1 class="hero-title">Intermediate <span class="accent">Trading</span></h1>
-    <p class="hero-sub">You know the basics — now build a systematic edge. Dive into technical analysis, indicator stacking, risk frameworks and trade management.</p>
+    <p class="hero-sub">You know the basics — now sharpen your edge. Learn to read charts like a pro, evaluate real companies, and build a portfolio that can weather any market.</p>
   </div>
 </div>
 
 <section class="content-section">
   <div class="content-inner">
-    <h2 class="section-title">What's Coming</h2>
-    <p class="section-desc">Here's a preview of what we're building for this section.</p>
-    <div class="hub-grid reveal">
-      <div class="hub-card">
-        <div class="card-icon">📐</div>
-        <div class="card-title">Technical Analysis Deep Dives</div>
-        <div class="card-desc">Master candlestick patterns, support & resistance, Fibonacci retracements and volume-price analysis with interactive chart walkthroughs.</div>
+    <div class="tab-bar reveal">
+      <button class="tab-btn active" data-tab="ta">Technical Analysis</button>
+      <button class="tab-btn" data-tab="picking">Stock Picking</button>
+      <button class="tab-btn" data-tab="balance">Balancing a Portfolio</button>
+      <button class="tab-btn" data-tab="terms">Key Terminology</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-ta">
+      <h2 class="section-title">Technical Analysis</h2>
+      <p class="section-desc">Charts aren't fortune-telling — they're a read on crowd psychology. Here's how to spot the setups that matter.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📐</span><span class="lesson-title">Chart Patterns — Head & Shoulders, Double Tops, Triangles</span></div>
+            <p class="lesson-desc">Beyond single candles, recurring price shapes like head-and-shoulders, double tops, and triangles reveal when a trend is likely to continue or reverse. These patterns form because human behavior — fear and greed — repeats itself.</p>
+            <span class="benefit-tag">Spot the setups other traders are watching too</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌡️</span><span class="lesson-title">RSI — Spotting Overbought & Oversold Conditions</span></div>
+            <p class="lesson-desc">The Relative Strength Index measures how fast and how far a price has moved, on a scale of 0-100. Readings above 70 suggest an asset may be overbought; below 30 suggests oversold — an early warning of a potential pullback or bounce.</p>
+            <span class="benefit-tag">Catch stretched moves before they snap back</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📊</span><span class="lesson-title">MACD — Reading Momentum and Trend Shifts</span></div>
+            <p class="lesson-desc">The Moving Average Convergence Divergence indicator compares two moving averages to reveal shifts in momentum. When the MACD line crosses its signal line, it's often one of the earliest clues that a trend is changing gear.</p>
+            <span class="benefit-tag">See momentum shift before price fully confirms it</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🎢</span><span class="lesson-title">Bollinger Bands — Measuring Volatility in Real Time</span></div>
+            <p class="lesson-desc">Bollinger Bands wrap a moving average in an upper and lower band based on volatility. Bands that squeeze tight often precede a big move; bands that stretch wide signal an already-extended market.</p>
+            <span class="benefit-tag">Know when calm is about to break</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔗</span><span class="lesson-title">Stacking Indicators for Confluence</span></div>
+            <p class="lesson-desc">No single indicator is reliable on its own — they all lag or lie sometimes. The real skill is combining two or three (say, a trend line, RSI, and volume) and only acting when they agree. That agreement is called confluence.</p>
+            <span class="benefit-tag">Filter out false signals by demanding agreement</span>
+          </div>
+        </div>
       </div>
-      <div class="hub-card">
-        <div class="card-icon">🔗</div>
-        <div class="card-title">Indicator Stacking & Confluence</div>
-        <div class="card-desc">Learn how to combine RSI, MACD, Bollinger Bands and moving averages to create high-confidence signal filters that cut through market noise.</div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> no indicator predicts the future with certainty — they all lag price to some degree. Use them to stack probability in your favor, not as guarantees, and always pair signals with a risk management plan.
       </div>
-      <div class="hub-card">
-        <div class="card-icon">🛡️</div>
-        <div class="card-title">Risk Management Frameworks</div>
-        <div class="card-desc">Position sizing, stop placement, risk-reward ratios and portfolio heat — the rules professional traders use to survive and thrive long-term.</div>
+    </div>
+
+    <div class="tab-panel" id="tab-picking">
+      <h2 class="section-title">Stock Picking</h2>
+      <p class="section-desc">Move beyond the ticker symbol. Here's how to read what a company's numbers are actually telling you.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧾</span><span class="lesson-title">Reading the Income Statement — Is It Actually Profitable?</span></div>
+            <p class="lesson-desc">The income statement shows revenue, expenses, and profit over a period. Look beyond the headline number — is revenue growing, are margins expanding, and is profit coming from the core business rather than one-off gains?</p>
+            <span class="benefit-tag">Separate real growth from accounting noise</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">⚖️</span><span class="lesson-title">The Balance Sheet — How Much Debt Is Too Much?</span></div>
+            <p class="lesson-desc">The balance sheet shows what a company owns versus what it owes at a single point in time. A healthy balance sheet has manageable debt relative to earnings and enough cash to survive a downturn without panicking.</p>
+            <span class="benefit-tag">Avoid businesses one bad year from trouble</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💧</span><span class="lesson-title">Cash Flow — Following the Money, Not Just the Profit</span></div>
+            <p class="lesson-desc">Profit can be shaped by accounting choices; cash is harder to fake. Free cash flow shows how much real money a business generates after running and investing in itself — the fuel for dividends, buybacks and growth.</p>
+            <span class="benefit-tag">Cash flow tells the truth profit sometimes hides</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌳</span><span class="lesson-title">Growth vs Dividend Stocks — Matching Companies to Your Goals</span></div>
+            <p class="lesson-desc">Growth stocks reinvest everything to expand fast and rarely pay dividends; dividend stocks are typically mature, stable businesses that return cash to shareholders directly. Neither is "better" — it depends on whether you want income now or growth later.</p>
+            <span class="benefit-tag">Pick companies that match what you actually want</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🏷️</span><span class="lesson-title">Valuation — What's a Fair Price to Pay?</span></div>
+            <p class="lesson-desc">Even a great company can be a bad investment at the wrong price. Comparing metrics like P/E, P/S, and PEG ratio against a company's own history and its peers helps you judge whether you're paying a fair price or chasing hype.</p>
+            <span class="benefit-tag">Buy quality without overpaying for it</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> no single metric tells the whole story — a low P/E can mean a bargain or a business in decline. Always read the numbers together, and alongside the industry a company competes in.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-balance">
+      <h2 class="section-title">Balancing a Portfolio</h2>
+      <p class="section-desc">Picking good assets is only half the job. Here's how professionals combine them into a portfolio that holds up.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🥧</span><span class="lesson-title">Asset Allocation — Your Most Important Decision</span></div>
+            <p class="lesson-desc">How you split your money across stocks, bonds, cash and other assets drives the vast majority of your portfolio's long-term risk and return — far more than which individual stock you pick. Get the mix right first.</p>
+            <span class="benefit-tag">The single biggest lever you actually control</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔀</span><span class="lesson-title">Correlation — Why Owning 20 Stocks Isn't Always Diversified</span></div>
+            <p class="lesson-desc">If your 20 holdings are all tech companies, they'll likely rise and fall together — that's not real diversification. True diversification comes from combining assets that don't move in lockstep, so when one zigs, another zags.</p>
+            <span class="benefit-tag">Smooth out the ride without giving up returns</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">⚖️</span><span class="lesson-title">Rebalancing — Keeping Your Portfolio on Target</span></div>
+            <p class="lesson-desc">Winners grow to take up more of your portfolio over time, quietly shifting your risk higher than intended. Rebalancing — periodically trimming winners and topping up laggards — brings you back to your target mix and locks in gains.</p>
+            <span class="benefit-tag">Systematically sell high and buy low</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📏</span><span class="lesson-title">Position Sizing — How Much Is Too Much in One Holding?</span></div>
+            <p class="lesson-desc">Even a great conviction idea shouldn't dominate your portfolio. Capping any single position at a sensible percentage limits the damage if you're wrong, without capping your upside if you're right.</p>
+            <span class="benefit-tag">Survive being wrong so you can profit from being right</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧭</span><span class="lesson-title">Time Horizon & Risk Tolerance — Matching the Plan to You</span></div>
+            <p class="lesson-desc">A 25-year-old saving for retirement and a 60-year-old about to retire shouldn't hold the same portfolio. Your time horizon and how much volatility you can stomach without panic-selling should shape your entire allocation.</p>
+            <span class="benefit-tag">A portfolio you can actually stick with</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> a well-balanced portfolio isn't a one-time setup — your goals, risk tolerance and life stage change over time, and your allocation should be revisited as they do.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-terms">
+      <h2 class="section-title">Key Terminology</h2>
+      <p class="section-desc">The vocabulary that separates casual investors from people who actually understand what they own.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🎯</span><span class="lesson-title">Alpha & Beta — Skill vs Market Exposure</span></div>
+            <p class="lesson-desc">Beta measures how much an investment moves with the overall market; alpha measures the extra return earned above what beta alone would predict. Alpha is what separates genuine skill (or luck) from just riding the market.</p>
+            <span class="benefit-tag">Know whether you're beating the market, or just in it</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📐</span><span class="lesson-title">Sharpe Ratio — Return Per Unit of Risk</span></div>
+            <p class="lesson-desc">Two portfolios can have the same return but very different levels of risk taken to get there. The Sharpe ratio divides return by volatility, giving you a single number to compare how efficiently different strategies generate their gains.</p>
+            <span class="benefit-tag">Compare strategies on a level playing field</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📉</span><span class="lesson-title">Drawdown — Measuring the Pain, Not Just the Gain</span></div>
+            <p class="lesson-desc">Maximum drawdown is the largest drop from a peak to a trough your portfolio experienced. A strategy with great average returns but brutal drawdowns can be harder to stick with than a steadier one with slightly lower returns.</p>
+            <span class="benefit-tag">Understand the ride, not just the destination</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💧</span><span class="lesson-title">Liquidity — How Fast Can You Get Your Money Out?</span></div>
+            <p class="lesson-desc">Liquidity describes how quickly and cheaply an asset can be bought or sold without moving its price. Highly liquid assets like large-cap stocks are easy to exit; less liquid assets like small caps or property can trap your capital when you need it most.</p>
+            <span class="benefit-tag">Know how quickly your money can move if plans change</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🛡️</span><span class="lesson-title">Hedging — Insuring Your Portfolio Against the Unexpected</span></div>
+            <p class="lesson-desc">Hedging means taking a position specifically designed to offset losses elsewhere in your portfolio — like holding some bonds or gold alongside stocks. It typically costs some return in exchange for smoother, more predictable outcomes.</p>
+            <span class="benefit-tag">Trade a little upside for a lot less downside surprise</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> the Pro track builds directly on these concepts with options, macro analysis, and advanced portfolio construction. Bookmark this page as a quick refresher.
       </div>
     </div>
   </div>
 </section>
 <section class="content-section alt-bg">
   <div class="content-inner">
-    <div class="notify-box reveal">
-      <div style="font-size:32px;margin-bottom:16px;">🔔</div>
-      <div class="notify-title">Intermediate content is on the way</div>
-      <p class="notify-desc">Drop your email and we'll let you know the moment the Intermediate track goes live.</p>
-      <div class="notify-form">
-        <input class="notify-input" type="email" placeholder="your@email.com">
-        <button class="notify-btn">Notify Me</button>
-      </div>
+    <h2 class="section-title">Ready for More?</h2>
+    <p class="section-desc">Put these skills into practice or push into advanced territory.</p>
+    <div class="cta-grid reveal">
+      <a href="/learn/pro" class="hub-card">
+        <div class="card-icon">🚀</div>
+        <div class="card-title">Level Up to Pro</div>
+        <div class="card-desc">Ready to go further? Explore options, macro analysis, and advanced portfolio construction.</div>
+        <div class="card-link">Continue learning →</div>
+      </a>
+      <a href="/backtester" class="hub-card">
+        <div class="card-icon">🧪</div>
+        <div class="card-title">Try the Backtester</div>
+        <div class="card-desc">Put your technical analysis skills to the test — backtest a strategy against real historical data.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
     </div>
   </div>
 </section>
@@ -182,6 +398,14 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
