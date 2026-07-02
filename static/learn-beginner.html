@@ -65,6 +65,12 @@
 .fine-print b { color: var(--text); }
 .cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
 @media (max-width: 700px) { .lesson-item { flex-direction: column; } .cta-grid { grid-template-columns: 1fr; } }
+.tab-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; flex-wrap: wrap; }
+.tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.tab-btn:hover { border-color: var(--border2); color: var(--text); }
+.tab-btn.active { background: var(--purple2); border-color: var(--purple2); color: #03130f; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp 0.4s ease both; }
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -140,52 +146,211 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner">
-    <h2 class="section-title">The 5 Things That Actually Matter</h2>
-    <p class="section-desc">Skip the noise. Master these five habits first and you're already ahead of most people who never start.</p>
-    <div class="lesson-list reveal">
-      <div class="lesson-item">
-        <div class="lesson-num">1</div>
-        <div class="lesson-body">
-          <div class="lesson-title-row"><span class="lesson-icon">🌱</span><span class="lesson-title">Start Early — Let Compounding Work For You</span></div>
-          <p class="lesson-desc">Investing isn't about being a genius — it's about giving your money time to grow. Compound growth means the returns you earn start earning their own returns. Someone who invests $200/month starting at 25 can end up with far more at retirement than someone who invests $400/month starting at 35 — even though they put in less overall.</p>
-          <span class="benefit-tag">The earlier you start, the less you need to save later</span>
+    <div class="tab-bar reveal">
+      <button class="tab-btn active" data-tab="habits">5 Basic Habits</button>
+      <button class="tab-btn" data-tab="assets">Types of Assets</button>
+      <button class="tab-btn" data-tab="charts">Reading a Chart</button>
+      <button class="tab-btn" data-tab="terms">Key Terminology</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-habits">
+      <h2 class="section-title">The 5 Things That Actually Matter</h2>
+      <p class="section-desc">Skip the noise. Master these five habits first and you're already ahead of most people who never start.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌱</span><span class="lesson-title">Start Early — Let Compounding Work For You</span></div>
+            <p class="lesson-desc">Investing isn't about being a genius — it's about giving your money time to grow. Compound growth means the returns you earn start earning their own returns. Someone who invests $200/month starting at 25 can end up with far more at retirement than someone who invests $400/month starting at 35 — even though they put in less overall.</p>
+            <span class="benefit-tag">The earlier you start, the less you need to save later</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧺</span><span class="lesson-title">Diversify Instead of Betting on One Stock</span></div>
+            <p class="lesson-desc">You don't need to pick "the next big winner" to build wealth. A single low-cost index fund or ETF gives you a slice of hundreds of companies at once, so one company's bad week can't sink your whole portfolio.</p>
+            <span class="benefit-tag">Spread the risk, keep the upside</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔁</span><span class="lesson-title">Invest Consistently, Not Perfectly</span></div>
+            <p class="lesson-desc">You will never perfectly time the market — and you don't need to. Investing a fixed amount on a regular schedule, rain or shine (known as dollar-cost averaging), smooths out the highs and lows and turns investing into a habit instead of a stressful decision.</p>
+            <span class="benefit-tag">Consistency beats timing, every time</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💸</span><span class="lesson-title">Keep Costs Low</span></div>
+            <p class="lesson-desc">A 1% annual fee sounds tiny, but over 30 years it can quietly eat away a huge chunk of your final balance. Low-cost index funds and ETFs let almost all of your returns stay exactly where they belong — compounding in your account.</p>
+            <span class="benefit-tag">Every % saved in fees compounds in your favor</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧭</span><span class="lesson-title">Think in Decades, Not Days</span></div>
+            <p class="lesson-desc">Markets move up and down every single day — that's normal, not a warning sign. Historically, staying invested through the noise has rewarded patient investors far more than trying to jump in and out at the "right" moments.</p>
+            <span class="benefit-tag">Time in the market beats timing the market</span>
+          </div>
         </div>
       </div>
-      <div class="lesson-item">
-        <div class="lesson-num">2</div>
-        <div class="lesson-body">
-          <div class="lesson-title-row"><span class="lesson-icon">🧺</span><span class="lesson-title">Diversify Instead of Betting on One Stock</span></div>
-          <p class="lesson-desc">You don't need to pick "the next big winner" to build wealth. A single low-cost index fund or ETF gives you a slice of hundreds of companies at once, so one company's bad week can't sink your whole portfolio.</p>
-          <span class="benefit-tag">Spread the risk, keep the upside</span>
-        </div>
-      </div>
-      <div class="lesson-item">
-        <div class="lesson-num">3</div>
-        <div class="lesson-body">
-          <div class="lesson-title-row"><span class="lesson-icon">🔁</span><span class="lesson-title">Invest Consistently, Not Perfectly</span></div>
-          <p class="lesson-desc">You will never perfectly time the market — and you don't need to. Investing a fixed amount on a regular schedule, rain or shine (known as dollar-cost averaging), smooths out the highs and lows and turns investing into a habit instead of a stressful decision.</p>
-          <span class="benefit-tag">Consistency beats timing, every time</span>
-        </div>
-      </div>
-      <div class="lesson-item">
-        <div class="lesson-num">4</div>
-        <div class="lesson-body">
-          <div class="lesson-title-row"><span class="lesson-icon">💸</span><span class="lesson-title">Keep Costs Low</span></div>
-          <p class="lesson-desc">A 1% annual fee sounds tiny, but over 30 years it can quietly eat away a huge chunk of your final balance. Low-cost index funds and ETFs let almost all of your returns stay exactly where they belong — compounding in your account.</p>
-          <span class="benefit-tag">Every % saved in fees compounds in your favor</span>
-        </div>
-      </div>
-      <div class="lesson-item">
-        <div class="lesson-num">5</div>
-        <div class="lesson-body">
-          <div class="lesson-title-row"><span class="lesson-icon">🧭</span><span class="lesson-title">Think in Decades, Not Days</span></div>
-          <p class="lesson-desc">Markets move up and down every single day — that's normal, not a warning sign. Historically, staying invested through the noise has rewarded patient investors far more than trying to jump in and out at the "right" moments.</p>
-          <span class="benefit-tag">Time in the market beats timing the market</span>
-        </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> every one of these habits comes with trade-offs — market risk, volatility, and the occasional downturn are part of the deal. We'll cover the fine print, risk management, and how to protect your downside in later lessons. For now, focus on building the fundamentals.
       </div>
     </div>
-    <div class="fine-print reveal">
-      <b>Worth knowing:</b> every one of these habits comes with trade-offs — market risk, volatility, and the occasional downturn are part of the deal. We'll cover the fine print, risk management, and how to protect your downside in later lessons. For now, focus on building the fundamentals.
+
+    <div class="tab-panel" id="tab-assets">
+      <h2 class="section-title">Types of Assets</h2>
+      <p class="section-desc">Every investment falls into one of a few buckets. Here's what you're actually buying, and why it might belong in your portfolio.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📈</span><span class="lesson-title">Stocks — Owning a Piece of a Company</span></div>
+            <p class="lesson-desc">When you buy a share of stock, you own a tiny slice of that company — its profits, its growth, and yes, its risk. Stocks have historically delivered the strongest long-term returns of any major asset class.</p>
+            <span class="benefit-tag">Own the businesses you believe in</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧺</span><span class="lesson-title">ETFs & Index Funds — One Trade, Hundreds of Companies</span></div>
+            <p class="lesson-desc">An ETF bundles together dozens or hundreds of stocks or bonds into a single, tradeable basket. Buy one share of a broad index fund and you instantly own a slice of the entire market.</p>
+            <span class="benefit-tag">Instant diversification, low cost, one click</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🏛️</span><span class="lesson-title">Bonds — Lending Money for Steady Interest</span></div>
+            <p class="lesson-desc">A bond is essentially an IOU — you lend money to a government or company, and they pay you interest until they pay you back. Bonds are typically less volatile than stocks and act as ballast in a portfolio.</p>
+            <span class="benefit-tag">Steadier returns that smooth out the ride</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💵</span><span class="lesson-title">Cash & Cash Equivalents — Your Safety Net</span></div>
+            <p class="lesson-desc">Savings accounts, money market funds, and short-term treasury bills won't make you rich, but they keep your money safe and accessible. Every investor needs some cash on hand before putting money to work.</p>
+            <span class="benefit-tag">Liquidity and safety when you need it most</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌐</span><span class="lesson-title">Alternative Assets — Real Estate, Commodities & Crypto</span></div>
+            <p class="lesson-desc">Beyond stocks and bonds, assets like real estate (REITs), gold, and cryptocurrency offer further diversification. They often move differently to traditional markets — but usually carry higher risk and complexity.</p>
+            <span class="benefit-tag">Extra diversification beyond the basics</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> no single asset class is right for everyone — the ideal mix depends on your goals, timeline and risk tolerance. We'll cover how to build a balanced portfolio in later lessons.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-charts">
+      <h2 class="section-title">Reading a Chart</h2>
+      <p class="section-desc">Charts look intimidating until you know what you're looking at. Here are the five building blocks behind every price chart.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🕯️</span><span class="lesson-title">Candlesticks — Price Action at a Glance</span></div>
+            <p class="lesson-desc">Each candlestick shows four numbers for a time period: the open, high, low, and close price. A green (or hollow) candle means the price rose; a red (or filled) candle means it fell. Once you can read one, you can read any chart.</p>
+            <span class="benefit-tag">See the full story of a price move, instantly</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📉</span><span class="lesson-title">Trend Lines — Is It Going Up, Down, or Sideways?</span></div>
+            <p class="lesson-desc">Draw a line connecting the highs or lows of a chart and you'll reveal the underlying trend. Markets spend most of their time trending in one direction — spotting it early is half the battle.</p>
+            <span class="benefit-tag">Know which direction the wind is blowing</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📊</span><span class="lesson-title">Volume — How Much Conviction Is Behind the Move?</span></div>
+            <p class="lesson-desc">Volume — the bars beneath a chart — shows how many shares changed hands. A price move on high volume carries far more weight than the same move on a quiet, low-volume day.</p>
+            <span class="benefit-tag">Separate real moves from noise</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧱</span><span class="lesson-title">Support & Resistance — Where Price Tends to Turn</span></div>
+            <p class="lesson-desc">Support is a price floor where buyers have stepped in before; resistance is a ceiling where sellers have shown up. Spotting these zones helps you understand likely turning points.</p>
+            <span class="benefit-tag">Spot the levels that matter</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">〰️</span><span class="lesson-title">Moving Averages — Smoothing Out the Noise</span></div>
+            <p class="lesson-desc">A moving average plots the average price over a set period (like 50 or 200 days), smoothing out the day-to-day jitter so the real trend stands out clearly.</p>
+            <span class="benefit-tag">See the forest, not just the trees</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> charts show you what happened — not what will happen next. Treat these tools as one input alongside research and a sound long-term plan, not a crystal ball.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-terms">
+      <h2 class="section-title">Key Terminology</h2>
+      <p class="section-desc">The five terms that show up everywhere in investing news and conversation — decoded in plain English.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🐂</span><span class="lesson-title">Bull Market vs Bear Market</span></div>
+            <p class="lesson-desc">A bull market means prices are generally rising and confidence is high. A bear market means prices have fallen sharply (typically 20%+ from a recent high) and pessimism dominates. Knowing which one you're in helps you set expectations.</p>
+            <span class="benefit-tag">Decode the headlines with confidence</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">⚖️</span><span class="lesson-title">Market Capitalization ("Market Cap")</span></div>
+            <p class="lesson-desc">Market cap is a company's total value on the stock market — its share price multiplied by the number of shares. It's the fastest way to gauge whether you're looking at a small, scrappy company or a market giant.</p>
+            <span class="benefit-tag">Size up a company in seconds</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💰</span><span class="lesson-title">Dividends — Getting Paid to Hold</span></div>
+            <p class="lesson-desc">Some companies share their profits directly with shareholders through regular cash payments called dividends. It's a way to earn income from your investments without selling a single share.</p>
+            <span class="benefit-tag">Passive income, straight into your account</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧮</span><span class="lesson-title">P/E Ratio — Is It Cheap or Expensive?</span></div>
+            <p class="lesson-desc">The Price-to-Earnings ratio compares a stock's price to its profits. A high P/E suggests investors expect strong future growth; a low P/E can signal a bargain — or a warning sign. It's a quick sanity check, not the full picture.</p>
+            <span class="benefit-tag">A fast gut-check on valuation</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌊</span><span class="lesson-title">Volatility — How Bumpy Is the Ride?</span></div>
+            <p class="lesson-desc">Volatility measures how much and how quickly a price swings up and down. Higher volatility means bigger potential gains — and bigger potential losses. Understanding it helps you pick investments that match your comfort level.</p>
+            <span class="benefit-tag">Match your investments to your risk appetite</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> this is just the start of the vocabulary — as you move into Intermediate and Pro, you'll pick up dozens more terms. Bookmark this page as a quick refresher.
+      </div>
     </div>
   </div>
 </section>
@@ -232,6 +397,14 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
