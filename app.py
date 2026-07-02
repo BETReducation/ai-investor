@@ -7,6 +7,7 @@ import pandas as pd
 import bcrypt
 import json
 import os
+import secrets
 try:
     import psycopg2
     import psycopg2.extras
@@ -215,15 +216,17 @@ def _ensure_default_user() -> None:
             cur.execute("SELECT 1 FROM users LIMIT 1")
             if cur.fetchone():
                 return
-        pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
+        password = secrets.token_urlsafe(12)
+        pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
-        print("\n  ✓ Created default user  →  username: admin  |  password: apex2024  |  tier: power_user\n")
+        print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: power_user\n")
         return
     if os.path.exists(USERS_FILE):
         return
-    pw_hash = bcrypt.hashpw(b"apex2024", bcrypt.gensalt()).decode("utf-8")
+    password = secrets.token_urlsafe(12)
+    pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
-    print("\n  ✓ Created default user  →  username: admin  |  password: apex2024  |  tier: power_user\n")
+    print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: power_user\n")
 
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
@@ -463,7 +466,7 @@ def api_register():
     _save_users(users)
 
     login_user(User(username, "power_user"), remember=True)
-    return jsonify({"success": True, "username": username, "tier": "power_user", "preferences": {}})
+    return jsonify({"success": True, "username": username, "tier": "power_user", "preferences": {}, "landing_page": "/"})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -488,6 +491,7 @@ def api_login():
         "username": username,
         "tier": user_data.get("tier", "basic"),
         "preferences": user_data.get("preferences", {}),
+        "landing_page": user_data.get("profile", {}).get("landing_page", "/"),
     })
 
 
@@ -549,6 +553,16 @@ def load_preferences():
     })
 
 
+LANDING_PAGE_CHOICES = {
+    "/",
+    "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro",
+    "/tools", "/tools/signals", "/backtester", "/tools/portfolio",
+    "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
+    "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
+    "/partners", "/profile",
+}
+
+
 @app.route("/api/profile", methods=["GET"])
 @login_required
 def api_get_profile():
@@ -563,6 +577,7 @@ def api_get_profile():
         "bio":            profile.get("bio", ""),
         "investor_type":  profile.get("investor_type", "beginner"),
         "profile_picture": profile.get("profile_picture", ""),
+        "landing_page":   profile.get("landing_page", "/"),
     })
 
 
@@ -585,6 +600,11 @@ def api_update_profile():
         if value not in PRESET_AVATARS:
             return jsonify({"error": "Invalid avatar selection"}), 400
         profile["profile_picture"] = value
+    if "landing_page" in data:
+        value = str(data["landing_page"]).strip()
+        if value not in LANDING_PAGE_CHOICES:
+            return jsonify({"error": "Invalid landing page"}), 400
+        profile["landing_page"] = value
     users[current_user.id]["profile"] = profile
     _save_users(users)
     return jsonify({"success": True, "profile": profile})

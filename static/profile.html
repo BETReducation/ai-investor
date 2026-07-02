@@ -290,6 +290,41 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             </select>
           </div>
           <div class="form-group span2">
+            <div class="form-label">Sign-In Destination</div>
+            <select id="fieldLandingPage" class="form-input">
+              <option value="/">Home</option>
+              <optgroup label="Learn">
+                <option value="/learn">Learn Hub</option>
+                <option value="/learn/beginner">Beginner</option>
+                <option value="/learn/intermediate">Intermediate</option>
+                <option value="/learn/pro">Pro</option>
+              </optgroup>
+              <optgroup label="Tools">
+                <option value="/tools">Tools Hub</option>
+                <option value="/tools/signals">Signals</option>
+                <option value="/backtester">Backtester</option>
+                <option value="/tools/portfolio">Portfolio Manager</option>
+              </optgroup>
+              <optgroup label="The Arena">
+                <option value="/arena">Arena Hub</option>
+                <option value="/arena/market-xi">Market XI</option>
+                <option value="/arena/competitions">Trading Competitions</option>
+                <option value="/arena/predictions">Predictions Markets</option>
+              </optgroup>
+              <optgroup label="Alpha">
+                <option value="/alpha">Alpha Hub</option>
+                <option value="/alpha/connor">Connor</option>
+                <option value="/alpha/dave">Dave</option>
+                <option value="/alpha/gary">Gary</option>
+                <option value="/alpha/tom">Tom</option>
+                <option value="/alpha/podcast">Podcast</option>
+              </optgroup>
+              <option value="/partners">Partners</option>
+              <option value="/profile">Profile</option>
+            </select>
+            <div class="form-hint">Where you land right after signing in.</div>
+          </div>
+          <div class="form-group span2">
             <div class="form-label">Bio</div>
             <textarea id="fieldBio" class="form-input form-textarea" placeholder="A short description about yourself and your investment goals..." maxlength="280"></textarea>
           </div>
@@ -486,6 +521,7 @@ function populateProfile(data) {
   document.getElementById('fieldEmail').value       = data.email || '';
   document.getElementById('fieldBio').value         = data.bio || '';
   document.getElementById('fieldInvestorType').value = data.investor_type || 'beginner';
+  document.getElementById('fieldLandingPage').value = data.landing_page || '/';
 
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
   highlightCurrentPlan(data.tier);
@@ -551,6 +587,7 @@ async function saveProfile() {
     email:         document.getElementById('fieldEmail').value.trim(),
     bio:           document.getElementById('fieldBio').value.trim(),
     investor_type: document.getElementById('fieldInvestorType').value,
+    landing_page:  document.getElementById('fieldLandingPage').value,
   };
 
   try {

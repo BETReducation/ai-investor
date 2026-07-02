@@ -356,9 +356,9 @@ function switchTab(tab) {
 }
 
 // ── Redirect after auth ──
-function getRedirect() {
+function getRedirect(landingPage) {
   const params = new URLSearchParams(window.location.search);
-  return params.get('next') || '/signal-config';
+  return params.get('next') || landingPage || '/';
 }
 
 // ── Login ──
@@ -382,8 +382,8 @@ async function doLogin() {
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Login failed. Check your credentials.'); return; }
-    if (remember) localStorage.setItem('apexSession', '1');
-    window.location.href = getRedirect();
+    if (remember) localStorage.setItem('gcaSession', '1');
+    window.location.href = getRedirect(data.landing_page);
   } catch {
     showError(errEl, 'Cannot reach server — please try again.');
   } finally {
@@ -417,10 +417,10 @@ async function doRegister() {
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Registration failed.'); return; }
-    localStorage.setItem('apexSession', '1');
+    localStorage.setItem('gcaSession', '1');
     okEl.textContent = 'Account created! Redirecting…';
     okEl.style.display = 'block';
-    setTimeout(() => { window.location.href = getRedirect(); }, 1000);
+    setTimeout(() => { window.location.href = getRedirect(data.landing_page); }, 1000);
   } catch {
     showError(errEl, 'Cannot reach server — please try again.');
   } finally {
