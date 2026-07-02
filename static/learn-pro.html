@@ -50,6 +50,30 @@
 .notify-input:focus { border-color: var(--teal); }
 .notify-btn { background: var(--teal); color: #03130f; border: none; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
 .notify-btn:hover { opacity: 0.88; }
+.lesson-list { display: flex; flex-direction: column; gap: 18px; max-width: 820px; margin: 0 auto; }
+.lesson-item { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; display: flex; gap: 24px; align-items: flex-start; transition: border-color 0.25s, transform 0.25s; }
+.lesson-item:hover { border-color: var(--border2); transform: translateY(-2px); }
+.lesson-num { flex-shrink: 0; width: 52px; height: 52px; border-radius: 14px; background: rgba(45,212,191,0.12); border: 1px solid rgba(45,212,191,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--teal); }
+.lesson-body { flex: 1; min-width: 0; }
+.lesson-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.lesson-icon { font-size: 21px; }
+.lesson-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; color: var(--text); }
+.lesson-desc { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.benefit-tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); color: var(--green); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 100px; }
+.benefit-tag::before { content: '✓'; font-weight: 800; }
+.builds-on-tag { display: inline-flex; align-items: center; gap: 7px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); color: var(--purple2); font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 100px; margin-left: 8px; }
+.builds-on-tag::before { content: '↑'; font-weight: 800; }
+.fine-print { max-width: 820px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .lesson-item { flex-direction: column; } .cta-grid { grid-template-columns: 1fr; } }
+.tab-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; flex-wrap: wrap; }
+.tab-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, background 0.2s, color 0.2s; }
+.tab-btn:hover { border-color: var(--border2); color: var(--text); }
+.tab-btn.active { background: #5eead4; border-color: #5eead4; color: #03130f; }
+[data-theme="light"] .tab-btn.active { background: #2dd4bf; border-color: #2dd4bf; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeUp 0.4s ease both; }
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -125,37 +149,248 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner">
-    <h2 class="section-title">What's Coming</h2>
-    <p class="section-desc">Here's a preview of what we're building for this section.</p>
-    <div class="hub-grid reveal">
-      <div class="hub-card">
-        <div class="card-icon">🔬</div>
-        <div class="card-title">Quantitative Strategy Design</div>
-        <div class="card-desc">Build fully systematic, back-tested trading strategies using statistical methods — mean reversion, momentum factor models, and regime detection.</div>
+    <div class="tab-bar reveal">
+      <button class="tab-btn active" data-tab="quant">Quantitative Strategy Design</button>
+      <button class="tab-btn" data-tab="options">Options & Derivatives</button>
+      <button class="tab-btn" data-tab="macro">Macro & Cross-Asset Analysis</button>
+      <button class="tab-btn" data-tab="terms">Key Terminology</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-quant">
+      <h2 class="section-title">Quantitative Strategy Design</h2>
+      <p class="section-desc">Trading ideas become durable when you turn them into rules a computer can test. Here's how professionals build and validate a systematic edge.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔄</span><span class="lesson-title">Mean Reversion — Betting Prices Return to "Normal"</span></div>
+            <p class="lesson-desc">Mean reversion strategies bet that when a price strays far from its historical average, it will eventually snap back. Pairs trading and statistical arbitrage are built on this single idea, applied with strict rules instead of gut feel.</p>
+            <span class="benefit-tag">Turn "it's gone too far" into a testable edge</span>
+            <span class="builds-on-tag">Builds on: Bollinger Bands (Intermediate)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📈</span><span class="lesson-title">Momentum & Factor Models</span></div>
+            <p class="lesson-desc">Factor models isolate specific, persistent drivers of returns — momentum, value, quality, size — and build rules-based portfolios around them, rather than relying on any single trade idea.</p>
+            <span class="benefit-tag">Replace hunches with measurable, repeatable factors</span>
+            <span class="builds-on-tag">Builds on: MACD (Intermediate)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧪</span><span class="lesson-title">Backtesting — Proving an Idea Before Risking Real Money</span></div>
+            <p class="lesson-desc">A backtest runs your strategy's rules against historical data to see how it would have performed. Done properly — with realistic costs and no lookahead bias — it's the difference between a hunch and evidence.</p>
+            <span class="benefit-tag">Find out if your edge is real before it costs you</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🌗</span><span class="lesson-title">Regime Detection — Knowing When the Rules Change</span></div>
+            <p class="lesson-desc">Markets shift between calm, trending, and chaotic regimes, and a strategy that thrives in one can blow up in another. Regime detection uses volatility and correlation signals to recognize the shift and adjust exposure accordingly.</p>
+            <span class="benefit-tag">Adapt before the market forces you to</span>
+            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🎛️</span><span class="lesson-title">Position Sizing & Risk Budgeting at the Strategy Level</span></div>
+            <p class="lesson-desc">Professional quants size every trade by its statistical risk contribution, not a flat dollar amount — capping how much any single signal or asset can hurt the whole book if it goes wrong.</p>
+            <span class="benefit-tag">Make sizing a formula, not a feeling</span>
+            <span class="builds-on-tag">Builds on: Position Sizing (Intermediate)</span>
+          </div>
+        </div>
       </div>
-      <div class="hub-card">
-        <div class="card-icon">📉</div>
-        <div class="card-title">Options & Derivatives</div>
-        <div class="card-desc">Understand options pricing, the Greeks, volatility skew and practical strategies: covered calls, spreads, straddles and hedging techniques.</div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> a backtest that looks great is not the same as a strategy that will survive live markets — overfitting, changing regimes and real-world costs can all quietly break an otherwise "perfect" system.
       </div>
-      <div class="hub-card">
-        <div class="card-icon">🌍</div>
-        <div class="card-title">Macro & Cross-Asset Analysis</div>
-        <div class="card-desc">Follow global capital flows, central bank cycles, yield curve dynamics and how macro shifts create multi-month directional trades in equities and crypto.</div>
+    </div>
+
+    <div class="tab-panel" id="tab-options">
+      <h2 class="section-title">Options & Derivatives</h2>
+      <p class="section-desc">Options let you define risk with precision most other instruments can't match — if you understand exactly what you're holding.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🎟️</span><span class="lesson-title">What Is an Option? Rights, Not Obligations</span></div>
+            <p class="lesson-desc">A call option gives you the right — not the obligation — to buy an asset at a set price before a set date; a put gives you the right to sell. That asymmetry, capped cost against uncapped potential, makes options a genuinely different tool from owning the stock outright.</p>
+            <span class="benefit-tag">Define your maximum loss before you place the trade</span>
+            <span class="builds-on-tag">Builds on: Stocks (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🧮</span><span class="lesson-title">The Greeks — Delta, Gamma, Theta & Vega Explained</span></div>
+            <p class="lesson-desc">The Greeks measure how an option's price reacts to different forces: Delta to the underlying price, Gamma to the speed of that change, Theta to time decay, and Vega to volatility. Master these and you understand exactly what you're exposed to.</p>
+            <span class="benefit-tag">See every risk in your position, not just the price</span>
+            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📊</span><span class="lesson-title">Implied Volatility & Volatility Skew</span></div>
+            <p class="lesson-desc">Implied volatility reflects what the market expects future price swings to look like — and it's rarely flat across strike prices. Understanding the resulting "skew" reveals where the market is pricing in the most fear or complacency.</p>
+            <span class="benefit-tag">Read what the market is actually afraid of</span>
+            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💵</span><span class="lesson-title">Income Strategies — Covered Calls & Cash-Secured Puts</span></div>
+            <p class="lesson-desc">Selling a covered call against stock you own — or a cash-secured put on stock you'd be happy to buy — lets you collect a premium in exchange for capping your upside or committing to a purchase price. It's a way to get paid for a view you already hold.</p>
+            <span class="benefit-tag">Turn a stock you already hold into extra income</span>
+            <span class="builds-on-tag">Builds on: Dividends (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🛡️</span><span class="lesson-title">Spreads & Hedging — Defining Your Risk on Both Sides</span></div>
+            <p class="lesson-desc">Combining two or more options into a spread — like a bull call spread or a protective collar — lets you cap both your cost and your risk, trading away some potential profit for a far more predictable outcome.</p>
+            <span class="benefit-tag">Know your best and worst case before you enter</span>
+            <span class="builds-on-tag">Builds on: Hedging (Intermediate)</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> options can lose value even when your market direction is right, purely from time decay or a drop in implied volatility. Sizing and structure matter as much as the view itself.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-macro">
+      <h2 class="section-title">Macro & Cross-Asset Analysis</h2>
+      <p class="section-desc">Zoom out. The biggest, longest-lasting moves in any single asset are often set in motion by forces far outside it.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🏦</span><span class="lesson-title">Central Bank Policy — Why Interest Rates Move Everything</span></div>
+            <p class="lesson-desc">When central banks raise or cut interest rates, they change the cost of money for the entire economy — reshaping everything from mortgage payments to how attractively priced stocks look compared to bonds. Few single forces move markets more.</p>
+            <span class="benefit-tag">Understand the lever that moves every asset class at once</span>
+            <span class="builds-on-tag">Builds on: Bonds (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📉</span><span class="lesson-title">The Yield Curve — The Bond Market's Early Warning System</span></div>
+            <p class="lesson-desc">The yield curve plots interest rates across different bond maturities. When short-term rates rise above long-term ones (an "inversion"), it has historically been one of the most reliable early warnings of an oncoming recession.</p>
+            <span class="benefit-tag">Spot recession risk before the headlines catch up</span>
+            <span class="builds-on-tag">Builds on: Bonds (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💱</span><span class="lesson-title">Currency Markets & Capital Flows</span></div>
+            <p class="lesson-desc">Currencies move on interest rate differentials, trade balances, and where global capital is chasing the best risk-adjusted returns. A strengthening or weakening currency quietly reshapes the earnings of every multinational company you might own.</p>
+            <span class="benefit-tag">See the hidden force behind global earnings surprises</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔗</span><span class="lesson-title">Cross-Asset Correlation — When Everything Moves Together</span></div>
+            <p class="lesson-desc">In calm markets, stocks, bonds, and commodities often move independently — offering real diversification. In a crisis, correlations frequently spike toward 1, and previously "diversified" portfolios fall together. Knowing when and why this happens is critical to real risk management.</p>
+            <span class="benefit-tag">Know when your diversification is about to disappear</span>
+            <span class="builds-on-tag">Builds on: Correlation (Intermediate)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🥇</span><span class="lesson-title">Commodities & Safe Havens — Gold, Oil, and Risk Sentiment</span></div>
+            <p class="lesson-desc">Commodities like gold and oil respond to their own supply-and-demand dynamics, but also act as barometers of broader risk sentiment — gold often rising when confidence in currencies or governments wavers, oil reacting to global growth expectations.</p>
+            <span class="benefit-tag">Read a second market that talks when equities go quiet</span>
+            <span class="builds-on-tag">Builds on: Alternative Assets (Beginner)</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> macro views play out over months or years, not days — the hardest part is usually being early and staying disciplined enough to hold the position through the noise in between.
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-terms">
+      <h2 class="section-title">Key Terminology</h2>
+      <p class="section-desc">The precise, numerate vocabulary that professional trading desks and fund managers use every day.</p>
+      <div class="lesson-list">
+        <div class="lesson-item">
+          <div class="lesson-num">1</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">🔢</span><span class="lesson-title">Basis Points (bps) — The Language of Precision</span></div>
+            <p class="lesson-desc">A basis point is one-hundredth of a percentage point (0.01%). Professionals use bps instead of percentages because it removes ambiguity — "up 25bps" always means a quarter of one percent, no matter the starting number.</p>
+            <span class="benefit-tag">Speak the exact language professionals use</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">2</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">⏱️</span><span class="lesson-title">Duration — A Bond's Sensitivity to Interest Rates</span></div>
+            <p class="lesson-desc">Duration measures how much a bond's price will move for a given change in interest rates. A bond with a duration of 7 will fall roughly 7% in value if rates rise by 1% — essential for managing interest rate risk.</p>
+            <span class="benefit-tag">Quantify exactly how exposed a bond is to rate moves</span>
+            <span class="builds-on-tag">Builds on: Bonds (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">3</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">⚡</span><span class="lesson-title">Leverage — Amplifying Gains and Losses Alike</span></div>
+            <p class="lesson-desc">Leverage means controlling a larger position than your capital alone would allow, using borrowed money or derivatives. It multiplies your returns in both directions — a powerful tool that has also ended more accounts than almost any other single mistake.</p>
+            <span class="benefit-tag">Understand the tool before it understands you</span>
+            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">4</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">📐</span><span class="lesson-title">Value at Risk (VaR) — Quantifying Your Worst-Case Day</span></div>
+            <p class="lesson-desc">Value at Risk estimates the maximum expected loss over a given period at a given confidence level — for example, "95% confident we won't lose more than 3% tomorrow." It's the standard risk metric used across professional trading desks.</p>
+            <span class="benefit-tag">Put a number on how bad a bad day could be</span>
+            <span class="builds-on-tag">Builds on: Drawdown (Intermediate)</span>
+          </div>
+        </div>
+        <div class="lesson-item">
+          <div class="lesson-num">5</div>
+          <div class="lesson-body">
+            <div class="lesson-title-row"><span class="lesson-icon">💧</span><span class="lesson-title">Liquidity Risk vs Market Risk — Two Different Ways to Lose</span></div>
+            <p class="lesson-desc">Market risk is the chance an asset's price falls; liquidity risk is the chance you can't exit at a fair price even if you're right about the direction. Professionals plan for both — a great thesis is worthless if you can't act on it when it matters.</p>
+            <span class="benefit-tag">Plan your exit, not just your entry</span>
+            <span class="builds-on-tag">Builds on: Liquidity (Intermediate)</span>
+          </div>
+        </div>
+      </div>
+      <div class="fine-print">
+        <b>Worth knowing:</b> this vocabulary is the floor, not the ceiling — professional desks layer dozens more specialized terms on top depending on asset class. Use this as your foundation for reading research and prospectuses with confidence.
       </div>
     </div>
   </div>
 </section>
 <section class="content-section alt-bg">
   <div class="content-inner">
-    <div class="notify-box reveal">
-      <div style="font-size:32px;margin-bottom:16px;">🔔</div>
-      <div class="notify-title">Pro track is in development</div>
-      <p class="notify-desc">Be first to access the Pro curriculum when it launches.</p>
-      <div class="notify-form">
-        <input class="notify-input" type="email" placeholder="your@email.com">
-        <button class="notify-btn">Notify Me</button>
-      </div>
+    <h2 class="section-title">Ready to Put This to Work?</h2>
+    <p class="section-desc">You've got the theory — now test it against real markets and real competition.</p>
+    <div class="cta-grid reveal">
+      <a href="/tools/signals" class="hub-card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Deploy Your Edge</div>
+        <div class="card-desc">Build and run live signal strategies using the concepts you've just learned.</div>
+        <div class="card-link">Open Signals →</div>
+      </a>
+      <a href="/arena" class="hub-card">
+        <div class="card-icon">🏆</div>
+        <div class="card-title">Test Yourself in The Arena</div>
+        <div class="card-desc">Put your strategy up against other traders in competitions and prediction markets.</div>
+        <div class="card-link">Enter The Arena →</div>
+      </a>
     </div>
   </div>
 </section>
@@ -182,6 +417,14 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
@@ -189,7 +432,7 @@ revealEls.forEach(el => io.observe(el));
       const data = await res.json();
       if (data.authenticated && data.username) {
         const signIn = document.getElementById('navSignIn');
-        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
       }
     }
   } catch {}
