@@ -643,6 +643,14 @@ window.addEventListener('resize', () => {
   <div class="lab-sidebar">
     <div class="sidebar-header">BACKTEST PARAMETERS</div>
 
+    <!-- Simple / Detailed indicator mode -->
+    <div style="display:flex;gap:4px;padding:10px 16px 0;">
+      <button id="modeSimple" onclick="setIndicatorMode('simple')"
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">SIMPLE</button>
+      <button id="modeDetailed" onclick="setIndicatorMode('detailed')"
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">DETAILED</button>
+    </div>
+
     <!-- Symbol + Period + Interval -->
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
@@ -726,8 +734,25 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
+    <!-- Simple indicators (RSI only) -->
+    <div class="ctrl-section" id="simpleIndicators">
+      <div class="ctrl-label">RSI SETTINGS</div>
+      <div class="param-row">
+        <span class="param-label">Length</span>
+        <input type="number" class="param-input" id="rsiLengthSimple" value="14" min="2" max="200">
+      </div>
+      <div class="param-row">
+        <span class="param-label">Oversold level</span>
+        <input type="number" class="param-input" id="rsiOversoldSimple" value="30" min="10" max="45">
+      </div>
+      <div class="param-row" style="margin-bottom:0;">
+        <span class="param-label">Overbought level</span>
+        <input type="number" class="param-input" id="rsiOverboughtSimple" value="70" min="55" max="90">
+      </div>
+    </div>
+
     <!-- Indicators with expandable params -->
-    <div class="ctrl-section">
+    <div class="ctrl-section" id="detailedIndicators" style="display:none;">
       <div class="ctrl-label">INDICATORS — click name to configure</div>
 
       <!-- RSI -->
@@ -1204,6 +1229,19 @@ function setState(id) {
 }
 
 // ── Period mode toggle ────────────────────────────────────────────────────────
+let indicatorMode = 'simple';
+
+function setIndicatorMode(mode) {
+  indicatorMode = mode;
+  const isDetailed = mode === 'detailed';
+  document.getElementById('simpleIndicators').style.display   = isDetailed ? 'none' : '';
+  document.getElementById('detailedIndicators').style.display = isDetailed ? '' : 'none';
+  document.getElementById('modeSimple').style.background = isDetailed ? 'var(--bg-secondary)' : 'var(--accent-green)';
+  document.getElementById('modeSimple').style.color = isDetailed ? 'var(--text-secondary)' : '#000';
+  document.getElementById('modeDetailed').style.background = isDetailed ? 'var(--accent-green)' : 'var(--bg-secondary)';
+  document.getElementById('modeDetailed').style.color = isDetailed ? '#000' : 'var(--text-secondary)';
+}
+
 function setPeriodMode(mode) {
   const isCustom = mode === 'custom';
   document.getElementById('presetPanel').style.display = isCustom ? 'none' : '';
@@ -1265,10 +1303,19 @@ async function runBacktest() {
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
 
-  const rsiLength   = parseInt(document.getElementById('rsiLength').value)     || 14;
-  const rsiSmoothing = document.getElementById('rsiSmoothing').value || 'wilder';
-  const rsiOs       = parseInt(document.getElementById('rsiOversold').value)   || 30;
-  const rsiOb     = parseInt(document.getElementById('rsiOverbought').value) || 70;
+  const isSimple = indicatorMode === 'simple';
+
+  const rsiLength    = isSimple
+    ? parseInt(document.getElementById('rsiLengthSimple').value)     || 14
+    : parseInt(document.getElementById('rsiLength').value)           || 14;
+  const rsiOs        = isSimple
+    ? parseInt(document.getElementById('rsiOversoldSimple').value)   || 30
+    : parseInt(document.getElementById('rsiOversold').value)         || 30;
+  const rsiOb        = isSimple
+    ? parseInt(document.getElementById('rsiOverboughtSimple').value) || 70
+    : parseInt(document.getElementById('rsiOverbought').value)       || 70;
+  const rsiSmoothing = isSimple ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
+
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
   const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
@@ -1278,11 +1325,11 @@ async function runBacktest() {
   const emaLong   = parseInt(document.getElementById('emaLong').value)       || 21;
   const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
 
-  const rsiOn  = document.getElementById('togRsi').checked  ? 1 : 0;
-  const macdOn = document.getElementById('togMacd').checked ? 1 : 0;
-  const bbOn   = document.getElementById('togBb').checked   ? 1 : 0;
-  const maOn   = document.getElementById('togMa').checked   ? 1 : 0;
-  const volOn  = document.getElementById('togVol').checked  ? 1 : 0;
+  const rsiOn  = isSimple ? 1 : (document.getElementById('togRsi').checked  ? 1 : 0);
+  const macdOn = isSimple ? 0 : (document.getElementById('togMacd').checked ? 1 : 0);
+  const bbOn   = isSimple ? 0 : (document.getElementById('togBb').checked   ? 1 : 0);
+  const maOn   = isSimple ? 0 : (document.getElementById('togMa').checked   ? 1 : 0);
+  const volOn  = isSimple ? 0 : (document.getElementById('togVol').checked  ? 1 : 0);
 
   if (!symbol) {
     document.getElementById('btSymbol').focus();
