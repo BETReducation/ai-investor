@@ -132,6 +132,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="nav-cta">
     <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
     <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
 
@@ -420,6 +423,29 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 })();
 function updateLogos(theme) {
 }
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'light' ? 'dark' : 'light';
