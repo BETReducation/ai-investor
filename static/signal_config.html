@@ -206,7 +206,7 @@
   </div>
   <div class="site-nav-cta">
     <button class="theme-toggle" id="themeToggle" onclick="toggleGCATheme()" title="Toggle light/dark mode">🌙</button>
-    <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;">GUEST</span>
+    <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;display:none;"></span>
     <button class="site-btn-ghost" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">Sign In</button>
     <button class="site-btn-ghost" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
     <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
@@ -2128,12 +2128,16 @@ async function checkSession() {
 }
 
 function updateUserDisplay() {
-  document.getElementById('usernameDisplay').textContent = (currentUser || 'GUEST').toUpperCase();
+  const userDisplay = document.getElementById('usernameDisplay');
+  userDisplay.textContent = currentUser ? currentUser.toUpperCase() : '';
+  userDisplay.style.display = currentUser ? '' : 'none';
   document.getElementById('signInBtn').style.display = currentUser ? 'none' : 'inline-block';
   document.getElementById('logoutBtn').style.display  = currentUser ? 'inline-block' : 'none';
   const pill = document.getElementById('userPill');
-  pill.style.cursor = currentUser ? 'pointer' : 'default';
-  pill.title = currentUser ? 'View profile' : '';
+  if (pill) {
+    pill.style.cursor = currentUser ? 'pointer' : 'default';
+    pill.title = currentUser ? 'View profile' : '';
+  }
 }
 
 function userPillClick() {
