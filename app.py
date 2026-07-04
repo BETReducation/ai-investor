@@ -119,6 +119,7 @@ def _extract_calc_params(args) -> dict:
 # Backtester-only calc params (kept separate from _INT_CALC_KEYS/_FLOAT_CALC_KEYS
 # above so /api/indicators' calculate_all(**calc_params) never sees an unexpected kwarg).
 _BT_INT_CALC_KEYS = {
+    "rsi_div_lookback": 5,
     "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
     "donchian_length": 20,
     "keltner_length": 20, "keltner_atr_length": 10,
@@ -137,6 +138,11 @@ _BT_INT_CALC_KEYS = {
 }
 _BT_FLOAT_CALC_KEYS = {
     "keltner_mult": 2.0,
+}
+
+_VALID_RSI_TRIGGERS = {
+    "overbought_oversold", "overbought", "oversold", "centerline_cross",
+    "bullish_divergence", "bearish_divergence", "failure_swings",
 }
 
 
@@ -859,6 +865,12 @@ def backtest():
                 thresholds[key] = float(val)
             except ValueError:
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
+
+    rsi_trigger = request.args.get("rsi_trigger")
+    if rsi_trigger is not None:
+        if rsi_trigger not in _VALID_RSI_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'rsi_trigger'"}), 400
+        thresholds["rsi_trigger"] = rsi_trigger
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))

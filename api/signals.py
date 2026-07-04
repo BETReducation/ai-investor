@@ -5,6 +5,9 @@ from typing import Any
 DEFAULT_THRESHOLDS = {
     "rsi_oversold": 30,
     "rsi_overbought": 70,
+    "rsi_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold |
+                                            # centerline_cross | bullish_divergence |
+                                            # bearish_divergence | failure_swings
     "volume_surge": 1.5,
     "macd_threshold": 0,
     "bb_oversold": 0.05,        # price must be at/near lower band (within 5%)
@@ -55,15 +58,67 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     sell_score = 0
 
     rsi = indicators.get("rsi")
+    rsi_trig = indicators.get("rsi_trigger", {})
+    trigger  = t.get("rsi_trigger", "overbought_oversold")
     if t.get("rsi_on", 1) and rsi is not None:
-        if rsi < t["rsi_oversold"]:
-            signals.append({"indicator": "RSI", "type": "BUY", "detail": f"RSI {rsi:.1f} — oversold (<{t['rsi_oversold']})", "weight": 2})
-            buy_score += 2
-        elif rsi > t["rsi_overbought"]:
-            signals.append({"indicator": "RSI", "type": "SELL", "detail": f"RSI {rsi:.1f} — overbought (>{t['rsi_overbought']})", "weight": 2})
-            sell_score += 2
-        else:
-            signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": f"RSI {rsi:.1f} — neutral", "weight": 0})
+        if trigger == "overbought":
+            if rsi > t["rsi_overbought"]:
+                signals.append({"indicator": "RSI", "type": "SELL", "detail": f"RSI {rsi:.1f} — overbought (>{t['rsi_overbought']})", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": f"RSI {rsi:.1f} — not overbought", "weight": 0})
+
+        elif trigger == "oversold":
+            if rsi < t["rsi_oversold"]:
+                signals.append({"indicator": "RSI", "type": "BUY", "detail": f"RSI {rsi:.1f} — oversold (<{t['rsi_oversold']})", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": f"RSI {rsi:.1f} — not oversold", "weight": 0})
+
+        elif trigger == "centerline_cross":
+            cross = rsi_trig.get("centerline_cross", 0)
+            if cross > 0:
+                signals.append({"indicator": "RSI", "type": "BUY", "detail": "RSI crossed above the 50 centerline", "weight": 2})
+                buy_score += 2
+            elif cross < 0:
+                signals.append({"indicator": "RSI", "type": "SELL", "detail": "RSI crossed below the 50 centerline", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": "No centerline cross", "weight": 0})
+
+        elif trigger == "bullish_divergence":
+            if rsi_trig.get("bullish_divergence"):
+                signals.append({"indicator": "RSI", "type": "BUY", "detail": "Bullish divergence — price made a lower low, RSI a higher low", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+
+        elif trigger == "bearish_divergence":
+            if rsi_trig.get("bearish_divergence"):
+                signals.append({"indicator": "RSI", "type": "SELL", "detail": "Bearish divergence — price made a higher high, RSI a lower high", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
+
+        elif trigger == "failure_swings":
+            if rsi_trig.get("bullish_failure_swing"):
+                signals.append({"indicator": "RSI", "type": "BUY", "detail": "Bullish failure swing confirmed", "weight": 2})
+                buy_score += 2
+            elif rsi_trig.get("bearish_failure_swing"):
+                signals.append({"indicator": "RSI", "type": "SELL", "detail": "Bearish failure swing confirmed", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": "No failure swing", "weight": 0})
+
+        else:  # "overbought_oversold" (default) — unchanged from original behavior
+            if rsi < t["rsi_oversold"]:
+                signals.append({"indicator": "RSI", "type": "BUY", "detail": f"RSI {rsi:.1f} — oversold (<{t['rsi_oversold']})", "weight": 2})
+                buy_score += 2
+            elif rsi > t["rsi_overbought"]:
+                signals.append({"indicator": "RSI", "type": "SELL", "detail": f"RSI {rsi:.1f} — overbought (>{t['rsi_overbought']})", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "RSI", "type": "NEUTRAL", "detail": f"RSI {rsi:.1f} — neutral", "weight": 0})
 
     macd_data = indicators.get("macd", {})
     macd_val = macd_data.get("macd")

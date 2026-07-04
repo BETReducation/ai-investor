@@ -502,3 +502,126 @@ def calculate_fibonacci_levels(df: pd.DataFrame, lookback: int = 50) -> pd.DataF
         "FIB_618": swing_high - rng * 0.618,
         "FIB_786": swing_high - rng * 0.786,
     })
+
+
+# ── RSI trigger modes (Backtester) ────────────────────────────────────────────
+# Lets the RSI indicator fire on something other than plain overbought/oversold.
+
+def calculate_rsi_centerline_cross(rsi: pd.Series) -> pd.Series:
+    """+1 the bar RSI crosses above 50, -1 the bar it crosses below 50, else 0."""
+    above       = rsi > 50
+    prev_above  = above.shift(1, fill_value=False)
+    crossed_up  = above & ~prev_above
+    crossed_dn  = ~above & prev_above
+    signal = pd.Series(0, index=rsi.index)
+    signal[crossed_up] = 1
+    signal[crossed_dn] = -1
+    return signal
+
+
+def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    Regular divergence between price and RSI, detected off trailing-confirmed pivots:
+    bar j = i - lookback is a pivot if it's the min/max of the (2*lookback+1)-bar window
+    ending at i — using only data up to i, so there's no lookahead. Returns (bullish,
+    bearish) boolean Series, True on the bar a divergence is confirmed (the second pivot).
+    """
+    n = len(close)
+    bullish = np.zeros(n, dtype=bool)
+    bearish = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    c = close.values
+    r = rsi.values
+
+    last_low_price = last_low_rsi = None
+    last_high_price = last_high_rsi = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window_c = c[i - win + 1: i + 1]
+        window_r = r[i - win + 1: i + 1]
+        if np.isnan(window_c).any() or np.isnan(window_r).any():
+            continue
+
+        if c[j] == window_c.min():
+            if last_low_price is not None and c[j] < last_low_price and r[j] > last_low_rsi:
+                bullish[i] = True
+            last_low_price, last_low_rsi = c[j], r[j]
+
+        if c[j] == window_c.max():
+            if last_high_price is not None and c[j] > last_high_price and r[j] < last_high_rsi:
+                bearish[i] = True
+            last_high_price, last_high_rsi = c[j], r[j]
+
+    return pd.Series(bullish, index=close.index), pd.Series(bearish, index=close.index)
+
+
+def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+    """
+    Wilder's failure swings. Returns (bullish, bearish) boolean Series, True on the bar
+    the swing is confirmed (RSI breaks the high/low set during its pullback from the zone).
+    """
+    n = len(rsi)
+    r = rsi.values
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    # Bullish: idle -> armed (dipped below oversold) -> peaking (recovered, tracking high)
+    #          -> pullback (declining, must stay above oversold) -> break above the peak.
+    state, peak, prev = 0, None, None
+    for i in range(n):
+        v = r[i]
+        if v != v:
+            prev = v
+            continue
+        if state == 0:
+            if v < oversold:
+                state = 1
+        elif state == 1:
+            if v > oversold:
+                state, peak = 2, v
+        elif state == 2:
+            if v < oversold:
+                state = 1
+            elif prev is not None and v < prev:
+                peak, state = prev, 3
+            else:
+                peak = max(peak, v)
+        elif state == 3:
+            if v < oversold:
+                state = 1
+            elif v > peak:
+                bull[i] = True
+                state = 0
+        prev = v
+
+    # Bearish: mirror image.
+    state, trough, prev = 0, None, None
+    for i in range(n):
+        v = r[i]
+        if v != v:
+            prev = v
+            continue
+        if state == 0:
+            if v > overbought:
+                state = 1
+        elif state == 1:
+            if v < overbought:
+                state, trough = 2, v
+        elif state == 2:
+            if v > overbought:
+                state = 1
+            elif prev is not None and v > prev:
+                trough, state = prev, 3
+            else:
+                trough = min(trough, v)
+        elif state == 3:
+            if v > overbought:
+                state = 1
+            elif v < trough:
+                bear[i] = True
+                state = 0
+        prev = v
+
+    return pd.Series(bull, index=rsi.index), pd.Series(bear, index=rsi.index)

@@ -798,6 +798,22 @@ window.addEventListener('resize', () => {
           <span class="param-label">Overbought level</span>
           <input type="number" class="param-input" id="rsiOverbought" value="70" min="55" max="90">
         </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="rsiTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought / Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+            <option value="bullish_divergence">Bullish divergence</option>
+            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="failure_swings">Failure swings</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="rsiDivLookback" value="5" min="2" max="30">
+        </div>
       </div>
 
       <!-- MACD -->
@@ -1599,6 +1615,8 @@ async function runBacktest() {
     ? parseInt(document.getElementById('rsiOverboughtSimple').value) || 70
     : parseInt(document.getElementById('rsiOverbought').value)       || 70;
   const rsiSmoothing = isSimple ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
+  const rsiTrigger   = isSimple ? 'overbought_oversold' : (document.getElementById('rsiTrigger').value || 'overbought_oversold');
+  const rsiDivLookback = isSimple ? 5 : (parseInt(document.getElementById('rsiDivLookback').value) || 5);
 
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
@@ -1683,6 +1701,7 @@ async function runBacktest() {
     stop_loss: sl, take_profit: tp, min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    rsi_trigger: rsiTrigger, rsi_div_lookback: rsiDivLookback,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
     bb_length: bbLength, bb_std: bbStd,
     ema_short: emaShort, ema_long: emaLong,

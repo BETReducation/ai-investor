@@ -11,6 +11,7 @@ from api.indicators import (
     calculate_chaikin_volatility, calculate_historical_volatility,
     calculate_rolling_vwap, calculate_ad_line, calculate_cmf, calculate_tsi,
     calculate_awesome_oscillator, calculate_volume_profile_poc, calculate_fibonacci_levels,
+    calculate_rsi_centerline_cross, calculate_rsi_divergence, calculate_rsi_failure_swings,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -33,7 +34,8 @@ def run_backtest(
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
 
-    rsi_length  = int(cp.get("rsi_length",  14))
+    rsi_length      = int(cp.get("rsi_length",  14))
+    rsi_div_lookback = int(cp.get("rsi_div_lookback", 5))
     macd_fast   = int(cp.get("macd_fast",   12))
     macd_slow   = int(cp.get("macd_slow",   26))
     macd_signal = int(cp.get("macd_signal",  9))
@@ -88,6 +90,11 @@ def run_backtest(
 
     # ── Compute full indicator series upfront (O(n), not O(n²)) ──────────
     rsi_s   = calculate_rsi(df, length=rsi_length)
+    rsi_centerline       = calculate_rsi_centerline_cross(rsi_s)
+    rsi_bull_div, rsi_bear_div = calculate_rsi_divergence(df["Close"], rsi_s, lookback=rsi_div_lookback)
+    rsi_bull_fs, rsi_bear_fs   = calculate_rsi_failure_swings(
+        rsi_s, oversold=float(t.get("rsi_oversold", 30)), overbought=float(t.get("rsi_overbought", 70)),
+    )
     macd_df = calculate_macd(df, fast=macd_fast, slow=macd_slow, signal=macd_signal)
     bb_df   = calculate_bollinger_bands(df, length=bb_length, std=bb_std)
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
@@ -283,6 +290,13 @@ def run_backtest(
 
         indicators = {
             "rsi": _sf(row.get("RSI")),
+            "rsi_trigger": {
+                "centerline_cross":     int(rsi_centerline.iloc[i]),
+                "bullish_divergence":   bool(rsi_bull_div.iloc[i]),
+                "bearish_divergence":   bool(rsi_bear_div.iloc[i]),
+                "bullish_failure_swing": bool(rsi_bull_fs.iloc[i]),
+                "bearish_failure_swing": bool(rsi_bear_fs.iloc[i]),
+            },
             "macd": {
                 "macd":      mln,
                 "histogram": _sf(row.get(macd_cols[1]) if len(macd_cols) > 1 else None),
