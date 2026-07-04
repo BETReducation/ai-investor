@@ -20,6 +20,12 @@ DEFAULT_THRESHOLDS = {
     "macd_cross_lookback": 5,   # only fire MACD signal if line crossed signal within N bars
     "ema_cross_lookback": 10,   # only fire EMA signal if cross happened within N bars
     "ma_cross_lookback": 10,    # only fire MA signal if cross happened within N bars
+    "macd_trigger": "signal_cross",  # signal_cross | bullish_signal_cross | bearish_signal_cross |
+                                      # centerline_cross | bullish_divergence | bearish_divergence |
+                                      # histogram_reversal | overbought | oversold
+    "macd_centerline_lookback": 5,
+    "macd_zscore_overbought": 2.0,
+    "macd_zscore_oversold": -2.0,
 
     # ── Extended indicator set (Backtester) — all default OFF ────────────────
     "adx_on": 0, "adx_trend_threshold": 25,
@@ -123,20 +129,92 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     macd_data = indicators.get("macd", {})
     macd_val = macd_data.get("macd")
     macd_sig_val = macd_data.get("signal")
+    macd_trig = indicators.get("macd_trigger", {})
+    macd_trigger_mode = t.get("macd_trigger", "signal_cross")
     if t.get("macd_on", 1) and macd_val is not None and macd_sig_val is not None:
         crossovers = indicators.get("crossovers", {})
         macd_lookback = int(t.get("macd_cross_lookback", 5))
         macd_bars = crossovers.get("macd_bars_since_cross", 999)
         macd_dir = crossovers.get("macd_direction", 0)
-        if macd_bars <= macd_lookback:
-            if macd_dir > 0:
+        macd_crossed_recently = macd_bars <= macd_lookback
+
+        if macd_trigger_mode == "bullish_signal_cross":
+            if macd_crossed_recently and macd_dir > 0:
                 signals.append({"indicator": "MACD", "type": "BUY", "detail": f"MACD crossed above signal {macd_bars} bar(s) ago — bullish cross", "weight": 2})
                 buy_score += 2
             else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No recent bullish signal cross", "weight": 0})
+
+        elif macd_trigger_mode == "bearish_signal_cross":
+            if macd_crossed_recently and macd_dir < 0:
                 signals.append({"indicator": "MACD", "type": "SELL", "detail": f"MACD crossed below signal {macd_bars} bar(s) ago — bearish cross", "weight": 2})
                 sell_score += 2
-        else:
-            signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": f"No MACD cross in last {macd_lookback} bars", "weight": 0})
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No recent bearish signal cross", "weight": 0})
+
+        elif macd_trigger_mode == "centerline_cross":
+            cl_bars = macd_trig.get("centerline_bars_since_cross", 999)
+            cl_dir = macd_trig.get("centerline_direction", 0)
+            if cl_bars <= int(t.get("macd_centerline_lookback", 5)):
+                if cl_dir > 0:
+                    signals.append({"indicator": "MACD", "type": "BUY", "detail": "MACD crossed above the zero line", "weight": 2})
+                    buy_score += 2
+                else:
+                    signals.append({"indicator": "MACD", "type": "SELL", "detail": "MACD crossed below the zero line", "weight": 2})
+                    sell_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No recent centerline cross", "weight": 0})
+
+        elif macd_trigger_mode == "bullish_divergence":
+            if macd_trig.get("bullish_divergence"):
+                signals.append({"indicator": "MACD", "type": "BUY", "detail": "Bullish divergence — price made a lower low, MACD a higher low", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+
+        elif macd_trigger_mode == "bearish_divergence":
+            if macd_trig.get("bearish_divergence"):
+                signals.append({"indicator": "MACD", "type": "SELL", "detail": "Bearish divergence — price made a higher high, MACD a lower high", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
+
+        elif macd_trigger_mode == "histogram_reversal":
+            if macd_trig.get("bullish_histogram_reversal"):
+                signals.append({"indicator": "MACD", "type": "BUY", "detail": "Histogram reversed higher — bullish momentum shift", "weight": 2})
+                buy_score += 2
+            elif macd_trig.get("bearish_histogram_reversal"):
+                signals.append({"indicator": "MACD", "type": "SELL", "detail": "Histogram reversed lower — bearish momentum shift", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "No histogram reversal", "weight": 0})
+
+        elif macd_trigger_mode == "overbought":
+            z = macd_trig.get("zscore")
+            if z is not None and z > t.get("macd_zscore_overbought", 2.0):
+                signals.append({"indicator": "MACD", "type": "SELL", "detail": f"MACD z-score {z:.2f} — overbought", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "MACD not overbought", "weight": 0})
+
+        elif macd_trigger_mode == "oversold":
+            z = macd_trig.get("zscore")
+            if z is not None and z < t.get("macd_zscore_oversold", -2.0):
+                signals.append({"indicator": "MACD", "type": "BUY", "detail": f"MACD z-score {z:.2f} — oversold", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": "MACD not oversold", "weight": 0})
+
+        else:  # "signal_cross" (default) — unchanged from original behavior
+            if macd_crossed_recently:
+                if macd_dir > 0:
+                    signals.append({"indicator": "MACD", "type": "BUY", "detail": f"MACD crossed above signal {macd_bars} bar(s) ago — bullish cross", "weight": 2})
+                    buy_score += 2
+                else:
+                    signals.append({"indicator": "MACD", "type": "SELL", "detail": f"MACD crossed below signal {macd_bars} bar(s) ago — bearish cross", "weight": 2})
+                    sell_score += 2
+            else:
+                signals.append({"indicator": "MACD", "type": "NEUTRAL", "detail": f"No MACD cross in last {macd_lookback} bars", "weight": 0})
 
     bb = indicators.get("bollinger_bands", {})
     pct_b = bb.get("percent_b")

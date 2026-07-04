@@ -840,6 +840,28 @@ window.addEventListener('resize', () => {
           <input type="number" class="param-input" id="macdSignal" value="9" min="1" max="50"
                  oninput="updateMacdLabel()">
         </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="macdTrigger" style="width:100%;">
+            <option value="signal_cross">Signal Line Crossover (default)</option>
+            <option value="bullish_signal_cross">Bullish signal line crossover</option>
+            <option value="bearish_signal_cross">Bearish signal line crossover</option>
+            <option value="centerline_cross">Centerline crossover</option>
+            <option value="bullish_divergence">Bullish divergence</option>
+            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="histogram_reversal">Histogram reversal</option>
+            <option value="overbought">Overbought</option>
+            <option value="oversold">Oversold</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="macdDivLookback" value="5" min="2" max="30">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Z-score window (bars)</span>
+          <input type="number" class="param-input" id="macdZscoreLength" value="100" min="20" max="500">
+        </div>
       </div>
 
       <!-- Bollinger Bands -->
@@ -1621,6 +1643,9 @@ async function runBacktest() {
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
   const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
+  const macdTrigger      = document.getElementById('macdTrigger').value || 'signal_cross';
+  const macdDivLookback  = parseInt(document.getElementById('macdDivLookback').value)  || 5;
+  const macdZscoreLength = parseInt(document.getElementById('macdZscoreLength').value) || 100;
   const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
   const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
   const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
@@ -1703,6 +1728,7 @@ async function runBacktest() {
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     rsi_trigger: rsiTrigger, rsi_div_lookback: rsiDivLookback,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
+    macd_trigger: macdTrigger, macd_div_lookback: macdDivLookback, macd_zscore_length: macdZscoreLength,
     bb_length: bbLength, bb_std: bbStd,
     ema_short: emaShort, ema_long: emaLong,
     volume_surge: volSurge,

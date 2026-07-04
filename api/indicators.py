@@ -519,12 +519,13 @@ def calculate_rsi_centerline_cross(rsi: pd.Series) -> pd.Series:
     return signal
 
 
-def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+def calculate_price_divergence(close: pd.Series, indicator: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
     """
-    Regular divergence between price and RSI, detected off trailing-confirmed pivots:
-    bar j = i - lookback is a pivot if it's the min/max of the (2*lookback+1)-bar window
-    ending at i — using only data up to i, so there's no lookahead. Returns (bullish,
-    bearish) boolean Series, True on the bar a divergence is confirmed (the second pivot).
+    Regular divergence between price and any oscillator series, detected off
+    trailing-confirmed pivots: bar j = i - lookback is a pivot if it's the min/max
+    of the (2*lookback+1)-bar window ending at i — using only data up to i, so
+    there's no lookahead. Returns (bullish, bearish) boolean Series, True on the
+    bar a divergence is confirmed (the second pivot).
     """
     n = len(close)
     bullish = np.zeros(n, dtype=bool)
@@ -532,10 +533,10 @@ def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5
 
     win = 2 * lookback + 1
     c = close.values
-    r = rsi.values
+    r = indicator.values
 
-    last_low_price = last_low_rsi = None
-    last_high_price = last_high_rsi = None
+    last_low_price = last_low_ind = None
+    last_high_price = last_high_ind = None
 
     for i in range(win - 1, n):
         j = i - lookback
@@ -545,16 +546,43 @@ def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5
             continue
 
         if c[j] == window_c.min():
-            if last_low_price is not None and c[j] < last_low_price and r[j] > last_low_rsi:
+            if last_low_price is not None and c[j] < last_low_price and r[j] > last_low_ind:
                 bullish[i] = True
-            last_low_price, last_low_rsi = c[j], r[j]
+            last_low_price, last_low_ind = c[j], r[j]
 
         if c[j] == window_c.max():
-            if last_high_price is not None and c[j] > last_high_price and r[j] < last_high_rsi:
+            if last_high_price is not None and c[j] > last_high_price and r[j] < last_high_ind:
                 bearish[i] = True
-            last_high_price, last_high_rsi = c[j], r[j]
+            last_high_price, last_high_ind = c[j], r[j]
 
     return pd.Series(bullish, index=close.index), pd.Series(bearish, index=close.index)
+
+
+def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    return calculate_price_divergence(close, rsi, lookback)
+
+
+def calculate_macd_divergence(close: pd.Series, macd_line: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    return calculate_price_divergence(close, macd_line, lookback)
+
+
+def calculate_macd_histogram_reversal(histogram: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """
+    Bullish: the prior bar was a local trough in the histogram (it was falling, now rising).
+    Bearish: the prior bar was a local peak (it was rising, now falling).
+    Confirmed on the turn, using only data up to the current bar (no lookahead).
+    """
+    prev1 = histogram.shift(1)
+    prev2 = histogram.shift(2)
+    bullish = (prev2 > prev1) & (histogram > prev1)
+    bearish = (prev2 < prev1) & (histogram < prev1)
+    return bullish.fillna(False), bearish.fillna(False)
+
+
+def calculate_macd_zscore(macd_line: pd.Series, length: int = 100) -> pd.Series:
+    mean = macd_line.rolling(length).mean()
+    std  = macd_line.rolling(length).std()
+    return (macd_line - mean) / std.replace(0, np.nan)
 
 
 def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:

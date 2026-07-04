@@ -120,6 +120,7 @@ def _extract_calc_params(args) -> dict:
 # above so /api/indicators' calculate_all(**calc_params) never sees an unexpected kwarg).
 _BT_INT_CALC_KEYS = {
     "rsi_div_lookback": 5,
+    "macd_div_lookback": 5, "macd_zscore_length": 100,
     "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
     "donchian_length": 20,
     "keltner_length": 20, "keltner_atr_length": 10,
@@ -143,6 +144,11 @@ _BT_FLOAT_CALC_KEYS = {
 _VALID_RSI_TRIGGERS = {
     "overbought_oversold", "overbought", "oversold", "centerline_cross",
     "bullish_divergence", "bearish_divergence", "failure_swings",
+}
+
+_VALID_MACD_TRIGGERS = {
+    "signal_cross", "bullish_signal_cross", "bearish_signal_cross", "centerline_cross",
+    "bullish_divergence", "bearish_divergence", "histogram_reversal", "overbought", "oversold",
 }
 
 
@@ -858,6 +864,7 @@ def backtest():
         "cmf_on", "cmf_threshold",
         "vol_profile_on",
         "fib_on", "fib_tolerance_pct",
+        "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -871,6 +878,12 @@ def backtest():
         if rsi_trigger not in _VALID_RSI_TRIGGERS:
             return jsonify({"error": "Invalid value for 'rsi_trigger'"}), 400
         thresholds["rsi_trigger"] = rsi_trigger
+
+    macd_trigger = request.args.get("macd_trigger")
+    if macd_trigger is not None:
+        if macd_trigger not in _VALID_MACD_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'macd_trigger'"}), 400
+        thresholds["macd_trigger"] = macd_trigger
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))

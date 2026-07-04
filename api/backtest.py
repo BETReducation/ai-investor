@@ -12,6 +12,7 @@ from api.indicators import (
     calculate_rolling_vwap, calculate_ad_line, calculate_cmf, calculate_tsi,
     calculate_awesome_oscillator, calculate_volume_profile_poc, calculate_fibonacci_levels,
     calculate_rsi_centerline_cross, calculate_rsi_divergence, calculate_rsi_failure_swings,
+    calculate_macd_divergence, calculate_macd_histogram_reversal, calculate_macd_zscore,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -39,6 +40,8 @@ def run_backtest(
     macd_fast   = int(cp.get("macd_fast",   12))
     macd_slow   = int(cp.get("macd_slow",   26))
     macd_signal = int(cp.get("macd_signal",  9))
+    macd_div_lookback  = int(cp.get("macd_div_lookback", 5))
+    macd_zscore_length = int(cp.get("macd_zscore_length", 100))
     bb_length   = int(cp.get("bb_length",   20))
     bb_std      = float(cp.get("bb_std",    2.0))
     ema_short   = int(cp.get("ema_short",    9))
@@ -96,6 +99,12 @@ def run_backtest(
         rsi_s, oversold=float(t.get("rsi_oversold", 30)), overbought=float(t.get("rsi_overbought", 70)),
     )
     macd_df = calculate_macd(df, fast=macd_fast, slow=macd_slow, signal=macd_signal)
+    macd_line_s = macd_df.iloc[:, 0]
+    macd_hist_s = macd_df.iloc[:, 1]
+    macd_centerline_bars = _bars_since_cross_series(macd_line_s, pd.Series(0.0, index=macd_line_s.index))
+    macd_bull_div, macd_bear_div = calculate_macd_divergence(df["Close"], macd_line_s, lookback=macd_div_lookback)
+    macd_bull_hr, macd_bear_hr   = calculate_macd_histogram_reversal(macd_hist_s)
+    macd_zscore = calculate_macd_zscore(macd_line_s, length=macd_zscore_length)
     bb_df   = calculate_bollinger_bands(df, length=bb_length, std=bb_std)
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
     vol_df  = calculate_volume_indicators(df)
@@ -301,6 +310,15 @@ def run_backtest(
                 "macd":      mln,
                 "histogram": _sf(row.get(macd_cols[1]) if len(macd_cols) > 1 else None),
                 "signal":    msn,
+            },
+            "macd_trigger": {
+                "centerline_bars_since_cross": int(macd_centerline_bars.iloc[i]),
+                "centerline_direction":        1 if (mln is not None and mln > 0) else -1,
+                "bullish_divergence":          bool(macd_bull_div.iloc[i]),
+                "bearish_divergence":          bool(macd_bear_div.iloc[i]),
+                "bullish_histogram_reversal":  bool(macd_bull_hr.iloc[i]),
+                "bearish_histogram_reversal":  bool(macd_bear_hr.iloc[i]),
+                "zscore":                      _sf(macd_zscore.iloc[i]),
             },
             "bollinger_bands": {
                 "lower":     _sf(row.get(bb_cols[0]) if bb_cols else None),
