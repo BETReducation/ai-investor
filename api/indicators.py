@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
@@ -337,3 +338,167 @@ def calculate_all(
         "roc":        _safe_float(roc_s.iloc[-1])   if roc_s   is not None else None,
         "history":    _recent_ohlcv(combined),
     }
+
+
+# ── Extended indicator set (Backtester) ───────────────────────────────────────
+# Thin wrappers around proven pandas_ta calls (same calls already used above),
+# plus hand-rolled pandas/numpy calcs for indicators pandas_ta doesn't expose
+# in a form that lines up cleanly with per-bar backtesting (Ichimoku, Donchian,
+# Keltner, stdev, Chaikin volatility, historical volatility, VWAP, A/D line,
+# CMF, TSI, Awesome Oscillator, volume profile, Fibonacci retracement).
+
+def calculate_adx(df: pd.DataFrame, length: int = 14) -> pd.DataFrame:
+    return ta.adx(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_psar(df: pd.DataFrame, start: float = 0.02, inc: float = 0.02, max_af: float = 0.2) -> pd.DataFrame:
+    return ta.psar(df["High"], df["Low"], df["Close"], af0=start, af=inc, max_af=max_af)
+
+
+def calculate_supertrend(df: pd.DataFrame, length: int = 10, mult: float = 3.0) -> pd.DataFrame:
+    return ta.supertrend(df["High"], df["Low"], df["Close"], length=length, multiplier=mult)
+
+
+def calculate_stochastic(df: pd.DataFrame, k: int = 14, d: int = 3, smooth: int = 3) -> pd.DataFrame:
+    return ta.stoch(df["High"], df["Low"], df["Close"], k=k, d=d, smooth_k=smooth)
+
+
+def calculate_stochrsi(df: pd.DataFrame, length: int = 14, k: int = 3, d: int = 3) -> pd.DataFrame:
+    return ta.stochrsi(df["Close"], length=length, rsi_length=length, k=k, d=d)
+
+
+def calculate_cci(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.cci(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_williams_r(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.willr(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_roc(df: pd.DataFrame, length: int = 12) -> pd.Series:
+    return ta.roc(df["Close"], length=length)
+
+
+def calculate_mfi(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.mfi(df["High"], df["Low"], df["Close"], df["Volume"], length=length)
+
+
+def calculate_atr(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.atr(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_hma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.hma(df["Close"], length=length)
+
+
+def calculate_ichimoku(df: pd.DataFrame, tenkan: int = 9, kijun: int = 26, senkou: int = 52) -> pd.DataFrame:
+    """Manual calc (not pandas_ta) so cloud values line up with the bar they apply
+    to at backtest time — senkou spans are shifted forward by `kijun` bars, matching
+    how the cloud plotted "today" was actually computed from `kijun` bars ago."""
+    high, low = df["High"], df["Low"]
+    tenkan_sen = (high.rolling(tenkan).max() + low.rolling(tenkan).min()) / 2
+    kijun_sen  = (high.rolling(kijun).max()  + low.rolling(kijun).min())  / 2
+    senkou_a   = ((tenkan_sen + kijun_sen) / 2).shift(kijun)
+    senkou_b   = ((high.rolling(senkou).max() + low.rolling(senkou).min()) / 2).shift(kijun)
+    return pd.DataFrame({
+        "ICH_tenkan": tenkan_sen, "ICH_kijun": kijun_sen,
+        "ICH_senkou_a": senkou_a, "ICH_senkou_b": senkou_b,
+    })
+
+
+def calculate_donchian(df: pd.DataFrame, length: int = 20) -> pd.DataFrame:
+    upper = df["High"].rolling(length).max()
+    lower = df["Low"].rolling(length).min()
+    return pd.DataFrame({"DC_upper": upper, "DC_mid": (upper + lower) / 2, "DC_lower": lower})
+
+
+def calculate_keltner(df: pd.DataFrame, length: int = 20, atr_length: int = 10, mult: float = 2.0) -> pd.DataFrame:
+    basis   = ta.ema(df["Close"], length=length)
+    atr_val = ta.atr(df["High"], df["Low"], df["Close"], length=atr_length)
+    return pd.DataFrame({"KC_upper": basis + mult * atr_val, "KC_mid": basis, "KC_lower": basis - mult * atr_val})
+
+
+def calculate_stdev(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return df["Close"].rolling(length).std()
+
+
+def calculate_chaikin_volatility(df: pd.DataFrame, ema_length: int = 10, roc_length: int = 10) -> pd.Series:
+    hl_range  = df["High"] - df["Low"]
+    ema_range = hl_range.ewm(span=ema_length, adjust=False).mean()
+    prior     = ema_range.shift(roc_length)
+    return (ema_range - prior) / prior.replace(0, np.nan) * 100
+
+
+def calculate_historical_volatility(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    log_ret = np.log(df["Close"] / df["Close"].shift(1))
+    return log_ret.rolling(length).std() * (252 ** 0.5) * 100
+
+
+def calculate_rolling_vwap(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    typical = (df["High"] + df["Low"] + df["Close"]) / 3
+    tp_vol  = typical * df["Volume"]
+    return tp_vol.rolling(length).sum() / df["Volume"].rolling(length).sum().replace(0, np.nan)
+
+
+def calculate_ad_line(df: pd.DataFrame) -> pd.Series:
+    rng = (df["High"] - df["Low"]).replace(0, np.nan)
+    clv = ((df["Close"] - df["Low"]) - (df["High"] - df["Close"])) / rng
+    return (clv.fillna(0) * df["Volume"]).cumsum()
+
+
+def calculate_cmf(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    rng = (df["High"] - df["Low"]).replace(0, np.nan)
+    clv = ((df["Close"] - df["Low"]) - (df["High"] - df["Close"])) / rng
+    mfv = clv.fillna(0) * df["Volume"]
+    return mfv.rolling(length).sum() / df["Volume"].rolling(length).sum().replace(0, np.nan)
+
+
+def calculate_tsi(df: pd.DataFrame, long: int = 25, short: int = 13, signal: int = 13) -> pd.DataFrame:
+    mom       = df["Close"].diff()
+    ema1      = mom.ewm(span=long, adjust=False).mean()
+    ema2      = ema1.ewm(span=short, adjust=False).mean()
+    abs_ema1  = mom.abs().ewm(span=long, adjust=False).mean()
+    abs_ema2  = abs_ema1.ewm(span=short, adjust=False).mean()
+    tsi       = 100 * ema2 / abs_ema2.replace(0, np.nan)
+    return pd.DataFrame({"TSI": tsi, "TSI_signal": tsi.ewm(span=signal, adjust=False).mean()})
+
+
+def calculate_awesome_oscillator(df: pd.DataFrame, fast: int = 5, slow: int = 34) -> pd.Series:
+    median_price = (df["High"] + df["Low"]) / 2
+    return median_price.rolling(fast).mean() - median_price.rolling(slow).mean()
+
+
+def calculate_volume_profile_poc(df: pd.DataFrame, lookback: int = 50, bins: int = 24) -> pd.Series:
+    """Rolling point-of-control: the price bin with the most traded volume in each lookback window."""
+    high, low, close, vol = df["High"].values, df["Low"].values, df["Close"].values, df["Volume"].values
+    n = len(df)
+    poc = np.full(n, np.nan)
+    for i in range(lookback - 1, n):
+        lo_i = i - lookback + 1
+        w_high, w_low, w_vol = high[lo_i:i + 1], low[lo_i:i + 1], vol[lo_i:i + 1]
+        typical = (w_high + w_low + close[lo_i:i + 1]) / 3
+        window_low, window_high = w_low.min(), w_high.max()
+        if window_high <= window_low:
+            continue
+        edges = np.linspace(window_low, window_high, bins + 1)
+        bucket_vol = np.zeros(bins)
+        idxs = np.clip(np.digitize(typical, edges) - 1, 0, bins - 1)
+        for b, v in zip(idxs, w_vol):
+            bucket_vol[b] += v
+        best_bin = int(np.argmax(bucket_vol))
+        poc[i] = (edges[best_bin] + edges[best_bin + 1]) / 2
+    return pd.Series(poc, index=df.index)
+
+
+def calculate_fibonacci_levels(df: pd.DataFrame, lookback: int = 50) -> pd.DataFrame:
+    swing_high = df["High"].rolling(lookback).max()
+    swing_low  = df["Low"].rolling(lookback).min()
+    rng = swing_high - swing_low
+    return pd.DataFrame({
+        "FIB_high": swing_high, "FIB_low": swing_low,
+        "FIB_236": swing_high - rng * 0.236,
+        "FIB_382": swing_high - rng * 0.382,
+        "FIB_500": swing_high - rng * 0.5,
+        "FIB_618": swing_high - rng * 0.618,
+        "FIB_786": swing_high - rng * 0.786,
+    })

@@ -114,6 +114,51 @@ def _extract_calc_params(args) -> dict:
     if smoothing in ("wilder", "ema", "sma"):
         params["rsi_smoothing"] = smoothing
     return params
+
+
+# Backtester-only calc params (kept separate from _INT_CALC_KEYS/_FLOAT_CALC_KEYS
+# above so /api/indicators' calculate_all(**calc_params) never sees an unexpected kwarg).
+_BT_INT_CALC_KEYS = {
+    "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
+    "donchian_length": 20,
+    "keltner_length": 20, "keltner_atr_length": 10,
+    "stdev_length": 20,
+    "chaikin_vol_ema_length": 10, "chaikin_vol_roc_length": 10,
+    "hist_vol_length": 20,
+    "vwap_length": 20,
+    "ad_sma_length": 20,
+    "cmf_length": 20,
+    "tsi_long": 25, "tsi_short": 13, "tsi_signal": 13,
+    "ao_fast": 5, "ao_slow": 34,
+    "obv_sma_length": 20,
+    "vol_profile_lookback": 50, "vol_profile_bins": 24,
+    "fib_lookback": 50,
+    "hma_slope_lookback": 3,
+}
+_BT_FLOAT_CALC_KEYS = {
+    "keltner_mult": 2.0,
+}
+
+
+def _extract_backtest_calc_params(args) -> dict:
+    params = {}
+    for key in _BT_INT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = int(val)
+            except ValueError:
+                pass
+    for key in _BT_FLOAT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = float(val)
+            except ValueError:
+                pass
+    return params
+
+
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
@@ -781,6 +826,32 @@ def backtest():
         "bb_oversold", "bb_overbought",
         "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
         "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
+        # ── Extended indicator set (Backtester) ──────────────────────────
+        "adx_on", "adx_trend_threshold",
+        "psar_on", "psar_flip_lookback",
+        "ichimoku_on",
+        "supertrend_on", "supertrend_flip_lookback",
+        "donchian_on",
+        "hma_on",
+        "stoch_on", "stoch_oversold", "stoch_overbought",
+        "stochrsi_on", "stochrsi_oversold", "stochrsi_overbought",
+        "cci_on", "cci_oversold", "cci_overbought",
+        "willr_on", "willr_oversold", "willr_overbought",
+        "roc_on", "roc_threshold",
+        "mfi_on", "mfi_oversold", "mfi_overbought",
+        "tsi_on",
+        "ao_on",
+        "atr_on", "atr_trend_lookback",
+        "keltner_on",
+        "stdev_on", "stdev_trend_lookback",
+        "chaikin_vol_on", "chaikin_vol_trend_lookback",
+        "hist_vol_on", "hist_vol_trend_lookback",
+        "obv_on",
+        "vwap_on",
+        "ad_on",
+        "cmf_on", "cmf_threshold",
+        "vol_profile_on",
+        "fib_on", "fib_tolerance_pct",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -790,6 +861,7 @@ def backtest():
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
 
     calc_params = _extract_calc_params(request.args)
+    calc_params.update(_extract_backtest_calc_params(request.args))
 
     try:
         df = _fetch_ohlcv(symbol, period, interval, start_date=start_date, end_date=end_date)

@@ -17,6 +17,33 @@ DEFAULT_THRESHOLDS = {
     "macd_cross_lookback": 5,   # only fire MACD signal if line crossed signal within N bars
     "ema_cross_lookback": 10,   # only fire EMA signal if cross happened within N bars
     "ma_cross_lookback": 10,    # only fire MA signal if cross happened within N bars
+
+    # ── Extended indicator set (Backtester) — all default OFF ────────────────
+    "adx_on": 0, "adx_trend_threshold": 25,
+    "psar_on": 0, "psar_flip_lookback": 3,
+    "ichimoku_on": 0,
+    "supertrend_on": 0, "supertrend_flip_lookback": 3,
+    "donchian_on": 0,
+    "hma_on": 0,
+    "stoch_on": 0, "stoch_oversold": 20, "stoch_overbought": 80,
+    "stochrsi_on": 0, "stochrsi_oversold": 20, "stochrsi_overbought": 80,
+    "cci_on": 0, "cci_oversold": -100, "cci_overbought": 100,
+    "willr_on": 0, "willr_oversold": -80, "willr_overbought": -20,
+    "roc_on": 0, "roc_threshold": 2.0,
+    "mfi_on": 0, "mfi_oversold": 20, "mfi_overbought": 80,
+    "tsi_on": 0,
+    "ao_on": 0,
+    "atr_on": 0, "atr_trend_lookback": 5,
+    "keltner_on": 0,
+    "stdev_on": 0, "stdev_trend_lookback": 5,
+    "chaikin_vol_on": 0, "chaikin_vol_trend_lookback": 5,
+    "hist_vol_on": 0, "hist_vol_trend_lookback": 5,
+    "obv_on": 0,
+    "vwap_on": 0,
+    "ad_on": 0,
+    "cmf_on": 0, "cmf_threshold": 0.05,
+    "vol_profile_on": 0,
+    "fib_on": 0, "fib_tolerance_pct": 1.0,
 }
 
 
@@ -118,6 +145,298 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                 sell_score += 1
         else:
             signals.append({"indicator": "Volume", "type": "NEUTRAL", "detail": f"Volume {vol_ratio:.1f}x avg — no surge", "weight": 0})
+
+    # ── ADX (trend strength + direction) ─────────────────────────────────────
+    adx = indicators.get("adx", {})
+    adx_v, dmp_v, dmn_v = adx.get("adx"), adx.get("dmp"), adx.get("dmn")
+    if t.get("adx_on", 0) and adx_v is not None and dmp_v is not None and dmn_v is not None:
+        if adx_v > t["adx_trend_threshold"]:
+            label = "BUY" if dmp_v > dmn_v else "SELL"
+            signals.append({"indicator": "ADX", "type": label, "detail": f"ADX {adx_v:.1f} — strong trend, {'+DI' if label=='BUY' else '-DI'} leading", "weight": 2})
+            if label == "BUY": buy_score += 2
+            else: sell_score += 2
+        else:
+            signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": f"ADX {adx_v:.1f} — no strong trend", "weight": 0})
+
+    # ── Parabolic SAR ─────────────────────────────────────────────────────────
+    psar = indicators.get("psar", {})
+    if t.get("psar_on", 0) and psar.get("is_bull") is not None:
+        bars = psar.get("bars_since_flip", 999)
+        if bars <= t["psar_flip_lookback"]:
+            label = "BUY" if psar["is_bull"] else "SELL"
+            signals.append({"indicator": "Parabolic SAR", "type": label, "detail": f"SAR flipped {label.lower()} {bars} bar(s) ago", "weight": 2})
+            if label == "BUY": buy_score += 2
+            else: sell_score += 2
+        else:
+            signals.append({"indicator": "Parabolic SAR", "type": "NEUTRAL", "detail": "No recent SAR flip", "weight": 0})
+
+    # ── Ichimoku Cloud ────────────────────────────────────────────────────────
+    ichimoku = indicators.get("ichimoku", {})
+    cloud_pos = ichimoku.get("cloud_pos")
+    if t.get("ichimoku_on", 0) and cloud_pos:
+        if cloud_pos > 0:
+            signals.append({"indicator": "Ichimoku", "type": "BUY", "detail": "Price above the cloud — bullish", "weight": 2})
+            buy_score += 2
+        elif cloud_pos < 0:
+            signals.append({"indicator": "Ichimoku", "type": "SELL", "detail": "Price below the cloud — bearish", "weight": 2})
+            sell_score += 2
+        else:
+            signals.append({"indicator": "Ichimoku", "type": "NEUTRAL", "detail": "Price inside the cloud", "weight": 0})
+
+    # ── Supertrend ────────────────────────────────────────────────────────────
+    supertrend = indicators.get("supertrend", {})
+    if t.get("supertrend_on", 0) and supertrend.get("is_bull") is not None:
+        bars = supertrend.get("bars_since_flip", 999)
+        if bars <= t["supertrend_flip_lookback"]:
+            label = "BUY" if supertrend["is_bull"] else "SELL"
+            signals.append({"indicator": "Supertrend", "type": label, "detail": f"Supertrend flipped {label.lower()} {bars} bar(s) ago", "weight": 2})
+            if label == "BUY": buy_score += 2
+            else: sell_score += 2
+        else:
+            signals.append({"indicator": "Supertrend", "type": "NEUTRAL", "detail": "No recent Supertrend flip", "weight": 0})
+
+    # ── Donchian Channels (breakout) ──────────────────────────────────────────
+    donchian = indicators.get("donchian", {})
+    if t.get("donchian_on", 0) and donchian.get("upper") is not None:
+        close_v = donchian.get("close")
+        if close_v is not None and close_v >= donchian["upper"]:
+            signals.append({"indicator": "Donchian", "type": "BUY", "detail": "Breakout above the upper channel", "weight": 1})
+            buy_score += 1
+        elif close_v is not None and close_v <= donchian["lower"]:
+            signals.append({"indicator": "Donchian", "type": "SELL", "detail": "Breakdown below the lower channel", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Donchian", "type": "NEUTRAL", "detail": "Price inside the channel", "weight": 0})
+
+    # ── Hull Moving Average (slope) ───────────────────────────────────────────
+    hma = indicators.get("hma", {})
+    if t.get("hma_on", 0) and hma.get("value") is not None and hma.get("prev") is not None:
+        if hma["value"] > hma["prev"]:
+            signals.append({"indicator": "HMA", "type": "BUY", "detail": "HMA sloping up", "weight": 1})
+            buy_score += 1
+        elif hma["value"] < hma["prev"]:
+            signals.append({"indicator": "HMA", "type": "SELL", "detail": "HMA sloping down", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "HMA", "type": "NEUTRAL", "detail": "HMA flat", "weight": 0})
+
+    # ── Stochastic Oscillator ─────────────────────────────────────────────────
+    stoch = indicators.get("stochastic", {})
+    stoch_k = stoch.get("k")
+    if t.get("stoch_on", 0) and stoch_k is not None:
+        if stoch_k < t["stoch_oversold"]:
+            signals.append({"indicator": "Stochastic", "type": "BUY", "detail": f"%K {stoch_k:.1f} — oversold", "weight": 1})
+            buy_score += 1
+        elif stoch_k > t["stoch_overbought"]:
+            signals.append({"indicator": "Stochastic", "type": "SELL", "detail": f"%K {stoch_k:.1f} — overbought", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Stochastic", "type": "NEUTRAL", "detail": f"%K {stoch_k:.1f} — neutral", "weight": 0})
+
+    # ── Stochastic RSI ────────────────────────────────────────────────────────
+    stochrsi = indicators.get("stochrsi", {})
+    srsi_k = stochrsi.get("k")
+    if t.get("stochrsi_on", 0) and srsi_k is not None:
+        if srsi_k < t["stochrsi_oversold"]:
+            signals.append({"indicator": "Stochastic RSI", "type": "BUY", "detail": f"%K {srsi_k:.1f} — oversold", "weight": 1})
+            buy_score += 1
+        elif srsi_k > t["stochrsi_overbought"]:
+            signals.append({"indicator": "Stochastic RSI", "type": "SELL", "detail": f"%K {srsi_k:.1f} — overbought", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Stochastic RSI", "type": "NEUTRAL", "detail": f"%K {srsi_k:.1f} — neutral", "weight": 0})
+
+    # ── Commodity Channel Index ───────────────────────────────────────────────
+    cci_v = indicators.get("cci")
+    if t.get("cci_on", 0) and cci_v is not None:
+        if cci_v < t["cci_oversold"]:
+            signals.append({"indicator": "CCI", "type": "BUY", "detail": f"CCI {cci_v:.1f} — oversold", "weight": 1})
+            buy_score += 1
+        elif cci_v > t["cci_overbought"]:
+            signals.append({"indicator": "CCI", "type": "SELL", "detail": f"CCI {cci_v:.1f} — overbought", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "CCI", "type": "NEUTRAL", "detail": f"CCI {cci_v:.1f} — neutral", "weight": 0})
+
+    # ── Williams %R ───────────────────────────────────────────────────────────
+    willr_v = indicators.get("willr")
+    if t.get("willr_on", 0) and willr_v is not None:
+        if willr_v < t["willr_oversold"]:
+            signals.append({"indicator": "Williams %R", "type": "BUY", "detail": f"%R {willr_v:.1f} — oversold", "weight": 1})
+            buy_score += 1
+        elif willr_v > t["willr_overbought"]:
+            signals.append({"indicator": "Williams %R", "type": "SELL", "detail": f"%R {willr_v:.1f} — overbought", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": f"%R {willr_v:.1f} — neutral", "weight": 0})
+
+    # ── Rate of Change ────────────────────────────────────────────────────────
+    roc_v = indicators.get("roc")
+    if t.get("roc_on", 0) and roc_v is not None:
+        if roc_v > t["roc_threshold"]:
+            signals.append({"indicator": "ROC", "type": "BUY", "detail": f"ROC {roc_v:.1f}% — upward momentum", "weight": 1})
+            buy_score += 1
+        elif roc_v < -t["roc_threshold"]:
+            signals.append({"indicator": "ROC", "type": "SELL", "detail": f"ROC {roc_v:.1f}% — downward momentum", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": f"ROC {roc_v:.1f}% — flat", "weight": 0})
+
+    # ── Money Flow Index ──────────────────────────────────────────────────────
+    mfi_v = indicators.get("mfi")
+    if t.get("mfi_on", 0) and mfi_v is not None:
+        if mfi_v < t["mfi_oversold"]:
+            signals.append({"indicator": "MFI", "type": "BUY", "detail": f"MFI {mfi_v:.1f} — oversold", "weight": 1})
+            buy_score += 1
+        elif mfi_v > t["mfi_overbought"]:
+            signals.append({"indicator": "MFI", "type": "SELL", "detail": f"MFI {mfi_v:.1f} — overbought", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "MFI", "type": "NEUTRAL", "detail": f"MFI {mfi_v:.1f} — neutral", "weight": 0})
+
+    # ── True Strength Index ───────────────────────────────────────────────────
+    tsi = indicators.get("tsi", {})
+    tsi_v, tsi_sig = tsi.get("value"), tsi.get("signal")
+    if t.get("tsi_on", 0) and tsi_v is not None and tsi_sig is not None:
+        if tsi_v > tsi_sig:
+            signals.append({"indicator": "TSI", "type": "BUY", "detail": "TSI above its signal line", "weight": 1})
+            buy_score += 1
+        elif tsi_v < tsi_sig:
+            signals.append({"indicator": "TSI", "type": "SELL", "detail": "TSI below its signal line", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": "TSI at its signal line", "weight": 0})
+
+    # ── Awesome Oscillator ────────────────────────────────────────────────────
+    ao_v = indicators.get("awesome_oscillator")
+    if t.get("ao_on", 0) and ao_v is not None:
+        if ao_v > 0:
+            signals.append({"indicator": "Awesome Oscillator", "type": "BUY", "detail": f"AO {ao_v:.3f} — above zero", "weight": 1})
+            buy_score += 1
+        elif ao_v < 0:
+            signals.append({"indicator": "Awesome Oscillator", "type": "SELL", "detail": f"AO {ao_v:.3f} — below zero", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "AO at zero", "weight": 0})
+
+    # ── Volatility-expansion + direction indicators (ATR / StdDev / Chaikin
+    #    Volatility / Historical Volatility) — same heuristic for each:
+    #    rising volatility confirms whichever direction price is already moving. ──
+    def _vol_direction_signal(name, key, expanding, close_v, close_prev):
+        if not t.get(f"{key}_on", 0) or expanding is None or close_v is None or close_prev is None:
+            return
+        nonlocal buy_score, sell_score
+        if expanding and close_v > close_prev:
+            signals.append({"indicator": name, "type": "BUY", "detail": f"{name} expanding with price rising", "weight": 1})
+            buy_score += 1
+        elif expanding and close_v < close_prev:
+            signals.append({"indicator": name, "type": "SELL", "detail": f"{name} expanding with price falling", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": name, "type": "NEUTRAL", "detail": f"{name} not expanding", "weight": 0})
+
+    close_now = indicators.get("price", {}).get("close")
+
+    atr = indicators.get("atr", {})
+    _vol_direction_signal("ATR", "atr", atr.get("expanding"), close_now, atr.get("close_trend_ref"))
+
+    stdev = indicators.get("stdev", {})
+    _vol_direction_signal("Std Dev", "stdev", stdev.get("expanding"), close_now, stdev.get("close_trend_ref"))
+
+    chaikin_vol = indicators.get("chaikin_vol", {})
+    _vol_direction_signal("Chaikin Volatility", "chaikin_vol", chaikin_vol.get("expanding"), close_now, chaikin_vol.get("close_trend_ref"))
+
+    hist_vol = indicators.get("hist_vol", {})
+    _vol_direction_signal("Historical Volatility", "hist_vol", hist_vol.get("expanding"), close_now, hist_vol.get("close_trend_ref"))
+
+    # ── Keltner Channels (breakout) ───────────────────────────────────────────
+    keltner = indicators.get("keltner", {})
+    if t.get("keltner_on", 0) and keltner.get("upper") is not None and close_now is not None:
+        if close_now >= keltner["upper"]:
+            signals.append({"indicator": "Keltner Channels", "type": "BUY", "detail": "Breakout above the upper channel", "weight": 1})
+            buy_score += 1
+        elif close_now <= keltner["lower"]:
+            signals.append({"indicator": "Keltner Channels", "type": "SELL", "detail": "Breakdown below the lower channel", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "Price inside the channel", "weight": 0})
+
+    # ── On Balance Volume (trend vs its own average) ──────────────────────────
+    obv = indicators.get("obv_trend", {})
+    if t.get("obv_on", 0) and obv.get("obv") is not None and obv.get("obv_sma") is not None:
+        if obv["obv"] > obv["obv_sma"]:
+            signals.append({"indicator": "OBV", "type": "BUY", "detail": "OBV above its average — accumulation", "weight": 1})
+            buy_score += 1
+        elif obv["obv"] < obv["obv_sma"]:
+            signals.append({"indicator": "OBV", "type": "SELL", "detail": "OBV below its average — distribution", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "OBV", "type": "NEUTRAL", "detail": "OBV at its average", "weight": 0})
+
+    # ── VWAP ──────────────────────────────────────────────────────────────────
+    vwap_v = indicators.get("vwap")
+    if t.get("vwap_on", 0) and vwap_v is not None and close_now is not None:
+        if close_now > vwap_v:
+            signals.append({"indicator": "VWAP", "type": "BUY", "detail": "Price above VWAP", "weight": 1})
+            buy_score += 1
+        elif close_now < vwap_v:
+            signals.append({"indicator": "VWAP", "type": "SELL", "detail": "Price below VWAP", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "VWAP", "type": "NEUTRAL", "detail": "Price at VWAP", "weight": 0})
+
+    # ── Accumulation/Distribution Line (trend vs its own average) ────────────
+    ad = indicators.get("ad_trend", {})
+    if t.get("ad_on", 0) and ad.get("ad") is not None and ad.get("ad_sma") is not None:
+        if ad["ad"] > ad["ad_sma"]:
+            signals.append({"indicator": "A/D Line", "type": "BUY", "detail": "A/D Line above its average — accumulation", "weight": 1})
+            buy_score += 1
+        elif ad["ad"] < ad["ad_sma"]:
+            signals.append({"indicator": "A/D Line", "type": "SELL", "detail": "A/D Line below its average — distribution", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "A/D Line", "type": "NEUTRAL", "detail": "A/D Line at its average", "weight": 0})
+
+    # ── Chaikin Money Flow ────────────────────────────────────────────────────
+    cmf_v = indicators.get("cmf")
+    if t.get("cmf_on", 0) and cmf_v is not None:
+        if cmf_v > t["cmf_threshold"]:
+            signals.append({"indicator": "CMF", "type": "BUY", "detail": f"CMF {cmf_v:.2f} — buying pressure", "weight": 1})
+            buy_score += 1
+        elif cmf_v < -t["cmf_threshold"]:
+            signals.append({"indicator": "CMF", "type": "SELL", "detail": f"CMF {cmf_v:.2f} — selling pressure", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "CMF", "type": "NEUTRAL", "detail": f"CMF {cmf_v:.2f} — neutral", "weight": 0})
+
+    # ── Volume Profile (price vs point of control) ────────────────────────────
+    vp = indicators.get("volume_profile", {})
+    if t.get("vol_profile_on", 0) and vp.get("poc") is not None and close_now is not None:
+        if close_now > vp["poc"]:
+            signals.append({"indicator": "Volume Profile", "type": "BUY", "detail": "Price above the point of control", "weight": 1})
+            buy_score += 1
+        elif close_now < vp["poc"]:
+            signals.append({"indicator": "Volume Profile", "type": "SELL", "detail": "Price below the point of control", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Volume Profile", "type": "NEUTRAL", "detail": "Price at the point of control", "weight": 0})
+
+    # ── Fibonacci Retracement (bounce/reject off nearest level) ───────────────
+    fib = indicators.get("fibonacci", {})
+    nearest, dist_pct, trend, prev_close = (
+        fib.get("nearest_level"), fib.get("distance_pct"), fib.get("trend"), fib.get("prev_close"),
+    )
+    if (t.get("fib_on", 0) and nearest is not None and dist_pct is not None
+            and close_now is not None and prev_close is not None):
+        near_level = dist_pct <= t["fib_tolerance_pct"]
+        if near_level and trend == "up" and close_now > prev_close:
+            signals.append({"indicator": "Fibonacci", "type": "BUY", "detail": f"Bounce off {nearest} retracement support", "weight": 1})
+            buy_score += 1
+        elif near_level and trend == "down" and close_now < prev_close:
+            signals.append({"indicator": "Fibonacci", "type": "SELL", "detail": f"Rejected at {nearest} retracement resistance", "weight": 1})
+            sell_score += 1
+        else:
+            signals.append({"indicator": "Fibonacci", "type": "NEUTRAL", "detail": "No level reaction", "weight": 0})
 
     total_weight = buy_score + sell_score
     confidence = round((max(buy_score, sell_score) / total_weight * 100) if total_weight > 0 else 50, 1)
