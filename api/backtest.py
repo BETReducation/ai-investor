@@ -14,6 +14,8 @@ def run_backtest(
     stop_loss_pct: float = 2.0,
     take_profit_pct: float = 4.0,
     min_confidence: float = 60.0,
+    trailing_stop: bool = False,
+    trail_distance_pct: float = 1.5,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -150,11 +152,20 @@ def run_backtest(
             sl_price = ep * (1 - stop_loss_pct    / 100)
             tp_price = ep * (1 + take_profit_pct  / 100)
 
+            trail_price = None
+            if trailing_stop:
+                position["peak"] = max(position["peak"], high)
+                trail_price = position["peak"] * (1 - trail_distance_pct / 100)
+
+            # Trailing stop only ever tightens the floor set by the fixed stop.
+            effective_sl   = max(sl_price, trail_price) if trail_price is not None else sl_price
+            trail_is_tighter = trail_price is not None and effective_sl == trail_price and trail_price > sl_price
+
             exit_reason = exit_price = None
 
-            if low <= sl_price:
-                exit_reason = "Stop Loss"
-                exit_price  = max(low, sl_price)
+            if low <= effective_sl:
+                exit_reason = "Trailing Stop" if trail_is_tighter else "Stop Loss"
+                exit_price  = max(low, effective_sl)
             elif high >= tp_price:
                 exit_reason = "Take Profit"
                 exit_price  = min(high, tp_price)
@@ -177,7 +188,7 @@ def run_backtest(
 
         else:
             if overall == "BUY" and confidence >= min_confidence:
-                position = {"entry_price": close, "entry_date": date_str}
+                position = {"entry_price": close, "entry_date": date_str, "peak": close}
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
 

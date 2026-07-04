@@ -715,6 +715,19 @@ window.addEventListener('resize', () => {
                oninput="document.getElementById('slVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
       </div>
 
+      <div class="ctrl-row" style="margin-bottom:8px;">
+        <span class="ctrl-name">Trailing Stop-Loss</span>
+        <label class="toggle"><input type="checkbox" id="trailSL" onchange="document.getElementById('trailSLRow').style.opacity=this.checked?'1':'0.3';document.getElementById('trailSLRow').style.pointerEvents=this.checked?'auto':'none';"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="slider-row" id="trailSLRow" style="opacity:0.3;pointer-events:none;">
+        <div class="slider-header">
+          <span class="ctrl-name">Trail Distance</span>
+          <span class="ctrl-val" id="trailVal">1.5%</span>
+        </div>
+        <input type="range" id="trailDist" min="0.5" max="10" step="0.5" value="1.5"
+               oninput="document.getElementById('trailVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+
       <div class="slider-row">
         <div class="slider-header">
           <span class="ctrl-name">Take Profit</span>
@@ -1217,6 +1230,7 @@ function colorClass(v) {
 
 function reasonClass(r) {
   if (r === 'Stop Loss')   return 'reason-sl';
+  if (r === 'Trailing Stop') return 'reason-sl';
   if (r === 'Take Profit') return 'reason-tp';
   if (r === 'Signal')      return 'reason-sig';
   return 'reason-end';
@@ -1302,6 +1316,8 @@ async function runBacktest() {
   const sl       = document.getElementById('stopLoss').value;
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
+  const trailSL   = document.getElementById('trailSL').checked;
+  const trailDist = document.getElementById('trailDist').value;
 
   const isSimple = indicatorMode === 'simple';
 
@@ -1353,6 +1369,7 @@ async function runBacktest() {
     ...(startDate && { start_date: startDate }),
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, min_confidence: conf,
+    trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
     bb_length: bbLength, bb_std: bbStd,

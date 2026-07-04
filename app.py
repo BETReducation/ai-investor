@@ -770,6 +770,8 @@ def backtest():
         stop_loss_pct   = float(request.args.get("stop_loss",     2.0))
         take_profit_pct = float(request.args.get("take_profit",   4.0))
         min_confidence  = float(request.args.get("min_confidence", 60.0))
+        trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
+        trail_distance_pct = float(request.args.get("trail_distance", 1.5))
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid parameter: {e}"}), 400
 
@@ -798,6 +800,8 @@ def backtest():
             stop_loss_pct=stop_loss_pct,
             take_profit_pct=take_profit_pct,
             min_confidence=min_confidence,
+            trailing_stop=trailing_stop,
+            trail_distance_pct=trail_distance_pct,
         )
         metrics = calculate_metrics(trades, equity_curve)
         period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
