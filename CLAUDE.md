@@ -26,6 +26,19 @@ Push normally. If it's rejected because the remote has moved on:
 4. If there are real conflict markers, resolve them by understanding both sides' intent
    — don't blindly pick one side.
 
+## New pages
+
+Whenever a new page/route is added to the site (a new `@app.route` in `app.py` serving
+a new file under `static/`), also update `static/sitemap.html`:
+
+- Add the page as a node in the `siteTree` data at the bottom of the file, nested under
+  the right parent (matching where it sits in the nav).
+- Give it a real `href` so it's a clickable link, not a `todo` placeholder.
+- If a `todo: true` placeholder already exists for that page (e.g. a planned detail
+  page), turn it into a real link instead of adding a duplicate node.
+- If the new page also needs a nav entry, add it in the same place across every page's
+  nav (see how "Site Map" itself was added — same pattern, all `<li>` nav lists).
+
 ## General
 
 - Don't assume an unfamiliar change in the working tree or git history is a mistake —
