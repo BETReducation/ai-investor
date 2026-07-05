@@ -34,6 +34,8 @@
 .tree-row { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 8px; }
 .tree-row.expandable { cursor: pointer; }
 .tree-row.expandable:hover { background: var(--bg3); }
+.tree-row.linkable { cursor: pointer; }
+.tree-row.linkable:hover { background: var(--bg3); }
 .tree-chevron { font-size: 12px; width: 14px; flex-shrink: 0; color: var(--muted); transition: transform 0.15s; }
 .tree-icon { font-size: 15px; width: 18px; flex-shrink: 0; text-align: center; color: var(--purple2); }
 .tree-label { font-size: 14px; color: var(--text); text-decoration: none; }
@@ -245,10 +247,11 @@ const siteTree = [
 
 function renderNode(node) {
   const hasChildren = node.children && node.children.length;
+  const isLeafLink = !hasChildren && node.href && !node.todo;
   const li = document.createElement('li');
 
   const row = document.createElement('div');
-  row.className = 'tree-row' + (hasChildren ? ' expandable' : '');
+  row.className = 'tree-row' + (hasChildren ? ' expandable' : '') + (isLeafLink ? ' linkable' : '');
 
   const chevron = document.createElement('span');
   chevron.className = 'tree-chevron';
@@ -290,6 +293,11 @@ function renderNode(node) {
       const isOpen = childList.style.display !== 'none';
       childList.style.display = isOpen ? 'none' : 'block';
       chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    });
+  } else if (isLeafLink) {
+    row.addEventListener('click', (e) => {
+      if (e.target === labelEl) return;
+      window.location.href = node.href;
     });
   }
 
