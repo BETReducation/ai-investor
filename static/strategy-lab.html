@@ -715,6 +715,19 @@ window.addEventListener('resize', () => {
                oninput="document.getElementById('slVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
       </div>
 
+      <div class="ctrl-row" style="margin-bottom:8px;">
+        <span class="ctrl-name">Trailing Stop-Loss</span>
+        <label class="toggle"><input type="checkbox" id="trailSL" onchange="document.getElementById('trailSLRow').style.opacity=this.checked?'1':'0.3';document.getElementById('trailSLRow').style.pointerEvents=this.checked?'auto':'none';"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="slider-row" id="trailSLRow" style="opacity:0.3;pointer-events:none;">
+        <div class="slider-header">
+          <span class="ctrl-name">Trail Distance</span>
+          <span class="ctrl-val" id="trailVal">1.5%</span>
+        </div>
+        <input type="range" id="trailDist" min="0.5" max="30" step="0.5" value="1.5"
+               oninput="document.getElementById('trailVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+
       <div class="slider-row">
         <div class="slider-header">
           <span class="ctrl-name">Take Profit</span>
@@ -785,6 +798,22 @@ window.addEventListener('resize', () => {
           <span class="param-label">Overbought level</span>
           <input type="number" class="param-input" id="rsiOverbought" value="70" min="55" max="90">
         </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="rsiTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought / Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+            <option value="bullish_divergence">Bullish divergence</option>
+            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="failure_swings">Failure swings</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="rsiDivLookback" value="5" min="2" max="30">
+        </div>
       </div>
 
       <!-- MACD -->
@@ -810,6 +839,28 @@ window.addEventListener('resize', () => {
           <span class="param-label">Signal period</span>
           <input type="number" class="param-input" id="macdSignal" value="9" min="1" max="50"
                  oninput="updateMacdLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="macdTrigger" style="width:100%;">
+            <option value="signal_cross">Signal Line Crossover (default)</option>
+            <option value="bullish_signal_cross">Bullish signal line crossover</option>
+            <option value="bearish_signal_cross">Bearish signal line crossover</option>
+            <option value="centerline_cross">Centerline crossover</option>
+            <option value="bullish_divergence">Bullish divergence</option>
+            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="histogram_reversal">Histogram reversal</option>
+            <option value="overbought">Overbought</option>
+            <option value="oversold">Oversold</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="macdDivLookback" value="5" min="2" max="30">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Z-score window (bars)</span>
+          <input type="number" class="param-input" id="macdZscoreLength" value="100" min="20" max="500">
         </div>
       </div>
 
@@ -869,6 +920,273 @@ window.addEventListener('resize', () => {
           <input type="number" class="param-input" id="volSurge" value="1.5" min="1.0" max="10.0" step="0.1"
                  oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
         </div>
+      </div>
+    </div>
+
+    <!-- Extended indicator set -->
+    <div class="ctrl-section" id="extendedIndicators" style="display:none;">
+      <div class="ctrl-label">MORE INDICATORS — click name to configure</div>
+
+      <!-- ADX -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('adx')"><span>ADX</span><span class="ind-chevron" id="adxChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togAdx"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="adxParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="adxLength" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Trend threshold</span><input type="number" class="param-input" id="adxTrendThreshold" value="25" min="5" max="60"></div>
+      </div>
+
+      <!-- Parabolic SAR -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('psar')"><span>Parabolic SAR</span><span class="ind-chevron" id="psarChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togPsar"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="psarParams">
+        <div class="param-row"><span class="param-label">Start</span><input type="number" class="param-input" id="psarStart" value="0.02" min="0.001" max="0.5" step="0.001"></div>
+        <div class="param-row"><span class="param-label">Increment</span><input type="number" class="param-input" id="psarInc" value="0.02" min="0.001" max="0.5" step="0.001"></div>
+        <div class="param-row"><span class="param-label">Max step</span><input type="number" class="param-input" id="psarMax" value="0.2" min="0.01" max="1" step="0.01"></div>
+        <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="psarFlipLookback" value="3" min="1" max="20"></div>
+      </div>
+
+      <!-- Ichimoku Cloud -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('ichimoku')"><span>Ichimoku Cloud</span><span class="ind-chevron" id="ichimokuChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togIchimoku"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="ichimokuParams">
+        <div class="param-row"><span class="param-label">Tenkan period</span><input type="number" class="param-input" id="ichimokuTenkan" value="9" min="2" max="60"></div>
+        <div class="param-row"><span class="param-label">Kijun period</span><input type="number" class="param-input" id="ichimokuKijun" value="26" min="2" max="120"></div>
+        <div class="param-row"><span class="param-label">Senkou period</span><input type="number" class="param-input" id="ichimokuSenkou" value="52" min="2" max="200"></div>
+      </div>
+
+      <!-- Supertrend -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('supertrend')"><span>Supertrend</span><span class="ind-chevron" id="supertrendChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togSupertrend"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="supertrendParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="supertrendLength" value="10" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="supertrendMult" value="3.0" min="0.5" max="10" step="0.1"></div>
+        <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="supertrendFlipLookback" value="3" min="1" max="20"></div>
+      </div>
+
+      <!-- Donchian Channels -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('donchian')"><span>Donchian Channels</span><span class="ind-chevron" id="donchianChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togDonchian"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="donchianParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="donchianLength" value="20" min="2" max="200"></div>
+      </div>
+
+      <!-- Hull Moving Average -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('hma')"><span>Hull Moving Average</span><span class="ind-chevron" id="hmaChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togHma"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="hmaParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="hmaLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Slope lookback (bars)</span><input type="number" class="param-input" id="hmaSlopeLookback" value="3" min="1" max="20"></div>
+      </div>
+
+      <!-- Stochastic Oscillator -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('stoch')"><span>Stochastic Oscillator</span><span class="ind-chevron" id="stochChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togStoch"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="stochParams">
+        <div class="param-row"><span class="param-label">%K length</span><input type="number" class="param-input" id="stochK" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">%D length</span><input type="number" class="param-input" id="stochD" value="3" min="1" max="20"></div>
+        <div class="param-row"><span class="param-label">Smoothing</span><input type="number" class="param-input" id="stochSmooth" value="3" min="1" max="20"></div>
+        <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="stochOversold" value="20" min="1" max="45"></div>
+        <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochOverbought" value="80" min="55" max="99"></div>
+      </div>
+
+      <!-- Stochastic RSI -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('stochrsi')"><span>Stochastic RSI</span><span class="ind-chevron" id="stochrsiChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togStochrsi"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="stochrsiParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="stochrsiLength" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">%K smoothing</span><input type="number" class="param-input" id="stochrsiK" value="3" min="1" max="20"></div>
+        <div class="param-row"><span class="param-label">%D smoothing</span><input type="number" class="param-input" id="stochrsiD" value="3" min="1" max="20"></div>
+        <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="stochrsiOversold" value="20" min="1" max="45"></div>
+        <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochrsiOverbought" value="80" min="55" max="99"></div>
+      </div>
+
+      <!-- CCI -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('cci')"><span>Commodity Channel Index</span><span class="ind-chevron" id="cciChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togCci"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="cciParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="cciLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="cciOversold" value="-100" min="-300" max="-20"></div>
+        <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="cciOverbought" value="100" min="20" max="300"></div>
+      </div>
+
+      <!-- Williams %R -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('willr')"><span>Williams %R</span><span class="ind-chevron" id="willrChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togWillr"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="willrParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="willrLength" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="willrOversold" value="-80" min="-99" max="-51"></div>
+        <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="willrOverbought" value="-20" min="-49" max="-1"></div>
+      </div>
+
+      <!-- Rate of Change -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('roc')"><span>Rate of Change</span><span class="ind-chevron" id="rocChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togRoc"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="rocParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="rocLength" value="12" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Momentum threshold %</span><input type="number" class="param-input" id="rocThreshold" value="2.0" min="0.1" max="20" step="0.1"></div>
+      </div>
+
+      <!-- Money Flow Index -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('mfi')"><span>Money Flow Index</span><span class="ind-chevron" id="mfiChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togMfi"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="mfiParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="mfiLength" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="mfiOversold" value="20" min="1" max="45"></div>
+        <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="mfiOverbought" value="80" min="55" max="99"></div>
+      </div>
+
+      <!-- True Strength Index -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('tsi')"><span>True Strength Index</span><span class="ind-chevron" id="tsiChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togTsi"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="tsiParams">
+        <div class="param-row"><span class="param-label">Long EMA</span><input type="number" class="param-input" id="tsiLong" value="25" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Short EMA</span><input type="number" class="param-input" id="tsiShort" value="13" min="2" max="60"></div>
+        <div class="param-row"><span class="param-label">Signal EMA</span><input type="number" class="param-input" id="tsiSignal" value="13" min="2" max="60"></div>
+      </div>
+
+      <!-- Awesome Oscillator -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('ao')"><span>Awesome Oscillator</span><span class="ind-chevron" id="aoChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togAo"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="aoParams">
+        <div class="param-row"><span class="param-label">Fast length</span><input type="number" class="param-input" id="aoFast" value="5" min="1" max="50"></div>
+        <div class="param-row"><span class="param-label">Slow length</span><input type="number" class="param-input" id="aoSlow" value="34" min="2" max="200"></div>
+      </div>
+
+      <!-- Average True Range -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('atr')"><span>Average True Range</span><span class="ind-chevron" id="atrChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togAtr"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="atrParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="atrLength" value="14" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="atrTrendLookback" value="5" min="1" max="50"></div>
+      </div>
+
+      <!-- Keltner Channels -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('keltner')"><span>Keltner Channels</span><span class="ind-chevron" id="keltnerChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togKeltner"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="keltnerParams">
+        <div class="param-row"><span class="param-label">EMA length</span><input type="number" class="param-input" id="keltnerLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">ATR length</span><input type="number" class="param-input" id="keltnerAtrLength" value="10" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="keltnerMult" value="2.0" min="0.5" max="10" step="0.1"></div>
+      </div>
+
+      <!-- Standard Deviation -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('stdev')"><span>Standard Deviation</span><span class="ind-chevron" id="stdevChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togStdev"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="stdevParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="stdevLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="stdevTrendLookback" value="5" min="1" max="50"></div>
+      </div>
+
+      <!-- Chaikin Volatility -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('chaikinVol')"><span>Chaikin Volatility</span><span class="ind-chevron" id="chaikinVolChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togChaikinVol"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="chaikinVolParams">
+        <div class="param-row"><span class="param-label">Range EMA length</span><input type="number" class="param-input" id="chaikinVolEmaLength" value="10" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">ROC length</span><input type="number" class="param-input" id="chaikinVolRocLength" value="10" min="2" max="100"></div>
+        <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="chaikinVolTrendLookback" value="5" min="1" max="50"></div>
+      </div>
+
+      <!-- Historical Volatility -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('histVol')"><span>Historical Volatility</span><span class="ind-chevron" id="histVolChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togHistVol"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="histVolParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="histVolLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="histVolTrendLookback" value="5" min="1" max="50"></div>
+      </div>
+
+      <!-- On Balance Volume -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('obv')"><span>On Balance Volume</span><span class="ind-chevron" id="obvChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togObv"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="obvParams">
+        <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="obvSmaLength" value="20" min="2" max="200"></div>
+      </div>
+
+      <!-- VWAP -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('vwap')"><span>VWAP</span><span class="ind-chevron" id="vwapChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togVwap"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="vwapParams">
+        <div class="param-row"><span class="param-label">Rolling window (bars)</span><input type="number" class="param-input" id="vwapLength" value="20" min="2" max="200"></div>
+      </div>
+
+      <!-- Accumulation/Distribution Line -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('ad')"><span>Accumulation/Distribution</span><span class="ind-chevron" id="adChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togAd"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="adParams">
+        <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="adSmaLength" value="20" min="2" max="200"></div>
+      </div>
+
+      <!-- Chaikin Money Flow -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('cmf')"><span>Chaikin Money Flow</span><span class="ind-chevron" id="cmfChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togCmf"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="cmfParams">
+        <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="cmfLength" value="20" min="2" max="200"></div>
+        <div class="param-row"><span class="param-label">Threshold</span><input type="number" class="param-input" id="cmfThreshold" value="0.05" min="0.01" max="0.5" step="0.01"></div>
+      </div>
+
+      <!-- Volume Profile -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('volProfile')"><span>Volume Profile</span><span class="ind-chevron" id="volProfileChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togVolProfile"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="volProfileParams">
+        <div class="param-row"><span class="param-label">Lookback (bars)</span><input type="number" class="param-input" id="volProfileLookback" value="50" min="10" max="300"></div>
+        <div class="param-row"><span class="param-label">Price bins</span><input type="number" class="param-input" id="volProfileBins" value="24" min="5" max="100"></div>
+      </div>
+
+      <!-- Fibonacci Retracement -->
+      <div class="ind-row" style="margin-bottom:0;">
+        <span class="ind-label" onclick="toggleIndSettings('fib')"><span>Fibonacci Retracement</span><span class="ind-chevron" id="fibChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togFib"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="fibParams" style="margin-bottom:0;">
+        <div class="param-row"><span class="param-label">Swing lookback (bars)</span><input type="number" class="param-input" id="fibLookback" value="50" min="10" max="300"></div>
+        <div class="param-row"><span class="param-label">Level tolerance %</span><input type="number" class="param-input" id="fibTolerancePct" value="1.0" min="0.1" max="10" step="0.1"></div>
       </div>
     </div>
 
@@ -1217,6 +1535,7 @@ function colorClass(v) {
 
 function reasonClass(r) {
   if (r === 'Stop Loss')   return 'reason-sl';
+  if (r === 'Trailing Stop') return 'reason-sl';
   if (r === 'Take Profit') return 'reason-tp';
   if (r === 'Signal')      return 'reason-sig';
   return 'reason-end';
@@ -1236,6 +1555,7 @@ function setIndicatorMode(mode) {
   const isDetailed = mode === 'detailed';
   document.getElementById('simpleIndicators').style.display   = isDetailed ? 'none' : '';
   document.getElementById('detailedIndicators').style.display = isDetailed ? '' : 'none';
+  document.getElementById('extendedIndicators').style.display  = isDetailed ? '' : 'none';
   document.getElementById('modeSimple').style.background = isDetailed ? 'var(--bg-secondary)' : 'var(--accent-green)';
   document.getElementById('modeSimple').style.color = isDetailed ? 'var(--text-secondary)' : '#000';
   document.getElementById('modeDetailed').style.background = isDetailed ? 'var(--accent-green)' : 'var(--bg-secondary)';
@@ -1302,6 +1622,8 @@ async function runBacktest() {
   const sl       = document.getElementById('stopLoss').value;
   const tp       = document.getElementById('takeProfit').value;
   const conf     = document.getElementById('minConf').value;
+  const trailSL   = document.getElementById('trailSL').checked;
+  const trailDist = document.getElementById('trailDist').value;
 
   const isSimple = indicatorMode === 'simple';
 
@@ -1315,10 +1637,15 @@ async function runBacktest() {
     ? parseInt(document.getElementById('rsiOverboughtSimple').value) || 70
     : parseInt(document.getElementById('rsiOverbought').value)       || 70;
   const rsiSmoothing = isSimple ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
+  const rsiTrigger   = isSimple ? 'overbought_oversold' : (document.getElementById('rsiTrigger').value || 'overbought_oversold');
+  const rsiDivLookback = isSimple ? 5 : (parseInt(document.getElementById('rsiDivLookback').value) || 5);
 
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
   const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
+  const macdTrigger      = document.getElementById('macdTrigger').value || 'signal_cross';
+  const macdDivLookback  = parseInt(document.getElementById('macdDivLookback').value)  || 5;
+  const macdZscoreLength = parseInt(document.getElementById('macdZscoreLength').value) || 100;
   const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
   const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
   const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
@@ -1330,6 +1657,50 @@ async function runBacktest() {
   const bbOn   = isSimple ? 0 : (document.getElementById('togBb').checked   ? 1 : 0);
   const maOn   = isSimple ? 0 : (document.getElementById('togMa').checked   ? 1 : 0);
   const volOn  = isSimple ? 0 : (document.getElementById('togVol').checked  ? 1 : 0);
+
+  // ── Extended indicator set ──────────────────────────────────────────────
+  const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
+  const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
+  const _on = (id) => isSimple ? 0 : (document.getElementById(id).checked ? 1 : 0);
+
+  const extParams = {
+    adx_on: _on('togAdx'), adx_length: _iv('adxLength', 14), adx_trend_threshold: _iv('adxTrendThreshold', 25),
+    psar_on: _on('togPsar'), psar_start: _fv('psarStart', 0.02), psar_inc: _fv('psarInc', 0.02),
+      psar_max: _fv('psarMax', 0.2), psar_flip_lookback: _iv('psarFlipLookback', 3),
+    ichimoku_on: _on('togIchimoku'), ichimoku_tenkan: _iv('ichimokuTenkan', 9),
+      ichimoku_kijun: _iv('ichimokuKijun', 26), ichimoku_senkou: _iv('ichimokuSenkou', 52),
+    supertrend_on: _on('togSupertrend'), supertrend_length: _iv('supertrendLength', 10),
+      supertrend_mult: _fv('supertrendMult', 3.0), supertrend_flip_lookback: _iv('supertrendFlipLookback', 3),
+    donchian_on: _on('togDonchian'), donchian_length: _iv('donchianLength', 20),
+    hma_on: _on('togHma'), hma_length: _iv('hmaLength', 20), hma_slope_lookback: _iv('hmaSlopeLookback', 3),
+    stoch_on: _on('togStoch'), stoch_k: _iv('stochK', 14), stoch_d: _iv('stochD', 3), stoch_smooth: _iv('stochSmooth', 3),
+      stoch_oversold: _iv('stochOversold', 20), stoch_overbought: _iv('stochOverbought', 80),
+    stochrsi_on: _on('togStochrsi'), stochrsi_length: _iv('stochrsiLength', 14),
+      stochrsi_k: _iv('stochrsiK', 3), stochrsi_d: _iv('stochrsiD', 3),
+      stochrsi_oversold: _iv('stochrsiOversold', 20), stochrsi_overbought: _iv('stochrsiOverbought', 80),
+    cci_on: _on('togCci'), cci_length: _iv('cciLength', 20),
+      cci_oversold: _iv('cciOversold', -100), cci_overbought: _iv('cciOverbought', 100),
+    willr_on: _on('togWillr'), willr_length: _iv('willrLength', 14),
+      willr_oversold: _iv('willrOversold', -80), willr_overbought: _iv('willrOverbought', -20),
+    roc_on: _on('togRoc'), roc_length: _iv('rocLength', 12), roc_threshold: _fv('rocThreshold', 2.0),
+    mfi_on: _on('togMfi'), mfi_length: _iv('mfiLength', 14),
+      mfi_oversold: _iv('mfiOversold', 20), mfi_overbought: _iv('mfiOverbought', 80),
+    tsi_on: _on('togTsi'), tsi_long: _iv('tsiLong', 25), tsi_short: _iv('tsiShort', 13), tsi_signal: _iv('tsiSignal', 13),
+    ao_on: _on('togAo'), ao_fast: _iv('aoFast', 5), ao_slow: _iv('aoSlow', 34),
+    atr_on: _on('togAtr'), atr_length: _iv('atrLength', 14), atr_trend_lookback: _iv('atrTrendLookback', 5),
+    keltner_on: _on('togKeltner'), keltner_length: _iv('keltnerLength', 20),
+      keltner_atr_length: _iv('keltnerAtrLength', 10), keltner_mult: _fv('keltnerMult', 2.0),
+    stdev_on: _on('togStdev'), stdev_length: _iv('stdevLength', 20), stdev_trend_lookback: _iv('stdevTrendLookback', 5),
+    chaikin_vol_on: _on('togChaikinVol'), chaikin_vol_ema_length: _iv('chaikinVolEmaLength', 10),
+      chaikin_vol_roc_length: _iv('chaikinVolRocLength', 10), chaikin_vol_trend_lookback: _iv('chaikinVolTrendLookback', 5),
+    hist_vol_on: _on('togHistVol'), hist_vol_length: _iv('histVolLength', 20), hist_vol_trend_lookback: _iv('histVolTrendLookback', 5),
+    obv_on: _on('togObv'), obv_sma_length: _iv('obvSmaLength', 20),
+    vwap_on: _on('togVwap'), vwap_length: _iv('vwapLength', 20),
+    ad_on: _on('togAd'), ad_sma_length: _iv('adSmaLength', 20),
+    cmf_on: _on('togCmf'), cmf_length: _iv('cmfLength', 20), cmf_threshold: _fv('cmfThreshold', 0.05),
+    vol_profile_on: _on('togVolProfile'), vol_profile_lookback: _iv('volProfileLookback', 50), vol_profile_bins: _iv('volProfileBins', 24),
+    fib_on: _on('togFib'), fib_lookback: _iv('fibLookback', 50), fib_tolerance_pct: _fv('fibTolerancePct', 1.0),
+  };
 
   if (!symbol) {
     document.getElementById('btSymbol').focus();
@@ -1353,12 +1724,16 @@ async function runBacktest() {
     ...(startDate && { start_date: startDate }),
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, min_confidence: conf,
+    trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
+    rsi_trigger: rsiTrigger, rsi_div_lookback: rsiDivLookback,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
+    macd_trigger: macdTrigger, macd_div_lookback: macdDivLookback, macd_zscore_length: macdZscoreLength,
     bb_length: bbLength, bb_std: bbStd,
     ema_short: emaShort, ema_long: emaLong,
     volume_surge: volSurge,
     rsi_on: rsiOn, macd_on: macdOn, bb_on: bbOn, ma_on: maOn, vol_on: volOn,
+    ...extParams,
   });
 
   try {

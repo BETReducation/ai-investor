@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pandas_ta as ta
 
@@ -337,3 +338,318 @@ def calculate_all(
         "roc":        _safe_float(roc_s.iloc[-1])   if roc_s   is not None else None,
         "history":    _recent_ohlcv(combined),
     }
+
+
+# ── Extended indicator set (Backtester) ───────────────────────────────────────
+# Thin wrappers around proven pandas_ta calls (same calls already used above),
+# plus hand-rolled pandas/numpy calcs for indicators pandas_ta doesn't expose
+# in a form that lines up cleanly with per-bar backtesting (Ichimoku, Donchian,
+# Keltner, stdev, Chaikin volatility, historical volatility, VWAP, A/D line,
+# CMF, TSI, Awesome Oscillator, volume profile, Fibonacci retracement).
+
+def calculate_adx(df: pd.DataFrame, length: int = 14) -> pd.DataFrame:
+    return ta.adx(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_psar(df: pd.DataFrame, start: float = 0.02, inc: float = 0.02, max_af: float = 0.2) -> pd.DataFrame:
+    return ta.psar(df["High"], df["Low"], df["Close"], af0=start, af=inc, max_af=max_af)
+
+
+def calculate_supertrend(df: pd.DataFrame, length: int = 10, mult: float = 3.0) -> pd.DataFrame:
+    return ta.supertrend(df["High"], df["Low"], df["Close"], length=length, multiplier=mult)
+
+
+def calculate_stochastic(df: pd.DataFrame, k: int = 14, d: int = 3, smooth: int = 3) -> pd.DataFrame:
+    return ta.stoch(df["High"], df["Low"], df["Close"], k=k, d=d, smooth_k=smooth)
+
+
+def calculate_stochrsi(df: pd.DataFrame, length: int = 14, k: int = 3, d: int = 3) -> pd.DataFrame:
+    return ta.stochrsi(df["Close"], length=length, rsi_length=length, k=k, d=d)
+
+
+def calculate_cci(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.cci(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_williams_r(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.willr(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_roc(df: pd.DataFrame, length: int = 12) -> pd.Series:
+    return ta.roc(df["Close"], length=length)
+
+
+def calculate_mfi(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.mfi(df["High"], df["Low"], df["Close"], df["Volume"], length=length)
+
+
+def calculate_atr(df: pd.DataFrame, length: int = 14) -> pd.Series:
+    return ta.atr(df["High"], df["Low"], df["Close"], length=length)
+
+
+def calculate_hma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.hma(df["Close"], length=length)
+
+
+def calculate_ichimoku(df: pd.DataFrame, tenkan: int = 9, kijun: int = 26, senkou: int = 52) -> pd.DataFrame:
+    """Manual calc (not pandas_ta) so cloud values line up with the bar they apply
+    to at backtest time — senkou spans are shifted forward by `kijun` bars, matching
+    how the cloud plotted "today" was actually computed from `kijun` bars ago."""
+    high, low = df["High"], df["Low"]
+    tenkan_sen = (high.rolling(tenkan).max() + low.rolling(tenkan).min()) / 2
+    kijun_sen  = (high.rolling(kijun).max()  + low.rolling(kijun).min())  / 2
+    senkou_a   = ((tenkan_sen + kijun_sen) / 2).shift(kijun)
+    senkou_b   = ((high.rolling(senkou).max() + low.rolling(senkou).min()) / 2).shift(kijun)
+    return pd.DataFrame({
+        "ICH_tenkan": tenkan_sen, "ICH_kijun": kijun_sen,
+        "ICH_senkou_a": senkou_a, "ICH_senkou_b": senkou_b,
+    })
+
+
+def calculate_donchian(df: pd.DataFrame, length: int = 20) -> pd.DataFrame:
+    upper = df["High"].rolling(length).max()
+    lower = df["Low"].rolling(length).min()
+    return pd.DataFrame({"DC_upper": upper, "DC_mid": (upper + lower) / 2, "DC_lower": lower})
+
+
+def calculate_keltner(df: pd.DataFrame, length: int = 20, atr_length: int = 10, mult: float = 2.0) -> pd.DataFrame:
+    basis   = ta.ema(df["Close"], length=length)
+    atr_val = ta.atr(df["High"], df["Low"], df["Close"], length=atr_length)
+    return pd.DataFrame({"KC_upper": basis + mult * atr_val, "KC_mid": basis, "KC_lower": basis - mult * atr_val})
+
+
+def calculate_stdev(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return df["Close"].rolling(length).std()
+
+
+def calculate_chaikin_volatility(df: pd.DataFrame, ema_length: int = 10, roc_length: int = 10) -> pd.Series:
+    hl_range  = df["High"] - df["Low"]
+    ema_range = hl_range.ewm(span=ema_length, adjust=False).mean()
+    prior     = ema_range.shift(roc_length)
+    return (ema_range - prior) / prior.replace(0, np.nan) * 100
+
+
+def calculate_historical_volatility(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    log_ret = np.log(df["Close"] / df["Close"].shift(1))
+    return log_ret.rolling(length).std() * (252 ** 0.5) * 100
+
+
+def calculate_rolling_vwap(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    typical = (df["High"] + df["Low"] + df["Close"]) / 3
+    tp_vol  = typical * df["Volume"]
+    return tp_vol.rolling(length).sum() / df["Volume"].rolling(length).sum().replace(0, np.nan)
+
+
+def calculate_ad_line(df: pd.DataFrame) -> pd.Series:
+    rng = (df["High"] - df["Low"]).replace(0, np.nan)
+    clv = ((df["Close"] - df["Low"]) - (df["High"] - df["Close"])) / rng
+    return (clv.fillna(0) * df["Volume"]).cumsum()
+
+
+def calculate_cmf(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    rng = (df["High"] - df["Low"]).replace(0, np.nan)
+    clv = ((df["Close"] - df["Low"]) - (df["High"] - df["Close"])) / rng
+    mfv = clv.fillna(0) * df["Volume"]
+    return mfv.rolling(length).sum() / df["Volume"].rolling(length).sum().replace(0, np.nan)
+
+
+def calculate_tsi(df: pd.DataFrame, long: int = 25, short: int = 13, signal: int = 13) -> pd.DataFrame:
+    mom       = df["Close"].diff()
+    ema1      = mom.ewm(span=long, adjust=False).mean()
+    ema2      = ema1.ewm(span=short, adjust=False).mean()
+    abs_ema1  = mom.abs().ewm(span=long, adjust=False).mean()
+    abs_ema2  = abs_ema1.ewm(span=short, adjust=False).mean()
+    tsi       = 100 * ema2 / abs_ema2.replace(0, np.nan)
+    return pd.DataFrame({"TSI": tsi, "TSI_signal": tsi.ewm(span=signal, adjust=False).mean()})
+
+
+def calculate_awesome_oscillator(df: pd.DataFrame, fast: int = 5, slow: int = 34) -> pd.Series:
+    median_price = (df["High"] + df["Low"]) / 2
+    return median_price.rolling(fast).mean() - median_price.rolling(slow).mean()
+
+
+def calculate_volume_profile_poc(df: pd.DataFrame, lookback: int = 50, bins: int = 24) -> pd.Series:
+    """Rolling point-of-control: the price bin with the most traded volume in each lookback window."""
+    high, low, close, vol = df["High"].values, df["Low"].values, df["Close"].values, df["Volume"].values
+    n = len(df)
+    poc = np.full(n, np.nan)
+    for i in range(lookback - 1, n):
+        lo_i = i - lookback + 1
+        w_high, w_low, w_vol = high[lo_i:i + 1], low[lo_i:i + 1], vol[lo_i:i + 1]
+        typical = (w_high + w_low + close[lo_i:i + 1]) / 3
+        window_low, window_high = w_low.min(), w_high.max()
+        if window_high <= window_low:
+            continue
+        edges = np.linspace(window_low, window_high, bins + 1)
+        bucket_vol = np.zeros(bins)
+        idxs = np.clip(np.digitize(typical, edges) - 1, 0, bins - 1)
+        for b, v in zip(idxs, w_vol):
+            bucket_vol[b] += v
+        best_bin = int(np.argmax(bucket_vol))
+        poc[i] = (edges[best_bin] + edges[best_bin + 1]) / 2
+    return pd.Series(poc, index=df.index)
+
+
+def calculate_fibonacci_levels(df: pd.DataFrame, lookback: int = 50) -> pd.DataFrame:
+    swing_high = df["High"].rolling(lookback).max()
+    swing_low  = df["Low"].rolling(lookback).min()
+    rng = swing_high - swing_low
+    return pd.DataFrame({
+        "FIB_high": swing_high, "FIB_low": swing_low,
+        "FIB_236": swing_high - rng * 0.236,
+        "FIB_382": swing_high - rng * 0.382,
+        "FIB_500": swing_high - rng * 0.5,
+        "FIB_618": swing_high - rng * 0.618,
+        "FIB_786": swing_high - rng * 0.786,
+    })
+
+
+# ── RSI trigger modes (Backtester) ────────────────────────────────────────────
+# Lets the RSI indicator fire on something other than plain overbought/oversold.
+
+def calculate_rsi_centerline_cross(rsi: pd.Series) -> pd.Series:
+    """+1 the bar RSI crosses above 50, -1 the bar it crosses below 50, else 0."""
+    above       = rsi > 50
+    prev_above  = above.shift(1, fill_value=False)
+    crossed_up  = above & ~prev_above
+    crossed_dn  = ~above & prev_above
+    signal = pd.Series(0, index=rsi.index)
+    signal[crossed_up] = 1
+    signal[crossed_dn] = -1
+    return signal
+
+
+def calculate_price_divergence(close: pd.Series, indicator: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    Regular divergence between price and any oscillator series, detected off
+    trailing-confirmed pivots: bar j = i - lookback is a pivot if it's the min/max
+    of the (2*lookback+1)-bar window ending at i — using only data up to i, so
+    there's no lookahead. Returns (bullish, bearish) boolean Series, True on the
+    bar a divergence is confirmed (the second pivot).
+    """
+    n = len(close)
+    bullish = np.zeros(n, dtype=bool)
+    bearish = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    c = close.values
+    r = indicator.values
+
+    last_low_price = last_low_ind = None
+    last_high_price = last_high_ind = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window_c = c[i - win + 1: i + 1]
+        window_r = r[i - win + 1: i + 1]
+        if np.isnan(window_c).any() or np.isnan(window_r).any():
+            continue
+
+        if c[j] == window_c.min():
+            if last_low_price is not None and c[j] < last_low_price and r[j] > last_low_ind:
+                bullish[i] = True
+            last_low_price, last_low_ind = c[j], r[j]
+
+        if c[j] == window_c.max():
+            if last_high_price is not None and c[j] > last_high_price and r[j] < last_high_ind:
+                bearish[i] = True
+            last_high_price, last_high_ind = c[j], r[j]
+
+    return pd.Series(bullish, index=close.index), pd.Series(bearish, index=close.index)
+
+
+def calculate_rsi_divergence(close: pd.Series, rsi: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    return calculate_price_divergence(close, rsi, lookback)
+
+
+def calculate_macd_divergence(close: pd.Series, macd_line: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    return calculate_price_divergence(close, macd_line, lookback)
+
+
+def calculate_macd_histogram_reversal(histogram: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """
+    Bullish: the prior bar was a local trough in the histogram (it was falling, now rising).
+    Bearish: the prior bar was a local peak (it was rising, now falling).
+    Confirmed on the turn, using only data up to the current bar (no lookahead).
+    """
+    prev1 = histogram.shift(1)
+    prev2 = histogram.shift(2)
+    bullish = (prev2 > prev1) & (histogram > prev1)
+    bearish = (prev2 < prev1) & (histogram < prev1)
+    return bullish.fillna(False), bearish.fillna(False)
+
+
+def calculate_macd_zscore(macd_line: pd.Series, length: int = 100) -> pd.Series:
+    mean = macd_line.rolling(length).mean()
+    std  = macd_line.rolling(length).std()
+    return (macd_line - mean) / std.replace(0, np.nan)
+
+
+def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+    """
+    Wilder's failure swings. Returns (bullish, bearish) boolean Series, True on the bar
+    the swing is confirmed (RSI breaks the high/low set during its pullback from the zone).
+    """
+    n = len(rsi)
+    r = rsi.values
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    # Bullish: idle -> armed (dipped below oversold) -> peaking (recovered, tracking high)
+    #          -> pullback (declining, must stay above oversold) -> break above the peak.
+    state, peak, prev = 0, None, None
+    for i in range(n):
+        v = r[i]
+        if v != v:
+            prev = v
+            continue
+        if state == 0:
+            if v < oversold:
+                state = 1
+        elif state == 1:
+            if v > oversold:
+                state, peak = 2, v
+        elif state == 2:
+            if v < oversold:
+                state = 1
+            elif prev is not None and v < prev:
+                peak, state = prev, 3
+            else:
+                peak = max(peak, v)
+        elif state == 3:
+            if v < oversold:
+                state = 1
+            elif v > peak:
+                bull[i] = True
+                state = 0
+        prev = v
+
+    # Bearish: mirror image.
+    state, trough, prev = 0, None, None
+    for i in range(n):
+        v = r[i]
+        if v != v:
+            prev = v
+            continue
+        if state == 0:
+            if v > overbought:
+                state = 1
+        elif state == 1:
+            if v < overbought:
+                state, trough = 2, v
+        elif state == 2:
+            if v > overbought:
+                state = 1
+            elif prev is not None and v > prev:
+                trough, state = prev, 3
+            else:
+                trough = min(trough, v)
+        elif state == 3:
+            if v > overbought:
+                state = 1
+            elif v < trough:
+                bear[i] = True
+                state = 0
+        prev = v
+
+    return pd.Series(bull, index=rsi.index), pd.Series(bear, index=rsi.index)

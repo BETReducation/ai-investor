@@ -114,6 +114,63 @@ def _extract_calc_params(args) -> dict:
     if smoothing in ("wilder", "ema", "sma"):
         params["rsi_smoothing"] = smoothing
     return params
+
+
+# Backtester-only calc params (kept separate from _INT_CALC_KEYS/_FLOAT_CALC_KEYS
+# above so /api/indicators' calculate_all(**calc_params) never sees an unexpected kwarg).
+_BT_INT_CALC_KEYS = {
+    "rsi_div_lookback": 5,
+    "macd_div_lookback": 5, "macd_zscore_length": 100,
+    "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
+    "donchian_length": 20,
+    "keltner_length": 20, "keltner_atr_length": 10,
+    "stdev_length": 20,
+    "chaikin_vol_ema_length": 10, "chaikin_vol_roc_length": 10,
+    "hist_vol_length": 20,
+    "vwap_length": 20,
+    "ad_sma_length": 20,
+    "cmf_length": 20,
+    "tsi_long": 25, "tsi_short": 13, "tsi_signal": 13,
+    "ao_fast": 5, "ao_slow": 34,
+    "obv_sma_length": 20,
+    "vol_profile_lookback": 50, "vol_profile_bins": 24,
+    "fib_lookback": 50,
+    "hma_slope_lookback": 3,
+}
+_BT_FLOAT_CALC_KEYS = {
+    "keltner_mult": 2.0,
+}
+
+_VALID_RSI_TRIGGERS = {
+    "overbought_oversold", "overbought", "oversold", "centerline_cross",
+    "bullish_divergence", "bearish_divergence", "failure_swings",
+}
+
+_VALID_MACD_TRIGGERS = {
+    "signal_cross", "bullish_signal_cross", "bearish_signal_cross", "centerline_cross",
+    "bullish_divergence", "bearish_divergence", "histogram_reversal", "overbought", "oversold",
+}
+
+
+def _extract_backtest_calc_params(args) -> dict:
+    params = {}
+    for key in _BT_INT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = int(val)
+            except ValueError:
+                pass
+    for key in _BT_FLOAT_CALC_KEYS:
+        val = args.get(key)
+        if val is not None:
+            try:
+                params[key] = float(val)
+            except ValueError:
+                pass
+    return params
+
+
 VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
@@ -770,6 +827,8 @@ def backtest():
         stop_loss_pct   = float(request.args.get("stop_loss",     2.0))
         take_profit_pct = float(request.args.get("take_profit",   4.0))
         min_confidence  = float(request.args.get("min_confidence", 60.0))
+        trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
+        trail_distance_pct = float(request.args.get("trail_distance", 1.5))
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid parameter: {e}"}), 400
 
@@ -779,6 +838,33 @@ def backtest():
         "bb_oversold", "bb_overbought",
         "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
         "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
+        # ── Extended indicator set (Backtester) ──────────────────────────
+        "adx_on", "adx_trend_threshold",
+        "psar_on", "psar_flip_lookback",
+        "ichimoku_on",
+        "supertrend_on", "supertrend_flip_lookback",
+        "donchian_on",
+        "hma_on",
+        "stoch_on", "stoch_oversold", "stoch_overbought",
+        "stochrsi_on", "stochrsi_oversold", "stochrsi_overbought",
+        "cci_on", "cci_oversold", "cci_overbought",
+        "willr_on", "willr_oversold", "willr_overbought",
+        "roc_on", "roc_threshold",
+        "mfi_on", "mfi_oversold", "mfi_overbought",
+        "tsi_on",
+        "ao_on",
+        "atr_on", "atr_trend_lookback",
+        "keltner_on",
+        "stdev_on", "stdev_trend_lookback",
+        "chaikin_vol_on", "chaikin_vol_trend_lookback",
+        "hist_vol_on", "hist_vol_trend_lookback",
+        "obv_on",
+        "vwap_on",
+        "ad_on",
+        "cmf_on", "cmf_threshold",
+        "vol_profile_on",
+        "fib_on", "fib_tolerance_pct",
+        "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -787,7 +873,20 @@ def backtest():
             except ValueError:
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
 
+    rsi_trigger = request.args.get("rsi_trigger")
+    if rsi_trigger is not None:
+        if rsi_trigger not in _VALID_RSI_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'rsi_trigger'"}), 400
+        thresholds["rsi_trigger"] = rsi_trigger
+
+    macd_trigger = request.args.get("macd_trigger")
+    if macd_trigger is not None:
+        if macd_trigger not in _VALID_MACD_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'macd_trigger'"}), 400
+        thresholds["macd_trigger"] = macd_trigger
+
     calc_params = _extract_calc_params(request.args)
+    calc_params.update(_extract_backtest_calc_params(request.args))
 
     try:
         df = _fetch_ohlcv(symbol, period, interval, start_date=start_date, end_date=end_date)
@@ -798,6 +897,8 @@ def backtest():
             stop_loss_pct=stop_loss_pct,
             take_profit_pct=take_profit_pct,
             min_confidence=min_confidence,
+            trailing_stop=trailing_stop,
+            trail_distance_pct=trail_distance_pct,
         )
         metrics = calculate_metrics(trades, equity_curve)
         period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
