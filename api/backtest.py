@@ -14,7 +14,7 @@ from api.indicators import (
     calculate_rsi_centerline_cross, calculate_rsi_divergence, calculate_rsi_failure_swings,
     calculate_macd_divergence, calculate_macd_histogram_reversal, calculate_macd_zscore,
     calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
-    calculate_ma_by_type,
+    calculate_ma_by_type, calculate_price_divergence,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -102,6 +102,9 @@ def run_backtest(
     vol_profile_lookback   = int(cp.get("vol_profile_lookback", 50))
     vol_profile_bins       = int(cp.get("vol_profile_bins", 24))
     fib_lookback           = int(cp.get("fib_lookback", 50))
+    vwap_band_pct          = float(cp.get("vwap_band_pct", 1.0))
+    obv_div_lookback       = int(cp.get("obv_div_lookback", 5))
+    ad_div_lookback        = int(cp.get("ad_div_lookback", 5))
 
     # ── Compute full indicator series upfront (O(n), not O(n²)) ──────────
     rsi_s   = calculate_rsi(df, length=rsi_length)
@@ -264,6 +267,38 @@ def run_backtest(
     obv_sma = combined["OBV"].rolling(obv_sma_length).mean()     if "OBV" in combined else pd.Series(np.nan, index=combined.index)
     ad_sma  = combined["AD_LINE"].rolling(ad_sma_length).mean()  if "AD_LINE" in combined else pd.Series(np.nan, index=combined.index)
 
+    # ── Trigger-mode precomputes for the remaining extended indicators ──────
+    # (bull/bear split + one discrete-cross-event variant per indicator, all built
+    # from series already computed above via the same _bars_since_cross_series /
+    # calculate_price_divergence primitives used for RSI/MACD/ADX.)
+    def _cross_bars(col_a, col_b=None, level=None):
+        if col_a not in combined:
+            return pd.Series(999, index=combined.index)
+        b = combined[col_b] if col_b else pd.Series(level, index=combined.index)
+        return _bars_since_cross_series(combined[col_a], b)
+
+    tk_cross_bars        = _cross_bars("ICH_tenkan", "ICH_kijun")
+    donchian_mid_bars    = _bars_since_cross_series(combined["Close"], combined["DC_mid"]) if "DC_mid" in combined else pd.Series(999, index=combined.index)
+    hma_price_bars       = _bars_since_cross_series(combined["Close"], combined["HMA"])    if "HMA"    in combined else pd.Series(999, index=combined.index)
+    stoch_signal_bars    = _bars_since_cross_series(combined[stoch_k_col], combined[stoch_d_col]) if stoch_k_col and stoch_d_col else pd.Series(999, index=combined.index)
+    stochrsi_signal_bars = _bars_since_cross_series(combined[srsi_k_col], combined[srsi_d_col])    if srsi_k_col and srsi_d_col   else pd.Series(999, index=combined.index)
+    cci_centerline_bars  = _cross_bars("CCI", level=0.0)
+    willr_midline_bars   = _cross_bars("WILLR", level=-50.0)
+    roc_centerline_bars  = _cross_bars("ROC", level=0.0)
+    mfi_centerline_bars  = _cross_bars("MFI", level=50.0)
+    tsi_centerline_bars  = _cross_bars("TSI", level=0.0)
+    ao_zero_bars         = _cross_bars("AO", level=0.0)
+    keltner_mid_bars     = _bars_since_cross_series(combined["Close"], combined["KC_mid"]) if "KC_mid" in combined else pd.Series(999, index=combined.index)
+    cmf_centerline_bars  = _cross_bars("CMF", level=0.0)
+    vp_poc_bars          = _bars_since_cross_series(combined["Close"], combined["VP_POC"]) if "VP_POC" in combined else pd.Series(999, index=combined.index)
+
+    obv_bull_div, obv_bear_div = calculate_price_divergence(df["Close"], combined["OBV"], lookback=obv_div_lookback)
+    ad_bull_div, ad_bear_div = (
+        calculate_price_divergence(df["Close"], combined["AD_LINE"], lookback=ad_div_lookback)
+        if "AD_LINE" in combined
+        else (pd.Series(False, index=combined.index), pd.Series(False, index=combined.index))
+    )
+
     warmup = max(
         50, macd_slow + macd_signal + 5, bb_length + 5,
         ichimoku_kijun + ichimoku_senkou, vol_profile_lookback, fib_lookback,
@@ -418,6 +453,8 @@ def run_backtest(
             "ichimoku": {
                 "tenkan": _sf(row.get("ICH_tenkan")), "kijun": _sf(row.get("ICH_kijun")),
                 "senkou_a": senkou_a, "senkou_b": senkou_b, "cloud_pos": cloud_pos,
+                "tk_cross_bars_since": int(tk_cross_bars.iloc[i]),
+                "tk_cross_direction":  1 if (row.get("ICH_tenkan") == row.get("ICH_tenkan") and row.get("ICH_kijun") == row.get("ICH_kijun") and row.get("ICH_tenkan") > row.get("ICH_kijun")) else -1,
             },
             "supertrend": {
                 "is_bull":         (bool(row.get(st_dir_col) == 1) if st_dir_col and row.get(st_dir_col) == row.get(st_dir_col) else None),
@@ -426,28 +463,58 @@ def run_backtest(
             "donchian": {
                 "upper": _sf(row.get("DC_upper")), "mid": _sf(row.get("DC_mid")),
                 "lower": _sf(row.get("DC_lower")), "close": close,
+                "mid_cross_bars_since": int(donchian_mid_bars.iloc[i]),
+                "mid_cross_direction":  1 if (close is not None and row.get("DC_mid") == row.get("DC_mid") and close > row.get("DC_mid")) else -1,
             },
             "hma": {
                 "value": _sf(row.get("HMA")),
                 "prev":  _sf(hma_prev.iloc[i]),
+                "price_cross_bars_since": int(hma_price_bars.iloc[i]),
+                "price_cross_direction":  1 if (close is not None and row.get("HMA") == row.get("HMA") and close > row.get("HMA")) else -1,
             },
             "stochastic": {
-                "k": _sf(row.get(stoch_k_col)) if stoch_k_col else None,
-                "d": _sf(row.get(stoch_d_col)) if stoch_d_col else None,
+                "k": (stoch_k_v := _sf(row.get(stoch_k_col)) if stoch_k_col else None),
+                "d": (stoch_d_v := _sf(row.get(stoch_d_col)) if stoch_d_col else None),
+                "signal_cross_bars_since": int(stoch_signal_bars.iloc[i]),
+                "signal_cross_direction":  1 if (stoch_k_v is not None and stoch_d_v is not None and stoch_k_v > stoch_d_v) else -1,
             },
             "stochrsi": {
-                "k": _sf(row.get(srsi_k_col)) if srsi_k_col else None,
-                "d": _sf(row.get(srsi_d_col)) if srsi_d_col else None,
+                "k": (srsi_k_v := _sf(row.get(srsi_k_col)) if srsi_k_col else None),
+                "d": (srsi_d_v := _sf(row.get(srsi_d_col)) if srsi_d_col else None),
+                "signal_cross_bars_since": int(stochrsi_signal_bars.iloc[i]),
+                "signal_cross_direction":  1 if (srsi_k_v is not None and srsi_d_v is not None and srsi_k_v > srsi_d_v) else -1,
             },
-            "cci":   _sf(row.get("CCI")),
-            "willr": _sf(row.get("WILLR")),
-            "roc":   _sf(row.get("ROC")),
-            "mfi":   _sf(row.get("MFI")),
+            "cci": {
+                "value": (cci_v := _sf(row.get("CCI"))),
+                "centerline_bars_since": int(cci_centerline_bars.iloc[i]),
+                "centerline_direction":  1 if (cci_v is not None and cci_v > 0) else -1,
+            },
+            "willr": {
+                "value": (willr_v := _sf(row.get("WILLR"))),
+                "midline_bars_since": int(willr_midline_bars.iloc[i]),
+                "midline_direction":  1 if (willr_v is not None and willr_v > -50) else -1,
+            },
+            "roc": {
+                "value": (roc_v := _sf(row.get("ROC"))),
+                "centerline_bars_since": int(roc_centerline_bars.iloc[i]),
+                "centerline_direction":  1 if (roc_v is not None and roc_v > 0) else -1,
+            },
+            "mfi": {
+                "value": (mfi_v := _sf(row.get("MFI"))),
+                "centerline_bars_since": int(mfi_centerline_bars.iloc[i]),
+                "centerline_direction":  1 if (mfi_v is not None and mfi_v > 50) else -1,
+            },
             "tsi": {
-                "value":  _sf(row.get("TSI")),
+                "value":  (tsi_v := _sf(row.get("TSI"))),
                 "signal": _sf(row.get("TSI_signal")),
+                "centerline_bars_since": int(tsi_centerline_bars.iloc[i]),
+                "centerline_direction":  1 if (tsi_v is not None and tsi_v > 0) else -1,
             },
-            "awesome_oscillator": _sf(row.get("AO")),
+            "awesome_oscillator": {
+                "value": (ao_v := _sf(row.get("AO"))),
+                "zero_cross_bars_since": int(ao_zero_bars.iloc[i]),
+                "zero_cross_direction":  1 if (ao_v is not None and ao_v > 0) else -1,
+            },
             "atr": {
                 "value":           _sf(row.get("ATR")),
                 "expanding":       _expanding("ATR", atr_sma),
@@ -455,6 +522,8 @@ def run_backtest(
             },
             "keltner": {
                 "upper": _sf(row.get("KC_upper")), "mid": _sf(row.get("KC_mid")), "lower": _sf(row.get("KC_lower")),
+                "mid_cross_bars_since": int(keltner_mid_bars.iloc[i]),
+                "mid_cross_direction":  1 if (close is not None and row.get("KC_mid") == row.get("KC_mid") and close > row.get("KC_mid")) else -1,
             },
             "stdev": {
                 "value":           _sf(row.get("STDEV")),
@@ -474,14 +543,30 @@ def run_backtest(
             "obv_trend": {
                 "obv":     _sf(row.get("OBV")),
                 "obv_sma": _sf(obv_sma.iloc[i]),
+                "bullish_divergence": bool(obv_bull_div.iloc[i]),
+                "bearish_divergence": bool(obv_bear_div.iloc[i]),
             },
-            "vwap": _sf(row.get("VWAP_ROLL")),
+            "vwap": {
+                "value": (vwap_v := _sf(row.get("VWAP_ROLL"))),
+                "upper_band": _sf(vwap_v * (1 + vwap_band_pct / 100)) if vwap_v is not None else None,
+                "lower_band": _sf(vwap_v * (1 - vwap_band_pct / 100)) if vwap_v is not None else None,
+            },
             "ad_trend": {
                 "ad":     _sf(row.get("AD_LINE")),
                 "ad_sma": _sf(ad_sma.iloc[i]),
+                "bullish_divergence": bool(ad_bull_div.iloc[i]),
+                "bearish_divergence": bool(ad_bear_div.iloc[i]),
             },
-            "cmf": _sf(row.get("CMF")),
-            "volume_profile": {"poc": _sf(row.get("VP_POC"))},
+            "cmf": {
+                "value": (cmf_v := _sf(row.get("CMF"))),
+                "centerline_bars_since": int(cmf_centerline_bars.iloc[i]),
+                "centerline_direction":  1 if (cmf_v is not None and cmf_v > 0) else -1,
+            },
+            "volume_profile": {
+                "poc": (poc_v := _sf(row.get("VP_POC"))),
+                "breakout_bars_since": int(vp_poc_bars.iloc[i]),
+                "breakout_direction":  1 if (close is not None and poc_v is not None and close > poc_v) else -1,
+            },
             "fibonacci": {
                 "nearest_level": fib_nearest, "distance_pct": fib_dist_pct, "trend": fib_trend,
                 "prev_close": _sf(combined["Close"].iloc[i - 1]) if i > 0 else None,

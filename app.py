@@ -139,10 +139,12 @@ _BT_INT_CALC_KEYS = {
     "bb_squeeze_lookback": 100, "bb_breakout_window": 10,
     "bb_walk_min_consecutive": 3, "bb_pattern_lookback": 5,
     "ma_short_length": 9, "ma_medium_length": 20, "ma_long_length": 50,
+    "obv_div_lookback": 5, "ad_div_lookback": 5,
 }
 _BT_FLOAT_CALC_KEYS = {
     "keltner_mult": 2.0,
     "bb_squeeze_percentile": 20.0, "bb_walk_tolerance_pct": 0.5,
+    "vwap_band_pct": 1.0,
 }
 
 _VALID_RSI_TRIGGERS = {
@@ -167,6 +169,33 @@ _VALID_MA_TRIGGERS = {
 _VALID_ADX_TRIGGERS = {
     "trend_threshold", "bull_di_cross", "bear_di_cross", "above_25", "above_50", "above_75",
     "strong_di_plus", "strong_di_minus",
+}
+
+_TRIGGER_WHITELISTS = {
+    "psar_trigger":        {"flip", "bull_flip", "bear_flip", "trend_state"},
+    "ichimoku_trigger":    {"cloud_position", "bullish", "bearish", "tk_cross"},
+    "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state"},
+    "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross"},
+    "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross"},
+    "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
+    "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross"},
+    "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
+    "willr_trigger":       {"overbought_oversold", "overbought", "oversold", "midline_cross"},
+    "roc_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},
+    "mfi_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
+    "tsi_trigger":         {"signal_cross", "bullish", "bearish", "centerline_cross"},
+    "ao_trigger":          {"zero_state", "bullish", "bearish", "zero_cross"},
+    "atr_trigger":         {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
+    "keltner_trigger":     {"breakout", "bullish", "bearish", "middle_cross"},
+    "stdev_trigger":       {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
+    "chaikin_vol_trigger": {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
+    "hist_vol_trigger":    {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
+    "obv_trigger":         {"trend", "bullish", "bearish", "divergence"},
+    "vwap_trigger":        {"position", "bullish", "bearish", "band_touch"},
+    "ad_trigger":          {"trend", "bullish", "bearish", "divergence"},
+    "cmf_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},
+    "vol_profile_trigger": {"position", "bullish", "bearish", "poc_breakout"},
+    "fib_trigger":         {"bounce_reject", "bullish_bounce", "bearish_reject", "any_touch"},
 }
 
 
@@ -891,6 +920,11 @@ def backtest():
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
         "ma_trigger_lookback",
         "adx_di_cross_lookback",
+        "ichimoku_tk_cross_lookback", "donchian_mid_cross_lookback", "hma_price_cross_lookback",
+        "stoch_signal_cross_lookback", "stochrsi_signal_cross_lookback",
+        "cci_centerline_lookback", "willr_midline_lookback", "roc_centerline_lookback",
+        "mfi_centerline_lookback", "tsi_centerline_lookback", "ao_zero_cross_lookback",
+        "keltner_mid_cross_lookback", "cmf_centerline_lookback", "vol_profile_breakout_lookback",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -928,6 +962,13 @@ def backtest():
         if adx_trigger not in _VALID_ADX_TRIGGERS:
             return jsonify({"error": "Invalid value for 'adx_trigger'"}), 400
         thresholds["adx_trigger"] = adx_trigger
+
+    for trig_key, allowed in _TRIGGER_WHITELISTS.items():
+        val = request.args.get(trig_key)
+        if val is not None:
+            if val not in allowed:
+                return jsonify({"error": f"Invalid value for '{trig_key}'"}), 400
+            thresholds[trig_key] = val
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))
