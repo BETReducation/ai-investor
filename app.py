@@ -138,6 +138,7 @@ _BT_INT_CALC_KEYS = {
     "hma_slope_lookback": 3,
     "bb_squeeze_lookback": 100, "bb_breakout_window": 10,
     "bb_walk_min_consecutive": 3, "bb_pattern_lookback": 5,
+    "ma_short_length": 9, "ma_medium_length": 20, "ma_long_length": 50,
 }
 _BT_FLOAT_CALC_KEYS = {
     "keltner_mult": 2.0,
@@ -159,6 +160,10 @@ _VALID_BB_TRIGGERS = {
     "walking_upper", "walking_lower", "w_bottom", "m_top",
 }
 
+_VALID_MA_TRIGGERS = {
+    "dual_cross", "price_cross", "two_ma_bull", "two_ma_bear", "three_ma_bull", "three_ma_bear",
+}
+
 
 def _extract_backtest_calc_params(args) -> dict:
     params = {}
@@ -176,6 +181,9 @@ def _extract_backtest_calc_params(args) -> dict:
                 params[key] = float(val)
             except ValueError:
                 pass
+    ma_type = args.get("ma_type", "").strip().lower()
+    if ma_type in ("simple", "smoothed", "exponential", "weighted", "volume_weighted"):
+        params["ma_type"] = ma_type
     return params
 
 
@@ -876,6 +884,7 @@ def backtest():
         "vol_profile_on",
         "fib_on", "fib_tolerance_pct",
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
+        "ma_trigger_lookback",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -901,6 +910,12 @@ def backtest():
         if bb_trigger not in _VALID_BB_TRIGGERS:
             return jsonify({"error": "Invalid value for 'bb_trigger'"}), 400
         thresholds["bb_trigger"] = bb_trigger
+
+    ma_trigger = request.args.get("ma_trigger")
+    if ma_trigger is not None:
+        if ma_trigger not in _VALID_MA_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'ma_trigger'"}), 400
+        thresholds["ma_trigger"] = ma_trigger
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))

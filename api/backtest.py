@@ -14,6 +14,7 @@ from api.indicators import (
     calculate_rsi_centerline_cross, calculate_rsi_divergence, calculate_rsi_failure_swings,
     calculate_macd_divergence, calculate_macd_histogram_reversal, calculate_macd_zscore,
     calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
+    calculate_ma_by_type,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -53,6 +54,10 @@ def run_backtest(
     bb_walk_tolerance_pct   = float(cp.get("bb_walk_tolerance_pct", 0.5))
     ema_short   = int(cp.get("ema_short",    9))
     ema_long    = int(cp.get("ema_long",    21))
+    ma_type          = str(cp.get("ma_type", "exponential"))
+    ma_short_length  = int(cp.get("ma_short_length", 9))
+    ma_medium_length = int(cp.get("ma_medium_length", 20))
+    ma_long_length   = int(cp.get("ma_long_length", 50))
 
     # ── Extended indicator set: lengths/params (sensible defaults if unset) ──
     adx_length             = int(cp.get("adx_length", 14))
@@ -128,6 +133,14 @@ def run_backtest(
     )
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
     vol_df  = calculate_volume_indicators(df)
+
+    ma_short_s  = calculate_ma_by_type(df, ma_short_length,  ma_type)
+    ma_medium_s = calculate_ma_by_type(df, ma_medium_length, ma_type)
+    ma_long_s   = calculate_ma_by_type(df, ma_long_length,   ma_type)
+    price_cross_bars = _bars_since_cross_series(df["Close"], ma_short_s)
+    two_ma_bars       = _bars_since_cross_series(ma_short_s, ma_long_s)
+    three_ma_bull_s = (ma_short_s > ma_medium_s) & (ma_medium_s > ma_long_s)
+    three_ma_bear_s = (ma_short_s < ma_medium_s) & (ma_medium_s < ma_long_s)
 
     adx_df        = _try(lambda: calculate_adx(df, length=adx_length))
     psar_df       = _try(lambda: calculate_psar(df, start=psar_start, inc=psar_inc, max_af=psar_max))
@@ -359,6 +372,14 @@ def run_backtest(
                 "ma_20":    m20, "ma_50": m50,
                 "ma_200":   _sf(row.get("MA_200")),
                 "ema_short": esn, "ema_long": eln,
+            },
+            "ma_trigger": {
+                "price_cross_bars_since": int(price_cross_bars.iloc[i]),
+                "price_cross_direction":  1 if (close is not None and ma_short_s.iloc[i] == ma_short_s.iloc[i] and close > ma_short_s.iloc[i]) else -1,
+                "two_ma_bars_since":      int(two_ma_bars.iloc[i]),
+                "two_ma_direction":       1 if (ma_short_s.iloc[i] == ma_short_s.iloc[i] and ma_long_s.iloc[i] == ma_long_s.iloc[i] and ma_short_s.iloc[i] > ma_long_s.iloc[i]) else -1,
+                "three_ma_bull":          bool(three_ma_bull_s.iloc[i]),
+                "three_ma_bear":          bool(three_ma_bear_s.iloc[i]),
             },
             "volume": {
                 "current": vol_now, "sma_20": vol_sma,

@@ -28,6 +28,9 @@ DEFAULT_THRESHOLDS = {
     "macd_zscore_oversold": -2.0,
     "bb_trigger": "percent_b",  # percent_b | upper_touch | lower_touch | volatility_breakout |
                                 # walking_upper | walking_lower | w_bottom | m_top
+    "ma_trigger": "dual_cross",  # dual_cross | price_cross | two_ma_bull | two_ma_bear |
+                                  # three_ma_bull | three_ma_bear
+    "ma_trigger_lookback": 5,
 
     # ── Extended indicator set (Backtester) — all default OFF ────────────────
     "adx_on": 0, "adx_trend_threshold": 25,
@@ -292,36 +295,85 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     ema_short_val = mas.get("ema_short")
     ema_long_val = mas.get("ema_long")
     crossovers = indicators.get("crossovers", {})
+    ma_trig = indicators.get("ma_trigger", {})
+    ma_trigger_mode = t.get("ma_trigger", "dual_cross")
+    ma_trig_lookback = int(t.get("ma_trigger_lookback", 5))
     if t.get("ma_on", 1):
-        ma_lookback = int(t.get("ma_cross_lookback", 10))
-        ma_bars = crossovers.get("ma_bars_since_cross", 999)
-        ma_dir = crossovers.get("ma_direction", 0)
-        if ma20 and ma50:
-            if ma_bars <= ma_lookback:
-                if ma_dir > 0:
-                    signals.append({"indicator": "MA", "type": "BUY", "detail": f"MA20 crossed above MA50 {ma_bars} bar(s) ago — golden cross", "weight": 1})
+        if ma_trigger_mode == "price_cross":
+            bars = ma_trig.get("price_cross_bars_since", 999)
+            direction = ma_trig.get("price_cross_direction", 0)
+            if bars <= ma_trig_lookback:
+                if direction > 0:
+                    signals.append({"indicator": "MA", "type": "BUY", "detail": "Price crossed above the MA", "weight": 1})
                     buy_score += 1
                 else:
-                    signals.append({"indicator": "MA", "type": "SELL", "detail": f"MA20 crossed below MA50 {ma_bars} bar(s) ago — death cross", "weight": 1})
+                    signals.append({"indicator": "MA", "type": "SELL", "detail": "Price crossed below the MA", "weight": 1})
                     sell_score += 1
             else:
-                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": f"No MA cross in last {ma_lookback} bars", "weight": 0})
+                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": "No recent price/MA cross", "weight": 0})
 
-        ema_lookback = int(t.get("ema_cross_lookback", 10))
-        ema_bars = crossovers.get("ema_bars_since_cross", 999)
-        ema_dir = crossovers.get("ema_direction", 0)
-        if ema_short_val and ema_long_val:
-            if ema_bars <= ema_lookback:
-                es = int(t.get("ema_short", 9))
-                el = int(t.get("ema_long", 21))
-                if ema_dir > 0:
-                    signals.append({"indicator": "EMA", "type": "BUY", "detail": f"EMA{es} crossed above EMA{el} {ema_bars} bar(s) ago — bullish cross", "weight": 1})
-                    buy_score += 1
-                else:
-                    signals.append({"indicator": "EMA", "type": "SELL", "detail": f"EMA{es} crossed below EMA{el} {ema_bars} bar(s) ago — bearish cross", "weight": 1})
-                    sell_score += 1
+        elif ma_trigger_mode == "two_ma_bull":
+            bars = ma_trig.get("two_ma_bars_since", 999)
+            direction = ma_trig.get("two_ma_direction", 0)
+            if bars <= ma_trig_lookback and direction > 0:
+                signals.append({"indicator": "MA", "type": "BUY", "detail": "Short MA crossed above long MA — bullish", "weight": 1})
+                buy_score += 1
             else:
-                signals.append({"indicator": "EMA", "type": "NEUTRAL", "detail": f"No EMA cross in last {ema_lookback} bars", "weight": 0})
+                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": "No recent bullish MA crossover", "weight": 0})
+
+        elif ma_trigger_mode == "two_ma_bear":
+            bars = ma_trig.get("two_ma_bars_since", 999)
+            direction = ma_trig.get("two_ma_direction", 0)
+            if bars <= ma_trig_lookback and direction < 0:
+                signals.append({"indicator": "MA", "type": "SELL", "detail": "Short MA crossed below long MA — bearish", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": "No recent bearish MA crossover", "weight": 0})
+
+        elif ma_trigger_mode == "three_ma_bull":
+            if ma_trig.get("three_ma_bull"):
+                signals.append({"indicator": "MA", "type": "BUY", "detail": "Short > Medium > Long MA — bullish trend alignment", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": "No bullish 3-MA alignment", "weight": 0})
+
+        elif ma_trigger_mode == "three_ma_bear":
+            if ma_trig.get("three_ma_bear"):
+                signals.append({"indicator": "MA", "type": "SELL", "detail": "Short < Medium < Long MA — bearish trend alignment", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": "No bearish 3-MA alignment", "weight": 0})
+
+        else:  # "dual_cross" (default) — unchanged from original behavior
+            ma_lookback = int(t.get("ma_cross_lookback", 10))
+            ma_bars = crossovers.get("ma_bars_since_cross", 999)
+            ma_dir = crossovers.get("ma_direction", 0)
+            if ma20 and ma50:
+                if ma_bars <= ma_lookback:
+                    if ma_dir > 0:
+                        signals.append({"indicator": "MA", "type": "BUY", "detail": f"MA20 crossed above MA50 {ma_bars} bar(s) ago — golden cross", "weight": 1})
+                        buy_score += 1
+                    else:
+                        signals.append({"indicator": "MA", "type": "SELL", "detail": f"MA20 crossed below MA50 {ma_bars} bar(s) ago — death cross", "weight": 1})
+                        sell_score += 1
+                else:
+                    signals.append({"indicator": "MA", "type": "NEUTRAL", "detail": f"No MA cross in last {ma_lookback} bars", "weight": 0})
+
+            ema_lookback = int(t.get("ema_cross_lookback", 10))
+            ema_bars = crossovers.get("ema_bars_since_cross", 999)
+            ema_dir = crossovers.get("ema_direction", 0)
+            if ema_short_val and ema_long_val:
+                if ema_bars <= ema_lookback:
+                    es = int(t.get("ema_short", 9))
+                    el = int(t.get("ema_long", 21))
+                    if ema_dir > 0:
+                        signals.append({"indicator": "EMA", "type": "BUY", "detail": f"EMA{es} crossed above EMA{el} {ema_bars} bar(s) ago — bullish cross", "weight": 1})
+                        buy_score += 1
+                    else:
+                        signals.append({"indicator": "EMA", "type": "SELL", "detail": f"EMA{es} crossed below EMA{el} {ema_bars} bar(s) ago — bearish cross", "weight": 1})
+                        sell_score += 1
+                else:
+                    signals.append({"indicator": "EMA", "type": "NEUTRAL", "detail": f"No EMA cross in last {ema_lookback} bars", "weight": 0})
 
     vol = indicators.get("volume", {})
     vol_ratio = vol.get("ratio")

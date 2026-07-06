@@ -741,3 +741,37 @@ def calculate_bb_double_patterns(
             last_high_price, last_high_touched, last_high_idx = h[j], touched, j
 
     return pd.Series(w_bottom, index=close.index), pd.Series(m_top, index=close.index)
+
+
+# ── Configurable MA type (Backtester — MA Cross trigger modes) ───────────────
+# Separate from calculate_moving_averages (which stays fixed EMA/SMA for the
+# live Signal page) so these can vary by user-selected MA type.
+
+def calculate_sma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return df["Close"].rolling(length).mean()
+
+
+def calculate_smma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    """Smoothed moving average (aka Wilder's RMA)."""
+    return df["Close"].ewm(alpha=1 / length, adjust=False).mean()
+
+
+def calculate_wma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.wma(df["Close"], length=length)
+
+
+def calculate_vwma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    pv = df["Close"] * df["Volume"]
+    return pv.rolling(length).sum() / df["Volume"].rolling(length).sum()
+
+
+def calculate_ma_by_type(df: pd.DataFrame, length: int = 20, ma_type: str = "exponential") -> pd.Series:
+    if ma_type == "simple":
+        return calculate_sma(df, length)
+    if ma_type == "smoothed":
+        return calculate_smma(df, length)
+    if ma_type == "weighted":
+        return calculate_wma(df, length)
+    if ma_type == "volume_weighted":
+        return calculate_vwma(df, length)
+    return ta.ema(df["Close"], length=length)  # "exponential" (default)
