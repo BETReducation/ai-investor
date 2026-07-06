@@ -423,6 +423,9 @@ def alpha_podcast(): return send_from_directory("static", "alpha-podcast.html")
 @app.route("/partners")
 def partners(): return send_from_directory("static", "partners.html")
 
+@app.route("/sitemap")
+def sitemap(): return send_from_directory("static", "sitemap.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 
