@@ -136,9 +136,12 @@ _BT_INT_CALC_KEYS = {
     "vol_profile_lookback": 50, "vol_profile_bins": 24,
     "fib_lookback": 50,
     "hma_slope_lookback": 3,
+    "bb_squeeze_lookback": 100, "bb_breakout_window": 10,
+    "bb_walk_min_consecutive": 3, "bb_pattern_lookback": 5,
 }
 _BT_FLOAT_CALC_KEYS = {
     "keltner_mult": 2.0,
+    "bb_squeeze_percentile": 20.0, "bb_walk_tolerance_pct": 0.5,
 }
 
 _VALID_RSI_TRIGGERS = {
@@ -149,6 +152,11 @@ _VALID_RSI_TRIGGERS = {
 _VALID_MACD_TRIGGERS = {
     "signal_cross", "bullish_signal_cross", "bearish_signal_cross", "centerline_cross",
     "bullish_divergence", "bearish_divergence", "histogram_reversal", "overbought", "oversold",
+}
+
+_VALID_BB_TRIGGERS = {
+    "percent_b", "upper_touch", "lower_touch", "volatility_breakout",
+    "walking_upper", "walking_lower", "w_bottom", "m_top",
 }
 
 
@@ -884,6 +892,12 @@ def backtest():
         if macd_trigger not in _VALID_MACD_TRIGGERS:
             return jsonify({"error": "Invalid value for 'macd_trigger'"}), 400
         thresholds["macd_trigger"] = macd_trigger
+
+    bb_trigger = request.args.get("bb_trigger")
+    if bb_trigger is not None:
+        if bb_trigger not in _VALID_BB_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'bb_trigger'"}), 400
+        thresholds["bb_trigger"] = bb_trigger
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))

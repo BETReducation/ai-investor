@@ -13,6 +13,7 @@ from api.indicators import (
     calculate_awesome_oscillator, calculate_volume_profile_poc, calculate_fibonacci_levels,
     calculate_rsi_centerline_cross, calculate_rsi_divergence, calculate_rsi_failure_swings,
     calculate_macd_divergence, calculate_macd_histogram_reversal, calculate_macd_zscore,
+    calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -44,6 +45,12 @@ def run_backtest(
     macd_zscore_length = int(cp.get("macd_zscore_length", 100))
     bb_length   = int(cp.get("bb_length",   20))
     bb_std      = float(cp.get("bb_std",    2.0))
+    bb_squeeze_lookback   = int(cp.get("bb_squeeze_lookback", 100))
+    bb_breakout_window    = int(cp.get("bb_breakout_window", 10))
+    bb_walk_min_consecutive = int(cp.get("bb_walk_min_consecutive", 3))
+    bb_pattern_lookback   = int(cp.get("bb_pattern_lookback", 5))
+    bb_squeeze_percentile   = float(cp.get("bb_squeeze_percentile", 20.0))
+    bb_walk_tolerance_pct   = float(cp.get("bb_walk_tolerance_pct", 0.5))
     ema_short   = int(cp.get("ema_short",    9))
     ema_long    = int(cp.get("ema_long",    21))
 
@@ -106,6 +113,19 @@ def run_backtest(
     macd_bull_hr, macd_bear_hr   = calculate_macd_histogram_reversal(macd_hist_s)
     macd_zscore = calculate_macd_zscore(macd_line_s, length=macd_zscore_length)
     bb_df   = calculate_bollinger_bands(df, length=bb_length, std=bb_std)
+    bb_lower_s, bb_mid_s, bb_upper_s, bb_bw_s = bb_df.iloc[:, 0], bb_df.iloc[:, 1], bb_df.iloc[:, 2], bb_df.iloc[:, 3]
+    bb_bull_breakout, bb_bear_breakout = calculate_bb_squeeze_breakout(
+        df["Close"], bb_upper_s, bb_lower_s, bb_bw_s,
+        squeeze_lookback=bb_squeeze_lookback, squeeze_percentile=bb_squeeze_percentile,
+        breakout_window=bb_breakout_window,
+    )
+    bb_walking_upper, bb_walking_lower = calculate_bb_walking_band(
+        df["Close"], bb_upper_s, bb_lower_s,
+        min_consecutive=bb_walk_min_consecutive, tolerance_pct=bb_walk_tolerance_pct,
+    )
+    bb_w_bottom, bb_m_top = calculate_bb_double_patterns(
+        df["Close"], df["Low"], df["High"], bb_lower_s, bb_mid_s, bb_upper_s, lookback=bb_pattern_lookback,
+    )
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
     vol_df  = calculate_volume_indicators(df)
 
@@ -326,6 +346,14 @@ def run_backtest(
                 "upper":     _sf(row.get(bb_cols[2]) if len(bb_cols) > 2 else None),
                 "bandwidth": _sf(row.get(bb_cols[3]) if len(bb_cols) > 3 else None),
                 "percent_b": _sf(row.get(bb_cols[4]) if len(bb_cols) > 4 else None),
+            },
+            "bb_trigger": {
+                "bull_breakout":  bool(bb_bull_breakout.iloc[i]),
+                "bear_breakout":  bool(bb_bear_breakout.iloc[i]),
+                "walking_upper":  bool(bb_walking_upper.iloc[i]),
+                "walking_lower":  bool(bb_walking_lower.iloc[i]),
+                "w_bottom":       bool(bb_w_bottom.iloc[i]),
+                "m_top":          bool(bb_m_top.iloc[i]),
             },
             "moving_averages": {
                 "ma_20":    m20, "ma_50": m50,

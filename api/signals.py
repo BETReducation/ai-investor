@@ -26,6 +26,8 @@ DEFAULT_THRESHOLDS = {
     "macd_centerline_lookback": 5,
     "macd_zscore_overbought": 2.0,
     "macd_zscore_oversold": -2.0,
+    "bb_trigger": "percent_b",  # percent_b | upper_touch | lower_touch | volatility_breakout |
+                                # walking_upper | walking_lower | w_bottom | m_top
 
     # ── Extended indicator set (Backtester) — all default OFF ────────────────
     "adx_on": 0, "adx_trend_threshold": 25,
@@ -219,15 +221,70 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     bb = indicators.get("bollinger_bands", {})
     pct_b = bb.get("percent_b")
     close = indicators.get("price", {}).get("close")
+    bb_trig = indicators.get("bb_trigger", {})
+    bb_trigger_mode = t.get("bb_trigger", "percent_b")
     if t.get("bb_on", 1) and pct_b is not None:
-        if pct_b < t["bb_oversold"]:
-            signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": f"%B {pct_b:.2f} — price near lower band (oversold)", "weight": 1})
-            buy_score += 1
-        elif pct_b > t["bb_overbought"]:
-            signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": f"%B {pct_b:.2f} — price near upper band (overbought)", "weight": 1})
-            sell_score += 1
-        else:
-            signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": f"%B {pct_b:.2f} — price within bands", "weight": 0})
+        if bb_trigger_mode == "upper_touch":
+            if bb.get("upper") is not None and close is not None and close >= bb["upper"]:
+                signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": "Price touched the upper band", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "No upper band touch", "weight": 0})
+
+        elif bb_trigger_mode == "lower_touch":
+            if bb.get("lower") is not None and close is not None and close <= bb["lower"]:
+                signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": "Price touched the lower band", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "No lower band touch", "weight": 0})
+
+        elif bb_trigger_mode == "volatility_breakout":
+            if bb_trig.get("bull_breakout"):
+                signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": "Volatility breakout above the upper band after a squeeze", "weight": 1})
+                buy_score += 1
+            elif bb_trig.get("bear_breakout"):
+                signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": "Volatility breakout below the lower band after a squeeze", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "No squeeze breakout", "weight": 0})
+
+        elif bb_trigger_mode == "walking_upper":
+            if bb_trig.get("walking_upper"):
+                signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": "Walking the upper band — trend continuation", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "Not walking the upper band", "weight": 0})
+
+        elif bb_trigger_mode == "walking_lower":
+            if bb_trig.get("walking_lower"):
+                signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": "Walking the lower band — trend continuation", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "Not walking the lower band", "weight": 0})
+
+        elif bb_trigger_mode == "w_bottom":
+            if bb_trig.get("w_bottom"):
+                signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": "W-bottom confirmed — reversal, not continuation", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "No W-bottom", "weight": 0})
+
+        elif bb_trigger_mode == "m_top":
+            if bb_trig.get("m_top"):
+                signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": "M-top confirmed — reversal, not continuation", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": "No M-top", "weight": 0})
+
+        else:  # "percent_b" (default) — unchanged from original behavior
+            if pct_b < t["bb_oversold"]:
+                signals.append({"indicator": "Bollinger Bands", "type": "BUY", "detail": f"%B {pct_b:.2f} — price near lower band (oversold)", "weight": 1})
+                buy_score += 1
+            elif pct_b > t["bb_overbought"]:
+                signals.append({"indicator": "Bollinger Bands", "type": "SELL", "detail": f"%B {pct_b:.2f} — price near upper band (overbought)", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Bollinger Bands", "type": "NEUTRAL", "detail": f"%B {pct_b:.2f} — price within bands", "weight": 0})
 
     mas = indicators.get("moving_averages", {})
     ma20 = mas.get("ma_20")
