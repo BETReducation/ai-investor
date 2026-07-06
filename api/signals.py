@@ -34,6 +34,10 @@ DEFAULT_THRESHOLDS = {
 
     # ── Extended indicator set (Backtester) — all default OFF ────────────────
     "adx_on": 0, "adx_trend_threshold": 25,
+    "adx_trigger": "trend_threshold",  # trend_threshold | bull_di_cross | bear_di_cross |
+                                        # above_25 | above_50 | above_75 |
+                                        # strong_di_plus | strong_di_minus
+    "adx_di_cross_lookback": 5,
     "psar_on": 0, "psar_flip_lookback": 3,
     "ichimoku_on": 0,
     "supertrend_on": 0, "supertrend_flip_lookback": 3,
@@ -391,14 +395,56 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     # ── ADX (trend strength + direction) ─────────────────────────────────────
     adx = indicators.get("adx", {})
     adx_v, dmp_v, dmn_v = adx.get("adx"), adx.get("dmp"), adx.get("dmn")
+    adx_trigger_mode = t.get("adx_trigger", "trend_threshold")
     if t.get("adx_on", 0) and adx_v is not None and dmp_v is not None and dmn_v is not None:
-        if adx_v > t["adx_trend_threshold"]:
-            label = "BUY" if dmp_v > dmn_v else "SELL"
-            signals.append({"indicator": "ADX", "type": label, "detail": f"ADX {adx_v:.1f} — strong trend, {'+DI' if label=='BUY' else '-DI'} leading", "weight": 2})
-            if label == "BUY": buy_score += 2
-            else: sell_score += 2
-        else:
-            signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": f"ADX {adx_v:.1f} — no strong trend", "weight": 0})
+        if adx_trigger_mode == "bull_di_cross":
+            bars = adx.get("di_cross_bars_since", 999)
+            if bars <= int(t.get("adx_di_cross_lookback", 5)) and adx.get("di_direction", 0) > 0:
+                signals.append({"indicator": "ADX", "type": "BUY", "detail": "+DI crossed above -DI — bullish", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": "No recent bullish DI crossover", "weight": 0})
+
+        elif adx_trigger_mode == "bear_di_cross":
+            bars = adx.get("di_cross_bars_since", 999)
+            if bars <= int(t.get("adx_di_cross_lookback", 5)) and adx.get("di_direction", 0) < 0:
+                signals.append({"indicator": "ADX", "type": "SELL", "detail": "-DI crossed above +DI — bearish", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": "No recent bearish DI crossover", "weight": 0})
+
+        elif adx_trigger_mode in ("above_25", "above_50", "above_75"):
+            fixed_threshold = {"above_25": 25, "above_50": 50, "above_75": 75}[adx_trigger_mode]
+            if adx_v > fixed_threshold:
+                label = "BUY" if dmp_v > dmn_v else "SELL"
+                signals.append({"indicator": "ADX", "type": label, "detail": f"ADX {adx_v:.1f} — above {fixed_threshold}, {'+DI' if label=='BUY' else '-DI'} leading", "weight": 2})
+                if label == "BUY": buy_score += 2
+                else: sell_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": f"ADX {adx_v:.1f} — below {fixed_threshold}", "weight": 0})
+
+        elif adx_trigger_mode == "strong_di_plus":
+            if adx_v > t["adx_trend_threshold"] and dmp_v > dmn_v:
+                signals.append({"indicator": "ADX", "type": "BUY", "detail": f"ADX {adx_v:.1f} — strong trend, +DI leading", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": "No strong +DI trend", "weight": 0})
+
+        elif adx_trigger_mode == "strong_di_minus":
+            if adx_v > t["adx_trend_threshold"] and dmn_v > dmp_v:
+                signals.append({"indicator": "ADX", "type": "SELL", "detail": f"ADX {adx_v:.1f} — strong trend, -DI leading", "weight": 2})
+                sell_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": "No strong -DI trend", "weight": 0})
+
+        else:  # "trend_threshold" (default) — unchanged from original behavior
+            if adx_v > t["adx_trend_threshold"]:
+                label = "BUY" if dmp_v > dmn_v else "SELL"
+                signals.append({"indicator": "ADX", "type": label, "detail": f"ADX {adx_v:.1f} — strong trend, {'+DI' if label=='BUY' else '-DI'} leading", "weight": 2})
+                if label == "BUY": buy_score += 2
+                else: sell_score += 2
+            else:
+                signals.append({"indicator": "ADX", "type": "NEUTRAL", "detail": f"ADX {adx_v:.1f} — no strong trend", "weight": 0})
 
     # ── Parabolic SAR ─────────────────────────────────────────────────────────
     psar = indicators.get("psar", {})

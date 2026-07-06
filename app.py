@@ -164,6 +164,11 @@ _VALID_MA_TRIGGERS = {
     "dual_cross", "price_cross", "two_ma_bull", "two_ma_bear", "three_ma_bull", "three_ma_bear",
 }
 
+_VALID_ADX_TRIGGERS = {
+    "trend_threshold", "bull_di_cross", "bear_di_cross", "above_25", "above_50", "above_75",
+    "strong_di_plus", "strong_di_minus",
+}
+
 
 def _extract_backtest_calc_params(args) -> dict:
     params = {}
@@ -885,6 +890,7 @@ def backtest():
         "fib_on", "fib_tolerance_pct",
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
         "ma_trigger_lookback",
+        "adx_di_cross_lookback",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -916,6 +922,12 @@ def backtest():
         if ma_trigger not in _VALID_MA_TRIGGERS:
             return jsonify({"error": "Invalid value for 'ma_trigger'"}), 400
         thresholds["ma_trigger"] = ma_trigger
+
+    adx_trigger = request.args.get("adx_trigger")
+    if adx_trigger is not None:
+        if adx_trigger not in _VALID_ADX_TRIGGERS:
+            return jsonify({"error": "Invalid value for 'adx_trigger'"}), 400
+        thresholds["adx_trigger"] = adx_trigger
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))

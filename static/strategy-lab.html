@@ -1010,6 +1010,23 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="adxParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="adxLength" value="14" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Trend threshold</span><input type="number" class="param-input" id="adxTrendThreshold" value="25" min="5" max="60"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="adxTrigger" style="width:100%;">
+            <option value="trend_threshold">Trend threshold (default)</option>
+            <option value="bull_di_cross">Bull DI Crossover</option>
+            <option value="bear_di_cross">Bear DI Crossover</option>
+            <option value="above_25">ADX above 25</option>
+            <option value="above_50">ADX above 50</option>
+            <option value="above_75">ADX above 75</option>
+            <option value="strong_di_plus">Strong ADX and DI+</option>
+            <option value="strong_di_minus">Strong ADX and DI-</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">DI cross lookback (bars)</span>
+          <input type="number" class="param-input" id="adxDiCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Parabolic SAR -->
@@ -1753,6 +1770,8 @@ async function runBacktest() {
 
   const extParams = {
     adx_on: _on('togAdx'), adx_length: _iv('adxLength', 14), adx_trend_threshold: _iv('adxTrendThreshold', 25),
+    adx_trigger: document.getElementById('adxTrigger').value || 'trend_threshold',
+    adx_di_cross_lookback: _iv('adxDiCrossLookback', 5),
     psar_on: _on('togPsar'), psar_start: _fv('psarStart', 0.02), psar_inc: _fv('psarInc', 0.02),
       psar_max: _fv('psarMax', 0.2), psar_flip_lookback: _iv('psarFlipLookback', 3),
     ichimoku_on: _on('togIchimoku'), ichimoku_tenkan: _iv('ichimokuTenkan', 9),

@@ -207,6 +207,11 @@ def run_backtest(
         adx_col = _find_col(adx_cols, "ADX")
         dmp_col = _find_col(adx_cols, "DMP")
         dmn_col = _find_col(adx_cols, "DMN")
+    di_cross_bars = (
+        _bars_since_cross_series(combined[dmp_col], combined[dmn_col])
+        if dmp_col and dmn_col
+        else pd.Series(999, index=combined.index)
+    )
 
     psar_long_col = psar_short_col = None
     if psar_df is not None:
@@ -401,8 +406,10 @@ def run_backtest(
             # ── Extended indicator set ────────────────────────────────────
             "adx": {
                 "adx": _sf(row.get(adx_col)) if adx_col else None,
-                "dmp": _sf(row.get(dmp_col)) if dmp_col else None,
-                "dmn": _sf(row.get(dmn_col)) if dmn_col else None,
+                "dmp": (dmp_v := _sf(row.get(dmp_col)) if dmp_col else None),
+                "dmn": (dmn_v := _sf(row.get(dmn_col)) if dmn_col else None),
+                "di_cross_bars_since": int(di_cross_bars.iloc[i]),
+                "di_direction":        1 if (dmp_v is not None and dmn_v is not None and dmp_v > dmn_v) else -1,
             },
             "psar": {
                 "is_bull":         (bool(psar_dir.iloc[i] == 1) if psar_dir.iloc[i] == psar_dir.iloc[i] else None),
