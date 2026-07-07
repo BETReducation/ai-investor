@@ -653,3 +653,125 @@ def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbough
         prev = v
 
     return pd.Series(bull, index=rsi.index), pd.Series(bear, index=rsi.index)
+
+
+# ── Bollinger Band trigger modes (Backtester) ─────────────────────────────────
+
+def calculate_bb_squeeze_breakout(
+    close: pd.Series, upper: pd.Series, lower: pd.Series, bandwidth: pd.Series,
+    squeeze_lookback: int = 100, squeeze_percentile: float = 20.0, breakout_window: int = 10,
+) -> tuple[pd.Series, pd.Series]:
+    """
+    Bullish/bearish volatility breakout: bandwidth was in the bottom
+    `squeeze_percentile`% of its trailing `squeeze_lookback`-bar range (a "squeeze")
+    at some point in the last `breakout_window` bars, and price has now closed
+    beyond a band.
+    """
+    bw_rank = bandwidth.rolling(squeeze_lookback).rank(pct=True) * 100
+    was_squeezed = (bw_rank <= squeeze_percentile).rolling(breakout_window).max().fillna(0).astype(bool)
+    bullish = was_squeezed & (close > upper)
+    bearish = was_squeezed & (close < lower)
+    return bullish.fillna(False), bearish.fillna(False)
+
+
+def calculate_bb_walking_band(
+    close: pd.Series, upper: pd.Series, lower: pd.Series,
+    min_consecutive: int = 3, tolerance_pct: float = 0.5,
+) -> tuple[pd.Series, pd.Series]:
+    """
+    "Walking the band": price has stayed at/beyond a band for `min_consecutive`
+    consecutive bars — a trend-continuation signal (not mean-reversion).
+    """
+    near_upper = close >= upper * (1 - tolerance_pct / 100)
+    near_lower = close <= lower * (1 + tolerance_pct / 100)
+
+    def _streak(mask: pd.Series) -> pd.Series:
+        groups = (~mask).cumsum()
+        return mask.astype(int).groupby(groups).cumsum()
+
+    walking_upper = _streak(near_upper) >= min_consecutive
+    walking_lower = _streak(near_lower) >= min_consecutive
+    return walking_upper, walking_lower
+
+
+def calculate_bb_double_patterns(
+    close: pd.Series, low: pd.Series, high: pd.Series,
+    lower_band: pd.Series, mid_band: pd.Series, upper_band: pd.Series, lookback: int = 5,
+) -> tuple[pd.Series, pd.Series]:
+    """
+    W-bottom: a pivot low touches/pierces the lower band, price rallies back above
+    the middle band (a real "W" shape, not just noise), then a later, HIGHER pivot
+    low forms without touching the lower band — confirms a reversal rather than a
+    continuation. M-top mirrors this at the upper band. Uses the same
+    trailing-confirmed pivot approach as calculate_price_divergence (no lookahead).
+    """
+    n = len(close)
+    w_bottom = np.zeros(n, dtype=bool)
+    m_top = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    c, l, h = close.values, low.values, high.values
+    lb, mb, ub = lower_band.values, mid_band.values, upper_band.values
+
+    last_low_price = last_low_touched = last_low_idx = None
+    last_high_price = last_high_touched = last_high_idx = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window_l = l[i - win + 1: i + 1]
+        window_h = h[i - win + 1: i + 1]
+        if (np.isnan(window_l).any() or np.isnan(window_h).any()
+                or lb[j] != lb[j] or ub[j] != ub[j] or mb[j] != mb[j]):
+            continue
+
+        if l[j] == window_l.min():
+            touched = l[j] <= lb[j]
+            if (last_low_idx is not None and l[j] > last_low_price
+                    and last_low_touched and not touched
+                    and c[last_low_idx:j + 1].max() >= mb[j]):
+                w_bottom[i] = True
+            last_low_price, last_low_touched, last_low_idx = l[j], touched, j
+
+        if h[j] == window_h.max():
+            touched = h[j] >= ub[j]
+            if (last_high_idx is not None and h[j] < last_high_price
+                    and last_high_touched and not touched
+                    and c[last_high_idx:j + 1].min() <= mb[j]):
+                m_top[i] = True
+            last_high_price, last_high_touched, last_high_idx = h[j], touched, j
+
+    return pd.Series(w_bottom, index=close.index), pd.Series(m_top, index=close.index)
+
+
+# ── Configurable MA type (Backtester — MA Cross trigger modes) ───────────────
+# Separate from calculate_moving_averages (which stays fixed EMA/SMA for the
+# live Signal page) so these can vary by user-selected MA type.
+
+def calculate_sma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return df["Close"].rolling(length).mean()
+
+
+def calculate_smma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    """Smoothed moving average (aka Wilder's RMA)."""
+    return df["Close"].ewm(alpha=1 / length, adjust=False).mean()
+
+
+def calculate_wma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    return ta.wma(df["Close"], length=length)
+
+
+def calculate_vwma(df: pd.DataFrame, length: int = 20) -> pd.Series:
+    pv = df["Close"] * df["Volume"]
+    return pv.rolling(length).sum() / df["Volume"].rolling(length).sum()
+
+
+def calculate_ma_by_type(df: pd.DataFrame, length: int = 20, ma_type: str = "exponential") -> pd.Series:
+    if ma_type == "simple":
+        return calculate_sma(df, length)
+    if ma_type == "smoothed":
+        return calculate_smma(df, length)
+    if ma_type == "weighted":
+        return calculate_wma(df, length)
+    if ma_type == "volume_weighted":
+        return calculate_vwma(df, length)
+    return ta.ema(df["Close"], length=length)  # "exponential" (default)

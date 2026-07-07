@@ -884,6 +884,43 @@ window.addEventListener('resize', () => {
           <input type="number" class="param-input" id="bbStd" value="2.0" min="0.5" max="4.0" step="0.1"
                  oninput="updateBbLabel()">
         </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="bbTrigger" style="width:100%;">
+            <option value="percent_b">%B Overbought/Oversold (default)</option>
+            <option value="upper_touch">Upper band touch</option>
+            <option value="lower_touch">Lower band touch</option>
+            <option value="volatility_breakout">Volatility breakout</option>
+            <option value="walking_upper">Walking upper band</option>
+            <option value="walking_lower">Walking lower band</option>
+            <option value="w_bottom">W bottom</option>
+            <option value="m_top">M top</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Squeeze lookback (bars)</span>
+          <input type="number" class="param-input" id="bbSqueezeLookback" value="100" min="20" max="500">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Squeeze percentile</span>
+          <input type="number" class="param-input" id="bbSqueezePercentile" value="20" min="1" max="50">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Breakout window (bars)</span>
+          <input type="number" class="param-input" id="bbBreakoutWindow" value="10" min="1" max="50">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Walk min. consecutive bars</span>
+          <input type="number" class="param-input" id="bbWalkMinConsecutive" value="3" min="2" max="20">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Walk tolerance %</span>
+          <input type="number" class="param-input" id="bbWalkTolerancePct" value="0.5" min="0" max="5" step="0.1">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Pattern pivot lookback</span>
+          <input type="number" class="param-input" id="bbPatternLookback" value="5" min="2" max="30">
+        </div>
       </div>
 
       <!-- MA Cross -->
@@ -904,6 +941,43 @@ window.addEventListener('resize', () => {
           <span class="param-label">EMA long period</span>
           <input type="number" class="param-input" id="emaLong" value="21" min="5" max="200"
                  oninput="updateMaLabel()">
+        </div>
+        <div class="param-row">
+          <span class="param-label">MA type</span>
+          <select class="param-input" id="maType" style="width:100%;">
+            <option value="exponential">Exponential (default)</option>
+            <option value="simple">Simple</option>
+            <option value="smoothed">Smoothed</option>
+            <option value="weighted">Weighted</option>
+            <option value="volume_weighted">Volume-weighted</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="maTrigger" style="width:100%;">
+            <option value="dual_cross">Dual MA Crossover (default)</option>
+            <option value="price_cross">Price Crossing MA</option>
+            <option value="two_ma_bull">Two MA bull crossover</option>
+            <option value="two_ma_bear">Two MA bear crossover</option>
+            <option value="three_ma_bull">Three MA bull trend</option>
+            <option value="three_ma_bear">Three MA bear trend</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Short period</span>
+          <input type="number" class="param-input" id="maShortLength" value="9" min="2" max="100">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Medium period</span>
+          <input type="number" class="param-input" id="maMediumLength" value="20" min="2" max="200">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Long period</span>
+          <input type="number" class="param-input" id="maLongLength" value="50" min="5" max="300">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger lookback (bars)</span>
+          <input type="number" class="param-input" id="maTriggerLookback" value="5" min="1" max="30">
         </div>
       </div>
 
@@ -936,6 +1010,23 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="adxParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="adxLength" value="14" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Trend threshold</span><input type="number" class="param-input" id="adxTrendThreshold" value="25" min="5" max="60"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="adxTrigger" style="width:100%;">
+            <option value="trend_threshold">Trend threshold (default)</option>
+            <option value="bull_di_cross">Bull DI Crossover</option>
+            <option value="bear_di_cross">Bear DI Crossover</option>
+            <option value="above_25">ADX above 25</option>
+            <option value="above_50">ADX above 50</option>
+            <option value="above_75">ADX above 75</option>
+            <option value="strong_di_plus">Strong ADX and DI+</option>
+            <option value="strong_di_minus">Strong ADX and DI-</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">DI cross lookback (bars)</span>
+          <input type="number" class="param-input" id="adxDiCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Parabolic SAR -->
@@ -948,6 +1039,15 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Increment</span><input type="number" class="param-input" id="psarInc" value="0.02" min="0.001" max="0.5" step="0.001"></div>
         <div class="param-row"><span class="param-label">Max step</span><input type="number" class="param-input" id="psarMax" value="0.2" min="0.01" max="1" step="0.01"></div>
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="psarFlipLookback" value="3" min="1" max="20"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="psarTrigger" style="width:100%;">
+            <option value="flip">Flip (default)</option>
+            <option value="bull_flip">Bullish flip only</option>
+            <option value="bear_flip">Bearish flip only</option>
+            <option value="trend_state">Trend state</option>
+          </select>
+        </div>
       </div>
 
       <!-- Ichimoku Cloud -->
@@ -959,6 +1059,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Tenkan period</span><input type="number" class="param-input" id="ichimokuTenkan" value="9" min="2" max="60"></div>
         <div class="param-row"><span class="param-label">Kijun period</span><input type="number" class="param-input" id="ichimokuKijun" value="26" min="2" max="120"></div>
         <div class="param-row"><span class="param-label">Senkou period</span><input type="number" class="param-input" id="ichimokuSenkou" value="52" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="ichimokuTrigger" style="width:100%;">
+            <option value="cloud_position">Cloud position (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="tk_cross">Tenkan/Kijun cross</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">TK cross lookback (bars)</span>
+          <input type="number" class="param-input" id="ichimokuTkCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Supertrend -->
@@ -970,6 +1083,15 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="supertrendLength" value="10" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="supertrendMult" value="3.0" min="0.5" max="10" step="0.1"></div>
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="supertrendFlipLookback" value="3" min="1" max="20"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="supertrendTrigger" style="width:100%;">
+            <option value="flip">Flip (default)</option>
+            <option value="bull_flip">Bullish flip only</option>
+            <option value="bear_flip">Bearish flip only</option>
+            <option value="trend_state">Trend state</option>
+          </select>
+        </div>
       </div>
 
       <!-- Donchian Channels -->
@@ -979,6 +1101,19 @@ window.addEventListener('resize', () => {
       </div>
       <div class="ind-params" id="donchianParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="donchianLength" value="20" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="donchianTrigger" style="width:100%;">
+            <option value="breakout">Breakout (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="middle_cross">Midline cross</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Midline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="donchianMidCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Hull Moving Average -->
@@ -989,6 +1124,19 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="hmaParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="hmaLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Slope lookback (bars)</span><input type="number" class="param-input" id="hmaSlopeLookback" value="3" min="1" max="20"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="hmaTrigger" style="width:100%;">
+            <option value="slope">Slope (default)</option>
+            <option value="bullish_slope">Bullish slope only</option>
+            <option value="bearish_slope">Bearish slope only</option>
+            <option value="price_cross">Price crossing HMA</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Price cross lookback (bars)</span>
+          <input type="number" class="param-input" id="hmaPriceCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Stochastic Oscillator -->
@@ -1002,6 +1150,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Smoothing</span><input type="number" class="param-input" id="stochSmooth" value="3" min="1" max="20"></div>
         <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="stochOversold" value="20" min="1" max="45"></div>
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochOverbought" value="80" min="55" max="99"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="stochTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought/Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="signal_cross">%K/%D signal cross</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Signal cross lookback (bars)</span>
+          <input type="number" class="param-input" id="stochSignalCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Stochastic RSI -->
@@ -1015,6 +1176,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">%D smoothing</span><input type="number" class="param-input" id="stochrsiD" value="3" min="1" max="20"></div>
         <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="stochrsiOversold" value="20" min="1" max="45"></div>
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochrsiOverbought" value="80" min="55" max="99"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="stochrsiTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought/Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="signal_cross">%K/%D signal cross</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Signal cross lookback (bars)</span>
+          <input type="number" class="param-input" id="stochrsiSignalCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- CCI -->
@@ -1026,6 +1200,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="cciLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="cciOversold" value="-100" min="-300" max="-20"></div>
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="cciOverbought" value="100" min="20" max="300"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="cciTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought/Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Centerline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="cciCenterlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Williams %R -->
@@ -1037,6 +1224,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="willrLength" value="14" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="willrOversold" value="-80" min="-99" max="-51"></div>
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="willrOverbought" value="-20" min="-49" max="-1"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="willrTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought/Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="midline_cross">-50 midline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Midline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="willrMidlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Rate of Change -->
@@ -1047,6 +1247,19 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="rocParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="rocLength" value="12" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Momentum threshold %</span><input type="number" class="param-input" id="rocThreshold" value="2.0" min="0.1" max="20" step="0.1"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="rocTrigger" style="width:100%;">
+            <option value="threshold">Threshold (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Centerline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="rocCenterlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Money Flow Index -->
@@ -1058,6 +1271,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="mfiLength" value="14" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Oversold level</span><input type="number" class="param-input" id="mfiOversold" value="20" min="1" max="45"></div>
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="mfiOverbought" value="80" min="55" max="99"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="mfiTrigger" style="width:100%;">
+            <option value="overbought_oversold">Overbought/Oversold (default)</option>
+            <option value="overbought">Overbought only</option>
+            <option value="oversold">Oversold only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Centerline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="mfiCenterlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- True Strength Index -->
@@ -1069,6 +1295,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Long EMA</span><input type="number" class="param-input" id="tsiLong" value="25" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Short EMA</span><input type="number" class="param-input" id="tsiShort" value="13" min="2" max="60"></div>
         <div class="param-row"><span class="param-label">Signal EMA</span><input type="number" class="param-input" id="tsiSignal" value="13" min="2" max="60"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="tsiTrigger" style="width:100%;">
+            <option value="signal_cross">Signal cross (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Centerline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="tsiCenterlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Awesome Oscillator -->
@@ -1079,6 +1318,19 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="aoParams">
         <div class="param-row"><span class="param-label">Fast length</span><input type="number" class="param-input" id="aoFast" value="5" min="1" max="50"></div>
         <div class="param-row"><span class="param-label">Slow length</span><input type="number" class="param-input" id="aoSlow" value="34" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="aoTrigger" style="width:100%;">
+            <option value="zero_state">Zero-line state (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="zero_cross">Zero-line crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Zero cross lookback (bars)</span>
+          <input type="number" class="param-input" id="aoZeroCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Average True Range -->
@@ -1089,6 +1341,15 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="atrParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="atrLength" value="14" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="atrTrendLookback" value="5" min="1" max="50"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="atrTrigger" style="width:100%;">
+            <option value="expansion">Expansion + direction (default)</option>
+            <option value="bullish_expansion">Bullish expansion only</option>
+            <option value="bearish_expansion">Bearish expansion only</option>
+            <option value="contraction">Contraction (squeeze)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Keltner Channels -->
@@ -1100,6 +1361,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">EMA length</span><input type="number" class="param-input" id="keltnerLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">ATR length</span><input type="number" class="param-input" id="keltnerAtrLength" value="10" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="keltnerMult" value="2.0" min="0.5" max="10" step="0.1"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="keltnerTrigger" style="width:100%;">
+            <option value="breakout">Breakout (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="middle_cross">Midline cross</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Midline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="keltnerMidCrossLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Standard Deviation -->
@@ -1110,6 +1384,15 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="stdevParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="stdevLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="stdevTrendLookback" value="5" min="1" max="50"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="stdevTrigger" style="width:100%;">
+            <option value="expansion">Expansion + direction (default)</option>
+            <option value="bullish_expansion">Bullish expansion only</option>
+            <option value="bearish_expansion">Bearish expansion only</option>
+            <option value="contraction">Contraction (squeeze)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Chaikin Volatility -->
@@ -1121,6 +1404,15 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Range EMA length</span><input type="number" class="param-input" id="chaikinVolEmaLength" value="10" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">ROC length</span><input type="number" class="param-input" id="chaikinVolRocLength" value="10" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="chaikinVolTrendLookback" value="5" min="1" max="50"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="chaikinVolTrigger" style="width:100%;">
+            <option value="expansion">Expansion + direction (default)</option>
+            <option value="bullish_expansion">Bullish expansion only</option>
+            <option value="bearish_expansion">Bearish expansion only</option>
+            <option value="contraction">Contraction (squeeze)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Historical Volatility -->
@@ -1131,6 +1423,15 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="histVolParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="histVolLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="histVolTrendLookback" value="5" min="1" max="50"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="histVolTrigger" style="width:100%;">
+            <option value="expansion">Expansion + direction (default)</option>
+            <option value="bullish_expansion">Bullish expansion only</option>
+            <option value="bearish_expansion">Bearish expansion only</option>
+            <option value="contraction">Contraction (squeeze)</option>
+          </select>
+        </div>
       </div>
 
       <!-- On Balance Volume -->
@@ -1140,6 +1441,19 @@ window.addEventListener('resize', () => {
       </div>
       <div class="ind-params" id="obvParams">
         <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="obvSmaLength" value="20" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="obvTrigger" style="width:100%;">
+            <option value="trend">Trend vs average (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="divergence">Divergence</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="obvDivLookback" value="5" min="2" max="30">
+        </div>
       </div>
 
       <!-- VWAP -->
@@ -1149,6 +1463,19 @@ window.addEventListener('resize', () => {
       </div>
       <div class="ind-params" id="vwapParams">
         <div class="param-row"><span class="param-label">Rolling window (bars)</span><input type="number" class="param-input" id="vwapLength" value="20" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="vwapTrigger" style="width:100%;">
+            <option value="position">Position (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="band_touch">Band touch</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Band %</span>
+          <input type="number" class="param-input" id="vwapBandPct" value="1.0" min="0.1" max="10" step="0.1">
+        </div>
       </div>
 
       <!-- Accumulation/Distribution Line -->
@@ -1158,6 +1485,19 @@ window.addEventListener('resize', () => {
       </div>
       <div class="ind-params" id="adParams">
         <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="adSmaLength" value="20" min="2" max="200"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="adTrigger" style="width:100%;">
+            <option value="trend">Trend vs average (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="divergence">Divergence</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence pivot lookback</span>
+          <input type="number" class="param-input" id="adDivLookback" value="5" min="2" max="30">
+        </div>
       </div>
 
       <!-- Chaikin Money Flow -->
@@ -1168,6 +1508,19 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="cmfParams">
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="cmfLength" value="20" min="2" max="200"></div>
         <div class="param-row"><span class="param-label">Threshold</span><input type="number" class="param-input" id="cmfThreshold" value="0.05" min="0.01" max="0.5" step="0.01"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="cmfTrigger" style="width:100%;">
+            <option value="threshold">Threshold (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="centerline_cross">Centerline crossover</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Centerline cross lookback (bars)</span>
+          <input type="number" class="param-input" id="cmfCenterlineLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Volume Profile -->
@@ -1178,6 +1531,19 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="volProfileParams">
         <div class="param-row"><span class="param-label">Lookback (bars)</span><input type="number" class="param-input" id="volProfileLookback" value="50" min="10" max="300"></div>
         <div class="param-row"><span class="param-label">Price bins</span><input type="number" class="param-input" id="volProfileBins" value="24" min="5" max="100"></div>
+        <div class="param-row">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="volProfileTrigger" style="width:100%;">
+            <option value="position">Position vs POC (default)</option>
+            <option value="bullish">Bullish only</option>
+            <option value="bearish">Bearish only</option>
+            <option value="poc_breakout">POC breakout</option>
+          </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Breakout lookback (bars)</span>
+          <input type="number" class="param-input" id="volProfileBreakoutLookback" value="5" min="1" max="30">
+        </div>
       </div>
 
       <!-- Fibonacci Retracement -->
@@ -1188,6 +1554,15 @@ window.addEventListener('resize', () => {
       <div class="ind-params" id="fibParams" style="margin-bottom:0;">
         <div class="param-row"><span class="param-label">Swing lookback (bars)</span><input type="number" class="param-input" id="fibLookback" value="50" min="10" max="300"></div>
         <div class="param-row"><span class="param-label">Level tolerance %</span><input type="number" class="param-input" id="fibTolerancePct" value="1.0" min="0.1" max="10" step="0.1"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <select class="param-input" id="fibTrigger" style="width:100%;">
+            <option value="bounce_reject">Bounce/Reject (default)</option>
+            <option value="bullish_bounce">Bullish bounce only</option>
+            <option value="bearish_reject">Bearish reject only</option>
+            <option value="any_touch">Any level touch</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -1649,8 +2024,21 @@ async function runBacktest() {
   const macdZscoreLength = parseInt(document.getElementById('macdZscoreLength').value) || 100;
   const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
   const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
+  const bbTrigger              = document.getElementById('bbTrigger').value || 'percent_b';
+  const bbSqueezeLookback      = parseInt(document.getElementById('bbSqueezeLookback').value)      || 100;
+  const bbSqueezePercentile    = parseFloat(document.getElementById('bbSqueezePercentile').value)  || 20;
+  const bbBreakoutWindow       = parseInt(document.getElementById('bbBreakoutWindow').value)       || 10;
+  const bbWalkMinConsecutive   = parseInt(document.getElementById('bbWalkMinConsecutive').value)    || 3;
+  const bbWalkTolerancePct     = parseFloat(document.getElementById('bbWalkTolerancePct').value)   || 0.5;
+  const bbPatternLookback      = parseInt(document.getElementById('bbPatternLookback').value)       || 5;
   const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
   const emaLong   = parseInt(document.getElementById('emaLong').value)       || 21;
+  const maType           = document.getElementById('maType').value || 'exponential';
+  const maTrigger        = document.getElementById('maTrigger').value || 'dual_cross';
+  const maShortLength    = parseInt(document.getElementById('maShortLength').value)    || 9;
+  const maMediumLength   = parseInt(document.getElementById('maMediumLength').value)   || 20;
+  const maLongLength     = parseInt(document.getElementById('maLongLength').value)     || 50;
+  const maTriggerLookback = parseInt(document.getElementById('maTriggerLookback').value) || 5;
   const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
 
   const rsiOn  = isSimple ? 1 : (document.getElementById('togRsi').checked  ? 1 : 0);
@@ -1663,44 +2051,80 @@ async function runBacktest() {
   const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _on = (id) => isSimple ? 0 : (document.getElementById(id).checked ? 1 : 0);
+  const _tv = (id, fb) => document.getElementById(id).value || fb;
 
   const extParams = {
     adx_on: _on('togAdx'), adx_length: _iv('adxLength', 14), adx_trend_threshold: _iv('adxTrendThreshold', 25),
+    adx_trigger: document.getElementById('adxTrigger').value || 'trend_threshold',
+    adx_di_cross_lookback: _iv('adxDiCrossLookback', 5),
     psar_on: _on('togPsar'), psar_start: _fv('psarStart', 0.02), psar_inc: _fv('psarInc', 0.02),
       psar_max: _fv('psarMax', 0.2), psar_flip_lookback: _iv('psarFlipLookback', 3),
+      psar_trigger: _tv('psarTrigger', 'flip'),
     ichimoku_on: _on('togIchimoku'), ichimoku_tenkan: _iv('ichimokuTenkan', 9),
       ichimoku_kijun: _iv('ichimokuKijun', 26), ichimoku_senkou: _iv('ichimokuSenkou', 52),
+      ichimoku_trigger: _tv('ichimokuTrigger', 'cloud_position'),
+      ichimoku_tk_cross_lookback: _iv('ichimokuTkCrossLookback', 5),
     supertrend_on: _on('togSupertrend'), supertrend_length: _iv('supertrendLength', 10),
       supertrend_mult: _fv('supertrendMult', 3.0), supertrend_flip_lookback: _iv('supertrendFlipLookback', 3),
+      supertrend_trigger: _tv('supertrendTrigger', 'flip'),
     donchian_on: _on('togDonchian'), donchian_length: _iv('donchianLength', 20),
+      donchian_trigger: _tv('donchianTrigger', 'breakout'),
+      donchian_mid_cross_lookback: _iv('donchianMidCrossLookback', 5),
     hma_on: _on('togHma'), hma_length: _iv('hmaLength', 20), hma_slope_lookback: _iv('hmaSlopeLookback', 3),
+      hma_trigger: _tv('hmaTrigger', 'slope'), hma_price_cross_lookback: _iv('hmaPriceCrossLookback', 5),
     stoch_on: _on('togStoch'), stoch_k: _iv('stochK', 14), stoch_d: _iv('stochD', 3), stoch_smooth: _iv('stochSmooth', 3),
       stoch_oversold: _iv('stochOversold', 20), stoch_overbought: _iv('stochOverbought', 80),
+      stoch_trigger: _tv('stochTrigger', 'overbought_oversold'),
+      stoch_signal_cross_lookback: _iv('stochSignalCrossLookback', 5),
     stochrsi_on: _on('togStochrsi'), stochrsi_length: _iv('stochrsiLength', 14),
       stochrsi_k: _iv('stochrsiK', 3), stochrsi_d: _iv('stochrsiD', 3),
       stochrsi_oversold: _iv('stochrsiOversold', 20), stochrsi_overbought: _iv('stochrsiOverbought', 80),
+      stochrsi_trigger: _tv('stochrsiTrigger', 'overbought_oversold'),
+      stochrsi_signal_cross_lookback: _iv('stochrsiSignalCrossLookback', 5),
     cci_on: _on('togCci'), cci_length: _iv('cciLength', 20),
       cci_oversold: _iv('cciOversold', -100), cci_overbought: _iv('cciOverbought', 100),
+      cci_trigger: _tv('cciTrigger', 'overbought_oversold'),
+      cci_centerline_lookback: _iv('cciCenterlineLookback', 5),
     willr_on: _on('togWillr'), willr_length: _iv('willrLength', 14),
       willr_oversold: _iv('willrOversold', -80), willr_overbought: _iv('willrOverbought', -20),
+      willr_trigger: _tv('willrTrigger', 'overbought_oversold'),
+      willr_midline_lookback: _iv('willrMidlineLookback', 5),
     roc_on: _on('togRoc'), roc_length: _iv('rocLength', 12), roc_threshold: _fv('rocThreshold', 2.0),
+      roc_trigger: _tv('rocTrigger', 'threshold'), roc_centerline_lookback: _iv('rocCenterlineLookback', 5),
     mfi_on: _on('togMfi'), mfi_length: _iv('mfiLength', 14),
       mfi_oversold: _iv('mfiOversold', 20), mfi_overbought: _iv('mfiOverbought', 80),
+      mfi_trigger: _tv('mfiTrigger', 'overbought_oversold'),
+      mfi_centerline_lookback: _iv('mfiCenterlineLookback', 5),
     tsi_on: _on('togTsi'), tsi_long: _iv('tsiLong', 25), tsi_short: _iv('tsiShort', 13), tsi_signal: _iv('tsiSignal', 13),
+      tsi_trigger: _tv('tsiTrigger', 'signal_cross'), tsi_centerline_lookback: _iv('tsiCenterlineLookback', 5),
     ao_on: _on('togAo'), ao_fast: _iv('aoFast', 5), ao_slow: _iv('aoSlow', 34),
+      ao_trigger: _tv('aoTrigger', 'zero_state'), ao_zero_cross_lookback: _iv('aoZeroCrossLookback', 5),
     atr_on: _on('togAtr'), atr_length: _iv('atrLength', 14), atr_trend_lookback: _iv('atrTrendLookback', 5),
+      atr_trigger: _tv('atrTrigger', 'expansion'),
     keltner_on: _on('togKeltner'), keltner_length: _iv('keltnerLength', 20),
       keltner_atr_length: _iv('keltnerAtrLength', 10), keltner_mult: _fv('keltnerMult', 2.0),
+      keltner_trigger: _tv('keltnerTrigger', 'breakout'),
+      keltner_mid_cross_lookback: _iv('keltnerMidCrossLookback', 5),
     stdev_on: _on('togStdev'), stdev_length: _iv('stdevLength', 20), stdev_trend_lookback: _iv('stdevTrendLookback', 5),
+      stdev_trigger: _tv('stdevTrigger', 'expansion'),
     chaikin_vol_on: _on('togChaikinVol'), chaikin_vol_ema_length: _iv('chaikinVolEmaLength', 10),
       chaikin_vol_roc_length: _iv('chaikinVolRocLength', 10), chaikin_vol_trend_lookback: _iv('chaikinVolTrendLookback', 5),
+      chaikin_vol_trigger: _tv('chaikinVolTrigger', 'expansion'),
     hist_vol_on: _on('togHistVol'), hist_vol_length: _iv('histVolLength', 20), hist_vol_trend_lookback: _iv('histVolTrendLookback', 5),
+      hist_vol_trigger: _tv('histVolTrigger', 'expansion'),
     obv_on: _on('togObv'), obv_sma_length: _iv('obvSmaLength', 20),
+      obv_trigger: _tv('obvTrigger', 'trend'), obv_div_lookback: _iv('obvDivLookback', 5),
     vwap_on: _on('togVwap'), vwap_length: _iv('vwapLength', 20),
+      vwap_trigger: _tv('vwapTrigger', 'position'), vwap_band_pct: _fv('vwapBandPct', 1.0),
     ad_on: _on('togAd'), ad_sma_length: _iv('adSmaLength', 20),
+      ad_trigger: _tv('adTrigger', 'trend'), ad_div_lookback: _iv('adDivLookback', 5),
     cmf_on: _on('togCmf'), cmf_length: _iv('cmfLength', 20), cmf_threshold: _fv('cmfThreshold', 0.05),
+      cmf_trigger: _tv('cmfTrigger', 'threshold'), cmf_centerline_lookback: _iv('cmfCenterlineLookback', 5),
     vol_profile_on: _on('togVolProfile'), vol_profile_lookback: _iv('volProfileLookback', 50), vol_profile_bins: _iv('volProfileBins', 24),
+      vol_profile_trigger: _tv('volProfileTrigger', 'position'),
+      vol_profile_breakout_lookback: _iv('volProfileBreakoutLookback', 5),
     fib_on: _on('togFib'), fib_lookback: _iv('fibLookback', 50), fib_tolerance_pct: _fv('fibTolerancePct', 1.0),
+      fib_trigger: _tv('fibTrigger', 'bounce_reject'),
   };
 
   if (!symbol) {
@@ -1731,7 +2155,12 @@ async function runBacktest() {
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
     macd_trigger: macdTrigger, macd_div_lookback: macdDivLookback, macd_zscore_length: macdZscoreLength,
     bb_length: bbLength, bb_std: bbStd,
+    bb_trigger: bbTrigger, bb_squeeze_lookback: bbSqueezeLookback, bb_squeeze_percentile: bbSqueezePercentile,
+    bb_breakout_window: bbBreakoutWindow, bb_walk_min_consecutive: bbWalkMinConsecutive,
+    bb_walk_tolerance_pct: bbWalkTolerancePct, bb_pattern_lookback: bbPatternLookback,
     ema_short: emaShort, ema_long: emaLong,
+    ma_type: maType, ma_trigger: maTrigger, ma_trigger_lookback: maTriggerLookback,
+    ma_short_length: maShortLength, ma_medium_length: maMediumLength, ma_long_length: maLongLength,
     volume_surge: volSurge,
     rsi_on: rsiOn, macd_on: macdOn, bb_on: bbOn, ma_on: maOn, vol_on: volOn,
     ...extParams,
