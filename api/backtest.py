@@ -225,9 +225,18 @@ def run_backtest(
         long_notna  = combined[psar_long_col].notna()
         short_notna = combined[psar_short_col].notna()
         psar_dir = pd.Series(np.where(long_notna, 1.0, np.where(short_notna, -1.0, np.nan)), index=combined.index)
+        psar_value_s = combined[psar_long_col].where(long_notna, combined[psar_short_col])
     else:
         psar_dir = pd.Series(np.nan, index=combined.index)
+        psar_value_s = pd.Series(np.nan, index=combined.index)
     psar_flip = _bars_since_flip_series(psar_dir)
+
+    # "Trailing stop" trigger: the SAR dot IS a trailing stop, so its gap from price
+    # narrowing (vs `psar_gap_lookback` bars ago) means momentum is decelerating toward
+    # that stop — an early warning of a possible flip, ahead of the flip itself.
+    psar_gap_lookback = int(t.get("psar_gap_lookback", 3))
+    psar_gap_s = (df["Close"] - psar_value_s).abs()
+    psar_narrowing_s = psar_gap_s < psar_gap_s.shift(psar_gap_lookback)
 
     st_dir_col = None
     if supertrend_df is not None:
@@ -449,6 +458,7 @@ def run_backtest(
             "psar": {
                 "is_bull":         (bool(psar_dir.iloc[i] == 1) if psar_dir.iloc[i] == psar_dir.iloc[i] else None),
                 "bars_since_flip": int(psar_flip.iloc[i]),
+                "gap_narrowing":   bool(psar_narrowing_s.iloc[i]),
             },
             "ichimoku": {
                 "tenkan": _sf(row.get("ICH_tenkan")), "kijun": _sf(row.get("ICH_kijun")),

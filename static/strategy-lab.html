@@ -1039,14 +1039,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Increment</span><input type="number" class="param-input" id="psarInc" value="0.02" min="0.001" max="0.5" step="0.001"></div>
         <div class="param-row"><span class="param-label">Max step</span><input type="number" class="param-input" id="psarMax" value="0.2" min="0.01" max="1" step="0.01"></div>
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="psarFlipLookback" value="3" min="1" max="20"></div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Trigger</span>
           <select class="param-input" id="psarTrigger" style="width:100%;">
             <option value="flip">Flip (default)</option>
             <option value="bull_flip">Bullish flip only</option>
             <option value="bear_flip">Bearish flip only</option>
             <option value="trend_state">Trend state</option>
+            <option value="trailing_stop">Trailing stop (momentum change)</option>
           </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Gap narrowing lookback (bars)</span>
+          <input type="number" class="param-input" id="psarGapLookback" value="3" min="1" max="20">
         </div>
       </div>
 
@@ -2059,7 +2064,7 @@ async function runBacktest() {
     adx_di_cross_lookback: _iv('adxDiCrossLookback', 5),
     psar_on: _on('togPsar'), psar_start: _fv('psarStart', 0.02), psar_inc: _fv('psarInc', 0.02),
       psar_max: _fv('psarMax', 0.2), psar_flip_lookback: _iv('psarFlipLookback', 3),
-      psar_trigger: _tv('psarTrigger', 'flip'),
+      psar_trigger: _tv('psarTrigger', 'flip'), psar_gap_lookback: _iv('psarGapLookback', 3),
     ichimoku_on: _on('togIchimoku'), ichimoku_tenkan: _iv('ichimokuTenkan', 9),
       ichimoku_kijun: _iv('ichimokuKijun', 26), ichimoku_senkou: _iv('ichimokuSenkou', 52),
       ichimoku_trigger: _tv('ichimokuTrigger', 'cloud_position'),

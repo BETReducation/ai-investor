@@ -39,7 +39,8 @@ DEFAULT_THRESHOLDS = {
                                         # strong_di_plus | strong_di_minus
     "adx_di_cross_lookback": 5,
     "psar_on": 0, "psar_flip_lookback": 3,
-    "psar_trigger": "flip",  # flip | bull_flip | bear_flip | trend_state
+    "psar_trigger": "flip",  # flip | bull_flip | bear_flip | trend_state | trailing_stop
+    "psar_gap_lookback": 3,
     "ichimoku_on": 0,
     "ichimoku_trigger": "cloud_position",  # cloud_position | bullish | bearish | tk_cross
     "ichimoku_tk_cross_lookback": 5,
@@ -507,6 +508,14 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
             signals.append({"indicator": "Parabolic SAR", "type": label, "detail": f"Dot currently {'below' if label=='BUY' else 'above'} price", "weight": 2})
             if label == "BUY": buy_score += 2
             else: sell_score += 2
+        elif psar_trigger == "trailing_stop":
+            if psar.get("gap_narrowing"):
+                label = "SELL" if psar["is_bull"] else "BUY"
+                signals.append({"indicator": "Parabolic SAR", "type": label, "detail": f"Price closing in on the trailing stop — {'bullish' if label=='BUY' else 'bearish'} momentum fading", "weight": 2})
+                if label == "BUY": buy_score += 2
+                else: sell_score += 2
+            else:
+                signals.append({"indicator": "Parabolic SAR", "type": "NEUTRAL", "detail": "Gap from the trailing stop stable or widening", "weight": 0})
         else:  # "flip" (default) — unchanged
             if recent:
                 label = "BUY" if psar["is_bull"] else "SELL"
