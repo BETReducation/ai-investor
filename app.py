@@ -420,6 +420,9 @@ def learn_beginner(): return send_from_directory("static", "learn-beginner.html"
 @app.route("/learn/beginner/start-early")
 def learn_beginner_start_early(): return send_from_directory("static", "lesson-start-early.html")
 
+@app.route("/learn/beginner/diversify")
+def learn_beginner_diversify(): return send_from_directory("static", "lesson-diversify.html")
+
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
 
