@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diversify — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table td.diff-cell { color: #ff3355; font-weight: 700; }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+.benefits-table th, .benefits-table td { text-align: left; white-space: normal; }
+.benefits-table th:first-child, .benefits-table td:first-child { width: 34%; }
+.benefits-table td:first-child { color: var(--text); }
+.benefits-table td.check-cell { color: var(--green); }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Habit 2 of 5</div>
+    <h1 class="hero-title">🧺 Diversify — Don't Bet It All on <span class="accent">One Stock</span></h1>
+    <p class="hero-sub">You don't need to pick "the next big winner" to build wealth. Spreading your money across many investments means no single company's bad day can sink your whole portfolio.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Does "Diversification" Really Mean?</h2>
+    <p class="body-text">Diversification just means spreading your money across many different investments instead of putting it all into one. If one company has a bad year, only a small slice of your portfolio feels it — the rest keeps doing its own thing, completely unaffected.</p>
+    <p class="body-text">A simple everyday way to picture it: think of a fruit basket instead of a single fruit stand. If one type of fruit has a bad season, you've still got plenty of others to enjoy. A properly diversified portfolio works the same way — no single "ingredient" can spoil the whole basket.</p>
+
+    <div class="example-card">
+      <h3>💡 Real example: Priya vs. Jordan</h3>
+      <p class="body-text" style="margin-bottom:0;">Jordan puts $10,000 into a single company's stock. Priya puts the same $10,000 into a diversified index fund holding hundreds of companies. That year, the wider market has a rough patch. Who comes out better?</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">🧑 Jordan — one company</div>
+          <div class="ep-row"><span>Amount invested</span><b>$10,000</b></div>
+          <div class="ep-row"><span>Where it went</span><b>1 company</b></div>
+          <div class="ep-row"><span>That company's year</span><b>-45%</b></div>
+          <div class="ep-total">
+            <div class="val">$5,500</div>
+            <div class="lbl">value at year end</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">👩‍💼 Priya — diversified fund</div>
+          <div class="ep-row"><span>Amount invested</span><b>$10,000</b></div>
+          <div class="ep-row"><span>Where it went</span><b>500+ companies</b></div>
+          <div class="ep-row"><span>The fund's year</span><b>-8%</b></div>
+          <div class="ep-total">
+            <div class="val">$9,200</div>
+            <div class="lbl">value at year end</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Same amount invested, same rough year in the market — but Jordan's fate depended entirely on one company's decisions and luck, while Priya's outcome reflected hundreds of businesses instead of just one.</p>
+    </div>
+
+    <p class="body-text">Diversification doesn't just protect you in a single bad year, either. Research consistently shows that a small handful of standout companies drive most of a market's long-term gains, while plenty of individual stocks go nowhere or worse. Spreading your money across many companies means you're far more likely to end up owning the winners, instead of betting your whole portfolio on picking just one.</p>
+
+    <div class="reinvest-card">
+      <h3>🧺 The Cost of Concentration</h3>
+      <p>Here's what happens to a $10,000 portfolio if one single holding drops all the way to zero, depending on how much of your portfolio is tied up in it — and what you'd keep instead if that same share had been diversified.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Share in one stock</th><th>If concentrated (drops to $0)</th><th>You'd lose</th><th>If diversified instead</th><th>Extra you'd keep</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>100%</td><td>$0</td><td class="diff-cell">-$10,000</td><td>$6,500</td><td class="check-cell">+$6,500</td></tr>
+          <tr><td>75%</td><td>$2,500</td><td class="diff-cell">-$7,500</td><td>$7,375</td><td class="check-cell">+$4,875</td></tr>
+          <tr><td>50%</td><td>$5,000</td><td class="diff-cell">-$5,000</td><td>$8,250</td><td class="check-cell">+$3,250</td></tr>
+          <tr><td>40%</td><td>$6,000</td><td class="diff-cell">-$4,000</td><td>$8,600</td><td class="check-cell">+$2,600</td></tr>
+          <tr><td>30%</td><td>$7,000</td><td class="diff-cell">-$3,000</td><td>$8,950</td><td class="check-cell">+$1,950</td></tr>
+          <tr><td>25%</td><td>$7,500</td><td class="diff-cell">-$2,500</td><td>$9,125</td><td class="check-cell">+$1,625</td></tr>
+          <tr><td>20%</td><td>$8,000</td><td class="diff-cell">-$2,000</td><td>$9,300</td><td class="check-cell">+$1,300</td></tr>
+          <tr><td>15%</td><td>$8,500</td><td class="diff-cell">-$1,500</td><td>$9,475</td><td class="check-cell">+$975</td></tr>
+          <tr><td>10%</td><td>$9,000</td><td class="diff-cell">-$1,000</td><td>$9,650</td><td class="check-cell">+$650</td></tr>
+          <tr><td>5%</td><td>$9,500</td><td class="diff-cell">-$500</td><td>$9,825</td><td class="check-cell">+$325</td></tr>
+          <tr><td>2%</td><td>$9,800</td><td class="diff-cell">-$200</td><td>$9,930</td><td class="check-cell">+$130</td></tr>
+          <tr><td>1%</td><td>$9,900</td><td class="diff-cell">-$100</td><td>$9,965</td><td class="check-cell">+$65</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">"Portfolio if it drops to zero" assumes a full 100% loss on that single holding — a worst-case scenario used to show why concentration is risky, not a prediction. "Portfolio if diversified instead" assumes that same share had instead been spread across many holdings and hit a severe market downturn of -35% (roughly in line with the scale of a serious historical bear market) rather than going to zero — still a bad year, just nowhere near total loss.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>✨ The Potential Benefits of Diversification</h3>
+      <p>It's not just about limiting losses — spreading your money around also improves your odds of capturing gains, wherever they show up.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table benefits-table">
+          <thead>
+            <tr><th>Benefit</th><th>What it means for you</th></tr>
+          </thead>
+          <tbody>
+          <tr><td class="check-cell">✓ Smoother overall returns</td><td>Gains and losses across many holdings tend to balance out, so your portfolio's ride is less bumpy year to year.</td></tr>
+          <tr><td class="check-cell">✓ More chances to own a winner</td><td>A small handful of standout companies drive most long-term market gains — owning more companies means you're more likely to hold them.</td></tr>
+          <tr><td class="check-cell">✓ Reduced single-company risk</td><td>No one business's bad decision, scandal, or bankruptcy can wipe out your whole portfolio.</td></tr>
+          <tr><td class="check-cell">✓ Exposure to different sectors &amp; regions</td><td>When one industry or country struggles, others may be thriving, balancing out your overall return.</td></tr>
+          <tr><td class="check-cell">✓ Easier to stick with your plan</td><td>Smaller swings in value make it easier to stay invested through rough patches instead of panic-selling.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> diversification reduces risk, but it doesn't eliminate it — a diversified portfolio can still lose value when the whole market falls. The goal isn't to avoid all risk, it's to avoid having your entire financial future depend on any single company.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: The Concentration Risk Simulator</h2>
+    <p class="section-desc">See how much of your portfolio would be at risk if a single holding went to zero, based on how concentrated your portfolio is.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcTotal">Total portfolio value ($)</label>
+          <input type="number" id="calcTotal" value="10000" min="1" max="100000000">
+        </div>
+        <div class="calc-field">
+          <label for="calcShare">% of your portfolio in a single stock</label>
+          <input type="number" id="calcShare" value="25" min="0" max="100" step="1">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Risk →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csOne">—</div><div class="cs-lbl">In that one company</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csRest">—</div><div class="cs-lbl">Spread across everything else</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csLoss">—</div><div class="cs-lbl">You'd lose if it went to zero</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barContrib"></div>
+          <div class="calc-bar-growth" id="barGrowth"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>At risk in one company</span>
+          <span><span class="dot" style="background:var(--green)"></span>Protected by diversification</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. What does "diversification" mean in investing?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Putting all your money into the single best-performing stock you can find</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Spreading your money across many different investments so no one company can sink your whole portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Only investing in companies from your own country</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Avoiding the stock market altogether and only holding cash</label>
+        </div>
+        <div class="quiz-explain">Diversification means spreading your money across many different investments, so no single company or sector can sink your entire portfolio.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">2. Why can a single company's stock be much riskier than a diversified index fund?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> A single company depends entirely on its own management, competitors and luck, while an index fund spreads that risk across hundreds of companies</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Single stocks are always more expensive to buy</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Diversified funds are guaranteed by the government</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Single stocks pay higher dividends by law</label>
+        </div>
+        <div class="quiz-explain">A single stock's fate rides entirely on one company's decisions and circumstances. A diversified fund spreads that same risk across hundreds of businesses at once.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">3. In the Priya vs. Jordan example, why did Priya's portfolio hold up better in a rough year?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> She sold her shares right before the downturn</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> She only invested in gold and cash</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Her money was spread across hundreds of companies instead of just one</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> She had inside information about the market</label>
+        </div>
+        <div class="quiz-explain">Priya's diversified fund meant no single company's bad year could hurt her nearly as much as it hurt Jordan, who was fully concentrated in one stock.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. If you put 50% of your portfolio into one company and it goes to zero, what happens?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> You lose nothing, because the rest of your portfolio protects you completely</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> You lose 100% of your total portfolio automatically</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Your broker automatically replaces the lost value</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> You lose 50% of your total portfolio's value</label>
+        </div>
+        <div class="quiz-explain">Your loss is proportional to how much of your portfolio was tied up in that one holding — 50% invested means a 50% hit to your total portfolio if it goes to zero.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. What's the main takeaway of this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Diversification guarantees you'll never lose money</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Spreading your investments across many assets reduces the impact any single one can have on your overall wealth</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> You should only ever own one stock at a time</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Diversification is only useful for professional investors</label>
+        </div>
+        <div class="quiz-explain">Diversification doesn't eliminate risk entirely, but spreading your money across many assets means no single company's fate determines your financial future.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/diversify-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the concept, the Priya vs. Jordan example, the concentration risk table, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/diversify-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to check how concentrated your own holdings are and reflect on your own diversification.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/diversify-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore diversification and asset allocation in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Ready for Habit 3?</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Keep building your foundations.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to All 5 Habits</div>
+        <div class="card-desc">Return to the Beginner hub and pick up where you left off.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a diversified, low-cost portfolio and track it over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function runCalc() {
+  const total = parseFloat(document.getElementById('calcTotal').value) || 0;
+  const share = Math.min(Math.max(parseFloat(document.getElementById('calcShare').value) || 0, 0), 100);
+
+  const inOne = total * (share / 100);
+  const rest = total - inOne;
+  const loss = inOne;
+
+  document.getElementById('csOne').textContent = fmtMoney(inOne);
+  document.getElementById('csRest').textContent = fmtMoney(rest);
+  document.getElementById('csLoss').textContent = fmtMoney(loss);
+
+  const onePct = share;
+  const restPct = 100 - share;
+  const barContrib = document.getElementById('barContrib');
+  const barGrowth = document.getElementById('barGrowth');
+  barContrib.style.width = onePct + '%';
+  barGrowth.style.width = restPct + '%';
+  barContrib.textContent = onePct > 12 ? Math.round(onePct) + '%' : '';
+  barGrowth.textContent = restPct > 12 ? Math.round(restPct) + '%' : '';
+
+  const callout = document.getElementById('calcCallout');
+  if (share > 10) {
+    callout.innerHTML = '⚠️ Many long-term investors aim to keep any single stock under about <b>10%</b> of their portfolio, precisely to limit this kind of risk. Right now, <b>' + share + '%</b> of your portfolio (' + fmtMoney(inOne) + ') would ride on one company alone.';
+  } else if (share > 0) {
+    callout.innerHTML = '✅ Keeping a single holding around ' + share + '% of your portfolio is in line with how many long-term investors manage single-stock risk — a rough guideline is to stay under about 10%.';
+  } else {
+    callout.innerHTML = 'With 0% in any single stock, no individual company could put a dent in your portfolio at all — that\'s diversification working at its simplest.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>

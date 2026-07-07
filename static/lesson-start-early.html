@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Start Early & Compounding — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 16px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 16px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table td.diff-cell { color: var(--green); font-weight: 700; }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Habit 1 of 5</div>
+    <h1 class="hero-title">🌱 Start Early — Let <span class="accent">Compounding</span> Work For You</h1>
+    <p class="hero-sub">The single biggest advantage a beginner investor has isn't skill or luck — it's time. Here's why starting matters more than almost anything else.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Is "Compounding," Really?</h2>
+    <p class="body-text">Compounding just means your money makes money — and then <b>that</b> money starts making money too. Imagine you invest $100 and it grows by 10% in a year. You now have $110. The next year, that 10% growth applies to the full $110, not just your original $100 — so you earn $11 instead of $10. It sounds small, but stretched over decades, that snowball effect becomes enormous.</p>
+    <p class="body-text">A simple everyday way to picture it: think of a snowball rolling down a long hill. At the top, it barely grows — there's not much snow to stick to it yet. But the further it rolls, the bigger it gets, and the bigger it gets, the <i>faster</i> it picks up even more snow. Money invested early is that snowball right at the top of a very long hill.</p>
+
+    <div class="example-card">
+      <h3>💡 Real example: Sarah vs. Mike</h3>
+      <p class="body-text" style="margin-bottom:0;">Sarah starts investing $200 a month at age 25. Mike waits ten years and starts investing $400 a month — twice as much — at age 35. Both keep going until they retire at 65, and both earn a typical long-run average return of 7% a year. Who ends up with more?</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">👩 Sarah — starts at 25</div>
+          <div class="ep-row"><span>Monthly investment</span><b>$200</b></div>
+          <div class="ep-row"><span>Years invested</span><b>40 years</b></div>
+          <div class="ep-row"><span>Total she contributes</span><b>$96,000</b></div>
+          <div class="ep-total">
+            <div class="val">$524,963</div>
+            <div class="lbl">value at age 65</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">👨 Mike — starts at 35</div>
+          <div class="ep-row"><span>Monthly investment</span><b>$400</b></div>
+          <div class="ep-row"><span>Years invested</span><b>30 years</b></div>
+          <div class="ep-row"><span>Total he contributes</span><b>$144,000</b></div>
+          <div class="ep-total">
+            <div class="val">$487,988</div>
+            <div class="lbl">value at age 65</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Even though Mike put in <b>50% more of his own money</b>, Sarah still ends up ahead — purely because her money had ten extra years to compound. That's the entire lesson in one example.</p>
+    </div>
+
+    <p class="body-text">Here's another way to see it in daily life: skipping one $5 coffee a day and investing it instead ($150/month) from age 20 instead of age 30 could be the difference between retiring comfortably and just retiring "okay" — not because of the size of the habit, but because of <i>how long it had to grow</i>.</p>
+
+    <div class="reinvest-card">
+      <h3>📈 The Power of Reinvesting the Gains</h3>
+      <p>A one-time $10,000 investment growing at 7% a year, compared two ways: reinvesting each year's growth (compound) versus taking the same 7% only on your original $10,000 every year (simple). Same rate, same starting amount — the only difference is whether the gains stay invested.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Year</th><th>Compound growth (reinvested)</th><th>Simple growth (not reinvested)</th><th>Extra from reinvesting</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>Year 1</td><td>$10,700</td><td>$10,700</td><td class="diff-cell">+$0</td></tr>
+          <tr><td>Year 2</td><td>$11,449</td><td>$11,400</td><td class="diff-cell">+$49</td></tr>
+          <tr><td>Year 3</td><td>$12,250</td><td>$12,100</td><td class="diff-cell">+$150</td></tr>
+          <tr><td>Year 4</td><td>$13,108</td><td>$12,800</td><td class="diff-cell">+$308</td></tr>
+          <tr><td>Year 5</td><td>$14,026</td><td>$13,500</td><td class="diff-cell">+$526</td></tr>
+          <tr><td>Year 6</td><td>$15,007</td><td>$14,200</td><td class="diff-cell">+$807</td></tr>
+          <tr><td>Year 7</td><td>$16,058</td><td>$14,900</td><td class="diff-cell">+$1,158</td></tr>
+          <tr><td>Year 8</td><td>$17,182</td><td>$15,600</td><td class="diff-cell">+$1,582</td></tr>
+          <tr><td>Year 9</td><td>$18,385</td><td>$16,300</td><td class="diff-cell">+$2,085</td></tr>
+          <tr><td>Year 10</td><td>$19,672</td><td>$17,000</td><td class="diff-cell">+$2,672</td></tr>
+          <tr><td>Year 11</td><td>$21,049</td><td>$17,700</td><td class="diff-cell">+$3,349</td></tr>
+          <tr><td>Year 12</td><td>$22,522</td><td>$18,400</td><td class="diff-cell">+$4,122</td></tr>
+          <tr><td>Year 13</td><td>$24,098</td><td>$19,100</td><td class="diff-cell">+$4,998</td></tr>
+          <tr><td>Year 14</td><td>$25,785</td><td>$19,800</td><td class="diff-cell">+$5,985</td></tr>
+          <tr><td>Year 15</td><td>$27,590</td><td>$20,500</td><td class="diff-cell">+$7,090</td></tr>
+          <tr><td>Year 16</td><td>$29,522</td><td>$21,200</td><td class="diff-cell">+$8,322</td></tr>
+          <tr><td>Year 17</td><td>$31,588</td><td>$21,900</td><td class="diff-cell">+$9,688</td></tr>
+          <tr><td>Year 18</td><td>$33,799</td><td>$22,600</td><td class="diff-cell">+$11,199</td></tr>
+          <tr><td>Year 19</td><td>$36,165</td><td>$23,300</td><td class="diff-cell">+$12,865</td></tr>
+          <tr><td>Year 20</td><td>$38,697</td><td>$24,000</td><td class="diff-cell">+$14,697</td></tr>
+          <tr><td>Year 21</td><td>$41,406</td><td>$24,700</td><td class="diff-cell">+$16,706</td></tr>
+          <tr><td>Year 22</td><td>$44,304</td><td>$25,400</td><td class="diff-cell">+$18,904</td></tr>
+          <tr><td>Year 23</td><td>$47,405</td><td>$26,100</td><td class="diff-cell">+$21,305</td></tr>
+          <tr><td>Year 24</td><td>$50,724</td><td>$26,800</td><td class="diff-cell">+$23,924</td></tr>
+          <tr><td>Year 25</td><td>$54,274</td><td>$27,500</td><td class="diff-cell">+$26,774</td></tr>
+          <tr><td>Year 26</td><td>$58,074</td><td>$28,200</td><td class="diff-cell">+$29,874</td></tr>
+          <tr><td>Year 27</td><td>$62,139</td><td>$28,900</td><td class="diff-cell">+$33,239</td></tr>
+          <tr><td>Year 28</td><td>$66,488</td><td>$29,600</td><td class="diff-cell">+$36,888</td></tr>
+          <tr><td>Year 29</td><td>$71,143</td><td>$30,300</td><td class="diff-cell">+$40,843</td></tr>
+          <tr><td>Year 30</td><td>$76,123</td><td>$31,000</td><td class="diff-cell">+$45,123</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">Based on a $10,000 starting amount at a 7% annual return, the same illustrative figure used above — not a guarantee of future performance.</p>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> the 7% figure used above is a simplified, illustrative long-run average — real markets go up and down year to year, and past performance never guarantees future returns. The point isn't the exact number; it's the principle that time is one of the most powerful tools you have.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: The Compounding Calculator</h2>
+    <p class="section-desc">Plug in your own numbers below and see how starting age changes your result. There's no wrong answer here — the goal is just to build a feel for how the maths behaves.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcAge">Your age now</label>
+          <input type="number" id="calcAge" value="25" min="10" max="80">
+        </div>
+        <div class="calc-field">
+          <label for="calcRetire">Age you plan to stop investing</label>
+          <input type="number" id="calcRetire" value="65" min="11" max="90">
+        </div>
+        <div class="calc-field">
+          <label for="calcMonthly">Monthly investment ($)</label>
+          <input type="number" id="calcMonthly" value="200" min="1" max="100000">
+        </div>
+        <div class="calc-field">
+          <label for="calcReturn">Expected annual return (%)</label>
+          <input type="number" id="calcReturn" value="7" min="0" max="30" step="0.5">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">Calculate My Growth →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csYears">—</div><div class="cs-lbl">Years invested</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csContrib">—</div><div class="cs-lbl">Total you contribute</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csFuture">—</div><div class="cs-lbl">Estimated future value</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barContrib"></div>
+          <div class="calc-bar-growth" id="barGrowth"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>Your contributions</span>
+          <span><span class="dot" style="background:var(--green)"></span>Growth from compounding</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">1. What does "compounding" mean in investing?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Your returns start earning their own returns over time</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Only your original deposits ever grow</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Your bank charges you extra interest on loans</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> You must manually reinvest your dividends every single day</label>
+        </div>
+        <div class="quiz-explain">Compounding means the growth your money earns starts generating its own growth — a snowball effect that accelerates the longer it runs.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. Why can starting 10 years earlier have such a big impact, even with smaller monthly contributions?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because markets always rise in an investor's first 10 years</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the extra decade gives compounding more time to work</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because younger investors are charged lower fees by law</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> It doesn't really matter — timing has no real effect</label>
+        </div>
+        <div class="quiz-explain">More time invested means more compounding cycles. An extra 10 years can outweigh a much larger monthly contribution, as the Sarah vs. Mike example showed.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">3. In the Sarah vs. Mike example, why does Sarah end up with more money despite contributing less overall?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> She chose better-performing investments than Mike</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Mike invested in a much riskier type of account</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Her contributions had 10 extra years to compound</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Sarah received a large one-off tax refund</label>
+        </div>
+        <div class="quiz-explain">Both earned the same 7% return — the only real difference was time. Sarah's head start let compounding do more of the heavy lifting.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. Which statement best describes the "cost of waiting" to start investing?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> There's no real cost — you can always catch up later by investing more</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It only matters if you're investing more than $1,000 a month</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Waiting is actually better because prices always fall over time</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Delaying reduces the time compounding has to work, which can be very hard to fully make up</label>
+        </div>
+        <div class="quiz-explain">You can invest more later to try to catch up, but as Mike's example shows, it often takes a lot more money to match what an earlier start achieves.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. What's the single biggest takeaway from this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> You need a large lump sum of cash to start investing</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> You need to be a market expert before compounding helps you</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Time in the market is one of the most powerful tools for building wealth</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Compounding only works if you invest more than $1,000 a month</label>
+        </div>
+        <div class="quiz-explain">Small, consistent amounts started early can outgrow much larger amounts started late. Time — not size or expertise — is the real advantage.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/start-early-compounding-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A single-page, printable summary of this whole lesson — the concept, the Sarah vs. Mike example, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/start-early-compounding-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to run the compounding maths on your own numbers and reflect on your own starting point.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/start-early-compounding-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore compound growth and long-term investing in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Ready for Habit 2?</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Keep building your foundations.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to All 5 Habits</div>
+        <div class="card-desc">Return to the Beginner hub and pick up where you left off.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a diversified, low-cost portfolio and track it over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function runCalc() {
+  const age = parseFloat(document.getElementById('calcAge').value) || 0;
+  const retire = parseFloat(document.getElementById('calcRetire').value) || 0;
+  const monthly = parseFloat(document.getElementById('calcMonthly').value) || 0;
+  const rate = (parseFloat(document.getElementById('calcReturn').value) || 0) / 100;
+  const years = Math.max(retire - age, 0);
+  const months = years * 12;
+  const r = rate / 12;
+
+  let future;
+  if (r === 0) {
+    future = monthly * months;
+  } else {
+    future = monthly * ((Math.pow(1 + r, months) - 1) / r);
+  }
+  const contributed = monthly * months;
+  const growth = Math.max(future - contributed, 0);
+
+  document.getElementById('csYears').textContent = years + ' yrs';
+  document.getElementById('csContrib').textContent = fmtMoney(contributed);
+  document.getElementById('csFuture').textContent = fmtMoney(future);
+
+  const contribPct = future > 0 ? (contributed / future) * 100 : 0;
+  const growthPct = 100 - contribPct;
+  const barContrib = document.getElementById('barContrib');
+  const barGrowth = document.getElementById('barGrowth');
+  barContrib.style.width = contribPct + '%';
+  barGrowth.style.width = growthPct + '%';
+  barContrib.textContent = contribPct > 12 ? Math.round(contribPct) + '%' : '';
+  barGrowth.textContent = growthPct > 12 ? Math.round(growthPct) + '%' : '';
+
+  // Compare to starting 10 years later, same monthly amount
+  const laterYears = Math.max(years - 10, 0);
+  const laterMonths = laterYears * 12;
+  let laterFuture;
+  if (r === 0) {
+    laterFuture = monthly * laterMonths;
+  } else {
+    laterFuture = monthly * ((Math.pow(1 + r, laterMonths) - 1) / r);
+  }
+  const diff = future - laterFuture;
+  const callout = document.getElementById('calcCallout');
+  if (years > 10 && diff > 0) {
+    callout.innerHTML = '⏳ Waiting just <b>10 extra years</b> to start (same $' + monthly + '/month) would leave you with roughly <b>' + fmtMoney(laterFuture) + '</b> instead of ' + fmtMoney(future) + ' — a difference of about <b>' + fmtMoney(diff) + '</b>.';
+  } else {
+    callout.innerHTML = 'Try extending your investing window to really see compounding shine — the longer the timeline, the bigger the snowball effect.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
