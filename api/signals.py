@@ -45,7 +45,8 @@ DEFAULT_THRESHOLDS = {
     "ichimoku_trigger": "cloud_position",  # cloud_position | bullish | bearish | tk_cross
     "ichimoku_tk_cross_lookback": 5,
     "supertrend_on": 0, "supertrend_flip_lookback": 3,
-    "supertrend_trigger": "flip",  # flip | bull_flip | bear_flip | trend_state
+    "supertrend_trigger": "flip",  # flip | bull_flip | bear_flip | trend_state | trailing_stop
+    "supertrend_gap_lookback": 3,
     "donchian_on": 0,
     "donchian_trigger": "breakout",  # breakout | bullish | bearish | middle_cross
     "donchian_mid_cross_lookback": 5,
@@ -586,6 +587,14 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
             signals.append({"indicator": "Supertrend", "type": label, "detail": f"Currently {'bullish' if label=='BUY' else 'bearish'}", "weight": 2})
             if label == "BUY": buy_score += 2
             else: sell_score += 2
+        elif supertrend_trigger == "trailing_stop":
+            if supertrend.get("gap_narrowing"):
+                label = "SELL" if supertrend["is_bull"] else "BUY"
+                signals.append({"indicator": "Supertrend", "type": label, "detail": f"Price closing in on the trailing stop — {'bullish' if label=='BUY' else 'bearish'} momentum fading", "weight": 2})
+                if label == "BUY": buy_score += 2
+                else: sell_score += 2
+            else:
+                signals.append({"indicator": "Supertrend", "type": "NEUTRAL", "detail": "Gap from the trailing stop stable or widening", "weight": 0})
         else:  # "flip" (default) — unchanged
             if recent:
                 label = "BUY" if supertrend["is_bull"] else "SELL"

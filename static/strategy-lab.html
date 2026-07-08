@@ -1088,14 +1088,19 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="supertrendLength" value="10" min="2" max="100"></div>
         <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="supertrendMult" value="3.0" min="0.5" max="10" step="0.1"></div>
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="supertrendFlipLookback" value="3" min="1" max="20"></div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Trigger</span>
           <select class="param-input" id="supertrendTrigger" style="width:100%;">
             <option value="flip">Flip (default)</option>
             <option value="bull_flip">Bullish flip only</option>
             <option value="bear_flip">Bearish flip only</option>
             <option value="trend_state">Trend state</option>
+            <option value="trailing_stop">Trailing stop (momentum change)</option>
           </select>
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Gap narrowing lookback (bars)</span>
+          <input type="number" class="param-input" id="supertrendGapLookback" value="3" min="1" max="20">
         </div>
       </div>
 
@@ -2071,7 +2076,7 @@ async function runBacktest() {
       ichimoku_tk_cross_lookback: _iv('ichimokuTkCrossLookback', 5),
     supertrend_on: _on('togSupertrend'), supertrend_length: _iv('supertrendLength', 10),
       supertrend_mult: _fv('supertrendMult', 3.0), supertrend_flip_lookback: _iv('supertrendFlipLookback', 3),
-      supertrend_trigger: _tv('supertrendTrigger', 'flip'),
+      supertrend_trigger: _tv('supertrendTrigger', 'flip'), supertrend_gap_lookback: _iv('supertrendGapLookback', 3),
     donchian_on: _on('togDonchian'), donchian_length: _iv('donchianLength', 20),
       donchian_trigger: _tv('donchianTrigger', 'breakout'),
       donchian_mid_cross_lookback: _iv('donchianMidCrossLookback', 5),

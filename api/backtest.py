@@ -238,11 +238,22 @@ def run_backtest(
     psar_gap_s = (df["Close"] - psar_value_s).abs()
     psar_narrowing_s = psar_gap_s < psar_gap_s.shift(psar_gap_lookback)
 
-    st_dir_col = None
+    st_dir_col = st_val_col = None
     if supertrend_df is not None:
         st_cols = list(supertrend_df.columns)
         st_dir_col = _find_col(st_cols, "SUPERTD")
+        st_val_col = _find_col(st_cols, "SUPERT_")
     st_flip = _bars_since_flip_series(combined[st_dir_col]) if st_dir_col else pd.Series(999, index=combined.index)
+
+    # "Trailing stop" trigger: the Supertrend line IS a trailing stop, so its gap from
+    # price narrowing (vs `supertrend_gap_lookback` bars ago) means momentum is
+    # decelerating toward that stop — an early warning ahead of the flip itself.
+    supertrend_gap_lookback = int(t.get("supertrend_gap_lookback", 3))
+    if st_val_col:
+        st_gap_s = (combined["Close"] - combined[st_val_col]).abs()
+        st_narrowing_s = st_gap_s < st_gap_s.shift(supertrend_gap_lookback)
+    else:
+        st_narrowing_s = pd.Series(False, index=combined.index)
 
     stoch_k_col = stoch_d_col = None
     if stoch_df is not None:
@@ -469,6 +480,7 @@ def run_backtest(
             "supertrend": {
                 "is_bull":         (bool(row.get(st_dir_col) == 1) if st_dir_col and row.get(st_dir_col) == row.get(st_dir_col) else None),
                 "bars_since_flip": int(st_flip.iloc[i]),
+                "gap_narrowing":   bool(st_narrowing_s.iloc[i]),
             },
             "donchian": {
                 "upper": _sf(row.get("DC_upper")), "mid": _sf(row.get("DC_mid")),

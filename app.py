@@ -174,7 +174,7 @@ _VALID_ADX_TRIGGERS = {
 _TRIGGER_WHITELISTS = {
     "psar_trigger":        {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
     "ichimoku_trigger":    {"cloud_position", "bullish", "bearish", "tk_cross"},
-    "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state"},
+    "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
     "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross"},
     "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross"},
     "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
@@ -926,7 +926,7 @@ def backtest():
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
         "ma_trigger_lookback",
         "adx_di_cross_lookback",
-        "psar_gap_lookback",
+        "psar_gap_lookback", "supertrend_gap_lookback",
         "ichimoku_tk_cross_lookback", "donchian_mid_cross_lookback", "hma_price_cross_lookback",
         "stoch_signal_cross_lookback", "stochrsi_signal_cross_lookback",
         "cci_centerline_lookback", "willr_midline_lookback", "roc_centerline_lookback",
