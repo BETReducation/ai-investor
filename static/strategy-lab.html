@@ -1329,11 +1329,17 @@ window.addEventListener('resize', () => {
             <option value="overbought">Overbought only</option>
             <option value="oversold">Oversold only</option>
             <option value="centerline_cross">Centerline crossover</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Centerline cross lookback (bars)</span>
           <input type="number" class="param-input" id="mfiCenterlineLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence lookback (bars)</span>
+          <input type="number" class="param-input" id="mfiDivLookback" value="5" min="2" max="30">
         </div>
       </div>
 
@@ -2151,6 +2157,7 @@ async function runBacktest() {
       mfi_oversold: _iv('mfiOversold', 20), mfi_overbought: _iv('mfiOverbought', 80),
       mfi_trigger: _tv('mfiTrigger', 'overbought_oversold'),
       mfi_centerline_lookback: _iv('mfiCenterlineLookback', 5),
+      mfi_div_lookback: _iv('mfiDivLookback', 5),
     tsi_on: _on('togTsi'), tsi_long: _iv('tsiLong', 25), tsi_short: _iv('tsiShort', 13), tsi_signal: _iv('tsiSignal', 13),
       tsi_trigger: _tv('tsiTrigger', 'signal_cross'), tsi_centerline_lookback: _iv('tsiCenterlineLookback', 5),
     ao_on: _on('togAo'), ao_fast: _iv('aoFast', 5), ao_slow: _iv('aoSlow', 34),

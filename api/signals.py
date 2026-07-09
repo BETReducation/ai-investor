@@ -77,7 +77,8 @@ DEFAULT_THRESHOLDS = {
     # bullish_divergence | bearish_divergence
     "roc_centerline_lookback": 5,
     "mfi_on": 0, "mfi_oversold": 20, "mfi_overbought": 80,
-    "mfi_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | centerline_cross
+    "mfi_trigger": "overbought_oversold",
+    # overbought_oversold | overbought | oversold | centerline_cross | bullish_divergence | bearish_divergence
     "mfi_centerline_lookback": 5,
     "tsi_on": 0,
     "tsi_trigger": "signal_cross",  # signal_cross | bullish | bearish | centerline_cross
@@ -1035,6 +1036,18 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "MFI", "type": "NEUTRAL", "detail": "No recent centerline cross", "weight": 0})
+        elif mfi_trigger == "bullish_divergence":
+            if mfi.get("bullish_divergence"):
+                signals.append({"indicator": "MFI", "type": "BUY", "detail": "Bullish divergence — price made a lower low, MFI a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "MFI", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif mfi_trigger == "bearish_divergence":
+            if mfi.get("bearish_divergence"):
+                signals.append({"indicator": "MFI", "type": "SELL", "detail": "Bearish divergence — price made a higher high, MFI a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "MFI", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "overbought_oversold" (default) — unchanged
             if mfi_v < t["mfi_oversold"]:
                 signals.append({"indicator": "MFI", "type": "BUY", "detail": f"MFI {mfi_v:.1f} — oversold", "weight": 1})
