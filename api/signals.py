@@ -86,7 +86,9 @@ DEFAULT_THRESHOLDS = {
     # bullish_divergence | bearish_divergence
     "tsi_centerline_lookback": 5,
     "ao_on": 0,
-    "ao_trigger": "zero_state",  # zero_state | bullish | bearish | zero_cross
+    "ao_trigger": "zero_state",
+    # zero_state | bullish | bearish | zero_cross | bull_saucer | bear_saucer |
+    # bull_twin_peaks | bear_twin_peaks | bull_divergence | bear_divergence
     "ao_zero_cross_lookback": 5,
     "atr_on": 0, "atr_trend_lookback": 5,
     "atr_trigger": "expansion",  # expansion | bullish_expansion | bearish_expansion | contraction
@@ -1150,6 +1152,42 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No recent zero cross", "weight": 0})
+        elif ao_trigger == "bull_saucer":
+            if ao.get("bull_saucer"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "BUY", "detail": "Bull saucer — momentum dipped and turned back up above zero", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bull saucer", "weight": 0})
+        elif ao_trigger == "bear_saucer":
+            if ao.get("bear_saucer"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "SELL", "detail": "Bear saucer — momentum ticked up and turned back down below zero", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bear saucer", "weight": 0})
+        elif ao_trigger == "bull_twin_peaks":
+            if ao.get("bull_twin_peaks"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "BUY", "detail": "Bull twin peaks — second trough below zero shallower than the first", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bull twin peaks", "weight": 0})
+        elif ao_trigger == "bear_twin_peaks":
+            if ao.get("bear_twin_peaks"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "SELL", "detail": "Bear twin peaks — second peak above zero lower than the first", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bear twin peaks", "weight": 0})
+        elif ao_trigger == "bull_divergence":
+            if ao.get("bullish_divergence"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "BUY", "detail": "Bullish divergence — price made a lower low, AO a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif ao_trigger == "bear_divergence":
+            if ao.get("bearish_divergence"):
+                signals.append({"indicator": "Awesome Oscillator", "type": "SELL", "detail": "Bearish divergence — price made a higher high, AO a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Awesome Oscillator", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "zero_state" (default) — unchanged
             if ao_v > 0:
                 signals.append({"indicator": "Awesome Oscillator", "type": "BUY", "detail": f"AO {ao_v:.3f} — above zero", "weight": 1})

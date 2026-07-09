@@ -1392,11 +1392,22 @@ window.addEventListener('resize', () => {
             <option value="bullish">Bullish only</option>
             <option value="bearish">Bearish only</option>
             <option value="zero_cross">Zero-line crossover</option>
+            <option value="bull_saucer">Bull Saucer</option>
+            <option value="bear_saucer">Bear Saucer</option>
+            <option value="bull_twin_peaks">Bull Twin Peaks</option>
+            <option value="bear_twin_peaks">Bear Twin Peaks</option>
+            <option value="bull_divergence">Bull Divergence</option>
+            <option value="bear_divergence">Bear Divergence</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Zero cross lookback (bars)</span>
           <input type="number" class="param-input" id="aoZeroCrossLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row"><span class="param-label">Twin peaks lookback (bars)</span><input type="number" class="param-input" id="aoTwinPeaksLookback" value="5" min="2" max="30"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence lookback (bars)</span>
+          <input type="number" class="param-input" id="aoDivLookback" value="5" min="2" max="30">
         </div>
       </div>
 
@@ -2174,6 +2185,7 @@ async function runBacktest() {
       tsi_div_lookback: _iv('tsiDivLookback', 5),
     ao_on: _on('togAo'), ao_fast: _iv('aoFast', 5), ao_slow: _iv('aoSlow', 34),
       ao_trigger: _tv('aoTrigger', 'zero_state'), ao_zero_cross_lookback: _iv('aoZeroCrossLookback', 5),
+      ao_twin_peaks_lookback: _iv('aoTwinPeaksLookback', 5), ao_div_lookback: _iv('aoDivLookback', 5),
     atr_on: _on('togAtr'), atr_length: _iv('atrLength', 14), atr_trend_lookback: _iv('atrTrendLookback', 5),
       atr_trigger: _tv('atrTrigger', 'expansion'),
     keltner_on: _on('togKeltner'), keltner_length: _iv('keltnerLength', 20),

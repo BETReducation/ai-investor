@@ -468,6 +468,60 @@ def calculate_awesome_oscillator(df: pd.DataFrame, fast: int = 5, slow: int = 34
     return median_price.rolling(fast).mean() - median_price.rolling(slow).mean()
 
 
+def calculate_ao_saucer(ao: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """
+    Bill Williams' AO saucer: a 3-bar momentum-dip-and-recover confirmed while the
+    oscillator stays on one side of zero. Bull saucer — three bars above zero where the
+    middle bar dips (lower than the first) and the current bar turns back up (higher than
+    the middle), signaling fading-then-returning bullish momentum. Bear saucer mirrors
+    this below zero.
+    """
+    a, b, c = ao.shift(2), ao.shift(1), ao
+    bull = (a > 0) & (b > 0) & (c > 0) & (b < a) & (c > b)
+    bear = (a < 0) & (b < 0) & (c < 0) & (b > a) & (c < b)
+    return bull.fillna(False), bear.fillna(False)
+
+
+def calculate_ao_twin_peaks(ao: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    Bill Williams' AO twin peaks: two troughs (bull) or peaks (bear) on the same side of
+    zero, where the oscillator holds that side for the entire stretch between them, and
+    the second extreme is shallower than the first — confirming momentum is fading before
+    price actually reverses. Pivots are trailing-confirmed the same way as
+    calculate_price_divergence: bar j = i - lookback is a pivot if it's the min/max of the
+    (2*lookback+1)-bar window ending at i, so there's no lookahead.
+    """
+    n = len(ao)
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    a = ao.values
+
+    last_trough_idx = last_trough_val = None
+    last_peak_idx = last_peak_val = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window = a[i - win + 1: i + 1]
+        if np.isnan(window).any():
+            continue
+
+        if a[j] == window.min() and a[j] < 0:
+            if (last_trough_val is not None and a[j] > last_trough_val
+                    and (a[last_trough_idx:j + 1] < 0).all()):
+                bull[i] = True
+            last_trough_idx, last_trough_val = j, a[j]
+
+        if a[j] == window.max() and a[j] > 0:
+            if (last_peak_val is not None and a[j] < last_peak_val
+                    and (a[last_peak_idx:j + 1] > 0).all()):
+                bear[i] = True
+            last_peak_idx, last_peak_val = j, a[j]
+
+    return pd.Series(bull, index=ao.index), pd.Series(bear, index=ao.index)
+
+
 def calculate_volume_profile_poc(df: pd.DataFrame, lookback: int = 50, bins: int = 24) -> pd.Series:
     """Rolling point-of-control: the price bin with the most traded volume in each lookback window."""
     high, low, close, vol = df["High"].values, df["Low"].values, df["Close"].values, df["Volume"].values

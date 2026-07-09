@@ -16,6 +16,7 @@ from api.indicators import (
     calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
     calculate_ma_by_type, calculate_price_divergence,
     calculate_willr_failure_swings, calculate_trend_confirmation,
+    calculate_ao_saucer, calculate_ao_twin_peaks,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -108,6 +109,8 @@ def run_backtest(
     tsi_div_lookback       = int(cp.get("tsi_div_lookback", 5))
     ao_fast                = int(cp.get("ao_fast", 5))
     ao_slow                = int(cp.get("ao_slow", 34))
+    ao_div_lookback        = int(cp.get("ao_div_lookback", 5))
+    ao_twin_peaks_lookback = int(cp.get("ao_twin_peaks_lookback", 5))
     obv_sma_length         = int(cp.get("obv_sma_length", 20))
     vol_profile_lookback   = int(cp.get("vol_profile_lookback", 50))
     vol_profile_bins       = int(cp.get("vol_profile_bins", 24))
@@ -326,6 +329,17 @@ def run_backtest(
         )
     else:
         tsi_bull_div = tsi_bear_div = pd.Series(False, index=combined.index)
+
+    if "AO" in combined:
+        ao_bull_saucer, ao_bear_saucer = calculate_ao_saucer(combined["AO"])
+        ao_bull_twin, ao_bear_twin = calculate_ao_twin_peaks(combined["AO"], lookback=ao_twin_peaks_lookback)
+        ao_bull_div, ao_bear_div = calculate_price_divergence(
+            combined["Close"], combined["AO"], lookback=ao_div_lookback,
+        )
+    else:
+        ao_bull_saucer = ao_bear_saucer = pd.Series(False, index=combined.index)
+        ao_bull_twin = ao_bear_twin = pd.Series(False, index=combined.index)
+        ao_bull_div = ao_bear_div = pd.Series(False, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -623,6 +637,12 @@ def run_backtest(
                 "value": (ao_v := _sf(row.get("AO"))),
                 "zero_cross_bars_since": int(ao_zero_bars.iloc[i]),
                 "zero_cross_direction":  1 if (ao_v is not None and ao_v > 0) else -1,
+                "bull_saucer": bool(ao_bull_saucer.iloc[i]),
+                "bear_saucer": bool(ao_bear_saucer.iloc[i]),
+                "bull_twin_peaks": bool(ao_bull_twin.iloc[i]),
+                "bear_twin_peaks": bool(ao_bear_twin.iloc[i]),
+                "bullish_divergence": bool(ao_bull_div.iloc[i]),
+                "bearish_divergence": bool(ao_bear_div.iloc[i]),
             },
             "atr": {
                 "value":           _sf(row.get("ATR")),
