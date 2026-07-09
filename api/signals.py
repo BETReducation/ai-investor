@@ -48,7 +48,7 @@ DEFAULT_THRESHOLDS = {
     "supertrend_trigger": "flip",  # flip | bull_flip | bear_flip | trend_state | trailing_stop
     "supertrend_gap_lookback": 3,
     "donchian_on": 0,
-    "donchian_trigger": "breakout",  # breakout | bullish | bearish | middle_cross
+    "donchian_trigger": "breakout",  # breakout | bullish | bearish | middle_cross | two_channel_bull | two_channel_bear
     "donchian_mid_cross_lookback": 5,
     "hma_on": 0,
     "hma_trigger": "slope",  # slope | bullish_slope | bearish_slope | price_cross
@@ -632,6 +632,30 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "Donchian", "type": "NEUTRAL", "detail": "No recent midline cross", "weight": 0})
+        elif donchian_trigger == "two_channel_bull":
+            # Turtle-style long system: enter on an upper breakout of the (longer) entry
+            # channel, exit on a lower breakdown of the (shorter) exit channel.
+            exit_lower = donchian.get("exit_lower")
+            if close_v is not None and close_v >= donchian["upper"]:
+                signals.append({"indicator": "Donchian", "type": "BUY", "detail": "Long entry: breakout above the entry channel", "weight": 1})
+                buy_score += 1
+            elif close_v is not None and exit_lower is not None and close_v <= exit_lower:
+                signals.append({"indicator": "Donchian", "type": "SELL", "detail": "Long exit: breakdown below the exit channel", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Donchian", "type": "NEUTRAL", "detail": "No entry or exit breakout", "weight": 0})
+        elif donchian_trigger == "two_channel_bear":
+            # Turtle-style short system: enter on a lower breakdown of the (longer) entry
+            # channel, exit (cover) on an upper breakout of the (shorter) exit channel.
+            exit_upper = donchian.get("exit_upper")
+            if close_v is not None and close_v <= donchian["lower"]:
+                signals.append({"indicator": "Donchian", "type": "SELL", "detail": "Short entry: breakdown below the entry channel", "weight": 1})
+                sell_score += 1
+            elif close_v is not None and exit_upper is not None and close_v >= exit_upper:
+                signals.append({"indicator": "Donchian", "type": "BUY", "detail": "Short exit: breakout above the exit channel", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Donchian", "type": "NEUTRAL", "detail": "No entry or exit breakout", "weight": 0})
         else:  # "breakout" (default) — unchanged
             if close_v is not None and close_v >= donchian["upper"]:
                 signals.append({"indicator": "Donchian", "type": "BUY", "detail": "Breakout above the upper channel", "weight": 1})

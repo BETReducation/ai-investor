@@ -83,6 +83,7 @@ def run_backtest(
     ichimoku_kijun         = int(cp.get("ichimoku_kijun", 26))
     ichimoku_senkou        = int(cp.get("ichimoku_senkou", 52))
     donchian_length        = int(cp.get("donchian_length", 20))
+    donchian_exit_length   = int(cp.get("donchian_exit_length", 10))
     keltner_length         = int(cp.get("keltner_length", 20))
     keltner_atr_length     = int(cp.get("keltner_atr_length", 10))
     keltner_mult           = float(cp.get("keltner_mult", 2.0))
@@ -158,6 +159,11 @@ def run_backtest(
     hma_s         = _try(lambda: calculate_hma(df, length=hma_length))
     ichimoku_df   = _try(lambda: calculate_ichimoku(df, tenkan=ichimoku_tenkan, kijun=ichimoku_kijun, senkou=ichimoku_senkou))
     donchian_df   = _try(lambda: calculate_donchian(df, length=donchian_length))
+    donchian_exit_df = _try(lambda: calculate_donchian(df, length=donchian_exit_length))
+    if donchian_exit_df is not None:
+        donchian_exit_df = donchian_exit_df.rename(
+            columns={"DC_upper": "DC_exit_upper", "DC_mid": "DC_exit_mid", "DC_lower": "DC_exit_lower"}
+        )
     keltner_df    = _try(lambda: calculate_keltner(df, length=keltner_length, atr_length=keltner_atr_length, mult=keltner_mult))
     stdev_s       = _try(lambda: calculate_stdev(df, length=stdev_length))
     chaikin_vol_s = _try(lambda: calculate_chaikin_volatility(df, ema_length=chaikin_vol_ema_length, roc_length=chaikin_vol_roc_length))
@@ -173,7 +179,7 @@ def run_backtest(
     frames = [df[["Open", "High", "Low", "Close", "Volume"]],
               mas_df, vol_df, rsi_s.rename("RSI"), macd_df, bb_df]
     for extra in (adx_df, psar_df, supertrend_df, stoch_df, stochrsi_df, ichimoku_df,
-                  donchian_df, keltner_df, tsi_df, fib_df):
+                  donchian_df, donchian_exit_df, keltner_df, tsi_df, fib_df):
         if extra is not None:
             frames.append(extra)
     for name, s in (("CCI", cci_s), ("WILLR", willr_s), ("ROC", roc_s), ("MFI", mfi_s),
@@ -487,6 +493,7 @@ def run_backtest(
                 "lower": _sf(row.get("DC_lower")), "close": close,
                 "mid_cross_bars_since": int(donchian_mid_bars.iloc[i]),
                 "mid_cross_direction":  1 if (close is not None and row.get("DC_mid") == row.get("DC_mid") and close > row.get("DC_mid")) else -1,
+                "exit_upper": _sf(row.get("DC_exit_upper")), "exit_lower": _sf(row.get("DC_exit_lower")),
             },
             "hma": {
                 "value": _sf(row.get("HMA")),
