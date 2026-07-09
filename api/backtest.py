@@ -79,6 +79,7 @@ def run_backtest(
     atr_length             = int(cp.get("atr_length", 14))
     hma_length             = int(cp.get("hma_length", 20))
     hma_slope_lookback     = int(cp.get("hma_slope_lookback", 3))
+    hma_fast_length        = int(cp.get("hma_fast_length", 9))
     ichimoku_tenkan        = int(cp.get("ichimoku_tenkan", 9))
     ichimoku_kijun         = int(cp.get("ichimoku_kijun", 26))
     ichimoku_senkou        = int(cp.get("ichimoku_senkou", 52))
@@ -157,6 +158,7 @@ def run_backtest(
     mfi_s         = _try(lambda: calculate_mfi(df, length=mfi_length))
     atr_s         = _try(lambda: calculate_atr(df, length=atr_length))
     hma_s         = _try(lambda: calculate_hma(df, length=hma_length))
+    hma_fast_s    = _try(lambda: calculate_hma(df, length=hma_fast_length))
     ichimoku_df   = _try(lambda: calculate_ichimoku(df, tenkan=ichimoku_tenkan, kijun=ichimoku_kijun, senkou=ichimoku_senkou))
     donchian_df   = _try(lambda: calculate_donchian(df, length=donchian_length))
     donchian_exit_df = _try(lambda: calculate_donchian(df, length=donchian_exit_length))
@@ -183,7 +185,7 @@ def run_backtest(
         if extra is not None:
             frames.append(extra)
     for name, s in (("CCI", cci_s), ("WILLR", willr_s), ("ROC", roc_s), ("MFI", mfi_s),
-                    ("ATR", atr_s), ("HMA", hma_s), ("STDEV", stdev_s),
+                    ("ATR", atr_s), ("HMA", hma_s), ("HMA_FAST", hma_fast_s), ("STDEV", stdev_s),
                     ("CHAIKIN_VOL", chaikin_vol_s), ("HIST_VOL", hist_vol_s),
                     ("VWAP_ROLL", vwap_s), ("AD_LINE", ad_line_s), ("CMF", cmf_s),
                     ("AO", ao_s), ("VP_POC", vp_s)):
@@ -274,6 +276,14 @@ def run_backtest(
         srsi_d_col = rc[1] if len(rc) > 1 else None
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
+
+    # "Two HMA" cross triggers: crossover of a fast HMA (hma_fast_length) over/under the
+    # (slower) primary HMA — same bull/bear-cross-event pattern as the two-MA trigger.
+    hma_two_bars = (
+        _bars_since_cross_series(combined["HMA_FAST"], combined["HMA"])
+        if "HMA_FAST" in combined and "HMA" in combined
+        else pd.Series(999, index=combined.index)
+    )
 
     atr_trend_lb   = int(t.get("atr_trend_lookback", 5))
     stdev_trend_lb = int(t.get("stdev_trend_lookback", 5))
@@ -500,6 +510,9 @@ def run_backtest(
                 "prev":  _sf(hma_prev.iloc[i]),
                 "price_cross_bars_since": int(hma_price_bars.iloc[i]),
                 "price_cross_direction":  1 if (close is not None and row.get("HMA") == row.get("HMA") and close > row.get("HMA")) else -1,
+                "fast": (hma_fast_v := _sf(row.get("HMA_FAST"))),
+                "two_cross_bars_since": int(hma_two_bars.iloc[i]),
+                "two_cross_direction":  1 if (hma_fast_v is not None and row.get("HMA") == row.get("HMA") and hma_fast_v > row.get("HMA")) else -1,
             },
             "stochastic": {
                 "k": (stoch_k_v := _sf(row.get(stoch_k_col)) if stoch_k_col else None),

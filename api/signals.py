@@ -51,8 +51,9 @@ DEFAULT_THRESHOLDS = {
     "donchian_trigger": "breakout",  # breakout | bullish | bearish | middle_cross | two_channel_bull | two_channel_bear
     "donchian_mid_cross_lookback": 5,
     "hma_on": 0,
-    "hma_trigger": "slope",  # slope | bullish_slope | bearish_slope | price_cross
+    "hma_trigger": "slope",  # slope | bullish_slope | bearish_slope | price_cross | two_hma_bull | two_hma_bear
     "hma_price_cross_lookback": 5,
+    "hma_two_cross_lookback": 5,
     "stoch_on": 0, "stoch_oversold": 20, "stoch_overbought": 80,
     "stoch_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | signal_cross
     "stoch_signal_cross_lookback": 5,
@@ -693,6 +694,22 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "HMA", "type": "NEUTRAL", "detail": "No recent price/HMA cross", "weight": 0})
+        elif hma_trigger == "two_hma_bull":
+            bars = hma.get("two_cross_bars_since", 999)
+            direction = hma.get("two_cross_direction", 0)
+            if bars <= int(t.get("hma_two_cross_lookback", 5)) and direction > 0:
+                signals.append({"indicator": "HMA", "type": "BUY", "detail": "Fast HMA crossed above the slow HMA — bullish", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "HMA", "type": "NEUTRAL", "detail": "No recent bullish HMA crossover", "weight": 0})
+        elif hma_trigger == "two_hma_bear":
+            bars = hma.get("two_cross_bars_since", 999)
+            direction = hma.get("two_cross_direction", 0)
+            if bars <= int(t.get("hma_two_cross_lookback", 5)) and direction < 0:
+                signals.append({"indicator": "HMA", "type": "SELL", "detail": "Fast HMA crossed below the slow HMA — bearish", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "HMA", "type": "NEUTRAL", "detail": "No recent bearish HMA crossover", "weight": 0})
         else:  # "slope" (default) — unchanged
             if hma["value"] > hma["prev"]:
                 signals.append({"indicator": "HMA", "type": "BUY", "detail": "HMA sloping up", "weight": 1})

@@ -1147,11 +1147,18 @@ window.addEventListener('resize', () => {
             <option value="bullish_slope">Bullish slope only</option>
             <option value="bearish_slope">Bearish slope only</option>
             <option value="price_cross">Price crossing HMA</option>
+            <option value="two_hma_bull">Two HMA bull cross</option>
+            <option value="two_hma_bear">Two HMA bear cross</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Price cross lookback (bars)</span>
           <input type="number" class="param-input" id="hmaPriceCrossLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row"><span class="param-label">Fast HMA length</span><input type="number" class="param-input" id="hmaFastLength" value="9" min="2" max="200"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Two HMA cross lookback (bars)</span>
+          <input type="number" class="param-input" id="hmaTwoCrossLookback" value="5" min="1" max="30">
         </div>
       </div>
 
@@ -2089,6 +2096,7 @@ async function runBacktest() {
       donchian_exit_length: _iv('donchianExitLength', 10),
     hma_on: _on('togHma'), hma_length: _iv('hmaLength', 20), hma_slope_lookback: _iv('hmaSlopeLookback', 3),
       hma_trigger: _tv('hmaTrigger', 'slope'), hma_price_cross_lookback: _iv('hmaPriceCrossLookback', 5),
+      hma_fast_length: _iv('hmaFastLength', 9), hma_two_cross_lookback: _iv('hmaTwoCrossLookback', 5),
     stoch_on: _on('togStoch'), stoch_k: _iv('stochK', 14), stoch_d: _iv('stochD', 3), stoch_smooth: _iv('stochSmooth', 3),
       stoch_oversold: _iv('stochOversold', 20), stoch_overbought: _iv('stochOverbought', 80),
       stoch_trigger: _tv('stochTrigger', 'overbought_oversold'),
