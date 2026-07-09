@@ -72,6 +72,7 @@ def run_backtest(
     stochrsi_length        = int(cp.get("stochrsi_length", 14))
     stochrsi_k             = int(cp.get("stochrsi_k", 3))
     stochrsi_d             = int(cp.get("stochrsi_d", 3))
+    stochrsi_div_lookback  = int(cp.get("stochrsi_div_lookback", 5))
     cci_length             = int(cp.get("cci_length", 20))
     willr_length           = int(cp.get("willr_length", 14))
     roc_length             = int(cp.get("roc_length", 12))
@@ -274,6 +275,12 @@ def run_backtest(
         rc = list(stochrsi_df.columns)
         srsi_k_col = rc[0] if len(rc) > 0 else None
         srsi_d_col = rc[1] if len(rc) > 1 else None
+    if srsi_k_col:
+        stochrsi_bull_div, stochrsi_bear_div = calculate_price_divergence(
+            combined["Close"], combined[srsi_k_col], lookback=stochrsi_div_lookback,
+        )
+    else:
+        stochrsi_bull_div = stochrsi_bear_div = pd.Series(False, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -525,6 +532,8 @@ def run_backtest(
                 "d": (srsi_d_v := _sf(row.get(srsi_d_col)) if srsi_d_col else None),
                 "signal_cross_bars_since": int(stochrsi_signal_bars.iloc[i]),
                 "signal_cross_direction":  1 if (srsi_k_v is not None and srsi_d_v is not None and srsi_k_v > srsi_d_v) else -1,
+                "bullish_divergence": bool(stochrsi_bull_div.iloc[i]),
+                "bearish_divergence": bool(stochrsi_bear_div.iloc[i]),
             },
             "cci": {
                 "value": (cci_v := _sf(row.get("CCI"))),

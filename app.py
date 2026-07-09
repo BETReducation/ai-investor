@@ -121,6 +121,7 @@ def _extract_calc_params(args) -> dict:
 _BT_INT_CALC_KEYS = {
     "rsi_div_lookback": 5,
     "macd_div_lookback": 5, "macd_zscore_length": 100,
+    "stochrsi_div_lookback": 5,
     "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
     "donchian_length": 20, "donchian_exit_length": 10,
     "keltner_length": 20, "keltner_atr_length": 10,
@@ -178,7 +179,7 @@ _TRIGGER_WHITELISTS = {
     "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross", "two_channel_bull", "two_channel_bear"},
     "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross", "two_hma_bull", "two_hma_bear"},
     "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
-    "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross"},
+    "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross", "bullish_divergence", "bearish_divergence"},
     "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
     "willr_trigger":       {"overbought_oversold", "overbought", "oversold", "midline_cross"},
     "roc_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},

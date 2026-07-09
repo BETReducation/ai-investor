@@ -1206,11 +1206,17 @@ window.addEventListener('resize', () => {
             <option value="overbought">Overbought only</option>
             <option value="oversold">Oversold only</option>
             <option value="signal_cross">%K/%D signal cross</option>
+            <option value="bullish_divergence">Bullish divergence</option>
+            <option value="bearish_divergence">Bearish divergence</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Signal cross lookback (bars)</span>
           <input type="number" class="param-input" id="stochrsiSignalCrossLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence lookback (bars)</span>
+          <input type="number" class="param-input" id="stochrsiDivLookback" value="5" min="2" max="30">
         </div>
       </div>
 
@@ -2106,6 +2112,7 @@ async function runBacktest() {
       stochrsi_oversold: _iv('stochrsiOversold', 20), stochrsi_overbought: _iv('stochrsiOverbought', 80),
       stochrsi_trigger: _tv('stochrsiTrigger', 'overbought_oversold'),
       stochrsi_signal_cross_lookback: _iv('stochrsiSignalCrossLookback', 5),
+      stochrsi_div_lookback: _iv('stochrsiDivLookback', 5),
     cci_on: _on('togCci'), cci_length: _iv('cciLength', 20),
       cci_oversold: _iv('cciOversold', -100), cci_overbought: _iv('cciOverbought', 100),
       cci_trigger: _tv('cciTrigger', 'overbought_oversold'),

@@ -59,6 +59,7 @@ DEFAULT_THRESHOLDS = {
     "stoch_signal_cross_lookback": 5,
     "stochrsi_on": 0, "stochrsi_oversold": 20, "stochrsi_overbought": 80,
     "stochrsi_trigger": "overbought_oversold",
+    # overbought_oversold | overbought | oversold | signal_cross | bullish_divergence | bearish_divergence
     "stochrsi_signal_cross_lookback": 5,
     "cci_on": 0, "cci_oversold": -100, "cci_overbought": 100,
     "cci_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | centerline_cross
@@ -786,6 +787,18 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "Stochastic RSI", "type": "NEUTRAL", "detail": "No recent %K/%D cross", "weight": 0})
+        elif stochrsi_trigger == "bullish_divergence":
+            if stochrsi.get("bullish_divergence"):
+                signals.append({"indicator": "Stochastic RSI", "type": "BUY", "detail": "Bullish divergence — price made a lower low, %K a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Stochastic RSI", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif stochrsi_trigger == "bearish_divergence":
+            if stochrsi.get("bearish_divergence"):
+                signals.append({"indicator": "Stochastic RSI", "type": "SELL", "detail": "Bearish divergence — price made a higher high, %K a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Stochastic RSI", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "overbought_oversold" (default) — unchanged
             if srsi_k < t["stochrsi_oversold"]:
                 signals.append({"indicator": "Stochastic RSI", "type": "BUY", "detail": f"%K {srsi_k:.1f} — oversold", "weight": 1})
