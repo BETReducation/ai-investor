@@ -15,6 +15,7 @@ from api.indicators import (
     calculate_macd_divergence, calculate_macd_histogram_reversal, calculate_macd_zscore,
     calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
     calculate_ma_by_type, calculate_price_divergence,
+    calculate_willr_failure_swings, calculate_trend_confirmation,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -75,6 +76,8 @@ def run_backtest(
     stochrsi_div_lookback  = int(cp.get("stochrsi_div_lookback", 5))
     cci_length             = int(cp.get("cci_length", 20))
     willr_length           = int(cp.get("willr_length", 14))
+    willr_div_lookback     = int(cp.get("willr_div_lookback", 5))
+    willr_confirm_lookback = int(cp.get("willr_confirm_lookback", 5))
     roc_length             = int(cp.get("roc_length", 12))
     mfi_length             = int(cp.get("mfi_length", 14))
     atr_length             = int(cp.get("atr_length", 14))
@@ -281,6 +284,21 @@ def run_backtest(
         )
     else:
         stochrsi_bull_div = stochrsi_bear_div = pd.Series(False, index=combined.index)
+
+    if "WILLR" in combined:
+        willr_bull_div, willr_bear_div = calculate_price_divergence(
+            combined["Close"], combined["WILLR"], lookback=willr_div_lookback,
+        )
+        willr_bull_conf, willr_bear_conf = calculate_trend_confirmation(
+            combined["Close"], combined["WILLR"], lookback=willr_confirm_lookback,
+        )
+        willr_bull_fs, willr_bear_fs = calculate_willr_failure_swings(
+            combined["WILLR"], oversold=float(t.get("willr_oversold", -80)), overbought=float(t.get("willr_overbought", -20)),
+        )
+    else:
+        willr_bull_div = willr_bear_div = pd.Series(False, index=combined.index)
+        willr_bull_conf = willr_bear_conf = pd.Series(False, index=combined.index)
+        willr_bull_fs = willr_bear_fs = pd.Series(False, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -544,6 +562,12 @@ def run_backtest(
                 "value": (willr_v := _sf(row.get("WILLR"))),
                 "midline_bars_since": int(willr_midline_bars.iloc[i]),
                 "midline_direction":  1 if (willr_v is not None and willr_v > -50) else -1,
+                "bullish_divergence": bool(willr_bull_div.iloc[i]),
+                "bearish_divergence": bool(willr_bear_div.iloc[i]),
+                "bullish_confirmation": bool(willr_bull_conf.iloc[i]),
+                "bearish_confirmation": bool(willr_bear_conf.iloc[i]),
+                "bullish_failure_swing": bool(willr_bull_fs.iloc[i]),
+                "bearish_failure_swing": bool(willr_bear_fs.iloc[i]),
             },
             "roc": {
                 "value": (roc_v := _sf(row.get("ROC"))),

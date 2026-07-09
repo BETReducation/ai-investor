@@ -66,7 +66,10 @@ DEFAULT_THRESHOLDS = {
                                             # breakout_bull | breakout_bear
     "cci_centerline_lookback": 5,
     "willr_on": 0, "willr_oversold": -80, "willr_overbought": -20,
-    "willr_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | midline_cross
+    "willr_trigger": "overbought_oversold",
+    # overbought_oversold | overbought | oversold | midline_cross | momentum_failure_bull |
+    # momentum_failure_bear | trend_confirmation_bull | trend_confirmation_bear |
+    # bullish_divergence | bearish_divergence
     "willr_midline_lookback": 5,
     "roc_on": 0, "roc_threshold": 2.0,
     "roc_trigger": "threshold",  # threshold | bullish | bearish | centerline_cross
@@ -890,6 +893,42 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No recent midline cross", "weight": 0})
+        elif willr_trigger == "momentum_failure_bull":
+            if willr.get("bullish_failure_swing"):
+                signals.append({"indicator": "Williams %R", "type": "BUY", "detail": "Bullish failure swing — %R failed to make a new low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bullish failure swing", "weight": 0})
+        elif willr_trigger == "momentum_failure_bear":
+            if willr.get("bearish_failure_swing"):
+                signals.append({"indicator": "Williams %R", "type": "SELL", "detail": "Bearish failure swing — %R failed to make a new high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bearish failure swing", "weight": 0})
+        elif willr_trigger == "trend_confirmation_bull":
+            if willr.get("bullish_confirmation"):
+                signals.append({"indicator": "Williams %R", "type": "BUY", "detail": "Trend confirmed — price and %R both made a higher high", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bullish trend confirmation", "weight": 0})
+        elif willr_trigger == "trend_confirmation_bear":
+            if willr.get("bearish_confirmation"):
+                signals.append({"indicator": "Williams %R", "type": "SELL", "detail": "Trend confirmed — price and %R both made a lower low", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bearish trend confirmation", "weight": 0})
+        elif willr_trigger == "bullish_divergence":
+            if willr.get("bullish_divergence"):
+                signals.append({"indicator": "Williams %R", "type": "BUY", "detail": "Bullish divergence — price made a lower low, %R a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif willr_trigger == "bearish_divergence":
+            if willr.get("bearish_divergence"):
+                signals.append({"indicator": "Williams %R", "type": "SELL", "detail": "Bearish divergence — price made a higher high, %R a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Williams %R", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "overbought_oversold" (default) — unchanged
             if willr_v < t["willr_oversold"]:
                 signals.append({"indicator": "Williams %R", "type": "BUY", "detail": f"%R {willr_v:.1f} — oversold", "weight": 1})

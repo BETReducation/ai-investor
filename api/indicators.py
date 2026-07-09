@@ -585,13 +585,15 @@ def calculate_macd_zscore(macd_line: pd.Series, length: int = 100) -> pd.Series:
     return (macd_line - mean) / std.replace(0, np.nan)
 
 
-def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+def calculate_failure_swings(series: pd.Series, oversold: float, overbought: float) -> tuple[pd.Series, pd.Series]:
     """
-    Wilder's failure swings. Returns (bullish, bearish) boolean Series, True on the bar
-    the swing is confirmed (RSI breaks the high/low set during its pullback from the zone).
+    Wilder's failure swings, generic over any bounded oscillator with an oversold/overbought
+    zone (RSI 0-100, Williams %R -100-0, etc). Returns (bullish, bearish) boolean Series, True
+    on the bar the swing is confirmed (the series breaks the high/low set during its pullback
+    from the zone).
     """
-    n = len(rsi)
-    r = rsi.values
+    n = len(series)
+    r = series.values
     bull = np.zeros(n, dtype=bool)
     bear = np.zeros(n, dtype=bool)
 
@@ -652,7 +654,53 @@ def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbough
                 state = 0
         prev = v
 
-    return pd.Series(bull, index=rsi.index), pd.Series(bear, index=rsi.index)
+    return pd.Series(bull, index=series.index), pd.Series(bear, index=series.index)
+
+
+def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+    return calculate_failure_swings(rsi, oversold, overbought)
+
+
+def calculate_willr_failure_swings(willr: pd.Series, oversold: float = -80, overbought: float = -20) -> tuple[pd.Series, pd.Series]:
+    return calculate_failure_swings(willr, oversold, overbought)
+
+
+def calculate_trend_confirmation(close: pd.Series, indicator: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    The mirror image of calculate_price_divergence: detected off the same trailing-confirmed
+    pivots, but flags the bar a new price extreme is echoed by a same-direction extreme in the
+    oscillator (both higher highs, or both lower lows) — confirming the trend is still backed by
+    momentum, rather than warning that it's fading.
+    """
+    n = len(close)
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    c = close.values
+    r = indicator.values
+
+    last_low_price = last_low_ind = None
+    last_high_price = last_high_ind = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window_c = c[i - win + 1: i + 1]
+        window_r = r[i - win + 1: i + 1]
+        if np.isnan(window_c).any() or np.isnan(window_r).any():
+            continue
+
+        if c[j] == window_c.min():
+            if last_low_price is not None and c[j] < last_low_price and r[j] < last_low_ind:
+                bear[i] = True
+            last_low_price, last_low_ind = c[j], r[j]
+
+        if c[j] == window_c.max():
+            if last_high_price is not None and c[j] > last_high_price and r[j] > last_high_ind:
+                bull[i] = True
+            last_high_price, last_high_ind = c[j], r[j]
+
+    return pd.Series(bull, index=close.index), pd.Series(bear, index=close.index)
 
 
 # ── Bollinger Band trigger modes (Backtester) ─────────────────────────────────

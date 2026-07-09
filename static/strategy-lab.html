@@ -1262,11 +1262,22 @@ window.addEventListener('resize', () => {
             <option value="overbought">Overbought only</option>
             <option value="oversold">Oversold only</option>
             <option value="midline_cross">-50 midline crossover</option>
+            <option value="momentum_failure_bull">Momentum Failure Bull</option>
+            <option value="momentum_failure_bear">Momentum Failure Bear</option>
+            <option value="trend_confirmation_bull">Trend Confirmation Bull</option>
+            <option value="trend_confirmation_bear">Trend Confirmation Bear</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Midline cross lookback (bars)</span>
           <input type="number" class="param-input" id="willrMidlineLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row"><span class="param-label">Divergence lookback (bars)</span><input type="number" class="param-input" id="willrDivLookback" value="5" min="2" max="30"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trend confirmation lookback (bars)</span>
+          <input type="number" class="param-input" id="willrConfirmLookback" value="5" min="2" max="30">
         </div>
       </div>
 
@@ -2123,6 +2134,7 @@ async function runBacktest() {
       willr_oversold: _iv('willrOversold', -80), willr_overbought: _iv('willrOverbought', -20),
       willr_trigger: _tv('willrTrigger', 'overbought_oversold'),
       willr_midline_lookback: _iv('willrMidlineLookback', 5),
+      willr_div_lookback: _iv('willrDivLookback', 5), willr_confirm_lookback: _iv('willrConfirmLookback', 5),
     roc_on: _on('togRoc'), roc_length: _iv('rocLength', 12), roc_threshold: _fv('rocThreshold', 2.0),
       roc_trigger: _tv('rocTrigger', 'threshold'), roc_centerline_lookback: _iv('rocCenterlineLookback', 5),
     mfi_on: _on('togMfi'), mfi_length: _iv('mfiLength', 14),
