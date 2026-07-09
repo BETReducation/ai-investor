@@ -180,7 +180,7 @@ _TRIGGER_WHITELISTS = {
     "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross", "two_hma_bull", "two_hma_bear"},
     "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
     "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross", "bullish_divergence", "bearish_divergence"},
-    "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
+    "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross", "breakout_bull", "breakout_bear"},
     "willr_trigger":       {"overbought_oversold", "overbought", "oversold", "midline_cross"},
     "roc_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},
     "mfi_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},

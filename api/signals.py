@@ -62,7 +62,8 @@ DEFAULT_THRESHOLDS = {
     # overbought_oversold | overbought | oversold | signal_cross | bullish_divergence | bearish_divergence
     "stochrsi_signal_cross_lookback": 5,
     "cci_on": 0, "cci_oversold": -100, "cci_overbought": 100,
-    "cci_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | centerline_cross
+    "cci_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | centerline_cross |
+                                            # breakout_bull | breakout_bear
     "cci_centerline_lookback": 5,
     "willr_on": 0, "willr_oversold": -80, "willr_overbought": -20,
     "willr_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | midline_cross
@@ -837,6 +838,20 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "CCI", "type": "NEUTRAL", "detail": "No recent centerline cross", "weight": 0})
+        elif cci_trigger == "breakout_bull":
+            # Momentum-continuation read of the +100 level (opposite of "overbought" mean-reversion):
+            # a push above +100 signals strengthening bullish momentum, not exhaustion.
+            if cci_v > t["cci_overbought"]:
+                signals.append({"indicator": "CCI", "type": "BUY", "detail": f"CCI {cci_v:.1f} — bullish breakout above +100", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "CCI", "type": "NEUTRAL", "detail": f"CCI {cci_v:.1f} — no bullish breakout", "weight": 0})
+        elif cci_trigger == "breakout_bear":
+            if cci_v < t["cci_oversold"]:
+                signals.append({"indicator": "CCI", "type": "SELL", "detail": f"CCI {cci_v:.1f} — bearish breakout below -100", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "CCI", "type": "NEUTRAL", "detail": f"CCI {cci_v:.1f} — no bearish breakout", "weight": 0})
         else:  # "overbought_oversold" (default) — unchanged
             if cci_v < t["cci_oversold"]:
                 signals.append({"indicator": "CCI", "type": "BUY", "detail": f"CCI {cci_v:.1f} — oversold", "weight": 1})
