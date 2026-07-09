@@ -105,6 +105,7 @@ def run_backtest(
     tsi_long               = int(cp.get("tsi_long", 25))
     tsi_short              = int(cp.get("tsi_short", 13))
     tsi_signal             = int(cp.get("tsi_signal", 13))
+    tsi_div_lookback       = int(cp.get("tsi_div_lookback", 5))
     ao_fast                = int(cp.get("ao_fast", 5))
     ao_slow                = int(cp.get("ao_slow", 34))
     obv_sma_length         = int(cp.get("obv_sma_length", 20))
@@ -318,6 +319,13 @@ def run_backtest(
         )
     else:
         mfi_bull_div = mfi_bear_div = pd.Series(False, index=combined.index)
+
+    if "TSI" in combined:
+        tsi_bull_div, tsi_bear_div = calculate_price_divergence(
+            combined["Close"], combined["TSI"], lookback=tsi_div_lookback,
+        )
+    else:
+        tsi_bull_div = tsi_bear_div = pd.Series(False, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -608,6 +616,8 @@ def run_backtest(
                 "signal": _sf(row.get("TSI_signal")),
                 "centerline_bars_since": int(tsi_centerline_bars.iloc[i]),
                 "centerline_direction":  1 if (tsi_v is not None and tsi_v > 0) else -1,
+                "bullish_divergence": bool(tsi_bull_div.iloc[i]),
+                "bearish_divergence": bool(tsi_bear_div.iloc[i]),
             },
             "awesome_oscillator": {
                 "value": (ao_v := _sf(row.get("AO"))),

@@ -80,8 +80,10 @@ DEFAULT_THRESHOLDS = {
     "mfi_trigger": "overbought_oversold",
     # overbought_oversold | overbought | oversold | centerline_cross | bullish_divergence | bearish_divergence
     "mfi_centerline_lookback": 5,
-    "tsi_on": 0,
-    "tsi_trigger": "signal_cross",  # signal_cross | bullish | bearish | centerline_cross
+    "tsi_on": 0, "tsi_oversold": -25, "tsi_overbought": 25,
+    "tsi_trigger": "signal_cross",
+    # signal_cross | bullish | bearish | centerline_cross | overbought | oversold |
+    # bullish_divergence | bearish_divergence
     "tsi_centerline_lookback": 5,
     "ao_on": 0,
     "ao_trigger": "zero_state",  # zero_state | bullish | bearish | zero_cross
@@ -1086,6 +1088,30 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": "No recent centerline cross", "weight": 0})
+        elif tsi_trigger == "overbought":
+            if tsi_v > t["tsi_overbought"]:
+                signals.append({"indicator": "TSI", "type": "SELL", "detail": f"TSI {tsi_v:.1f} — overbought", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": f"TSI {tsi_v:.1f} — not overbought", "weight": 0})
+        elif tsi_trigger == "oversold":
+            if tsi_v < t["tsi_oversold"]:
+                signals.append({"indicator": "TSI", "type": "BUY", "detail": f"TSI {tsi_v:.1f} — oversold", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": f"TSI {tsi_v:.1f} — not oversold", "weight": 0})
+        elif tsi_trigger == "bullish_divergence":
+            if tsi.get("bullish_divergence"):
+                signals.append({"indicator": "TSI", "type": "BUY", "detail": "Bullish divergence — price made a lower low, TSI a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif tsi_trigger == "bearish_divergence":
+            if tsi.get("bearish_divergence"):
+                signals.append({"indicator": "TSI", "type": "SELL", "detail": "Bearish divergence — price made a higher high, TSI a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "TSI", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "signal_cross" (default) — unchanged
             if tsi_v > tsi_sig:
                 signals.append({"indicator": "TSI", "type": "BUY", "detail": "TSI above its signal line", "weight": 1})
