@@ -79,6 +79,8 @@ def run_backtest(
     willr_div_lookback     = int(cp.get("willr_div_lookback", 5))
     willr_confirm_lookback = int(cp.get("willr_confirm_lookback", 5))
     roc_length             = int(cp.get("roc_length", 12))
+    roc_div_lookback       = int(cp.get("roc_div_lookback", 5))
+    roc_momentum_lookback  = int(cp.get("roc_momentum_lookback", 3))
     mfi_length             = int(cp.get("mfi_length", 14))
     atr_length             = int(cp.get("atr_length", 14))
     hma_length             = int(cp.get("hma_length", 20))
@@ -299,6 +301,15 @@ def run_backtest(
         willr_bull_div = willr_bear_div = pd.Series(False, index=combined.index)
         willr_bull_conf = willr_bear_conf = pd.Series(False, index=combined.index)
         willr_bull_fs = willr_bear_fs = pd.Series(False, index=combined.index)
+
+    if "ROC" in combined:
+        roc_bull_div, roc_bear_div = calculate_price_divergence(
+            combined["Close"], combined["ROC"], lookback=roc_div_lookback,
+        )
+        roc_prev = combined["ROC"].shift(roc_momentum_lookback)
+    else:
+        roc_bull_div = roc_bear_div = pd.Series(False, index=combined.index)
+        roc_prev = pd.Series(np.nan, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -573,6 +584,9 @@ def run_backtest(
                 "value": (roc_v := _sf(row.get("ROC"))),
                 "centerline_bars_since": int(roc_centerline_bars.iloc[i]),
                 "centerline_direction":  1 if (roc_v is not None and roc_v > 0) else -1,
+                "prev": _sf(roc_prev.iloc[i]),
+                "bullish_divergence": bool(roc_bull_div.iloc[i]),
+                "bearish_divergence": bool(roc_bear_div.iloc[i]),
             },
             "mfi": {
                 "value": (mfi_v := _sf(row.get("MFI"))),

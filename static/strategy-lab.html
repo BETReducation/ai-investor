@@ -1296,11 +1296,20 @@ window.addEventListener('resize', () => {
             <option value="bullish">Bullish only</option>
             <option value="bearish">Bearish only</option>
             <option value="centerline_cross">Centerline crossover</option>
+            <option value="bull_momentum">Bull Momentum</option>
+            <option value="bear_momentum">Bear Momentum</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Centerline cross lookback (bars)</span>
           <input type="number" class="param-input" id="rocCenterlineLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row"><span class="param-label">Momentum lookback (bars)</span><input type="number" class="param-input" id="rocMomentumLookback" value="3" min="1" max="30"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Divergence lookback (bars)</span>
+          <input type="number" class="param-input" id="rocDivLookback" value="5" min="2" max="30">
         </div>
       </div>
 
@@ -2137,6 +2146,7 @@ async function runBacktest() {
       willr_div_lookback: _iv('willrDivLookback', 5), willr_confirm_lookback: _iv('willrConfirmLookback', 5),
     roc_on: _on('togRoc'), roc_length: _iv('rocLength', 12), roc_threshold: _fv('rocThreshold', 2.0),
       roc_trigger: _tv('rocTrigger', 'threshold'), roc_centerline_lookback: _iv('rocCenterlineLookback', 5),
+      roc_momentum_lookback: _iv('rocMomentumLookback', 3), roc_div_lookback: _iv('rocDivLookback', 5),
     mfi_on: _on('togMfi'), mfi_length: _iv('mfiLength', 14),
       mfi_oversold: _iv('mfiOversold', 20), mfi_overbought: _iv('mfiOverbought', 80),
       mfi_trigger: _tv('mfiTrigger', 'overbought_oversold'),

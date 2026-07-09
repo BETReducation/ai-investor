@@ -72,7 +72,9 @@ DEFAULT_THRESHOLDS = {
     # bullish_divergence | bearish_divergence
     "willr_midline_lookback": 5,
     "roc_on": 0, "roc_threshold": 2.0,
-    "roc_trigger": "threshold",  # threshold | bullish | bearish | centerline_cross
+    "roc_trigger": "threshold",
+    # threshold | bullish | bearish | centerline_cross | bull_momentum | bear_momentum |
+    # bullish_divergence | bearish_divergence
     "roc_centerline_lookback": 5,
     "mfi_on": 0, "mfi_oversold": 20, "mfi_overbought": 80,
     "mfi_trigger": "overbought_oversold",  # overbought_oversold | overbought | oversold | centerline_cross
@@ -967,6 +969,34 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": "No recent centerline cross", "weight": 0})
+        elif roc_trigger == "bull_momentum":
+            # Stronger than "bullish": ROC must be above threshold AND still rising,
+            # i.e. momentum is actively building, not just sitting above the level.
+            prev = roc.get("prev")
+            if prev is not None and roc_v > t["roc_threshold"] and roc_v > prev:
+                signals.append({"indicator": "ROC", "type": "BUY", "detail": f"ROC {roc_v:.1f}% — rising above threshold, bullish momentum building", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": "No bullish momentum building", "weight": 0})
+        elif roc_trigger == "bear_momentum":
+            prev = roc.get("prev")
+            if prev is not None and roc_v < -t["roc_threshold"] and roc_v < prev:
+                signals.append({"indicator": "ROC", "type": "SELL", "detail": f"ROC {roc_v:.1f}% — falling below threshold, bearish momentum building", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": "No bearish momentum building", "weight": 0})
+        elif roc_trigger == "bullish_divergence":
+            if roc.get("bullish_divergence"):
+                signals.append({"indicator": "ROC", "type": "BUY", "detail": "Bullish divergence — price made a lower low, ROC a higher low", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": "No bullish divergence", "weight": 0})
+        elif roc_trigger == "bearish_divergence":
+            if roc.get("bearish_divergence"):
+                signals.append({"indicator": "ROC", "type": "SELL", "detail": "Bearish divergence — price made a higher high, ROC a lower high", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "ROC", "type": "NEUTRAL", "detail": "No bearish divergence", "weight": 0})
         else:  # "threshold" (default) — unchanged
             if roc_v > t["roc_threshold"]:
                 signals.append({"indicator": "ROC", "type": "BUY", "detail": f"ROC {roc_v:.1f}% — upward momentum", "weight": 1})
