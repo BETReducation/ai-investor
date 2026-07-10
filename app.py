@@ -8,7 +8,6 @@ import bcrypt
 import json
 import os
 import secrets
-from itertools import zip_longest
 try:
     import psycopg2
     import psycopg2.extras
@@ -21,8 +20,6 @@ from api.indicators import calculate_all
 from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
-from api.news import get_cached_news
-from api.company_news import get_cached_company_news
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
@@ -881,29 +878,6 @@ def symbol_search():
             "type": q.get("quoteType") or "",
         })
     return jsonify({"results": results})
-
-
-@app.route("/api/finance-news", methods=["GET"])
-def finance_news():
-    """Slides for the homepage's rolling gallery: photo headlines from free finance
-    RSS feeds, and merger/product-release headlines for a watchlist of large
-    companies (Google News). Each source is cached to disk independently and only
-    refetched once its cache is a week or older, so this refreshes itself on the
-    first visit after a week has passed rather than needing a background scheduler."""
-    news_cache = get_cached_news()
-    company_cache = get_cached_company_news()
-
-    lists = [
-        news_cache.get("items", []),
-        company_cache.get("items", []),
-    ]
-    items = [item for group in zip_longest(*lists) for item in group if item is not None]
-
-    fetched_at = min(
-        (t for t in (news_cache.get("fetched_at"), company_cache.get("fetched_at")) if t),
-        default=None,
-    )
-    return jsonify({"items": items, "fetched_at": fetched_at})
 
 
 _CUSTOM_SYMBOLS_MAX = 50

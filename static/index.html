@@ -347,11 +347,9 @@ nav {
   pointer-events: none;
 }
 
-/* Rotating background gallery — current finance/banking/economy headlines and
-   large-company news, refetched weekly (see /api/finance-news). Sits behind
-   everything else in the hero; the ::after scrim keeps the headline/body
-   text readable over photos. Each slide is a single element (kind-specific
-   inner content), so rotation only ever needs to toggle one class per slide. */
+/* Rotating background gallery of self-hosted trading/graph/finance/banking
+   photos (see static/img/hero-gallery/). Sits behind everything else in the
+   hero; the ::after scrim keeps the headline/body text readable over photos. */
 .hero-gallery {
   position: absolute;
   inset: 0;
@@ -362,15 +360,13 @@ nav {
 .hero-gallery-slide {
   position: absolute;
   inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.75);
   opacity: 0;
   transition: opacity 1.4s ease;
 }
 .hero-gallery-slide.active { opacity: 1; }
-.hero-gallery-slide.photo {
-  background-size: cover;
-  background-position: center;
-  filter: saturate(0.75);
-}
 .hero-gallery::after {
   content: '';
   position: absolute;
@@ -381,72 +377,6 @@ nav {
 [data-theme="light"] .hero-gallery::after {
   background: linear-gradient(180deg, rgba(245,247,255,0.82) 0%, rgba(245,247,255,0.92) 55%, var(--bg) 100%);
 }
-.hero-gallery-caption {
-  position: absolute;
-  left: 50%;
-  bottom: 26px;
-  transform: translateX(-50%);
-  max-width: 88%;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-  text-align: center;
-  text-decoration: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.7s ease 0.3s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.hero-gallery-slide.active .hero-gallery-caption { opacity: 1; }
-.hero-gallery-caption:hover { color: var(--text); }
-
-/* Company card — same rotation slot and bottom anchor as the photo captions,
-   kept compact so it never collides with the hero buttons above it. */
-.gallery-company-card {
-  position: absolute;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  width: min(440px, 90%);
-  z-index: 1;
-  background: rgba(13,16,32,0.6);
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  padding: 10px 16px;
-  backdrop-filter: blur(6px);
-  text-decoration: none;
-  display: block;
-}
-[data-theme="light"] .gallery-company-card {
-  background: rgba(255,255,255,0.72);
-}
-.gallery-company-tag {
-  display: inline-block;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--green);
-  background: rgba(0,212,170,0.12);
-  border-radius: 5px;
-  padding: 2px 7px;
-  margin-bottom: 6px;
-}
-.gallery-company-headline {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  font-size: 13px;
-  line-height: 1.3;
-  color: var(--text);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.gallery-company-card:hover .gallery-company-headline { color: var(--green); }
 
 /* Grid pattern overlay */
 .hero-grid {
@@ -1282,71 +1212,65 @@ section.alt-bg { background: var(--bg2); }
 </footer>
 
 <script>
-// ── Hero rolling gallery: news photos, company headlines ──
-(async function heroGallery() {
+// ── Hero rolling gallery: self-hosted trading/graph/finance/banking photos ──
+(function heroGallery() {
   const wrap = document.getElementById('heroGallery');
   if (!wrap) return;
 
-  function buildPhotoSlide(item) {
-    const slide = document.createElement('div');
-    slide.className = 'hero-gallery-slide photo';
-    slide.style.backgroundImage = `url("${item.image}")`;
-    const caption = document.createElement('a');
-    caption.className = 'hero-gallery-caption';
-    caption.href = item.link;
-    caption.target = '_blank';
-    caption.rel = 'noopener noreferrer';
-    caption.textContent = item.title;
-    slide.appendChild(caption);
-    return slide;
+  const GALLERY_IMAGES = [
+    'frankfurt-trading-floor.jpg',
+    'nyse-facade.jpg',
+    'manhattan-financial-skyline.jpg',
+    'wall-street-bull.jpg',
+    'bank-building-mumbai.jpg',
+    'bank-building-portland.jpg',
+    'stock-tickers.jpg',
+    'ecb-frankfurt-dawn.jpg',
+    'nyse-trading-floor-historic.jpg',
+    'dow-jones-chart.jpg',
+    'taipei-financial-skyline.jpg',
+    'royal-exchange-london.jpg',
+    'candlestick-chart.jpg',
+    'tokyo-exchange-interior.jpg',
+  ];
+
+  // Shuffle so repeat visits don't always open on the same image.
+  const order = GALLERY_IMAGES.slice();
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
   }
 
-  function buildCompanySlide(item) {
+  const slides = order.map(() => {
     const slide = document.createElement('div');
-    slide.className = 'hero-gallery-slide company';
-    const card = document.createElement('a');
-    card.className = 'gallery-company-card';
-    card.href = item.link;
-    card.target = '_blank';
-    card.rel = 'noopener noreferrer';
-    card.innerHTML = `
-      <span class="gallery-company-tag">${item.company}</span>
-      <div class="gallery-company-headline"></div>
-    `;
-    card.querySelector('.gallery-company-headline').textContent = item.title;
-    slide.appendChild(card);
+    slide.className = 'hero-gallery-slide';
+    wrap.appendChild(slide);
     return slide;
-  }
+  });
 
-  try {
-    const res = await fetch('/api/finance-news');
-    if (!res.ok) return;
-    const data = await res.json();
-    const items = (data.items || []).filter(it => {
-      if (it.kind === 'photo') return !!it.image;
-      if (it.kind === 'company') return !!it.title;
-      return false;
-    });
-    if (!items.length) return;
-
-    const builders = { photo: buildPhotoSlide, company: buildCompanySlide };
-    items.forEach((item, i) => {
-      const slide = builders[item.kind](item);
-      if (i === 0) slide.classList.add('active');
-      wrap.appendChild(slide);
-    });
-
-    if (items.length > 1) {
-      const slides = wrap.querySelectorAll('.hero-gallery-slide');
-      let idx = 0;
-      setInterval(() => {
-        slides[idx].classList.remove('active');
-        idx = (idx + 1) % slides.length;
-        slides[idx].classList.add('active');
-      }, 10000);
+  // Only fetch an image the first time its slide is about to be shown, so a
+  // page load costs 2 photos, not all 14 — the rest load in the background
+  // as rotation reaches them (and are cached by the browser after that).
+  function loadSlide(i) {
+    const slide = slides[i];
+    if (!slide.style.backgroundImage) {
+      slide.style.backgroundImage = `url("/static/img/hero-gallery/${order[i]}")`;
     }
-  } catch (e) {
-    // Network hiccup — leave the gallery empty, hero glows still show through.
+  }
+
+  loadSlide(0);
+  slides[0].classList.add('active');
+
+  if (slides.length > 1) {
+    loadSlide(1);
+    let idx = 0;
+    setInterval(() => {
+      slides[idx].classList.remove('active');
+      idx = (idx + 1) % slides.length;
+      loadSlide(idx);
+      loadSlide((idx + 1) % slides.length);
+      slides[idx].classList.add('active');
+    }, 10000);
   }
 })();
 
