@@ -130,6 +130,7 @@ _BT_INT_CALC_KEYS = {
     "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
     "donchian_length": 20, "donchian_exit_length": 10,
     "keltner_length": 20, "keltner_atr_length": 10,
+    "keltner_walk_min_consecutive": 3, "keltner_squeeze_lookback": 10,
     "stdev_length": 20,
     "chaikin_vol_ema_length": 10, "chaikin_vol_roc_length": 10,
     "hist_vol_length": 20,
@@ -148,7 +149,7 @@ _BT_INT_CALC_KEYS = {
     "obv_div_lookback": 5, "ad_div_lookback": 5,
 }
 _BT_FLOAT_CALC_KEYS = {
-    "keltner_mult": 2.0,
+    "keltner_mult": 2.0, "keltner_walk_tolerance_pct": 0.5,
     "bb_squeeze_percentile": 20.0, "bb_walk_tolerance_pct": 0.5,
     "vwap_band_pct": 1.0,
 }
@@ -203,7 +204,10 @@ _TRIGGER_WHITELISTS = {
                              "bull_twin_peaks", "bear_twin_peaks",
                              "bull_divergence", "bear_divergence"},
     "atr_trigger":         {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
-    "keltner_trigger":     {"breakout", "bullish", "bearish", "middle_cross"},
+    "keltner_trigger":     {"breakout", "bullish", "bearish", "middle_cross",
+                             "bull_band_riding", "bear_band_riding",
+                             "bull_mean_reversion", "bear_mean_reversion",
+                             "keltner_squeeze"},
     "stdev_trigger":       {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
     "chaikin_vol_trigger": {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
     "hist_vol_trigger":    {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},

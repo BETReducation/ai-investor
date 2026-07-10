@@ -418,6 +418,24 @@ def calculate_keltner(df: pd.DataFrame, length: int = 20, atr_length: int = 10, 
     return pd.DataFrame({"KC_upper": basis + mult * atr_val, "KC_mid": basis, "KC_lower": basis - mult * atr_val})
 
 
+def calculate_keltner_squeeze(
+    close: pd.Series, bb_upper: pd.Series, bb_lower: pd.Series,
+    kc_upper: pd.Series, kc_lower: pd.Series, breakout_window: int = 10,
+) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """
+    TTM-style squeeze: Bollinger Bands compressed inside the Keltner Channel (bb_upper <
+    kc_upper and bb_lower > kc_lower) signals a volatility contraction — a breakout is
+    building. Returns (squeeze_on, bullish_release, bearish_release): the latter two fire
+    when a squeeze was active within the last `breakout_window` bars and price has now
+    closed beyond a Keltner band.
+    """
+    squeeze_on = (bb_upper < kc_upper) & (bb_lower > kc_lower)
+    was_squeezed = squeeze_on.rolling(breakout_window).max().fillna(0).astype(bool)
+    bullish_release = was_squeezed & (close > kc_upper)
+    bearish_release = was_squeezed & (close < kc_lower)
+    return squeeze_on.fillna(False), bullish_release.fillna(False), bearish_release.fillna(False)
+
+
 def calculate_stdev(df: pd.DataFrame, length: int = 20) -> pd.Series:
     return df["Close"].rolling(length).std()
 

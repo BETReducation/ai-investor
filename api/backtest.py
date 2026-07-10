@@ -16,7 +16,7 @@ from api.indicators import (
     calculate_bb_squeeze_breakout, calculate_bb_walking_band, calculate_bb_double_patterns,
     calculate_ma_by_type, calculate_price_divergence,
     calculate_willr_failure_swings, calculate_trend_confirmation,
-    calculate_ao_saucer, calculate_ao_twin_peaks,
+    calculate_ao_saucer, calculate_ao_twin_peaks, calculate_keltner_squeeze,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -96,6 +96,9 @@ def run_backtest(
     keltner_length         = int(cp.get("keltner_length", 20))
     keltner_atr_length     = int(cp.get("keltner_atr_length", 10))
     keltner_mult           = float(cp.get("keltner_mult", 2.0))
+    keltner_walk_min_consecutive = int(cp.get("keltner_walk_min_consecutive", 3))
+    keltner_walk_tolerance_pct   = float(cp.get("keltner_walk_tolerance_pct", 0.5))
+    keltner_squeeze_lookback     = int(cp.get("keltner_squeeze_lookback", 10))
     stdev_length           = int(cp.get("stdev_length", 20))
     chaikin_vol_ema_length = int(cp.get("chaikin_vol_ema_length", 10))
     chaikin_vol_roc_length = int(cp.get("chaikin_vol_roc_length", 10))
@@ -340,6 +343,19 @@ def run_backtest(
         ao_bull_saucer = ao_bear_saucer = pd.Series(False, index=combined.index)
         ao_bull_twin = ao_bear_twin = pd.Series(False, index=combined.index)
         ao_bull_div = ao_bear_div = pd.Series(False, index=combined.index)
+
+    if "KC_upper" in combined and "KC_lower" in combined:
+        kc_walking_upper, kc_walking_lower = calculate_bb_walking_band(
+            combined["Close"], combined["KC_upper"], combined["KC_lower"],
+            min_consecutive=keltner_walk_min_consecutive, tolerance_pct=keltner_walk_tolerance_pct,
+        )
+        kc_squeeze_on, kc_squeeze_bull, kc_squeeze_bear = calculate_keltner_squeeze(
+            combined["Close"], bb_upper_s, bb_lower_s, combined["KC_upper"], combined["KC_lower"],
+            breakout_window=keltner_squeeze_lookback,
+        )
+    else:
+        kc_walking_upper = kc_walking_lower = pd.Series(False, index=combined.index)
+        kc_squeeze_on = kc_squeeze_bull = kc_squeeze_bear = pd.Series(False, index=combined.index)
 
     hma_prev = combined["HMA"].shift(hma_slope_lookback) if "HMA" in combined else pd.Series(np.nan, index=combined.index)
 
@@ -653,6 +669,11 @@ def run_backtest(
                 "upper": _sf(row.get("KC_upper")), "mid": _sf(row.get("KC_mid")), "lower": _sf(row.get("KC_lower")),
                 "mid_cross_bars_since": int(keltner_mid_bars.iloc[i]),
                 "mid_cross_direction":  1 if (close is not None and row.get("KC_mid") == row.get("KC_mid") and close > row.get("KC_mid")) else -1,
+                "walking_upper": bool(kc_walking_upper.iloc[i]),
+                "walking_lower": bool(kc_walking_lower.iloc[i]),
+                "squeeze_on": bool(kc_squeeze_on.iloc[i]),
+                "squeeze_bull_release": bool(kc_squeeze_bull.iloc[i]),
+                "squeeze_bear_release": bool(kc_squeeze_bear.iloc[i]),
             },
             "stdev": {
                 "value":           _sf(row.get("STDEV")),

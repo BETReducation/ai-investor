@@ -93,7 +93,9 @@ DEFAULT_THRESHOLDS = {
     "atr_on": 0, "atr_trend_lookback": 5,
     "atr_trigger": "expansion",  # expansion | bullish_expansion | bearish_expansion | contraction
     "keltner_on": 0,
-    "keltner_trigger": "breakout",  # breakout | bullish | bearish | middle_cross
+    "keltner_trigger": "breakout",
+    # breakout | bullish | bearish | middle_cross | bull_band_riding | bear_band_riding |
+    # bull_mean_reversion | bear_mean_reversion | keltner_squeeze
     "keltner_mid_cross_lookback": 5,
     "stdev_on": 0, "stdev_trend_lookback": 5,
     "stdev_trigger": "expansion",
@@ -1279,6 +1281,43 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                     sell_score += 1
             else:
                 signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "No recent midline cross", "weight": 0})
+        elif keltner_trigger == "bull_band_riding":
+            if keltner.get("walking_upper"):
+                signals.append({"indicator": "Keltner Channels", "type": "BUY", "detail": "Price is riding the upper channel — strong uptrend", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "Not riding the upper channel", "weight": 0})
+        elif keltner_trigger == "bear_band_riding":
+            if keltner.get("walking_lower"):
+                signals.append({"indicator": "Keltner Channels", "type": "SELL", "detail": "Price is riding the lower channel — strong downtrend", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "Not riding the lower channel", "weight": 0})
+        elif keltner_trigger == "bull_mean_reversion":
+            # Opposite read of "bearish": touching/piercing the lower band is treated as
+            # oversold (expect a bounce back toward the mean) rather than a breakdown.
+            if close_now <= keltner["lower"]:
+                signals.append({"indicator": "Keltner Channels", "type": "BUY", "detail": "Price at/below the lower channel — oversold, expecting reversion", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "No mean-reversion setup", "weight": 0})
+        elif keltner_trigger == "bear_mean_reversion":
+            if close_now >= keltner["upper"]:
+                signals.append({"indicator": "Keltner Channels", "type": "SELL", "detail": "Price at/above the upper channel — overbought, expecting reversion", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "No mean-reversion setup", "weight": 0})
+        elif keltner_trigger == "keltner_squeeze":
+            if keltner.get("squeeze_bull_release"):
+                signals.append({"indicator": "Keltner Channels", "type": "BUY", "detail": "Squeeze released — breakout above the upper channel", "weight": 1})
+                buy_score += 1
+            elif keltner.get("squeeze_bear_release"):
+                signals.append({"indicator": "Keltner Channels", "type": "SELL", "detail": "Squeeze released — breakdown below the lower channel", "weight": 1})
+                sell_score += 1
+            elif keltner.get("squeeze_on"):
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "Squeeze active — Bollinger Bands inside the channel, watching for breakout", "weight": 0})
+            else:
+                signals.append({"indicator": "Keltner Channels", "type": "NEUTRAL", "detail": "No squeeze", "weight": 0})
         else:  # "breakout" (default) — unchanged
             if close_now >= keltner["upper"]:
                 signals.append({"indicator": "Keltner Channels", "type": "BUY", "detail": "Breakout above the upper channel", "weight": 1})

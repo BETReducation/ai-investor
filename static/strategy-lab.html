@@ -1446,11 +1446,22 @@ window.addEventListener('resize', () => {
             <option value="bullish">Bullish only</option>
             <option value="bearish">Bearish only</option>
             <option value="middle_cross">Midline cross</option>
+            <option value="bull_band_riding">Bull Band Riding</option>
+            <option value="bear_band_riding">Bear Band Riding</option>
+            <option value="bull_mean_reversion">Bull Mean Reversion</option>
+            <option value="bear_mean_reversion">Bear Mean Reversion</option>
+            <option value="keltner_squeeze">Keltner Squeeze</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Midline cross lookback (bars)</span>
           <input type="number" class="param-input" id="keltnerMidCrossLookback" value="5" min="1" max="30">
+        </div>
+        <div class="param-row"><span class="param-label">Band riding min. consecutive bars</span><input type="number" class="param-input" id="keltnerWalkMinConsecutive" value="3" min="2" max="20"></div>
+        <div class="param-row"><span class="param-label">Band riding tolerance %</span><input type="number" class="param-input" id="keltnerWalkTolerancePct" value="0.5" min="0" max="5" step="0.1"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Squeeze lookback (bars)</span>
+          <input type="number" class="param-input" id="keltnerSqueezeLookback" value="10" min="1" max="50">
         </div>
       </div>
 
@@ -2192,6 +2203,9 @@ async function runBacktest() {
       keltner_atr_length: _iv('keltnerAtrLength', 10), keltner_mult: _fv('keltnerMult', 2.0),
       keltner_trigger: _tv('keltnerTrigger', 'breakout'),
       keltner_mid_cross_lookback: _iv('keltnerMidCrossLookback', 5),
+      keltner_walk_min_consecutive: _iv('keltnerWalkMinConsecutive', 3),
+      keltner_walk_tolerance_pct: _fv('keltnerWalkTolerancePct', 0.5),
+      keltner_squeeze_lookback: _iv('keltnerSqueezeLookback', 10),
     stdev_on: _on('togStdev'), stdev_length: _iv('stdevLength', 20), stdev_trend_lookback: _iv('stdevTrendLookback', 5),
       stdev_trigger: _tv('stdevTrigger', 'expansion'),
     chaikin_vol_on: _on('togChaikinVol'), chaikin_vol_ema_length: _iv('chaikinVolEmaLength', 10),
