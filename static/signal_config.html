@@ -272,6 +272,7 @@ window.addEventListener('resize', () => {
           <input type="text" id="wlSearchInput" placeholder="Search any stock, ETF, crypto, forex, futures…"
                  autocomplete="off" oninput="onSymbolSearchInput(this.value)"
                  onfocus="if(this.value) onSymbolSearchInput(this.value)">
+          <div class="wl-search-hint" id="wlSearchHint" style="display:none;">Sign in to save symbols you search for</div>
           <div class="wl-search-results" id="wlSearchResults"></div>
         </div>
         <div class="wl-check-list" id="wlCheckList"></div>
@@ -1980,14 +1981,53 @@ function onSymbolSearchInput(q) {
   searchDebounceTimer = setTimeout(() => runSymbolSearch(query), 300);
 }
 
+// Yahoo's own search frequently buries (or omits) the actual index behind unrelated
+// futures/ETF/ETN matches for common nicknames like "nasdaq" or "ftse100" — this puts
+// the real index at the top of the results for the names people actually type.
+const INDEX_ALIASES = {
+  'nasdaq': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaqcomposite': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaq100': { symbol: '^NDX', name: 'NASDAQ 100', exchange: 'NASDAQ', type: 'INDEX' },
+  'dow': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'dowjones': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'sp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'sandp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'ftse': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'ftse100': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'dax': { symbol: '^GDAXI', name: 'DAX', exchange: 'XETRA', type: 'INDEX' },
+  'cac40': { symbol: '^FCHI', name: 'CAC 40', exchange: 'Paris', type: 'INDEX' },
+  'nikkei': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'nikkei225': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'hangseng': { symbol: '^HSI', name: 'Hang Seng Index', exchange: 'HKSE', type: 'INDEX' },
+  'russell2000': { symbol: '^RUT', name: 'Russell 2000', exchange: 'Chicago Options', type: 'INDEX' },
+  'vix': { symbol: '^VIX', name: 'CBOE Volatility Index', exchange: 'CBOE', type: 'INDEX' },
+};
+
+function matchIndexAlias(query) {
+  const norm = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!norm) return null;
+  if (INDEX_ALIASES[norm]) return INDEX_ALIASES[norm];
+  if (norm.length < 3) return null;
+  for (const key in INDEX_ALIASES) {
+    if (norm.startsWith(key) || key.startsWith(norm)) return INDEX_ALIASES[key];
+  }
+  return null;
+}
+
 async function runSymbolSearch(query) {
+  let results = [];
   try {
     const res = await fetch(API_BASE + '/api/symbol-search?q=' + encodeURIComponent(query));
     const data = await res.json();
-    searchResults = (data.results || []).filter(r => !assets[r.symbol]);
+    results = data.results || [];
   } catch (e) {
-    searchResults = [];
+    results = [];
   }
+  const alias = matchIndexAlias(query);
+  if (alias && !results.some(r => r.symbol === alias.symbol)) {
+    results = [alias, ...results];
+  }
+  searchResults = results.filter(r => !assets[r.symbol]);
   renderSearchResults(query);
 }
 
@@ -2059,7 +2099,17 @@ function exchangeToTvPrefix(exchange) {
   return null;
 }
 
+// yfinance indices ("^"-prefixed) don't carry a normal stock exchange, so they need
+// their own explicit map onto TradingView's free TVC index feed.
+const INDEX_TV_MAP = {
+  '^GSPC': 'TVC:SPX', '^DJI': 'TVC:DJI', '^IXIC': 'TVC:IXIC', '^NDX': 'TVC:NDX',
+  '^FTSE': 'TVC:UKX', '^GDAXI': 'TVC:DAX', '^FCHI': 'TVC:CAC40',
+  '^N225': 'TVC:NI225', '^HSI': 'TVC:HSI', '^RUT': 'TVC:RUT', '^VIX': 'TVC:VIX',
+  '^STOXX50E': 'TVC:SX5E', '^AXJO': 'TVC:XJO', '^BSESN': 'BSE:SENSEX', '^NSEI': 'TVC:NIFTY',
+};
+
 function guessTvSymbol(symbol, category, exchange) {
+  if (INDEX_TV_MAP[symbol]) return INDEX_TV_MAP[symbol];
   if (category === 'crypto') return 'BINANCE:' + symbol.replace('-USD', 'USDT').replace(/[^A-Z0-9]/g, '');
   if (category === 'forex') return 'FX:' + symbol.replace('=X', '');
   if (category === 'futures') return symbol.replace('=F', '1!');
@@ -2082,7 +2132,21 @@ function addManualSymbol() {
 }
 
 async function addCustomSymbol(symbol, label, category, exchange) {
-  if (!currentUser) { addLog('warn', 'SYMBOLS', 'Sign in to save custom symbols to your account'); return; }
+  if (!currentUser) {
+    // checkSession() may still be resolving on a fast click right after page load —
+    // double-check before rejecting rather than trusting a possibly-stale currentUser.
+    try {
+      const meRes = await fetch(API_BASE + '/api/me', { credentials: 'include' });
+      const me = await meRes.json();
+      if (me.authenticated) currentUser = me.username;
+    } catch (e) {}
+  }
+  if (!currentUser) {
+    const hint = document.getElementById('wlSearchHint');
+    if (hint) { hint.style.display = 'block'; hint.classList.add('wl-search-hint-error'); }
+    addLog('warn', 'SYMBOLS', 'Sign in to save custom symbols to your account');
+    return;
+  }
   if (assets[symbol]) { addLog('info', 'SYMBOLS', `${symbol} is already in your list`); return; }
 
   try {
@@ -2102,9 +2166,8 @@ async function addCustomSymbol(symbol, label, category, exchange) {
     searchResults = [];
     renderSearchResults('');
     renderWlDropdown();
-    renderWatchlist();
     addLog('info', 'SYMBOLS', `Added ${symbol} to your watchlist`);
-    fetchPrices(symbol).then(() => { updateWatchlist(); renderWlDropdown(); }).catch(() => {});
+    selectAsset(symbol); // switch the chart/indicator panel to the symbol just added
   } catch (e) {
     addLog('err', 'SYMBOLS', 'Add failed: ' + e.message);
   }
@@ -2164,8 +2227,16 @@ function toggleWatchlistDropdown() {
   const chev = document.getElementById('wlChev');
   if (dd)   dd.style.display = wlDropdownOpen ? 'flex' : 'none';
   if (chev) chev.classList.toggle('open', wlDropdownOpen);
-  if (wlDropdownOpen) renderWlDropdown();
-  else renderWatchlist();  // refresh active list when closing
+  if (wlDropdownOpen) {
+    renderWlDropdown();
+    const hint = document.getElementById('wlSearchHint');
+    if (hint) {
+      hint.classList.remove('wl-search-hint-error');
+      hint.style.display = currentUser ? 'none' : 'block';
+    }
+  } else {
+    renderWatchlist();  // refresh active list when closing
+  }
 }
 
 function wlRowClick(sym, event) {
