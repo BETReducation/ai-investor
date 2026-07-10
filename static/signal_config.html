@@ -725,37 +725,11 @@ window.addEventListener('resize', () => {
 
 const API_BASE = '';
 
-const symbolMap = {
-  'BTC/USDT': 'BTC-USD',
-  'ETH/USDT': 'ETH-USD',
-  'SOL/USDT': 'SOL-USD',
-  'ADA/USDT': 'ADA-USD',
-  'AAPL':     'AAPL',
-  'TSLA':     'TSLA',
-  'NVDA':     'NVDA',
-  'EUR/USD':  'EURUSD=X',
-  'GBP/USD':  'GBPUSD=X',
-  'USD/JPY':  'JPY=X',
-  'GOLD':     'GC=F',
-  'SILVER':   'SI=F',
-  'COPPER':   'HG=F',
-};
-
-const tvSymbolMap = {
-  'BTC/USDT': 'BINANCE:BTCUSDT',
-  'ETH/USDT': 'BINANCE:ETHUSDT',
-  'SOL/USDT': 'BINANCE:SOLUSDT',
-  'ADA/USDT': 'BINANCE:ADAUSDT',
-  'AAPL':     'NASDAQ:AAPL',
-  'TSLA':     'NASDAQ:TSLA',
-  'NVDA':     'NASDAQ:NVDA',
-  'EUR/USD':  'FX:EURUSD',
-  'GBP/USD':  'FX:GBPUSD',
-  'USD/JPY':  'FX:USDJPY',
-  'GOLD':     'TVC:GOLD',
-  'SILVER':   'TVC:SILVER',
-  'COPPER':   'TVC:COPPER',
-};
+// No built-in defaults — the watchlist starts empty and users populate it entirely
+// via the search feature (see registerCustomSymbol/loadCustomSymbols below), which
+// fills these in at runtime for whatever they search for and save.
+const symbolMap = {};
+const tvSymbolMap = {};
 
 const intervalMap = {
   '1m':  { period: '1d',  interval: '1m'  },
@@ -778,7 +752,7 @@ let currentUser = null;
 let dashboardInitialized = false;
 let engineRunning = false;
 let pollTimer = null;
-let currentAsset = 'BTC/USDT';
+let currentAsset = null;
 let currentView = 'price';
 let pendingTrade = null;
 let positions = [];
@@ -788,21 +762,9 @@ let tradesExecuted = 0;
 let tradeWins = 0;
 let signalsToday = 0;
 
-const assets = {
-  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'ADA/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'AAPL':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'TSLA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'NVDA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'USD/JPY':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'GOLD':     { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-  'SILVER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-  'COPPER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-};
+// Populated at runtime from the user's saved custom symbols (loadCustomSymbols) and
+// whatever they add via search (registerCustomSymbol) — no built-in defaults.
+const assets = {};
 
 let priceHistory = {};
 Object.keys(assets).forEach(a => { priceHistory[a] = []; });
@@ -1854,7 +1816,18 @@ function updateRiskBar() {
 let tvWidget = null;
 
 function initChart() {
-  loadTvChart('BINANCE:BTCUSDT');
+  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
+  else showChartPlaceholder();
+}
+
+function showChartPlaceholder() {
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  if (tvWidget) tvWidget = null;
+  container.innerHTML = `
+    <div class="chart-empty-state">
+      <div class="empty-state">NO ASSET SELECTED<br><span style="font-size:8px;">Click WATCHLIST ▼ and search to add one</span></div>
+    </div>`;
 }
 
 function loadTvChart(tvSym) {
@@ -1886,7 +1859,8 @@ function loadTvChart(tvSym) {
 }
 
 document.addEventListener('gca-theme-change', function() {
-  loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
+  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
+  else showChartPlaceholder();
 });
 
 function drawChart() { /* replaced by TradingView */ }
@@ -2262,7 +2236,8 @@ function toggleWatchlistItem(sym, enabled) {
   watchlistEnabled[sym] = enabled;
   if (!enabled && sym === currentAsset) {
     const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
-    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next] || 'BINANCE:BTCUSDT'); }
+    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next]); }
+    else { currentAsset = null; showChartPlaceholder(); }
   }
   _wlUpdateCount();
 }
@@ -2288,7 +2263,7 @@ function selectAsset(sym) {
   clearIndicatorBar();
   renderWatchlist();
   updateChartOverlay();
-  const tvSym = tvSymbolMap[sym] || 'BINANCE:BTCUSDT';
+  const tvSym = tvSymbolMap[sym] || sym;
   loadTvChart(tvSym);
   addLog('info', 'CHART', `Switched to ${sym} → ${tvSym}`);
   // Show cached data immediately if we already have it, then refresh in the background
