@@ -79,6 +79,13 @@ def _ensure_table() -> None:
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
+# yfinance has no native 2-hour/4-hour bars — synthesized by fetching hourly data and
+# resampling. Kept separate from VALID_INTERVALS since every other caller of that set
+# (elsewhere in the codebase, if any) should keep seeing only intervals yfinance itself
+# understands; only _fetch_ohlcv needs to know about the synthetic ones.
+_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h"}
+ALL_VALID_INTERVALS = VALID_INTERVALS | set(_RESAMPLE_INTERVALS)
+
 _INT_CALC_KEYS = {
     "rsi_length": 14, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9,
     "bb_length": 20, "ema_short": 9, "ema_long": 21,
@@ -359,6 +366,14 @@ def _ensure_default_user() -> None:
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
 
+def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last"}
+    if "Volume" in df.columns:
+        agg["Volume"] = "sum"
+    resampled = df.resample(rule).agg(agg)
+    return resampled.dropna(subset=["Open"])
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -366,8 +381,9 @@ def _fetch_ohlcv(
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> pd.DataFrame:
-    if interval not in VALID_INTERVALS:
+    if interval not in ALL_VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
+    fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
     ticker = yf.Ticker(symbol.upper())
     if start_date:
         import datetime as _dt
@@ -377,13 +393,17 @@ def _fetch_ohlcv(
                 _dt.date.fromisoformat(end_date)
         except ValueError:
             raise ValueError("start_date / end_date must be YYYY-MM-DD")
-        df = ticker.history(start=start_date, end=end_date or None, interval=interval, auto_adjust=True)
+        df = ticker.history(start=start_date, end=end_date or None, interval=fetch_interval, auto_adjust=True)
     else:
         if period not in VALID_PERIODS:
             raise ValueError(f"Invalid period: {period}")
-        df = ticker.history(period=period, interval=interval, auto_adjust=True)
+        df = ticker.history(period=period, interval=fetch_interval, auto_adjust=True)
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol}")
+    if interval in _RESAMPLE_INTERVALS:
+        df = _resample_ohlcv(df, interval)
+        if df.empty:
+            raise ValueError(f"No data returned for symbol: {symbol}")
     return df
 
 

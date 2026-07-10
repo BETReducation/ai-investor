@@ -686,14 +686,6 @@ window.addEventListener('resize', () => {
   <div class="lab-sidebar">
     <div class="sidebar-header">BACKTEST PARAMETERS</div>
 
-    <!-- Simple / Detailed indicator mode -->
-    <div style="display:flex;gap:4px;padding:10px 16px 0;">
-      <button id="modeSimple" onclick="setIndicatorMode('simple')"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">SIMPLE</button>
-      <button id="modeDetailed" onclick="setIndicatorMode('detailed')"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">DETAILED</button>
-    </div>
-
     <!-- Symbol + Period + Interval -->
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
@@ -716,6 +708,15 @@ window.addEventListener('resize', () => {
       </div>
       <div id="presetPanel">
         <select id="btPeriod" class="lab-input">
+          <option value="halfday">1/2 Day</option>
+          <option value="1d">1 Day</option>
+          <option value="2d">2 Days</option>
+          <option value="3d">3 Days</option>
+          <option value="4d">4 Days</option>
+          <option value="5d">5 Days</option>
+          <option value="1wk">1 Week</option>
+          <option value="2wk">2 Weeks</option>
+          <option value="3wk">3 Weeks</option>
           <option value="1mo">1 Month</option>
           <option value="3mo">3 Months</option>
           <option value="6mo">6 Months</option>
@@ -740,6 +741,8 @@ window.addEventListener('resize', () => {
         <option value="15m">15 Minutes</option>
         <option value="30m">30 Minutes</option>
         <option value="1h">1 Hour</option>
+        <option value="2h">2 Hours</option>
+        <option value="4h">4 Hours</option>
         <option value="1d" selected>1 Day</option>
         <option value="1wk">1 Week</option>
         <option value="1mo">1 Month</option>
@@ -798,25 +801,8 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
-    <!-- Simple indicators (RSI only) -->
-    <div class="ctrl-section" id="simpleIndicators">
-      <div class="ctrl-label">RSI SETTINGS</div>
-      <div class="param-row">
-        <span class="param-label">Length</span>
-        <input type="number" class="param-input" id="rsiLengthSimple" value="14" min="2" max="200">
-      </div>
-      <div class="param-row">
-        <span class="param-label">Oversold level</span>
-        <input type="number" class="param-input" id="rsiOversoldSimple" value="30" min="10" max="45">
-      </div>
-      <div class="param-row" style="margin-bottom:0;">
-        <span class="param-label">Overbought level</span>
-        <input type="number" class="param-input" id="rsiOverboughtSimple" value="70" min="55" max="90">
-      </div>
-    </div>
-
     <!-- Indicators with expandable params -->
-    <div class="ctrl-section" id="detailedIndicators" style="display:none;">
+    <div class="ctrl-section" id="detailedIndicators">
       <div class="ctrl-label">INDICATORS — click name to configure</div>
 
       <!-- RSI -->
@@ -1046,11 +1032,6 @@ window.addEventListener('resize', () => {
                  oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
         </div>
       </div>
-    </div>
-
-    <!-- Extended indicator set -->
-    <div class="ctrl-section" id="extendedIndicators" style="display:none;">
-      <div class="ctrl-label">MORE INDICATORS — click name to configure</div>
 
       <!-- ADX -->
       <div class="ind-row">
@@ -2118,10 +2099,15 @@ function buildChart(labels, stratData, bahData, trades, capital) {
   const buyPoints  = [];
   const sellPoints = [];
   trades.forEach(t => {
-    const ey = equityMap[t.entry_date] ?? null;
-    const xy = equityMap[t.exit_date]  ?? null;
-    if (ey !== null) buyPoints.push({ x: t.entry_date, y: ey });
-    if (xy !== null) sellPoints.push({ x: t.exit_date,  y: xy });
+    // labels/equityMap keys are truncated to the date part (see labels above) —
+    // entry_date/exit_date carry a full timestamp, so this lookup silently missed
+    // every trade until now (buyPoints/sellPoints were always empty).
+    const entryDate = t.entry_date.slice(0, 10);
+    const exitDate  = t.exit_date.slice(0, 10);
+    const ey = equityMap[entryDate] ?? null;
+    const xy = equityMap[exitDate]  ?? null;
+    if (ey !== null) buyPoints.push({ x: entryDate, y: ey });
+    if (xy !== null) sellPoints.push({ x: exitDate,  y: xy });
   });
 
   if (equityChart) equityChart.destroy();
@@ -2265,20 +2251,6 @@ function setState(id) {
 }
 
 // ── Period mode toggle ────────────────────────────────────────────────────────
-let indicatorMode = 'simple';
-
-function setIndicatorMode(mode) {
-  indicatorMode = mode;
-  const isDetailed = mode === 'detailed';
-  document.getElementById('simpleIndicators').style.display   = isDetailed ? 'none' : '';
-  document.getElementById('detailedIndicators').style.display = isDetailed ? '' : 'none';
-  document.getElementById('extendedIndicators').style.display  = isDetailed ? '' : 'none';
-  document.getElementById('modeSimple').style.background = isDetailed ? 'var(--bg-secondary)' : 'var(--accent-green)';
-  document.getElementById('modeSimple').style.color = isDetailed ? 'var(--text-secondary)' : '#000';
-  document.getElementById('modeDetailed').style.background = isDetailed ? 'var(--accent-green)' : 'var(--bg-secondary)';
-  document.getElementById('modeDetailed').style.color = isDetailed ? '#000' : 'var(--text-secondary)';
-}
-
 function setPeriodMode(mode) {
   const isCustom = mode === 'custom';
   document.getElementById('presetPanel').style.display = isCustom ? 'none' : '';
@@ -2329,12 +2301,35 @@ function toggleIndSettings(id) {
 }
 
 // ── Run backtest ──────────────────────────────────────────────────────────────
+// yfinance's `period` param only understands a fixed set of tokens (1d, 5d, 1mo, ...) —
+// there's no native "2 days" or "3 weeks". These short presets are implemented as an
+// explicit date range instead (today minus N days), routed through the same
+// start_date/end_date path as the CUSTOM date picker. "1/2 Day" has no finer-than-a-day
+// equivalent since dates are whole-day granularity, so it resolves to the same single
+// day as "1 Day" — the distinction only really shows up when paired with an intraday
+// timeframe (1m/5m/etc).
+const SHORT_PERIOD_DAYS = {
+  halfday: 1, '2d': 2, '3d': 3, '4d': 4, '1wk': 7, '2wk': 14, '3wk': 21,
+};
+
+function computeShortPresetRange(presetVal) {
+  const days = SHORT_PERIOD_DAYS[presetVal];
+  if (!days) return null;
+  const fmt = d => d.toISOString().slice(0, 10);
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+  return { startDate: fmt(start), endDate: fmt(end) };
+}
+
 async function runBacktest() {
   const symbol   = document.getElementById('btSymbol').value.trim().toUpperCase();
   const isCustom   = document.getElementById('customPanel').style.display !== 'none';
-  const period     = isCustom ? '2y' : document.getElementById('btPeriod').value;
-  const startDate  = isCustom ? document.getElementById('btStartDate').value : '';
-  const endDate    = isCustom ? document.getElementById('btEndDate').value : '';
+  const periodVal  = document.getElementById('btPeriod').value;
+  const shortRange = !isCustom ? computeShortPresetRange(periodVal) : null;
+  const period     = isCustom ? '2y' : (shortRange ? '5d' : periodVal);
+  const startDate  = isCustom ? document.getElementById('btStartDate').value : (shortRange ? shortRange.startDate : '');
+  const endDate    = isCustom ? document.getElementById('btEndDate').value   : (shortRange ? shortRange.endDate   : '');
   const interval   = document.getElementById('btInterval').value;
   const sl       = document.getElementById('stopLoss').value;
   const tp       = document.getElementById('takeProfit').value;
@@ -2342,20 +2337,12 @@ async function runBacktest() {
   const trailSL   = document.getElementById('trailSL').checked;
   const trailDist = document.getElementById('trailDist').value;
 
-  const isSimple = indicatorMode === 'simple';
-
-  const rsiLength    = isSimple
-    ? parseInt(document.getElementById('rsiLengthSimple').value)     || 14
-    : parseInt(document.getElementById('rsiLength').value)           || 14;
-  const rsiOs        = isSimple
-    ? parseInt(document.getElementById('rsiOversoldSimple').value)   || 30
-    : parseInt(document.getElementById('rsiOversold').value)         || 30;
-  const rsiOb        = isSimple
-    ? parseInt(document.getElementById('rsiOverboughtSimple').value) || 70
-    : parseInt(document.getElementById('rsiOverbought').value)       || 70;
-  const rsiSmoothing = isSimple ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
-  const rsiTrigger   = isSimple ? 'overbought_oversold' : (document.getElementById('rsiTrigger').value || 'overbought_oversold');
-  const rsiDivLookback = isSimple ? 5 : (parseInt(document.getElementById('rsiDivLookback').value) || 5);
+  const rsiLength      = parseInt(document.getElementById('rsiLength').value)     || 14;
+  const rsiOs          = parseInt(document.getElementById('rsiOversold').value)   || 30;
+  const rsiOb          = parseInt(document.getElementById('rsiOverbought').value) || 70;
+  const rsiSmoothing   = document.getElementById('rsiSmoothing').value || 'wilder';
+  const rsiTrigger     = document.getElementById('rsiTrigger').value || 'overbought_oversold';
+  const rsiDivLookback = parseInt(document.getElementById('rsiDivLookback').value) || 5;
 
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
@@ -2382,16 +2369,16 @@ async function runBacktest() {
   const maTriggerLookback = parseInt(document.getElementById('maTriggerLookback').value) || 5;
   const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
 
-  const rsiOn  = isSimple ? 1 : (document.getElementById('togRsi').checked  ? 1 : 0);
-  const macdOn = isSimple ? 0 : (document.getElementById('togMacd').checked ? 1 : 0);
-  const bbOn   = isSimple ? 0 : (document.getElementById('togBb').checked   ? 1 : 0);
-  const maOn   = isSimple ? 0 : (document.getElementById('togMa').checked   ? 1 : 0);
-  const volOn  = isSimple ? 0 : (document.getElementById('togVol').checked  ? 1 : 0);
+  const rsiOn  = document.getElementById('togRsi').checked  ? 1 : 0;
+  const macdOn = document.getElementById('togMacd').checked ? 1 : 0;
+  const bbOn   = document.getElementById('togBb').checked   ? 1 : 0;
+  const maOn   = document.getElementById('togMa').checked   ? 1 : 0;
+  const volOn  = document.getElementById('togVol').checked  ? 1 : 0;
 
   // ── Extended indicator set ──────────────────────────────────────────────
   const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
-  const _on = (id) => isSimple ? 0 : (document.getElementById(id).checked ? 1 : 0);
+  const _on = (id) => document.getElementById(id).checked ? 1 : 0;
   const _tv = (id, fb) => document.getElementById(id).value || fb;
 
   const extParams = {
@@ -2547,13 +2534,20 @@ function fmtMoney(capital, pct) {
   return sign + '£' + abs.toFixed(0);
 }
 
+const INTERVAL_LABELS = {
+  '1m': '1 Minute', '5m': '5 Minute', '15m': '15 Minute', '30m': '30 Minute',
+  '1h': '1 Hour', '2h': '2 Hour', '4h': '4 Hour',
+  '1d': 'Daily', '1wk': 'Weekly', '1mo': 'Monthly', '3mo': '3 Month',
+};
+
 function renderResults(data) {
-  const { symbol, period, metrics, trades, equity_curve, bah_curve } = data;
+  const { symbol, period, interval, metrics, trades, equity_curve, bah_curve } = data;
   const capital = parseFloat(document.getElementById('btCapital').value) || 10000;
 
   // Context bar
   document.getElementById('ctxSymbol').textContent = symbol;
-  document.getElementById('ctxPeriod').textContent = `Period: ${period}  ·  Daily bars`;
+  const barsLabel = (INTERVAL_LABELS[interval] || interval || 'Daily') + ' bars';
+  document.getElementById('ctxPeriod').textContent = `Period: ${period}  ·  ${barsLabel}`;
   document.getElementById('ctxTrades').textContent = `${metrics.num_trades} trade${metrics.num_trades !== 1 ? 's' : ''}`;
 
   const noTradeWarn = metrics.num_trades === 0
