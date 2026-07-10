@@ -1913,6 +1913,12 @@ async function initMySymbols() {
 initMySymbols();
 
 function onBtSymbolInput(q) {
+  // A real keystroke (as opposed to picking a search result, which sets .value
+  // programmatically and never fires oninput) means whatever was previously picked no
+  // longer matches what's in the field — don't let a stale category/exchange guess
+  // leak onto a manually-typed symbol when the user hits Save.
+  lastPickedCategory = null;
+  lastPickedExchange = null;
   clearTimeout(btSearchTimer);
   const query = q.trim();
   if (!query) {
@@ -1923,14 +1929,53 @@ function onBtSymbolInput(q) {
   btSearchTimer = setTimeout(() => runBtSymbolSearch(query), 300);
 }
 
+// Yahoo's own search frequently buries (or omits) the actual index behind unrelated
+// futures/ETF/ETN matches for common nicknames like "nasdaq" or "ftse100" — this puts
+// the real index at the top of the results for the names people actually type.
+const INDEX_ALIASES = {
+  'nasdaq': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaqcomposite': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaq100': { symbol: '^NDX', name: 'NASDAQ 100', exchange: 'NASDAQ', type: 'INDEX' },
+  'dow': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'dowjones': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'sp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'sandp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'ftse': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'ftse100': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'dax': { symbol: '^GDAXI', name: 'DAX', exchange: 'XETRA', type: 'INDEX' },
+  'cac40': { symbol: '^FCHI', name: 'CAC 40', exchange: 'Paris', type: 'INDEX' },
+  'nikkei': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'nikkei225': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'hangseng': { symbol: '^HSI', name: 'Hang Seng Index', exchange: 'HKSE', type: 'INDEX' },
+  'russell2000': { symbol: '^RUT', name: 'Russell 2000', exchange: 'Chicago Options', type: 'INDEX' },
+  'vix': { symbol: '^VIX', name: 'CBOE Volatility Index', exchange: 'CBOE', type: 'INDEX' },
+};
+
+function matchIndexAlias(query) {
+  const norm = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!norm) return null;
+  if (INDEX_ALIASES[norm]) return INDEX_ALIASES[norm];
+  if (norm.length < 3) return null;
+  for (const key in INDEX_ALIASES) {
+    if (norm.startsWith(key) || key.startsWith(norm)) return INDEX_ALIASES[key];
+  }
+  return null;
+}
+
 async function runBtSymbolSearch(query) {
+  let results = [];
   try {
     const res = await fetch('/api/symbol-search?q=' + encodeURIComponent(query));
     const data = await res.json();
-    btSearchResults = data.results || [];
+    results = data.results || [];
   } catch (e) {
-    btSearchResults = [];
+    results = [];
   }
+  const alias = matchIndexAlias(query);
+  if (alias && !results.some(r => r.symbol === alias.symbol)) {
+    results = [alias, ...results];
+  }
+  btSearchResults = results;
   renderBtSearchResults(query);
 }
 
@@ -1966,12 +2011,14 @@ function categoryFromQuoteType(symbol, quoteType) {
 }
 
 let lastPickedCategory = null;
+let lastPickedExchange = null;
 
 function pickBtSearchResult(idx) {
   const r = btSearchResults[idx];
   if (!r) return;
   document.getElementById('btSymbol').value = r.symbol;
   lastPickedCategory = categoryFromQuoteType(r.symbol, r.type);
+  lastPickedExchange = r.exchange || null;
   btSearchResults = [];
   renderBtSearchResults('');
 }
@@ -1979,6 +2026,7 @@ function pickBtSearchResult(idx) {
 function pickBtSymbol(symbol) {
   document.getElementById('btSymbol').value = symbol;
   lastPickedCategory = null;
+  lastPickedExchange = null;
   btSearchResults = [];
   renderBtSearchResults('');
 }
@@ -1995,12 +2043,16 @@ async function saveCurrentSymbol() {
   }
   if (mySymbols.some(s => s.symbol === symbol)) return;
 
+  // lastPickedCategory/Exchange only reflect the symbol currently in the input if it
+  // was set by actually picking it (from search or an alias) — a manually-edited or
+  // freshly-typed symbol shouldn't inherit a stale guess from a previous pick.
   const category = lastPickedCategory || categoryFromQuoteType(symbol, null);
+  const exchange = lastPickedExchange || '';
   try {
     const res = await fetch('/api/custom-symbols', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol, label: symbol, category }),
+      body: JSON.stringify({ symbol, label: symbol, category, exchange }),
     });
     const data = await res.json();
     if (!res.ok) {
