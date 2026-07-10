@@ -10,15 +10,20 @@ import xml.etree.ElementTree as ET
 NEWS_CACHE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "news_cache.json")
 REFRESH_INTERVAL_SECONDS = 7 * 24 * 60 * 60  # 1 week
 
-# Free, no-API-key finance/banking/economy RSS feeds. Each is checked independently —
-# one going down or dropping images doesn't take out the others. (investing.com was
-# tried and dropped: its image CDN sends Cross-Origin-Resource-Policy: same-origin,
-# which silently blocks the images from ever rendering as a background-image on our
-# origin in Chromium-based browsers.)
+# Free, no-API-key Bloomberg RSS feeds. Each is checked independently — one going
+# down or dropping images doesn't take out the others. (investing.com was tried and
+# dropped: its image CDN sends Cross-Origin-Resource-Policy: same-origin, which
+# silently blocks the images from ever rendering as a background-image on our
+# origin in Chromium-based browsers. marketplace.org, tradingeconomics.com, and
+# apnews.com/hub/economy were also tried and dropped: none of them expose a working
+# free RSS feed — marketplace.org's feed route 404s, tradingeconomics.com blocks RSS
+# requests outright, and AP's "?output=rss" trick just returns the HTML page. Bloomberg
+# has no dedicated "finance" feed either, so "markets" is used as the closest match.)
 FEEDS = [
-    "https://feeds.bbci.co.uk/news/business/rss.xml",
-    "https://feeds.content.dowjones.io/public/rss/mw_topstories",
-    "https://www.theguardian.com/uk/business/rss",
+    "https://feeds.bloomberg.com/markets/news.rss",
+    "https://feeds.bloomberg.com/economics/news.rss",
+    "https://feeds.bloomberg.com/industries/news.rss",
+    "https://feeds.bloomberg.com/technology/news.rss",
 ]
 
 _MEDIA_NS = "{http://search.yahoo.com/mrss/}"
