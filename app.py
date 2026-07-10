@@ -880,6 +880,7 @@ def add_custom_symbol():
         return jsonify({"error": "symbol is required"}), 400
     label = (data.get("label") or symbol).strip()
     category = (data.get("category") or "stock").strip().lower()
+    exchange = (data.get("exchange") or "").strip()
 
     users = _load_users()
     if current_user.id not in users:
@@ -896,7 +897,7 @@ def add_custom_symbol():
             df = None
         if df is None or df.empty:
             return jsonify({"error": f"No data found for '{symbol}' — check the ticker"}), 400
-        custom.append({"symbol": symbol, "label": label, "category": category})
+        custom.append({"symbol": symbol, "label": label, "category": category, "exchange": exchange})
 
     prefs["custom_symbols"] = custom
     _save_preferences(current_user.id, prefs)

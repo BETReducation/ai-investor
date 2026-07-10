@@ -2028,31 +2028,60 @@ function categoryFromQuoteType(symbol, quoteType) {
   return 'stock';
 }
 
-// TradingView needs exchange-qualified symbols for crypto/forex; for everything else
-// the widget's own symbol resolver (allow_symbol_change:true) usually handles a bare
-// yfinance-style ticker directly, or lets the user pick the right one from its own
-// search if not — so this only needs to special-case the formats TV can't parse as-is.
-function guessTvSymbol(symbol, category) {
+// A bare ticker with no exchange prefix ("MSFT" instead of "NASDAQ:MSFT") frequently
+// fails to resolve on first load in the TradingView widget — it shows its own "This
+// symbol doesn't exist" error rather than falling back gracefully. So stocks/ETFs/etc.
+// need a real EXCHANGE:SYMBOL mapping, built from the exchange Yahoo's search already
+// gave us; only unrecognized exchanges fall back to the bare symbol as a last resort
+// (the widget's own allow_symbol_change lets the user manually fix it from there).
+function exchangeToTvPrefix(exchange) {
+  const ex = (exchange || '').toUpperCase();
+  const map = [
+    ['NASDAQ', 'NASDAQ'],
+    ['NYSE ARCA', 'AMEX'], ['NYSEARCA', 'AMEX'], ['NYSE AMERICAN', 'AMEX'], ['AMEX', 'AMEX'],
+    ['NYSE', 'NYSE'],
+    ['BATS', 'BATS'], ['CBOE', 'CBOE'],
+    ['LONDON', 'LSE'], ['LSE', 'LSE'],
+    ['TORONTO', 'TSX'], ['TSX', 'TSX'], ['TSXV', 'TSXV'],
+    ['FRANKFURT', 'FWB'], ['XETRA', 'XETR'], ['GERMANY', 'XETR'],
+    ['PARIS', 'EURONEXT'], ['AMSTERDAM', 'EURONEXT'], ['BRUSSELS', 'EURONEXT'],
+    ['HONG KONG', 'HKEX'],
+    ['TOKYO', 'TSE'],
+    ['SWISS', 'SIX'],
+    ['AUSTRALIA', 'ASX'], ['ASX', 'ASX'],
+    ['SHANGHAI', 'SSE'], ['SHENZHEN', 'SZSE'],
+    ['INDIA', 'NSE'], ['NSE', 'NSE'], ['BSE', 'BSE'],
+    ['SINGAPORE', 'SGX'],
+  ];
+  for (const [needle, prefix] of map) {
+    if (ex.includes(needle)) return prefix;
+  }
+  return null;
+}
+
+function guessTvSymbol(symbol, category, exchange) {
   if (category === 'crypto') return 'BINANCE:' + symbol.replace('-USD', 'USDT').replace(/[^A-Z0-9]/g, '');
   if (category === 'forex') return 'FX:' + symbol.replace('=X', '');
   if (category === 'futures') return symbol.replace('=F', '1!');
-  return symbol;
+  const prefix = exchangeToTvPrefix(exchange);
+  const cleanSymbol = symbol.split('.')[0]; // strip yfinance suffixes like .L, .TO, .SW
+  return prefix ? `${prefix}:${cleanSymbol}` : symbol;
 }
 
 function addSearchResult(idx) {
   const r = searchResults[idx];
   if (!r) return;
-  addCustomSymbol(r.symbol, r.name, categoryFromQuoteType(r.symbol, r.type));
+  addCustomSymbol(r.symbol, r.name, categoryFromQuoteType(r.symbol, r.type), r.exchange);
 }
 
 function addManualSymbol() {
   const input = document.getElementById('wlSearchInput');
   const symbol = (input?.value || '').trim().toUpperCase();
   if (!symbol) return;
-  addCustomSymbol(symbol, symbol, categoryFromQuoteType(symbol, null));
+  addCustomSymbol(symbol, symbol, categoryFromQuoteType(symbol, null), '');
 }
 
-async function addCustomSymbol(symbol, label, category) {
+async function addCustomSymbol(symbol, label, category, exchange) {
   if (!currentUser) { addLog('warn', 'SYMBOLS', 'Sign in to save custom symbols to your account'); return; }
   if (assets[symbol]) { addLog('info', 'SYMBOLS', `${symbol} is already in your list`); return; }
 
@@ -2060,12 +2089,12 @@ async function addCustomSymbol(symbol, label, category) {
     const res = await fetch(API_BASE + '/api/custom-symbols', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbol, label, category }),
+      body: JSON.stringify({ symbol, label, category, exchange }),
     });
     const data = await res.json();
     if (!res.ok) { addLog('err', 'SYMBOLS', data.error || `Failed to add ${symbol}`); return; }
 
-    registerCustomSymbol(symbol, category);
+    registerCustomSymbol(symbol, category, exchange);
     watchlistEnabled[symbol] = true;
 
     const input = document.getElementById('wlSearchInput');
@@ -2081,9 +2110,9 @@ async function addCustomSymbol(symbol, label, category) {
   }
 }
 
-function registerCustomSymbol(symbol, category) {
+function registerCustomSymbol(symbol, category, exchange) {
   symbolMap[symbol] = symbol;
-  tvSymbolMap[symbol] = guessTvSymbol(symbol, category);
+  tvSymbolMap[symbol] = guessTvSymbol(symbol, category, exchange);
   assets[symbol] = { price: 0, vol: 1.0, category: category || 'stock', change: 0 };
   priceHistory[symbol] = [];
   customSymbolKeys.add(symbol);
@@ -2121,7 +2150,7 @@ async function loadCustomSymbols() {
     const data = await res.json();
     (data.symbols || []).forEach(s => {
       if (assets[s.symbol]) return; // already a built-in — don't overwrite it
-      registerCustomSymbol(s.symbol, s.category);
+      registerCustomSymbol(s.symbol, s.category, s.exchange);
       watchlistEnabled[s.symbol] = true;
     });
     renderWlDropdown();
