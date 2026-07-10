@@ -8,6 +8,7 @@ import bcrypt
 import json
 import os
 import secrets
+from itertools import zip_longest
 try:
     import psycopg2
     import psycopg2.extras
@@ -21,6 +22,8 @@ from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 from api.news import get_cached_news
+from api.econ_stats import get_cached_stats
+from api.company_news import get_cached_company_news
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
@@ -883,12 +886,28 @@ def symbol_search():
 
 @app.route("/api/finance-news", methods=["GET"])
 def finance_news():
-    """Headlines + images for the homepage's rolling gallery, pulled from a handful of
-    free finance RSS feeds (no API key). Cached to disk and only refetched once the
-    cache is a week or older, so this refreshes itself on the first visit after a week
-    has passed rather than needing a background scheduler."""
-    cache = get_cached_news()
-    return jsonify({"items": cache.get("items", []), "fetched_at": cache.get("fetched_at")})
+    """Slides for the homepage's rolling gallery: photo headlines from free finance
+    RSS feeds, GDP/inflation/unemployment stats for major economies (World Bank),
+    and merger/product-release headlines for a watchlist of large companies (Google
+    News). Each source is cached to disk independently and only refetched once its
+    cache is a week or older, so this refreshes itself on the first visit after a
+    week has passed rather than needing a background scheduler."""
+    news_cache = get_cached_news()
+    stats_cache = get_cached_stats()
+    company_cache = get_cached_company_news()
+
+    lists = [
+        news_cache.get("items", []),
+        stats_cache.get("items", []),
+        company_cache.get("items", []),
+    ]
+    items = [item for group in zip_longest(*lists) for item in group if item is not None]
+
+    fetched_at = min(
+        (t for t in (news_cache.get("fetched_at"), stats_cache.get("fetched_at"), company_cache.get("fetched_at")) if t),
+        default=None,
+    )
+    return jsonify({"items": items, "fetched_at": fetched_at})
 
 
 _CUSTOM_SYMBOLS_MAX = 50

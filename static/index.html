@@ -348,8 +348,11 @@ nav {
 }
 
 /* Rotating background gallery — current finance/banking/economy headlines,
-   refetched weekly (see /api/finance-news). Sits behind everything else in the
-   hero; the ::after scrim keeps the headline/body text readable over photos. */
+   country GDP/inflation/unemployment stats, and large-company news, all
+   refetched weekly (see /api/finance-news). Sits behind everything else in
+   the hero; the ::after scrim keeps the headline/body text readable over
+   photos. Each slide is a single element (kind-specific inner content), so
+   rotation only ever needs to toggle one class per slide. */
 .hero-gallery {
   position: absolute;
   inset: 0;
@@ -360,13 +363,15 @@ nav {
 .hero-gallery-slide {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
   opacity: 0;
-  filter: saturate(0.75);
   transition: opacity 1.4s ease;
 }
 .hero-gallery-slide.active { opacity: 1; }
+.hero-gallery-slide.photo {
+  background-size: cover;
+  background-position: center;
+  filter: saturate(0.75);
+}
 .hero-gallery::after {
   content: '';
   position: absolute;
@@ -391,13 +396,91 @@ nav {
   text-decoration: none;
   z-index: 1;
   opacity: 0;
-  transition: opacity 0.7s ease;
+  transition: opacity 0.7s ease 0.3s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.hero-gallery-caption.active { opacity: 1; }
+.hero-gallery-slide.active .hero-gallery-caption { opacity: 1; }
 .hero-gallery-caption:hover { color: var(--text); }
+
+/* Stat / company cards — same rotation slot and bottom anchor as the photo
+   captions, kept compact and horizontal so they never collide with the hero
+   buttons above them regardless of viewport height. */
+.gallery-stat-card, .gallery-company-card {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: min(440px, 90%);
+  z-index: 1;
+  background: rgba(13,16,32,0.6);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 16px;
+  backdrop-filter: blur(6px);
+  text-decoration: none;
+  display: block;
+}
+[data-theme="light"] .gallery-stat-card,
+[data-theme="light"] .gallery-company-card {
+  background: rgba(255,255,255,0.72);
+}
+.gallery-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.gallery-stat-flag { font-size: 15px; line-height: 1; }
+.gallery-stat-country {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+}
+.gallery-stat-metrics {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+.gallery-stat-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.gallery-stat-metric span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+.gallery-stat-metric strong { font-size: 13px; color: var(--text); }
+.gallery-company-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: rgba(0,212,170,0.12);
+  border-radius: 5px;
+  padding: 2px 7px;
+  margin-bottom: 6px;
+}
+.gallery-company-headline {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gallery-company-card:hover .gallery-company-headline { color: var(--green); }
 
 /* Grid pattern overlay */
 .hero-grid {
@@ -1233,42 +1316,90 @@ section.alt-bg { background: var(--bg2); }
 </footer>
 
 <script>
-// ── Hero rolling news gallery ──
+// ── Hero rolling gallery: news photos, country stats, company headlines ──
 (async function heroGallery() {
   const wrap = document.getElementById('heroGallery');
   if (!wrap) return;
+
+  function pct(n) { return (n === null || n === undefined) ? '—' : `${n > 0 ? '+' : ''}${n}%`; }
+
+  function buildPhotoSlide(item) {
+    const slide = document.createElement('div');
+    slide.className = 'hero-gallery-slide photo';
+    slide.style.backgroundImage = `url("${item.image}")`;
+    const caption = document.createElement('a');
+    caption.className = 'hero-gallery-caption';
+    caption.href = item.link;
+    caption.target = '_blank';
+    caption.rel = 'noopener noreferrer';
+    caption.textContent = item.title;
+    slide.appendChild(caption);
+    return slide;
+  }
+
+  function buildStatSlide(item) {
+    const slide = document.createElement('div');
+    slide.className = 'hero-gallery-slide stat';
+    const card = document.createElement('div');
+    card.className = 'gallery-stat-card';
+    card.innerHTML = `
+      <div class="gallery-stat-head">
+        <span class="gallery-stat-flag">${item.flag || ''}</span>
+        <span class="gallery-stat-country">${item.country}</span>
+      </div>
+      <div class="gallery-stat-metrics">
+        <div class="gallery-stat-metric"><span>GDP</span><strong>${pct(item.gdp_growth)}</strong></div>
+        <div class="gallery-stat-metric"><span>INFLATION</span><strong>${pct(item.inflation)}</strong></div>
+        <div class="gallery-stat-metric"><span>UNEMPLOYMENT</span><strong>${pct(item.unemployment)}</strong></div>
+      </div>
+    `;
+    slide.appendChild(card);
+    return slide;
+  }
+
+  function buildCompanySlide(item) {
+    const slide = document.createElement('div');
+    slide.className = 'hero-gallery-slide company';
+    const card = document.createElement('a');
+    card.className = 'gallery-company-card';
+    card.href = item.link;
+    card.target = '_blank';
+    card.rel = 'noopener noreferrer';
+    card.innerHTML = `
+      <span class="gallery-company-tag">${item.company}</span>
+      <div class="gallery-company-headline"></div>
+    `;
+    card.querySelector('.gallery-company-headline').textContent = item.title;
+    slide.appendChild(card);
+    return slide;
+  }
+
   try {
     const res = await fetch('/api/finance-news');
     if (!res.ok) return;
     const data = await res.json();
-    const items = (data.items || []).filter(it => it.image);
+    const items = (data.items || []).filter(it => {
+      if (it.kind === 'photo') return !!it.image;
+      if (it.kind === 'stat') return it.gdp_growth !== null || it.inflation !== null || it.unemployment !== null;
+      if (it.kind === 'company') return !!it.title;
+      return false;
+    });
     if (!items.length) return;
 
+    const builders = { photo: buildPhotoSlide, stat: buildStatSlide, company: buildCompanySlide };
     items.forEach((item, i) => {
-      const slide = document.createElement('div');
-      slide.className = 'hero-gallery-slide' + (i === 0 ? ' active' : '');
-      slide.style.backgroundImage = `url("${item.image}")`;
+      const slide = builders[item.kind](item);
+      if (i === 0) slide.classList.add('active');
       wrap.appendChild(slide);
-
-      const caption = document.createElement('a');
-      caption.className = 'hero-gallery-caption' + (i === 0 ? ' active' : '');
-      caption.href = item.link;
-      caption.target = '_blank';
-      caption.rel = 'noopener noreferrer';
-      caption.textContent = item.title;
-      wrap.appendChild(caption);
     });
 
     if (items.length > 1) {
       const slides = wrap.querySelectorAll('.hero-gallery-slide');
-      const captions = wrap.querySelectorAll('.hero-gallery-caption');
       let idx = 0;
       setInterval(() => {
         slides[idx].classList.remove('active');
-        captions[idx].classList.remove('active');
         idx = (idx + 1) % slides.length;
         slides[idx].classList.add('active');
-        captions[idx].classList.add('active');
       }, 10000);
     }
   } catch (e) {

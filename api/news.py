@@ -54,6 +54,7 @@ def _parse_feed(url: str, limit: int = 8) -> list[dict]:
         if not image:
             continue  # the gallery needs a picture — skip text-only items
         items.append({
+            "kind": "photo",
             "title": title_el.text.strip(),
             "link": link_el.text.strip(),
             "image": image,
