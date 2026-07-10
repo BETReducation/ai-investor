@@ -2100,12 +2100,19 @@ function exchangeToTvPrefix(exchange) {
 }
 
 // yfinance indices ("^"-prefixed) don't carry a normal stock exchange, so they need
-// their own explicit map onto TradingView's free TVC index feed.
+// their own explicit map onto a TradingView symbol. The obvious TVC:<index> feeds
+// (TVC:SPX, TVC:UKX, TVC:VIX, ...) are exchange-licensed data gated behind a
+// TradingView login/subscription — the widget shows "This symbol is only available
+// on TradingView" for them even though they look valid. Verified live (headless
+// browser against the actual embedded widget) that the FOREXCOM CFD feeds are what's
+// actually accessible on the free embed for indices; VIX uses the VIXY ETF as a proxy
+// since the raw index isn't available at all on the free tier.
 const INDEX_TV_MAP = {
-  '^GSPC': 'TVC:SPX', '^DJI': 'TVC:DJI', '^IXIC': 'TVC:IXIC', '^NDX': 'TVC:NDX',
-  '^FTSE': 'TVC:UKX', '^GDAXI': 'TVC:DAX', '^FCHI': 'TVC:CAC40',
-  '^N225': 'TVC:NI225', '^HSI': 'TVC:HSI', '^RUT': 'TVC:RUT', '^VIX': 'TVC:VIX',
-  '^STOXX50E': 'TVC:SX5E', '^AXJO': 'TVC:XJO', '^BSESN': 'BSE:SENSEX', '^NSEI': 'TVC:NIFTY',
+  '^GSPC': 'FOREXCOM:SPXUSD', '^DJI': 'FOREXCOM:DJI',
+  '^IXIC': 'FOREXCOM:NSXUSD', '^NDX': 'FOREXCOM:NSXUSD',
+  '^FTSE': 'FOREXCOM:UK100', '^GDAXI': 'FOREXCOM:GRXEUR', '^FCHI': 'FOREXCOM:FRXEUR',
+  '^N225': 'FOREXCOM:JPXJPY', '^HSI': 'FOREXCOM:HKXHKD',
+  '^RUT': 'FOREXCOM:US2000', '^VIX': 'AMEX:VIXY',
 };
 
 function guessTvSymbol(symbol, category, exchange) {
@@ -2293,6 +2300,7 @@ function selectAsset(sym) {
 // --- TICKER TAPE ---
 function updateTicker() {
   const tape = document.getElementById('tickerTape');
+  if (!tape) return;
   tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
