@@ -20,6 +20,7 @@ from api.indicators import calculate_all
 from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
+from api.news import get_cached_news
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
@@ -878,6 +879,16 @@ def symbol_search():
             "type": q.get("quoteType") or "",
         })
     return jsonify({"results": results})
+
+
+@app.route("/api/finance-news", methods=["GET"])
+def finance_news():
+    """Headlines + images for the homepage's rolling gallery, pulled from a handful of
+    free finance RSS feeds (no API key). Cached to disk and only refetched once the
+    cache is a week or older, so this refreshes itself on the first visit after a week
+    has passed rather than needing a background scheduler."""
+    cache = get_cached_news()
+    return jsonify({"items": cache.get("items", []), "fetched_at": cache.get("fetched_at")})
 
 
 _CUSTOM_SYMBOLS_MAX = 50

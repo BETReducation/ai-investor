@@ -202,7 +202,6 @@
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
-    <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
   <div class="site-nav-cta">
@@ -368,15 +367,6 @@ window.addEventListener('resize', () => {
 
       <!-- Add condition -->
       <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
-
-      <!-- Quick-start templates -->
-      <div class="section-label" style="margin-top:14px;">QUICK START TEMPLATES</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
-        <button class="template-btn" onclick="loadTemplate('oversold_bounce')">Oversold Bounce</button>
-        <button class="template-btn" onclick="loadTemplate('overbought_sell')">Overbought Sell</button>
-        <button class="template-btn" onclick="loadTemplate('macd_breakout')">MACD Breakout</button>
-        <button class="template-btn" onclick="loadTemplate('volume_pop')">Volume Pop</button>
-      </div>
 
       <!-- Live condition status for current asset -->
       <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
@@ -905,13 +895,6 @@ const INDICATOR_PARAMS = {
   ],
 };
 
-const STRATEGY_TEMPLATES = {
-  oversold_bounce: { name: 'Oversold Bounce', type: 'BUY',  match: 'all', conditions: [{ type: 'rsi_below',       value: 30  }, { type: 'bb_lower',        value: 15  }] },
-  overbought_sell: { name: 'Overbought Sell', type: 'SELL', match: 'all', conditions: [{ type: 'rsi_above',       value: 70  }, { type: 'bb_upper',        value: 85  }] },
-  macd_breakout:   { name: 'MACD Breakout',   type: 'BUY',  match: 'all', conditions: [{ type: 'macd_bull_cross', value: 3   }, { type: 'price_above_ma20', value: 0  }] },
-  volume_pop:      { name: 'Volume Pop',      type: 'BUY',  match: 'all', conditions: [{ type: 'volume_spike',    value: 2.0 }, { type: 'macd_bull_cross', value: 5   }] },
-};
-
 let watchlistEnabled = {};
 let wlDropdownOpen = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
@@ -1128,19 +1111,6 @@ function renderConditions() {
         </div>
       </div>`;
   }).join('');
-}
-
-function loadTemplate(name) {
-  const tpl = STRATEGY_TEMPLATES[name];
-  if (!tpl) return;
-  document.getElementById('strategyName').value = tpl.name;
-  document.getElementById('stratMatch').value   = tpl.match;
-  strategyMatch = tpl.match;
-  strategyConditions = tpl.conditions.map(c => ({ ...c }));
-  setStratType(tpl.type);
-  renderConditions();
-  updateStrategyStatus();
-  addLog('info', 'STRAT', `Loaded template: ${tpl.name}`);
 }
 
 function renderStrategyDropdown() {

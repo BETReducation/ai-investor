@@ -102,21 +102,8 @@ body {
 }
 [data-theme="light"] .btn-hero-secondary:hover { background: rgba(0,0,0,0.09); }
 
-[data-theme="light"] .mockup-frame {
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.08),
-    0 40px 120px rgba(0,0,0,0.14),
-    0 0 60px rgba(0,168,130,0.06);
-}
 [data-theme="light"] .mockup-bar { background: rgba(0,0,0,0.03); border-bottom-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .mockup-url { background: rgba(0,0,0,0.06); color: #777fa0; }
-[data-theme="light"] .mockup-fade { background: linear-gradient(transparent, var(--bg)); }
-
-[data-theme="light"] .chip {
-  background: rgba(245,247,255,0.95);
-  border-color: rgba(0,0,0,0.12);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
-}
 
 [data-theme="light"] .stats-bar { border-bottom-color: rgba(0,0,0,0.08); }
 [data-theme="light"] .stats-inner { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.08); }
@@ -360,6 +347,58 @@ nav {
   pointer-events: none;
 }
 
+/* Rotating background gallery — current finance/banking/economy headlines,
+   refetched weekly (see /api/finance-news). Sits behind everything else in the
+   hero; the ::after scrim keeps the headline/body text readable over photos. */
+.hero-gallery {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+.hero-gallery-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  filter: saturate(0.75);
+  transition: opacity 1.4s ease;
+}
+.hero-gallery-slide.active { opacity: 1; }
+.hero-gallery::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6,8,18,0.72) 0%, rgba(6,8,18,0.85) 55%, var(--bg) 100%);
+  pointer-events: none;
+}
+[data-theme="light"] .hero-gallery::after {
+  background: linear-gradient(180deg, rgba(245,247,255,0.82) 0%, rgba(245,247,255,0.92) 55%, var(--bg) 100%);
+}
+.hero-gallery-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  max-width: 88%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-align: center;
+  text-decoration: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hero-gallery-caption.active { opacity: 1; }
+.hero-gallery-caption:hover { color: var(--text); }
+
 /* Grid pattern overlay */
 .hero-grid {
   position: absolute;
@@ -472,29 +511,6 @@ nav {
   transform: translateY(-2px);
 }
 
-/* ── HERO DASHBOARD MOCKUP ── */
-.hero-mockup {
-  position: relative;
-  z-index: 2;
-  margin-top: 70px;
-  width: 100%;
-  max-width: 1100px;
-  animation: fadeUp 0.9s 0.6s ease both;
-}
-
-.mockup-frame {
-  position: relative;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.06),
-    0 40px 120px rgba(0,0,0,0.7),
-    0 0 80px rgba(0,212,170,0.08),
-    0 0 120px rgba(124,58,237,0.06);
-}
-
 .mockup-bar {
   display: flex;
   align-items: center;
@@ -521,138 +537,6 @@ nav {
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.03em;
 }
-
-.mockup-iframe-wrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
-  overflow: hidden;
-}
-.mockup-iframe-wrap iframe {
-  width: 167%;
-  height: 167%;
-  transform: scale(0.6);
-  transform-origin: top left;
-  border: none;
-  pointer-events: none;
-}
-
-/* ── PORTFOLIO DONUT (hero mockup) ── */
-.mockup-portfolio {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 64px;
-  background: var(--bg3);
-  padding: 20px;
-}
-.portfolio-donut-wrap {
-  position: relative;
-  width: 300px;
-  height: 300px;
-  flex-shrink: 0;
-}
-.portfolio-donut {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: conic-gradient(
-    var(--green) 0% 40%,
-    var(--purple) 40% 65%,
-    #0088ff 65% 85%,
-    var(--gold) 85% 100%
-  );
-}
-.portfolio-donut-center {
-  position: absolute;
-  inset: 26%;
-  border-radius: 50%;
-  background: var(--bg3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-}
-.portfolio-donut-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 15px;
-  color: var(--text);
-}
-.portfolio-donut-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-.portfolio-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-.portfolio-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-}
-.portfolio-legend-dot {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.portfolio-legend-pct {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-/* Fade out bottom edge of iframe */
-.mockup-fade {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 30%;
-  background: linear-gradient(transparent, var(--bg));
-  pointer-events: none;
-}
-
-/* Floating stat chips on mockup */
-.mockup-chips {
-  position: absolute;
-  bottom: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-  z-index: 5;
-}
-.chip {
-  background: rgba(13,16,32,0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  padding: 10px 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-.chip-icon {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-}
-.chip-icon.green { background: rgba(0,212,170,0.15); color: var(--green); }
-.chip-icon.purple { background: rgba(124,58,237,0.15); color: var(--purple2); }
-.chip-icon.gold { background: rgba(251,191,36,0.15); color: var(--gold); }
-.chip-label { font-size: 11px; color: var(--muted); line-height: 1.2; }
-.chip-value { font-size: 14px; font-weight: 700; color: var(--text); }
 
 /* ── STATS BAR ── */
 .stats-bar {
@@ -1026,7 +910,6 @@ section.alt-bg { background: var(--bg2); }
   .feature-row.reverse { direction: ltr; }
   .tools-grid { grid-template-columns: 1fr; }
   .stats-inner { grid-template-columns: 1fr 1fr; }
-  .mockup-chips { display: none; }
 }
 @media (max-width: 600px) {
   .stats-inner { grid-template-columns: 1fr; }
@@ -1080,7 +963,6 @@ section.alt-bg { background: var(--bg2); }
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
-    <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
   <div class="nav-cta">
@@ -1094,6 +976,7 @@ section.alt-bg { background: var(--bg2); }
 
 <!-- HERO -->
 <section class="hero">
+  <div class="hero-gallery" id="heroGallery"></div>
   <div class="hero-grid"></div>
 
   <div class="hero-content">
@@ -1115,61 +998,6 @@ section.alt-bg { background: var(--bg2); }
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
         Explore the Platform
       </a>
-    </div>
-  </div>
-
-  <!-- Dashboard mockup -->
-  <div class="hero-mockup">
-    <div class="mockup-frame">
-      <div class="mockup-bar">
-        <div class="mockup-dot"></div>
-        <div class="mockup-dot"></div>
-        <div class="mockup-dot"></div>
-        <div class="mockup-url">growthcapitalacademy.com / portfolio</div>
-      </div>
-      <div class="mockup-iframe-wrap">
-        <div class="mockup-portfolio">
-          <div class="portfolio-donut-wrap">
-            <div class="portfolio-donut"></div>
-            <div class="portfolio-donut-center">
-              <div class="portfolio-donut-title">Your Mix</div>
-              <div class="portfolio-donut-sub">4 asset types</div>
-            </div>
-          </div>
-          <div class="portfolio-legend">
-            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--green)"></span>Stocks <span class="portfolio-legend-pct">40%</span></div>
-            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--purple)"></span>Crypto <span class="portfolio-legend-pct">25%</span></div>
-            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:#0088ff"></span>Bonds <span class="portfolio-legend-pct">20%</span></div>
-            <div class="portfolio-legend-item"><span class="portfolio-legend-dot" style="background:var(--gold)"></span>Cash <span class="portfolio-legend-pct">15%</span></div>
-          </div>
-        </div>
-        <div class="mockup-fade"></div>
-      </div>
-    </div>
-
-    <!-- Floating chips -->
-    <div class="mockup-chips">
-      <div class="chip">
-        <div class="chip-icon green">↑</div>
-        <div>
-          <div class="chip-label">Stocks</div>
-          <div class="chip-value">40% of mix</div>
-        </div>
-      </div>
-      <div class="chip">
-        <div class="chip-icon purple">⚡</div>
-        <div>
-          <div class="chip-label">Crypto</div>
-          <div class="chip-value">25% of mix</div>
-        </div>
-      </div>
-      <div class="chip">
-        <div class="chip-icon gold">★</div>
-        <div>
-          <div class="chip-label">Cash &amp; Bonds</div>
-          <div class="chip-value">35% of mix</div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
@@ -1405,6 +1233,49 @@ section.alt-bg { background: var(--bg2); }
 </footer>
 
 <script>
+// ── Hero rolling news gallery ──
+(async function heroGallery() {
+  const wrap = document.getElementById('heroGallery');
+  if (!wrap) return;
+  try {
+    const res = await fetch('/api/finance-news');
+    if (!res.ok) return;
+    const data = await res.json();
+    const items = (data.items || []).filter(it => it.image);
+    if (!items.length) return;
+
+    items.forEach((item, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'hero-gallery-slide' + (i === 0 ? ' active' : '');
+      slide.style.backgroundImage = `url("${item.image}")`;
+      wrap.appendChild(slide);
+
+      const caption = document.createElement('a');
+      caption.className = 'hero-gallery-caption' + (i === 0 ? ' active' : '');
+      caption.href = item.link;
+      caption.target = '_blank';
+      caption.rel = 'noopener noreferrer';
+      caption.textContent = item.title;
+      wrap.appendChild(caption);
+    });
+
+    if (items.length > 1) {
+      const slides = wrap.querySelectorAll('.hero-gallery-slide');
+      const captions = wrap.querySelectorAll('.hero-gallery-caption');
+      let idx = 0;
+      setInterval(() => {
+        slides[idx].classList.remove('active');
+        captions[idx].classList.remove('active');
+        idx = (idx + 1) % slides.length;
+        slides[idx].classList.add('active');
+        captions[idx].classList.add('active');
+      }, 10000);
+    }
+  } catch (e) {
+    // Network hiccup — leave the gallery empty, hero glows still show through.
+  }
+})();
+
 // Scroll reveal
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries) => {
