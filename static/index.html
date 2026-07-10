@@ -347,12 +347,11 @@ nav {
   pointer-events: none;
 }
 
-/* Rotating background gallery — current finance/banking/economy headlines,
-   country GDP/inflation/unemployment stats, and large-company news, all
-   refetched weekly (see /api/finance-news). Sits behind everything else in
-   the hero; the ::after scrim keeps the headline/body text readable over
-   photos. Each slide is a single element (kind-specific inner content), so
-   rotation only ever needs to toggle one class per slide. */
+/* Rotating background gallery — current finance/banking/economy headlines and
+   large-company news, refetched weekly (see /api/finance-news). Sits behind
+   everything else in the hero; the ::after scrim keeps the headline/body
+   text readable over photos. Each slide is a single element (kind-specific
+   inner content), so rotation only ever needs to toggle one class per slide. */
 .hero-gallery {
   position: absolute;
   inset: 0;
@@ -404,10 +403,9 @@ nav {
 .hero-gallery-slide.active .hero-gallery-caption { opacity: 1; }
 .hero-gallery-caption:hover { color: var(--text); }
 
-/* Stat / company cards — same rotation slot and bottom anchor as the photo
-   captions, kept compact and horizontal so they never collide with the hero
-   buttons above them regardless of viewport height. */
-.gallery-stat-card, .gallery-company-card {
+/* Company card — same rotation slot and bottom anchor as the photo captions,
+   kept compact so it never collides with the hero buttons above it. */
+.gallery-company-card {
   position: absolute;
   left: 50%;
   bottom: 22px;
@@ -422,41 +420,9 @@ nav {
   text-decoration: none;
   display: block;
 }
-[data-theme="light"] .gallery-stat-card,
 [data-theme="light"] .gallery-company-card {
   background: rgba(255,255,255,0.72);
 }
-.gallery-stat-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.gallery-stat-flag { font-size: 15px; line-height: 1; }
-.gallery-stat-country {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  color: var(--text);
-}
-.gallery-stat-metrics {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
-.gallery-stat-metric {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.gallery-stat-metric span {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.03em;
-  color: var(--muted);
-}
-.gallery-stat-metric strong { font-size: 13px; color: var(--text); }
 .gallery-company-tag {
   display: inline-block;
   font-family: 'JetBrains Mono', monospace;
@@ -1316,12 +1282,10 @@ section.alt-bg { background: var(--bg2); }
 </footer>
 
 <script>
-// ── Hero rolling gallery: news photos, country stats, company headlines ──
+// ── Hero rolling gallery: news photos, company headlines ──
 (async function heroGallery() {
   const wrap = document.getElementById('heroGallery');
   if (!wrap) return;
-
-  function pct(n) { return (n === null || n === undefined) ? '—' : `${n > 0 ? '+' : ''}${n}%`; }
 
   function buildPhotoSlide(item) {
     const slide = document.createElement('div');
@@ -1334,26 +1298,6 @@ section.alt-bg { background: var(--bg2); }
     caption.rel = 'noopener noreferrer';
     caption.textContent = item.title;
     slide.appendChild(caption);
-    return slide;
-  }
-
-  function buildStatSlide(item) {
-    const slide = document.createElement('div');
-    slide.className = 'hero-gallery-slide stat';
-    const card = document.createElement('div');
-    card.className = 'gallery-stat-card';
-    card.innerHTML = `
-      <div class="gallery-stat-head">
-        <span class="gallery-stat-flag">${item.flag || ''}</span>
-        <span class="gallery-stat-country">${item.country}</span>
-      </div>
-      <div class="gallery-stat-metrics">
-        <div class="gallery-stat-metric"><span>GDP</span><strong>${pct(item.gdp_growth)}</strong></div>
-        <div class="gallery-stat-metric"><span>INFLATION</span><strong>${pct(item.inflation)}</strong></div>
-        <div class="gallery-stat-metric"><span>UNEMPLOYMENT</span><strong>${pct(item.unemployment)}</strong></div>
-      </div>
-    `;
-    slide.appendChild(card);
     return slide;
   }
 
@@ -1380,13 +1324,12 @@ section.alt-bg { background: var(--bg2); }
     const data = await res.json();
     const items = (data.items || []).filter(it => {
       if (it.kind === 'photo') return !!it.image;
-      if (it.kind === 'stat') return it.gdp_growth !== null || it.inflation !== null || it.unemployment !== null;
       if (it.kind === 'company') return !!it.title;
       return false;
     });
     if (!items.length) return;
 
-    const builders = { photo: buildPhotoSlide, stat: buildStatSlide, company: buildCompanySlide };
+    const builders = { photo: buildPhotoSlide, company: buildCompanySlide };
     items.forEach((item, i) => {
       const slide = builders[item.kind](item);
       if (i === 0) slide.classList.add('active');
