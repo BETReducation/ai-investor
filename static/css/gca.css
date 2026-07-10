@@ -856,7 +856,7 @@
 
   .wl-check-item {
     display: grid;
-    grid-template-columns: 16px 1fr auto auto;
+    grid-template-columns: 16px 1fr auto auto 16px;
     align-items: center;
     gap: 8px;
     padding: 6px 10px 6px 14px;
@@ -876,6 +876,36 @@
   .wl-check-sym { font-size: 11px; font-weight: 600; color: var(--text-primary); letter-spacing: 1px; }
   .wl-check-cat { font-size: 8px; color: var(--text-muted); letter-spacing: 1px; text-align: right; }
   .wl-check-price { font-size: 9px; text-align: right; font-variant-numeric: tabular-nums; min-width: 60px; }
+  .wl-check-remove {
+    width: 16px; height: 16px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; line-height: 1; color: var(--text-muted);
+    background: none; border: none; cursor: pointer; border-radius: 2px;
+  }
+  .wl-check-remove:hover { color: var(--accent-red); background: rgba(255,70,70,.1); }
+
+  /* Custom symbol search (inside the watchlist dropdown) */
+  .wl-search { position: relative; padding: 8px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .wl-search input[type="text"] { font-size: 10px; }
+  .wl-search-results {
+    position: absolute; top: 100%; left: 10px; right: 10px;
+    background: var(--bg-panel); border: 1px solid var(--border-bright);
+    max-height: 220px; overflow-y: auto; z-index: 210;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+    display: none;
+  }
+  .wl-search-result {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
+  }
+  .wl-search-result:last-child { border-bottom: none; }
+  .wl-search-result:hover { background: var(--bg-hover); }
+  .wl-sr-sym { font-size: 10px; font-weight: 700; color: var(--text-primary); letter-spacing: .5px; min-width: 56px; }
+  .wl-sr-name { font-size: 9px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wl-sr-type { font-size: 8px; color: var(--text-muted); letter-spacing: 1px; flex-shrink: 0; }
+  .wl-search-manual { font-size: 9px; color: var(--accent-blue); letter-spacing: .5px; }
+  .wl-search-empty { padding: 8px 10px; font-size: 9px; color: var(--text-muted); }
 
   /* Active asset list — scrollable so it never dominates the panel */
   .wl-active-list { max-height: 220px; overflow-y: auto; scrollbar-width: thin; }

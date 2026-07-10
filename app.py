@@ -671,11 +671,17 @@ def admin_set_tier():
 @app.route("/api/save-preferences", methods=["POST"])
 @login_required
 def save_preferences():
-    prefs = request.get_json() or {}
+    incoming = request.get_json() or {}
     users = _load_users()
     if current_user.id not in users:
         return jsonify({"error": "User not found"}), 404
-    _save_preferences(current_user.id, prefs)
+    # Shallow-merge onto the existing preferences rather than replacing them outright,
+    # so keys this caller doesn't know about (e.g. custom_symbols, saved by the
+    # /api/custom-symbols endpoints) survive a save from a page that only manages its
+    # own subset of settings.
+    existing = users[current_user.id].get("preferences", {}) or {}
+    merged = {**existing, **incoming}
+    _save_preferences(current_user.id, merged)
     return jsonify({"success": True})
 
 
@@ -825,6 +831,90 @@ def prices():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Failed to fetch prices: {str(e)}"}), 500
+
+
+@app.route("/api/symbol-search", methods=["GET"])
+def symbol_search():
+    """Ticker/company autocomplete, proxied through yfinance's Search (which itself
+    wraps Yahoo's public search endpoint). Best-effort — degrades to an empty result
+    list on any failure (missing yfinance.Search in an older pinned version, Yahoo
+    throttling, network error, etc.) rather than surfacing a 500 to the picker UI."""
+    query = request.args.get("q", "").strip()
+    if len(query) < 1:
+        return jsonify({"results": []})
+    try:
+        quotes = yf.Search(query, max_results=10).quotes
+    except Exception:
+        return jsonify({"results": []})
+    results = []
+    for q in quotes:
+        symbol = q.get("symbol")
+        if not symbol:
+            continue
+        results.append({
+            "symbol": symbol,
+            "name": q.get("shortname") or q.get("longname") or symbol,
+            "exchange": q.get("exchDisp") or q.get("exchange") or "",
+            "type": q.get("quoteType") or "",
+        })
+    return jsonify({"results": results})
+
+
+_CUSTOM_SYMBOLS_MAX = 50
+
+
+@app.route("/api/custom-symbols", methods=["GET"])
+@login_required
+def get_custom_symbols():
+    users = _load_users()
+    prefs = users.get(current_user.id, {}).get("preferences", {}) or {}
+    return jsonify({"symbols": prefs.get("custom_symbols", [])})
+
+
+@app.route("/api/custom-symbols", methods=["POST"])
+@login_required
+def add_custom_symbol():
+    data = request.get_json() or {}
+    symbol = (data.get("symbol") or "").strip().upper()
+    if not symbol:
+        return jsonify({"error": "symbol is required"}), 400
+    label = (data.get("label") or symbol).strip()
+    category = (data.get("category") or "stock").strip().lower()
+
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    prefs = users[current_user.id].get("preferences", {}) or {}
+    custom = prefs.get("custom_symbols", [])
+
+    if not any(s["symbol"] == symbol for s in custom):
+        if len(custom) >= _CUSTOM_SYMBOLS_MAX:
+            return jsonify({"error": f"Custom symbol list is full (max {_CUSTOM_SYMBOLS_MAX})"}), 400
+        try:
+            df = _fetch_ohlcv(symbol, period="5d", interval="1d")
+        except Exception:
+            df = None
+        if df is None or df.empty:
+            return jsonify({"error": f"No data found for '{symbol}' — check the ticker"}), 400
+        custom.append({"symbol": symbol, "label": label, "category": category})
+
+    prefs["custom_symbols"] = custom
+    _save_preferences(current_user.id, prefs)
+    return jsonify({"success": True, "symbols": custom})
+
+
+@app.route("/api/custom-symbols", methods=["DELETE"])
+@login_required
+def remove_custom_symbol():
+    symbol = (request.args.get("symbol") or "").strip().upper()
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    prefs = users[current_user.id].get("preferences", {}) or {}
+    custom = [s for s in prefs.get("custom_symbols", []) if s["symbol"] != symbol]
+    prefs["custom_symbols"] = custom
+    _save_preferences(current_user.id, prefs)
+    return jsonify({"success": True, "symbols": custom})
 
 
 @app.route("/api/indicators", methods=["GET"])

@@ -209,6 +209,48 @@
 
   select.lab-input option { background: var(--bg-card); }
 
+  /* Symbol search + "My Symbols" saved list */
+  .bt-symbol-row { display: flex; gap: 6px; align-items: stretch; margin-bottom: 4px; }
+  .bt-symbol-row .lab-input { flex: 1; margin-bottom: 0; }
+  .bt-save-sym-btn {
+    flex-shrink: 0; width: 30px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 2px;
+    color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.15s;
+  }
+  .bt-save-sym-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .bt-save-sym-btn.saved { color: var(--accent-green); border-color: var(--accent-green); }
+
+  .bt-search-results {
+    display: none; max-height: 180px; overflow-y: auto; scrollbar-width: thin;
+    background: var(--bg-card); border: 1px solid var(--border-bright);
+    margin: -2px 0 8px 0; border-radius: 2px;
+  }
+  .bt-search-result {
+    display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+    border-bottom: 1px solid var(--border); cursor: pointer; font-size: 10px;
+  }
+  .bt-search-result:last-child { border-bottom: none; }
+  .bt-search-result:hover { background: var(--bg-hover); }
+  .bt-sr-sym { font-weight: 700; color: var(--text-primary); min-width: 56px; letter-spacing: .5px; }
+  .bt-sr-name { color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bt-sr-type { color: var(--text-muted); font-size: 8px; letter-spacing: 1px; flex-shrink: 0; }
+  .bt-search-manual { color: var(--accent-blue); }
+  .bt-search-empty { padding: 6px 8px; font-size: 9px; color: var(--text-muted); }
+
+  .bt-mysymbols { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .bt-mysym-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 6px 3px 8px; font-size: 9px; letter-spacing: .5px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    cursor: pointer; color: var(--text-secondary); transition: all 0.15s;
+  }
+  .bt-mysym-chip:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+  .bt-mysym-chip button {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 10px; cursor: pointer; padding: 0; line-height: 1;
+  }
+  .bt-mysym-chip button:hover { color: var(--accent-red); }
+
   /* Indicator toggle rows */
   .ind-row {
     display: flex;
@@ -655,7 +697,15 @@ window.addEventListener('resize', () => {
     <!-- Symbol + Period + Interval -->
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
-      <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. AAPL, BTC-USD" value="AAPL" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+      <div class="bt-symbol-row">
+        <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. AAPL, BTC-USD" value="AAPL" autocomplete="off"
+               style="text-transform:uppercase;"
+               oninput="this.value=this.value.toUpperCase(); onBtSymbolInput(this.value);"
+               onfocus="if (this.value) onBtSymbolInput(this.value);">
+        <button type="button" class="bt-save-sym-btn" id="btSaveSymBtn" onclick="saveCurrentSymbol()" title="Save to My Symbols">☆</button>
+      </div>
+      <div class="bt-search-results" id="btSearchResults"></div>
+      <div class="bt-mysymbols" id="btMySymbols"></div>
 
       <div class="ctrl-label" style="margin-top:6px;">PERIOD</div>
       <div style="display:flex;gap:4px;margin-bottom:4px;">
@@ -1837,6 +1887,156 @@ window.addEventListener('resize', () => {
 
 <script>
 
+// ── Symbol search + "My Symbols" saved list ────────────────────────────────────
+// Shares the same /api/custom-symbols account storage as the Signal Tracker's
+// watchlist picker, so a symbol saved on either page shows up on both.
+let btCurrentUser = null;
+let mySymbols = [];
+let btSearchResults = [];
+let btSearchTimer = null;
+
+async function initMySymbols() {
+  try {
+    const meRes = await fetch('/api/me', { credentials: 'include' });
+    const me = await meRes.json();
+    if (me.authenticated) {
+      btCurrentUser = me.username;
+      const res = await fetch('/api/custom-symbols', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        mySymbols = data.symbols || [];
+      }
+    }
+  } catch (e) {}
+  renderMySymbols();
+}
+initMySymbols();
+
+function onBtSymbolInput(q) {
+  clearTimeout(btSearchTimer);
+  const query = q.trim();
+  if (!query) {
+    btSearchResults = [];
+    renderBtSearchResults('');
+    return;
+  }
+  btSearchTimer = setTimeout(() => runBtSymbolSearch(query), 300);
+}
+
+async function runBtSymbolSearch(query) {
+  try {
+    const res = await fetch('/api/symbol-search?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    btSearchResults = data.results || [];
+  } catch (e) {
+    btSearchResults = [];
+  }
+  renderBtSearchResults(query);
+}
+
+function renderBtSearchResults(query) {
+  const el = document.getElementById('btSearchResults');
+  if (!el) return;
+  if (!query) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  const rows = btSearchResults.map((r, i) => `
+    <div class="bt-search-result" onclick="pickBtSearchResult(${i})">
+      <span class="bt-sr-sym">${r.symbol}</span>
+      <span class="bt-sr-name">${r.name}</span>
+      <span class="bt-sr-type">${(r.type || '').toUpperCase()}</span>
+    </div>
+  `).join('');
+  el.innerHTML = rows || `<div class="bt-search-empty">No matches — type the exact ticker and hit Save ☆</div>`;
+  el.style.display = 'block';
+}
+
+function categoryFromQuoteType(symbol, quoteType) {
+  const t = (quoteType || '').toUpperCase();
+  if (t === 'CRYPTOCURRENCY') return 'crypto';
+  if (t === 'CURRENCY') return 'forex';
+  if (t === 'FUTURE') return 'futures';
+  if (t === 'ETF') return 'etf';
+  if (t === 'EQUITY') return 'stock';
+  if (t === 'INDEX') return 'index';
+  if (t === 'MUTUALFUND') return 'fund';
+  if (symbol.endsWith('-USD')) return 'crypto';
+  if (symbol.endsWith('=X')) return 'forex';
+  if (symbol.endsWith('=F')) return 'futures';
+  return 'stock';
+}
+
+let lastPickedCategory = null;
+
+function pickBtSearchResult(idx) {
+  const r = btSearchResults[idx];
+  if (!r) return;
+  document.getElementById('btSymbol').value = r.symbol;
+  lastPickedCategory = categoryFromQuoteType(r.symbol, r.type);
+  btSearchResults = [];
+  renderBtSearchResults('');
+}
+
+function pickBtSymbol(symbol) {
+  document.getElementById('btSymbol').value = symbol;
+  lastPickedCategory = null;
+  btSearchResults = [];
+  renderBtSearchResults('');
+}
+
+async function saveCurrentSymbol() {
+  const symbol = document.getElementById('btSymbol').value.trim().toUpperCase();
+  const btn = document.getElementById('btSaveSymBtn');
+  if (!symbol) return;
+  if (!btCurrentUser) {
+    btn.title = 'Sign in to save symbols to your account';
+    document.getElementById('btSymbol').style.borderColor = 'var(--accent-red)';
+    setTimeout(() => document.getElementById('btSymbol').style.borderColor = '', 1500);
+    return;
+  }
+  if (mySymbols.some(s => s.symbol === symbol)) return;
+
+  const category = lastPickedCategory || categoryFromQuoteType(symbol, null);
+  try {
+    const res = await fetch('/api/custom-symbols', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, label: symbol, category }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('btSymbol').style.borderColor = 'var(--accent-red)';
+      setTimeout(() => document.getElementById('btSymbol').style.borderColor = '', 1500);
+      return;
+    }
+    mySymbols = data.symbols || mySymbols;
+    renderMySymbols();
+    btn.classList.add('saved');
+    setTimeout(() => btn.classList.remove('saved'), 1500);
+  } catch (e) {}
+}
+
+async function removeMySymbol(symbol, event) {
+  if (event) event.stopPropagation();
+  try {
+    await fetch('/api/custom-symbols?symbol=' + encodeURIComponent(symbol), {
+      method: 'DELETE', credentials: 'include',
+    });
+  } catch (e) {}
+  mySymbols = mySymbols.filter(s => s.symbol !== symbol);
+  renderMySymbols();
+}
+
+function renderMySymbols() {
+  const el = document.getElementById('btMySymbols');
+  if (!el) return;
+  el.innerHTML = mySymbols.map(s => `
+    <span class="bt-mysym-chip" onclick="pickBtSymbol('${s.symbol}')">
+      ${s.symbol}
+      <button type="button" onclick="removeMySymbol('${s.symbol}', event)" title="Remove">✕</button>
+    </span>
+  `).join('');
+}
+
 // ── Chart instance ────────────────────────────────────────────────────────────
 let equityChart = null;
 
@@ -2421,7 +2621,12 @@ function fmtPrice(p) {
 
 // Allow Enter key in symbol field
 document.getElementById('btSymbol').addEventListener('keydown', e => {
-  if (e.key === 'Enter') runBacktest();
+  if (e.key === 'Enter') { btSearchResults = []; renderBtSearchResults(''); runBacktest(); }
+});
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('btSymbol')?.closest('.ctrl-section');
+  if (wrap && !wrap.contains(e.target)) { btSearchResults = []; renderBtSearchResults(''); }
 });
 </script>
 </body>
