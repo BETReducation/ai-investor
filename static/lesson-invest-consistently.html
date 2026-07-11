@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invest Consistently — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table td.diff-cell { color: #ff3355; font-weight: 700; }
+.reinvest-table td.check-cell { color: var(--green); font-weight: 700; }
+.reinvest-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field select, .calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field select:focus, .calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Habit 3 of 5</div>
+    <h1 class="hero-title">🔁 Invest Consistently, Not <span class="accent">Perfectly</span></h1>
+    <p class="hero-sub">You will never perfectly time the market — and you don't need to. Investing on a regular schedule turns investing into a habit instead of a stressful guessing game.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Is "Dollar-Cost Averaging"?</h2>
+    <p class="body-text">Dollar-cost averaging just means investing a fixed amount of money at regular intervals — say, $200 every month — no matter what the price is doing that day. Some months you'll buy when prices are up, some months when they're down. Over time, those ups and downs average out, so you're never betting everything on a single guess about where the market is headed next.</p>
+    <p class="body-text">A simple everyday way to picture it: think of filling up your car with petrol every week instead of trying to guess the one day of the year when prices will be lowest. You'll never fill up at the exact cheapest moment — but you'll also never get stuck guessing wrong and paying the most. You just get on with it, on a schedule, and the average works itself out.</p>
+
+    <div class="example-card">
+      <h3>💡 Real example: Alex vs. Jamie</h3>
+      <p class="body-text" style="margin-bottom:0;">Alex and Jamie each have $6,000 to invest over the course of a year, in a market that goes up and down along the way. Alex invests a fixed $500 every month, rain or shine. Jamie wants to "wait for the right moment" — she watches prices dip, hesitates, then feels confident once the market has already rallied, and finally invests the full $6,000 in month 7, right near that year's peak price.</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">🧑 Alex — invests monthly</div>
+          <div class="ep-row"><span>Total invested</span><b>$6,000</b></div>
+          <div class="ep-row"><span>How</span><b>$500 × 12 months</b></div>
+          <div class="ep-row"><span>Average price paid</span><b>$97.63/share</b></div>
+          <div class="ep-total">
+            <div class="val">$7,682</div>
+            <div class="lbl">value at year end</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">👩 Jamie — waits, then lump-sums</div>
+          <div class="ep-row"><span>Total invested</span><b>$6,000</b></div>
+          <div class="ep-row"><span>How</span><b>$6,000 in month 7</b></div>
+          <div class="ep-row"><span>Price paid</span><b>$115.00/share</b></div>
+          <div class="ep-total">
+            <div class="val">$6,522</div>
+            <div class="lbl">value at year end</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Both invested exactly $6,000. Alex ends up over <b>$1,000 ahead</b> — not by picking better investments, but simply by not needing to guess the "right" moment at all.</p>
+    </div>
+
+    <p class="body-text">Here's the uncomfortable truth about "waiting for the right time": nobody — not professional fund managers, not financial news pundits, nobody — can reliably predict short-term price moves. Waiting for certainty before you start often just means watching from the sidelines while prices move without you, then feeling pressure to jump in once it "feels safe" — which is usually exactly when prices have already risen.</p>
+
+    <div class="reinvest-card">
+      <h3>🎯 Could You Have Timed It Better?</h3>
+      <p>Using the same 12-month price path as Alex and Jamie, here's what investing the full $6,000 in one go would have been worth at year end, depending purely on which month you picked.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Month</th><th>Price that month</th><th>Lump-sum value at year end</th><th>Vs. Alex's steady approach</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>Month 1</td><td>$100</td><td>$7,500</td><td class="diff-cell">-$182</td></tr>
+          <tr><td>Month 2</td><td>$92</td><td>$8,152</td><td class="check-cell">+$470</td></tr>
+          <tr><td>Month 3</td><td>$85</td><td>$8,824</td><td class="check-cell">+$1,141</td></tr>
+          <tr><td>Month 4</td><td>$78</td><td>$9,615</td><td class="check-cell">+$1,933</td></tr>
+          <tr><td>Month 5</td><td>$82</td><td>$9,146</td><td class="check-cell">+$1,464</td></tr>
+          <tr><td>Month 6</td><td>$90</td><td>$8,333</td><td class="check-cell">+$651</td></tr>
+          <tr class="highlight-row"><td>Month 7 (Jamie)</td><td>$115</td><td>$6,522</td><td class="diff-cell">-$1,161</td></tr>
+          <tr><td>Month 8</td><td>$105</td><td>$7,143</td><td class="diff-cell">-$540</td></tr>
+          <tr><td>Month 9</td><td>$98</td><td>$7,653</td><td class="diff-cell">-$29</td></tr>
+          <tr><td>Month 10</td><td>$108</td><td>$6,944</td><td class="diff-cell">-$738</td></tr>
+          <tr><td>Month 11</td><td>$118</td><td>$6,356</td><td class="diff-cell">-$1,326</td></tr>
+          <tr><td>Month 12</td><td>$125</td><td>$6,000</td><td class="diff-cell">-$1,682</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">Alex's steady $500/month approach finished the year at $7,682. Notice the huge spread in the "one lucky guess" column — from $6,000 to $9,615 — purely depending on which month you'd have picked, with no way to have known in advance. Alex's approach isn't always the best outcome, but it avoids ever depending on getting that guess right.</p>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> dollar-cost averaging doesn't guarantee a profit or protect against a loss in a falling market — if prices trend downward all year, you'll still be down. What it does is remove the pressure of guessing a single "right moment," and it's a strategy anyone can stick to without needing to watch the market every day.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Could You Beat Alex?</h2>
+    <p class="section-desc">Using that same 12-month price path, pick a month where you'd have gone all-in with the full $6,000. See how it stacks up against Alex's steady $500/month — there's no way to know the "right" answer in advance, which is exactly the point.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid" style="grid-template-columns:1fr;max-width:360px;margin-left:auto;margin-right:auto;">
+        <div class="calc-field">
+          <label for="calcMonth">Pick a month to invest the full $6,000</label>
+          <select id="calcMonth">
+            <option value="1">Month 1 — $100/share</option>
+            <option value="2">Month 2 — $92/share</option>
+            <option value="3">Month 3 — $85/share</option>
+            <option value="4">Month 4 — $78/share</option>
+            <option value="5">Month 5 — $82/share</option>
+            <option value="6" selected>Month 6 — $90/share</option>
+            <option value="7">Month 7 — $115/share</option>
+            <option value="8">Month 8 — $105/share</option>
+            <option value="9">Month 9 — $98/share</option>
+            <option value="10">Month 10 — $108/share</option>
+            <option value="11">Month 11 — $118/share</option>
+            <option value="12">Month 12 — $125/share</option>
+          </select>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Result →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csYou">—</div><div class="cs-lbl">Your lump-sum result</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csAlex">$7,682</div><div class="cs-lbl">Alex's steady $500/month</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csDiff">—</div><div class="cs-lbl">Difference</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barContrib"></div>
+          <div class="calc-bar-growth" id="barGrowth"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>Your pick</span>
+          <span><span class="dot" style="background:var(--green)"></span>Alex's steady approach</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. What does "dollar-cost averaging" mean?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Investing your entire savings in a single stock</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Investing a fixed amount at regular intervals, regardless of price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Waiting for the market to hit its lowest point before investing</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Only investing when a financial advisor tells you to</label>
+        </div>
+        <div class="quiz-explain">Dollar-cost averaging means investing the same amount on a regular schedule — some months at higher prices, some at lower — so no single guess about timing determines your outcome.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">2. Why is trying to "time the market" so difficult?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Nobody can reliably predict short-term price swings, so waiting for the "right moment" often means missing opportunities entirely</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Markets are only open during specific hours</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Timing only matters for cryptocurrency</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> It's easy once you have a financial license</label>
+        </div>
+        <div class="quiz-explain">Even professional fund managers can't reliably predict short-term price moves. Waiting for certainty usually means either missing the move entirely or jumping in once prices have already risen.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. In the Alex vs. Jamie example, why did Alex end up ahead even though both invested the same $6,000?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Alex received a bonus from their employer</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Alex only invested in bonds</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Jamie invested in a riskier type of account</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Alex's monthly purchases averaged out the price, while Jamie waited and bought in near a peak</label>
+        </div>
+        <div class="quiz-explain">Alex bought at 12 different prices across the year, smoothing out the average. Jamie waited for confidence, which arrived only after prices had already climbed.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">4. What's one of the psychological benefits of investing consistently on a schedule?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It guarantees higher returns than any other strategy</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It removes the need to ever check your portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It turns investing into a routine habit instead of a stressful, high-stakes decision</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It eliminates all investment risk</label>
+        </div>
+        <div class="quiz-explain">Investing on autopilot on a set schedule takes the emotional pressure out of guessing the "right" moment — it becomes a routine rather than a source of stress.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. What's the main takeaway of this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> You should always wait for a market dip before investing</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Consistency, not perfect timing, is what actually builds wealth over time</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Dollar-cost averaging only works during bull markets</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> You need to check stock prices every day to invest successfully</label>
+        </div>
+        <div class="quiz-explain">You'll never reliably pick the perfect moment — showing up consistently, on a schedule, beats waiting for certainty that never comes.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/invest-consistently-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the concept, the Alex vs. Jamie example, the timing table, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/invest-consistently-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to plan your own consistent investing schedule and reflect on timing temptations.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/invest-consistently-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore dollar-cost averaging and investing behaviour in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Ready for Habit 4?</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Keep building your foundations.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to All 5 Habits</div>
+        <div class="card-desc">Return to the Beginner hub and pick up where you left off.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a diversified, low-cost portfolio and track it over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+const MONTH_PRICES = {1:100, 2:92, 3:85, 4:78, 5:82, 6:90, 7:115, 8:105, 9:98, 10:108, 11:118, 12:125};
+const FINAL_PRICE = MONTH_PRICES[12];
+const ALEX_VALUE = 7682;
+const LUMP_SUM = 6000;
+
+function runCalc() {
+  const month = parseInt(document.getElementById('calcMonth').value, 10);
+  const price = MONTH_PRICES[month];
+  const shares = LUMP_SUM / price;
+  const yourValue = shares * FINAL_PRICE;
+  const diff = yourValue - ALEX_VALUE;
+
+  document.getElementById('csYou').textContent = fmtMoney(yourValue);
+  document.getElementById('csDiff').textContent = (diff >= 0 ? '+' : '') + fmtMoney(diff);
+
+  const maxVal = Math.max(yourValue, ALEX_VALUE);
+  const yourPct = (yourValue / (yourValue + ALEX_VALUE)) * 100;
+  const alexPct = 100 - yourPct;
+  const barContrib = document.getElementById('barContrib');
+  const barGrowth = document.getElementById('barGrowth');
+  barContrib.style.width = yourPct + '%';
+  barGrowth.style.width = alexPct + '%';
+  barContrib.textContent = fmtMoney(yourValue);
+  barGrowth.textContent = fmtMoney(ALEX_VALUE);
+
+  const callout = document.getElementById('calcCallout');
+  if (diff > 0) {
+    callout.innerHTML = '🎉 You got lucky! Investing everything in month ' + month + ' beat Alex\'s steady approach by ' + fmtMoney(diff) + '. But here\'s the catch — you could only know that <i>after the year already played out</i>. There was no way to know in advance which month would win.';
+  } else if (diff < 0) {
+    callout.innerHTML = '📉 Investing everything in month ' + month + ' left you ' + fmtMoney(Math.abs(diff)) + ' behind Alex\'s steady approach — much like Jamie\'s experience. This is exactly the risk of waiting for a single "right moment."';
+  } else {
+    callout.innerHTML = 'That month landed you exactly level with Alex\'s steady approach — a reminder that consistency gives you a solid, predictable outcome without needing to guess right.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
