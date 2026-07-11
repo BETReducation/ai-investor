@@ -84,6 +84,13 @@ def _ensure_table() -> None:
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
+# yfinance has no native 2-hour/4-hour bars — synthesized by fetching hourly data and
+# resampling. Kept separate from VALID_INTERVALS since every other caller of that set
+# (elsewhere in the codebase, if any) should keep seeing only intervals yfinance itself
+# understands; only _fetch_ohlcv needs to know about the synthetic ones.
+_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h"}
+ALL_VALID_INTERVALS = VALID_INTERVALS | set(_RESAMPLE_INTERVALS)
+
 _INT_CALC_KEYS = {
     "rsi_length": 14, "macd_fast": 12, "macd_slow": 26, "macd_signal": 9,
     "bb_length": 20, "ema_short": 9, "ema_long": 21,
@@ -126,9 +133,16 @@ def _extract_calc_params(args) -> dict:
 _BT_INT_CALC_KEYS = {
     "rsi_div_lookback": 5,
     "macd_div_lookback": 5, "macd_zscore_length": 100,
+    "stochrsi_div_lookback": 5,
+    "willr_div_lookback": 5, "willr_confirm_lookback": 5,
+    "roc_div_lookback": 5, "roc_momentum_lookback": 3,
+    "mfi_div_lookback": 5,
+    "tsi_div_lookback": 5,
+    "ao_div_lookback": 5, "ao_twin_peaks_lookback": 5,
     "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
-    "donchian_length": 20,
+    "donchian_length": 20, "donchian_exit_length": 10,
     "keltner_length": 20, "keltner_atr_length": 10,
+    "keltner_walk_min_consecutive": 3, "keltner_squeeze_lookback": 10,
     "stdev_length": 20,
     "chaikin_vol_ema_length": 10, "chaikin_vol_roc_length": 10,
     "hist_vol_length": 20,
@@ -140,14 +154,14 @@ _BT_INT_CALC_KEYS = {
     "obv_sma_length": 20,
     "vol_profile_lookback": 50, "vol_profile_bins": 24,
     "fib_lookback": 50,
-    "hma_slope_lookback": 3,
+    "hma_slope_lookback": 3, "hma_fast_length": 9,
     "bb_squeeze_lookback": 100, "bb_breakout_window": 10,
     "bb_walk_min_consecutive": 3, "bb_pattern_lookback": 5,
     "ma_short_length": 9, "ma_medium_length": 20, "ma_long_length": 50,
     "obv_div_lookback": 5, "ad_div_lookback": 5,
 }
 _BT_FLOAT_CALC_KEYS = {
-    "keltner_mult": 2.0,
+    "keltner_mult": 2.0, "keltner_walk_tolerance_pct": 0.5,
     "bb_squeeze_percentile": 20.0, "bb_walk_tolerance_pct": 0.5,
     "vwap_band_pct": 1.0,
 }
@@ -177,21 +191,35 @@ _VALID_ADX_TRIGGERS = {
 }
 
 _TRIGGER_WHITELISTS = {
-    "psar_trigger":        {"flip", "bull_flip", "bear_flip", "trend_state"},
+    "psar_trigger":        {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
     "ichimoku_trigger":    {"cloud_position", "bullish", "bearish", "tk_cross"},
-    "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state"},
-    "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross"},
-    "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross"},
+    "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
+    "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross", "two_channel_bull", "two_channel_bear"},
+    "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross", "two_hma_bull", "two_hma_bear"},
     "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
-    "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross"},
-    "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
-    "willr_trigger":       {"overbought_oversold", "overbought", "oversold", "midline_cross"},
-    "roc_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},
-    "mfi_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross"},
-    "tsi_trigger":         {"signal_cross", "bullish", "bearish", "centerline_cross"},
-    "ao_trigger":          {"zero_state", "bullish", "bearish", "zero_cross"},
+    "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross", "bullish_divergence", "bearish_divergence"},
+    "cci_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross", "breakout_bull", "breakout_bear"},
+    "willr_trigger":       {"overbought_oversold", "overbought", "oversold", "midline_cross",
+                             "momentum_failure_bull", "momentum_failure_bear",
+                             "trend_confirmation_bull", "trend_confirmation_bear",
+                             "bullish_divergence", "bearish_divergence"},
+    "roc_trigger":         {"threshold", "bullish", "bearish", "centerline_cross",
+                             "bull_momentum", "bear_momentum",
+                             "bullish_divergence", "bearish_divergence"},
+    "mfi_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross",
+                             "bullish_divergence", "bearish_divergence"},
+    "tsi_trigger":         {"signal_cross", "bullish", "bearish", "centerline_cross",
+                             "overbought", "oversold",
+                             "bullish_divergence", "bearish_divergence"},
+    "ao_trigger":          {"zero_state", "bullish", "bearish", "zero_cross",
+                             "bull_saucer", "bear_saucer",
+                             "bull_twin_peaks", "bear_twin_peaks",
+                             "bull_divergence", "bear_divergence"},
     "atr_trigger":         {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
-    "keltner_trigger":     {"breakout", "bullish", "bearish", "middle_cross"},
+    "keltner_trigger":     {"breakout", "bullish", "bearish", "middle_cross",
+                             "bull_band_riding", "bear_band_riding",
+                             "bull_mean_reversion", "bear_mean_reversion",
+                             "keltner_squeeze"},
     "stdev_trigger":       {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
     "chaikin_vol_trigger": {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
     "hist_vol_trigger":    {"expansion", "bullish_expansion", "bearish_expansion", "contraction"},
@@ -364,6 +392,14 @@ def _ensure_default_user() -> None:
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
 
+def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
+    agg = {"Open": "first", "High": "max", "Low": "min", "Close": "last"}
+    if "Volume" in df.columns:
+        agg["Volume"] = "sum"
+    resampled = df.resample(rule).agg(agg)
+    return resampled.dropna(subset=["Open"])
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -371,8 +407,9 @@ def _fetch_ohlcv(
     start_date: str | None = None,
     end_date: str | None = None,
 ) -> pd.DataFrame:
-    if interval not in VALID_INTERVALS:
+    if interval not in ALL_VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
+    fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
     ticker = yf.Ticker(symbol.upper())
     if start_date:
         import datetime as _dt
@@ -382,13 +419,17 @@ def _fetch_ohlcv(
                 _dt.date.fromisoformat(end_date)
         except ValueError:
             raise ValueError("start_date / end_date must be YYYY-MM-DD")
-        df = ticker.history(start=start_date, end=end_date or None, interval=interval, auto_adjust=True)
+        df = ticker.history(start=start_date, end=end_date or None, interval=fetch_interval, auto_adjust=True)
     else:
         if period not in VALID_PERIODS:
             raise ValueError(f"Invalid period: {period}")
-        df = ticker.history(period=period, interval=interval, auto_adjust=True)
+        df = ticker.history(period=period, interval=fetch_interval, auto_adjust=True)
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol}")
+    if interval in _RESAMPLE_INTERVALS:
+        df = _resample_ohlcv(df, interval)
+        if df.empty:
+            raise ValueError(f"No data returned for symbol: {symbol}")
     return df
 
 
@@ -756,11 +797,17 @@ def admin_set_tier():
 @app.route("/api/save-preferences", methods=["POST"])
 @login_required
 def save_preferences():
-    prefs = request.get_json() or {}
+    incoming = request.get_json() or {}
     users = _load_users()
     if current_user.id not in users:
         return jsonify({"error": "User not found"}), 404
-    _save_preferences(current_user.id, prefs)
+    # Shallow-merge onto the existing preferences rather than replacing them outright,
+    # so keys this caller doesn't know about (e.g. custom_symbols, saved by the
+    # /api/custom-symbols endpoints) survive a save from a page that only manages its
+    # own subset of settings.
+    existing = users[current_user.id].get("preferences", {}) or {}
+    merged = {**existing, **incoming}
+    _save_preferences(current_user.id, merged)
     return jsonify({"success": True})
 
 
@@ -912,6 +959,91 @@ def prices():
         return jsonify({"error": f"Failed to fetch prices: {str(e)}"}), 500
 
 
+@app.route("/api/symbol-search", methods=["GET"])
+def symbol_search():
+    """Ticker/company autocomplete, proxied through yfinance's Search (which itself
+    wraps Yahoo's public search endpoint). Best-effort — degrades to an empty result
+    list on any failure (missing yfinance.Search in an older pinned version, Yahoo
+    throttling, network error, etc.) rather than surfacing a 500 to the picker UI."""
+    query = request.args.get("q", "").strip()
+    if len(query) < 1:
+        return jsonify({"results": []})
+    try:
+        quotes = yf.Search(query, max_results=10).quotes
+    except Exception:
+        return jsonify({"results": []})
+    results = []
+    for q in quotes:
+        symbol = q.get("symbol")
+        if not symbol:
+            continue
+        results.append({
+            "symbol": symbol,
+            "name": q.get("shortname") or q.get("longname") or symbol,
+            "exchange": q.get("exchDisp") or q.get("exchange") or "",
+            "type": q.get("quoteType") or "",
+        })
+    return jsonify({"results": results})
+
+
+_CUSTOM_SYMBOLS_MAX = 50
+
+
+@app.route("/api/custom-symbols", methods=["GET"])
+@login_required
+def get_custom_symbols():
+    users = _load_users()
+    prefs = users.get(current_user.id, {}).get("preferences", {}) or {}
+    return jsonify({"symbols": prefs.get("custom_symbols", [])})
+
+
+@app.route("/api/custom-symbols", methods=["POST"])
+@login_required
+def add_custom_symbol():
+    data = request.get_json() or {}
+    symbol = (data.get("symbol") or "").strip().upper()
+    if not symbol:
+        return jsonify({"error": "symbol is required"}), 400
+    label = (data.get("label") or symbol).strip()
+    category = (data.get("category") or "stock").strip().lower()
+    exchange = (data.get("exchange") or "").strip()
+
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    prefs = users[current_user.id].get("preferences", {}) or {}
+    custom = prefs.get("custom_symbols", [])
+
+    if not any(s["symbol"] == symbol for s in custom):
+        if len(custom) >= _CUSTOM_SYMBOLS_MAX:
+            return jsonify({"error": f"Custom symbol list is full (max {_CUSTOM_SYMBOLS_MAX})"}), 400
+        try:
+            df = _fetch_ohlcv(symbol, period="5d", interval="1d")
+        except Exception:
+            df = None
+        if df is None or df.empty:
+            return jsonify({"error": f"No data found for '{symbol}' — check the ticker"}), 400
+        custom.append({"symbol": symbol, "label": label, "category": category, "exchange": exchange})
+
+    prefs["custom_symbols"] = custom
+    _save_preferences(current_user.id, prefs)
+    return jsonify({"success": True, "symbols": custom})
+
+
+@app.route("/api/custom-symbols", methods=["DELETE"])
+@login_required
+def remove_custom_symbol():
+    symbol = (request.args.get("symbol") or "").strip().upper()
+    users = _load_users()
+    if current_user.id not in users:
+        return jsonify({"error": "User not found"}), 404
+    prefs = users[current_user.id].get("preferences", {}) or {}
+    custom = [s for s in prefs.get("custom_symbols", []) if s["symbol"] != symbol]
+    prefs["custom_symbols"] = custom
+    _save_preferences(current_user.id, prefs)
+    return jsonify({"success": True, "symbols": custom})
+
+
 @app.route("/api/indicators", methods=["GET"])
 def indicators():
     symbol = request.args.get("symbol", "").strip()
@@ -1016,7 +1148,7 @@ def backtest():
         "willr_on", "willr_oversold", "willr_overbought",
         "roc_on", "roc_threshold",
         "mfi_on", "mfi_oversold", "mfi_overbought",
-        "tsi_on",
+        "tsi_on", "tsi_oversold", "tsi_overbought",
         "ao_on",
         "atr_on", "atr_trend_lookback",
         "keltner_on",
@@ -1032,7 +1164,9 @@ def backtest():
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
         "ma_trigger_lookback",
         "adx_di_cross_lookback",
+        "psar_gap_lookback", "supertrend_gap_lookback",
         "ichimoku_tk_cross_lookback", "donchian_mid_cross_lookback", "hma_price_cross_lookback",
+        "hma_two_cross_lookback",
         "stoch_signal_cross_lookback", "stochrsi_signal_cross_lookback",
         "cci_centerline_lookback", "willr_midline_lookback", "roc_centerline_lookback",
         "mfi_centerline_lookback", "tsi_centerline_lookback", "ao_zero_cross_lookback",

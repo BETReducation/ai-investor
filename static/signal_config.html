@@ -202,7 +202,6 @@
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
-    <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
   <div class="site-nav-cta">
@@ -267,6 +266,13 @@ window.addEventListener('resize', () => {
         <div class="wl-dropdown-header">
           <span class="wl-dropdown-info" id="wlDropdownInfo">0 of 0 assets selected</span>
           <button class="wl-done-btn" onclick="toggleWatchlistDropdown()">✓ DONE</button>
+        </div>
+        <div class="wl-search">
+          <input type="text" id="wlSearchInput" placeholder="Search any stock, ETF, crypto, forex, futures…"
+                 autocomplete="off" oninput="onSymbolSearchInput(this.value)"
+                 onfocus="if(this.value) onSymbolSearchInput(this.value)">
+          <div class="wl-search-hint" id="wlSearchHint" style="display:none;">Sign in to save symbols you search for</div>
+          <div class="wl-search-results" id="wlSearchResults"></div>
         </div>
         <div class="wl-check-list" id="wlCheckList"></div>
       </div>
@@ -361,15 +367,6 @@ window.addEventListener('resize', () => {
 
       <!-- Add condition -->
       <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
-
-      <!-- Quick-start templates -->
-      <div class="section-label" style="margin-top:14px;">QUICK START TEMPLATES</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
-        <button class="template-btn" onclick="loadTemplate('oversold_bounce')">Oversold Bounce</button>
-        <button class="template-btn" onclick="loadTemplate('overbought_sell')">Overbought Sell</button>
-        <button class="template-btn" onclick="loadTemplate('macd_breakout')">MACD Breakout</button>
-        <button class="template-btn" onclick="loadTemplate('volume_pop')">Volume Pop</button>
-      </div>
 
       <!-- Live condition status for current asset -->
       <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
@@ -718,37 +715,11 @@ window.addEventListener('resize', () => {
 
 const API_BASE = '';
 
-const symbolMap = {
-  'BTC/USDT': 'BTC-USD',
-  'ETH/USDT': 'ETH-USD',
-  'SOL/USDT': 'SOL-USD',
-  'ADA/USDT': 'ADA-USD',
-  'AAPL':     'AAPL',
-  'TSLA':     'TSLA',
-  'NVDA':     'NVDA',
-  'EUR/USD':  'EURUSD=X',
-  'GBP/USD':  'GBPUSD=X',
-  'USD/JPY':  'JPY=X',
-  'GOLD':     'GC=F',
-  'SILVER':   'SI=F',
-  'COPPER':   'HG=F',
-};
-
-const tvSymbolMap = {
-  'BTC/USDT': 'BINANCE:BTCUSDT',
-  'ETH/USDT': 'BINANCE:ETHUSDT',
-  'SOL/USDT': 'BINANCE:SOLUSDT',
-  'ADA/USDT': 'BINANCE:ADAUSDT',
-  'AAPL':     'NASDAQ:AAPL',
-  'TSLA':     'NASDAQ:TSLA',
-  'NVDA':     'NASDAQ:NVDA',
-  'EUR/USD':  'FX:EURUSD',
-  'GBP/USD':  'FX:GBPUSD',
-  'USD/JPY':  'FX:USDJPY',
-  'GOLD':     'TVC:GOLD',
-  'SILVER':   'TVC:SILVER',
-  'COPPER':   'TVC:COPPER',
-};
+// No built-in defaults — the watchlist starts empty and users populate it entirely
+// via the search feature (see registerCustomSymbol/loadCustomSymbols below), which
+// fills these in at runtime for whatever they search for and save.
+const symbolMap = {};
+const tvSymbolMap = {};
 
 const intervalMap = {
   '1m':  { period: '1d',  interval: '1m'  },
@@ -771,7 +742,7 @@ let currentUser = null;
 let dashboardInitialized = false;
 let engineRunning = false;
 let pollTimer = null;
-let currentAsset = 'BTC/USDT';
+let currentAsset = null;
 let currentView = 'price';
 let pendingTrade = null;
 let positions = [];
@@ -781,21 +752,9 @@ let tradesExecuted = 0;
 let tradeWins = 0;
 let signalsToday = 0;
 
-const assets = {
-  'BTC/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'ETH/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'SOL/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'ADA/USDT': { price: 0, vol: 1.0, category: 'crypto',  change: 0 },
-  'AAPL':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'TSLA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'NVDA':     { price: 0, vol: 1.0, category: 'stock',   change: 0 },
-  'EUR/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'GBP/USD':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'USD/JPY':  { price: 0, vol: 1.0, category: 'forex',   change: 0 },
-  'GOLD':     { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-  'SILVER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-  'COPPER':   { price: 0, vol: 1.0, category: 'commodity', change: 0 },
-};
+// Populated at runtime from the user's saved custom symbols (loadCustomSymbols) and
+// whatever they add via search (registerCustomSymbol) — no built-in defaults.
+const assets = {};
 
 let priceHistory = {};
 Object.keys(assets).forEach(a => { priceHistory[a] = []; });
@@ -936,16 +895,16 @@ const INDICATOR_PARAMS = {
   ],
 };
 
-const STRATEGY_TEMPLATES = {
-  oversold_bounce: { name: 'Oversold Bounce', type: 'BUY',  match: 'all', conditions: [{ type: 'rsi_below',       value: 30  }, { type: 'bb_lower',        value: 15  }] },
-  overbought_sell: { name: 'Overbought Sell', type: 'SELL', match: 'all', conditions: [{ type: 'rsi_above',       value: 70  }, { type: 'bb_upper',        value: 85  }] },
-  macd_breakout:   { name: 'MACD Breakout',   type: 'BUY',  match: 'all', conditions: [{ type: 'macd_bull_cross', value: 3   }, { type: 'price_above_ma20', value: 0  }] },
-  volume_pop:      { name: 'Volume Pop',      type: 'BUY',  match: 'all', conditions: [{ type: 'volume_spike',    value: 2.0 }, { type: 'macd_bull_cross', value: 5   }] },
-};
-
 let watchlistEnabled = {};
 let wlDropdownOpen = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
+
+// Symbols the user searched for and saved to their account (as opposed to the 13
+// built-in defaults above). Tracked separately so the watchlist picker can offer a
+// remove button only for these.
+let customSymbolKeys = new Set();
+let searchDebounceTimer = null;
+let searchResults = [];
 
 // --- TIER SYSTEM ---
 const TIER_RANKS = { basic: 0, signal_tester: 1, power_user: 2 };
@@ -1152,19 +1111,6 @@ function renderConditions() {
         </div>
       </div>`;
   }).join('');
-}
-
-function loadTemplate(name) {
-  const tpl = STRATEGY_TEMPLATES[name];
-  if (!tpl) return;
-  document.getElementById('strategyName').value = tpl.name;
-  document.getElementById('stratMatch').value   = tpl.match;
-  strategyMatch = tpl.match;
-  strategyConditions = tpl.conditions.map(c => ({ ...c }));
-  setStratType(tpl.type);
-  renderConditions();
-  updateStrategyStatus();
-  addLog('info', 'STRAT', `Loaded template: ${tpl.name}`);
 }
 
 function renderStrategyDropdown() {
@@ -1840,7 +1786,18 @@ function updateRiskBar() {
 let tvWidget = null;
 
 function initChart() {
-  loadTvChart('BINANCE:BTCUSDT');
+  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
+  else showChartPlaceholder();
+}
+
+function showChartPlaceholder() {
+  const container = document.getElementById('tvChart');
+  if (!container) return;
+  if (tvWidget) tvWidget = null;
+  container.innerHTML = `
+    <div class="chart-empty-state">
+      <div class="empty-state">NO ASSET SELECTED<br><span style="font-size:8px;">Click WATCHLIST ▼ and search to add one</span></div>
+    </div>`;
 }
 
 function loadTvChart(tvSym) {
@@ -1872,7 +1829,8 @@ function loadTvChart(tvSym) {
 }
 
 document.addEventListener('gca-theme-change', function() {
-  loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
+  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
+  else showChartPlaceholder();
 });
 
 function drawChart() { /* replaced by TradingView */ }
@@ -1935,6 +1893,9 @@ function renderWlDropdown() {
     const checked = watchlistEnabled[sym];
     const isActive = sym === currentAsset;
     const price = a.price ? '$' + formatPrice(a.price, sym) : '—';
+    const removeBtn = customSymbolKeys.has(sym)
+      ? `<button class="wl-check-remove" onclick="removeCustomSymbol('${sym}', event)" title="Remove from my list">✕</button>`
+      : `<span></span>`;
     return `
       <div class="wl-check-item${isActive ? ' is-active' : ''}" onclick="wlRowClick('${sym}', event)">
         <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation()"
@@ -1942,8 +1903,273 @@ function renderWlDropdown() {
         <span class="wl-check-sym">${sym}</span>
         <span class="wl-check-cat">${a.category.toUpperCase()}</span>
         <span class="wl-check-price ${getChgClass(a.change)}" id="wl-dp-${sym.replace('/','_')}">${price}</span>
+        ${removeBtn}
       </div>`;
   }).join('');
+}
+
+// --- CUSTOM SYMBOL SEARCH & SAVE ---
+// Lets a signed-in user find and track any stock, ETF, crypto, forex pair, future,
+// commodity, etc. beyond the 13 built-in defaults, saved to their account via
+// /api/custom-symbols (persisted in their preferences, isolated from the rest of the
+// prefs blob so it can't be clobbered by savePreferences() on this page).
+
+function onSymbolSearchInput(q) {
+  clearTimeout(searchDebounceTimer);
+  const query = q.trim();
+  if (!query) {
+    searchResults = [];
+    renderSearchResults(query);
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => runSymbolSearch(query), 300);
+}
+
+// Yahoo's own search frequently buries (or omits) the actual index behind unrelated
+// futures/ETF/ETN matches for common nicknames like "nasdaq" or "ftse100" — this puts
+// the real index at the top of the results for the names people actually type.
+const INDEX_ALIASES = {
+  'nasdaq': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaqcomposite': { symbol: '^IXIC', name: 'NASDAQ Composite', exchange: 'NASDAQ', type: 'INDEX' },
+  'nasdaq100': { symbol: '^NDX', name: 'NASDAQ 100', exchange: 'NASDAQ', type: 'INDEX' },
+  'dow': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'dowjones': { symbol: '^DJI', name: 'Dow Jones Industrial Average', exchange: 'Dow Jones', type: 'INDEX' },
+  'sp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'sandp500': { symbol: '^GSPC', name: 'S&P 500', exchange: 'SNP', type: 'INDEX' },
+  'ftse': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'ftse100': { symbol: '^FTSE', name: 'FTSE 100', exchange: 'FTSE', type: 'INDEX' },
+  'dax': { symbol: '^GDAXI', name: 'DAX', exchange: 'XETRA', type: 'INDEX' },
+  'cac40': { symbol: '^FCHI', name: 'CAC 40', exchange: 'Paris', type: 'INDEX' },
+  'nikkei': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'nikkei225': { symbol: '^N225', name: 'Nikkei 225', exchange: 'Osaka', type: 'INDEX' },
+  'hangseng': { symbol: '^HSI', name: 'Hang Seng Index', exchange: 'HKSE', type: 'INDEX' },
+  'russell2000': { symbol: '^RUT', name: 'Russell 2000', exchange: 'Chicago Options', type: 'INDEX' },
+  'vix': { symbol: '^VIX', name: 'CBOE Volatility Index', exchange: 'CBOE', type: 'INDEX' },
+};
+
+function matchIndexAlias(query) {
+  const norm = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!norm) return null;
+  if (INDEX_ALIASES[norm]) return INDEX_ALIASES[norm];
+  if (norm.length < 3) return null;
+  for (const key in INDEX_ALIASES) {
+    if (norm.startsWith(key) || key.startsWith(norm)) return INDEX_ALIASES[key];
+  }
+  return null;
+}
+
+async function runSymbolSearch(query) {
+  let results = [];
+  try {
+    const res = await fetch(API_BASE + '/api/symbol-search?q=' + encodeURIComponent(query));
+    const data = await res.json();
+    results = data.results || [];
+  } catch (e) {
+    results = [];
+  }
+  const alias = matchIndexAlias(query);
+  if (alias && !results.some(r => r.symbol === alias.symbol)) {
+    results = [alias, ...results];
+  }
+  searchResults = results.filter(r => !assets[r.symbol]);
+  renderSearchResults(query);
+}
+
+function renderSearchResults(query) {
+  const el = document.getElementById('wlSearchResults');
+  if (!el) return;
+  if (!query) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+  const rows = searchResults.map((r, i) => `
+    <div class="wl-search-result" onclick="addSearchResult(${i})">
+      <span class="wl-sr-sym">${r.symbol}</span>
+      <span class="wl-sr-name">${r.name}</span>
+      <span class="wl-sr-type">${(r.type || '').toUpperCase()}</span>
+    </div>
+  `).join('');
+  const manualLabel = query.toUpperCase().replace(/[^A-Z0-9=\-.]/g, '');
+  const manual = manualLabel && !assets[manualLabel] ? `
+    <div class="wl-search-result" onclick="addManualSymbol()">
+      <span class="wl-search-manual">+ Add "${manualLabel}" directly</span>
+    </div>` : '';
+  el.innerHTML = (rows + manual) || `<div class="wl-search-empty">No matches — try the exact ticker</div>`;
+  el.style.display = 'block';
+}
+
+function categoryFromQuoteType(symbol, quoteType) {
+  const t = (quoteType || '').toUpperCase();
+  if (t === 'CRYPTOCURRENCY') return 'crypto';
+  if (t === 'CURRENCY') return 'forex';
+  if (t === 'FUTURE') return 'futures';
+  if (t === 'ETF') return 'etf';
+  if (t === 'EQUITY') return 'stock';
+  if (t === 'INDEX') return 'index';
+  if (t === 'MUTUALFUND') return 'fund';
+  // No search metadata (manual entry) — fall back to the yfinance ticker convention.
+  if (symbol.endsWith('-USD')) return 'crypto';
+  if (symbol.endsWith('=X')) return 'forex';
+  if (symbol.endsWith('=F')) return 'futures';
+  return 'stock';
+}
+
+// A bare ticker with no exchange prefix ("MSFT" instead of "NASDAQ:MSFT") frequently
+// fails to resolve on first load in the TradingView widget — it shows its own "This
+// symbol doesn't exist" error rather than falling back gracefully. So stocks/ETFs/etc.
+// need a real EXCHANGE:SYMBOL mapping, built from the exchange Yahoo's search already
+// gave us; only unrecognized exchanges fall back to the bare symbol as a last resort
+// (the widget's own allow_symbol_change lets the user manually fix it from there).
+function exchangeToTvPrefix(exchange) {
+  const ex = (exchange || '').toUpperCase();
+  const map = [
+    ['NASDAQ', 'NASDAQ'],
+    ['NYSE ARCA', 'AMEX'], ['NYSEARCA', 'AMEX'], ['NYSE AMERICAN', 'AMEX'], ['AMEX', 'AMEX'],
+    ['NYSE', 'NYSE'],
+    ['BATS', 'BATS'], ['CBOE', 'CBOE'],
+    ['LONDON', 'LSE'], ['LSE', 'LSE'],
+    ['TORONTO', 'TSX'], ['TSX', 'TSX'], ['TSXV', 'TSXV'],
+    ['FRANKFURT', 'FWB'], ['XETRA', 'XETR'], ['GERMANY', 'XETR'],
+    ['PARIS', 'EURONEXT'], ['AMSTERDAM', 'EURONEXT'], ['BRUSSELS', 'EURONEXT'],
+    ['HONG KONG', 'HKEX'],
+    ['TOKYO', 'TSE'],
+    ['SWISS', 'SIX'],
+    ['AUSTRALIA', 'ASX'], ['ASX', 'ASX'],
+    ['SHANGHAI', 'SSE'], ['SHENZHEN', 'SZSE'],
+    ['INDIA', 'NSE'], ['NSE', 'NSE'], ['BSE', 'BSE'],
+    ['SINGAPORE', 'SGX'],
+  ];
+  for (const [needle, prefix] of map) {
+    if (ex.includes(needle)) return prefix;
+  }
+  return null;
+}
+
+// yfinance indices ("^"-prefixed) don't carry a normal stock exchange, so they need
+// their own explicit map onto a TradingView symbol. The obvious TVC:<index> feeds
+// (TVC:SPX, TVC:UKX, TVC:VIX, ...) are exchange-licensed data gated behind a
+// TradingView login/subscription — the widget shows "This symbol is only available
+// on TradingView" for them even though they look valid. Verified live (headless
+// browser against the actual embedded widget) that the FOREXCOM CFD feeds are what's
+// actually accessible on the free embed for indices; VIX uses the VIXY ETF as a proxy
+// since the raw index isn't available at all on the free tier.
+const INDEX_TV_MAP = {
+  '^GSPC': 'FOREXCOM:SPXUSD', '^DJI': 'FOREXCOM:DJI',
+  '^IXIC': 'FOREXCOM:NSXUSD', '^NDX': 'FOREXCOM:NSXUSD',
+  '^FTSE': 'FOREXCOM:UK100', '^GDAXI': 'FOREXCOM:GRXEUR', '^FCHI': 'FOREXCOM:FRXEUR',
+  '^N225': 'FOREXCOM:JPXJPY', '^HSI': 'FOREXCOM:HKXHKD',
+  '^RUT': 'FOREXCOM:US2000', '^VIX': 'AMEX:VIXY',
+};
+
+function guessTvSymbol(symbol, category, exchange) {
+  if (INDEX_TV_MAP[symbol]) return INDEX_TV_MAP[symbol];
+  if (category === 'crypto') return 'BINANCE:' + symbol.replace('-USD', 'USDT').replace(/[^A-Z0-9]/g, '');
+  if (category === 'forex') return 'FX:' + symbol.replace('=X', '');
+  if (category === 'futures') return symbol.replace('=F', '1!');
+  const prefix = exchangeToTvPrefix(exchange);
+  const cleanSymbol = symbol.split('.')[0]; // strip yfinance suffixes like .L, .TO, .SW
+  return prefix ? `${prefix}:${cleanSymbol}` : symbol;
+}
+
+function addSearchResult(idx) {
+  const r = searchResults[idx];
+  if (!r) return;
+  addCustomSymbol(r.symbol, r.name, categoryFromQuoteType(r.symbol, r.type), r.exchange);
+}
+
+function addManualSymbol() {
+  const input = document.getElementById('wlSearchInput');
+  const symbol = (input?.value || '').trim().toUpperCase();
+  if (!symbol) return;
+  addCustomSymbol(symbol, symbol, categoryFromQuoteType(symbol, null), '');
+}
+
+async function addCustomSymbol(symbol, label, category, exchange) {
+  if (!currentUser) {
+    // checkSession() may still be resolving on a fast click right after page load —
+    // double-check before rejecting rather than trusting a possibly-stale currentUser.
+    try {
+      const meRes = await fetch(API_BASE + '/api/me', { credentials: 'include' });
+      const me = await meRes.json();
+      if (me.authenticated) currentUser = me.username;
+    } catch (e) {}
+  }
+  if (!currentUser) {
+    const hint = document.getElementById('wlSearchHint');
+    if (hint) { hint.style.display = 'block'; hint.classList.add('wl-search-hint-error'); }
+    addLog('warn', 'SYMBOLS', 'Sign in to save custom symbols to your account');
+    return;
+  }
+  if (assets[symbol]) { addLog('info', 'SYMBOLS', `${symbol} is already in your list`); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/custom-symbols', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, label, category, exchange }),
+    });
+    const data = await res.json();
+    if (!res.ok) { addLog('err', 'SYMBOLS', data.error || `Failed to add ${symbol}`); return; }
+
+    registerCustomSymbol(symbol, category, exchange);
+    watchlistEnabled[symbol] = true;
+
+    const input = document.getElementById('wlSearchInput');
+    if (input) input.value = '';
+    searchResults = [];
+    renderSearchResults('');
+    renderWlDropdown();
+    addLog('info', 'SYMBOLS', `Added ${symbol} to your watchlist`);
+    selectAsset(symbol); // switch the chart/indicator panel to the symbol just added
+  } catch (e) {
+    addLog('err', 'SYMBOLS', 'Add failed: ' + e.message);
+  }
+}
+
+function registerCustomSymbol(symbol, category, exchange) {
+  symbolMap[symbol] = symbol;
+  tvSymbolMap[symbol] = guessTvSymbol(symbol, category, exchange);
+  assets[symbol] = { price: 0, vol: 1.0, category: category || 'stock', change: 0 };
+  priceHistory[symbol] = [];
+  customSymbolKeys.add(symbol);
+}
+
+async function removeCustomSymbol(symbol, event) {
+  if (event) event.stopPropagation();
+  try {
+    await fetch(API_BASE + '/api/custom-symbols?symbol=' + encodeURIComponent(symbol), {
+      method: 'DELETE', credentials: 'include',
+    });
+  } catch (e) {}
+
+  delete assets[symbol];
+  delete symbolMap[symbol];
+  delete tvSymbolMap[symbol];
+  delete watchlistEnabled[symbol];
+  delete priceHistory[symbol];
+  customSymbolKeys.delete(symbol);
+
+  if (currentAsset === symbol) {
+    const fallback = Object.keys(assets)[0];
+    if (fallback) selectAsset(fallback);
+  }
+  renderWlDropdown();
+  renderWatchlist();
+  addLog('info', 'SYMBOLS', `Removed ${symbol} from your watchlist`);
+}
+
+async function loadCustomSymbols() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(API_BASE + '/api/custom-symbols', { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.symbols || []).forEach(s => {
+      if (assets[s.symbol]) return; // already a built-in — don't overwrite it
+      registerCustomSymbol(s.symbol, s.category, s.exchange);
+      watchlistEnabled[s.symbol] = true;
+    });
+    renderWlDropdown();
+    renderWatchlist();
+  } catch (e) {}
 }
 
 function toggleWatchlistDropdown() {
@@ -1952,8 +2178,16 @@ function toggleWatchlistDropdown() {
   const chev = document.getElementById('wlChev');
   if (dd)   dd.style.display = wlDropdownOpen ? 'flex' : 'none';
   if (chev) chev.classList.toggle('open', wlDropdownOpen);
-  if (wlDropdownOpen) renderWlDropdown();
-  else renderWatchlist();  // refresh active list when closing
+  if (wlDropdownOpen) {
+    renderWlDropdown();
+    const hint = document.getElementById('wlSearchHint');
+    if (hint) {
+      hint.classList.remove('wl-search-hint-error');
+      hint.style.display = currentUser ? 'none' : 'block';
+    }
+  } else {
+    renderWatchlist();  // refresh active list when closing
+  }
 }
 
 function wlRowClick(sym, event) {
@@ -1972,7 +2206,8 @@ function toggleWatchlistItem(sym, enabled) {
   watchlistEnabled[sym] = enabled;
   if (!enabled && sym === currentAsset) {
     const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
-    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next] || 'BINANCE:BTCUSDT'); }
+    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next]); }
+    else { currentAsset = null; showChartPlaceholder(); }
   }
   _wlUpdateCount();
 }
@@ -1998,7 +2233,7 @@ function selectAsset(sym) {
   clearIndicatorBar();
   renderWatchlist();
   updateChartOverlay();
-  const tvSym = tvSymbolMap[sym] || 'BINANCE:BTCUSDT';
+  const tvSym = tvSymbolMap[sym] || sym;
   loadTvChart(tvSym);
   addLog('info', 'CHART', `Switched to ${sym} → ${tvSym}`);
   // Show cached data immediately if we already have it, then refresh in the background
@@ -2010,6 +2245,7 @@ function selectAsset(sym) {
 // --- TICKER TAPE ---
 function updateTicker() {
   const tape = document.getElementById('tickerTape');
+  if (!tape) return;
   tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
@@ -2113,6 +2349,7 @@ async function checkSession() {
           applyPreferences(prefData.preferences || {});
         }
       } catch (e) {}
+      await loadCustomSymbols();
     } else {
       currentUser = null;
       userAuthenticated = false;

@@ -418,6 +418,24 @@ def calculate_keltner(df: pd.DataFrame, length: int = 20, atr_length: int = 10, 
     return pd.DataFrame({"KC_upper": basis + mult * atr_val, "KC_mid": basis, "KC_lower": basis - mult * atr_val})
 
 
+def calculate_keltner_squeeze(
+    close: pd.Series, bb_upper: pd.Series, bb_lower: pd.Series,
+    kc_upper: pd.Series, kc_lower: pd.Series, breakout_window: int = 10,
+) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """
+    TTM-style squeeze: Bollinger Bands compressed inside the Keltner Channel (bb_upper <
+    kc_upper and bb_lower > kc_lower) signals a volatility contraction — a breakout is
+    building. Returns (squeeze_on, bullish_release, bearish_release): the latter two fire
+    when a squeeze was active within the last `breakout_window` bars and price has now
+    closed beyond a Keltner band.
+    """
+    squeeze_on = (bb_upper < kc_upper) & (bb_lower > kc_lower)
+    was_squeezed = squeeze_on.rolling(breakout_window).max().fillna(0).astype(bool)
+    bullish_release = was_squeezed & (close > kc_upper)
+    bearish_release = was_squeezed & (close < kc_lower)
+    return squeeze_on.fillna(False), bullish_release.fillna(False), bearish_release.fillna(False)
+
+
 def calculate_stdev(df: pd.DataFrame, length: int = 20) -> pd.Series:
     return df["Close"].rolling(length).std()
 
@@ -466,6 +484,60 @@ def calculate_tsi(df: pd.DataFrame, long: int = 25, short: int = 13, signal: int
 def calculate_awesome_oscillator(df: pd.DataFrame, fast: int = 5, slow: int = 34) -> pd.Series:
     median_price = (df["High"] + df["Low"]) / 2
     return median_price.rolling(fast).mean() - median_price.rolling(slow).mean()
+
+
+def calculate_ao_saucer(ao: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """
+    Bill Williams' AO saucer: a 3-bar momentum-dip-and-recover confirmed while the
+    oscillator stays on one side of zero. Bull saucer — three bars above zero where the
+    middle bar dips (lower than the first) and the current bar turns back up (higher than
+    the middle), signaling fading-then-returning bullish momentum. Bear saucer mirrors
+    this below zero.
+    """
+    a, b, c = ao.shift(2), ao.shift(1), ao
+    bull = (a > 0) & (b > 0) & (c > 0) & (b < a) & (c > b)
+    bear = (a < 0) & (b < 0) & (c < 0) & (b > a) & (c < b)
+    return bull.fillna(False), bear.fillna(False)
+
+
+def calculate_ao_twin_peaks(ao: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    Bill Williams' AO twin peaks: two troughs (bull) or peaks (bear) on the same side of
+    zero, where the oscillator holds that side for the entire stretch between them, and
+    the second extreme is shallower than the first — confirming momentum is fading before
+    price actually reverses. Pivots are trailing-confirmed the same way as
+    calculate_price_divergence: bar j = i - lookback is a pivot if it's the min/max of the
+    (2*lookback+1)-bar window ending at i, so there's no lookahead.
+    """
+    n = len(ao)
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    a = ao.values
+
+    last_trough_idx = last_trough_val = None
+    last_peak_idx = last_peak_val = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window = a[i - win + 1: i + 1]
+        if np.isnan(window).any():
+            continue
+
+        if a[j] == window.min() and a[j] < 0:
+            if (last_trough_val is not None and a[j] > last_trough_val
+                    and (a[last_trough_idx:j + 1] < 0).all()):
+                bull[i] = True
+            last_trough_idx, last_trough_val = j, a[j]
+
+        if a[j] == window.max() and a[j] > 0:
+            if (last_peak_val is not None and a[j] < last_peak_val
+                    and (a[last_peak_idx:j + 1] > 0).all()):
+                bear[i] = True
+            last_peak_idx, last_peak_val = j, a[j]
+
+    return pd.Series(bull, index=ao.index), pd.Series(bear, index=ao.index)
 
 
 def calculate_volume_profile_poc(df: pd.DataFrame, lookback: int = 50, bins: int = 24) -> pd.Series:
@@ -585,13 +657,15 @@ def calculate_macd_zscore(macd_line: pd.Series, length: int = 100) -> pd.Series:
     return (macd_line - mean) / std.replace(0, np.nan)
 
 
-def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+def calculate_failure_swings(series: pd.Series, oversold: float, overbought: float) -> tuple[pd.Series, pd.Series]:
     """
-    Wilder's failure swings. Returns (bullish, bearish) boolean Series, True on the bar
-    the swing is confirmed (RSI breaks the high/low set during its pullback from the zone).
+    Wilder's failure swings, generic over any bounded oscillator with an oversold/overbought
+    zone (RSI 0-100, Williams %R -100-0, etc). Returns (bullish, bearish) boolean Series, True
+    on the bar the swing is confirmed (the series breaks the high/low set during its pullback
+    from the zone).
     """
-    n = len(rsi)
-    r = rsi.values
+    n = len(series)
+    r = series.values
     bull = np.zeros(n, dtype=bool)
     bear = np.zeros(n, dtype=bool)
 
@@ -652,7 +726,53 @@ def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbough
                 state = 0
         prev = v
 
-    return pd.Series(bull, index=rsi.index), pd.Series(bear, index=rsi.index)
+    return pd.Series(bull, index=series.index), pd.Series(bear, index=series.index)
+
+
+def calculate_rsi_failure_swings(rsi: pd.Series, oversold: float = 30, overbought: float = 70) -> tuple[pd.Series, pd.Series]:
+    return calculate_failure_swings(rsi, oversold, overbought)
+
+
+def calculate_willr_failure_swings(willr: pd.Series, oversold: float = -80, overbought: float = -20) -> tuple[pd.Series, pd.Series]:
+    return calculate_failure_swings(willr, oversold, overbought)
+
+
+def calculate_trend_confirmation(close: pd.Series, indicator: pd.Series, lookback: int = 5) -> tuple[pd.Series, pd.Series]:
+    """
+    The mirror image of calculate_price_divergence: detected off the same trailing-confirmed
+    pivots, but flags the bar a new price extreme is echoed by a same-direction extreme in the
+    oscillator (both higher highs, or both lower lows) — confirming the trend is still backed by
+    momentum, rather than warning that it's fading.
+    """
+    n = len(close)
+    bull = np.zeros(n, dtype=bool)
+    bear = np.zeros(n, dtype=bool)
+
+    win = 2 * lookback + 1
+    c = close.values
+    r = indicator.values
+
+    last_low_price = last_low_ind = None
+    last_high_price = last_high_ind = None
+
+    for i in range(win - 1, n):
+        j = i - lookback
+        window_c = c[i - win + 1: i + 1]
+        window_r = r[i - win + 1: i + 1]
+        if np.isnan(window_c).any() or np.isnan(window_r).any():
+            continue
+
+        if c[j] == window_c.min():
+            if last_low_price is not None and c[j] < last_low_price and r[j] < last_low_ind:
+                bear[i] = True
+            last_low_price, last_low_ind = c[j], r[j]
+
+        if c[j] == window_c.max():
+            if last_high_price is not None and c[j] > last_high_price and r[j] > last_high_ind:
+                bull[i] = True
+            last_high_price, last_high_ind = c[j], r[j]
+
+    return pd.Series(bull, index=close.index), pd.Series(bear, index=close.index)
 
 
 # ── Bollinger Band trigger modes (Backtester) ─────────────────────────────────
