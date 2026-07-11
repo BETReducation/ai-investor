@@ -8,6 +8,11 @@ import bcrypt
 import json
 import os
 import secrets
+import hashlib
+import hmac
+import time
+import smtplib
+from email.mime.text import MIMEText
 try:
     import psycopg2
     import psycopg2.extras
@@ -302,6 +307,27 @@ def _save_users(users: dict) -> None:
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
+
+
+def _send_email(to_addr: str, subject: str, body: str) -> None:
+    smtp_host = os.environ.get("SMTP_HOST", "")
+    if not smtp_host:
+        # No SMTP configured — log so it's still usable during setup/testing.
+        print(f"\n  ✉️  [email not configured] To: {to_addr}  Subject: {subject}\n{body}\n")
+        return
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
+    from_addr = os.environ.get("SMTP_FROM", smtp_user)
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = from_addr
+    msg["To"] = to_addr
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        if smtp_user:
+            server.login(smtp_user, smtp_pass)
+        server.sendmail(from_addr, [to_addr], msg.as_string())
 
 
 def _save_preferences(username: str, preferences: dict) -> None:
@@ -609,6 +635,86 @@ def api_login():
         "preferences": user_data.get("preferences", {}),
         "landing_page": user_data.get("profile", {}).get("landing_page", "/"),
     })
+
+
+@app.route("/api/forgot-password", methods=["POST"])
+def api_forgot_password():
+    data = request.get_json() or {}
+    identifier = data.get("identifier", "").strip().lower()
+    generic = {"success": True, "message": "If an account matches that username or email, we've sent a reset link."}
+    if not identifier:
+        return jsonify(generic)
+
+    users = _load_users()
+    match_username = None
+    for username, user_data in users.items():
+        email = (user_data.get("profile", {}) or {}).get("email", "").strip().lower()
+        if username.lower() == identifier or (email and email == identifier):
+            match_username = username
+            break
+
+    if match_username:
+        user_data = users[match_username]
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        profile = dict(user_data.get("profile", {}) or {})
+        profile["reset_token_hash"] = token_hash
+        profile["reset_token_expires"] = time.time() + 3600  # 1 hour
+        user_data["profile"] = profile
+        users[match_username] = user_data
+        _save_users(users)
+
+        reset_link = f"{request.host_url.rstrip('/')}/reset-password?u={match_username}&t={token}"
+        to_addr = profile.get("email") or match_username
+        _send_email(
+            to_addr,
+            "Reset your Growth Capital Academy password",
+            f"Someone requested a password reset for the account \"{match_username}\".\n\n"
+            f"Reset your password here (valid for 1 hour):\n{reset_link}\n\n"
+            f"If you didn't request this, you can safely ignore this email.",
+        )
+
+    return jsonify(generic)
+
+
+@app.route("/api/reset-password", methods=["POST"])
+def api_reset_password():
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    token = data.get("token", "")
+    new_password = data.get("new_password", "")
+
+    if not username or not token or not new_password:
+        return jsonify({"error": "Missing required fields"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    users = _load_users()
+    user_data = users.get(username)
+    profile = (user_data.get("profile", {}) or {}) if user_data else {}
+    stored_hash = profile.get("reset_token_hash")
+    expires = profile.get("reset_token_expires", 0)
+
+    if not user_data or not stored_hash or time.time() > expires:
+        return jsonify({"error": "This reset link is invalid or has expired. Please request a new one."}), 400
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    if not hmac.compare_digest(token_hash, stored_hash):
+        return jsonify({"error": "This reset link is invalid or has expired. Please request a new one."}), 400
+
+    user_data["password_hash"] = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    profile.pop("reset_token_hash", None)
+    profile.pop("reset_token_expires", None)
+    user_data["profile"] = profile
+    users[username] = user_data
+    _save_users(users)
+
+    return jsonify({"success": True})
+
+
+@app.route("/reset-password")
+def reset_password_page():
+    return send_from_directory("static", "reset-password.html")
 
 
 @app.route("/api/logout", methods=["POST"])

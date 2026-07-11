@@ -276,7 +276,7 @@ body::after {
   <div class="card">
 
     <div class="logo">
-      <a href="/">Win<span class="dot">.</span>vestor</a>
+      <a href="/"><img src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:44px;width:auto;border-radius:10px;display:block;margin:0 auto;"></a>
       <div class="logo-sub">Your Investing Education Hub</div>
     </div>
 
@@ -301,6 +301,21 @@ body::after {
         <input type="checkbox" id="loginRemember" checked> Keep me signed in
       </label>
       <button class="submit-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <div class="back" style="margin-top:16px;"><a href="#" onclick="showForgot(); return false;">Forgot password?</a></div>
+    </div>
+
+    <!-- FORGOT PASSWORD FORM -->
+    <div id="forgotPanel" style="display:none;">
+      <div class="msg error" id="forgotError"></div>
+      <div class="msg success" id="forgotSuccess"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">Enter your username or email and we'll send you a link to reset your password.</p>
+      <div class="field" style="margin-bottom:22px;">
+        <label class="field-label" for="forgotIdentifier">Username or email</label>
+        <input type="text" id="forgotIdentifier" placeholder="Enter username or email" autocomplete="username"
+               onkeydown="if(event.key==='Enter') doForgotPassword()">
+      </div>
+      <button class="submit-btn" id="forgotBtn" onclick="doForgotPassword()">Send Reset Link</button>
+      <div class="back" style="margin-top:16px;"><a href="#" onclick="showLoginFromForgot(); return false;">← Back to sign in</a></div>
     </div>
 
     <!-- REGISTER FORM -->
@@ -351,8 +366,49 @@ function switchTab(tab) {
   const isLogin = tab === 'login';
   document.getElementById('loginPanel').style.display    = isLogin ? '' : 'none';
   document.getElementById('registerPanel').style.display = isLogin ? 'none' : '';
+  document.getElementById('forgotPanel').style.display   = 'none';
+  document.querySelector('.tabs').style.display = '';
   document.getElementById('tabLogin').classList.toggle('active', isLogin);
   document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+}
+
+// ── Forgot password ──
+function showForgot() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('registerPanel').style.display = 'none';
+  document.getElementById('forgotPanel').style.display = '';
+  document.querySelector('.tabs').style.display = 'none';
+}
+function showLoginFromForgot() {
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotSuccess').style.display = 'none';
+  switchTab('login');
+}
+async function doForgotPassword() {
+  const btn        = document.getElementById('forgotBtn');
+  const identifier = document.getElementById('forgotIdentifier').value.trim();
+  const errEl      = document.getElementById('forgotError');
+  const okEl       = document.getElementById('forgotSuccess');
+
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (!identifier) { showError(errEl, 'Please enter your username or email.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('/api/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier }),
+    });
+    const data = await res.json();
+    okEl.textContent = data.message || "If an account matches, we've sent a reset link.";
+    okEl.style.display = 'block';
+    document.getElementById('forgotIdentifier').value = '';
+  } catch {
+    showError(errEl, 'Cannot reach server — please try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send Reset Link';
+  }
 }
 
 // ── Redirect after auth ──
