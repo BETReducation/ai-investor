@@ -452,9 +452,14 @@ def calculate_historical_volatility(df: pd.DataFrame, length: int = 20) -> pd.Se
     return log_ret.rolling(length).std() * (252 ** 0.5) * 100
 
 
-def calculate_rolling_vwap(df: pd.DataFrame, length: int = 20) -> pd.Series:
+def calculate_rolling_vwap(df: pd.DataFrame, length: int = 20, anchored: bool = False) -> pd.Series:
+    """By default a rolling N-bar VWAP. When anchored=True, ignores `length` and
+    instead cumulatively sums from the start of `df` — a classic anchored VWAP
+    that never rolls off older bars, only growing wider over the series."""
     typical = (df["High"] + df["Low"] + df["Close"]) / 3
     tp_vol  = typical * df["Volume"]
+    if anchored:
+        return tp_vol.cumsum() / df["Volume"].cumsum().replace(0, np.nan)
     return tp_vol.rolling(length).sum() / df["Volume"].rolling(length).sum().replace(0, np.nan)
 
 

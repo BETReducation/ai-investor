@@ -119,6 +119,7 @@ def run_backtest(
     vol_profile_bins       = int(cp.get("vol_profile_bins", 24))
     fib_lookback           = int(cp.get("fib_lookback", 50))
     vwap_band_pct          = float(cp.get("vwap_band_pct", 1.0))
+    vwap_anchored          = bool(int(cp.get("vwap_anchored", 0)))
     obv_div_lookback       = int(cp.get("obv_div_lookback", 5))
     ad_div_lookback        = int(cp.get("ad_div_lookback", 5))
 
@@ -184,7 +185,7 @@ def run_backtest(
     stdev_s       = _try(lambda: calculate_stdev(df, length=stdev_length))
     chaikin_vol_s = _try(lambda: calculate_chaikin_volatility(df, ema_length=chaikin_vol_ema_length, roc_length=chaikin_vol_roc_length))
     hist_vol_s    = _try(lambda: calculate_historical_volatility(df, length=hist_vol_length))
-    vwap_s        = _try(lambda: calculate_rolling_vwap(df, length=vwap_length))
+    vwap_s        = _try(lambda: calculate_rolling_vwap(df, length=vwap_length, anchored=vwap_anchored))
     ad_line_s     = _try(lambda: calculate_ad_line(df))
     cmf_s         = _try(lambda: calculate_cmf(df, length=cmf_length))
     tsi_df        = _try(lambda: calculate_tsi(df, long=tsi_long, short=tsi_short, signal=tsi_signal))
@@ -700,6 +701,8 @@ def run_backtest(
                 "value": (vwap_v := _sf(row.get("VWAP_ROLL"))),
                 "upper_band": _sf(vwap_v * (1 + vwap_band_pct / 100)) if vwap_v is not None else None,
                 "lower_band": _sf(vwap_v * (1 - vwap_band_pct / 100)) if vwap_v is not None else None,
+                "prev_close": _sf(combined["Close"].iloc[i - 1]) if i > 0 else None,
+                "prev_value": _sf(vwap_s.iloc[i - 1]) if i > 0 and vwap_s is not None else None,
             },
             "ad_trend": {
                 "ad":     _sf(row.get("AD_LINE")),

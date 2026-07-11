@@ -1589,11 +1589,17 @@ window.addEventListener('resize', () => {
             <option value="bullish">Bullish only</option>
             <option value="bearish">Bearish only</option>
             <option value="band_touch">Band touch</option>
+            <option value="pullback_buy">Pullback buy</option>
+            <option value="pullback_sell">Pullback sell</option>
           </select>
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Band %</span>
           <input type="number" class="param-input" id="vwapBandPct" value="1.0" min="0.1" max="10" step="0.1">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Anchored</span>
+          <label class="toggle"><input type="checkbox" id="vwapAnchored"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
         </div>
       </div>
 
@@ -2455,6 +2461,7 @@ async function runBacktest() {
       obv_trigger: _tv('obvTrigger', 'trend'), obv_div_lookback: _iv('obvDivLookback', 5),
     vwap_on: _on('togVwap'), vwap_length: _iv('vwapLength', 20),
       vwap_trigger: _tv('vwapTrigger', 'position'), vwap_band_pct: _fv('vwapBandPct', 1.0),
+      vwap_anchored: _on('vwapAnchored'),
     ad_on: _on('togAd'), ad_sma_length: _iv('adSmaLength', 20),
       ad_trigger: _tv('adTrigger', 'trend'), ad_div_lookback: _iv('adDivLookback', 5),
     cmf_on: _on('togCmf'), cmf_length: _iv('cmfLength', 20), cmf_threshold: _fv('cmfThreshold', 0.05),

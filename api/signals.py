@@ -106,7 +106,7 @@ DEFAULT_THRESHOLDS = {
     "obv_on": 0,
     "obv_trigger": "trend",  # trend | bullish | bearish | divergence
     "vwap_on": 0,
-    "vwap_trigger": "position",  # position | bullish | bearish | band_touch
+    "vwap_trigger": "position",  # position | bullish | bearish | band_touch | pullback_buy | pullback_sell
     "ad_on": 0,
     "ad_trigger": "trend",  # trend | bullish | bearish | divergence
     "cmf_on": 0, "cmf_threshold": 0.05,
@@ -1390,6 +1390,22 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                 buy_score += 1
             else:
                 signals.append({"indicator": "VWAP", "type": "NEUTRAL", "detail": "Price within the VWAP band", "weight": 0})
+        elif vwap_trigger == "pullback_buy":
+            prev_close, prev_value = vwap.get("prev_close"), vwap.get("prev_value")
+            if (prev_close is not None and prev_value is not None
+                    and prev_close <= prev_value and close_now > vwap_v):
+                signals.append({"indicator": "VWAP", "type": "BUY", "detail": "Price pulled back to VWAP and reclaimed it", "weight": 1})
+                buy_score += 1
+            else:
+                signals.append({"indicator": "VWAP", "type": "NEUTRAL", "detail": "No VWAP pullback-and-reclaim", "weight": 0})
+        elif vwap_trigger == "pullback_sell":
+            prev_close, prev_value = vwap.get("prev_close"), vwap.get("prev_value")
+            if (prev_close is not None and prev_value is not None
+                    and prev_close >= prev_value and close_now < vwap_v):
+                signals.append({"indicator": "VWAP", "type": "SELL", "detail": "Price pulled back to VWAP and rejected it", "weight": 1})
+                sell_score += 1
+            else:
+                signals.append({"indicator": "VWAP", "type": "NEUTRAL", "detail": "No VWAP pullback-and-rejection", "weight": 0})
         else:  # "position" (default) — unchanged
             if close_now > vwap_v:
                 signals.append({"indicator": "VWAP", "type": "BUY", "detail": "Price above VWAP", "weight": 1})
