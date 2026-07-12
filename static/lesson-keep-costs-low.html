@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keep Costs Low — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table td.diff-cell { color: #ff3355; font-weight: 700; }
+.reinvest-table td.check-cell { color: var(--green); font-weight: 700; }
+.reinvest-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+/* PRACTICAL TIPS GRID */
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Habit 4 of 5</div>
+    <h1 class="hero-title">Keep Costs <span class="accent">Low</span></h1>
+    <p class="hero-sub">A 1% annual fee sounds tiny — but left unchecked for a few decades, it can quietly cost you more than the market ever did. Here's where investing costs actually hide, and four concrete ways to keep more of what you earn.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">Where Do Investing Costs Actually Hide?</h2>
+    <p class="body-text">Every investment has costs somewhere — the question is whether you can see them. A brokerage commission on a trade is obvious. A fund's ongoing "expense ratio" is not — it's quietly deducted from the fund's value every single day, so you never see a bill, you just end up with a smaller pot than you otherwise would have. Bid-ask spreads, currency conversion fees, "premium" subscription tiers, and advisor or management fees all work the same way: small, easy to ignore, and only visible if you go looking for them.</p>
+    <p class="body-text">A useful analogy: it's like a gym membership you forgot you were paying for. $10 a month feels irrelevant in the moment — but multiply it by 30 years and it's thousands of dollars leaving your account that you'll never notice, unless you actually check.</p>
+
+    <div class="example-card">
+      <h3>💡 Real example: Nadia vs. Ryan</h3>
+      <p class="body-text" style="margin-bottom:0;">Nadia and Ryan each invest $300 a month for 30 years, into funds that track the same overall market and earn the same 8% average annual return before fees. The only difference: Nadia picks a low-cost index fund charging a 0.05% annual fee, while Ryan picks an actively managed fund charging a fairly typical 1.50% annual fee.</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">👩 Nadia — low-cost index fund</div>
+          <div class="ep-row"><span>Total invested</span><b>$108,000</b></div>
+          <div class="ep-row"><span>How</span><b>$300 × 360 months</b></div>
+          <div class="ep-row"><span>Annual fee</span><b>0.05%</b></div>
+          <div class="ep-total">
+            <div class="val">$442,596</div>
+            <div class="lbl">value after 30 years</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">🧑 Ryan — actively managed fund</div>
+          <div class="ep-row"><span>Total invested</span><b>$108,000</b></div>
+          <div class="ep-row"><span>How</span><b>$300 × 360 months</b></div>
+          <div class="ep-row"><span>Annual fee</span><b>1.50%</b></div>
+          <div class="ep-total">
+            <div class="val">$331,853</div>
+            <div class="lbl">value after 30 years</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Nadia and Ryan contributed the exact same $108,000. Nadia still ends up <b>$110,743 ahead</b> — a gap bigger than either of them ever put in — purely because of a 1.45-percentage-point fee difference, compounding quietly in the background for three decades.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>📊 The Real Cost of Fees Over Time</h3>
+      <p>Same $300/month, same 30 years, same 8% gross market return — here's how the final balance shifts as the annual fee creeps up.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Annual fee</th><th>Net annual return</th><th>Value after 30 years</th><th>Cost vs. 0.05% fund</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>0.05%</td><td>7.95%</td><td>$442,596</td><td class="check-cell">Baseline</td></tr>
+          <tr><td>0.25%</td><td>7.75%</td><td>$425,056</td><td class="diff-cell">-$17,540</td></tr>
+          <tr><td>0.50%</td><td>7.50%</td><td>$404,234</td><td class="diff-cell">-$38,362</td></tr>
+          <tr><td>0.75%</td><td>7.25%</td><td>$384,568</td><td class="diff-cell">-$58,028</td></tr>
+          <tr><td>1.00%</td><td>7.00%</td><td>$365,991</td><td class="diff-cell">-$76,605</td></tr>
+          <tr class="highlight-row"><td>1.50% (Ryan)</td><td>6.50%</td><td>$331,853</td><td class="diff-cell">-$110,743</td></tr>
+          <tr><td>2.00%</td><td>6.00%</td><td>$301,355</td><td class="diff-cell">-$141,241</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">Every extra 0.25% in annual fees costs tens of thousands of dollars over a full investing lifetime — and that's before counting one-off trading costs on top. Checking a fund's expense ratio takes about 30 seconds and is one of the highest-leverage things you can do as an investor.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Practical Ways to Cut Your Costs</h3>
+    <p class="section-desc" style="margin-left:0;text-align:left;max-width:none;">None of these require picking better investments — just paying less to hold the same ones.</p>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>📝 Track What You Spend</h4>
+        <p>Investing apps make it easy to buy on impulse — a dip alert, a hot tip from a forum, "just one more trade." Keep a simple running log (a notes app, a spreadsheet, or your platform's own transaction history) of every deposit, trade, and fee. If you can't say roughly how much you spent on fees last month, that's usually a sign you're trading more than you realize.</p>
+      </div>
+      <div class="tip-card">
+        <h4>🎟️ Use Invite Codes When You Join</h4>
+        <p>Many brokers and exchanges offer a genuine perk — cash, a free share, or reduced fees — for signing up with a friend's invite code, and the same back to whoever refers you. It's free money for a link you were probably going to click anyway. Ask around before signing up cold, and once you're happy with a platform, share your own code too. Just don't let a bonus be the deciding factor — a $20 sign-up bonus doesn't make up for years of higher ongoing fees on the wrong platform.</p>
+      </div>
+      <div class="tip-card">
+        <h4>🔍 Compare Platforms for the Same Job</h4>
+        <p>The "same" platform can price wildly differently depending on which product you use. A well-known example: Kraken's simple "buy crypto instantly" widget bundles in a spread and premium that can run well over 1%, while Kraken Pro — the advanced trading interface on the very same account — charges a small maker/taker fee for the exact same coin, often a fraction of that. Before you fund an account, spend five minutes checking whether that platform has a cheaper "pro" or "advanced" mode for a simple buy-and-hold transaction.</p>
+      </div>
+      <div class="tip-card">
+        <h4>🔁 Transact Less</h4>
+        <p>Every trade can cost you — a commission, a bid-ask spread, sometimes a currency conversion fee. Buying one low-cost ETF that already holds hundreds of stocks is usually far cheaper, in transaction terms, than buying each of those stocks individually. But it's a trade-off, not a free lunch: that ETF also charges its own small ongoing expense ratio, year after year, for as long as you hold it — so over a very long horizon, a slightly higher fund fee can outweigh the transaction fees you saved. The goal isn't zero trades, it's fewer, more deliberate ones.</p>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> none of this means chasing the cheapest option blindly — a slightly higher fee can be worth it for better security, customer support, or features you'll actually use. The goal is to know what you're paying and why, not to assume every fee is evil. A 0.05% vs. 0.20% index fund difference is rarely worth agonizing over; a 0.05% vs. 1.50% one almost always is.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: The Fee Impact Calculator</h2>
+    <p class="section-desc">Plug in your own numbers and see exactly how much a fee difference could cost you — or save you — over time.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcMonthly">Monthly investment ($)</label>
+          <input type="number" id="calcMonthly" value="300" min="1">
+        </div>
+        <div class="calc-field">
+          <label for="calcYears">Years invested</label>
+          <input type="number" id="calcYears" value="30" min="1" max="60">
+        </div>
+        <div class="calc-field">
+          <label for="calcReturn">Expected annual return before fees (%)</label>
+          <input type="number" id="calcReturn" value="8" step="0.1">
+        </div>
+        <div class="calc-field">
+          <label for="calcFeeA">Fund A annual fee (%)</label>
+          <input type="number" id="calcFeeA" value="0.05" step="0.01" min="0">
+        </div>
+        <div class="calc-field" style="grid-column: span 2;">
+          <label for="calcFeeB">Fund B annual fee (%)</label>
+          <input type="number" id="calcFeeB" value="1.00" step="0.01" min="0">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Result →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csA">—</div><div class="cs-lbl">Fund A final value</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csB">—</div><div class="cs-lbl">Fund B final value</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csDiff">—</div><div class="cs-lbl">Difference</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barA"></div>
+          <div class="calc-bar-growth" id="barB"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>Fund A</span>
+          <span><span class="dot" style="background:var(--green)"></span>Fund B</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">1. Which of these is an ongoing cost that's charged automatically every year, whether or not you ever trade?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> A fund's expense ratio</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A one-time account opening fee</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A stock's bid-ask spread</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A referral bonus</label>
+        </div>
+        <div class="quiz-explain">A fund's expense ratio is deducted quietly from its value every single day, regardless of whether you buy, sell, or do nothing at all — unlike one-off costs like an account fee or a trade's spread.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. Why does a 1% annual fee difference matter so much over 30 years?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Fees are only charged once, in the first year</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> It compounds against you every year, shrinking the base your future growth is calculated on</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> It only affects returns during a market downturn</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> It's automatically refunded after 10 years</label>
+        </div>
+        <div class="quiz-explain">Just like gains, fees compound. A slightly smaller balance every year means slightly smaller growth on top of it — a gap that widens every single year you stay invested.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">3. What's the smartest way to compare two platforms before funding an account?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Pick whichever app has the nicest design</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Assume all platforms charge the same fees</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Check the actual fee schedule for the specific transaction type you'll use (e.g. a simple "instant buy" vs. an advanced/pro trading tier)</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Choose whichever platform is most popular</label>
+        </div>
+        <div class="quiz-explain">The same platform can price the same trade very differently depending on which interface you use — like Kraken's simple buy widget vs. Kraken Pro. Always check the fee schedule for how you'll actually use it.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. What's the right way to think about broker or exchange invite/referral codes?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> They should always be your top priority when choosing a platform</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> They don't exist for investing platforms</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> They guarantee lower fees forever</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> They can be a genuine free perk, but shouldn't outweigh choosing the right platform on fees and fit</label>
+        </div>
+        <div class="quiz-explain">A sign-up bonus is nice, free money — but it's a one-off. It's not worth locking yourself into a platform with worse ongoing fees just to grab it.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. Why might buying one ETF instead of 20 individual stocks reduce your costs?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> ETFs are always completely free to hold</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> It avoids the transaction cost of 20 separate trades, though the ETF still carries its own small ongoing fee</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Individual stocks always have higher expense ratios than ETFs</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> ETFs are not affected by market movements</label>
+        </div>
+        <div class="quiz-explain">One ETF trade instead of 20 individual stock trades means fewer commissions and spreads to pay upfront — but remember the ETF's own expense ratio still applies for as long as you hold it.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/keep-costs-low-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — where costs hide, the Nadia vs. Ryan example, the fee-over-time table, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/keep-costs-low-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to audit your own current fees and plan how to cut them.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/keep-costs-low-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore investment fees and cost drag in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Ready for Habit 5?</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Keep building your foundations.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to All 5 Habits</div>
+        <div class="card-desc">Return to the Beginner hub and pick up where you left off.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a diversified, low-cost portfolio and track it over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function fv(monthly, months, annualNetRate) {
+  const r = annualNetRate / 12;
+  if (Math.abs(r) < 1e-9) return monthly * months;
+  return monthly * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+function runCalc() {
+  const monthly = parseFloat(document.getElementById('calcMonthly').value) || 0;
+  const years = parseFloat(document.getElementById('calcYears').value) || 0;
+  const months = years * 12;
+  const gross = (parseFloat(document.getElementById('calcReturn').value) || 0) / 100;
+  const feeA = (parseFloat(document.getElementById('calcFeeA').value) || 0) / 100;
+  const feeB = (parseFloat(document.getElementById('calcFeeB').value) || 0) / 100;
+
+  const valueA = fv(monthly, months, gross - feeA);
+  const valueB = fv(monthly, months, gross - feeB);
+  const contributed = monthly * months;
+  const diff = valueA - valueB;
+
+  document.getElementById('csA').textContent = fmtMoney(valueA);
+  document.getElementById('csB').textContent = fmtMoney(valueB);
+  document.getElementById('csDiff').textContent = (diff >= 0 ? '+' : '') + fmtMoney(diff);
+
+  const total = valueA + valueB;
+  const pctA = total > 0 ? (valueA / total) * 100 : 50;
+  const pctB = 100 - pctA;
+  const barA = document.getElementById('barA');
+  const barB = document.getElementById('barB');
+  barA.style.width = pctA + '%';
+  barB.style.width = pctB + '%';
+  barA.textContent = fmtMoney(valueA);
+  barB.textContent = fmtMoney(valueB);
+
+  const callout = document.getElementById('calcCallout');
+  if (Math.abs(diff) < 1) {
+    callout.innerHTML = 'With identical fees, both funds land in the same place — the fee itself is the only thing that was separating them.';
+  } else if (diff > 0) {
+    callout.innerHTML = 'Over ' + years + ' years, Fund A\'s lower fee leaves you ' + fmtMoney(diff) + ' better off than Fund B — from the exact same ' + fmtMoney(contributed) + ' contributed. That whole gap is fee drag, not investment skill.';
+  } else {
+    callout.innerHTML = 'Fund B actually finishes ' + fmtMoney(Math.abs(diff)) + ' ahead of Fund A here. This calculator only isolates the fee difference — it assumes both funds otherwise earn the identical gross return before fees.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
