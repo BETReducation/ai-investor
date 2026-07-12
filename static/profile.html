@@ -415,6 +415,31 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </table>
       </div>
 
+      <!-- ADMIN TOOLS -->
+      <div class="profile-card" id="adminToolsCard" style="display:none;">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🛠️</span>Admin Tools</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="form-label">Username</div>
+            <input type="text" id="adminRoleUsername" class="form-input" placeholder="e.g. admin">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Alpha Role</div>
+            <select id="adminRoleSelect" class="form-input">
+              <option value="">None (remove access)</option>
+              <option value="tom">Tom</option>
+              <option value="dave">Dave</option>
+              <option value="gary">Gary</option>
+              <option value="connor">Connor</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-save" id="adminAssignRoleBtn" onclick="assignAlphaRole()">Assign Role</button>
+        <span class="form-hint" id="adminRoleHint"></span>
+      </div>
+
       <!-- DANGER ZONE -->
       <div class="profile-card" style="border-color:rgba(255,71,87,0.25);">
         <div class="card-header-row">
@@ -505,6 +530,9 @@ async function boot() {
     profileTier = data.tier || 'basic';
     populateProfile(data);
     document.getElementById('profilePage').style.display = 'block';
+    if (data.username === 'admin') {
+      document.getElementById('adminToolsCard').style.display = 'block';
+    }
   } catch (e) {
     document.getElementById('notLoggedIn').style.display = 'flex';
   }
@@ -575,6 +603,46 @@ function updateDangerZone(tier) {
   if (tier === 'basic') {
     subBtn.disabled = true;
     subBtn.title = 'You are already on the free Basic plan';
+  }
+}
+
+// ── Admin tools ──────────────────────────────────────────────────────────────
+
+async function assignAlphaRole() {
+  const btn      = document.getElementById('adminAssignRoleBtn');
+  const hint     = document.getElementById('adminRoleHint');
+  const username = document.getElementById('adminRoleUsername').value.trim();
+  const role     = document.getElementById('adminRoleSelect').value || null;
+
+  if (!username) {
+    hint.textContent = 'Enter a username first.';
+    hint.style.color = '#ff4757';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Assigning...';
+  hint.textContent = '';
+
+  try {
+    const res = await fetch('/api/admin/set-alpha-role', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, alpha_role: role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to assign role');
+    hint.textContent = role
+      ? `@${username} is now assigned to the "${role}" Alpha page.`
+      : `@${username}'s Alpha role has been removed.`;
+    hint.style.color = 'var(--green)';
+  } catch (e) {
+    hint.textContent = e.message || 'Something went wrong.';
+    hint.style.color = '#ff4757';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Assign Role';
   }
 }
 
