@@ -210,7 +210,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="content-inner">
     <div class="watchlist-strip reveal">
       <div class="watchlist-label">Current Watchlist</div>
-      <div class="watchlist-items">
+      <div class="watchlist-items" id="watchlistItems">
         <div class="watchlist-item">
           <div class="wl-top"><span class="wl-asset">BTC/USD</span><span class="stance-badge stance-bullish">Bullish</span></div>
           <p class="wl-note">Placeholder — Dave's current one-line take on this setup will go here.</p>
@@ -232,7 +232,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="content-inner">
     <h2 class="section-title">Videos</h2>
     <p class="section-desc">Dave's latest market breakdowns, hosted on YouTube and embedded here.</p>
-    <div class="media-grid reveal">
+    <div class="media-grid reveal" id="videoGrid">
       <div class="video-card">
         <div class="video-thumb"><span class="play-icon">▶</span></div>
         <div class="media-body">
@@ -273,7 +273,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="content-inner">
     <h2 class="section-title">Latest Thoughts</h2>
     <p class="section-desc">Dave's research notes and write-ups, normalized into a consistent format.</p>
-    <div class="media-grid reveal">
+    <div class="media-grid reveal" id="postGrid">
       <div class="post-card">
         <div class="media-body">
           <span class="media-tag topic-b">Setups Watchlist</span>
@@ -314,7 +314,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="content-inner">
     <h2 class="section-title">Alpha Links</h2>
     <p class="section-desc">Sites Dave is currently reading and following.</p>
-    <div class="links-list reveal">
+    <div class="links-list reveal" id="linksList">
       <a href="#" class="link-item">
         <div class="link-icon">🔗</div>
         <div class="link-body">
@@ -444,6 +444,170 @@ window.addEventListener('scroll', () => {
     ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
     : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
 });
+
+// ── Live Alpha content (replaces the placeholder cards above when the
+//    partner has published anything) ──────────────────────────────────────
+const ALPHA_SLUG = 'dave';
+const PAGE_TOPICS = ['Chart Breakdowns', 'Setups Watchlist', 'Pre-Market'];
+
+function topicAccentClass(topic) {
+  const idx = PAGE_TOPICS.indexOf(topic);
+  return 'topic-' + (idx === 1 ? 'b' : idx === 2 ? 'c' : 'a');
+}
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  if (/^[\w-]{11}$/.test(url)) return url;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function renderWatchlist(items) {
+  const container = document.getElementById('watchlistItems');
+  if (!container || !items.length) return;
+  container.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'watchlist-item';
+    const top = document.createElement('div');
+    top.className = 'wl-top';
+    const asset = document.createElement('span');
+    asset.className = 'wl-asset';
+    asset.textContent = item.title || '';
+    const stance = item.stance || 'neutral';
+    const badge = document.createElement('span');
+    badge.className = 'stance-badge stance-' + stance;
+    badge.textContent = stance.charAt(0).toUpperCase() + stance.slice(1);
+    top.appendChild(asset);
+    top.appendChild(badge);
+    div.appendChild(top);
+    if (item.snippet) {
+      const note = document.createElement('p');
+      note.className = 'wl-note';
+      note.textContent = item.snippet;
+      div.appendChild(note);
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderVideos(items) {
+  const container = document.getElementById('videoGrid');
+  if (!container || !items.length) return;
+  container.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    const thumb = document.createElement('div');
+    thumb.className = 'video-thumb';
+    const videoId = extractYouTubeId(item.url);
+    if (videoId) {
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube.com/embed/' + videoId;
+      iframe.style.cssText = 'width:100%;height:100%;border:0;';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.title = item.title || 'Video';
+      thumb.appendChild(iframe);
+    } else {
+      const play = document.createElement('span');
+      play.className = 'play-icon';
+      play.textContent = '▶';
+      thumb.appendChild(play);
+    }
+    card.appendChild(thumb);
+    const body = document.createElement('div');
+    body.className = 'media-body';
+    if (item.topic) {
+      const tag = document.createElement('span');
+      tag.className = 'media-tag ' + topicAccentClass(item.topic);
+      tag.textContent = item.topic;
+      body.appendChild(tag);
+    }
+    const title = document.createElement('div');
+    title.className = 'media-title';
+    title.textContent = item.title || '';
+    body.appendChild(title);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function renderPosts(items) {
+  const container = document.getElementById('postGrid');
+  if (!container || !items.length) return;
+  container.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'post-card';
+    const body = document.createElement('div');
+    body.className = 'media-body';
+    if (item.topic) {
+      const tag = document.createElement('span');
+      tag.className = 'media-tag ' + topicAccentClass(item.topic);
+      tag.textContent = item.topic;
+      body.appendChild(tag);
+    }
+    const title = document.createElement('div');
+    title.className = 'media-title';
+    title.textContent = item.title || '';
+    body.appendChild(title);
+    if (item.snippet) {
+      const snippet = document.createElement('p');
+      snippet.className = 'media-snippet';
+      snippet.textContent = item.snippet;
+      body.appendChild(snippet);
+    }
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function renderLinks(items) {
+  const container = document.getElementById('linksList');
+  if (!container || !items.length) return;
+  container.innerHTML = '';
+  items.forEach(item => {
+    const a = document.createElement('a');
+    a.className = 'link-item';
+    a.href = /^https?:\/\//.test(item.url || '') ? item.url : '#';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    const icon = document.createElement('div');
+    icon.className = 'link-icon';
+    icon.textContent = '🔗';
+    a.appendChild(icon);
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'link-body';
+    const name = document.createElement('div');
+    name.className = 'link-name';
+    name.textContent = item.title || '';
+    bodyDiv.appendChild(name);
+    if (item.snippet) {
+      const desc = document.createElement('div');
+      desc.className = 'link-desc';
+      desc.textContent = item.snippet;
+      bodyDiv.appendChild(desc);
+    }
+    a.appendChild(bodyDiv);
+    const arrow = document.createElement('div');
+    arrow.className = 'link-arrow';
+    arrow.textContent = '→';
+    a.appendChild(arrow);
+    container.appendChild(a);
+  });
+}
+
+(async function loadAlphaContent() {
+  try {
+    const res = await fetch('/api/alpha/' + ALPHA_SLUG + '/content');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.watchlist) renderWatchlist(data.watchlist);
+    if (data.video) renderVideos(data.video);
+    if (data.post) renderPosts(data.post);
+    if (data.link) renderLinks(data.link);
+  } catch {}
+})();
 </script>
 </body>
 </html>

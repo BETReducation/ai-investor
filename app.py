@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, Response
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from functools import wraps
@@ -11,7 +11,10 @@ import secrets
 import hashlib
 import hmac
 import time
+import re
 import smtplib
+import requests
+from bs4 import BeautifulSoup
 from email.mime.text import MIMEText
 try:
     import psycopg2
@@ -19,6 +22,8 @@ try:
 except ImportError:
     psycopg2 = None
 from datetime import timedelta
+import datetime as _dt
+import base64
 from werkzeug.utils import secure_filename
 
 from api.indicators import calculate_all
@@ -58,6 +63,23 @@ UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads", "av
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# ── Alpha content ────────────────────────────────────────────────────────────
+ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
+ALPHA_CONTENT_KINDS = {"post", "video", "link", "watchlist"}
+ALPHA_STANCES = {"bullish", "neutral", "bearish"}
+ALPHA_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "alpha_content.json")
+ALLOWED_DOC_EXTENSIONS = {"docx", "pdf", "xlsx", "xls"}
+MAX_UPLOAD_TEXT_CHARS = 40000  # cap extracted text sent to the normalize step
+
+# Each partner's 3 nominated topics — must match the topic-pill labels
+# hardcoded on their public page (static/alpha-<name>.html).
+ALPHA_TOPICS = {
+    "tom":    ["Stocks", "Metals", "ETFs"],
+    "dave":   ["Chart Breakdowns", "Setups Watchlist", "Pre-Market"],
+    "gary":   ["Long-Term Investing", "Technical Analysis", "Impact of AI"],
+    "connor": ["Macro & Micro", "Quant Statistics", "Finance & Formulae"],
+}
+
 
 def _db_conn():
     url = DATABASE_URL
@@ -81,6 +103,28 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'basic'")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
         cur.execute("UPDATE users SET tier = 'power_user' WHERE tier IN ('basic', 'signal_tester')")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS alpha_role TEXT")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS alpha_content (
+                id              SERIAL PRIMARY KEY,
+                author          TEXT NOT NULL,
+                kind            TEXT NOT NULL,
+                status          TEXT NOT NULL DEFAULT 'draft',
+                topic           TEXT,
+                title           TEXT,
+                snippet         TEXT,
+                body            TEXT,
+                stance          TEXT,
+                url             TEXT,
+                source_kind     TEXT,
+                source_filename TEXT,
+                source_file     BYTEA,
+                source_text     TEXT,
+                created_at      TIMESTAMP NOT NULL DEFAULT now(),
+                updated_at      TIMESTAMP NOT NULL DEFAULT now(),
+                published_at    TIMESTAMP
+            )
+        """)
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -262,16 +306,18 @@ TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
 # ── User model ───────────────────────────────────────────────────────────────
 
 class User(UserMixin):
-    def __init__(self, username: str, tier: str = "basic"):
+    def __init__(self, username: str, tier: str = "basic", alpha_role: str | None = None):
         self.id = username
         self.tier = tier
+        self.alpha_role = alpha_role
 
 
 @login_manager.user_loader
 def load_user(username: str):
     users = _load_users()
     if username in users:
-        return User(username, users[username].get("tier", "basic"))
+        u = users[username]
+        return User(username, u.get("tier", "basic"), u.get("alpha_role"))
     return None
 
 
@@ -298,18 +344,31 @@ def tier_required(min_tier: str):
     return decorator
 
 
+def alpha_author_required(f):
+    """Gates an endpoint to users with an assigned alpha_role (one of the 4 partners)."""
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({"error": "Login required"}), 401
+        if not getattr(current_user, "alpha_role", None):
+            return jsonify({"error": "This account has no Alpha author access"}), 403
+        return f(*args, **kwargs)
+    return wrapped
+
+
 # ── User-store helpers ───────────────────────────────────────────────────────
 
 def _load_users() -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT username, password_hash, preferences, tier, profile FROM users")
+            cur.execute("SELECT username, password_hash, preferences, tier, profile, alpha_role FROM users")
             return {
                 row["username"]: {
                     "password_hash": row["password_hash"],
                     "preferences":   row["preferences"] or {},
                     "tier":          row.get("tier", "basic"),
                     "profile":       row.get("profile") or {},
+                    "alpha_role":    row.get("alpha_role"),
                 }
                 for row in cur.fetchall()
             }
@@ -324,17 +383,283 @@ def _save_users(users: dict) -> None:
         with _db_conn() as conn, conn.cursor() as cur:
             for username, data in users.items():
                 cur.execute("""
-                    INSERT INTO users (username, password_hash, preferences, tier, profile)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO users (username, password_hash, preferences, tier, profile, alpha_role)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE
                         SET password_hash = EXCLUDED.password_hash,
                             preferences   = EXCLUDED.preferences,
                             tier          = EXCLUDED.tier,
-                            profile       = EXCLUDED.profile
-                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic"), json.dumps(data.get("profile", {}))))
+                            profile       = EXCLUDED.profile,
+                            alpha_role    = EXCLUDED.alpha_role
+                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic"), json.dumps(data.get("profile", {})), data.get("alpha_role")))
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
+
+
+# ── Alpha content store ──────────────────────────────────────────────────────
+# Mirrors the _load_users/_save_users dual-path pattern above: Postgres when
+# DATABASE_URL is set, a local JSON file otherwise. source_file (the original
+# uploaded document) is never included in list/get results — only
+# alpha_content_get_file() fetches it, so listing drafts never has to move a
+# binary blob around.
+
+_ALPHA_CONTENT_FIELDS = [
+    "author", "kind", "status", "topic", "title", "snippet", "body", "stance", "url",
+    "source_kind", "source_filename", "source_text",
+]
+
+
+def _alpha_row_to_dict(row: dict) -> dict:
+    d = {k: row.get(k) for k in ["id", *_ALPHA_CONTENT_FIELDS]}
+    for key in ("created_at", "updated_at", "published_at"):
+        val = row.get(key)
+        d[key] = val.isoformat() if val is not None else None
+    return d
+
+
+def _load_alpha_content_json() -> dict:
+    if not os.path.exists(ALPHA_CONTENT_FILE):
+        return {"items": [], "next_id": 1}
+    with open(ALPHA_CONTENT_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_alpha_content_json(data: dict) -> None:
+    with open(ALPHA_CONTENT_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def alpha_content_list(author: str | None = None, status: str | None = None) -> list:
+    if DATABASE_URL:
+        query = f"SELECT id, {', '.join(_ALPHA_CONTENT_FIELDS)}, created_at, updated_at, published_at FROM alpha_content WHERE 1=1"
+        params = []
+        if author:
+            query += " AND author = %s"
+            params.append(author)
+        if status:
+            query += " AND status = %s"
+            params.append(status)
+        query += " ORDER BY created_at DESC"
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(query, params)
+            return [_alpha_row_to_dict(row) for row in cur.fetchall()]
+    data = _load_alpha_content_json()
+    items = data["items"]
+    if author:
+        items = [i for i in items if i.get("author") == author]
+    if status:
+        items = [i for i in items if i.get("status") == status]
+    items = sorted(items, key=lambda i: i.get("created_at") or "", reverse=True)
+    return [{k: v for k, v in i.items() if k != "source_file"} for i in items]
+
+
+def alpha_content_get(item_id: int) -> dict | None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"SELECT id, {', '.join(_ALPHA_CONTENT_FIELDS)}, created_at, updated_at, published_at "
+                f"FROM alpha_content WHERE id = %s", (item_id,)
+            )
+            row = cur.fetchone()
+            return _alpha_row_to_dict(row) if row else None
+    data = _load_alpha_content_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            return {k: v for k, v in item.items() if k != "source_file"}
+    return None
+
+
+def alpha_content_get_file(item_id: int):
+    """Returns (filename, bytes) or (None, None) if there's no attached file."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT source_filename, source_file FROM alpha_content WHERE id = %s", (item_id,))
+            row = cur.fetchone()
+            if not row or row["source_file"] is None:
+                return None, None
+            return row["source_filename"], bytes(row["source_file"])
+    data = _load_alpha_content_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            b64 = item.get("source_file")
+            if not b64:
+                return None, None
+            return item.get("source_filename"), base64.b64decode(b64)
+    return None, None
+
+
+def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
+    now = _dt.datetime.utcnow()
+    if DATABASE_URL:
+        cols = [*_ALPHA_CONTENT_FIELDS, "source_file", "created_at", "updated_at"]
+        vals = [fields.get(k) for k in _ALPHA_CONTENT_FIELDS] + [
+            psycopg2.Binary(file_bytes) if file_bytes else None, now, now
+        ]
+        placeholders = ", ".join(["%s"] * len(vals))
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"INSERT INTO alpha_content ({', '.join(cols)}) VALUES ({placeholders}) "
+                f"RETURNING id, {', '.join(_ALPHA_CONTENT_FIELDS)}, created_at, updated_at, published_at",
+                vals,
+            )
+            row = cur.fetchone()
+            return _alpha_row_to_dict(row)
+    data = _load_alpha_content_json()
+    new_id = data.get("next_id", 1)
+    item = {k: fields.get(k) for k in _ALPHA_CONTENT_FIELDS}
+    item["id"] = new_id
+    item["created_at"] = now.isoformat()
+    item["updated_at"] = now.isoformat()
+    item["published_at"] = None
+    if file_bytes:
+        item["source_file"] = base64.b64encode(file_bytes).decode("ascii")
+    data["items"].append(item)
+    data["next_id"] = new_id + 1
+    _save_alpha_content_json(data)
+    return {k: v for k, v in item.items() if k != "source_file"}
+
+
+def alpha_content_update(item_id: int, updates: dict) -> dict | None:
+    now = _dt.datetime.utcnow()
+    allowed = set(_ALPHA_CONTENT_FIELDS) | {"published_at"}
+    updates = {k: v for k, v in updates.items() if k in allowed}
+    if DATABASE_URL:
+        if not updates:
+            return alpha_content_get(item_id)
+        set_clauses = [f"{k} = %s" for k in updates] + ["updated_at = %s"]
+        vals = list(updates.values()) + [now, item_id]
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"UPDATE alpha_content SET {', '.join(set_clauses)} WHERE id = %s "
+                f"RETURNING id, {', '.join(_ALPHA_CONTENT_FIELDS)}, created_at, updated_at, published_at",
+                vals,
+            )
+            row = cur.fetchone()
+            return _alpha_row_to_dict(row) if row else None
+    data = _load_alpha_content_json()
+    json_updates = dict(updates)
+    if "published_at" in json_updates:
+        val = json_updates["published_at"]
+        json_updates["published_at"] = val.isoformat() if hasattr(val, "isoformat") else val
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            item.update(json_updates)
+            item["updated_at"] = now.isoformat()
+            _save_alpha_content_json(data)
+            return {k: v for k, v in item.items() if k != "source_file"}
+    return None
+
+
+def alpha_content_delete(item_id: int) -> bool:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM alpha_content WHERE id = %s", (item_id,))
+            return cur.rowcount > 0
+    data = _load_alpha_content_json()
+    before = len(data["items"])
+    data["items"] = [i for i in data["items"] if i.get("id") != item_id]
+    _save_alpha_content_json(data)
+    return len(data["items"]) < before
+
+
+# ── Alpha content: extraction & normalization ────────────────────────────────
+
+def extract_text_from_upload(file_storage) -> str:
+    """Extracts plain text from an uploaded .docx/.pdf/.xlsx/.xls FileStorage.
+    Raises ValueError with a user-facing message on failure."""
+    filename = file_storage.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_DOC_EXTENSIONS:
+        raise ValueError(f"Unsupported file type .{ext or '?'} — please upload a Word, PDF or Excel file")
+    try:
+        if ext == "docx":
+            import docx
+            document = docx.Document(file_storage)
+            parts = [p.text for p in document.paragraphs if p.text.strip()]
+            for table in document.tables:
+                for row in table.rows:
+                    parts.append(" | ".join(cell.text.strip() for cell in row.cells))
+            text = "\n".join(parts)
+        elif ext == "pdf":
+            from pypdf import PdfReader
+            reader = PdfReader(file_storage)
+            text = "\n".join((page.extract_text() or "") for page in reader.pages)
+        else:  # xlsx / xls
+            import openpyxl
+            wb = openpyxl.load_workbook(file_storage, data_only=True)
+            parts = []
+            for sheet in wb.worksheets:
+                parts.append(f"[Sheet: {sheet.title}]")
+                for row in sheet.iter_rows(values_only=True):
+                    cells = [str(c) for c in row if c is not None]
+                    if cells:
+                        parts.append(" | ".join(cells))
+            text = "\n".join(parts)
+    except ValueError:
+        raise
+    except Exception:
+        raise ValueError("Couldn't read that file — it may be corrupted, password-protected, or an unsupported format")
+    text = text.strip()
+    if not text:
+        raise ValueError("No readable text found in that file")
+    return text[:MAX_UPLOAD_TEXT_CHARS]
+
+
+def extract_text_from_url(url: str) -> str:
+    """Fetches a URL and strips it down to readable text. Best-effort — many
+    sites (paywalls, JS-rendered pages, bot protection) won't work well; the
+    'paste text' input mode is the reliable fallback for those."""
+    if not url.startswith(("http://", "https://")):
+        raise ValueError("Please enter a valid http(s) link")
+    try:
+        resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0 (GCA-AlphaBot)"})
+        resp.raise_for_status()
+    except Exception:
+        raise ValueError("Couldn't fetch that link — try pasting the text directly instead")
+    try:
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "header", "footer", "noscript"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n")
+        lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+        text = "\n".join(lines)
+    except Exception:
+        raise ValueError("Couldn't read the content at that link")
+    if not text:
+        raise ValueError("No readable text found at that link")
+    return text[:MAX_UPLOAD_TEXT_CHARS]
+
+
+def normalize_content(raw_text: str, author: str, topics: list) -> dict:
+    """Turns raw extracted text into {title, topic, snippet, body} for a draft post.
+
+    STUB — no ANTHROPIC_API_KEY is wired in yet. This does a naive extractive
+    pass (first sentence as title, next couple of sentences as snippet, raw
+    text reflowed into paragraphs as the body, first nominated topic as the
+    default) so the rest of the pipeline — upload, draft review, edit,
+    publish, public rendering — is fully testable right now.
+
+    To make this real: call the Claude API (see the claude-api skill for the
+    current model id and Messages API usage) with a prompt that gives it
+    `author`, the exact `topics` list (it must pick one of these three, not
+    invent a new one), and `raw_text`, instructing it to return JSON
+    {title, topic, snippet, body} — allowed to tighten/condense wording
+    (per the earlier scoping decision) but not invent facts absent from
+    raw_text. Keep the same return shape so no caller needs to change.
+    """
+    text = " ".join(raw_text.split())
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    title = (sentences[0] if sentences else text)[:100].strip() or "Untitled note"
+    snippet_source = " ".join(sentences[1:3]) if len(sentences) > 1 else text
+    snippet_words = snippet_source.split()
+    snippet = " ".join(snippet_words[:40])
+    if len(snippet_words) > 40:
+        snippet += "…"
+    paragraphs = [p.strip() for p in raw_text.split("\n") if p.strip()]
+    body = "\n\n".join(paragraphs) if paragraphs else text
+    topic = topics[0] if topics else None
+    return {"title": title, "topic": topic, "snippet": snippet, "body": body}
 
 
 def _send_email(to_addr: str, subject: str, body: str) -> None:
@@ -774,11 +1099,12 @@ def api_logout():
 @app.route("/api/me", methods=["GET"])
 def api_me():
     if not current_user.is_authenticated:
-        return jsonify({"authenticated": False, "username": None, "tier": "basic"})
+        return jsonify({"authenticated": False, "username": None, "tier": "basic", "alpha_role": None})
     return jsonify({
         "authenticated": True,
         "username": current_user.id,
         "tier": getattr(current_user, "tier", "basic"),
+        "alpha_role": getattr(current_user, "alpha_role", None),
     })
 
 
@@ -798,6 +1124,25 @@ def admin_set_tier():
     users[username]["tier"] = new_tier
     _save_users(users)
     return jsonify({"success": True, "username": username, "tier": new_tier})
+
+
+@app.route("/api/admin/set-alpha-role", methods=["POST"])
+@login_required
+def admin_set_alpha_role():
+    if current_user.id != "admin":
+        return jsonify({"error": "Admin only"}), 403
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    role = data.get("alpha_role")
+    role = role.strip() if isinstance(role, str) else role
+    if role not in ALPHA_ROLES and role not in (None, ""):
+        return jsonify({"error": f"Invalid alpha_role. Valid options: {sorted(ALPHA_ROLES)} or null to unassign"}), 400
+    users = _load_users()
+    if username not in users:
+        return jsonify({"error": "User not found"}), 404
+    users[username]["alpha_role"] = role or None
+    _save_users(users)
+    return jsonify({"success": True, "username": username, "alpha_role": role or None})
 
 
 @app.route("/api/save-preferences", methods=["POST"])
@@ -907,6 +1252,183 @@ def api_upload_avatar():
     users[current_user.id]["profile"] = profile
     _save_users(users)
     return jsonify({"success": True, "avatar_url": avatar_url})
+
+
+# ── Alpha content API ─────────────────────────────────────────────────────────
+
+def _alpha_can_touch(item) -> bool:
+    return item is not None and item.get("author") == current_user.alpha_role
+
+
+@app.route("/api/alpha/upload", methods=["POST"])
+@login_required
+@alpha_author_required
+def api_alpha_upload():
+    author = current_user.alpha_role
+    kind = (request.form.get("kind") or "post").strip()
+    if kind not in ALPHA_CONTENT_KINDS:
+        return jsonify({"error": f"Invalid kind. Valid options: {sorted(ALPHA_CONTENT_KINDS)}"}), 400
+    requested_topic = (request.form.get("topic") or "").strip() or None
+
+    file_bytes = None
+    source_filename = None
+    try:
+        if "file" in request.files and request.files["file"].filename:
+            f = request.files["file"]
+            source_filename = secure_filename(f.filename)
+            file_bytes = f.read()
+            f.seek(0)
+            raw_text = extract_text_from_upload(f)
+            source_kind = "file"
+        elif (request.form.get("link") or "").strip():
+            raw_text = extract_text_from_url(request.form.get("link").strip())
+            source_kind = "link"
+        elif (request.form.get("paste") or "").strip():
+            raw_text = request.form.get("paste").strip()[:MAX_UPLOAD_TEXT_CHARS]
+            source_kind = "paste"
+        else:
+            return jsonify({"error": "Provide a file, a link, or pasted text"}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    author_topics = ALPHA_TOPICS.get(author, [])
+    normalized = normalize_content(raw_text, author, author_topics)
+    topic = requested_topic if requested_topic in author_topics else normalized["topic"]
+
+    fields = {
+        "author": author, "kind": kind, "status": "draft", "topic": topic,
+        "title": normalized["title"], "snippet": normalized["snippet"], "body": normalized["body"],
+        "stance": None, "url": None,
+        "source_kind": source_kind, "source_filename": source_filename, "source_text": raw_text,
+    }
+    item = alpha_content_create(fields, file_bytes=file_bytes)
+    return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/alpha/content", methods=["GET", "POST"])
+@login_required
+@alpha_author_required
+def api_alpha_content():
+    author = current_user.alpha_role
+    if request.method == "GET":
+        return jsonify({"items": alpha_content_list(author=author)})
+
+    data = request.get_json() or {}
+    kind = (data.get("kind") or "").strip()
+    if kind not in ALPHA_CONTENT_KINDS:
+        return jsonify({"error": f"Invalid kind. Valid options: {sorted(ALPHA_CONTENT_KINDS)}"}), 400
+    if kind == "post":
+        return jsonify({"error": "Posts are created via the upload endpoint, not this one"}), 400
+
+    topic = (data.get("topic") or "").strip() or None
+    if topic and topic not in ALPHA_TOPICS.get(author, []):
+        return jsonify({"error": "Topic must be one of your nominated topics"}), 400
+
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"error": "Title is required"}), 400
+
+    fields = {
+        "author": author, "kind": kind, "status": "draft", "topic": topic,
+        "title": title,
+        "snippet": (data.get("snippet") or "").strip() or None,
+        "body": (data.get("body") or "").strip() or None,
+        "stance": None, "url": None,
+        "source_kind": "manual", "source_filename": None, "source_text": None,
+    }
+    if kind == "watchlist":
+        stance = (data.get("stance") or "").strip().lower()
+        if stance not in ALPHA_STANCES:
+            return jsonify({"error": f"Stance must be one of {sorted(ALPHA_STANCES)}"}), 400
+        fields["stance"] = stance
+    if kind in ("video", "link"):
+        url = (data.get("url") or "").strip()
+        if not url:
+            return jsonify({"error": f"A URL is required for a {kind}"}), 400
+        fields["url"] = url
+
+    item = alpha_content_create(fields)
+    return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/alpha/content/<int:item_id>", methods=["PUT", "DELETE"])
+@login_required
+@alpha_author_required
+def api_alpha_content_item(item_id):
+    existing = alpha_content_get(item_id)
+    if not _alpha_can_touch(existing):
+        return jsonify({"error": "Not found"}), 404
+
+    if request.method == "DELETE":
+        alpha_content_delete(item_id)
+        return jsonify({"success": True})
+
+    data = request.get_json() or {}
+    updates = {}
+    for field in ("topic", "title", "snippet", "body", "url"):
+        if field in data:
+            value = data[field]
+            updates[field] = (str(value).strip() or None) if value is not None else None
+    if "stance" in data:
+        stance = (data["stance"] or "").strip().lower()
+        if stance and stance not in ALPHA_STANCES:
+            return jsonify({"error": f"Stance must be one of {sorted(ALPHA_STANCES)}"}), 400
+        updates["stance"] = stance or None
+    if updates.get("topic") and updates["topic"] not in ALPHA_TOPICS.get(current_user.alpha_role, []):
+        return jsonify({"error": "Topic must be one of your nominated topics"}), 400
+    if "status" in data:
+        status = data["status"]
+        if status not in ("draft", "published"):
+            return jsonify({"error": "Status must be 'draft' or 'published'"}), 400
+        updates["status"] = status
+        updates["published_at"] = _dt.datetime.utcnow() if status == "published" else None
+
+    item = alpha_content_update(item_id, updates)
+    return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/alpha/content/<int:item_id>/file", methods=["GET"])
+@login_required
+@alpha_author_required
+def api_alpha_content_file(item_id):
+    existing = alpha_content_get(item_id)
+    if not _alpha_can_touch(existing):
+        return jsonify({"error": "Not found"}), 404
+    filename, file_bytes = alpha_content_get_file(item_id)
+    if file_bytes is None:
+        return jsonify({"error": "No file attached to this item"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "application/octet-stream"
+    return Response(
+        file_bytes, mimetype=mimetype,
+        headers={"Content-Disposition": f"attachment; filename={secure_filename(filename or 'download')}"}
+    )
+
+
+_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "snippet", "body", "stance", "url", "published_at"]
+
+
+@app.route("/api/alpha/<slug>/content", methods=["GET"])
+def api_alpha_public_content(slug):
+    if slug not in ALPHA_ROLES:
+        return jsonify({"error": "Unknown author"}), 404
+    items = alpha_content_list(author=slug, status="published")
+    grouped = {"watchlist": [], "video": [], "post": [], "link": []}
+    for item in items:
+        public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
+        grouped.setdefault(item["kind"], []).append(public_item)
+    caps = {"watchlist": 3, "video": 4, "post": 4}
+    for kind, cap in caps.items():
+        grouped[kind] = grouped[kind][:cap]
+    return jsonify(grouped)
+
+
+@app.route("/alpha/studio")
+def alpha_studio():
+    # Client-side checks /api/me for alpha_role, same convention as /profile —
+    # no server-side @login_required here since page routes in this app rely
+    # on the JS auth check rather than a redirect-on-401 pattern.
+    return send_from_directory("static", "alpha-studio.html")
 
 
 @app.route("/api/subscription/cancel", methods=["POST"])
