@@ -2417,6 +2417,13 @@ async function checkSession() {
         }
       } catch (e) {}
       await loadCustomSymbols();
+
+      // Support "Open" links from the profile page's Saved Strategies list.
+      const wantStrategy = new URLSearchParams(location.search).get('loadStrategy');
+      if (wantStrategy && savedStrategies.find(s => s.name === wantStrategy)) {
+        document.getElementById('strategySelect').value = wantStrategy;
+        loadSavedStrategy(wantStrategy);
+      }
     } else {
       currentUser = null;
       userAuthenticated = false;

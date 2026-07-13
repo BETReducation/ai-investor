@@ -1693,6 +1693,24 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
+    <!-- Save / Load strategy -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">SAVED STRATEGIES</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <select id="btStrategySelect" class="lab-input" onchange="loadSavedBacktestStrategy(this.value)" style="flex:1;margin-bottom:0;">
+          <option value="">— New Strategy —</option>
+        </select>
+        <button onclick="deleteSavedBacktestStrategy()" title="Delete selected strategy"
+          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:5px 10px;border-radius:2px;line-height:1;font-family:'IBM Plex Mono',monospace;">×</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" id="btStrategyName" class="lab-input" placeholder="Strategy name" style="flex:1;margin-bottom:0;">
+        <button onclick="saveBacktestStrategy()" title="Save this configuration"
+          style="background:rgba(0,255,136,0.08);border:1px solid var(--accent-green);color:var(--accent-green);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px 12px;border-radius:2px;font-family:'IBM Plex Mono',monospace;">SAVE</button>
+      </div>
+      <div id="btStrategyHint" style="font-size:9px;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+
     <!-- Run button -->
     <div style="padding:14px 16px;">
       <button class="btn-run" id="runBtn" onclick="runBacktest()">▶ RUN BACKTEST</button>
@@ -1883,6 +1901,7 @@ let btCurrentUser = null;
 let mySymbols = [];
 let btSearchResults = [];
 let btSearchTimer = null;
+let savedBacktests = [];
 
 async function initMySymbols() {
   try {
@@ -1895,11 +1914,131 @@ async function initMySymbols() {
         const data = await res.json();
         mySymbols = data.symbols || [];
       }
+      const prefRes = await fetch('/api/load-preferences', { credentials: 'include' });
+      if (prefRes.ok) {
+        const prefData = await prefRes.json();
+        if (Array.isArray(prefData.preferences?.saved_backtests)) {
+          savedBacktests = prefData.preferences.saved_backtests;
+        }
+      }
     }
   } catch (e) {}
   renderMySymbols();
+  renderBacktestStrategyDropdown();
+
+  // Support "Open" links from the profile page's Saved Strategies list.
+  const wantStrategy = new URLSearchParams(location.search).get('loadStrategy');
+  if (wantStrategy && savedBacktests.find(s => s.name === wantStrategy)) {
+    document.getElementById('btStrategySelect').value = wantStrategy;
+    loadSavedBacktestStrategy(wantStrategy);
+  }
 }
 initMySymbols();
+
+// ── Save / load backtest strategies ────────────────────────────────────────
+// Generic: every labelled control in the sidebar has a stable id, so a saved
+// "strategy" is just a snapshot of every field's value/checked state rather
+// than a hand-maintained list — the latter would silently drift out of sync
+// as indicators get added to the sidebar over time.
+const BT_STRATEGY_CONTROL_IDS = new Set(['btStrategySelect', 'btStrategyName']);
+
+function serializeBacktestConfig() {
+  const cfg = {};
+  document.querySelectorAll('.lab-sidebar [id]').forEach(el => {
+    if (BT_STRATEGY_CONTROL_IDS.has(el.id)) return;
+    if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+      cfg[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+    }
+  });
+  // periodMode isn't a form field (it's two plain buttons toggling panel visibility)
+  // so it needs to be captured/restored explicitly alongside the generic fields.
+  cfg._periodMode = document.getElementById('customPanel').style.display !== 'none' ? 'custom' : 'preset';
+  return cfg;
+}
+
+function applyBacktestConfig(cfg) {
+  Object.entries(cfg).forEach(([id, val]) => {
+    if (id === '_periodMode') return;
+    const el = document.getElementById(id);
+    if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!val;
+    else el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  if (cfg._periodMode) setPeriodMode(cfg._periodMode);
+}
+
+function renderBacktestStrategyDropdown() {
+  const sel = document.getElementById('btStrategySelect');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— New Strategy —</option>' +
+    savedBacktests.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  if (savedBacktests.find(s => s.name === current)) sel.value = current;
+}
+
+async function persistSavedBacktests(hintEl) {
+  if (!btCurrentUser) {
+    if (hintEl) hintEl.textContent = 'Sign in to save strategies to your account.';
+    return false;
+  }
+  try {
+    const res = await fetch('/api/save-preferences', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ saved_backtests: savedBacktests }),
+    });
+    if (!res.ok) throw new Error();
+    return true;
+  } catch (e) {
+    if (hintEl) hintEl.textContent = 'Failed to save — try again.';
+    return false;
+  }
+}
+
+async function saveBacktestStrategy() {
+  const nameInput = document.getElementById('btStrategyName');
+  const hint = document.getElementById('btStrategyHint');
+  const name = nameInput.value.trim();
+  if (!name) { hint.textContent = 'Enter a name for this strategy first.'; return; }
+
+  const strategy = { name, config: serializeBacktestConfig(), savedAt: new Date().toISOString() };
+  const idx = savedBacktests.findIndex(s => s.name === name);
+  if (idx >= 0) savedBacktests[idx] = strategy; else savedBacktests.push(strategy);
+
+  hint.textContent = 'Saving...';
+  const ok = await persistSavedBacktests(hint);
+  if (ok) {
+    renderBacktestStrategyDropdown();
+    document.getElementById('btStrategySelect').value = name;
+    hint.textContent = `Saved "${name}".`;
+  }
+}
+
+function loadSavedBacktestStrategy(name) {
+  const hint = document.getElementById('btStrategyHint');
+  if (!name) { if (hint) hint.textContent = ''; return; }
+  const s = savedBacktests.find(s => s.name === name);
+  if (!s) return;
+  document.getElementById('btStrategyName').value = s.name;
+  applyBacktestConfig(s.config);
+  if (hint) hint.textContent = `Loaded "${s.name}".`;
+}
+
+async function deleteSavedBacktestStrategy() {
+  const sel = document.getElementById('btStrategySelect');
+  const hint = document.getElementById('btStrategyHint');
+  const name = sel.value;
+  if (!name) { hint.textContent = 'Select a saved strategy to delete.'; return; }
+  savedBacktests = savedBacktests.filter(s => s.name !== name);
+  const ok = await persistSavedBacktests(hint);
+  if (ok) {
+    renderBacktestStrategyDropdown();
+    document.getElementById('btStrategyName').value = '';
+    hint.textContent = `Deleted "${name}".`;
+  }
+}
 
 function onBtSymbolInput(q) {
   // A real keystroke (as opposed to picking a search result, which sets .value
