@@ -210,7 +210,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
           <a href="#" class="social-icon" title="LinkedIn">in</a>
           <a href="#" class="social-icon" title="Substack">S</a>
         </div>
-        <span class="alpha-updated">Updated 4 days ago</span>
+        <span class="alpha-updated" id="alphaUpdated">Updated 4 days ago</span>
       </div>
     </div>
   </div>
@@ -677,6 +677,23 @@ const _initialTopic = new URLSearchParams(window.location.search).get('topic');
 const _validInitialTopic = _initialTopic && PAGE_TOPICS.includes(_initialTopic) ? _initialTopic : null;
 setActiveTopicPill(_validInitialTopic);
 loadAlphaContent(_validInitialTopic);
+
+(async function updateLastUpdated() {
+  const el = document.getElementById('alphaUpdated');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/alpha/' + ALPHA_SLUG + '/content');
+    if (!res.ok) return;
+    const data = await res.json();
+    const allItems = [].concat(data.watchlist || [], data.video || [], data.post || [], data.link || []);
+    const timestamps = allItems
+      .map(i => i.published_at ? new Date(i.published_at).getTime() : NaN)
+      .filter(t => !isNaN(t));
+    if (!timestamps.length) { el.textContent = 'No updates yet'; return; }
+    const diffDays = Math.floor((Date.now() - Math.max(...timestamps)) / 86400000);
+    el.textContent = diffDays <= 0 ? 'Updated today' : 'Updated ' + diffDays + ' day' + (diffDays === 1 ? '' : 's') + ' ago';
+  } catch {}
+})();
 </script>
 </body>
 </html>
