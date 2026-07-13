@@ -182,6 +182,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
     <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
@@ -198,7 +199,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
     <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Habit 3 of 5</div>
-    <h1 class="hero-title">🔁 Invest Consistently, Not <span class="accent">Perfectly</span></h1>
+    <h1 class="hero-title">Invest Consistently, Not <span class="accent">Perfectly</span></h1>
     <p class="hero-sub">You will never perfectly time the market — and you don't need to. Investing on a regular schedule turns investing into a habit instead of a stressful guessing game.</p>
   </div>
 </div>
@@ -553,7 +554,11 @@ function checkQuiz() {
       const data = await res.json();
       if (data.authenticated && data.username) {
         const signIn = document.getElementById('navSignIn');
-        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
       }
     }
   } catch {}

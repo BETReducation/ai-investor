@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpha Studio — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.page-hero { padding: 100px 5% 48px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(45,212,191,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--teal); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; line-height: 1.08; color: var(--text); margin-bottom: 16px; }
+.hero-title .accent { color: var(--teal); }
+.hero-sub { font-size: clamp(15px, 1.6vw, 18px); color: var(--muted); max-width: 560px; margin: 0 auto; line-height: 1.6; }
+.content-section { padding: 0 5% 60px; }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+
+/* GATES */
+.gate-box { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 48px 32px; text-align: center; max-width: 480px; margin: 0 auto; }
+.gate-box p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 18px; }
+.gate-box a.btn-primary-sm { display: inline-block; }
+
+/* PANELS */
+.studio-panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 28px; }
+.studio-panel h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+.studio-panel p.panel-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+.author-line { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.author-line b { color: var(--text); }
+.author-line a { color: var(--teal); text-decoration: none; font-weight: 600; }
+.author-line a:hover { text-decoration: underline; }
+
+/* UPLOAD TABS */
+.upload-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.upload-tab { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.upload-tab.active { border-color: var(--teal); color: var(--teal); }
+.upload-input-panel { display: none; }
+
+/* FORMS */
+.form-field { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+.form-input, .form-textarea, .form-select {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text);
+  border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--teal); }
+.form-textarea { resize: vertical; line-height: 1.5; }
+.form-msg { font-size: 12.5px; margin-top: 10px; min-height: 16px; }
+.form-msg.success { color: var(--green); }
+.form-msg.error { color: #ff3355; }
+.quick-add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.published-filters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.pub-filter-topics { display: flex; gap: 8px; flex-wrap: wrap; }
+.pub-filter-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 6px 14px; border-radius: 100px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
+.pub-filter-pill.active { border-color: var(--teal); color: var(--teal); background: rgba(45,212,191,0.1); }
+.pub-filter-dates { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pub-filter-dates .form-select { width: auto; min-width: 140px; }
+.pub-filter-dates .form-input { width: auto; }
+.pub-filter-sep { color: var(--muted); font-size: 13px; }
+@media (max-width: 800px) { .quick-add-grid { grid-template-columns: 1fr; } }
+.quick-add-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.quick-add-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 12px; }
+
+/* BUTTONS */
+.btn-primary-sm, .btn-ghost-sm, .btn-danger-sm {
+  font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 18px; border-radius: 8px;
+  cursor: pointer; border: 1px solid transparent; transition: opacity 0.2s, border-color 0.2s;
+}
+.btn-primary-sm { background: var(--teal); color: #03130f; }
+.btn-primary-sm:hover { opacity: 0.88; }
+.btn-primary-sm:disabled { opacity: 0.5; cursor: default; }
+.btn-ghost-sm { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+.btn-ghost-sm:hover { border-color: var(--teal); }
+.btn-danger-sm { background: transparent; border-color: rgba(255,51,85,0.3); color: #ff3355; }
+.btn-danger-sm:hover { background: rgba(255,51,85,0.08); }
+
+/* CONTENT LISTS */
+.studio-list { display: flex; flex-direction: column; gap: 16px; }
+.list-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
+.studio-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.collapsible-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.collapsible-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; }
+.collapsible-header:hover { background: var(--bg2); }
+.collapsible-chevron { font-size: 11px; color: var(--muted); flex-shrink: 0; width: 10px; }
+.collapsible-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collapsible-date { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+.collapsible-body { padding: 0 18px 18px; }
+.collapsible-body .studio-card { background: transparent; border: none; padding: 0; border-radius: 0; }
+.studio-card-head { display: flex; gap: 8px; }
+.kind-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; background: rgba(124,58,237,0.12); color: var(--purple2); }
+.kind-badge.topic-badge { background: rgba(45,212,191,0.12); color: var(--teal); }
+.card-title-input { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; }
+.card-file-link { font-size: 12px; color: var(--teal); text-decoration: none; }
+.card-file-link:hover { text-decoration: underline; }
+.studio-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.card-image-tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+.card-image-tab { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.card-image-tab.active { border-color: var(--teal); color: var(--teal); }
+.card-image-preview { max-width: 100%; max-height: 140px; border-radius: 10px; display: block; margin-top: 8px; object-fit: cover; }
+.card-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.insert-panel { display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;">
+    <div class="section-badge">Partners Only</div>
+    <h1 class="hero-title">Alpha <span class="accent">Studio</span></h1>
+    <p class="hero-sub">Upload research, add videos and links, and manage your watchlist. Everything starts as a draft — nothing goes live until you publish it.</p>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner wide">
+
+    <div class="gate-box" id="gateLoggedOut">
+      <p>You need to sign in to access Alpha Studio.</p>
+      <a href="/login" class="btn-primary-sm">Sign In</a>
+    </div>
+
+    <div class="gate-box" id="gateNoAccess">
+      <p>This account doesn't have Alpha author access. If you're one of the four partners, ask an admin to grant it to your account.</p>
+    </div>
+
+    <div id="studioApp" style="display:none;">
+      <div class="author-line">Managing <b id="authorName">—</b>'s Alpha page — <a href="#" id="viewPageLink" target="_blank">view the live page →</a></div>
+
+      <!-- Upload a post -->
+      <div class="studio-panel">
+        <h2>Add a Post</h2>
+        <p class="panel-desc">Upload a Word doc, PDF or Excel file, paste a link, or paste raw text. It'll come back as a draft below for you to review before publishing.</p>
+        <div class="upload-tabs">
+          <button class="upload-tab active" data-mode="file" onclick="setUploadMode('file')">File</button>
+          <button class="upload-tab" data-mode="link" onclick="setUploadMode('link')">Link</button>
+          <button class="upload-tab" data-mode="paste" onclick="setUploadMode('paste')">Paste Text</button>
+        </div>
+        <div class="upload-input-panel" data-mode="file" style="display:block;">
+          <div class="form-field">
+            <label class="form-label" for="uploadFile">Word (.docx), PDF or Excel (.xlsx/.xls) file</label>
+            <input class="form-input" type="file" id="uploadFile" accept=".docx,.pdf,.xlsx,.xls">
+          </div>
+        </div>
+        <div class="upload-input-panel" data-mode="link">
+          <div class="form-field">
+            <label class="form-label" for="uploadLink">Link to an article or thread</label>
+            <input class="form-input" type="url" id="uploadLink" placeholder="https://…">
+          </div>
+        </div>
+        <div class="upload-input-panel" data-mode="paste">
+          <div class="form-field">
+            <label class="form-label" for="uploadPaste">Paste your raw notes or write-up</label>
+            <textarea class="form-textarea" id="uploadPaste" rows="6" placeholder="Paste anything — bullet points, a rough draft, whatever you've got."></textarea>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="uploadTopic">Topic</label>
+          <select class="form-select topic-select" id="uploadTopic"></select>
+        </div>
+        <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUpload()">Upload &amp; Create Draft</button>
+        <div class="form-msg" id="uploadMsg"></div>
+      </div>
+
+      <!-- Quick add -->
+      <div class="studio-panel">
+        <h2>Quick Add</h2>
+        <p class="panel-desc">Videos, links and watchlist items are already short and structured, so these skip the upload step and go straight to a draft.</p>
+        <div class="quick-add-grid">
+          <div class="quick-add-card">
+            <h3>🎬 Video</h3>
+            <div class="form-field"><input class="form-input" id="videoTitle" placeholder="Video title"></div>
+            <div class="form-field"><input class="form-input" id="videoUrl" placeholder="YouTube URL or video ID"></div>
+            <div class="form-field"><select class="form-select topic-select" id="videoTopic"></select></div>
+            <button class="btn-ghost-sm" onclick="quickAdd('video')">Add Video</button>
+            <div class="form-msg" id="videoMsg"></div>
+          </div>
+          <div class="quick-add-card">
+            <h3>🔗 Link</h3>
+            <div class="form-field"><input class="form-input" id="linkTitle" placeholder="Link title"></div>
+            <div class="form-field"><input class="form-input" id="linkUrl" placeholder="https://…"></div>
+            <div class="form-field"><textarea class="form-textarea" id="linkDesc" rows="2" placeholder="Why you like it (short)"></textarea></div>
+            <div class="form-field"><select class="form-select topic-select" id="linkTopic"></select></div>
+            <button class="btn-ghost-sm" onclick="quickAdd('link')">Add Link</button>
+            <div class="form-msg" id="linkMsg"></div>
+          </div>
+          <div class="quick-add-card">
+            <h3>📊 Watchlist Item</h3>
+            <div class="form-field"><input class="form-input" id="watchlistTitle" placeholder="Asset / ticker"></div>
+            <div class="form-field">
+              <select class="form-select" id="watchlistStance">
+                <option value="bullish">Bullish</option>
+                <option value="neutral">Neutral</option>
+                <option value="bearish">Bearish</option>
+              </select>
+            </div>
+            <div class="form-field"><textarea class="form-textarea" id="watchlistNote" rows="2" placeholder="One-line take"></textarea></div>
+            <div class="form-field"><select class="form-select topic-select" id="watchlistTopic"></select></div>
+            <button class="btn-ghost-sm" onclick="quickAdd('watchlist')">Add to Watchlist</button>
+            <div class="form-msg" id="watchlistMsg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drafts -->
+      <div class="studio-panel">
+        <h2>Drafts</h2>
+        <p class="panel-desc">Review and edit before publishing. Nothing here is visible on your public page yet.</p>
+        <div class="studio-list" id="draftsList"></div>
+        <div class="list-empty" id="draftsEmpty">No drafts yet — upload something above.</div>
+      </div>
+
+      <!-- Published -->
+      <div class="studio-panel">
+        <h2>Published</h2>
+        <p class="panel-desc">Live on your public Alpha page right now.</p>
+        <div class="published-filters">
+          <div class="pub-filter-topics" id="pubTopicFilters"></div>
+          <div class="pub-filter-dates">
+            <select class="form-select" id="pubMonthSelect">
+              <option value="">All time</option>
+            </select>
+            <input type="date" class="form-input" id="pubDateFrom" title="From date">
+            <span class="pub-filter-sep">–</span>
+            <input type="date" class="form-input" id="pubDateTo" title="To date">
+            <button type="button" class="btn-ghost-sm" id="pubClearFilters">Clear</button>
+          </div>
+        </div>
+        <div class="studio-list" id="publishedList"></div>
+        <div class="list-empty" id="publishedEmpty">Nothing published yet.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+// Must match ALPHA_TOPICS in app.py and the topic-pill labels on each
+// static/alpha-<name>.html page — kept in sync by hand.
+const AUTHOR_TOPICS = {
+  tom: ['Stocks', 'Metals', 'ETFs'],
+  dave: ['Chart Breakdowns', 'Setups Watchlist', 'Pre-Market'],
+  gary: ['Long-Term Investing', 'Technical Analysis', 'Impact of AI'],
+  connor: ['Macro & Micro', 'Quant Statistics', 'Finance & Formulae'],
+};
+const AUTHOR_NAMES = { tom: 'Tom', dave: 'Dave', gary: 'Gary', connor: 'Connor' };
+const KIND_LABELS = { post: 'Post', video: 'Video', link: 'Link', watchlist: 'Watchlist' };
+
+let currentAuthor = null;
+let uploadMode = 'file';
+let publishedTopicFilter = '';
+let publishedDateFrom = '';
+let publishedDateTo = '';
+let allItems = [];
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
+
+async function initStudio() {
+  let me;
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    me = await res.json();
+  } catch { me = { authenticated: false }; }
+
+  if (!me.authenticated) {
+    document.getElementById('gateLoggedOut').style.display = 'block';
+    return;
+  }
+  if (!me.alpha_role) {
+    document.getElementById('gateNoAccess').style.display = 'block';
+    return;
+  }
+  currentAuthor = me.alpha_role;
+  document.getElementById('studioApp').style.display = 'block';
+  document.getElementById('authorName').textContent = AUTHOR_NAMES[currentAuthor] || currentAuthor;
+  document.getElementById('viewPageLink').href = '/alpha/' + currentAuthor;
+  populateTopicSelects();
+  populatePublishedTopicFilters();
+  wirePublishedDateFilters();
+  loadContent();
+}
+
+function populateTopicSelects() {
+  const topics = AUTHOR_TOPICS[currentAuthor] || [];
+  document.querySelectorAll('.topic-select').forEach(sel => {
+    sel.innerHTML = topics.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  });
+}
+
+function populatePublishedTopicFilters() {
+  const container = document.getElementById('pubTopicFilters');
+  container.innerHTML = '';
+  const topics = AUTHOR_TOPICS[currentAuthor] || [];
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = 'pub-filter-pill active';
+  allBtn.dataset.topic = '';
+  allBtn.textContent = 'All Topics';
+  container.appendChild(allBtn);
+  topics.forEach(topic => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pub-filter-pill';
+    btn.dataset.topic = topic;
+    btn.textContent = topic;
+    container.appendChild(btn);
+  });
+  container.querySelectorAll('.pub-filter-pill').forEach(btn => {
+    btn.onclick = () => {
+      publishedTopicFilter = btn.dataset.topic;
+      container.querySelectorAll('.pub-filter-pill').forEach(b => b.classList.toggle('active', b === btn));
+      renderPublishedList();
+    };
+  });
+}
+
+function wirePublishedDateFilters() {
+  const monthSelect = document.getElementById('pubMonthSelect');
+  const fromInput = document.getElementById('pubDateFrom');
+  const toInput = document.getElementById('pubDateTo');
+  const clearBtn = document.getElementById('pubClearFilters');
+
+  monthSelect.onchange = () => {
+    if (!monthSelect.value) {
+      publishedDateFrom = '';
+      publishedDateTo = '';
+    } else {
+      const [year, month] = monthSelect.value.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      publishedDateFrom = monthSelect.value + '-01';
+      publishedDateTo = monthSelect.value + '-' + String(lastDay).padStart(2, '0');
+    }
+    fromInput.value = publishedDateFrom;
+    toInput.value = publishedDateTo;
+    renderPublishedList();
+  };
+
+  fromInput.onchange = () => {
+    publishedDateFrom = fromInput.value;
+    monthSelect.value = '';
+    renderPublishedList();
+  };
+
+  toInput.onchange = () => {
+    publishedDateTo = toInput.value;
+    monthSelect.value = '';
+    renderPublishedList();
+  };
+
+  clearBtn.onclick = () => {
+    publishedDateFrom = '';
+    publishedDateTo = '';
+    publishedTopicFilter = '';
+    monthSelect.value = '';
+    fromInput.value = '';
+    toInput.value = '';
+    document.querySelectorAll('#pubTopicFilters .pub-filter-pill').forEach(b => b.classList.toggle('active', !b.dataset.topic));
+    renderPublishedList();
+  };
+}
+
+function populatePublishedMonthOptions() {
+  const monthSelect = document.getElementById('pubMonthSelect');
+  const selected = monthSelect.value;
+  const months = new Set();
+  allItems.filter(i => i.status === 'published' && i.published_at).forEach(i => {
+    const d = new Date(i.published_at);
+    if (!isNaN(d)) months.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  });
+  const sorted = [...months].sort().reverse();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  monthSelect.innerHTML = '<option value="">All time</option>' + sorted.map(m => {
+    const [y, mo] = m.split('-').map(Number);
+    return `<option value="${m}">${monthNames[mo - 1]} ${y}</option>`;
+  }).join('');
+  monthSelect.value = selected;
+}
+
+function renderPublishedList() {
+  const container = document.getElementById('publishedList');
+  const emptyEl = document.getElementById('publishedEmpty');
+  const allPublished = allItems.filter(i => i.status === 'published');
+  const items = allPublished.filter(i => {
+    if (publishedTopicFilter && i.topic !== publishedTopicFilter) return false;
+    if (publishedDateFrom && (!i.published_at || i.published_at < publishedDateFrom)) return false;
+    if (publishedDateTo && (!i.published_at || i.published_at.slice(0, 10) > publishedDateTo)) return false;
+    return true;
+  });
+  container.innerHTML = '';
+  const filtersActive = publishedTopicFilter || publishedDateFrom || publishedDateTo;
+  if (!allPublished.length) {
+    emptyEl.textContent = 'Nothing published yet.';
+    emptyEl.style.display = 'block';
+  } else if (!items.length) {
+    emptyEl.textContent = 'No published items match these filters.';
+    emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+  }
+  items.forEach(item => container.appendChild(buildCollapsibleCard(item)));
+}
+
+function setUploadMode(mode) {
+  uploadMode = mode;
+  document.querySelectorAll('.upload-tab').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('.upload-input-panel').forEach(p => { p.style.display = p.dataset.mode === mode ? 'block' : 'none'; });
+}
+
+async function submitUpload() {
+  const btn = document.getElementById('uploadSubmitBtn');
+  const msg = document.getElementById('uploadMsg');
+  msg.textContent = ''; msg.className = 'form-msg';
+  const form = new FormData();
+  form.append('kind', 'post');
+  form.append('topic', document.getElementById('uploadTopic').value);
+  if (uploadMode === 'file') {
+    const f = document.getElementById('uploadFile').files[0];
+    if (!f) { msg.textContent = 'Choose a file first.'; msg.className = 'form-msg error'; return; }
+    form.append('file', f);
+  } else if (uploadMode === 'link') {
+    const link = document.getElementById('uploadLink').value.trim();
+    if (!link) { msg.textContent = 'Enter a link first.'; msg.className = 'form-msg error'; return; }
+    form.append('link', link);
+  } else {
+    const paste = document.getElementById('uploadPaste').value.trim();
+    if (!paste) { msg.textContent = 'Paste some text first.'; msg.className = 'form-msg error'; return; }
+    form.append('paste', paste);
+  }
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+  try {
+    const res = await fetch('/api/alpha/upload', { method: 'POST', credentials: 'include', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    msg.textContent = 'Draft created — review it below.';
+    msg.className = 'form-msg success';
+    document.getElementById('uploadFile').value = '';
+    document.getElementById('uploadLink').value = '';
+    document.getElementById('uploadPaste').value = '';
+    loadContent();
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Upload & Create Draft';
+  }
+}
+
+async function quickAdd(kind) {
+  const msg = document.getElementById(kind + 'Msg');
+  msg.textContent = ''; msg.className = 'form-msg';
+  const body = { kind, topic: document.getElementById(kind + 'Topic').value };
+  body.title = document.getElementById(kind + 'Title').value.trim();
+  if (kind === 'watchlist') {
+    body.stance = document.getElementById('watchlistStance').value;
+    body.snippet = document.getElementById('watchlistNote').value.trim();
+  } else {
+    body.url = document.getElementById(kind + 'Url').value.trim();
+    if (kind === 'link') body.snippet = document.getElementById('linkDesc').value.trim();
+  }
+  if (!body.title) { msg.textContent = 'Title is required.'; msg.className = 'form-msg error'; return; }
+  try {
+    const res = await fetch('/api/alpha/content', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to add');
+    msg.textContent = 'Added as a draft.';
+    msg.className = 'form-msg success';
+    document.getElementById(kind + 'Title').value = '';
+    if (kind === 'watchlist') { document.getElementById('watchlistNote').value = ''; }
+    else {
+      document.getElementById(kind + 'Url').value = '';
+      if (kind === 'link') document.getElementById('linkDesc').value = '';
+    }
+    loadContent();
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  }
+}
+
+async function loadContent() {
+  try {
+    const res = await fetch('/api/alpha/content', { credentials: 'include' });
+    const data = await res.json();
+    allItems = data.items || [];
+  } catch { allItems = []; }
+  renderList('draft', document.getElementById('draftsList'), document.getElementById('draftsEmpty'));
+  populatePublishedMonthOptions();
+  renderPublishedList();
+}
+
+function renderList(status, container, emptyEl) {
+  const items = allItems.filter(i => i.status === status);
+  container.innerHTML = '';
+  emptyEl.style.display = items.length ? 'none' : 'block';
+  items.forEach(item => container.appendChild(buildCard(item)));
+}
+
+function buildCollapsibleCard(item) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'collapsible-card';
+
+  const header = document.createElement('div');
+  header.className = 'collapsible-header';
+
+  const chevron = document.createElement('span');
+  chevron.className = 'collapsible-chevron';
+  chevron.textContent = '▸';
+  header.appendChild(chevron);
+
+  const kindBadge = document.createElement('span');
+  kindBadge.className = 'kind-badge';
+  kindBadge.textContent = KIND_LABELS[item.kind] || item.kind;
+  header.appendChild(kindBadge);
+
+  if (item.topic) {
+    const topicBadge = document.createElement('span');
+    topicBadge.className = 'kind-badge topic-badge';
+    topicBadge.textContent = item.topic;
+    header.appendChild(topicBadge);
+  }
+
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'collapsible-title';
+  titleSpan.textContent = item.title || '(untitled)';
+  header.appendChild(titleSpan);
+
+  if (item.published_at) {
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'collapsible-date';
+    const d = new Date(item.published_at);
+    if (!isNaN(d)) dateSpan.textContent = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    header.appendChild(dateSpan);
+  }
+
+  wrapper.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'collapsible-body';
+  body.style.display = 'none';
+  body.appendChild(buildCard(item, true));
+  wrapper.appendChild(body);
+
+  header.onclick = () => {
+    const opening = body.style.display === 'none';
+    body.style.display = opening ? 'block' : 'none';
+    chevron.textContent = opening ? '▾' : '▸';
+    wrapper.classList.toggle('open', opening);
+  };
+
+  return wrapper;
+}
+
+function autoGrowTextarea(el, maxPx) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight + 2, maxPx || 600) + 'px';
+}
+
+function buildCard(item, skipHead) {
+  const card = document.createElement('div');
+  card.className = 'studio-card';
+  const isDraft = item.status === 'draft';
+
+  if (!skipHead) {
+    const head = document.createElement('div');
+    head.className = 'studio-card-head';
+    const kindBadge = document.createElement('span');
+    kindBadge.className = 'kind-badge';
+    kindBadge.textContent = KIND_LABELS[item.kind] || item.kind;
+    head.appendChild(kindBadge);
+    if (item.topic) {
+      const topicBadge = document.createElement('span');
+      topicBadge.className = 'kind-badge topic-badge';
+      topicBadge.textContent = item.topic;
+      head.appendChild(topicBadge);
+    }
+    card.appendChild(head);
+  }
+
+  const titleInput = document.createElement('input');
+  titleInput.className = 'form-input card-title-input';
+  titleInput.placeholder = 'Title';
+  titleInput.spellcheck = true;
+  titleInput.value = item.title || '';
+  card.appendChild(titleInput);
+
+  let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
+  let updatePublishGate = () => {};
+  let subtitleInput = null, imageUrlInput = null;
+  let imageMode = item.image_filename ? 'upload' : 'url';
+
+  if (item.kind === 'post') {
+    subtitleInput = document.createElement('input');
+    subtitleInput.className = 'form-input';
+    subtitleInput.placeholder = 'Sub-title — a catchy one-liner';
+    subtitleInput.spellcheck = true;
+    subtitleInput.value = item.subtitle || '';
+    card.appendChild(subtitleInput);
+
+    snippetInput = document.createElement('textarea');
+    snippetInput.className = 'form-textarea';
+    snippetInput.rows = 2;
+    snippetInput.placeholder = 'Snippet';
+    snippetInput.spellcheck = true;
+    snippetInput.value = item.snippet || '';
+    snippetInput.addEventListener('input', () => autoGrowTextarea(snippetInput, 240));
+    card.appendChild(snippetInput);
+    setTimeout(() => autoGrowTextarea(snippetInput, 240), 0);
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'card-toolbar';
+    const headingBtn = document.createElement('button');
+    headingBtn.type = 'button';
+    headingBtn.className = 'btn-ghost-sm';
+    headingBtn.textContent = '+ Sub-heading';
+    const imageBtn = document.createElement('button');
+    imageBtn.type = 'button';
+    imageBtn.className = 'btn-ghost-sm';
+    imageBtn.textContent = '+ Image';
+    const linkBtn = document.createElement('button');
+    linkBtn.type = 'button';
+    linkBtn.className = 'btn-ghost-sm';
+    linkBtn.textContent = '+ Link';
+    toolbar.appendChild(headingBtn);
+    toolbar.appendChild(imageBtn);
+    toolbar.appendChild(linkBtn);
+    card.appendChild(toolbar);
+
+    // Insert Image panel — mirrors the main-image URL/Upload tabs, but inserts
+    // a standalone ![alt](url) paragraph at the body cursor instead of setting
+    // the post's single main-image slot.
+    const imagePanel = document.createElement('div');
+    imagePanel.className = 'insert-panel';
+    imagePanel.style.display = 'none';
+    let insertImageMode = 'url';
+    const imgTabs = document.createElement('div');
+    imgTabs.className = 'card-image-tabs';
+    const imgUrlTab = document.createElement('button');
+    imgUrlTab.type = 'button'; imgUrlTab.className = 'card-image-tab'; imgUrlTab.textContent = 'URL';
+    const imgUploadTab = document.createElement('button');
+    imgUploadTab.type = 'button'; imgUploadTab.className = 'card-image-tab'; imgUploadTab.textContent = 'Upload';
+    imgTabs.appendChild(imgUrlTab);
+    imgTabs.appendChild(imgUploadTab);
+    imagePanel.appendChild(imgTabs);
+    const insertImageUrlInput = document.createElement('input');
+    insertImageUrlInput.className = 'form-input';
+    insertImageUrlInput.placeholder = 'https://example.com/image.jpg';
+    imagePanel.appendChild(insertImageUrlInput);
+    const insertImageFileInput = document.createElement('input');
+    insertImageFileInput.type = 'file';
+    insertImageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    insertImageFileInput.style.display = 'none';
+    imagePanel.appendChild(insertImageFileInput);
+    const insertImageAltInput = document.createElement('input');
+    insertImageAltInput.className = 'form-input';
+    insertImageAltInput.placeholder = 'Alt text (optional)';
+    imagePanel.appendChild(insertImageAltInput);
+    const insertImageBtn = document.createElement('button');
+    insertImageBtn.type = 'button';
+    insertImageBtn.className = 'btn-primary-sm';
+    insertImageBtn.textContent = 'Insert';
+    imagePanel.appendChild(insertImageBtn);
+    const insertImageMsg = document.createElement('span');
+    insertImageMsg.className = 'form-msg';
+    imagePanel.appendChild(insertImageMsg);
+    card.appendChild(imagePanel);
+
+    function renderInsertImageMode() {
+      imgUrlTab.classList.toggle('active', insertImageMode === 'url');
+      imgUploadTab.classList.toggle('active', insertImageMode === 'upload');
+      insertImageUrlInput.style.display = insertImageMode === 'url' ? 'block' : 'none';
+      insertImageFileInput.style.display = insertImageMode === 'upload' ? 'block' : 'none';
+    }
+    imgUrlTab.onclick = () => { insertImageMode = 'url'; renderInsertImageMode(); };
+    imgUploadTab.onclick = () => { insertImageMode = 'upload'; renderInsertImageMode(); };
+    renderInsertImageMode();
+
+    // Insert Link panel — inline [text](url), not a standalone paragraph.
+    const linkPanel = document.createElement('div');
+    linkPanel.className = 'insert-panel';
+    linkPanel.style.display = 'none';
+    const insertLinkTextInput = document.createElement('input');
+    insertLinkTextInput.className = 'form-input';
+    insertLinkTextInput.placeholder = 'Link text';
+    linkPanel.appendChild(insertLinkTextInput);
+    const insertLinkUrlInput = document.createElement('input');
+    insertLinkUrlInput.className = 'form-input';
+    insertLinkUrlInput.placeholder = 'https://example.com';
+    linkPanel.appendChild(insertLinkUrlInput);
+    const insertLinkBtn = document.createElement('button');
+    insertLinkBtn.type = 'button';
+    insertLinkBtn.className = 'btn-primary-sm';
+    insertLinkBtn.textContent = 'Insert';
+    linkPanel.appendChild(insertLinkBtn);
+    const insertLinkMsg = document.createElement('span');
+    insertLinkMsg.className = 'form-msg';
+    linkPanel.appendChild(insertLinkMsg);
+    card.appendChild(linkPanel);
+
+    bodyInput = document.createElement('textarea');
+    bodyInput.className = 'form-textarea';
+    bodyInput.rows = 6;
+    bodyInput.placeholder = 'Body';
+    bodyInput.spellcheck = true;
+    bodyInput.value = item.body || '';
+    bodyInput.addEventListener('input', () => autoGrowTextarea(bodyInput, 600));
+    card.appendChild(bodyInput);
+    setTimeout(() => autoGrowTextarea(bodyInput, 600), 0);
+
+    function insertAtCursor(before, after, text, selectFrom, selectLen) {
+      const start = bodyInput.selectionStart, end = bodyInput.selectionEnd;
+      const pre = bodyInput.value.slice(0, start), post = bodyInput.value.slice(end);
+      bodyInput.value = pre + before + text + after + post;
+      const from = selectFrom != null ? selectFrom : text.length;
+      const len = selectLen != null ? selectLen : 0;
+      const selStart = pre.length + before.length + from;
+      bodyInput.focus();
+      bodyInput.setSelectionRange(selStart, selStart + len);
+    }
+
+    headingBtn.onclick = () => {
+      imagePanel.style.display = 'none';
+      linkPanel.style.display = 'none';
+      const start = bodyInput.selectionStart;
+      const before = bodyInput.value.slice(0, start);
+      const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
+      insertAtCursor(lead + '## ', '\n\n', 'Sub-heading', 0, 'Sub-heading'.length);
+    };
+
+    imageBtn.onclick = () => {
+      linkPanel.style.display = 'none';
+      imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
+    };
+
+    linkBtn.onclick = () => {
+      imagePanel.style.display = 'none';
+      linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
+    };
+
+    insertLinkBtn.onclick = () => {
+      const text = insertLinkTextInput.value.trim();
+      const url = insertLinkUrlInput.value.trim();
+      if (!text || !url) { insertLinkMsg.textContent = 'Enter both link text and a URL.'; insertLinkMsg.className = 'form-msg error'; return; }
+      if (!/^https?:\/\//.test(url)) { insertLinkMsg.textContent = 'URL must start with http:// or https://'; insertLinkMsg.className = 'form-msg error'; return; }
+      const start = bodyInput.selectionStart;
+      insertAtCursor('', '', '[' + text + '](' + url + ')', 0, 0);
+      insertLinkTextInput.value = '';
+      insertLinkUrlInput.value = '';
+      insertLinkMsg.textContent = '';
+      linkPanel.style.display = 'none';
+    };
+
+    function insertImageMarkup(url) {
+      const alt = insertImageAltInput.value.trim();
+      const start = bodyInput.selectionStart;
+      const before = bodyInput.value.slice(0, start);
+      const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
+      insertAtCursor(lead, '\n\n', '![' + alt + '](' + url + ')', 0, 0);
+      insertImageAltInput.value = '';
+      insertImageMsg.textContent = '';
+      imagePanel.style.display = 'none';
+    }
+
+    insertImageBtn.onclick = async () => {
+      if (insertImageMode === 'url') {
+        const url = insertImageUrlInput.value.trim();
+        if (!/^https?:\/\//.test(url)) { insertImageMsg.textContent = 'URL must start with http:// or https://'; insertImageMsg.className = 'form-msg error'; return; }
+        insertImageMarkup(url);
+        insertImageUrlInput.value = '';
+        return;
+      }
+      const f = insertImageFileInput.files[0];
+      if (!f) { insertImageMsg.textContent = 'Choose a file first.'; insertImageMsg.className = 'form-msg error'; return; }
+      insertImageBtn.disabled = true;
+      insertImageBtn.textContent = 'Uploading…';
+      const form = new FormData();
+      form.append('image', f);
+      try {
+        const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        insertImageMarkup(data.url);
+        insertImageFileInput.value = '';
+      } catch (e) {
+        insertImageMsg.textContent = e.message;
+        insertImageMsg.className = 'form-msg error';
+      } finally {
+        insertImageBtn.disabled = false;
+        insertImageBtn.textContent = 'Insert';
+      }
+    };
+
+    if (item.source_filename) {
+      const dl = document.createElement('a');
+      dl.href = '/api/alpha/content/' + item.id + '/file';
+      dl.className = 'card-file-link';
+      dl.textContent = '📎 ' + item.source_filename;
+      card.appendChild(dl);
+    }
+
+    // ── Main image: URL or upload-from-desktop, mutually exclusive ──────
+    const imageTabs = document.createElement('div');
+    imageTabs.className = 'card-image-tabs';
+    const urlTabBtn = document.createElement('button');
+    urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
+    const uploadTabBtn = document.createElement('button');
+    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload';
+    imageTabs.appendChild(urlTabBtn);
+    imageTabs.appendChild(uploadTabBtn);
+    card.appendChild(imageTabs);
+
+    imageUrlInput = document.createElement('input');
+    imageUrlInput.className = 'form-input';
+    imageUrlInput.placeholder = 'https://example.com/image.jpg';
+    imageUrlInput.value = item.image_url || '';
+    card.appendChild(imageUrlInput);
+
+    const uploadPanel = document.createElement('div');
+    const imageFileInput = document.createElement('input');
+    imageFileInput.type = 'file';
+    imageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    const uploadImageBtn = document.createElement('button');
+    uploadImageBtn.type = 'button'; uploadImageBtn.className = 'btn-ghost-sm'; uploadImageBtn.textContent = 'Upload Image';
+    const imageMsg = document.createElement('span');
+    imageMsg.className = 'form-msg';
+    uploadPanel.appendChild(imageFileInput);
+    uploadPanel.appendChild(uploadImageBtn);
+    uploadPanel.appendChild(imageMsg);
+    card.appendChild(uploadPanel);
+
+    const imagePreview = document.createElement('img');
+    imagePreview.className = 'card-image-preview';
+    if (item.image_filename) {
+      imagePreview.src = '/api/alpha/content/' + item.id + '/image';
+    } else if (item.image_url) {
+      imagePreview.src = item.image_url;
+    } else {
+      imagePreview.style.display = 'none';
+    }
+    card.appendChild(imagePreview);
+
+    function renderImageMode() {
+      urlTabBtn.classList.toggle('active', imageMode === 'url');
+      uploadTabBtn.classList.toggle('active', imageMode === 'upload');
+      imageUrlInput.style.display = imageMode === 'url' ? 'block' : 'none';
+      uploadPanel.style.display = imageMode === 'upload' ? 'block' : 'none';
+    }
+    urlTabBtn.onclick = () => { imageMode = 'url'; renderImageMode(); };
+    uploadTabBtn.onclick = () => { imageMode = 'upload'; renderImageMode(); };
+    renderImageMode();
+
+    uploadImageBtn.onclick = async () => {
+      const f = imageFileInput.files[0];
+      if (!f) { imageMsg.textContent = 'Choose a file first.'; imageMsg.className = 'form-msg error'; return; }
+      uploadImageBtn.disabled = true;
+      uploadImageBtn.textContent = 'Uploading…';
+      const form = new FormData();
+      form.append('image', f);
+      try {
+        const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        imageMsg.textContent = 'Image uploaded.';
+        imageMsg.className = 'form-msg success';
+        item.image_filename = data.item.image_filename;
+        item.image_url = data.item.image_url;
+        imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
+        imagePreview.style.display = 'block';
+        updatePublishGate();
+      } catch (e) {
+        imageMsg.textContent = e.message;
+        imageMsg.className = 'form-msg error';
+      } finally {
+        uploadImageBtn.disabled = false;
+        uploadImageBtn.textContent = 'Upload Image';
+      }
+    };
+  } else if (item.kind === 'watchlist') {
+    stanceSelect = document.createElement('select');
+    stanceSelect.className = 'form-select';
+    ['bullish', 'neutral', 'bearish'].forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+      if (item.stance === s) opt.selected = true;
+      stanceSelect.appendChild(opt);
+    });
+    card.appendChild(stanceSelect);
+
+    snippetInput = document.createElement('textarea');
+    snippetInput.className = 'form-textarea';
+    snippetInput.rows = 2;
+    snippetInput.placeholder = 'One-line note';
+    snippetInput.value = item.snippet || '';
+    card.appendChild(snippetInput);
+  } else {
+    urlInput = document.createElement('input');
+    urlInput.className = 'form-input';
+    urlInput.placeholder = item.kind === 'video' ? 'YouTube video ID or URL' : 'URL';
+    urlInput.value = item.url || '';
+    card.appendChild(urlInput);
+
+    if (item.kind === 'link') {
+      snippetInput = document.createElement('textarea');
+      snippetInput.className = 'form-textarea';
+      snippetInput.rows = 2;
+      snippetInput.placeholder = 'Short description';
+      snippetInput.value = item.snippet || '';
+      card.appendChild(snippetInput);
+    }
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'studio-card-actions';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-ghost-sm';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = () => {
+    const updates = { title: titleInput.value.trim() };
+    if (subtitleInput) updates.subtitle = subtitleInput.value.trim();
+    if (snippetInput) updates.snippet = snippetInput.value.trim();
+    if (bodyInput) updates.body = bodyInput.value.trim();
+    if (stanceSelect) updates.stance = stanceSelect.value;
+    if (urlInput) updates.url = urlInput.value.trim();
+    if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
+    updateItem(item.id, updates);
+  };
+  actions.appendChild(saveBtn);
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
+  toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
+  toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' });
+  if (isDraft && item.kind === 'post') {
+    updatePublishGate = () => {
+      const missing = [];
+      if (!(item.title || '').trim()) missing.push('title');
+      if (!(item.subtitle || '').trim()) missing.push('subtitle');
+      if (!((item.image_url || '').trim() || item.image_filename)) missing.push('image');
+      toggleBtn.disabled = missing.length > 0;
+      toggleBtn.title = missing.length ? 'Missing before publishing: ' + missing.join(', ') + '.' : '';
+    };
+    updatePublishGate();
+  }
+  actions.appendChild(toggleBtn);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn-danger-sm';
+  delBtn.textContent = 'Delete';
+  delBtn.onclick = () => {
+    if (confirm('Delete this ' + (KIND_LABELS[item.kind] || item.kind).toLowerCase() + '?')) deleteItem(item.id);
+  };
+  actions.appendChild(delBtn);
+
+  card.appendChild(actions);
+  return card;
+}
+
+async function updateItem(id, updates) {
+  try {
+    const res = await fetch('/api/alpha/content/' + id, {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Update failed');
+    loadContent();
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteItem(id) {
+  try {
+    const res = await fetch('/api/alpha/content/' + id, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Delete failed');
+    loadContent();
+  } catch (e) { alert(e.message); }
+}
+
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
+
+initStudio();
+</script>
+</body>
+</html>

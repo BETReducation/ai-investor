@@ -193,6 +193,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
   <div class="nav-cta">
@@ -413,6 +415,33 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </table>
       </div>
 
+      <!-- ADMIN TOOLS -->
+      <div class="profile-card" id="adminToolsCard" style="display:none;">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🛠️</span>Admin Tools</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="form-label">Username</div>
+            <select id="adminRoleUsername" class="form-input">
+              <option value="">Loading users…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Alpha Role</div>
+            <select id="adminRoleSelect" class="form-input">
+              <option value="">None (remove access)</option>
+              <option value="tom">Tom</option>
+              <option value="dave">Dave</option>
+              <option value="gary">Gary</option>
+              <option value="connor">Connor</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-save" id="adminAssignRoleBtn" onclick="assignAlphaRole()">Assign Role</button>
+        <span class="form-hint" id="adminRoleHint"></span>
+      </div>
+
       <!-- DANGER ZONE -->
       <div class="profile-card" style="border-color:rgba(255,71,87,0.25);">
         <div class="card-header-row">
@@ -503,6 +532,10 @@ async function boot() {
     profileTier = data.tier || 'basic';
     populateProfile(data);
     document.getElementById('profilePage').style.display = 'block';
+    if (data.username === 'admin') {
+      document.getElementById('adminToolsCard').style.display = 'block';
+      loadAdminUserList();
+    }
   } catch (e) {
     document.getElementById('notLoggedIn').style.display = 'flex';
   }
@@ -573,6 +606,69 @@ function updateDangerZone(tier) {
   if (tier === 'basic') {
     subBtn.disabled = true;
     subBtn.title = 'You are already on the free Basic plan';
+  }
+}
+
+// ── Admin tools ──────────────────────────────────────────────────────────────
+
+async function loadAdminUserList() {
+  const select = document.getElementById('adminRoleUsername');
+  const previousValue = select.value;
+  try {
+    const res = await fetch('/api/admin/users', { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load users');
+    select.innerHTML = '';
+    data.users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.username;
+      opt.textContent = u.username + (u.alpha_role ? ` — currently: ${u.alpha_role}` : '');
+      select.appendChild(opt);
+    });
+    if (previousValue && data.users.some(u => u.username === previousValue)) {
+      select.value = previousValue;
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Failed to load users</option>';
+  }
+}
+
+async function assignAlphaRole() {
+  const btn      = document.getElementById('adminAssignRoleBtn');
+  const hint     = document.getElementById('adminRoleHint');
+  const username = document.getElementById('adminRoleUsername').value.trim();
+  const role     = document.getElementById('adminRoleSelect').value || null;
+
+  if (!username) {
+    hint.textContent = 'Enter a username first.';
+    hint.style.color = '#ff4757';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Assigning...';
+  hint.textContent = '';
+
+  try {
+    const res = await fetch('/api/admin/set-alpha-role', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, alpha_role: role }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to assign role');
+    hint.textContent = role
+      ? `@${username} is now assigned to the "${role}" Alpha page.`
+      : `@${username}'s Alpha role has been removed.`;
+    hint.style.color = 'var(--green)';
+    loadAdminUserList();
+  } catch (e) {
+    hint.textContent = e.message || 'Something went wrong.';
+    hint.style.color = '#ff4757';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Assign Role';
   }
 }
 
@@ -741,7 +837,11 @@ function showToast(msg, type) {
       const data = await res.json();
       if (data.authenticated && data.username) {
         const signIn = document.getElementById('navSignIn');
-        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
       }
     }
   } catch {}

@@ -50,6 +50,74 @@
 .notify-input:focus { border-color: var(--gold); }
 .notify-btn { background: var(--gold); color: #03130f; border: none; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
 .notify-btn:hover { opacity: 0.88; }
+
+/* ALPHA PROFILE HERO */
+.alpha-photo-row { position: relative; max-width: 900px; margin: 0 auto 28px; height: 128px; display: flex; align-items: center; justify-content: center; }
+.alpha-photo-line { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--border2); }
+.alpha-photo-ring { position: relative; z-index: 2; width: 132px; height: 132px; border-radius: 50%; background: var(--bg); padding: 6px; }
+.alpha-photo-circle { width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, var(--gold2), var(--purple2)); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 42px; color: #fff; overflow: hidden; }
+.alpha-photo-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.alpha-identity { position: relative; z-index: 2; }
+.alpha-name { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 12px; }
+.alpha-topics { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.topic-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 14px; border-radius: 100px; border: 1px solid; background: transparent; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.topic-a { color: var(--teal); border-color: rgba(45,212,191,0.32); background: rgba(45,212,191,0.08); }
+.topic-b { color: var(--gold); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
+.topic-c { color: var(--purple2); border-color: rgba(124,58,237,0.32); background: rgba(124,58,237,0.08); }
+.topic-all { color: var(--muted); border-color: var(--border2); }
+.topic-pill.active-filter.topic-a { background: var(--teal); color: #03130f; }
+.topic-pill.active-filter.topic-b { background: var(--gold); color: #03130f; }
+.topic-pill.active-filter.topic-c { background: var(--purple2); color: #fff; }
+.topic-pill.active-filter.topic-all { background: var(--text); border-color: var(--text); color: var(--bg); }
+.topic-empty-msg { font-size: 13px; color: var(--muted); text-align: center; padding: 24px; grid-column: 1 / -1; }
+.alpha-meta-row { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.alpha-socials { display: flex; gap: 8px; }
+.social-icon { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 700; transition: color 0.2s, border-color 0.2s; }
+.social-icon:hover { color: var(--text); border-color: var(--text); }
+.alpha-updated { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+/* WATCHLIST */
+.watchlist-strip { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 30px 32px; }
+.watchlist-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 20px; display: flex; align-items: center; gap: 7px; }
+.watchlist-label::before { content: ''; width: 18px; height: 1px; background: var(--teal); }
+.watchlist-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 800px) { .watchlist-items { grid-template-columns: 1fr; } }
+.watchlist-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.wl-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.wl-asset { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.stance-badge { font-size: 10.5px; font-weight: 700; padding: 4px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; }
+.stance-bullish { background: rgba(0,212,170,0.12); color: var(--green); }
+.stance-neutral { background: rgba(136,146,176,0.15); color: var(--muted); }
+.stance-bearish { background: rgba(255,51,85,0.12); color: #ff3355; }
+.wl-note { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* MEDIA GRIDS (videos + posts) */
+.media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 1000px) { .media-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .media-grid { grid-template-columns: 1fr; } }
+.video-card, .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.25s, transform 0.25s; text-decoration: none; color: inherit; }
+.video-card:hover, .post-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.video-thumb { aspect-ratio: 16/9; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
+.post-thumb { aspect-ratio: 16/9; background: var(--bg3); overflow: hidden; }
+.post-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.play-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(45,212,191,0.15); border: 1px solid rgba(45,212,191,0.35); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.media-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.post-card .media-body { padding: 20px; }
+.media-tag { align-self: flex-start; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
+.media-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.4; }
+.media-sub { font-size: 12px; color: var(--muted); }
+.media-snippet { font-size: 12.5px; color: var(--muted); line-height: 1.6; flex: 1; }
+
+/* ALPHA LINKS */
+.links-list { display: flex; flex-direction: column; gap: 12px; max-width: 760px; margin: 0 auto; }
+.link-item { display: flex; align-items: center; gap: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; text-decoration: none; transition: border-color 0.25s, transform 0.25s; }
+.link-item:hover { border-color: var(--border2); transform: translateX(4px); }
+.link-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.link-body { flex: 1; min-width: 0; }
+.link-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+.link-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.link-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -105,6 +173,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </ul>
     </li>
     <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
   <div class="nav-cta">
@@ -117,44 +187,186 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 </nav>
 
 
-<div class="page-hero">
+<div class="page-hero" style="padding-bottom:44px;">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge">Alpha / Gary</div>
-    <h1 class="hero-title">Gary's <span class="accent">Alpha</span></h1>
-    <p class="hero-sub">Fundamental analysis and long-horizon investing. Gary digs into company financials, sector tailwinds and valuation to surface compelling long-term opportunities.</p>
+    <div class="alpha-photo-row">
+      <div class="alpha-photo-line"></div>
+      <div class="alpha-photo-ring">
+        <div class="alpha-photo-circle">G</div>
+      </div>
+    </div>
+    <div class="alpha-identity">
+      <h1 class="alpha-name">Gary</h1>
+      <div class="alpha-topics" id="topicFilters">
+        <button type="button" class="topic-pill topic-all" data-topic="">All</button>
+        <button type="button" class="topic-pill topic-a" data-topic="Long-Term Investing">Long-Term Investing</button>
+        <button type="button" class="topic-pill topic-b" data-topic="Technical Analysis">Technical Analysis</button>
+        <button type="button" class="topic-pill topic-c" data-topic="Impact of AI">Impact of AI</button>
+      </div>
+      <div class="alpha-meta-row">
+        <div class="alpha-socials">
+          <a href="#" class="social-icon" title="X / Twitter">𝕏</a>
+          <a href="#" class="social-icon" title="LinkedIn">in</a>
+          <a href="#" class="social-icon" title="Substack">S</a>
+        </div>
+        <span class="alpha-updated" id="alphaUpdated">Updated 4 days ago</span>
+      </div>
+    </div>
   </div>
 </div>
 
-<section class="content-section">
+<section class="content-section" style="padding-top:0;padding-bottom:50px;">
   <div class="content-inner">
-    <h2 class="section-title">What's Coming</h2>
-    <p class="section-desc">Here's a preview of what we're building for this section.</p>
-    <div class="hub-grid reveal">
-      <div class="hub-card">
-        <div class="card-icon">🌳</div>
-        <div class="card-title">Long Term Investments</div>
-        <div class="card-desc">Gary's core philosophy — building conviction in businesses worth holding for years, not weeks. Company fundamentals, sector tailwinds, and the patience to let compounding do the work.</div>
-      </div>
-      <div class="hub-card">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Basic Technical Analysis</div>
-        <div class="card-desc">A practical, no-nonsense look at reading price charts alongside the fundamentals — trend, support and resistance, and the handful of signals Gary actually pays attention to before timing an entry.</div>
-      </div>
-      <div class="hub-card">
-        <div class="card-icon">🤖</div>
-        <div class="card-title">Impact of AI</div>
-        <div class="card-desc">How artificial intelligence is reshaping company earnings, competitive moats and entire industries — and what it means for the long-term investment cases Gary is building today.</div>
+    <div class="watchlist-strip reveal">
+      <div class="watchlist-label">Current Watchlist</div>
+      <div class="watchlist-items" id="watchlistItems">
+        <div class="watchlist-item">
+          <div class="wl-top"><span class="wl-asset">MSFT</span><span class="stance-badge stance-bullish">Bullish</span></div>
+          <p class="wl-note">Placeholder — Gary's current one-line take on this asset will go here.</p>
+        </div>
+        <div class="watchlist-item">
+          <div class="wl-top"><span class="wl-asset">US 10-Year Treasury</span><span class="stance-badge stance-neutral">Neutral</span></div>
+          <p class="wl-note">Placeholder — Gary's current one-line take on this asset will go here.</p>
+        </div>
+        <div class="watchlist-item">
+          <div class="wl-top"><span class="wl-asset">Small-Cap Value</span><span class="stance-badge stance-bearish">Bearish</span></div>
+          <p class="wl-note">Placeholder — Gary's current one-line take on this asset will go here.</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
+
 <section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Videos</h2>
+    <p class="section-desc">Gary's latest market breakdowns, hosted on YouTube and embedded here.</p>
+    <div class="media-grid reveal" id="videoGrid">
+      <div class="video-card">
+        <div class="video-thumb"><span class="play-icon">▶</span></div>
+        <div class="media-body">
+          <span class="media-tag topic-a">Long-Term Investing</span>
+          <div class="media-title">Video title placeholder</div>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="video-card">
+        <div class="video-thumb"><span class="play-icon">▶</span></div>
+        <div class="media-body">
+          <span class="media-tag topic-b">Technical Analysis</span>
+          <div class="media-title">Video title placeholder</div>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="video-card">
+        <div class="video-thumb"><span class="play-icon">▶</span></div>
+        <div class="media-body">
+          <span class="media-tag topic-c">Impact of AI</span>
+          <div class="media-title">Video title placeholder</div>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="video-card">
+        <div class="video-thumb"><span class="play-icon">▶</span></div>
+        <div class="media-body">
+          <span class="media-tag topic-a">Long-Term Investing</span>
+          <div class="media-title">Video title placeholder</div>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">Latest Thoughts</h2>
+    <p class="section-desc">Gary's research notes and write-ups, normalized into a consistent format.</p>
+    <div class="media-grid reveal" id="postGrid">
+      <div class="post-card">
+        <div class="media-body">
+          <span class="media-tag topic-b">Technical Analysis</span>
+          <div class="media-title">Post title placeholder</div>
+          <p class="media-snippet">A short placeholder snippet of the post will appear here once Gary uploads his first note.</p>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="post-card">
+        <div class="media-body">
+          <span class="media-tag topic-c">Impact of AI</span>
+          <div class="media-title">Post title placeholder</div>
+          <p class="media-snippet">A short placeholder snippet of the post will appear here once Gary uploads his first note.</p>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="post-card">
+        <div class="media-body">
+          <span class="media-tag topic-a">Long-Term Investing</span>
+          <div class="media-title">Post title placeholder</div>
+          <p class="media-snippet">A short placeholder snippet of the post will appear here once Gary uploads his first note.</p>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+      <div class="post-card">
+        <div class="media-body">
+          <span class="media-tag topic-b">Technical Analysis</span>
+          <div class="media-title">Post title placeholder</div>
+          <p class="media-snippet">A short placeholder snippet of the post will appear here once Gary uploads his first note.</p>
+          <div class="media-sub">Coming soon</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Alpha Links</h2>
+    <p class="section-desc">Sites Gary is currently reading and following.</p>
+    <div class="links-list reveal" id="linksList">
+      <a href="#" class="link-item">
+        <div class="link-icon">🔗</div>
+        <div class="link-body">
+          <div class="link-name">Link title placeholder</div>
+          <div class="link-desc">A short placeholder description of why Gary likes this resource will go here.</div>
+        </div>
+        <div class="link-arrow">→</div>
+      </a>
+      <a href="#" class="link-item">
+        <div class="link-icon">🔗</div>
+        <div class="link-body">
+          <div class="link-name">Link title placeholder</div>
+          <div class="link-desc">A short placeholder description of why Gary likes this resource will go here.</div>
+        </div>
+        <div class="link-arrow">→</div>
+      </a>
+      <a href="#" class="link-item">
+        <div class="link-icon">🔗</div>
+        <div class="link-body">
+          <div class="link-name">Link title placeholder</div>
+          <div class="link-desc">A short placeholder description of why Gary likes this resource will go here.</div>
+        </div>
+        <div class="link-arrow">→</div>
+      </a>
+      <a href="#" class="link-item">
+        <div class="link-icon">🔗</div>
+        <div class="link-body">
+          <div class="link-name">Link title placeholder</div>
+          <div class="link-desc">A short placeholder description of why Gary likes this resource will go here.</div>
+        </div>
+        <div class="link-arrow">→</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
   <div class="content-inner">
     <div class="notify-box reveal">
       <div style="font-size:32px;margin-bottom:16px;">🔔</div>
-      <div class="notify-title">Gary's Alpha launches soon</div>
-      <p class="notify-desc">Get notified when Gary's first letter goes out.</p>
+      <div class="notify-title">Get notified about Gary's next post</div>
+      <p class="notify-desc">We'll email you when Gary shares new research, a video or a watchlist update.</p>
       <div class="notify-form">
         <input class="notify-input" type="email" placeholder="your@email.com">
         <button class="notify-btn">Notify Me</button>
@@ -192,7 +404,11 @@ revealEls.forEach(el => io.observe(el));
       const data = await res.json();
       if (data.authenticated && data.username) {
         const signIn = document.getElementById('navSignIn');
-        if (signIn) { signIn.textContent = 'Profile'; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
       }
     }
   } catch {}
@@ -242,6 +458,242 @@ window.addEventListener('scroll', () => {
     ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
     : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
 });
+
+// ── Live Alpha content (replaces the placeholder cards above when the
+//    partner has published anything) ──────────────────────────────────────
+const ALPHA_SLUG = 'gary';
+const PAGE_TOPICS = ['Long-Term Investing', 'Technical Analysis', 'Impact of AI'];
+
+function topicAccentClass(topic) {
+  const idx = PAGE_TOPICS.indexOf(topic);
+  return 'topic-' + (idx === 1 ? 'b' : idx === 2 ? 'c' : 'a');
+}
+
+function extractYouTubeId(url) {
+  if (!url) return null;
+  if (/^[\w-]{11}$/.test(url)) return url;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function showEmptyState(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const p = document.createElement('p');
+  p.className = 'topic-empty-msg';
+  p.textContent = message;
+  container.appendChild(p);
+}
+
+function renderWatchlist(items, emptyMessage) {
+  const container = document.getElementById('watchlistItems');
+  if (!container) return;
+  if (!items.length) { if (emptyMessage) showEmptyState('watchlistItems', emptyMessage); return; }
+  container.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'watchlist-item';
+    const top = document.createElement('div');
+    top.className = 'wl-top';
+    const asset = document.createElement('span');
+    asset.className = 'wl-asset';
+    asset.textContent = item.title || '';
+    const stance = item.stance || 'neutral';
+    const badge = document.createElement('span');
+    badge.className = 'stance-badge stance-' + stance;
+    badge.textContent = stance.charAt(0).toUpperCase() + stance.slice(1);
+    top.appendChild(asset);
+    top.appendChild(badge);
+    div.appendChild(top);
+    if (item.snippet) {
+      const note = document.createElement('p');
+      note.className = 'wl-note';
+      note.textContent = item.snippet;
+      div.appendChild(note);
+    }
+    container.appendChild(div);
+  });
+}
+
+function renderVideos(items, emptyMessage) {
+  const container = document.getElementById('videoGrid');
+  if (!container) return;
+  if (!items.length) { if (emptyMessage) showEmptyState('videoGrid', emptyMessage); return; }
+  container.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    const thumb = document.createElement('div');
+    thumb.className = 'video-thumb';
+    const videoId = extractYouTubeId(item.url);
+    if (videoId) {
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube.com/embed/' + videoId;
+      iframe.style.cssText = 'width:100%;height:100%;border:0;';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.title = item.title || 'Video';
+      thumb.appendChild(iframe);
+    } else {
+      const play = document.createElement('span');
+      play.className = 'play-icon';
+      play.textContent = '▶';
+      thumb.appendChild(play);
+    }
+    card.appendChild(thumb);
+    const body = document.createElement('div');
+    body.className = 'media-body';
+    if (item.topic) {
+      const tag = document.createElement('span');
+      tag.className = 'media-tag ' + topicAccentClass(item.topic);
+      tag.textContent = item.topic;
+      body.appendChild(tag);
+    }
+    const title = document.createElement('div');
+    title.className = 'media-title';
+    title.textContent = item.title || '';
+    body.appendChild(title);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function renderPosts(items, emptyMessage) {
+  const container = document.getElementById('postGrid');
+  if (!container) return;
+  if (!items.length) { if (emptyMessage) showEmptyState('postGrid', emptyMessage); return; }
+  container.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('a');
+    card.className = 'post-card';
+    card.href = '/alpha/' + ALPHA_SLUG + '/post/' + item.id;
+    if (item.image_url) {
+      const thumb = document.createElement('div');
+      thumb.className = 'post-thumb';
+      const img = document.createElement('img');
+      img.src = item.image_url;
+      img.alt = item.title || '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+      card.appendChild(thumb);
+    }
+    const body = document.createElement('div');
+    body.className = 'media-body';
+    if (item.topic) {
+      const tag = document.createElement('span');
+      tag.className = 'media-tag ' + topicAccentClass(item.topic);
+      tag.textContent = item.topic;
+      body.appendChild(tag);
+    }
+    const title = document.createElement('div');
+    title.className = 'media-title';
+    title.textContent = item.title || '';
+    body.appendChild(title);
+    if (item.snippet) {
+      const snippet = document.createElement('p');
+      snippet.className = 'media-snippet';
+      snippet.textContent = item.snippet;
+      body.appendChild(snippet);
+    }
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function renderLinks(items, emptyMessage) {
+  const container = document.getElementById('linksList');
+  if (!container) return;
+  if (!items.length) { if (emptyMessage) showEmptyState('linksList', emptyMessage); return; }
+  container.innerHTML = '';
+  items.forEach(item => {
+    const a = document.createElement('a');
+    a.className = 'link-item';
+    a.href = /^https?:\/\//.test(item.url || '') ? item.url : '#';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    const icon = document.createElement('div');
+    icon.className = 'link-icon';
+    icon.textContent = '🔗';
+    a.appendChild(icon);
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'link-body';
+    const name = document.createElement('div');
+    name.className = 'link-name';
+    name.textContent = item.title || '';
+    bodyDiv.appendChild(name);
+    if (item.snippet) {
+      const desc = document.createElement('div');
+      desc.className = 'link-desc';
+      desc.textContent = item.snippet;
+      bodyDiv.appendChild(desc);
+    }
+    a.appendChild(bodyDiv);
+    const arrow = document.createElement('div');
+    arrow.className = 'link-arrow';
+    arrow.textContent = '→';
+    a.appendChild(arrow);
+    container.appendChild(a);
+  });
+}
+
+async function loadAlphaContent(topic) {
+  try {
+    const url = '/api/alpha/' + ALPHA_SLUG + '/content' + (topic ? '?topic=' + encodeURIComponent(topic) : '');
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderWatchlist(data.watchlist || [], topic ? 'No watchlist items yet under this topic.' : null);
+    renderVideos(data.video || [], topic ? 'No videos yet under this topic.' : null);
+    renderPosts(data.post || [], topic ? 'No posts yet under this topic.' : null);
+    renderLinks(data.link || [], topic ? 'No links yet under this topic.' : null);
+  } catch {}
+}
+
+function setActiveTopicPill(topic) {
+  document.querySelectorAll('#topicFilters .topic-pill').forEach(btn => {
+    btn.classList.toggle('active-filter', (btn.dataset.topic || '') === (topic || ''));
+  });
+}
+
+document.querySelectorAll('#topicFilters .topic-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const topic = btn.dataset.topic || null;
+    const url = new URL(window.location.href);
+    if (topic) url.searchParams.set('topic', topic); else url.searchParams.delete('topic');
+    history.pushState({}, '', url);
+    setActiveTopicPill(topic);
+    loadAlphaContent(topic);
+  });
+});
+
+window.addEventListener('popstate', () => {
+  const t = new URLSearchParams(window.location.search).get('topic');
+  const valid = t && PAGE_TOPICS.includes(t) ? t : null;
+  setActiveTopicPill(valid);
+  loadAlphaContent(valid);
+});
+
+const _initialTopic = new URLSearchParams(window.location.search).get('topic');
+const _validInitialTopic = _initialTopic && PAGE_TOPICS.includes(_initialTopic) ? _initialTopic : null;
+setActiveTopicPill(_validInitialTopic);
+loadAlphaContent(_validInitialTopic);
+
+(async function updateLastUpdated() {
+  const el = document.getElementById('alphaUpdated');
+  if (!el) return;
+  try {
+    const res = await fetch('/api/alpha/' + ALPHA_SLUG + '/content');
+    if (!res.ok) return;
+    const data = await res.json();
+    const allItems = [].concat(data.watchlist || [], data.video || [], data.post || [], data.link || []);
+    const timestamps = allItems
+      .map(i => i.published_at ? new Date(i.published_at).getTime() : NaN)
+      .filter(t => !isNaN(t));
+    if (!timestamps.length) { el.textContent = 'No updates yet'; return; }
+    const diffDays = Math.floor((Date.now() - Math.max(...timestamps)) / 86400000);
+    el.textContent = diffDays <= 0 ? 'Updated today' : 'Updated ' + diffDays + ' day' + (diffDays === 1 ? '' : 's') + ' ago';
+  } catch {}
+})();
 </script>
 </body>
 </html>
