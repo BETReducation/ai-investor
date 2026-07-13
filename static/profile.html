@@ -76,6 +76,19 @@
 .form-actions { display: flex; gap: 14px; align-items: center; margin-top: 20px; }
 .form-hint { font-size: 12px; color: var(--muted); }
 
+/* Toggle switch */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row-text { display: flex; flex-direction: column; gap: 3px; }
+.toggle-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.toggle-row-desc { font-size: 12px; color: var(--muted); }
+.toggle { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-track { position: absolute; inset: 0; background: var(--border2); border-radius: 12px; transition: background 0.2s; }
+.toggle-thumb { position: absolute; width: 16px; height: 16px; background: var(--muted); border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s, background 0.2s; }
+.toggle input:checked ~ .toggle-track { background: rgba(0,212,170,0.35); }
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--green); }
+
 /* Buttons */
 .btn-save { background: var(--green); color: #03130f; border: none; padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
 .btn-save:hover { opacity: 0.88; }
@@ -340,6 +353,47 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      <!-- PREFERENCES: sign-in + signal tracker notifications -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🔔</span>Preferences</div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Stay signed in</div>
+            <div class="toggle-row-desc">Keep me logged in on this device until I log out. Turn off to require signing in every visit.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefStaySignedIn" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Signal Tracker — sound alerts</div>
+            <div class="toggle-row-desc">Play a short tone when a new BUY/SELL signal fires while the Signal Tracker tab is open.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefSoundAlerts" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Signal Tracker — popup alerts</div>
+            <div class="toggle-row-desc">Show an on-screen popup when a new BUY/SELL signal fires while the Signal Tracker tab is open.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefPopupAlerts" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <span class="form-hint" id="prefsSaveHint"></span>
+      </div>
+
       <!-- SUBSCRIPTION -->
       <div class="profile-card">
         <div class="card-header-row">
@@ -562,6 +616,12 @@ function populateProfile(data) {
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
   highlightCurrentPlan(data.tier);
   updateDangerZone(data.tier);
+
+  const prefs = data.preferences || {};
+  const notif = prefs.notification_settings || {};
+  document.getElementById('prefStaySignedIn').checked = prefs.stay_signed_in !== false;
+  document.getElementById('prefSoundAlerts').checked  = notif.sound_enabled !== false;
+  document.getElementById('prefPopupAlerts').checked  = notif.popup_enabled !== false;
 }
 
 function setAvatarDisplay(value, name) {
@@ -705,6 +765,36 @@ async function saveProfile() {
     btn.disabled = false;
     btn.textContent = 'Save Changes';
   }
+}
+
+// ── Preferences (sign-in + notifications) ──────────────────────────────────────
+
+let prefsSaveTimer = null;
+function savePrefsToggles() {
+  clearTimeout(prefsSaveTimer);
+  const hint = document.getElementById('prefsSaveHint');
+  hint.textContent = 'Saving...';
+  prefsSaveTimer = setTimeout(async () => {
+    const payload = {
+      stay_signed_in: document.getElementById('prefStaySignedIn').checked,
+      notification_settings: {
+        sound_enabled: document.getElementById('prefSoundAlerts').checked,
+        popup_enabled: document.getElementById('prefPopupAlerts').checked,
+      },
+    };
+    try {
+      const res = await fetch('/api/save-preferences', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      hint.textContent = 'Saved';
+      setTimeout(() => { hint.textContent = ''; }, 1500);
+    } catch (e) {
+      hint.textContent = 'Failed to save — try again';
+    }
+  }, 250);
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
