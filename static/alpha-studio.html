@@ -60,6 +60,14 @@
 .form-msg.success { color: var(--green); }
 .form-msg.error { color: #ff3355; }
 .quick-add-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.published-filters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.pub-filter-topics { display: flex; gap: 8px; flex-wrap: wrap; }
+.pub-filter-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 6px 14px; border-radius: 100px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
+.pub-filter-pill.active { border-color: var(--teal); color: var(--teal); background: rgba(45,212,191,0.1); }
+.pub-filter-dates { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pub-filter-dates .form-select { width: auto; min-width: 140px; }
+.pub-filter-dates .form-input { width: auto; }
+.pub-filter-sep { color: var(--muted); font-size: 13px; }
 @media (max-width: 800px) { .quick-add-grid { grid-template-columns: 1fr; } }
 .quick-add-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
 .quick-add-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 12px; }
@@ -279,6 +287,18 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="studio-panel">
         <h2>Published</h2>
         <p class="panel-desc">Live on your public Alpha page right now.</p>
+        <div class="published-filters">
+          <div class="pub-filter-topics" id="pubTopicFilters"></div>
+          <div class="pub-filter-dates">
+            <select class="form-select" id="pubMonthSelect">
+              <option value="">All time</option>
+            </select>
+            <input type="date" class="form-input" id="pubDateFrom" title="From date">
+            <span class="pub-filter-sep">–</span>
+            <input type="date" class="form-input" id="pubDateTo" title="To date">
+            <button type="button" class="btn-ghost-sm" id="pubClearFilters">Clear</button>
+          </div>
+        </div>
         <div class="studio-list" id="publishedList"></div>
         <div class="list-empty" id="publishedEmpty">Nothing published yet.</div>
       </div>
@@ -317,6 +337,9 @@ const KIND_LABELS = { post: 'Post', video: 'Video', link: 'Link', watchlist: 'Wa
 
 let currentAuthor = null;
 let uploadMode = 'file';
+let publishedTopicFilter = '';
+let publishedDateFrom = '';
+let publishedDateTo = '';
 let allItems = [];
 
 function esc(str) {
@@ -345,6 +368,8 @@ async function initStudio() {
   document.getElementById('authorName').textContent = AUTHOR_NAMES[currentAuthor] || currentAuthor;
   document.getElementById('viewPageLink').href = '/alpha/' + currentAuthor;
   populateTopicSelects();
+  populatePublishedTopicFilters();
+  wirePublishedDateFilters();
   loadContent();
 }
 
@@ -353,6 +378,119 @@ function populateTopicSelects() {
   document.querySelectorAll('.topic-select').forEach(sel => {
     sel.innerHTML = topics.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
   });
+}
+
+function populatePublishedTopicFilters() {
+  const container = document.getElementById('pubTopicFilters');
+  container.innerHTML = '';
+  const topics = AUTHOR_TOPICS[currentAuthor] || [];
+  const allBtn = document.createElement('button');
+  allBtn.type = 'button';
+  allBtn.className = 'pub-filter-pill active';
+  allBtn.dataset.topic = '';
+  allBtn.textContent = 'All Topics';
+  container.appendChild(allBtn);
+  topics.forEach(topic => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pub-filter-pill';
+    btn.dataset.topic = topic;
+    btn.textContent = topic;
+    container.appendChild(btn);
+  });
+  container.querySelectorAll('.pub-filter-pill').forEach(btn => {
+    btn.onclick = () => {
+      publishedTopicFilter = btn.dataset.topic;
+      container.querySelectorAll('.pub-filter-pill').forEach(b => b.classList.toggle('active', b === btn));
+      renderPublishedList();
+    };
+  });
+}
+
+function wirePublishedDateFilters() {
+  const monthSelect = document.getElementById('pubMonthSelect');
+  const fromInput = document.getElementById('pubDateFrom');
+  const toInput = document.getElementById('pubDateTo');
+  const clearBtn = document.getElementById('pubClearFilters');
+
+  monthSelect.onchange = () => {
+    if (!monthSelect.value) {
+      publishedDateFrom = '';
+      publishedDateTo = '';
+    } else {
+      const [year, month] = monthSelect.value.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      publishedDateFrom = monthSelect.value + '-01';
+      publishedDateTo = monthSelect.value + '-' + String(lastDay).padStart(2, '0');
+    }
+    fromInput.value = publishedDateFrom;
+    toInput.value = publishedDateTo;
+    renderPublishedList();
+  };
+
+  fromInput.onchange = () => {
+    publishedDateFrom = fromInput.value;
+    monthSelect.value = '';
+    renderPublishedList();
+  };
+
+  toInput.onchange = () => {
+    publishedDateTo = toInput.value;
+    monthSelect.value = '';
+    renderPublishedList();
+  };
+
+  clearBtn.onclick = () => {
+    publishedDateFrom = '';
+    publishedDateTo = '';
+    publishedTopicFilter = '';
+    monthSelect.value = '';
+    fromInput.value = '';
+    toInput.value = '';
+    document.querySelectorAll('#pubTopicFilters .pub-filter-pill').forEach(b => b.classList.toggle('active', !b.dataset.topic));
+    renderPublishedList();
+  };
+}
+
+function populatePublishedMonthOptions() {
+  const monthSelect = document.getElementById('pubMonthSelect');
+  const selected = monthSelect.value;
+  const months = new Set();
+  allItems.filter(i => i.status === 'published' && i.published_at).forEach(i => {
+    const d = new Date(i.published_at);
+    if (!isNaN(d)) months.add(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+  });
+  const sorted = [...months].sort().reverse();
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  monthSelect.innerHTML = '<option value="">All time</option>' + sorted.map(m => {
+    const [y, mo] = m.split('-').map(Number);
+    return `<option value="${m}">${monthNames[mo - 1]} ${y}</option>`;
+  }).join('');
+  monthSelect.value = selected;
+}
+
+function renderPublishedList() {
+  const container = document.getElementById('publishedList');
+  const emptyEl = document.getElementById('publishedEmpty');
+  const allPublished = allItems.filter(i => i.status === 'published');
+  const items = allPublished.filter(i => {
+    if (publishedTopicFilter && i.topic !== publishedTopicFilter) return false;
+    if (publishedDateFrom && (!i.published_at || i.published_at < publishedDateFrom)) return false;
+    if (publishedDateTo && (!i.published_at || i.published_at.slice(0, 10) > publishedDateTo)) return false;
+    return true;
+  });
+  container.innerHTML = '';
+  const filtersActive = publishedTopicFilter || publishedDateFrom || publishedDateTo;
+  if (!allPublished.length) {
+    emptyEl.textContent = 'Nothing published yet.';
+    emptyEl.style.display = 'block';
+  } else if (!items.length) {
+    emptyEl.textContent = 'No published items match these filters.';
+    emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+  }
+  items.forEach(item => container.appendChild(buildCollapsibleCard(item)));
 }
 
 function setUploadMode(mode) {
@@ -444,16 +582,15 @@ async function loadContent() {
     allItems = data.items || [];
   } catch { allItems = []; }
   renderList('draft', document.getElementById('draftsList'), document.getElementById('draftsEmpty'));
-  renderList('published', document.getElementById('publishedList'), document.getElementById('publishedEmpty'));
+  populatePublishedMonthOptions();
+  renderPublishedList();
 }
 
 function renderList(status, container, emptyEl) {
   const items = allItems.filter(i => i.status === status);
   container.innerHTML = '';
   emptyEl.style.display = items.length ? 'none' : 'block';
-  items.forEach(item => container.appendChild(
-    status === 'published' ? buildCollapsibleCard(item) : buildCard(item)
-  ));
+  items.forEach(item => container.appendChild(buildCard(item)));
 }
 
 function buildCollapsibleCard(item) {
