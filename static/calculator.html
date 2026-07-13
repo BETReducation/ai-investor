@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.page-hero { padding: 100px 5% 40px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(0,212,170,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--green); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5vw, 56px); letter-spacing: -0.03em; line-height: 1.08; color: var(--text); margin-bottom: 16px; }
+.hero-title .accent { color: var(--green); }
+.hero-sub { font-size: clamp(15px, 1.6vw, 17px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 20px 5% 80px; }
+.content-inner { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+.calc-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.calc-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.calc-card-header .icon { font-size: 22px; }
+.calc-card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; color: var(--text); }
+.calc-card-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.span2 { grid-column: 1 / -1; }
+.form-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.form-input { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: 'Space Grotesk', sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+.form-input:focus { border-color: var(--green); }
+.form-hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+.result-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 12px; flex-wrap: wrap; }
+.result-row:last-child { border-bottom: none; }
+.result-label { font-size: 13px; color: var(--muted); }
+.result-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--text); }
+.result-val.hero { font-size: 24px; color: var(--green); }
+.result-val.warn { color: #ff9f43; }
+.result-val.bad { color: #ff4757; }
+.result-block { background: var(--bg3); border: 1px solid var(--border2); border-radius: 14px; padding: 18px 20px; margin-top: 20px; }
+.kelly-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+.kelly-tier { background: var(--bg3); border: 1px solid var(--border2); border-radius: 14px; padding: 16px; text-align: center; }
+.kelly-tier.active { border-color: var(--green); background: rgba(0,212,170,0.06); }
+.kelly-tier-name { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.kelly-tier-pct { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin-bottom: 4px; }
+.kelly-tier-amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+.calc-note { font-size: 12px; color: var(--muted); background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; line-height: 1.6; margin-top: 18px; }
+
+@media (max-width: 700px) {
+  .form-grid, .form-grid.cols3, .kelly-tiers { grid-template-columns: 1fr; }
+}
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Risk Tools</div>
+    <h1 class="hero-title">Position Size <span class="accent">Calculator</span></h1>
+    <p class="hero-sub">Work out how much to risk with the Kelly Criterion, then convert that risk into an exact lot size with the pip calculator — the two work together below.</p>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+
+    <!-- KELLY CRITERION -->
+    <div class="calc-card">
+      <div class="calc-card-header"><span class="icon">🎯</span><span class="calc-card-title">Kelly Criterion</span></div>
+      <div class="calc-card-sub">The Kelly Criterion estimates the mathematically optimal fraction of your account to risk per trade, given your historical win rate and win/loss ratio. Most traders use a fraction of full Kelly (half or quarter) to reduce variance.</div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <div class="form-label">Account Balance</div>
+          <input type="number" id="kAccount" class="form-input" value="10000" min="0" step="any" oninput="calcKelly()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Win Rate (%)</div>
+          <input type="number" id="kWinRate" class="form-input" value="55" min="0" max="100" step="any" oninput="calcKelly()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Average Win Per Trade</div>
+          <input type="number" id="kAvgWin" class="form-input" value="150" min="0" step="any" oninput="calcKelly()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Average Loss Per Trade</div>
+          <input type="number" id="kAvgLoss" class="form-input" value="100" min="0" step="any" oninput="calcKelly()">
+        </div>
+      </div>
+      <div class="form-hint">Average win/loss can be in £, $, pips, or R-multiples — only the ratio between them matters, so use whatever unit your trade history is recorded in.</div>
+
+      <div class="kelly-tiers">
+        <div class="kelly-tier" id="kTierQuarter">
+          <div class="kelly-tier-name">Quarter Kelly</div>
+          <div class="kelly-tier-pct" id="kQuarterPct">—</div>
+          <div class="kelly-tier-amt" id="kQuarterAmt">—</div>
+        </div>
+        <div class="kelly-tier active" id="kTierHalf">
+          <div class="kelly-tier-name">Half Kelly (Recommended)</div>
+          <div class="kelly-tier-pct" id="kHalfPct">—</div>
+          <div class="kelly-tier-amt" id="kHalfAmt">—</div>
+        </div>
+        <div class="kelly-tier" id="kTierFull">
+          <div class="kelly-tier-name">Full Kelly</div>
+          <div class="kelly-tier-pct" id="kFullPct">—</div>
+          <div class="kelly-tier-amt" id="kFullAmt">—</div>
+        </div>
+      </div>
+
+      <div class="calc-note" id="kWarning" style="display:none;"></div>
+    </div>
+
+    <!-- PIP CALCULATOR -->
+    <div class="calc-card">
+      <div class="calc-card-header"><span class="icon">💱</span><span class="calc-card-title">Pip Calculator</span></div>
+      <div class="calc-card-sub">Work out the value of one pip for a currency pair and lot size, then use it to convert a £/$ risk amount (e.g. from the Kelly box above) into a position size.</div>
+
+      <div class="form-grid cols3">
+        <div class="form-group">
+          <div class="form-label">Currency Pair</div>
+          <select id="pPair" class="form-input" onchange="calcPip()">
+            <optgroup label="Majors">
+              <option value="EURUSD">EUR/USD</option>
+              <option value="GBPUSD">GBP/USD</option>
+              <option value="USDJPY">USD/JPY</option>
+              <option value="USDCHF">USD/CHF</option>
+              <option value="AUDUSD">AUD/USD</option>
+              <option value="USDCAD">USD/CAD</option>
+              <option value="NZDUSD">NZD/USD</option>
+            </optgroup>
+            <optgroup label="Crosses">
+              <option value="EURGBP">EUR/GBP</option>
+              <option value="EURJPY">EUR/JPY</option>
+              <option value="GBPJPY">GBP/JPY</option>
+              <option value="EURCHF">EUR/CHF</option>
+              <option value="AUDJPY">AUD/JPY</option>
+              <option value="CHFJPY">CHF/JPY</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Lot Size</div>
+          <select id="pLotType" class="form-input" onchange="onLotTypeChange()">
+            <option value="100000">Standard (100,000 units)</option>
+            <option value="10000">Mini (10,000 units)</option>
+            <option value="1000">Micro (1,000 units)</option>
+            <option value="custom">Custom units</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label"># of Lots</div>
+          <input type="number" id="pLots" class="form-input" value="1" min="0" step="any" oninput="calcPip()">
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:18px;">
+        <div class="form-group" id="pCustomUnitsWrap" style="display:none;">
+          <div class="form-label">Custom Units Per Lot</div>
+          <input type="number" id="pCustomUnits" class="form-input" value="100000" min="0" step="any" oninput="calcPip()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Quote &rarr; Account Currency Rate</div>
+          <input type="number" id="pConvRate" class="form-input" value="1" min="0" step="any" oninput="calcPip()">
+          <div class="form-hint">Leave at 1 if your account currency is the same as the pair's quote currency (the second symbol, e.g. USD in EUR/USD). Otherwise enter how much 1 unit of the quote currency is worth in your account currency.</div>
+        </div>
+      </div>
+
+      <div class="result-block">
+        <div class="result-row">
+          <div class="result-label">Pip size for this pair</div>
+          <div class="result-val" id="pPipSize">—</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Pip value (per lot, in account currency)</div>
+          <div class="result-val" id="pPipValuePerLot">—</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Total pip value (all lots)</div>
+          <div class="result-val hero" id="pPipValueTotal">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK -> POSITION SIZE -->
+    <div class="calc-card">
+      <div class="calc-card-header"><span class="icon">⚖️</span><span class="calc-card-title">Risk → Position Size</span></div>
+      <div class="calc-card-sub">Combine your Kelly-suggested risk amount with a stop-loss distance (in pips) to get the exact lot size to trade.</div>
+
+      <div class="form-grid cols3">
+        <div class="form-group">
+          <div class="form-label">Risk Amount</div>
+          <input type="number" id="rRiskAmount" class="form-input" value="0" min="0" step="any" oninput="calcRisk()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Stop Loss (pips)</div>
+          <input type="number" id="rStopPips" class="form-input" value="20" min="0" step="any" oninput="calcRisk()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Pip Value (per standard lot)</div>
+          <input type="number" id="rPipValueStdLot" class="form-input" value="0" min="0" step="any" oninput="calcRisk()">
+        </div>
+      </div>
+      <div class="form-hint">Risk Amount and Pip Value auto-fill from the boxes above (Half Kelly £ risk, and this pair's pip value scaled to a standard 100,000-unit lot) — override either if you want to test a different scenario.</div>
+
+      <div class="result-block">
+        <div class="result-row">
+          <div class="result-label">Suggested position size</div>
+          <div class="result-val hero" id="rLotsResult">—</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">In units</div>
+          <div class="result-val" id="rUnitsResult">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+// ── Kelly Criterion ─────────────────────────────────────────────────────────
+// Full Kelly fraction f* = W - (1-W)/R, where W = win probability and
+// R = average win / average loss (the payoff ratio). f* is clamped to
+// [0, 1] since a negative or >100% suggestion isn't an actionable stake.
+function calcKelly() {
+  const account = parseFloat(document.getElementById('kAccount').value) || 0;
+  const winRate = (parseFloat(document.getElementById('kWinRate').value) || 0) / 100;
+  const avgWin  = parseFloat(document.getElementById('kAvgWin').value) || 0;
+  const avgLoss = parseFloat(document.getElementById('kAvgLoss').value) || 0;
+
+  const warnBox = document.getElementById('kWarning');
+  warnBox.style.display = 'none';
+
+  let fullKelly = 0;
+  if (avgLoss > 0 && avgWin > 0) {
+    const R = avgWin / avgLoss;
+    fullKelly = winRate - (1 - winRate) / R;
+  } else {
+    warnBox.style.display = 'block';
+    warnBox.textContent = 'Enter both an average win and average loss greater than zero.';
+  }
+
+  const rawFullPct = fullKelly * 100;
+  const clamped = Math.max(0, Math.min(1, fullKelly));
+
+  if (fullKelly <= 0 && avgLoss > 0 && avgWin > 0) {
+    warnBox.style.display = 'block';
+    warnBox.textContent = `This win rate / payoff ratio has negative expectancy (full Kelly = ${rawFullPct.toFixed(1)}%) — the Kelly Criterion says not to bet. Improve your win rate or win/loss ratio before sizing a position.`;
+  } else if (fullKelly > 0.5) {
+    warnBox.style.display = 'block';
+    warnBox.textContent = `Full Kelly is suggesting a very large stake (${rawFullPct.toFixed(1)}% of account). Full Kelly is high-variance even when correct — most traders use half or quarter Kelly.`;
+  }
+
+  const tiers = [
+    { frac: clamped,       pctEl: 'kFullPct',    amtEl: 'kFullAmt' },
+    { frac: clamped / 2,   pctEl: 'kHalfPct',    amtEl: 'kHalfAmt' },
+    { frac: clamped / 4,   pctEl: 'kQuarterPct', amtEl: 'kQuarterAmt' },
+  ];
+  tiers.forEach(t => {
+    document.getElementById(t.pctEl).textContent = (t.frac * 100).toFixed(1) + '%';
+    document.getElementById(t.amtEl).textContent = fmtMoney(t.frac * account);
+  });
+
+  // Feed the Half Kelly £ amount into the Risk -> Position Size box as a sane default.
+  const riskInput = document.getElementById('rRiskAmount');
+  if (!riskInput.dataset.userEdited) {
+    riskInput.value = (clamped / 2 * account).toFixed(2);
+  }
+  calcRisk();
+}
+
+function fmtMoney(n) {
+  return (isFinite(n) ? n : 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Pip Calculator ──────────────────────────────────────────────────────────
+// Pip size is 0.01 for pairs quoted in JPY, 0.0001 for everything else.
+// Pip value (in quote currency) = pipSize * units traded; converting to the
+// account currency just needs the quote->account exchange rate.
+const JPY_PAIRS = new Set(['USDJPY', 'EURJPY', 'GBPJPY', 'AUDJPY', 'CHFJPY']);
+
+function onLotTypeChange() {
+  const type = document.getElementById('pLotType').value;
+  document.getElementById('pCustomUnitsWrap').style.display = type === 'custom' ? 'flex' : 'none';
+  calcPip();
+}
+
+function unitsPerLot() {
+  const type = document.getElementById('pLotType').value;
+  if (type === 'custom') return parseFloat(document.getElementById('pCustomUnits').value) || 0;
+  return parseFloat(type) || 0;
+}
+
+function calcPip() {
+  const pair = document.getElementById('pPair').value;
+  const lots = parseFloat(document.getElementById('pLots').value) || 0;
+  const convRate = parseFloat(document.getElementById('pConvRate').value) || 0;
+  const units = unitsPerLot();
+
+  const pipSize = JPY_PAIRS.has(pair) ? 0.01 : 0.0001;
+  const pipValuePerLotQuote = pipSize * units;
+  const pipValuePerLot = pipValuePerLotQuote * convRate;
+  const pipValueTotal = pipValuePerLot * lots;
+
+  document.getElementById('pPipSize').textContent = pipSize.toFixed(pipSize === 0.01 ? 2 : 4);
+  document.getElementById('pPipValuePerLot').textContent = fmtMoney(pipValuePerLot);
+  document.getElementById('pPipValueTotal').textContent = fmtMoney(pipValueTotal);
+
+  // Scale to a standard 100,000-unit lot for the Risk -> Position Size box,
+  // regardless of what lot size was selected above.
+  const pipValueStdLot = pipSize * 100000 * convRate;
+  const stdLotInput = document.getElementById('rPipValueStdLot');
+  if (!stdLotInput.dataset.userEdited) {
+    stdLotInput.value = pipValueStdLot.toFixed(4);
+  }
+  calcRisk();
+}
+
+// ── Risk -> Position Size ────────────────────────────────────────────────────
+function calcRisk() {
+  const risk = parseFloat(document.getElementById('rRiskAmount').value) || 0;
+  const stopPips = parseFloat(document.getElementById('rStopPips').value) || 0;
+  const pipValueStdLot = parseFloat(document.getElementById('rPipValueStdLot').value) || 0;
+
+  let lots = 0;
+  if (stopPips > 0 && pipValueStdLot > 0) {
+    lots = risk / (stopPips * pipValueStdLot);
+  }
+  document.getElementById('rLotsResult').textContent = lots > 0 ? lots.toFixed(2) + ' standard lots' : '—';
+  document.getElementById('rUnitsResult').textContent = lots > 0 ? Math.round(lots * 100000).toLocaleString() + ' units' : '—';
+}
+
+['rRiskAmount', 'rPipValueStdLot'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function () { this.dataset.userEdited = '1'; });
+});
+
+calcKelly();
+calcPip();
+
+// ── Nav / theme boilerplate (shared pattern across site pages) ──────────────
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+updateToggleIcon(document.documentElement.getAttribute('data-theme') || 'light');
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  nav.style.background = window.scrollY > 40
+    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
+    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
+});
+</script>
+</body>
+</html>

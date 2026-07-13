@@ -998,6 +998,9 @@ def tools_signals(): return send_from_directory("static", "signal_config.html")
 @app.route("/tools/portfolio")
 def tools_portfolio(): return send_from_directory("static", "portfolio-balancer.html")
 
+@app.route("/tools/calculator")
+def tools_calculator(): return send_from_directory("static", "calculator.html")
+
 @app.route("/arena")
 def arena(): return send_from_directory("static", "arena.html")
 
@@ -1361,7 +1364,7 @@ def load_preferences():
 LANDING_PAGE_CHOICES = {
     "/",
     "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro",
-    "/tools", "/tools/signals", "/backtester", "/tools/portfolio",
+    "/tools", "/tools/signals", "/backtester", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
     "/partners", "/profile",
