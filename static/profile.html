@@ -423,7 +423,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="form-grid">
           <div class="form-group">
             <div class="form-label">Username</div>
-            <input type="text" id="adminRoleUsername" class="form-input" placeholder="e.g. admin">
+            <select id="adminRoleUsername" class="form-input">
+              <option value="">Loading users…</option>
+            </select>
           </div>
           <div class="form-group">
             <div class="form-label">Alpha Role</div>
@@ -532,6 +534,7 @@ async function boot() {
     document.getElementById('profilePage').style.display = 'block';
     if (data.username === 'admin') {
       document.getElementById('adminToolsCard').style.display = 'block';
+      loadAdminUserList();
     }
   } catch (e) {
     document.getElementById('notLoggedIn').style.display = 'flex';
@@ -608,6 +611,28 @@ function updateDangerZone(tier) {
 
 // ── Admin tools ──────────────────────────────────────────────────────────────
 
+async function loadAdminUserList() {
+  const select = document.getElementById('adminRoleUsername');
+  const previousValue = select.value;
+  try {
+    const res = await fetch('/api/admin/users', { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load users');
+    select.innerHTML = '';
+    data.users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.username;
+      opt.textContent = u.username + (u.alpha_role ? ` — currently: ${u.alpha_role}` : '');
+      select.appendChild(opt);
+    });
+    if (previousValue && data.users.some(u => u.username === previousValue)) {
+      select.value = previousValue;
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Failed to load users</option>';
+  }
+}
+
 async function assignAlphaRole() {
   const btn      = document.getElementById('adminAssignRoleBtn');
   const hint     = document.getElementById('adminRoleHint');
@@ -637,6 +662,7 @@ async function assignAlphaRole() {
       ? `@${username} is now assigned to the "${role}" Alpha page.`
       : `@${username}'s Alpha role has been removed.`;
     hint.style.color = 'var(--green)';
+    loadAdminUserList();
   } catch (e) {
     hint.textContent = e.message || 'Something went wrong.';
     hint.style.color = '#ff4757';

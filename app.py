@@ -1283,6 +1283,18 @@ def admin_set_tier():
     return jsonify({"success": True, "username": username, "tier": new_tier})
 
 
+@app.route("/api/admin/users", methods=["GET"])
+@login_required
+def admin_list_users():
+    if current_user.id != "admin":
+        return jsonify({"error": "Admin only"}), 403
+    users = _load_users()
+    return jsonify({"users": [
+        {"username": u, "alpha_role": data.get("alpha_role"), "tier": data.get("tier", "basic")}
+        for u, data in sorted(users.items())
+    ]})
+
+
 @app.route("/api/admin/set-alpha-role", methods=["POST"])
 @login_required
 def admin_set_alpha_role():
