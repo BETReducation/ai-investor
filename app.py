@@ -1539,7 +1539,10 @@ _ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "subtitle", "snippet", "
 def api_alpha_public_content(slug):
     if slug not in ALPHA_ROLES:
         return jsonify({"error": "Unknown author"}), 404
+    topic = (request.args.get("topic") or "").strip() or None
     items = alpha_content_list(author=slug, status="published")
+    if topic:
+        items = [i for i in items if i.get("topic") == topic]
     grouped = {"watchlist": [], "video": [], "post": [], "link": []}
     for item in items:
         public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
