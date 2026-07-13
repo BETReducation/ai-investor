@@ -1140,9 +1140,17 @@ def admin_set_alpha_role():
     users = _load_users()
     if username not in users:
         return jsonify({"error": "User not found"}), 404
-    users[username]["alpha_role"] = role or None
+    role = role or None
+    if role:
+        holder = next(
+            (u for u, data in users.items() if u != username and data.get("alpha_role") == role),
+            None,
+        )
+        if holder:
+            return jsonify({"error": f'Role "{role}" is already assigned to "{holder}". Unassign it there first.'}), 409
+    users[username]["alpha_role"] = role
     _save_users(users)
-    return jsonify({"success": True, "username": username, "alpha_role": role or None})
+    return jsonify({"success": True, "username": username, "alpha_role": role})
 
 
 @app.route("/api/save-preferences", methods=["POST"])
