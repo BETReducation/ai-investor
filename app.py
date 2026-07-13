@@ -59,9 +59,7 @@ login_manager.session_protection = "basic"
 
 USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads", "avatars")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ── Alpha content ────────────────────────────────────────────────────────────
 ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
@@ -104,6 +102,8 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
         cur.execute("UPDATE users SET tier = 'power_user' WHERE tier IN ('basic', 'signal_tester')")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS alpha_role TEXT")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_file BYTEA")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_filename TEXT")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content (
                 id              SERIAL PRIMARY KEY,
@@ -399,6 +399,40 @@ def _save_users(users: dict) -> None:
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
+
+
+def get_user_avatar(username: str):
+    """Returns (filename, bytes) or (None, None). Kept out of _load_users()'s
+    Postgres SELECT so that hot path (hit on every authenticated request)
+    never has to move an image blob around."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT avatar_filename, avatar_file FROM users WHERE username = %s", (username,))
+            row = cur.fetchone()
+            if not row or row["avatar_file"] is None:
+                return None, None
+            return row["avatar_filename"], bytes(row["avatar_file"])
+    users = _load_users()
+    user = users.get(username)
+    if not user or not user.get("avatar_file"):
+        return None, None
+    return user.get("avatar_filename"), base64.b64decode(user["avatar_file"])
+
+
+def set_user_avatar(username: str, filename: str, file_bytes: bytes) -> None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET avatar_file = %s, avatar_filename = %s WHERE username = %s",
+                (psycopg2.Binary(file_bytes), filename, username),
+            )
+        return
+    users = _load_users()
+    if username not in users:
+        return
+    users[username]["avatar_file"] = base64.b64encode(file_bytes).decode("ascii")
+    users[username]["avatar_filename"] = filename
+    _save_users(users)
 
 
 # ── Alpha content store ──────────────────────────────────────────────────────
@@ -1303,17 +1337,30 @@ def api_upload_avatar():
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
         return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
-    filename = secure_filename(f"{current_user.id}.{ext}")
-    file.save(os.path.join(UPLOAD_FOLDER, filename))
-    avatar_url = f"/static/uploads/avatars/{filename}"
     users = _load_users()
     if current_user.id not in users:
         return jsonify({"error": "User not found"}), 404
+    filename = secure_filename(f"{current_user.id}.{ext}")
+    avatar_url = f"/api/profile/avatar/{current_user.id}"
     profile = users[current_user.id].get("profile", {})
     profile["profile_picture"] = avatar_url
     users[current_user.id]["profile"] = profile
     _save_users(users)
+    # set_user_avatar() does its own load/save cycle in the local-JSON-fallback
+    # path — must run after the profile_picture save above, not before, or its
+    # internal _save_users() call would clobber this one's write and vice versa.
+    set_user_avatar(current_user.id, filename, file.read())
     return jsonify({"success": True, "avatar_url": avatar_url})
+
+
+@app.route("/api/profile/avatar/<username>", methods=["GET"])
+def api_get_avatar(username):
+    filename, file_bytes = get_user_avatar(username)
+    if file_bytes is None:
+        return jsonify({"error": "No avatar"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
+    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": "public, max-age=3600"})
 
 
 # ── Alpha content API ─────────────────────────────────────────────────────────
