@@ -472,6 +472,7 @@ function buildCard(item) {
   card.appendChild(titleInput);
 
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
+  let updatePublishGate = () => {};
   let subtitleInput = null, imageUrlInput = null;
   let imageMode = item.image_filename ? 'upload' : 'url';
 
@@ -530,7 +531,7 @@ function buildCard(item) {
     const urlTabBtn = document.createElement('button');
     urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
     const uploadTabBtn = document.createElement('button');
-    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload Image';
+    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload';
     imageTabs.appendChild(urlTabBtn);
     imageTabs.appendChild(uploadTabBtn);
     card.appendChild(imageTabs);
@@ -588,7 +589,11 @@ function buildCard(item) {
         if (!res.ok) throw new Error(data.error || 'Upload failed');
         imageMsg.textContent = 'Image uploaded.';
         imageMsg.className = 'form-msg success';
-        loadContent();
+        item.image_filename = data.item.image_filename;
+        item.image_url = data.item.image_url;
+        imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
+        imagePreview.style.display = 'block';
+        updatePublishGate();
       } catch (e) {
         imageMsg.textContent = e.message;
         imageMsg.className = 'form-msg error';
@@ -655,14 +660,15 @@ function buildCard(item) {
   toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
   toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' });
   if (isDraft && item.kind === 'post') {
-    const missing = [];
-    if (!(item.title || '').trim()) missing.push('title');
-    if (!(item.subtitle || '').trim()) missing.push('subtitle');
-    if (!((item.image_url || '').trim() || item.image_filename)) missing.push('image');
-    if (missing.length) {
-      toggleBtn.disabled = true;
-      toggleBtn.title = 'Missing before publishing: ' + missing.join(', ') + '.';
-    }
+    updatePublishGate = () => {
+      const missing = [];
+      if (!(item.title || '').trim()) missing.push('title');
+      if (!(item.subtitle || '').trim()) missing.push('subtitle');
+      if (!((item.image_url || '').trim() || item.image_filename)) missing.push('image');
+      toggleBtn.disabled = missing.length > 0;
+      toggleBtn.title = missing.length ? 'Missing before publishing: ' + missing.join(', ') + '.' : '';
+    };
+    updatePublishGate();
   }
   actions.appendChild(toggleBtn);
 
