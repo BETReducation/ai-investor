@@ -92,6 +92,8 @@
 .video-card, .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.25s, transform 0.25s; text-decoration: none; color: inherit; }
 .video-card:hover, .post-card:hover { border-color: var(--border2); transform: translateY(-3px); }
 .video-thumb { aspect-ratio: 16/9; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
+.post-thumb { aspect-ratio: 16/9; background: var(--bg3); overflow: hidden; }
+.post-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .play-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(45,212,191,0.15); border: 1px solid rgba(45,212,191,0.35); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .media-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .post-card .media-body { padding: 20px; }
@@ -545,6 +547,16 @@ function renderPosts(items) {
     const card = document.createElement('a');
     card.className = 'post-card';
     card.href = '/alpha/' + ALPHA_SLUG + '/post/' + item.id;
+    if (item.image_url) {
+      const thumb = document.createElement('div');
+      thumb.className = 'post-thumb';
+      const img = document.createElement('img');
+      img.src = item.image_url;
+      img.alt = item.title || '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+      card.appendChild(thumb);
+    }
     const body = document.createElement('div');
     body.className = 'media-body';
     if (item.topic) {

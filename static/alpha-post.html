@@ -25,14 +25,17 @@
 .topic-b { color: var(--gold); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
 .topic-c { color: var(--purple2); border-color: rgba(124,58,237,0.32); background: rgba(124,58,237,0.08); }
 .post-date { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-.post-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(28px, 4.2vw, 44px); letter-spacing: -0.02em; line-height: 1.15; color: var(--text); margin-bottom: 24px; }
+.post-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(28px, 4.2vw, 44px); letter-spacing: -0.02em; line-height: 1.15; color: var(--text); margin-bottom: 10px; }
+.post-subtitle { font-size: 18px; color: var(--muted); line-height: 1.5; margin-bottom: 28px; font-weight: 500; }
 .post-byline { display: flex; align-items: center; gap: 12px; padding-bottom: 32px; margin-bottom: 32px; border-bottom: 1px solid var(--border); }
 .byline-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--purple2)); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: #03130f; flex-shrink: 0; }
 .byline-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); text-decoration: none; }
 .byline-name:hover { color: var(--teal); }
 .byline-sub { font-size: 12px; color: var(--muted); }
+.post-hero-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; margin-bottom: 32px; display: block; }
 .post-body p { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 20px; }
 [data-theme="light"] .post-body p { color: #2a2f45; }
+.post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; }
 .post-empty { text-align: center; padding: 60px 20px; }
 .post-empty-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 12px; }
 .post-empty-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
@@ -111,6 +114,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <span class="post-date" id="postDate"></span>
     </div>
     <h1 class="post-title" id="postTitle"></h1>
+    <p class="post-subtitle" id="postSubtitle" style="display:none;"></p>
     <div class="post-byline">
       <div class="byline-avatar" id="bylineAvatar"></div>
       <div>
@@ -118,6 +122,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="byline-sub">Alpha Partner</div>
       </div>
     </div>
+    <img class="post-hero-image" id="postHeroImage" style="display:none;">
     <div class="post-body" id="postBody"></div>
   </div>
 
@@ -258,12 +263,32 @@ function showNotFound() {
 
     document.getElementById('postTitle').textContent = item.title || 'Untitled';
 
+    const subtitleEl = document.getElementById('postSubtitle');
+    if (item.subtitle) {
+      subtitleEl.textContent = item.subtitle;
+      subtitleEl.style.display = 'block';
+    }
+
+    if (item.image_url) {
+      const heroImg = document.getElementById('postHeroImage');
+      heroImg.src = item.image_url;
+      heroImg.alt = item.title || '';
+      heroImg.style.display = 'block';
+    }
+
     const bodyEl = document.getElementById('postBody');
     const text = item.body || item.snippet || '';
     text.split(/\n+/).map(p => p.trim()).filter(Boolean).forEach(para => {
-      const p = document.createElement('p');
-      p.textContent = para;
-      bodyEl.appendChild(p);
+      if (para.startsWith('## ')) {
+        const h = document.createElement('h2');
+        h.className = 'post-subheading';
+        h.textContent = para.slice(3).trim();
+        bodyEl.appendChild(h);
+      } else {
+        const p = document.createElement('p');
+        p.textContent = para;
+        bodyEl.appendChild(p);
+      }
     });
 
     document.getElementById('postLoaded').style.display = 'block';

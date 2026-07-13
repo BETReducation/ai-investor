@@ -125,6 +125,10 @@ def _ensure_table() -> None:
                 published_at    TIMESTAMP
             )
         """)
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS subtitle TEXT")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_url TEXT")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_filename TEXT")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_file BYTEA")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -405,8 +409,9 @@ def _save_users(users: dict) -> None:
 # binary blob around.
 
 _ALPHA_CONTENT_FIELDS = [
-    "author", "kind", "status", "topic", "title", "snippet", "body", "stance", "url",
+    "author", "kind", "status", "topic", "title", "subtitle", "snippet", "body", "stance", "url",
     "source_kind", "source_filename", "source_text",
+    "image_url", "image_filename",
 ]
 
 
@@ -451,7 +456,7 @@ def alpha_content_list(author: str | None = None, status: str | None = None) -> 
     if status:
         items = [i for i in items if i.get("status") == status]
     items = sorted(items, key=lambda i: i.get("created_at") or "", reverse=True)
-    return [{k: v for k, v in i.items() if k != "source_file"} for i in items]
+    return [{k: v for k, v in i.items() if k not in ("source_file", "image_file")} for i in items]
 
 
 def alpha_content_get(item_id: int) -> dict | None:
@@ -466,7 +471,7 @@ def alpha_content_get(item_id: int) -> dict | None:
     data = _load_alpha_content_json()
     for item in data["items"]:
         if item.get("id") == item_id:
-            return {k: v for k, v in item.items() if k != "source_file"}
+            return {k: v for k, v in item.items() if k not in ("source_file", "image_file")}
     return None
 
 
@@ -487,6 +492,50 @@ def alpha_content_get_file(item_id: int):
                 return None, None
             return item.get("source_filename"), base64.b64decode(b64)
     return None, None
+
+
+def alpha_content_get_image(item_id: int):
+    """Returns (filename, bytes) or (None, None) if there's no uploaded image file."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT image_filename, image_file FROM alpha_content WHERE id = %s", (item_id,))
+            row = cur.fetchone()
+            if not row or row["image_file"] is None:
+                return None, None
+            return row["image_filename"], bytes(row["image_file"])
+    data = _load_alpha_content_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            b64 = item.get("image_file")
+            if not b64:
+                return None, None
+            return item.get("image_filename"), base64.b64decode(b64)
+    return None, None
+
+
+def alpha_content_set_image(item_id: int, filename: str, file_bytes: bytes) -> dict | None:
+    """Sets the uploaded image file, clearing image_url to enforce file-vs-URL exclusivity."""
+    now = _dt.datetime.utcnow()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"UPDATE alpha_content SET image_file = %s, image_filename = %s, image_url = NULL, "
+                f"updated_at = %s WHERE id = %s "
+                f"RETURNING id, {', '.join(_ALPHA_CONTENT_FIELDS)}, created_at, updated_at, published_at",
+                (psycopg2.Binary(file_bytes), filename, now, item_id),
+            )
+            row = cur.fetchone()
+            return _alpha_row_to_dict(row) if row else None
+    data = _load_alpha_content_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            item["image_file"] = base64.b64encode(file_bytes).decode("ascii")
+            item["image_filename"] = filename
+            item["image_url"] = None
+            item["updated_at"] = now.isoformat()
+            _save_alpha_content_json(data)
+            return {k: v for k, v in item.items() if k not in ("source_file", "image_file")}
+    return None
 
 
 def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
@@ -517,12 +566,12 @@ def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
     data["items"].append(item)
     data["next_id"] = new_id + 1
     _save_alpha_content_json(data)
-    return {k: v for k, v in item.items() if k != "source_file"}
+    return {k: v for k, v in item.items() if k not in ("source_file", "image_file")}
 
 
 def alpha_content_update(item_id: int, updates: dict) -> dict | None:
     now = _dt.datetime.utcnow()
-    allowed = set(_ALPHA_CONTENT_FIELDS) | {"published_at"}
+    allowed = set(_ALPHA_CONTENT_FIELDS) | {"published_at", "image_file"}
     updates = {k: v for k, v in updates.items() if k in allowed}
     if DATABASE_URL:
         if not updates:
@@ -547,7 +596,7 @@ def alpha_content_update(item_id: int, updates: dict) -> dict | None:
             item.update(json_updates)
             item["updated_at"] = now.isoformat()
             _save_alpha_content_json(data)
-            return {k: v for k, v in item.items() if k != "source_file"}
+            return {k: v for k, v in item.items() if k not in ("source_file", "image_file")}
     return None
 
 
@@ -632,25 +681,30 @@ def extract_text_from_url(url: str) -> str:
 
 
 def normalize_content(raw_text: str, author: str, topics: list) -> dict:
-    """Turns raw extracted text into {title, topic, snippet, body} for a draft post.
+    """Turns raw extracted text into {title, subtitle, topic, snippet, body} for a draft post.
 
     STUB — no ANTHROPIC_API_KEY is wired in yet. This does a naive extractive
-    pass (first sentence as title, next couple of sentences as snippet, raw
-    text reflowed into paragraphs as the body, first nominated topic as the
-    default) so the rest of the pipeline — upload, draft review, edit,
-    publish, public rendering — is fully testable right now.
+    pass (first sentence as title, second sentence as a subtitle suggestion,
+    next couple of sentences as snippet, raw text reflowed into paragraphs as
+    the body, first nominated topic as the default) so the rest of the
+    pipeline — upload, draft review, edit, publish, public rendering — is
+    fully testable right now.
 
     To make this real: call the Claude API (see the claude-api skill for the
     current model id and Messages API usage) with a prompt that gives it
     `author`, the exact `topics` list (it must pick one of these three, not
     invent a new one), and `raw_text`, instructing it to return JSON
-    {title, topic, snippet, body} — allowed to tighten/condense wording
-    (per the earlier scoping decision) but not invent facts absent from
-    raw_text. Keep the same return shape so no caller needs to change.
+    {title, subtitle, topic, snippet, body} — allowed to tighten/condense
+    wording (per the earlier scoping decision) but not invent facts absent
+    from raw_text. Keep the same return shape so no caller needs to change.
     """
     text = " ".join(raw_text.split())
     sentences = re.split(r"(?<=[.!?])\s+", text)
     title = (sentences[0] if sentences else text)[:100].strip() or "Untitled note"
+    subtitle_source = sentences[1] if len(sentences) > 1 else (sentences[0] if sentences else text)
+    subtitle = subtitle_source.strip()[:140]
+    if len(subtitle_source) > 140:
+        subtitle += "…"
     snippet_source = " ".join(sentences[1:3]) if len(sentences) > 1 else text
     snippet_words = snippet_source.split()
     snippet = " ".join(snippet_words[:40])
@@ -659,7 +713,7 @@ def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     paragraphs = [p.strip() for p in raw_text.split("\n") if p.strip()]
     body = "\n\n".join(paragraphs) if paragraphs else text
     topic = topics[0] if topics else None
-    return {"title": title, "topic": topic, "snippet": snippet, "body": body}
+    return {"title": title, "subtitle": subtitle, "topic": topic, "snippet": snippet, "body": body}
 
 
 def _send_email(to_addr: str, subject: str, body: str) -> None:
@@ -1305,7 +1359,8 @@ def api_alpha_upload():
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
-        "title": normalized["title"], "snippet": normalized["snippet"], "body": normalized["body"],
+        "title": normalized["title"], "subtitle": normalized["subtitle"],
+        "snippet": normalized["snippet"], "body": normalized["body"],
         "stance": None, "url": None,
         "source_kind": source_kind, "source_filename": source_filename, "source_text": raw_text,
     }
@@ -1373,10 +1428,17 @@ def api_alpha_content_item(item_id):
 
     data = request.get_json() or {}
     updates = {}
-    for field in ("topic", "title", "snippet", "body", "url"):
+    for field in ("topic", "title", "subtitle", "snippet", "body", "url"):
         if field in data:
             value = data[field]
             updates[field] = (str(value).strip() or None) if value is not None else None
+    if "image_url" in data:
+        image_url = (data["image_url"] or "").strip()
+        updates["image_url"] = image_url or None
+        if image_url:
+            # Switching to URL mode clears any previously uploaded file.
+            updates["image_file"] = None
+            updates["image_filename"] = None
     if "stance" in data:
         stance = (data["stance"] or "").strip().lower()
         if stance and stance not in ALPHA_STANCES:
@@ -1388,6 +1450,21 @@ def api_alpha_content_item(item_id):
         status = data["status"]
         if status not in ("draft", "published"):
             return jsonify({"error": "Status must be 'draft' or 'published'"}), 400
+        if status == "published":
+            merged = {**existing, **updates}
+            if merged.get("kind") == "post":
+                missing = []
+                if not (merged.get("title") or "").strip():
+                    missing.append("title")
+                if not (merged.get("subtitle") or "").strip():
+                    missing.append("subtitle")
+                if not ((merged.get("image_url") or "").strip() or merged.get("image_filename")):
+                    missing.append("image")
+                if missing:
+                    return jsonify({
+                        "error": "Missing before publishing: " + ", ".join(missing) + ".",
+                        "missing_fields": missing,
+                    }), 400
         updates["status"] = status
         updates["published_at"] = _dt.datetime.utcnow() if status == "published" else None
 
@@ -1413,7 +1490,49 @@ def api_alpha_content_file(item_id):
     )
 
 
-_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "snippet", "body", "stance", "url", "published_at"]
+@app.route("/api/alpha/content/<int:item_id>/image", methods=["GET"])
+def api_alpha_content_image(item_id):
+    item = alpha_content_get(item_id)
+    if not item:
+        return jsonify({"error": "Not found"}), 404
+    is_owner = current_user.is_authenticated and getattr(current_user, "alpha_role", None) == item.get("author")
+    if item.get("status") != "published" and not is_owner:
+        return jsonify({"error": "Not found"}), 404
+    filename, file_bytes = alpha_content_get_image(item_id)
+    if file_bytes is None:
+        return jsonify({"error": "No image attached"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
+    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
+    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+
+
+@app.route("/api/alpha/content/<int:item_id>/image", methods=["POST"])
+@login_required
+@alpha_author_required
+def api_alpha_content_image_upload(item_id):
+    existing = alpha_content_get(item_id)
+    if not _alpha_can_touch(existing):
+        return jsonify({"error": "Not found"}), 404
+    if existing.get("kind") != "post":
+        return jsonify({"error": "Images can only be attached to posts"}), 400
+    if "image" not in request.files or not request.files["image"].filename:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["image"]
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
+    item = alpha_content_set_image(item_id, secure_filename(file.filename), file.read())
+    return jsonify({"success": True, "item": item})
+
+
+def _alpha_public_image_url(item: dict) -> str | None:
+    if item.get("image_filename"):
+        return f"/api/alpha/content/{item['id']}/image"
+    return item.get("image_url")
+
+
+_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "subtitle", "snippet", "body", "stance", "url", "published_at"]
 
 
 @app.route("/api/alpha/<slug>/content", methods=["GET"])
@@ -1424,6 +1543,7 @@ def api_alpha_public_content(slug):
     grouped = {"watchlist": [], "video": [], "post": [], "link": []}
     for item in items:
         public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
+        public_item["image_url"] = _alpha_public_image_url(item)
         grouped.setdefault(item["kind"], []).append(public_item)
     caps = {"watchlist": 3, "video": 4, "post": 4}
     for kind, cap in caps.items():
@@ -1438,7 +1558,9 @@ def api_alpha_public_post(slug, post_id):
     item = alpha_content_get(post_id)
     if not item or item["author"] != slug or item["kind"] != "post" or item["status"] != "published":
         return jsonify({"error": "Post not found"}), 404
-    return jsonify({k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS})
+    public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
+    public_item["image_url"] = _alpha_public_image_url(item)
+    return jsonify(public_item)
 
 
 @app.route("/alpha/<slug>/post/<int:post_id>")

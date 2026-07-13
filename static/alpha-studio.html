@@ -88,6 +88,11 @@
 .card-file-link { font-size: 12px; color: var(--teal); text-decoration: none; }
 .card-file-link:hover { text-decoration: underline; }
 .studio-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.card-image-tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+.card-image-tab { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 100px; cursor: pointer; transition: border-color 0.2s, color 0.2s; }
+.card-image-tab.active { border-color: var(--teal); color: var(--teal); }
+.card-image-preview { max-width: 100%; max-height: 140px; border-radius: 10px; display: block; margin-top: 8px; object-fit: cover; }
+.card-heading-btn { align-self: flex-start; }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
@@ -461,25 +466,55 @@ function buildCard(item) {
 
   const titleInput = document.createElement('input');
   titleInput.className = 'form-input card-title-input';
+  titleInput.placeholder = 'Title';
+  titleInput.spellcheck = true;
   titleInput.value = item.title || '';
   card.appendChild(titleInput);
 
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
+  let subtitleInput = null, imageUrlInput = null;
+  let imageMode = item.image_filename ? 'upload' : 'url';
 
   if (item.kind === 'post') {
+    subtitleInput = document.createElement('input');
+    subtitleInput.className = 'form-input';
+    subtitleInput.placeholder = 'Sub-title — a catchy one-liner';
+    subtitleInput.spellcheck = true;
+    subtitleInput.value = item.subtitle || '';
+    card.appendChild(subtitleInput);
+
     snippetInput = document.createElement('textarea');
     snippetInput.className = 'form-textarea';
     snippetInput.rows = 2;
     snippetInput.placeholder = 'Snippet';
+    snippetInput.spellcheck = true;
     snippetInput.value = item.snippet || '';
     card.appendChild(snippetInput);
+
+    const headingBtn = document.createElement('button');
+    headingBtn.type = 'button';
+    headingBtn.className = 'btn-ghost-sm card-heading-btn';
+    headingBtn.textContent = '+ Sub-heading';
+    card.appendChild(headingBtn);
 
     bodyInput = document.createElement('textarea');
     bodyInput.className = 'form-textarea';
     bodyInput.rows = 6;
     bodyInput.placeholder = 'Body';
+    bodyInput.spellcheck = true;
     bodyInput.value = item.body || '';
     card.appendChild(bodyInput);
+
+    headingBtn.onclick = () => {
+      const start = bodyInput.selectionStart, end = bodyInput.selectionEnd;
+      const before = bodyInput.value.slice(0, start), after = bodyInput.value.slice(end);
+      const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
+      const marker = '## ', placeholder = 'Sub-heading';
+      bodyInput.value = before + lead + marker + placeholder + '\n\n' + after;
+      const selStart = before.length + lead.length + marker.length;
+      bodyInput.focus();
+      bodyInput.setSelectionRange(selStart, selStart + placeholder.length);
+    };
 
     if (item.source_filename) {
       const dl = document.createElement('a');
@@ -488,6 +523,80 @@ function buildCard(item) {
       dl.textContent = '📎 ' + item.source_filename;
       card.appendChild(dl);
     }
+
+    // ── Main image: URL or upload-from-desktop, mutually exclusive ──────
+    const imageTabs = document.createElement('div');
+    imageTabs.className = 'card-image-tabs';
+    const urlTabBtn = document.createElement('button');
+    urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
+    const uploadTabBtn = document.createElement('button');
+    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload Image';
+    imageTabs.appendChild(urlTabBtn);
+    imageTabs.appendChild(uploadTabBtn);
+    card.appendChild(imageTabs);
+
+    imageUrlInput = document.createElement('input');
+    imageUrlInput.className = 'form-input';
+    imageUrlInput.placeholder = 'https://example.com/image.jpg';
+    imageUrlInput.value = item.image_url || '';
+    card.appendChild(imageUrlInput);
+
+    const uploadPanel = document.createElement('div');
+    const imageFileInput = document.createElement('input');
+    imageFileInput.type = 'file';
+    imageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    const uploadImageBtn = document.createElement('button');
+    uploadImageBtn.type = 'button'; uploadImageBtn.className = 'btn-ghost-sm'; uploadImageBtn.textContent = 'Upload Image';
+    const imageMsg = document.createElement('span');
+    imageMsg.className = 'form-msg';
+    uploadPanel.appendChild(imageFileInput);
+    uploadPanel.appendChild(uploadImageBtn);
+    uploadPanel.appendChild(imageMsg);
+    card.appendChild(uploadPanel);
+
+    const imagePreview = document.createElement('img');
+    imagePreview.className = 'card-image-preview';
+    if (item.image_filename) {
+      imagePreview.src = '/api/alpha/content/' + item.id + '/image';
+    } else if (item.image_url) {
+      imagePreview.src = item.image_url;
+    } else {
+      imagePreview.style.display = 'none';
+    }
+    card.appendChild(imagePreview);
+
+    function renderImageMode() {
+      urlTabBtn.classList.toggle('active', imageMode === 'url');
+      uploadTabBtn.classList.toggle('active', imageMode === 'upload');
+      imageUrlInput.style.display = imageMode === 'url' ? 'block' : 'none';
+      uploadPanel.style.display = imageMode === 'upload' ? 'block' : 'none';
+    }
+    urlTabBtn.onclick = () => { imageMode = 'url'; renderImageMode(); };
+    uploadTabBtn.onclick = () => { imageMode = 'upload'; renderImageMode(); };
+    renderImageMode();
+
+    uploadImageBtn.onclick = async () => {
+      const f = imageFileInput.files[0];
+      if (!f) { imageMsg.textContent = 'Choose a file first.'; imageMsg.className = 'form-msg error'; return; }
+      uploadImageBtn.disabled = true;
+      uploadImageBtn.textContent = 'Uploading…';
+      const form = new FormData();
+      form.append('image', f);
+      try {
+        const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        imageMsg.textContent = 'Image uploaded.';
+        imageMsg.className = 'form-msg success';
+        loadContent();
+      } catch (e) {
+        imageMsg.textContent = e.message;
+        imageMsg.className = 'form-msg error';
+      } finally {
+        uploadImageBtn.disabled = false;
+        uploadImageBtn.textContent = 'Upload Image';
+      }
+    };
   } else if (item.kind === 'watchlist') {
     stanceSelect = document.createElement('select');
     stanceSelect.className = 'form-select';
@@ -531,10 +640,12 @@ function buildCard(item) {
   saveBtn.textContent = 'Save';
   saveBtn.onclick = () => {
     const updates = { title: titleInput.value.trim() };
+    if (subtitleInput) updates.subtitle = subtitleInput.value.trim();
     if (snippetInput) updates.snippet = snippetInput.value.trim();
     if (bodyInput) updates.body = bodyInput.value.trim();
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
+    if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
     updateItem(item.id, updates);
   };
   actions.appendChild(saveBtn);
@@ -543,6 +654,16 @@ function buildCard(item) {
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
   toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
   toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' });
+  if (isDraft && item.kind === 'post') {
+    const missing = [];
+    if (!(item.title || '').trim()) missing.push('title');
+    if (!(item.subtitle || '').trim()) missing.push('subtitle');
+    if (!((item.image_url || '').trim() || item.image_filename)) missing.push('image');
+    if (missing.length) {
+      toggleBtn.disabled = true;
+      toggleBtn.title = 'Missing before publishing: ' + missing.join(', ') + '.';
+    }
+  }
   actions.appendChild(toggleBtn);
 
   const delBtn = document.createElement('button');
