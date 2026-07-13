@@ -1431,6 +1431,21 @@ def api_alpha_public_content(slug):
     return jsonify(grouped)
 
 
+@app.route("/api/alpha/<slug>/post/<int:post_id>", methods=["GET"])
+def api_alpha_public_post(slug, post_id):
+    if slug not in ALPHA_ROLES:
+        return jsonify({"error": "Unknown author"}), 404
+    item = alpha_content_get(post_id)
+    if not item or item["author"] != slug or item["kind"] != "post" or item["status"] != "published":
+        return jsonify({"error": "Post not found"}), 404
+    return jsonify({k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS})
+
+
+@app.route("/alpha/<slug>/post/<int:post_id>")
+def alpha_post_page(slug, post_id):
+    return send_from_directory("static", "alpha-post.html")
+
+
 @app.route("/alpha/studio")
 def alpha_studio():
     # Client-side checks /api/me for alpha_role, same convention as /profile —

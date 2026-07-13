@@ -89,7 +89,7 @@
 .media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 @media (max-width: 1000px) { .media-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .media-grid { grid-template-columns: 1fr; } }
-.video-card, .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.25s, transform 0.25s; }
+.video-card, .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.25s, transform 0.25s; text-decoration: none; color: inherit; }
 .video-card:hover, .post-card:hover { border-color: var(--border2); transform: translateY(-3px); }
 .video-thumb { aspect-ratio: 16/9; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
 .play-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(45,212,191,0.15); border: 1px solid rgba(45,212,191,0.35); color: var(--teal); display: flex; align-items: center; justify-content: center; font-size: 14px; }
@@ -542,8 +542,9 @@ function renderPosts(items) {
   if (!container || !items.length) return;
   container.innerHTML = '';
   items.forEach(item => {
-    const card = document.createElement('div');
+    const card = document.createElement('a');
     card.className = 'post-card';
+    card.href = '/alpha/' + ALPHA_SLUG + '/post/' + item.id;
     const body = document.createElement('div');
     body.className = 'media-body';
     if (item.topic) {
