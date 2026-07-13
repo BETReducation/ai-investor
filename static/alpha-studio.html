@@ -81,6 +81,14 @@
 .studio-list { display: flex; flex-direction: column; gap: 16px; }
 .list-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
 .studio-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.collapsible-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.collapsible-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; }
+.collapsible-header:hover { background: var(--bg2); }
+.collapsible-chevron { font-size: 11px; color: var(--muted); flex-shrink: 0; width: 10px; }
+.collapsible-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collapsible-date { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+.collapsible-body { padding: 0 18px 18px; }
+.collapsible-body .studio-card { background: transparent; border: none; padding: 0; border-radius: 0; }
 .studio-card-head { display: flex; gap: 8px; }
 .kind-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; background: rgba(124,58,237,0.12); color: var(--purple2); }
 .kind-badge.topic-badge { background: rgba(45,212,191,0.12); color: var(--teal); }
@@ -443,27 +451,91 @@ function renderList(status, container, emptyEl) {
   const items = allItems.filter(i => i.status === status);
   container.innerHTML = '';
   emptyEl.style.display = items.length ? 'none' : 'block';
-  items.forEach(item => container.appendChild(buildCard(item)));
+  items.forEach(item => container.appendChild(
+    status === 'published' ? buildCollapsibleCard(item) : buildCard(item)
+  ));
 }
 
-function buildCard(item) {
-  const card = document.createElement('div');
-  card.className = 'studio-card';
-  const isDraft = item.status === 'draft';
+function buildCollapsibleCard(item) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'collapsible-card';
 
-  const head = document.createElement('div');
-  head.className = 'studio-card-head';
+  const header = document.createElement('div');
+  header.className = 'collapsible-header';
+
+  const chevron = document.createElement('span');
+  chevron.className = 'collapsible-chevron';
+  chevron.textContent = '▸';
+  header.appendChild(chevron);
+
   const kindBadge = document.createElement('span');
   kindBadge.className = 'kind-badge';
   kindBadge.textContent = KIND_LABELS[item.kind] || item.kind;
-  head.appendChild(kindBadge);
+  header.appendChild(kindBadge);
+
   if (item.topic) {
     const topicBadge = document.createElement('span');
     topicBadge.className = 'kind-badge topic-badge';
     topicBadge.textContent = item.topic;
-    head.appendChild(topicBadge);
+    header.appendChild(topicBadge);
   }
-  card.appendChild(head);
+
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'collapsible-title';
+  titleSpan.textContent = item.title || '(untitled)';
+  header.appendChild(titleSpan);
+
+  if (item.published_at) {
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'collapsible-date';
+    const d = new Date(item.published_at);
+    if (!isNaN(d)) dateSpan.textContent = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    header.appendChild(dateSpan);
+  }
+
+  wrapper.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'collapsible-body';
+  body.style.display = 'none';
+  body.appendChild(buildCard(item, true));
+  wrapper.appendChild(body);
+
+  header.onclick = () => {
+    const opening = body.style.display === 'none';
+    body.style.display = opening ? 'block' : 'none';
+    chevron.textContent = opening ? '▾' : '▸';
+    wrapper.classList.toggle('open', opening);
+  };
+
+  return wrapper;
+}
+
+function autoGrowTextarea(el, maxPx) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight + 2, maxPx || 600) + 'px';
+}
+
+function buildCard(item, skipHead) {
+  const card = document.createElement('div');
+  card.className = 'studio-card';
+  const isDraft = item.status === 'draft';
+
+  if (!skipHead) {
+    const head = document.createElement('div');
+    head.className = 'studio-card-head';
+    const kindBadge = document.createElement('span');
+    kindBadge.className = 'kind-badge';
+    kindBadge.textContent = KIND_LABELS[item.kind] || item.kind;
+    head.appendChild(kindBadge);
+    if (item.topic) {
+      const topicBadge = document.createElement('span');
+      topicBadge.className = 'kind-badge topic-badge';
+      topicBadge.textContent = item.topic;
+      head.appendChild(topicBadge);
+    }
+    card.appendChild(head);
+  }
 
   const titleInput = document.createElement('input');
   titleInput.className = 'form-input card-title-input';
@@ -491,7 +563,9 @@ function buildCard(item) {
     snippetInput.placeholder = 'Snippet';
     snippetInput.spellcheck = true;
     snippetInput.value = item.snippet || '';
+    snippetInput.addEventListener('input', () => autoGrowTextarea(snippetInput, 240));
     card.appendChild(snippetInput);
+    setTimeout(() => autoGrowTextarea(snippetInput, 240), 0);
 
     const toolbar = document.createElement('div');
     toolbar.className = 'card-toolbar';
@@ -589,7 +663,9 @@ function buildCard(item) {
     bodyInput.placeholder = 'Body';
     bodyInput.spellcheck = true;
     bodyInput.value = item.body || '';
+    bodyInput.addEventListener('input', () => autoGrowTextarea(bodyInput, 600));
     card.appendChild(bodyInput);
+    setTimeout(() => autoGrowTextarea(bodyInput, 600), 0);
 
     function insertAtCursor(before, after, text, selectFrom, selectLen) {
       const start = bodyInput.selectionStart, end = bodyInput.selectionEnd;
