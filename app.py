@@ -66,6 +66,7 @@ ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
 ALPHA_CONTENT_KINDS = {"post", "video", "link", "watchlist"}
 ALPHA_STANCES = {"bullish", "neutral", "bearish"}
 ALPHA_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "alpha_content.json")
+ALPHA_ATTACHMENTS_FILE = os.path.join(os.path.dirname(__file__), "alpha_attachments.json")
 ALLOWED_DOC_EXTENSIONS = {"docx", "pdf", "xlsx", "xls"}
 MAX_UPLOAD_TEXT_CHARS = 40000  # cap extracted text sent to the normalize step
 
@@ -129,6 +130,15 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_url TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_filename TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_file BYTEA")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS alpha_content_attachment (
+                id          SERIAL PRIMARY KEY,
+                content_id  INTEGER NOT NULL,
+                filename    TEXT,
+                file        BYTEA NOT NULL,
+                created_at  TIMESTAMP NOT NULL DEFAULT now()
+            )
+        """)
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -572,6 +582,61 @@ def alpha_content_set_image(item_id: int, filename: str, file_bytes: bytes) -> d
     return None
 
 
+# ── Inline post attachments ──────────────────────────────────────────────────
+# A post's main image is a single slot on the alpha_content row itself; these
+# are additional images a writer drops into the middle of a post's body via
+# the Studio's Insert Image button, so a post can hold more than one.
+
+def _load_alpha_attachments_json() -> dict:
+    if not os.path.exists(ALPHA_ATTACHMENTS_FILE):
+        return {"items": [], "next_id": 1}
+    with open(ALPHA_ATTACHMENTS_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_alpha_attachments_json(data: dict) -> None:
+    with open(ALPHA_ATTACHMENTS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def alpha_attachment_create(content_id: int, filename: str, file_bytes: bytes) -> int:
+    """Returns the new attachment's id."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO alpha_content_attachment (content_id, filename, file) VALUES (%s, %s, %s) RETURNING id",
+                (content_id, filename, psycopg2.Binary(file_bytes)),
+            )
+            return cur.fetchone()[0]
+    data = _load_alpha_attachments_json()
+    new_id = data.get("next_id", 1)
+    data["items"].append({
+        "id": new_id,
+        "content_id": content_id,
+        "filename": filename,
+        "file": base64.b64encode(file_bytes).decode("ascii"),
+    })
+    data["next_id"] = new_id + 1
+    _save_alpha_attachments_json(data)
+    return new_id
+
+
+def alpha_attachment_get(attachment_id: int):
+    """Returns (content_id, filename, bytes) or (None, None, None)."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT content_id, filename, file FROM alpha_content_attachment WHERE id = %s", (attachment_id,))
+            row = cur.fetchone()
+            if not row:
+                return None, None, None
+            return row["content_id"], row["filename"], bytes(row["file"])
+    data = _load_alpha_attachments_json()
+    for item in data["items"]:
+        if item.get("id") == attachment_id:
+            return item.get("content_id"), item.get("filename"), base64.b64decode(item["file"])
+    return None, None, None
+
+
 def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
     now = _dt.datetime.utcnow()
     if DATABASE_URL:
@@ -637,8 +702,12 @@ def alpha_content_update(item_id: int, updates: dict) -> dict | None:
 def alpha_content_delete(item_id: int) -> bool:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM alpha_content_attachment WHERE content_id = %s", (item_id,))
             cur.execute("DELETE FROM alpha_content WHERE id = %s", (item_id,))
             return cur.rowcount > 0
+    attachments = _load_alpha_attachments_json()
+    attachments["items"] = [a for a in attachments["items"] if a.get("content_id") != item_id]
+    _save_alpha_attachments_json(attachments)
     data = _load_alpha_content_json()
     before = len(data["items"])
     data["items"] = [i for i in data["items"] if i.get("id") != item_id]
@@ -1571,6 +1640,42 @@ def api_alpha_content_image_upload(item_id):
         return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
     item = alpha_content_set_image(item_id, secure_filename(file.filename), file.read())
     return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/alpha/content/<int:item_id>/images", methods=["POST"])
+@login_required
+@alpha_author_required
+def api_alpha_content_attachment_upload(item_id):
+    """Uploads an inline image to embed mid-post (distinct from the single main
+    image slot on the row itself — a post can have any number of these)."""
+    existing = alpha_content_get(item_id)
+    if not _alpha_can_touch(existing):
+        return jsonify({"error": "Not found"}), 404
+    if existing.get("kind") != "post":
+        return jsonify({"error": "Images can only be attached to posts"}), 400
+    if "image" not in request.files or not request.files["image"].filename:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["image"]
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
+    attachment_id = alpha_attachment_create(item_id, secure_filename(file.filename), file.read())
+    return jsonify({"success": True, "url": f"/api/alpha/content/{item_id}/images/{attachment_id}"})
+
+
+@app.route("/api/alpha/content/<int:item_id>/images/<int:attachment_id>", methods=["GET"])
+def api_alpha_content_attachment_get(item_id, attachment_id):
+    content_id, filename, file_bytes = alpha_attachment_get(attachment_id)
+    if content_id != item_id or file_bytes is None:
+        return jsonify({"error": "Not found"}), 404
+    item = alpha_content_get(item_id)
+    is_owner = current_user.is_authenticated and getattr(current_user, "alpha_role", None) == (item or {}).get("author")
+    if not item or (item.get("status") != "published" and not is_owner):
+        return jsonify({"error": "Not found"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
+    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
+    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
 
 
 def _alpha_public_image_url(item: dict) -> str | None:

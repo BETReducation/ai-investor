@@ -36,6 +36,8 @@
 .post-body p { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 20px; }
 [data-theme="light"] .post-body p { color: #2a2f45; }
 .post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; }
+.post-inline-image { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 8px 0 28px; display: block; }
+.post-inline-link { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
 .post-empty { text-align: center; padding: 60px 20px; }
 .post-empty-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 12px; }
 .post-empty-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
@@ -229,6 +231,31 @@ function showNotFound() {
   document.getElementById('postNotFound').style.display = 'block';
 }
 
+// Parses [text](url) links out of a paragraph and appends the result as a mix
+// of text nodes and <a> elements — never innerHTML, so nothing in a
+// partner-submitted or AI-normalized body is ever treated as trusted HTML.
+function renderInlineText(container, text) {
+  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = linkPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+    }
+    const a = document.createElement('a');
+    a.href = match[2];
+    a.textContent = match[1];
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'post-inline-link';
+    container.appendChild(a);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    container.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+}
+
 (async function loadPost() {
   const m = window.location.pathname.match(/^\/alpha\/([a-z]+)\/post\/(\d+)/);
   if (!m || !AUTHOR_NAMES[m[1]]) { showNotFound(); return; }
@@ -279,14 +306,22 @@ function showNotFound() {
     const bodyEl = document.getElementById('postBody');
     const text = item.body || item.snippet || '';
     text.split(/\n+/).map(p => p.trim()).filter(Boolean).forEach(para => {
+      const imageMatch = para.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (para.startsWith('## ')) {
         const h = document.createElement('h2');
         h.className = 'post-subheading';
         h.textContent = para.slice(3).trim();
         bodyEl.appendChild(h);
+      } else if (imageMatch && /^(https?:\/\/|\/api\/)/.test(imageMatch[2])) {
+        const img = document.createElement('img');
+        img.className = 'post-inline-image';
+        img.src = imageMatch[2];
+        img.alt = imageMatch[1];
+        img.loading = 'lazy';
+        bodyEl.appendChild(img);
       } else {
         const p = document.createElement('p');
-        p.textContent = para;
+        renderInlineText(p, para);
         bodyEl.appendChild(p);
       }
     });
