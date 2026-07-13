@@ -2087,7 +2087,7 @@ function fmtChartMoney(v) {
   return '£' + v.toFixed(0);
 }
 
-function buildChart(labels, stratData, bahData, trades, capital) {
+function buildChart(labels, stratData, bahData, capital) {
   const ctx = document.getElementById('equityChart').getContext('2d');
 
   // Scale normalised equity (1.0 = start) to £ values
@@ -2099,24 +2099,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
   stratGrad.addColorStop(0,   'rgba(0,255,136,0.18)');
   stratGrad.addColorStop(0.6, 'rgba(0,255,136,0.04)');
   stratGrad.addColorStop(1,   'rgba(0,255,136,0)');
-
-  // Map trade entries/exits to scatter points (in £)
-  const equityMap = {};
-  labels.forEach((d, i) => { equityMap[d] = stratScaled[i]; });
-
-  const buyPoints  = [];
-  const sellPoints = [];
-  trades.forEach(t => {
-    // labels/equityMap keys are truncated to the date part (see labels above) —
-    // entry_date/exit_date carry a full timestamp, so this lookup silently missed
-    // every trade until now (buyPoints/sellPoints were always empty).
-    const entryDate = t.entry_date.slice(0, 10);
-    const exitDate  = t.exit_date.slice(0, 10);
-    const ey = equityMap[entryDate] ?? null;
-    const xy = equityMap[exitDate]  ?? null;
-    if (ey !== null) buyPoints.push({ x: entryDate, y: ey });
-    if (xy !== null) sellPoints.push({ x: exitDate,  y: xy });
-  });
 
   if (equityChart) equityChart.destroy();
 
@@ -2151,30 +2133,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
           tension: 0.1,
           order: 3,
         },
-        {
-          label: 'Entry',
-          data: buyPoints,
-          type: 'scatter',
-          backgroundColor: '#00ff88',
-          borderColor: '#050608',
-          borderWidth: 1,
-          pointRadius: 5,
-          pointStyle: 'triangle',
-          rotation: 0,
-          order: 1,
-        },
-        {
-          label: 'Exit',
-          data: sellPoints,
-          type: 'scatter',
-          backgroundColor: '#ff3355',
-          borderColor: '#050608',
-          borderWidth: 1,
-          pointRadius: 5,
-          pointStyle: 'triangle',
-          rotation: 180,
-          order: 1,
-        },
       ],
     },
     options: {
@@ -2196,8 +2154,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
           callbacks: {
             title: (items) => items[0]?.label ?? '',
             label: (item) => {
-              if (item.dataset.label === 'Entry') return '  ▲ Entry';
-              if (item.dataset.label === 'Exit')  return '  ▼ Exit';
               const pct = ((item.parsed.y / capital - 1) * 100).toFixed(2);
               const sign = pct >= 0 ? '+' : '';
               return `  ${item.dataset.label}: ${fmtChartMoney(item.parsed.y)} (${sign}${pct}%)`;
@@ -2633,7 +2589,7 @@ function renderResults(data) {
   bahLabels.forEach((d, i) => { bahMap[d] = bahVals[i]; });
   const bahAligned = labels.map(d => bahMap[d] ?? null);
 
-  buildChart(labels, stratVals, bahAligned, trades, capital);
+  buildChart(labels, stratVals, bahAligned, capital);
 
   // Trade log — compute compounding £ P&L per trade
   let runningEquity = capital;
@@ -2656,8 +2612,8 @@ function renderResults(data) {
       return `
       <tr>
         <td style="color:var(--text-muted);">${i + 1}</td>
-        <td>${t.entry_date.slice(0, 10)}</td>
-        <td>${t.exit_date.slice(0, 10)}</td>
+        <td>${fmtTradeDate(t.entry_date, interval)}</td>
+        <td>${fmtTradeDate(t.exit_date, interval)}</td>
         <td>${fmtPrice(t.entry_price)}</td>
         <td>${fmtPrice(t.exit_price)}</td>
         <td class="${t.return_pct >= 0 ? 'ret-pos' : 'ret-neg'}">${pctStr(t.return_pct)}</td>
@@ -2672,6 +2628,15 @@ function renderResults(data) {
 
 function fmtPrice(p) {
   return p >= 100 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+}
+
+const INTRADAY_INTERVALS = new Set(['1m', '5m', '15m', '30m', '1h', '2h', '4h']);
+function fmtTradeDate(dateStr, interval) {
+  if (!dateStr) return '—';
+  const datePart = dateStr.slice(0, 10);
+  if (!INTRADAY_INTERVALS.has(interval)) return datePart;
+  const timePart = dateStr.slice(11, 16);
+  return timePart ? `${datePart} ${timePart}` : datePart;
 }
 
 // Allow Enter key in symbol field
