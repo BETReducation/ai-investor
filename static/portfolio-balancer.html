@@ -136,9 +136,12 @@
 .cat-chev.open { transform:rotate(180deg); }
 .cat-body { display:none; background:var(--bg-secondary); border-top:1px solid var(--border); }
 .cat-body.open { display:block; }
+.cat-hdr .toggle { flex-shrink:0; }
+.cat-block.cat-off .cat-name, .cat-block.cat-off .cat-desc, .cat-block.cat-off .cat-dot { opacity:.4; }
+.cat-body.cat-off-body { opacity:.35; pointer-events:none; }
 
 /* ── Asset rows ─────────────────────────────────────────────────────────────── */
-.asset-row { display:grid; grid-template-columns:1fr 66px 46px 12px; align-items:center; gap:4px; padding:4px 8px; border-bottom:1px solid var(--border); }
+.asset-row { display:grid; grid-template-columns:1fr 66px 46px 12px 30px; align-items:center; gap:4px; padding:4px 8px; border-bottom:1px solid var(--border); }
 .asset-row:last-child { border-bottom:none; }
 .asset-name { font-size:9px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .asset-slider { width:100%; height:3px; accent-color:var(--accent-blue); cursor:pointer; }
@@ -149,6 +152,7 @@
 .live-ind { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
 .live-ind.on  { background:var(--accent-green); }
 .live-ind.off { background:var(--border); }
+.asset-row .toggle { flex-shrink:0; justify-self:end; }
 
 /* ── Chart ──────────────────────────────────────────────────────────────────── */
 .chart-wrap { position:relative; max-width:286px; margin:0 auto 12px; }
@@ -171,6 +175,11 @@
 .stat-box { background:var(--bg-card); border:1px solid var(--border); border-radius:2px; padding:11px 13px; margin-bottom:10px; }
 .stat-lbl { font-size:8px; color:var(--text-muted); letter-spacing:2px; margin-bottom:3px; }
 .stat-val { font-size:16px; font-weight:700; color:var(--text-primary); letter-spacing:1px; }
+.stat-val-edit { display:flex; align-items:center; gap:2px; }
+.stat-val-edit .stat-val-currency { font-size:16px; font-weight:700; color:var(--text-primary); }
+.stat-val-input { font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:var(--text-primary); letter-spacing:1px; background:transparent; border:none; border-bottom:1px dashed var(--border); width:100%; padding:0 0 1px; outline:none; transition:border-color .15s; }
+.stat-val-input:focus, .stat-val-input:hover { border-bottom-color:var(--accent-blue); }
+.stat-val-hint { font-size:7px; color:var(--text-muted); letter-spacing:1px; margin-top:2px; }
 .stat-sub { font-size:10px; margin-top:2px; }
 .stat-sub.up { color:var(--accent-green); } .stat-sub.dn { color:var(--accent-red); } .stat-sub.fl { color:var(--text-muted); }
 
@@ -268,6 +277,7 @@
         <li><a href="/tools/signals">Signals</a></li>
         <li><a href="/backtester">Backtester</a></li>
         <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
       </ul>
     </li>
     <li class="has-drop">
@@ -364,7 +374,7 @@ window.addEventListener('resize', () => {
 
   <!-- CENTER: Chart + allocation table -->
   <div class="pb-col pb-col-center">
-    <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;">LIVE ALLOCATION — TARGET 20% PER CATEGORY</div>
+    <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;" id="allocHeading">LIVE ALLOCATION — TARGET 20% PER CATEGORY</div>
     <div class="chart-wrap">
       <canvas id="pieChart" width="286" height="286"></canvas>
       <div class="chart-center">
@@ -381,12 +391,17 @@ window.addEventListener('resize', () => {
 
     <div class="stat-box">
       <div class="stat-lbl">BALANCED PORTFOLIO VALUE</div>
-      <div class="stat-val" id="rStatVal">£100,000</div>
+      <div class="stat-val-edit">
+        <span class="stat-val-currency">£</span>
+        <input type="number" class="stat-val-input" id="rStatValInput" value="100000" min="0" step="100"
+               onchange="setTotalValue(this.value)">
+      </div>
+      <div class="stat-val-hint">CLICK TO SET YOUR INVESTMENT AMOUNT</div>
       <div class="stat-sub fl" id="rStatGain">+£0 · ±0.00%</div>
     </div>
 
     <div class="sec-lbl">VS 100% CONCENTRATED (sorted by performance)</div>
-    <div style="font-size:8px;color:var(--text-muted);margin-bottom:6px;line-height:1.5;">What if all £100,000 went into a single asset class?</div>
+    <div style="font-size:8px;color:var(--text-muted);margin-bottom:6px;line-height:1.5;" id="cmpSubtitle">What if all £100,000 went into a single asset class?</div>
     <div id="cmpPanel"></div>
 
     <div class="sec-lbl" style="margin-top:14px;">REBALANCE TRADES</div>
@@ -438,6 +453,7 @@ window.addEventListener('resize', () => {
     <a href="/tools/signals">Signals</a>
     <a href="/backtester">Backtester</a>
     <a href="/tools/portfolio">Portfolio</a>
+    <a href="/tools/calculator">Calculator</a>
     <a href="/arena">The Arena</a>
     <a href="/alpha">Alpha</a>
     <a href="/partners">Partners</a>
@@ -453,7 +469,7 @@ window.addEventListener('resize', () => {
 
 <script>
 /* ══ DATA ════════════════════════════════════════════════════════════════════ */
-const PORTFOLIO_START = 100000;
+let PORTFOLIO_START = 100000;
 
 const CATS = [
   { id:'safe',   label:'Safe',           short:'SAFE', color:'#00c87a', desc:'Bonds, Gilts & Cash Savings',
@@ -477,6 +493,8 @@ let baseVals      = {};  // resets on each rebalance
 let liveBase      = {};  // prices at page-load (live baseline)
 let liveStatus    = {};  // { id: true/false } — is this asset live?
 let expanded      = {};
+let enabled       = {};  // per-asset on/off — excluded assets don't count toward the balanced total
+let catEnabled    = {};  // per-category master switch — off excludes all its assets regardless of their own toggle
 let evtLog        = [];
 let rebalHistory  = [];
 let roundNum      = 0;
@@ -485,9 +503,14 @@ let refreshTimer  = null;
 let liveMode      = true;  // false = scenario/manual active — live refresh fetches but doesn't override sliders
 
 function initState() {
-  ALL_ASSETS.forEach(a => { mults[a.id] = 1.0; baseVals[a.id] = ASSET_INITIAL; });
-  CATS.forEach((c, i) => { expanded[c.id] = i === 0; });
+  ALL_ASSETS.forEach(a => { mults[a.id] = 1.0; baseVals[a.id] = ASSET_INITIAL; enabled[a.id] = true; });
+  CATS.forEach((c, i) => { expanded[c.id] = i === 0; catEnabled[c.id] = true; });
 }
+
+function isAssetActive(a)  { return catEnabled[a.catId] && enabled[a.id]; }
+function activeAssets()    { return ALL_ASSETS.filter(isAssetActive); }
+function activeCategories(){ return CATS.filter(c => catEnabled[c.id]); }
+function catTargetPct()    { const n = activeCategories().length; return n ? 100 / n : 0; }
 
 /* ══ CALCULATIONS ════════════════════════════════════════════════════════════ */
 function calcPortfolio() {
@@ -497,7 +520,8 @@ function calcPortfolio() {
     catVals[cat.id] = 0;
     cat.assets.forEach(a => {
       const v = baseVals[a.id] * mults[a.id];
-      assetVals[a.id] = v; catVals[cat.id] += v; total += v;
+      assetVals[a.id] = v;
+      if (catEnabled[cat.id] && enabled[a.id]) { catVals[cat.id] += v; total += v; }
     });
   });
   const catPcts = {};
@@ -506,8 +530,10 @@ function calcPortfolio() {
 }
 
 function calcTrades(p) {
-  const target = p.total / ALL_ASSETS.length;
-  return ALL_ASSETS
+  const active = activeAssets();
+  if (active.length === 0) return [];
+  const target = p.total / active.length;
+  return active
     .map(a => ({ ...a, diff: target - p.assetVals[a.id] }))
     .filter(t => Math.abs(t.diff) > 1)
     .sort((a, b) => a.diff - b.diff);
@@ -590,17 +616,21 @@ function startAutoRefresh() {
 
 /* ══ BUILD UI ════════════════════════════════════════════════════════════════ */
 function buildPanel() {
-  document.getElementById('heroBadges').innerHTML = CATS.map(c =>
-    `<div class="pb-badge" style="background:${c.color}18;border-color:${c.color}44;color:${c.color};">
+  const target = catTargetPct();
+  document.getElementById('heroBadges').innerHTML = CATS.map(c => {
+    const off = !catEnabled[c.id];
+    return `<div class="pb-badge" style="background:${c.color}18;border-color:${c.color}44;color:${c.color};${off?'opacity:.4;':''}">
       <span style="width:6px;height:6px;border-radius:50%;background:${c.color};display:inline-block;"></span>
-      ${c.short} — 20%
-    </div>`).join('');
+      ${c.short} — ${off ? 'OFF' : target.toFixed(0)+'%'}
+    </div>`;
+  }).join('');
 
   const panel = document.getElementById('assetPanel');
   panel.innerHTML = '';
   CATS.forEach(cat => {
+    const off = !catEnabled[cat.id];
     const block = document.createElement('div');
-    block.className = 'cat-block';
+    block.className = 'cat-block' + (off ? ' cat-off' : '');
     block.innerHTML = `
       <div class="cat-hdr" onclick="toggleCat('${cat.id}')">
         <div class="cat-dot" style="background:${cat.color};"></div>
@@ -612,11 +642,16 @@ function buildPanel() {
           <div class="cat-pct-num" id="cpct-${cat.id}">20.0%</div>
           <div class="cat-pct-drift fl" id="cdrift-${cat.id}">±0.0%</div>
         </div>
+        <label class="toggle" title="${off?'Include':'Exclude'} this category in the balanced portfolio" onclick="event.stopPropagation();">
+          <input type="checkbox" ${catEnabled[cat.id]?'checked':''} onchange="toggleCatEnabled('${cat.id}')">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
         <svg class="cat-chev ${expanded[cat.id]?'open':''}" id="cchev-${cat.id}"
              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
              stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
-      <div class="cat-body ${expanded[cat.id]?'open':''}" id="cbody-${cat.id}">
+      <div class="cat-body ${expanded[cat.id]?'open':''}${off?' cat-off-body':''}" id="cbody-${cat.id}">
         ${cat.assets.map(a => `
           <div class="asset-row">
             <div class="asset-name" title="${a.label}">${a.label}</div>
@@ -624,6 +659,11 @@ function buildPanel() {
                    oninput="onSlider('${a.id}',this.value)">
             <span class="asset-pct fl" id="ap-${a.id}">±0%</span>
             <div class="live-ind off" id="li-${a.id}" title="Waiting for data"></div>
+            <label class="toggle" title="${enabled[a.id]===false?'Include':'Exclude'} this asset in the balanced portfolio">
+              <input type="checkbox" ${enabled[a.id]!==false?'checked':''} onchange="toggleAssetEnabled('${a.id}')">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
           </div>`).join('')}
       </div>`;
     panel.appendChild(block);
@@ -634,6 +674,37 @@ function toggleCat(id) {
   expanded[id] = !expanded[id];
   document.getElementById(`cbody-${id}`)?.classList.toggle('open', expanded[id]);
   document.getElementById(`cchev-${id}`)?.classList.toggle('open', expanded[id]);
+}
+
+function toggleCatEnabled(catId) {
+  catEnabled[catId] = !catEnabled[catId];
+  const cat = CATS.find(c => c.id === catId);
+  addEvt(catEnabled[catId] ? 'CATEGORY ON' : 'CATEGORY OFF', `${cat.label} ${catEnabled[catId] ? 'included in' : 'excluded from'} the balanced portfolio`);
+  buildPanel();
+  updateUI();
+}
+
+function toggleAssetEnabled(id) {
+  enabled[id] = enabled[id] === false ? true : false;
+  updateUI();
+}
+
+function setTotalValue(val) {
+  const newTotal = Math.max(0, parseFloat(val) || 0);
+  PORTFOLIO_START = newTotal;
+  const active = activeAssets();
+  const newBase = active.length ? newTotal / active.length : 0;
+  liveMode = false;
+  active.forEach(a => {
+    baseVals[a.id] = newBase;
+    mults[a.id] = 1.0;
+    const sl = document.getElementById(`sl-${a.id}`);
+    const ap = document.getElementById(`ap-${a.id}`);
+    if (sl) sl.value = 0;
+    if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
+  });
+  addEvt('PORTFOLIO VALUE', `Investment amount set to ${fmt(newTotal)} — positions re-equalised across ${active.length} enabled assets`);
+  updateUI();
 }
 
 function onSlider(id, val) {
@@ -671,9 +742,10 @@ function doRebalance() {
 
   rebalHistory.unshift({ round:roundNum, ts:now, total:p.total, gain, gainPct, sells, buys });
 
-  // Execute — reset all base values and sliders
-  const newBase = p.total / ALL_ASSETS.length;
-  ALL_ASSETS.forEach(a => {
+  // Execute — reset base values and sliders for enabled assets only
+  const active = activeAssets();
+  const newBase = active.length ? p.total / active.length : 0;
+  active.forEach(a => {
     const currentMarketPrice = liveBase[a.id] ? liveBase[a.id] * mults[a.id] : undefined;
     baseVals[a.id] = newBase;
     mults[a.id]    = 1.0;
@@ -695,12 +767,12 @@ function doRebalance() {
 
 function resetAll() {
   liveMode = true;
+  PORTFOLIO_START = 100000;
   initState();
   liveBase = {};
-  ALL_ASSETS.forEach(a => {
-    const sl = document.getElementById(`sl-${a.id}`); if (sl) sl.value = 0;
-    const ap = document.getElementById(`ap-${a.id}`); if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
-  });
+  buildPanel();
+  const input = document.getElementById('rStatValInput');
+  if (input) input.value = PORTFOLIO_START;
   addEvt('RESET', 'Portfolio reset — reloading live prices as new baseline…');
   loadLivePrices();
 }
@@ -743,8 +815,9 @@ function applyScene(name) {
 /* ══ UPDATE UI ═══════════════════════════════════════════════════════════════ */
 function updateUI() {
   const p       = calcPortfolio();
+  const target  = catTargetPct();
   const gain    = p.total - PORTFOLIO_START;
-  const gainPct = (gain / PORTFOLIO_START) * 100;
+  const gainPct = PORTFOLIO_START ? (gain / PORTFOLIO_START) * 100 : 0;
 
   // Chart center
   document.getElementById('ctrVal').textContent = fmt(p.total);
@@ -753,33 +826,40 @@ function updateUI() {
   ctrPct.style.color = gain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
   // Stat box
-  document.getElementById('rStatVal').textContent = fmt(p.total);
+  const statInput = document.getElementById('rStatValInput');
+  if (statInput && document.activeElement !== statInput) statInput.value = Math.round(p.total);
   const gainEl = document.getElementById('rStatGain');
   gainEl.textContent = fmtGain(gain) + ' · ' + fmtP(gainPct);
   gainEl.className = `stat-sub ${gain>0?'up':gain<0?'dn':'fl'}`;
+
+  // Allocation heading
+  const heading = document.getElementById('allocHeading');
+  if (heading) heading.textContent = `LIVE ALLOCATION — TARGET ${target.toFixed(1)}% PER ENABLED CATEGORY`;
+  const cmpSub = document.getElementById('cmpSubtitle');
+  if (cmpSub) cmpSub.textContent = `What if all ${fmt(PORTFOLIO_START)} went into a single asset class?`;
 
   // Pie chart
   if (pieChart) { pieChart.data.datasets[0].data = CATS.map(c => p.catPcts[c.id]); pieChart.update('none'); }
 
   // Category headers
   CATS.forEach(cat => {
-    const pct = p.catPcts[cat.id], drift = pct - 20;
-    const pe = document.getElementById(`cpct-${cat.id}`); if (pe) pe.textContent = pct.toFixed(1)+'%';
+    const pct = p.catPcts[cat.id], drift = catEnabled[cat.id] ? pct - target : 0;
+    const pe = document.getElementById(`cpct-${cat.id}`); if (pe) pe.textContent = catEnabled[cat.id] ? pct.toFixed(1)+'%' : 'OFF';
     const de = document.getElementById(`cdrift-${cat.id}`);
-    if (de) { de.textContent = fmtP(drift); de.className = `cat-pct-drift ${Math.abs(drift)<.2?'fl':drift>0?'up':'dn'}`; }
+    if (de) { de.textContent = catEnabled[cat.id] ? fmtP(drift) : ''; de.className = `cat-pct-drift ${Math.abs(drift)<.2?'fl':drift>0?'up':'dn'}`; }
   });
 
   // Allocation table
   document.getElementById('allocTbl').innerHTML = `
     <thead><tr><th></th><th>CATEGORY</th><th style="text-align:right;">ALLOC</th><th style="text-align:right;">DRIFT</th><th style="text-align:right;">VALUE</th></tr></thead>
     <tbody>${CATS.map((cat, i) => {
-      const pct = p.catPcts[cat.id], drift = pct-20, barW = Math.min(100,(pct/40)*100);
+      const pct = p.catPcts[cat.id], drift = pct-target, barW = Math.min(100, target ? (pct/(target*2))*100 : 0);
       const last = i === CATS.length-1;
       return `<tr${last?' class="last-row"':''}>
-        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cat.color};"></span></td>
-        <td>${cat.label}</td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cat.color};${catEnabled[cat.id]?'':'opacity:.35;'}"></span></td>
+        <td${catEnabled[cat.id]?'':' style="opacity:.5;"'}>${cat.label}${catEnabled[cat.id]?'':' (off)'}</td>
         <td style="text-align:right;font-weight:700;color:var(--text-primary);">${pct.toFixed(1)}%</td>
-        <td style="text-align:right;" class="${Math.abs(drift)<.1?'':'drift-'+(drift>0?'pos':'neg')}">${fmtP(drift)}</td>
+        <td style="text-align:right;" class="${!catEnabled[cat.id]||Math.abs(drift)<.1?'':'drift-'+(drift>0?'pos':'neg')}">${catEnabled[cat.id]?fmtP(drift):'—'}</td>
         <td style="text-align:right;">${fmt(p.catVals[cat.id])}</td>
       </tr>
       <tr${last?' class="last-row"':''}><td colspan="5" style="padding:0 4px 5px;">
@@ -898,7 +978,11 @@ function initChart() {
       plugins: {
         legend: { display:false },
         tooltip: {
-          callbacks: { label: ctx => `  ${ctx.label}: ${ctx.parsed.toFixed(1)}%  (target 20.0%)` },
+          callbacks: { label: ctx => {
+            const cat = CATS[ctx.dataIndex];
+            if (cat && !catEnabled[cat.id]) return `  ${ctx.label}: OFF — excluded from balanced total`;
+            return `  ${ctx.label}: ${ctx.parsed.toFixed(1)}%  (target ${catTargetPct().toFixed(1)}%)`;
+          } },
           bodyFont:{family:"'IBM Plex Mono',monospace",size:11},
           backgroundColor:'rgba(10,14,20,.96)', borderColor:'rgba(30,42,58,1)', borderWidth:1, padding:10,
         }

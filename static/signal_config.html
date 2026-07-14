@@ -87,11 +87,31 @@
 @media (max-width: 768px) {
   body { overflow: auto; }
 }
+
+/* SIGNAL TOAST — transient popup notification for a new alert firing */
+#signalToastStack { position: fixed; top: 84px; right: 16px; z-index: 9500; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.signal-toast { pointer-events: auto; width: 260px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.4); animation: signalToastIn 0.25s ease; }
+.signal-toast.buy { border-left: 3px solid var(--signal-buy); }
+.signal-toast.sell { border-left: 3px solid var(--signal-sell); }
+.signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
+@keyframes signalToastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes signalToastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(24px); } }
+.signal-toast-hdr { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.signal-toast-type { font-size: 10px; font-weight: 700; letter-spacing: 2px; }
+.signal-toast-type.buy { color: var(--signal-buy); }
+.signal-toast-type.sell { color: var(--signal-sell); }
+.signal-toast-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 2px; }
+.signal-toast-close:hover { color: var(--text-primary); }
+.signal-toast-body { padding: 8px 10px; font-size: 10px; color: var(--text-secondary); }
+.signal-toast-asset { font-weight: 700; color: var(--text-primary); }
 </style>
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script src="/static/js/theme.js"></script>
 </head>
 <body>
+
+<!-- SIGNAL TOAST STACK — popup notifications for new alerts (see fireAlert) -->
+<div id="signalToastStack"></div>
 
 <!-- SIGN-IN MODAL (optional — dashboard works without login) -->
 <div id="loginOverlay" class="login-overlay" style="display:none;">
@@ -181,6 +201,7 @@
         <li><a href="/tools/signals">Signals</a></li>
         <li><a href="/backtester">Backtester</a></li>
         <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
       </ul>
     </li>
     <li class="has-drop">
@@ -768,6 +789,7 @@ let strategyType  = 'BUY';
 let strategyMatch = 'all';
 let savedStrategies = [];
 let condExpanded  = {};
+let notificationSettings = { sound_enabled: true, popup_enabled: true };
 
 const CONDITION_DEFS = {
   // ── RSI ─────────────────────────────────────────────────────────────────────
@@ -1597,6 +1619,50 @@ function fireAlert(sym, sig) {
   const col = sig.type === 'BUY' ? 'signal' : 'err';
   addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ $${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
+
+  if (notificationSettings.sound_enabled) playAlertTone(sig.type);
+  if (notificationSettings.popup_enabled) showSignalToast(alert);
+}
+
+// ── NOTIFICATIONS: sound + popup (see profile Preferences card) ─────────────
+function playAlertTone(type) {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = type === 'BUY' ? 880 : 440;
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.36);
+    osc.onended = () => ctx.close();
+  } catch (e) {}
+}
+
+function showSignalToast(a) {
+  const stack = document.getElementById('signalToastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = `signal-toast ${a.type.toLowerCase()}`;
+  el.innerHTML = `
+    <div class="signal-toast-hdr">
+      <span class="signal-toast-type ${a.type.toLowerCase()}">${a.type} SIGNAL</span>
+      <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
+    </div>
+    <div class="signal-toast-body">
+      <span class="signal-toast-asset">${a.sym}</span> @ $${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
+    </div>`;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('closing');
+    setTimeout(() => el.remove(), 260);
+  }, 6000);
 }
 
 // --- RENDER ALERTS ---
@@ -2351,6 +2417,13 @@ async function checkSession() {
         }
       } catch (e) {}
       await loadCustomSymbols();
+
+      // Support "Open" links from the profile page's Saved Strategies list.
+      const wantStrategy = new URLSearchParams(location.search).get('loadStrategy');
+      if (wantStrategy && savedStrategies.find(s => s.name === wantStrategy)) {
+        document.getElementById('strategySelect').value = wantStrategy;
+        loadSavedStrategy(wantStrategy);
+      }
     } else {
       currentUser = null;
       userAuthenticated = false;
@@ -2625,6 +2698,13 @@ function applyPreferences(prefs) {
       document.getElementById('strategySelect').value = loadedName;
     }
   }
+
+  if (prefs.notification_settings) {
+    notificationSettings = {
+      sound_enabled: prefs.notification_settings.sound_enabled !== false,
+      popup_enabled: prefs.notification_settings.popup_enabled !== false,
+    };
+  }
 }
 
 // Boot
@@ -2764,6 +2844,7 @@ checkSession();
     <a href="/tools/signals">Signals</a>
     <a href="/backtester">Backtester</a>
     <a href="/tools/portfolio">Portfolio</a>
+    <a href="/tools/calculator">Calculator</a>
     <a href="/arena">The Arena</a>
     <a href="/alpha">Alpha</a>
     <a href="/partners">Partners</a>

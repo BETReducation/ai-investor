@@ -76,6 +76,35 @@
 .form-actions { display: flex; gap: 14px; align-items: center; margin-top: 20px; }
 .form-hint { font-size: 12px; color: var(--muted); }
 
+/* Saved strategies */
+.saved-strat-group { margin-top: 16px; }
+.saved-strat-group:first-of-type { margin-top: 0; }
+.saved-strat-group-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.saved-strat-list { display: flex; flex-direction: column; gap: 8px; }
+.saved-strat-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
+.saved-strat-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; }
+.saved-strat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.saved-strat-name { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved-strat-date { font-size: 11px; color: var(--muted); }
+.saved-strat-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.saved-strat-actions a, .saved-strat-actions button { font-size: 12px; font-weight: 600; font-family: inherit; padding: 6px 12px; border-radius: 7px; cursor: pointer; text-decoration: none; border: none; }
+.saved-strat-open { background: rgba(0,212,170,0.1); color: var(--green); border: 1px solid rgba(0,212,170,0.3) !important; }
+.saved-strat-delete { background: transparent; color: #ff4757; border: 1px solid rgba(255,71,87,0.35) !important; }
+.saved-strat-delete:hover { background: rgba(255,71,87,0.1); }
+
+/* Toggle switch */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-row-text { display: flex; flex-direction: column; gap: 3px; }
+.toggle-row-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.toggle-row-desc { font-size: 12px; color: var(--muted); }
+.toggle { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+.toggle input { display: none; }
+.toggle-track { position: absolute; inset: 0; background: var(--border2); border-radius: 12px; transition: background 0.2s; }
+.toggle-thumb { position: absolute; width: 16px; height: 16px; background: var(--muted); border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s, background 0.2s; }
+.toggle input:checked ~ .toggle-track { background: rgba(0,212,170,0.35); }
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--green); }
+
 /* Buttons */
 .btn-save { background: var(--green); color: #03130f; border: none; padding: 11px 24px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
 .btn-save:hover { opacity: 0.88; }
@@ -172,6 +201,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <li><a href="/tools/signals">Signals</a></li>
         <li><a href="/backtester">Backtester</a></li>
         <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
       </ul>
     </li>
     <li class="has-dropdown">
@@ -309,6 +339,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
                 <option value="/tools/signals">Signals</option>
                 <option value="/backtester">Backtester</option>
                 <option value="/tools/portfolio">Portfolio Manager</option>
+                <option value="/tools/calculator">Calculator</option>
               </optgroup>
               <optgroup label="The Arena">
                 <option value="/arena">Arena Hub</option>
@@ -337,6 +368,64 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="form-actions">
           <button class="btn-save" id="saveProfileBtn" onclick="saveProfile()">Save Changes</button>
           <span class="form-hint" id="saveProfileHint"></span>
+        </div>
+      </div>
+
+      <!-- PREFERENCES: sign-in + signal tracker notifications -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🔔</span>Preferences</div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Stay signed in</div>
+            <div class="toggle-row-desc">Keep me logged in on this device until I log out. Turn off to require signing in every visit.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefStaySignedIn" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Signal Tracker — sound alerts</div>
+            <div class="toggle-row-desc">Play a short tone when a new BUY/SELL signal fires while the Signal Tracker tab is open.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefSoundAlerts" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-row-text">
+            <div class="toggle-row-label">Signal Tracker — popup alerts</div>
+            <div class="toggle-row-desc">Show an on-screen popup when a new BUY/SELL signal fires while the Signal Tracker tab is open.</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="prefPopupAlerts" checked onchange="savePrefsToggles()">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <span class="form-hint" id="prefsSaveHint"></span>
+      </div>
+
+      <!-- SAVED STRATEGIES -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">💾</span>Saved Strategies</div>
+        </div>
+        <div class="card-header-sub" style="margin-top:-8px;">Strategies you've saved from the Backtester and Signal Tracker — pick up where you left off.</div>
+
+        <div class="saved-strat-group">
+          <div class="saved-strat-group-title">Backtester</div>
+          <div id="savedBacktestsList" class="saved-strat-list"></div>
+        </div>
+        <div class="saved-strat-group">
+          <div class="saved-strat-group-title">Signal Tracker</div>
+          <div id="savedSignalsList" class="saved-strat-list"></div>
         </div>
       </div>
 
@@ -473,6 +562,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <a href="/tools/signals">Signals</a>
       <a href="/backtester">Backtester</a>
       <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
       <a href="/arena">The Arena</a>
       <a href="/alpha">Alpha</a>
       <a href="/partners">Partners</a>
@@ -562,7 +652,93 @@ function populateProfile(data) {
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
   highlightCurrentPlan(data.tier);
   updateDangerZone(data.tier);
+
+  const prefs = data.preferences || {};
+  const notif = prefs.notification_settings || {};
+  document.getElementById('prefStaySignedIn').checked = prefs.stay_signed_in !== false;
+  document.getElementById('prefSoundAlerts').checked  = notif.sound_enabled !== false;
+  document.getElementById('prefPopupAlerts').checked  = notif.popup_enabled !== false;
+
+  renderSavedStrategies(prefs);
 }
+
+// ── Saved strategies ─────────────────────────────────────────────────────────
+
+function fmtSavedDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// For embedding inside a single-quoted JS string literal that itself sits inside a
+// double-quoted HTML onclick="..." attribute: escape for JS first (so the decoded
+// attribute text is a valid JS string), then HTML-escape the result for the
+// attribute itself — order matters, since HTML-decoding happens before JS parses it.
+function escJsAttr(str) {
+  const jsEscaped = String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return jsEscaped.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderSavedStrategies(prefs) {
+  const backtests = Array.isArray(prefs.saved_backtests) ? prefs.saved_backtests : [];
+  const signals    = Array.isArray(prefs.savedStrategies)  ? prefs.savedStrategies  : [];
+
+  const btEl = document.getElementById('savedBacktestsList');
+  btEl.innerHTML = backtests.length === 0
+    ? '<div class="saved-strat-empty">No saved backtests yet — save one from the Backtester.</div>'
+    : backtests.map(s => `
+      <div class="saved-strat-row">
+        <div class="saved-strat-info">
+          <div class="saved-strat-name">${escapeHtml(s.name)}</div>
+          <div class="saved-strat-date">${fmtSavedDate(s.savedAt)}</div>
+        </div>
+        <div class="saved-strat-actions">
+          <a class="saved-strat-open" href="/backtester?loadStrategy=${encodeURIComponent(s.name)}">Open</a>
+          <button class="saved-strat-delete" onclick="deleteSavedBacktest('${escJsAttr(s.name)}')">Delete</button>
+        </div>
+      </div>`).join('');
+
+  const sigEl = document.getElementById('savedSignalsList');
+  sigEl.innerHTML = signals.length === 0
+    ? '<div class="saved-strat-empty">No saved signal strategies yet — save one from the Signal Tracker.</div>'
+    : signals.map(s => `
+      <div class="saved-strat-row">
+        <div class="saved-strat-info">
+          <div class="saved-strat-name">${escapeHtml(s.name)}</div>
+          <div class="saved-strat-date">${s.type ? escapeHtml(s.type) + ' strategy' : ''}</div>
+        </div>
+        <div class="saved-strat-actions">
+          <a class="saved-strat-open" href="/tools/signals?loadStrategy=${encodeURIComponent(s.name)}">Open</a>
+          <button class="saved-strat-delete" onclick="deleteSavedSignalStrategy('${escJsAttr(s.name)}')">Delete</button>
+        </div>
+      </div>`).join('');
+}
+
+async function deleteSavedList(key, name) {
+  try {
+    const res = await fetch('/api/profile', { credentials: 'include' });
+    const data = await res.json();
+    const prefs = data.preferences || {};
+    const current = Array.isArray(prefs[key]) ? prefs[key] : [];
+    const filtered = current.filter(s => s.name !== name);
+    await fetch('/api/save-preferences', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [key]: filtered }),
+    });
+    prefs[key] = filtered;
+    renderSavedStrategies(prefs);
+    showToast(`Deleted "${name}"`, 'ok');
+  } catch (e) {
+    showToast('Failed to delete — try again', 'err');
+  }
+}
+
+function deleteSavedBacktest(name) { deleteSavedList('saved_backtests', name); }
+function deleteSavedSignalStrategy(name) { deleteSavedList('savedStrategies', name); }
 
 function setAvatarDisplay(value, name) {
   const circle = document.getElementById('avatarCircle');
@@ -705,6 +881,36 @@ async function saveProfile() {
     btn.disabled = false;
     btn.textContent = 'Save Changes';
   }
+}
+
+// ── Preferences (sign-in + notifications) ──────────────────────────────────────
+
+let prefsSaveTimer = null;
+function savePrefsToggles() {
+  clearTimeout(prefsSaveTimer);
+  const hint = document.getElementById('prefsSaveHint');
+  hint.textContent = 'Saving...';
+  prefsSaveTimer = setTimeout(async () => {
+    const payload = {
+      stay_signed_in: document.getElementById('prefStaySignedIn').checked,
+      notification_settings: {
+        sound_enabled: document.getElementById('prefSoundAlerts').checked,
+        popup_enabled: document.getElementById('prefPopupAlerts').checked,
+      },
+    };
+    try {
+      const res = await fetch('/api/save-preferences', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error();
+      hint.textContent = 'Saved';
+      setTimeout(() => { hint.textContent = ''; }, 1500);
+    } catch (e) {
+      hint.textContent = 'Failed to save — try again';
+    }
+  }, 250);
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────

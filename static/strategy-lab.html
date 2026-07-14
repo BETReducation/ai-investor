@@ -621,6 +621,7 @@
         <li><a href="/tools/signals">Signals</a></li>
         <li><a href="/backtester">Backtester</a></li>
         <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
       </ul>
     </li>
     <li class="has-drop">
@@ -842,8 +843,8 @@ window.addEventListener('resize', () => {
             <option value="overbought">Overbought only</option>
             <option value="oversold">Oversold only</option>
             <option value="centerline_cross">Centerline crossover</option>
-            <option value="bullish_divergence">Bullish divergence</option>
-            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
             <option value="failure_swings">Failure swings</option>
           </select>
         </div>
@@ -884,8 +885,8 @@ window.addEventListener('resize', () => {
             <option value="bullish_signal_cross">Bullish signal line crossover</option>
             <option value="bearish_signal_cross">Bearish signal line crossover</option>
             <option value="centerline_cross">Centerline crossover</option>
-            <option value="bullish_divergence">Bullish divergence</option>
-            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
             <option value="histogram_reversal">Histogram reversal</option>
             <option value="overbought">Overbought</option>
             <option value="oversold">Oversold</option>
@@ -1077,7 +1078,7 @@ window.addEventListener('resize', () => {
             <option value="bull_flip">Bullish flip only</option>
             <option value="bear_flip">Bearish flip only</option>
             <option value="trend_state">Trend state</option>
-            <option value="trailing_stop">Trailing stop (momentum change)</option>
+            <option value="trailing_stop">Trailing stop (Momentum change)</option>
           </select>
         </div>
         <div class="param-row" style="margin-bottom:0;">
@@ -1237,8 +1238,8 @@ window.addEventListener('resize', () => {
             <option value="overbought">Overbought only</option>
             <option value="oversold">Oversold only</option>
             <option value="signal_cross">%K/%D signal cross</option>
-            <option value="bullish_divergence">Bullish divergence</option>
-            <option value="bearish_divergence">Bearish divergence</option>
+            <option value="bullish_divergence">Bullish Divergence</option>
+            <option value="bearish_divergence">Bearish Divergence</option>
           </select>
         </div>
         <div class="param-row">
@@ -1692,6 +1693,24 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
+    <!-- Save / Load strategy -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">SAVED STRATEGIES</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <select id="btStrategySelect" class="lab-input" onchange="loadSavedBacktestStrategy(this.value)" style="flex:1;margin-bottom:0;">
+          <option value="">— New Strategy —</option>
+        </select>
+        <button onclick="deleteSavedBacktestStrategy()" title="Delete selected strategy"
+          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:5px 10px;border-radius:2px;line-height:1;font-family:'IBM Plex Mono',monospace;">×</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" id="btStrategyName" class="lab-input" placeholder="Strategy name" style="flex:1;margin-bottom:0;">
+        <button onclick="saveBacktestStrategy()" title="Save this configuration"
+          style="background:rgba(0,255,136,0.08);border:1px solid var(--accent-green);color:var(--accent-green);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px 12px;border-radius:2px;font-family:'IBM Plex Mono',monospace;">SAVE</button>
+      </div>
+      <div id="btStrategyHint" style="font-size:9px;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+
     <!-- Run button -->
     <div style="padding:14px 16px;">
       <button class="btn-run" id="runBtn" onclick="runBacktest()">▶ RUN BACKTEST</button>
@@ -1859,6 +1878,7 @@ window.addEventListener('resize', () => {
     <a href="/tools/signals">Signals</a>
     <a href="/backtester">Backtester</a>
     <a href="/tools/portfolio">Portfolio</a>
+    <a href="/tools/calculator">Calculator</a>
     <a href="/arena">The Arena</a>
     <a href="/alpha">Alpha</a>
     <a href="/partners">Partners</a>
@@ -1881,6 +1901,7 @@ let btCurrentUser = null;
 let mySymbols = [];
 let btSearchResults = [];
 let btSearchTimer = null;
+let savedBacktests = [];
 
 async function initMySymbols() {
   try {
@@ -1893,9 +1914,24 @@ async function initMySymbols() {
         const data = await res.json();
         mySymbols = data.symbols || [];
       }
+      const prefRes = await fetch('/api/load-preferences', { credentials: 'include' });
+      if (prefRes.ok) {
+        const prefData = await prefRes.json();
+        if (Array.isArray(prefData.preferences?.saved_backtests)) {
+          savedBacktests = prefData.preferences.saved_backtests;
+        }
+      }
     }
   } catch (e) {}
   renderMySymbols();
+  renderBacktestStrategyDropdown();
+
+  // Support "Open" links from the profile page's Saved Strategies list.
+  const wantStrategy = new URLSearchParams(location.search).get('loadStrategy');
+  if (wantStrategy && savedBacktests.find(s => s.name === wantStrategy)) {
+    document.getElementById('btStrategySelect').value = wantStrategy;
+    loadSavedBacktestStrategy(wantStrategy);
+  }
 }
 initMySymbols();
 
@@ -1911,6 +1947,111 @@ initMySymbols();
     }
   } catch {}
 })();
+
+// ── Save / load backtest strategies ────────────────────────────────────────
+// Generic: every labelled control in the sidebar has a stable id, so a saved
+// "strategy" is just a snapshot of every field's value/checked state rather
+// than a hand-maintained list — the latter would silently drift out of sync
+// as indicators get added to the sidebar over time.
+const BT_STRATEGY_CONTROL_IDS = new Set(['btStrategySelect', 'btStrategyName']);
+
+function serializeBacktestConfig() {
+  const cfg = {};
+  document.querySelectorAll('.lab-sidebar [id]').forEach(el => {
+    if (BT_STRATEGY_CONTROL_IDS.has(el.id)) return;
+    if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+      cfg[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
+    }
+  });
+  // periodMode isn't a form field (it's two plain buttons toggling panel visibility)
+  // so it needs to be captured/restored explicitly alongside the generic fields.
+  cfg._periodMode = document.getElementById('customPanel').style.display !== 'none' ? 'custom' : 'preset';
+  return cfg;
+}
+
+function applyBacktestConfig(cfg) {
+  Object.entries(cfg).forEach(([id, val]) => {
+    if (id === '_periodMode') return;
+    const el = document.getElementById(id);
+    if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!val;
+    else el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  if (cfg._periodMode) setPeriodMode(cfg._periodMode);
+}
+
+function renderBacktestStrategyDropdown() {
+  const sel = document.getElementById('btStrategySelect');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— New Strategy —</option>' +
+    savedBacktests.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  if (savedBacktests.find(s => s.name === current)) sel.value = current;
+}
+
+async function persistSavedBacktests(hintEl) {
+  if (!btCurrentUser) {
+    if (hintEl) hintEl.textContent = 'Sign in to save strategies to your account.';
+    return false;
+  }
+  try {
+    const res = await fetch('/api/save-preferences', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ saved_backtests: savedBacktests }),
+    });
+    if (!res.ok) throw new Error();
+    return true;
+  } catch (e) {
+    if (hintEl) hintEl.textContent = 'Failed to save — try again.';
+    return false;
+  }
+}
+
+async function saveBacktestStrategy() {
+  const nameInput = document.getElementById('btStrategyName');
+  const hint = document.getElementById('btStrategyHint');
+  const name = nameInput.value.trim();
+  if (!name) { hint.textContent = 'Enter a name for this strategy first.'; return; }
+
+  const strategy = { name, config: serializeBacktestConfig(), savedAt: new Date().toISOString() };
+  const idx = savedBacktests.findIndex(s => s.name === name);
+  if (idx >= 0) savedBacktests[idx] = strategy; else savedBacktests.push(strategy);
+
+  hint.textContent = 'Saving...';
+  const ok = await persistSavedBacktests(hint);
+  if (ok) {
+    renderBacktestStrategyDropdown();
+    document.getElementById('btStrategySelect').value = name;
+    hint.textContent = `Saved "${name}".`;
+  }
+}
+
+function loadSavedBacktestStrategy(name) {
+  const hint = document.getElementById('btStrategyHint');
+  if (!name) { if (hint) hint.textContent = ''; return; }
+  const s = savedBacktests.find(s => s.name === name);
+  if (!s) return;
+  document.getElementById('btStrategyName').value = s.name;
+  applyBacktestConfig(s.config);
+  if (hint) hint.textContent = `Loaded "${s.name}".`;
+}
+
+async function deleteSavedBacktestStrategy() {
+  const sel = document.getElementById('btStrategySelect');
+  const hint = document.getElementById('btStrategyHint');
+  const name = sel.value;
+  if (!name) { hint.textContent = 'Select a saved strategy to delete.'; return; }
+  savedBacktests = savedBacktests.filter(s => s.name !== name);
+  const ok = await persistSavedBacktests(hint);
+  if (ok) {
+    renderBacktestStrategyDropdown();
+    document.getElementById('btStrategyName').value = '';
+    hint.textContent = `Deleted "${name}".`;
+  }
+}
 
 function onBtSymbolInput(q) {
   // A real keystroke (as opposed to picking a search result, which sets .value
@@ -2098,7 +2239,7 @@ function fmtChartMoney(v) {
   return '£' + v.toFixed(0);
 }
 
-function buildChart(labels, stratData, bahData, trades, capital) {
+function buildChart(labels, stratData, bahData, capital) {
   const ctx = document.getElementById('equityChart').getContext('2d');
 
   // Scale normalised equity (1.0 = start) to £ values
@@ -2110,24 +2251,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
   stratGrad.addColorStop(0,   'rgba(0,255,136,0.18)');
   stratGrad.addColorStop(0.6, 'rgba(0,255,136,0.04)');
   stratGrad.addColorStop(1,   'rgba(0,255,136,0)');
-
-  // Map trade entries/exits to scatter points (in £)
-  const equityMap = {};
-  labels.forEach((d, i) => { equityMap[d] = stratScaled[i]; });
-
-  const buyPoints  = [];
-  const sellPoints = [];
-  trades.forEach(t => {
-    // labels/equityMap keys are truncated to the date part (see labels above) —
-    // entry_date/exit_date carry a full timestamp, so this lookup silently missed
-    // every trade until now (buyPoints/sellPoints were always empty).
-    const entryDate = t.entry_date.slice(0, 10);
-    const exitDate  = t.exit_date.slice(0, 10);
-    const ey = equityMap[entryDate] ?? null;
-    const xy = equityMap[exitDate]  ?? null;
-    if (ey !== null) buyPoints.push({ x: entryDate, y: ey });
-    if (xy !== null) sellPoints.push({ x: exitDate,  y: xy });
-  });
 
   if (equityChart) equityChart.destroy();
 
@@ -2162,30 +2285,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
           tension: 0.1,
           order: 3,
         },
-        {
-          label: 'Entry',
-          data: buyPoints,
-          type: 'scatter',
-          backgroundColor: '#00ff88',
-          borderColor: '#050608',
-          borderWidth: 1,
-          pointRadius: 5,
-          pointStyle: 'triangle',
-          rotation: 0,
-          order: 1,
-        },
-        {
-          label: 'Exit',
-          data: sellPoints,
-          type: 'scatter',
-          backgroundColor: '#ff3355',
-          borderColor: '#050608',
-          borderWidth: 1,
-          pointRadius: 5,
-          pointStyle: 'triangle',
-          rotation: 180,
-          order: 1,
-        },
       ],
     },
     options: {
@@ -2207,8 +2306,6 @@ function buildChart(labels, stratData, bahData, trades, capital) {
           callbacks: {
             title: (items) => items[0]?.label ?? '',
             label: (item) => {
-              if (item.dataset.label === 'Entry') return '  ▲ Entry';
-              if (item.dataset.label === 'Exit')  return '  ▼ Exit';
               const pct = ((item.parsed.y / capital - 1) * 100).toFixed(2);
               const sign = pct >= 0 ? '+' : '';
               return `  ${item.dataset.label}: ${fmtChartMoney(item.parsed.y)} (${sign}${pct}%)`;
@@ -2644,7 +2741,7 @@ function renderResults(data) {
   bahLabels.forEach((d, i) => { bahMap[d] = bahVals[i]; });
   const bahAligned = labels.map(d => bahMap[d] ?? null);
 
-  buildChart(labels, stratVals, bahAligned, trades, capital);
+  buildChart(labels, stratVals, bahAligned, capital);
 
   // Trade log — compute compounding £ P&L per trade
   let runningEquity = capital;
@@ -2667,8 +2764,8 @@ function renderResults(data) {
       return `
       <tr>
         <td style="color:var(--text-muted);">${i + 1}</td>
-        <td>${t.entry_date.slice(0, 10)}</td>
-        <td>${t.exit_date.slice(0, 10)}</td>
+        <td>${fmtTradeDate(t.entry_date, interval)}</td>
+        <td>${fmtTradeDate(t.exit_date, interval)}</td>
         <td>${fmtPrice(t.entry_price)}</td>
         <td>${fmtPrice(t.exit_price)}</td>
         <td class="${t.return_pct >= 0 ? 'ret-pos' : 'ret-neg'}">${pctStr(t.return_pct)}</td>
@@ -2683,6 +2780,15 @@ function renderResults(data) {
 
 function fmtPrice(p) {
   return p >= 100 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+}
+
+const INTRADAY_INTERVALS = new Set(['1m', '5m', '15m', '30m', '1h', '2h', '4h']);
+function fmtTradeDate(dateStr, interval) {
+  if (!dateStr) return '—';
+  const datePart = dateStr.slice(0, 10);
+  if (!INTRADAY_INTERVALS.has(interval)) return datePart;
+  const timePart = dateStr.slice(11, 16);
+  return timePart ? `${datePart} ${timePart}` : datePart;
 }
 
 // Allow Enter key in symbol field

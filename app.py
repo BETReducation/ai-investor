@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory, Response
+from flask import Flask, jsonify, request, send_from_directory, Response, session
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from functools import wraps
@@ -25,6 +25,7 @@ from datetime import timedelta
 import datetime as _dt
 import base64
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from api.indicators import calculate_all
 from api.signals import score_signals
@@ -33,6 +34,10 @@ from api.metrics import calculate_metrics
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
+# Railway (and most PaaS hosts) terminate TLS at an edge proxy and forward requests
+# over plain HTTP, so without this Flask sees every request as insecure — which
+# breaks Secure-cookie handling (session + remember-me) behind the proxy.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 _is_production = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("PRODUCTION")
 _allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
@@ -993,6 +998,9 @@ def tools_signals(): return send_from_directory("static", "signal_config.html")
 @app.route("/tools/portfolio")
 def tools_portfolio(): return send_from_directory("static", "portfolio-balancer.html")
 
+@app.route("/tools/calculator")
+def tools_calculator(): return send_from_directory("static", "calculator.html")
+
 @app.route("/arena")
 def arena(): return send_from_directory("static", "arena.html")
 
@@ -1136,6 +1144,7 @@ def api_register():
     }
     _save_users(users)
 
+    session.permanent = True
     login_user(User(username, "power_user"), remember=True)
     return jsonify({"success": True, "username": username, "tier": "power_user", "preferences": {}, "landing_page": "/"})
 
@@ -1156,7 +1165,9 @@ def api_login():
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    login_user(User(username, user_data.get("tier", "basic")), remember=True)
+    stay_signed_in = user_data.get("preferences", {}).get("stay_signed_in", True)
+    session.permanent = bool(stay_signed_in)
+    login_user(User(username, user_data.get("tier", "basic")), remember=bool(stay_signed_in))
     return jsonify({
         "success": True,
         "username": username,
@@ -1353,7 +1364,7 @@ def load_preferences():
 LANDING_PAGE_CHOICES = {
     "/",
     "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro",
-    "/tools", "/tools/signals", "/backtester", "/tools/portfolio",
+    "/tools", "/tools/signals", "/backtester", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
     "/partners", "/profile",
@@ -1375,6 +1386,7 @@ def api_get_profile():
         "investor_type":  profile.get("investor_type", "beginner"),
         "profile_picture": profile.get("profile_picture", ""),
         "landing_page":   profile.get("landing_page", "/"),
+        "preferences":    user_data.get("preferences", {}),
     })
 
 
