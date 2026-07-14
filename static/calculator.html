@@ -195,8 +195,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="form-grid cols3">
         <div class="form-group">
           <div class="form-label">Currency Pair</div>
-          <select id="pPair" class="form-input" onchange="calcPip()"></select>
-          <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics symbol list. Exotic pip precision can vary slightly by broker — check your MT5 terminal if the value looks off.</div>
+          <select id="pPair" class="form-input" onchange="onPipPairChange()"></select>
+          <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics / Metals symbol list. Exotic and metals pip precision can vary by broker — check your MT5 terminal if the value looks off.</div>
         </div>
         <div class="form-group">
           <div class="form-label">Lot Size</div>
@@ -217,6 +217,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="form-group" id="pCustomUnitsWrap" style="display:none;">
           <div class="form-label">Custom Units Per Lot</div>
           <input type="number" id="pCustomUnits" class="form-input" value="100000" min="0" step="any" oninput="calcPip()">
+          <div class="form-hint">For metals this is troy ounces per lot — commonly 100oz (Gold/Platinum/Palladium) or 5,000oz (Silver), but it varies by broker. Check Symbol Specification in MT5 and adjust if different.</div>
         </div>
         <div class="form-group">
           <div class="form-label">Quote &rarr; Account Currency Rate</div>
@@ -405,14 +406,31 @@ function fmtMoney(n) {
 
 // ── Pip Calculator ──────────────────────────────────────────────────────────
 // Pip size is 0.01 for any pair quoted in JPY (the pair's second symbol),
-// 0.0001 for everything else. Pip value (in quote currency) = pipSize *
-// units traded; converting to the account currency just needs the
-// quote->account exchange rate.
+// 0.0001 for everything else, or a metal-specific value for XAU/XAG/XPT/XPD
+// pairs. Pip value (in quote currency) = pipSize * units traded; converting
+// to the account currency just needs the quote->account exchange rate.
+const METAL_INFO = {
+  XAU: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Gold — 100 troy oz/lot is the common convention
+  XAG: { pipSize: 0.001, decimals: 3, contractSize: 5000 },  // Silver — 5,000 troy oz/lot is the common convention
+  XPT: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Platinum
+  XPD: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Palladium
+};
+function isMetal(pair) { return Object.prototype.hasOwnProperty.call(METAL_INFO, pair.slice(0, 3)); }
 function pipSizeFor(pair) {
+  if (isMetal(pair)) return METAL_INFO[pair.slice(0, 3)].pipSize;
   return pair.endsWith('JPY') ? 0.01 : 0.0001;
 }
+function decimalsFor(pair) {
+  if (isMetal(pair)) return METAL_INFO[pair.slice(0, 3)].decimals;
+  return pair.endsWith('JPY') ? 3 : 5;
+}
+function fmtPipSize(pipSize) {
+  if (pipSize >= 0.01) return pipSize.toFixed(2);
+  if (pipSize >= 0.001) return pipSize.toFixed(3);
+  return pipSize.toFixed(4);
+}
 
-// Mirrors MetaTrader 5's standard Majors / Minors / Exotics symbol groupings.
+// Mirrors MetaTrader 5's standard Majors / Minors / Exotics / Metals symbol groupings.
 const FX_PAIR_GROUPS = {
   Majors: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'],
   Minors: [
@@ -428,6 +446,11 @@ const FX_PAIR_GROUPS = {
     'GBPZAR', 'GBPTRY', 'GBPSGD', 'GBPNOK', 'GBPSEK', 'GBPDKK', 'GBPPLN',
     'AUDSGD', 'NZDSGD', 'CHFSGD', 'CADSGD',
     'SGDJPY', 'TRYJPY', 'ZARJPY', 'MXNJPY', 'NOKJPY', 'SEKJPY', 'HKDJPY', 'CNHJPY',
+  ],
+  Metals: [
+    'XAUUSD', 'XAUEUR', 'XAUGBP', 'XAUAUD', 'XAUJPY', 'XAUCHF',
+    'XAGUSD', 'XAGEUR', 'XAGGBP', 'XAGAUD', 'XAGJPY', 'XAGCHF',
+    'XPTUSD', 'XPDUSD',
   ],
 };
 
@@ -451,8 +474,30 @@ populatePairSelect(document.getElementById('pPair'), 'EURUSD');
 populatePairSelect(document.getElementById('srPair'), 'EURUSD');
 
 function onLotTypeChange() {
+  document.getElementById('pLotType').dataset.autoSet = '';
   const type = document.getElementById('pLotType').value;
   document.getElementById('pCustomUnitsWrap').style.display = type === 'custom' ? 'flex' : 'none';
+  calcPip();
+}
+
+// Metals don't trade in 100,000-unit forex lots, so switch the lot-size
+// selector to a metal-appropriate custom contract size automatically when a
+// metals pair is chosen, and back to a standard lot when leaving metals
+// (but only if we're the ones who set it — leave a manual choice alone).
+function onPipPairChange() {
+  const pair = document.getElementById('pPair').value;
+  const lotTypeEl = document.getElementById('pLotType');
+  if (isMetal(pair)) {
+    const info = METAL_INFO[pair.slice(0, 3)];
+    lotTypeEl.value = 'custom';
+    lotTypeEl.dataset.autoSet = '1';
+    document.getElementById('pCustomUnits').value = info.contractSize;
+    document.getElementById('pCustomUnitsWrap').style.display = 'flex';
+  } else if (lotTypeEl.dataset.autoSet === '1') {
+    lotTypeEl.value = '100000';
+    lotTypeEl.dataset.autoSet = '';
+    document.getElementById('pCustomUnitsWrap').style.display = 'none';
+  }
   calcPip();
 }
 
@@ -473,12 +518,15 @@ function calcPip() {
   const pipValuePerLot = pipValuePerLotQuote * convRate;
   const pipValueTotal = pipValuePerLot * lots;
 
-  document.getElementById('pPipSize').textContent = pipSize.toFixed(pipSize === 0.01 ? 2 : 4);
+  document.getElementById('pPipSize').textContent = fmtPipSize(pipSize);
   document.getElementById('pPipValuePerLot').textContent = fmtMoney(pipValuePerLot);
   document.getElementById('pPipValueTotal').textContent = fmtMoney(pipValueTotal);
 
-  // Scale to a standard 100,000-unit lot for the Risk -> Position Size box below.
-  window.pipValueStdLot = pipSize * 100000 * convRate;
+  // Scale to this instrument's standard lot (100,000 units for forex, or the
+  // metal's typical contract size) for the Risk -> Position Size box below.
+  const stdLotUnits = isMetal(pair) ? METAL_INFO[pair.slice(0, 3)].contractSize : 100000;
+  window.pipValueStdLot = pipSize * stdLotUnits * convRate;
+  window.stdLotUnits = stdLotUnits;
   calcRisk();
 }
 
@@ -496,7 +544,7 @@ function calcSR() {
   const warnBox = document.getElementById('srWarning');
   warnBox.style.display = 'none';
 
-  const decimals = pipSize === 0.01 ? 3 : 5;
+  const decimals = decimalsFor(pair);
 
   if (!isFinite(price) || price <= 0) {
     supportEl.textContent = '—';
@@ -565,12 +613,13 @@ function calcRisk() {
   const pipValueStdLot = window.pipValueStdLot || 0;
   const sym = currencySymbol();
 
+  const stdLotUnits = window.stdLotUnits || 100000;
   let lots = 0;
   if (stopPips > 0 && pipValueStdLot > 0) {
     lots = risk / (stopPips * pipValueStdLot);
   }
-  document.getElementById('rLotsResult').textContent = lots > 0 ? lots.toFixed(2) + ' standard lots' : '—';
-  document.getElementById('rUnitsResult').textContent = lots > 0 ? Math.round(lots * 100000).toLocaleString() + ' units' : '—';
+  document.getElementById('rLotsResult').textContent = lots > 0 ? lots.toFixed(2) + ' lots' : '—';
+  document.getElementById('rUnitsResult').textContent = lots > 0 ? Math.round(lots * stdLotUnits).toLocaleString() + ' units' : '—';
   document.getElementById('rRiskAmountLabel').textContent = sym ? `Risk Amount (${sym})` : 'Risk Amount';
 }
 
