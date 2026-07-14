@@ -196,7 +196,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="form-group">
           <div class="form-label">Currency Pair</div>
           <select id="pPair" class="form-input" onchange="onPipPairChange()"></select>
-          <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics / Metals symbol list. Exotic and metals pip precision can vary by broker — check your MT5 terminal if the value looks off.</div>
+          <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics / Metals / Oil symbol list. Exotic, metals, and oil pip precision can vary by broker — check your MT5 terminal if the value looks off.</div>
         </div>
         <div class="form-group">
           <div class="form-label">Lot Size</div>
@@ -217,7 +217,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="form-group" id="pCustomUnitsWrap" style="display:none;">
           <div class="form-label">Custom Units Per Lot</div>
           <input type="number" id="pCustomUnits" class="form-input" value="100000" min="0" step="any" oninput="calcPip()">
-          <div class="form-hint">For metals this is troy ounces per lot — commonly 100oz (Gold/Platinum/Palladium) or 5,000oz (Silver), but it varies by broker. Check Symbol Specification in MT5 and adjust if different.</div>
+          <div class="form-hint">For metals this is troy ounces per lot — commonly 100oz (Gold/Platinum/Palladium) or 5,000oz (Silver). For oil (WTI/Brent) it's barrels per lot — commonly 1,000. Both vary by broker — check Symbol Specification in MT5 and adjust if different.</div>
         </div>
         <div class="form-group">
           <div class="form-label">Quote &rarr; Account Currency Rate</div>
@@ -406,22 +406,25 @@ function fmtMoney(n) {
 
 // ── Pip Calculator ──────────────────────────────────────────────────────────
 // Pip size is 0.01 for any pair quoted in JPY (the pair's second symbol),
-// 0.0001 for everything else, or a metal-specific value for XAU/XAG/XPT/XPD
-// pairs. Pip value (in quote currency) = pipSize * units traded; converting
-// to the account currency just needs the quote->account exchange rate.
-const METAL_INFO = {
-  XAU: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Gold — 100 troy oz/lot is the common convention
-  XAG: { pipSize: 0.001, decimals: 3, contractSize: 5000 },  // Silver — 5,000 troy oz/lot is the common convention
-  XPT: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Platinum
-  XPD: { pipSize: 0.01,  decimals: 2, contractSize: 100 },   // Palladium
+// 0.0001 for everything else, or a commodity-specific value for the
+// XAU/XAG/XPT/XPD (metals) and XTI/XBR (oil) symbols below. Pip value (in
+// quote currency) = pipSize * units traded; converting to the account
+// currency just needs the quote->account exchange rate.
+const COMMODITY_INFO = {
+  XAU: { pipSize: 0.01,  decimals: 2, contractSize: 100 },    // Gold — 100 troy oz/lot is the common convention
+  XAG: { pipSize: 0.001, decimals: 3, contractSize: 5000 },   // Silver — 5,000 troy oz/lot is the common convention
+  XPT: { pipSize: 0.01,  decimals: 2, contractSize: 100 },    // Platinum
+  XPD: { pipSize: 0.01,  decimals: 2, contractSize: 100 },    // Palladium
+  XTI: { pipSize: 0.01,  decimals: 2, contractSize: 1000 },   // WTI Crude / US Oil — 1,000 barrels/lot is the common convention
+  XBR: { pipSize: 0.01,  decimals: 2, contractSize: 1000 },   // Brent Crude / UK Oil — 1,000 barrels/lot is the common convention
 };
-function isMetal(pair) { return Object.prototype.hasOwnProperty.call(METAL_INFO, pair.slice(0, 3)); }
+function isCommodity(pair) { return Object.prototype.hasOwnProperty.call(COMMODITY_INFO, pair.slice(0, 3)); }
 function pipSizeFor(pair) {
-  if (isMetal(pair)) return METAL_INFO[pair.slice(0, 3)].pipSize;
+  if (isCommodity(pair)) return COMMODITY_INFO[pair.slice(0, 3)].pipSize;
   return pair.endsWith('JPY') ? 0.01 : 0.0001;
 }
 function decimalsFor(pair) {
-  if (isMetal(pair)) return METAL_INFO[pair.slice(0, 3)].decimals;
+  if (isCommodity(pair)) return COMMODITY_INFO[pair.slice(0, 3)].decimals;
   return pair.endsWith('JPY') ? 3 : 5;
 }
 function fmtPipSize(pipSize) {
@@ -452,9 +455,17 @@ const FX_PAIR_GROUPS = {
     'XAGUSD', 'XAGEUR', 'XAGGBP', 'XAGAUD', 'XAGJPY', 'XAGCHF',
     'XPTUSD', 'XPDUSD',
   ],
+  Oil: ['XTIUSD', 'XBRUSD'],
 };
 
-function fmtPairLabel(pair) { return pair.slice(0, 3) + '/' + pair.slice(3); }
+// XTIUSD/XBRUSD is the most common MT5 naming (used by e.g. Exness, XM,
+// FBS), but plenty of brokers list the same instruments as USOIL/UKOIL —
+// the label spells out both so either naming is recognisable.
+const PAIR_LABEL_OVERRIDES = {
+  XTIUSD: 'WTI Crude / USD (US Oil)',
+  XBRUSD: 'Brent Crude / USD (UK Oil)',
+};
+function fmtPairLabel(pair) { return PAIR_LABEL_OVERRIDES[pair] || (pair.slice(0, 3) + '/' + pair.slice(3)); }
 
 function populatePairSelect(selectEl, defaultPair) {
   Object.entries(FX_PAIR_GROUPS).forEach(([groupName, pairs]) => {
@@ -480,15 +491,16 @@ function onLotTypeChange() {
   calcPip();
 }
 
-// Metals don't trade in 100,000-unit forex lots, so switch the lot-size
-// selector to a metal-appropriate custom contract size automatically when a
-// metals pair is chosen, and back to a standard lot when leaving metals
-// (but only if we're the ones who set it — leave a manual choice alone).
+// Metals and oil don't trade in 100,000-unit forex lots, so switch the
+// lot-size selector to a commodity-appropriate custom contract size
+// automatically when one of those pairs is chosen, and back to a standard
+// lot when leaving them (but only if we're the ones who set it — leave a
+// manual choice alone).
 function onPipPairChange() {
   const pair = document.getElementById('pPair').value;
   const lotTypeEl = document.getElementById('pLotType');
-  if (isMetal(pair)) {
-    const info = METAL_INFO[pair.slice(0, 3)];
+  if (isCommodity(pair)) {
+    const info = COMMODITY_INFO[pair.slice(0, 3)];
     lotTypeEl.value = 'custom';
     lotTypeEl.dataset.autoSet = '1';
     document.getElementById('pCustomUnits').value = info.contractSize;
@@ -523,8 +535,8 @@ function calcPip() {
   document.getElementById('pPipValueTotal').textContent = fmtMoney(pipValueTotal);
 
   // Scale to this instrument's standard lot (100,000 units for forex, or the
-  // metal's typical contract size) for the Risk -> Position Size box below.
-  const stdLotUnits = isMetal(pair) ? METAL_INFO[pair.slice(0, 3)].contractSize : 100000;
+  // commodity's typical contract size) for the Risk -> Position Size box below.
+  const stdLotUnits = isCommodity(pair) ? COMMODITY_INFO[pair.slice(0, 3)].contractSize : 100000;
   window.pipValueStdLot = pipSize * stdLotUnits * convRate;
   window.stdLotUnits = stdLotUnits;
   calcRisk();
