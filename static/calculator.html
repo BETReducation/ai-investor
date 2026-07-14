@@ -182,6 +182,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
           <div class="kelly-tier-amt" id="kFullAmt">—</div>
         </div>
       </div>
+      <div class="form-hint" style="margin-top:10px;">The percentage in each box is the share of your <strong>total account balance</strong> (the figure entered above, not your last trade or profit target) to risk on this single trade. The amount underneath it is that percentage converted into your account currency — e.g. Half Kelly at 5.0% on a £10,000 account risks £500 on the trade.</div>
 
       <div class="calc-note" id="kWarning" style="display:none;"></div>
     </div>
@@ -194,25 +195,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="form-grid cols3">
         <div class="form-group">
           <div class="form-label">Currency Pair</div>
-          <select id="pPair" class="form-input" onchange="calcPip()">
-            <optgroup label="Majors">
-              <option value="EURUSD">EUR/USD</option>
-              <option value="GBPUSD">GBP/USD</option>
-              <option value="USDJPY">USD/JPY</option>
-              <option value="USDCHF">USD/CHF</option>
-              <option value="AUDUSD">AUD/USD</option>
-              <option value="USDCAD">USD/CAD</option>
-              <option value="NZDUSD">NZD/USD</option>
-            </optgroup>
-            <optgroup label="Crosses">
-              <option value="EURGBP">EUR/GBP</option>
-              <option value="EURJPY">EUR/JPY</option>
-              <option value="GBPJPY">GBP/JPY</option>
-              <option value="EURCHF">EUR/CHF</option>
-              <option value="AUDJPY">AUD/JPY</option>
-              <option value="CHFJPY">CHF/JPY</option>
-            </optgroup>
-          </select>
+          <select id="pPair" class="form-input" onchange="calcPip()"></select>
+          <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics symbol list. Exotic pip precision can vary slightly by broker — check your MT5 terminal if the value looks off.</div>
         </div>
         <div class="form-group">
           <div class="form-label">Lot Size</div>
@@ -257,26 +241,54 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </div>
     </div>
 
-    <!-- RISK -> POSITION SIZE -->
+    <!-- SUPPORT / RESISTANCE -->
     <div class="calc-card">
-      <div class="calc-card-header"><span class="icon">⚖️</span><span class="calc-card-title">Risk → Position Size</span></div>
-      <div class="calc-card-sub">Combine your Kelly-suggested risk amount with a stop-loss distance (in pips) to get the exact lot size to trade.</div>
+      <div class="calc-card-header"><span class="icon">📐</span><span class="calc-card-title">Support / Resistance Distance</span></div>
+      <div class="calc-card-sub">Enter the current price alongside a support and/or resistance level to see how far price is from each — in price terms, pips, and percentage.</div>
 
       <div class="form-grid cols3">
         <div class="form-group">
-          <div class="form-label">Risk Amount</div>
-          <input type="number" id="rRiskAmount" class="form-input" value="0" min="0" step="any" oninput="calcRisk()">
+          <div class="form-label">Currency Pair</div>
+          <select id="srPair" class="form-input" onchange="calcSR()"></select>
         </div>
         <div class="form-group">
-          <div class="form-label">Stop Loss (pips)</div>
-          <input type="number" id="rStopPips" class="form-input" value="20" min="0" step="any" oninput="calcRisk()">
+          <div class="form-label">Current Price</div>
+          <input type="number" id="srPrice" class="form-input" value="" min="0" step="any" oninput="calcSR()">
         </div>
         <div class="form-group">
-          <div class="form-label">Pip Value (per standard lot)</div>
-          <input type="number" id="rPipValueStdLot" class="form-input" value="0" min="0" step="any" oninput="calcRisk()">
+          <div class="form-label">Support Level</div>
+          <input type="number" id="srSupport" class="form-input" value="" min="0" step="any" oninput="calcSR()">
         </div>
       </div>
-      <div class="form-hint">Risk Amount and Pip Value auto-fill from the boxes above (Half Kelly £ risk, and this pair's pip value scaled to a standard 100,000-unit lot) — override either if you want to test a different scenario.</div>
+      <div class="form-grid" style="margin-top:18px;">
+        <div class="form-group">
+          <div class="form-label">Resistance Level</div>
+          <input type="number" id="srResistance" class="form-input" value="" min="0" step="any" oninput="calcSR()">
+        </div>
+      </div>
+      <div class="form-hint">Leave either level blank if you only want to measure distance to one of them.</div>
+
+      <div class="result-block">
+        <div class="result-row">
+          <div class="result-label">Distance to Support</div>
+          <div class="result-val" id="srSupportResult">—</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Distance to Resistance</div>
+          <div class="result-val" id="srResistanceResult">—</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Price position in range</div>
+          <div class="result-val" id="srRangeResult">—</div>
+        </div>
+      </div>
+      <div class="calc-note" id="srWarning" style="display:none;"></div>
+    </div>
+
+    <!-- RISK -> POSITION SIZE -->
+    <div class="calc-card">
+      <div class="calc-card-header"><span class="icon">⚖️</span><span class="calc-card-title">Risk → Position Size</span></div>
+      <div class="calc-card-sub">Combine your Kelly-suggested risk amount with a stop-loss distance (in pips) to get the exact lot size to trade. Pip value is taken automatically from the Pip Calculator box above (based on the pair and lot size selected there).</div>
 
       <div class="result-block">
         <div class="result-row">
@@ -288,6 +300,31 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
           <div class="result-val" id="rUnitsResult">—</div>
         </div>
       </div>
+
+      <div class="form-grid cols3" style="margin-top:20px;">
+        <div class="form-group">
+          <div class="form-label" id="rRiskAmountLabel">Risk Amount</div>
+          <input type="number" id="rRiskAmount" class="form-input" value="0" min="0" step="any" oninput="calcRisk()">
+        </div>
+        <div class="form-group">
+          <div class="form-label">Currency</div>
+          <select id="rCurrency" class="form-input" onchange="onCurrencyChange()">
+            <option value="GBP">£ GBP</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="OTHER">Other…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Stop Loss (pips)</div>
+          <input type="number" id="rStopPips" class="form-input" value="20" min="0" step="any" oninput="calcRisk()">
+        </div>
+      </div>
+      <div class="form-group" id="rCustomCurrencyWrap" style="display:none; margin-top:14px;">
+        <div class="form-label">Currency Symbol / Code</div>
+        <input type="text" id="rCustomCurrency" class="form-input" placeholder="e.g. Fr, A$, kr" maxlength="5" oninput="calcRisk()">
+      </div>
+      <div class="form-hint">Risk Amount auto-fills from the Half Kelly amount above — override it to test a different scenario. Pick whichever currency your account is denominated in; "Other" lets you type a custom symbol or code (e.g. Fr, A$, kr).</div>
     </div>
 
   </div>
@@ -367,10 +404,51 @@ function fmtMoney(n) {
 }
 
 // ── Pip Calculator ──────────────────────────────────────────────────────────
-// Pip size is 0.01 for pairs quoted in JPY, 0.0001 for everything else.
-// Pip value (in quote currency) = pipSize * units traded; converting to the
-// account currency just needs the quote->account exchange rate.
-const JPY_PAIRS = new Set(['USDJPY', 'EURJPY', 'GBPJPY', 'AUDJPY', 'CHFJPY']);
+// Pip size is 0.01 for any pair quoted in JPY (the pair's second symbol),
+// 0.0001 for everything else. Pip value (in quote currency) = pipSize *
+// units traded; converting to the account currency just needs the
+// quote->account exchange rate.
+function pipSizeFor(pair) {
+  return pair.endsWith('JPY') ? 0.01 : 0.0001;
+}
+
+// Mirrors MetaTrader 5's standard Majors / Minors / Exotics symbol groupings.
+const FX_PAIR_GROUPS = {
+  Majors: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD'],
+  Minors: [
+    'EURGBP', 'EURJPY', 'EURCHF', 'EURAUD', 'EURCAD', 'EURNZD',
+    'GBPJPY', 'GBPCHF', 'GBPAUD', 'GBPCAD', 'GBPNZD',
+    'AUDJPY', 'AUDCHF', 'AUDCAD', 'AUDNZD',
+    'CADJPY', 'CADCHF', 'CHFJPY', 'NZDJPY', 'NZDCHF', 'NZDCAD',
+  ],
+  Exotics: [
+    'USDTRY', 'USDZAR', 'USDMXN', 'USDSGD', 'USDHKD', 'USDNOK', 'USDSEK', 'USDDKK',
+    'USDPLN', 'USDHUF', 'USDCZK', 'USDCNH', 'USDTHB', 'USDILS', 'USDSAR', 'USDAED',
+    'EURTRY', 'EURZAR', 'EURMXN', 'EURSGD', 'EURNOK', 'EURSEK', 'EURDKK', 'EURPLN', 'EURHUF', 'EURCZK',
+    'GBPZAR', 'GBPTRY', 'GBPSGD', 'GBPNOK', 'GBPSEK', 'GBPDKK', 'GBPPLN',
+    'AUDSGD', 'NZDSGD', 'CHFSGD', 'CADSGD',
+    'SGDJPY', 'TRYJPY', 'ZARJPY', 'MXNJPY', 'NOKJPY', 'SEKJPY', 'HKDJPY', 'CNHJPY',
+  ],
+};
+
+function fmtPairLabel(pair) { return pair.slice(0, 3) + '/' + pair.slice(3); }
+
+function populatePairSelect(selectEl, defaultPair) {
+  Object.entries(FX_PAIR_GROUPS).forEach(([groupName, pairs]) => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = groupName;
+    pairs.forEach(pair => {
+      const opt = document.createElement('option');
+      opt.value = pair;
+      opt.textContent = fmtPairLabel(pair);
+      if (pair === defaultPair) opt.selected = true;
+      optgroup.appendChild(opt);
+    });
+    selectEl.appendChild(optgroup);
+  });
+}
+populatePairSelect(document.getElementById('pPair'), 'EURUSD');
+populatePairSelect(document.getElementById('srPair'), 'EURUSD');
 
 function onLotTypeChange() {
   const type = document.getElementById('pLotType').value;
@@ -390,7 +468,7 @@ function calcPip() {
   const convRate = parseFloat(document.getElementById('pConvRate').value) || 0;
   const units = unitsPerLot();
 
-  const pipSize = JPY_PAIRS.has(pair) ? 0.01 : 0.0001;
+  const pipSize = pipSizeFor(pair);
   const pipValuePerLotQuote = pipSize * units;
   const pipValuePerLot = pipValuePerLotQuote * convRate;
   const pipValueTotal = pipValuePerLot * lots;
@@ -399,21 +477,93 @@ function calcPip() {
   document.getElementById('pPipValuePerLot').textContent = fmtMoney(pipValuePerLot);
   document.getElementById('pPipValueTotal').textContent = fmtMoney(pipValueTotal);
 
-  // Scale to a standard 100,000-unit lot for the Risk -> Position Size box,
-  // regardless of what lot size was selected above.
-  const pipValueStdLot = pipSize * 100000 * convRate;
-  const stdLotInput = document.getElementById('rPipValueStdLot');
-  if (!stdLotInput.dataset.userEdited) {
-    stdLotInput.value = pipValueStdLot.toFixed(4);
-  }
+  // Scale to a standard 100,000-unit lot for the Risk -> Position Size box below.
+  window.pipValueStdLot = pipSize * 100000 * convRate;
   calcRisk();
 }
 
+// ── Support / Resistance Distance ────────────────────────────────────────────
+function calcSR() {
+  const pair = document.getElementById('srPair').value;
+  const pipSize = pipSizeFor(pair);
+  const price = parseFloat(document.getElementById('srPrice').value);
+  const support = parseFloat(document.getElementById('srSupport').value);
+  const resistance = parseFloat(document.getElementById('srResistance').value);
+
+  const supportEl = document.getElementById('srSupportResult');
+  const resistanceEl = document.getElementById('srResistanceResult');
+  const rangeEl = document.getElementById('srRangeResult');
+  const warnBox = document.getElementById('srWarning');
+  warnBox.style.display = 'none';
+
+  const decimals = pipSize === 0.01 ? 3 : 5;
+
+  if (!isFinite(price) || price <= 0) {
+    supportEl.textContent = '—';
+    resistanceEl.textContent = '—';
+    rangeEl.textContent = '—';
+    return;
+  }
+
+  if (isFinite(support) && support > 0) {
+    const diff = price - support;
+    const pips = diff / pipSize;
+    const pct = (diff / price) * 100;
+    supportEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(decimals)} (${pips >= 0 ? '+' : ''}${pips.toFixed(1)} pips, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+    supportEl.className = 'result-val' + (diff < 0 ? ' bad' : '');
+  } else {
+    supportEl.textContent = '—';
+    supportEl.className = 'result-val';
+  }
+
+  if (isFinite(resistance) && resistance > 0) {
+    const diff = resistance - price;
+    const pips = diff / pipSize;
+    const pct = (diff / price) * 100;
+    resistanceEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(decimals)} (${pips >= 0 ? '+' : ''}${pips.toFixed(1)} pips, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+    resistanceEl.className = 'result-val' + (diff < 0 ? ' bad' : '');
+  } else {
+    resistanceEl.textContent = '—';
+    resistanceEl.className = 'result-val';
+  }
+
+  if (isFinite(support) && support > 0 && isFinite(resistance) && resistance > 0) {
+    if (resistance <= support) {
+      warnBox.style.display = 'block';
+      warnBox.textContent = 'Resistance should be above support — double check the two levels.';
+      rangeEl.textContent = '—';
+    } else {
+      const posPct = ((price - support) / (resistance - support)) * 100;
+      rangeEl.textContent = posPct.toFixed(1) + '% of the range';
+      if (posPct < 0 || posPct > 100) {
+        warnBox.style.display = 'block';
+        warnBox.textContent = 'Current price is outside the support/resistance range.';
+      }
+    }
+  } else {
+    rangeEl.textContent = '—';
+  }
+}
+
 // ── Risk -> Position Size ────────────────────────────────────────────────────
+const CURRENCY_SYMBOLS = { GBP: '£', USD: '$', EUR: '€' };
+
+function currencySymbol() {
+  const choice = document.getElementById('rCurrency').value;
+  if (choice === 'OTHER') return document.getElementById('rCustomCurrency').value.trim() || '';
+  return CURRENCY_SYMBOLS[choice] || '';
+}
+
+function onCurrencyChange() {
+  document.getElementById('rCustomCurrencyWrap').style.display = document.getElementById('rCurrency').value === 'OTHER' ? 'flex' : 'none';
+  calcRisk();
+}
+
 function calcRisk() {
   const risk = parseFloat(document.getElementById('rRiskAmount').value) || 0;
   const stopPips = parseFloat(document.getElementById('rStopPips').value) || 0;
-  const pipValueStdLot = parseFloat(document.getElementById('rPipValueStdLot').value) || 0;
+  const pipValueStdLot = window.pipValueStdLot || 0;
+  const sym = currencySymbol();
 
   let lots = 0;
   if (stopPips > 0 && pipValueStdLot > 0) {
@@ -421,14 +571,14 @@ function calcRisk() {
   }
   document.getElementById('rLotsResult').textContent = lots > 0 ? lots.toFixed(2) + ' standard lots' : '—';
   document.getElementById('rUnitsResult').textContent = lots > 0 ? Math.round(lots * 100000).toLocaleString() + ' units' : '—';
+  document.getElementById('rRiskAmountLabel').textContent = sym ? `Risk Amount (${sym})` : 'Risk Amount';
 }
 
-['rRiskAmount', 'rPipValueStdLot'].forEach(id => {
-  document.getElementById(id).addEventListener('input', function () { this.dataset.userEdited = '1'; });
-});
+document.getElementById('rRiskAmount').addEventListener('input', function () { this.dataset.userEdited = '1'; });
 
 calcKelly();
 calcPip();
+calcSR();
 
 // ── Nav / theme boilerplate (shared pattern across site pages) ──────────────
 (async function checkAuth() {
