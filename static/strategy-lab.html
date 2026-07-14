@@ -1899,6 +1899,19 @@ async function initMySymbols() {
 }
 initMySymbols();
 
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      }
+    }
+  } catch {}
+})();
+
 function onBtSymbolInput(q) {
   // A real keystroke (as opposed to picking a search result, which sets .value
   // programmatically and never fires oninput) means whatever was previously picked no
