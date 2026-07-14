@@ -133,7 +133,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
     <div class="section-badge">Risk Tools</div>
     <h1 class="hero-title">Position Size <span class="accent">Calculator</span></h1>
-    <p class="hero-sub">Work out how much to risk with the Kelly Criterion, then convert that risk into an exact lot size with the pip calculator — the two work together below.</p>
+    <p class="hero-sub">Work out how much to risk with the Kelly Criterion, then use the calculator to size that risk against a target price and stop loss — the boxes work together below.</p>
   </div>
 </div>
 
@@ -187,100 +187,42 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="calc-note" id="kWarning" style="display:none;"></div>
     </div>
 
-    <!-- PIP CALCULATOR -->
+    <!-- CALCULATOR -->
     <div class="calc-card">
-      <div class="calc-card-header"><span class="icon">💱</span><span class="calc-card-title">Pip Calculator</span></div>
-      <div class="calc-card-sub">Work out the value of one pip for a currency pair and lot size, then use it to convert a £/$ risk amount (e.g. from the Kelly box above) into a position size.</div>
+      <div class="calc-card-header"><span class="icon">📐</span><span class="calc-card-title">Calculator</span></div>
+      <div class="calc-card-sub">Enter the current price alongside a target price for a currency pair to see the distance between them in price terms, pips, and percentage, then add a lot size to see what that move is worth.</div>
 
       <div class="form-grid cols3">
         <div class="form-group">
           <div class="form-label">Currency Pair</div>
-          <select id="pPair" class="form-input" onchange="onPipPairChange()"></select>
+          <select id="srPair" class="form-input" onchange="calcCalculator()"></select>
           <div class="form-hint">Full MetaTrader 5 Majors / Minors / Exotics / Metals / Oil symbol list. Exotic, metals, and oil pip precision can vary by broker — check your MT5 terminal if the value looks off.</div>
         </div>
         <div class="form-group">
-          <div class="form-label">Lot Size</div>
-          <select id="pLotType" class="form-input" onchange="onLotTypeChange()">
-            <option value="100000">Standard (100,000 units)</option>
-            <option value="10000">Mini (10,000 units)</option>
-            <option value="1000">Micro (1,000 units)</option>
-            <option value="custom">Custom units</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <div class="form-label"># of Lots</div>
-          <input type="number" id="pLots" class="form-input" value="1" min="0" step="any" oninput="calcPip()">
-        </div>
-      </div>
-
-      <div class="form-grid" style="margin-top:18px;">
-        <div class="form-group" id="pCustomUnitsWrap" style="display:none;">
-          <div class="form-label">Custom Units Per Lot</div>
-          <input type="number" id="pCustomUnits" class="form-input" value="100000" min="0" step="any" oninput="calcPip()">
-          <div class="form-hint">For metals this is troy ounces per lot — commonly 100oz (Gold/Platinum/Palladium) or 5,000oz (Silver). For oil (WTI/Brent) it's barrels per lot — commonly 1,000. Both vary by broker — check Symbol Specification in MT5 and adjust if different.</div>
-        </div>
-        <div class="form-group">
-          <div class="form-label">Quote &rarr; Account Currency Rate</div>
-          <input type="number" id="pConvRate" class="form-input" value="1" min="0" step="any" oninput="calcPip()">
-          <div class="form-hint">Leave at 1 if your account currency is the same as the pair's quote currency (the second symbol, e.g. USD in EUR/USD). Otherwise enter how much 1 unit of the quote currency is worth in your account currency.</div>
-        </div>
-      </div>
-
-      <div class="result-block">
-        <div class="result-row">
-          <div class="result-label">Pip size for this pair</div>
-          <div class="result-val" id="pPipSize">—</div>
-        </div>
-        <div class="result-row">
-          <div class="result-label">Pip value (per lot, in account currency)</div>
-          <div class="result-val" id="pPipValuePerLot">—</div>
-        </div>
-        <div class="result-row">
-          <div class="result-label">Total pip value (all lots)</div>
-          <div class="result-val hero" id="pPipValueTotal">—</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SUPPORT / RESISTANCE -->
-    <div class="calc-card">
-      <div class="calc-card-header"><span class="icon">📐</span><span class="calc-card-title">Support / Resistance Distance</span></div>
-      <div class="calc-card-sub">Enter the current price alongside a support and/or resistance level to see how far price is from each — in price terms, pips, and percentage.</div>
-
-      <div class="form-grid cols3">
-        <div class="form-group">
-          <div class="form-label">Currency Pair</div>
-          <select id="srPair" class="form-input" onchange="calcSR()"></select>
-        </div>
-        <div class="form-group">
           <div class="form-label">Current Price</div>
-          <input type="number" id="srPrice" class="form-input" value="" min="0" step="any" oninput="calcSR()">
+          <input type="number" id="srPrice" class="form-input" value="" min="0" step="any" oninput="calcCalculator()">
         </div>
         <div class="form-group">
-          <div class="form-label">Support Level</div>
-          <input type="number" id="srSupport" class="form-input" value="" min="0" step="any" oninput="calcSR()">
+          <div class="form-label">Target Price</div>
+          <input type="number" id="srTarget" class="form-input" value="" min="0" step="any" oninput="calcCalculator()">
         </div>
       </div>
       <div class="form-grid" style="margin-top:18px;">
         <div class="form-group">
-          <div class="form-label">Resistance Level</div>
-          <input type="number" id="srResistance" class="form-input" value="" min="0" step="any" oninput="calcSR()">
+          <div class="form-label">Lot Size</div>
+          <input type="number" id="srLotSize" class="form-input" value="1" min="0" step="any" oninput="calcCalculator()">
         </div>
       </div>
-      <div class="form-hint">Leave either level blank if you only want to measure distance to one of them.</div>
+      <div class="form-hint">Lot size is in standard lots (100,000 units for forex, or this pair's typical commodity contract size for metals/oil) — used to value the move to your target price below.</div>
 
       <div class="result-block">
         <div class="result-row">
-          <div class="result-label">Distance to Support</div>
-          <div class="result-val" id="srSupportResult">—</div>
+          <div class="result-label">Distance to Target</div>
+          <div class="result-val" id="srDistanceResult">—</div>
         </div>
         <div class="result-row">
-          <div class="result-label">Distance to Resistance</div>
-          <div class="result-val" id="srResistanceResult">—</div>
-        </div>
-        <div class="result-row">
-          <div class="result-label">Price position in range</div>
-          <div class="result-val" id="srRangeResult">—</div>
+          <div class="result-label">Value of move (quote currency, at entered lot size)</div>
+          <div class="result-val hero" id="srValueResult">—</div>
         </div>
       </div>
       <div class="calc-note" id="srWarning" style="display:none;"></div>
@@ -289,7 +231,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <!-- RISK -> POSITION SIZE -->
     <div class="calc-card">
       <div class="calc-card-header"><span class="icon">⚖️</span><span class="calc-card-title">Risk → Position Size</span></div>
-      <div class="calc-card-sub">Combine your Kelly-suggested risk amount with a stop-loss distance (in pips) to get the exact lot size to trade. Pip value is taken automatically from the Pip Calculator box above (based on the pair and lot size selected there).</div>
+      <div class="calc-card-sub">Combine your Kelly-suggested risk amount with a stop-loss distance (in pips) to get the exact lot size to trade. Pip value is taken automatically from the Calculator box above (based on the pair selected there).</div>
 
       <div class="result-block">
         <div class="result-row">
@@ -427,11 +369,6 @@ function decimalsFor(pair) {
   if (isCommodity(pair)) return COMMODITY_INFO[pair.slice(0, 3)].decimals;
   return pair.endsWith('JPY') ? 3 : 5;
 }
-function fmtPipSize(pipSize) {
-  if (pipSize >= 0.01) return pipSize.toFixed(2);
-  if (pipSize >= 0.001) return pipSize.toFixed(3);
-  return pipSize.toFixed(4);
-}
 
 // Mirrors MetaTrader 5's standard Majors / Minors / Exotics / Metals symbol groupings.
 const FX_PAIR_GROUPS = {
@@ -481,128 +418,50 @@ function populatePairSelect(selectEl, defaultPair) {
     selectEl.appendChild(optgroup);
   });
 }
-populatePairSelect(document.getElementById('pPair'), 'EURUSD');
 populatePairSelect(document.getElementById('srPair'), 'EURUSD');
 
-function onLotTypeChange() {
-  document.getElementById('pLotType').dataset.autoSet = '';
-  const type = document.getElementById('pLotType').value;
-  document.getElementById('pCustomUnitsWrap').style.display = type === 'custom' ? 'flex' : 'none';
-  calcPip();
-}
-
-// Metals and oil don't trade in 100,000-unit forex lots, so switch the
-// lot-size selector to a commodity-appropriate custom contract size
-// automatically when one of those pairs is chosen, and back to a standard
-// lot when leaving them (but only if we're the ones who set it — leave a
-// manual choice alone).
-function onPipPairChange() {
-  const pair = document.getElementById('pPair').value;
-  const lotTypeEl = document.getElementById('pLotType');
-  if (isCommodity(pair)) {
-    const info = COMMODITY_INFO[pair.slice(0, 3)];
-    lotTypeEl.value = 'custom';
-    lotTypeEl.dataset.autoSet = '1';
-    document.getElementById('pCustomUnits').value = info.contractSize;
-    document.getElementById('pCustomUnitsWrap').style.display = 'flex';
-  } else if (lotTypeEl.dataset.autoSet === '1') {
-    lotTypeEl.value = '100000';
-    lotTypeEl.dataset.autoSet = '';
-    document.getElementById('pCustomUnitsWrap').style.display = 'none';
-  }
-  calcPip();
-}
-
-function unitsPerLot() {
-  const type = document.getElementById('pLotType').value;
-  if (type === 'custom') return parseFloat(document.getElementById('pCustomUnits').value) || 0;
-  return parseFloat(type) || 0;
-}
-
-function calcPip() {
-  const pair = document.getElementById('pPair').value;
-  const lots = parseFloat(document.getElementById('pLots').value) || 0;
-  const convRate = parseFloat(document.getElementById('pConvRate').value) || 0;
-  const units = unitsPerLot();
-
-  const pipSize = pipSizeFor(pair);
-  const pipValuePerLotQuote = pipSize * units;
-  const pipValuePerLot = pipValuePerLotQuote * convRate;
-  const pipValueTotal = pipValuePerLot * lots;
-
-  document.getElementById('pPipSize').textContent = fmtPipSize(pipSize);
-  document.getElementById('pPipValuePerLot').textContent = fmtMoney(pipValuePerLot);
-  document.getElementById('pPipValueTotal').textContent = fmtMoney(pipValueTotal);
-
-  // Scale to this instrument's standard lot (100,000 units for forex, or the
-  // commodity's typical contract size) for the Risk -> Position Size box below.
-  const stdLotUnits = isCommodity(pair) ? COMMODITY_INFO[pair.slice(0, 3)].contractSize : 100000;
-  window.pipValueStdLot = pipSize * stdLotUnits * convRate;
-  window.stdLotUnits = stdLotUnits;
-  calcRisk();
-}
-
-// ── Support / Resistance Distance ────────────────────────────────────────────
-function calcSR() {
+// ── Calculator ────────────────────────────────────────────────────────────
+function calcCalculator() {
   const pair = document.getElementById('srPair').value;
   const pipSize = pipSizeFor(pair);
+  const decimals = decimalsFor(pair);
   const price = parseFloat(document.getElementById('srPrice').value);
-  const support = parseFloat(document.getElementById('srSupport').value);
-  const resistance = parseFloat(document.getElementById('srResistance').value);
+  const target = parseFloat(document.getElementById('srTarget').value);
+  const lotSize = parseFloat(document.getElementById('srLotSize').value) || 0;
 
-  const supportEl = document.getElementById('srSupportResult');
-  const resistanceEl = document.getElementById('srResistanceResult');
-  const rangeEl = document.getElementById('srRangeResult');
+  const distanceEl = document.getElementById('srDistanceResult');
+  const valueEl = document.getElementById('srValueResult');
   const warnBox = document.getElementById('srWarning');
   warnBox.style.display = 'none';
 
-  const decimals = decimalsFor(pair);
+  // Feed pip value into the Risk -> Position Size box below, the same role
+  // the old standalone Pip Calculator played.
+  const stdLotUnits = isCommodity(pair) ? COMMODITY_INFO[pair.slice(0, 3)].contractSize : 100000;
+  const pipValuePerStdLot = pipSize * stdLotUnits;
+  window.pipValueStdLot = pipValuePerStdLot;
+  window.stdLotUnits = stdLotUnits;
 
   if (!isFinite(price) || price <= 0) {
-    supportEl.textContent = '—';
-    resistanceEl.textContent = '—';
-    rangeEl.textContent = '—';
+    distanceEl.textContent = '—';
+    valueEl.textContent = '—';
+    calcRisk();
     return;
   }
 
-  if (isFinite(support) && support > 0) {
-    const diff = price - support;
+  if (isFinite(target) && target > 0) {
+    const diff = price - target;
     const pips = diff / pipSize;
     const pct = (diff / price) * 100;
-    supportEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(decimals)} (${pips >= 0 ? '+' : ''}${pips.toFixed(1)} pips, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
-    supportEl.className = 'result-val' + (diff < 0 ? ' bad' : '');
+    distanceEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(decimals)} (${pips >= 0 ? '+' : ''}${pips.toFixed(1)} pips, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+
+    const value = Math.abs(pips) * pipValuePerStdLot * lotSize;
+    valueEl.textContent = fmtMoney(value);
   } else {
-    supportEl.textContent = '—';
-    supportEl.className = 'result-val';
+    distanceEl.textContent = '—';
+    valueEl.textContent = '—';
   }
 
-  if (isFinite(resistance) && resistance > 0) {
-    const diff = resistance - price;
-    const pips = diff / pipSize;
-    const pct = (diff / price) * 100;
-    resistanceEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(decimals)} (${pips >= 0 ? '+' : ''}${pips.toFixed(1)} pips, ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
-    resistanceEl.className = 'result-val' + (diff < 0 ? ' bad' : '');
-  } else {
-    resistanceEl.textContent = '—';
-    resistanceEl.className = 'result-val';
-  }
-
-  if (isFinite(support) && support > 0 && isFinite(resistance) && resistance > 0) {
-    if (resistance <= support) {
-      warnBox.style.display = 'block';
-      warnBox.textContent = 'Resistance should be above support — double check the two levels.';
-      rangeEl.textContent = '—';
-    } else {
-      const posPct = ((price - support) / (resistance - support)) * 100;
-      rangeEl.textContent = posPct.toFixed(1) + '% of the range';
-      if (posPct < 0 || posPct > 100) {
-        warnBox.style.display = 'block';
-        warnBox.textContent = 'Current price is outside the support/resistance range.';
-      }
-    }
-  } else {
-    rangeEl.textContent = '—';
-  }
+  calcRisk();
 }
 
 // ── Risk -> Position Size ────────────────────────────────────────────────────
@@ -638,8 +497,7 @@ function calcRisk() {
 document.getElementById('rRiskAmount').addEventListener('input', function () { this.dataset.userEdited = '1'; });
 
 calcKelly();
-calcPip();
-calcSR();
+calcCalculator();
 
 // ── Nav / theme boilerplate (shared pattern across site pages) ──────────────
 (async function checkAuth() {
