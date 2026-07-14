@@ -337,6 +337,24 @@
 
   .param-input:focus { border-color: var(--accent-blue); }
 
+  /* Trigger mode chips — several can be active at once per indicator */
+  .trigger-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .trigger-chip {
+    font-size: 8px;
+    padding: 3px 7px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .trigger-chip:hover { border-color: var(--accent-blue); }
+  .trigger-chip.active { background: rgba(0,255,136,0.12); border-color: var(--accent-green); color: var(--accent-green); }
+  .param-row.irrelevant { opacity: 0.35; pointer-events: none; }
+
   .toggle {
     position: relative;
     width: 32px;
@@ -838,15 +856,15 @@ window.addEventListener('resize', () => {
         </div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="rsiTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought / Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-            <option value="failure_swings">Failure swings</option>
-          </select>
+          <div class="trigger-chips" id="rsiTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought / Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="failure_swings" onclick="toggleTriggerChip(this)">Failure swings</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Divergence pivot lookback</span>
@@ -880,17 +898,17 @@ window.addEventListener('resize', () => {
         </div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="macdTrigger" style="width:100%;">
-            <option value="signal_cross">Signal Line Crossover (default)</option>
-            <option value="bullish_signal_cross">Bullish signal line crossover</option>
-            <option value="bearish_signal_cross">Bearish signal line crossover</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-            <option value="histogram_reversal">Histogram reversal</option>
-            <option value="overbought">Overbought</option>
-            <option value="oversold">Oversold</option>
-          </select>
+          <div class="trigger-chips" id="macdTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="signal_cross" onclick="toggleTriggerChip(this)">Signal Line Crossover (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_signal_cross" onclick="toggleTriggerChip(this)">Bullish signal line crossover</button>
+            <button type="button" class="trigger-chip" data-value="bearish_signal_cross" onclick="toggleTriggerChip(this)">Bearish signal line crossover</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="histogram_reversal" onclick="toggleTriggerChip(this)">Histogram reversal</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Divergence pivot lookback</span>
@@ -923,16 +941,19 @@ window.addEventListener('resize', () => {
         </div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="bbTrigger" style="width:100%;">
-            <option value="percent_b">%B Overbought/Oversold (default)</option>
-            <option value="upper_touch">Upper band touch</option>
-            <option value="lower_touch">Lower band touch</option>
-            <option value="volatility_breakout">Volatility breakout</option>
-            <option value="walking_upper">Walking upper band</option>
-            <option value="walking_lower">Walking lower band</option>
-            <option value="w_bottom">W bottom</option>
-            <option value="m_top">M top</option>
-          </select>
+          <div class="trigger-chips" id="bbTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="percent_b" onclick="toggleTriggerChip(this)">%B Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="upper_touch" onclick="toggleTriggerChip(this)">Upper band touch</button>
+            <button type="button" class="trigger-chip" data-value="lower_touch" onclick="toggleTriggerChip(this)">Lower band touch</button>
+            <button type="button" class="trigger-chip" data-value="volatility_breakout" onclick="toggleTriggerChip(this)">Volatility breakout</button>
+            <button type="button" class="trigger-chip" data-value="walking_upper" onclick="toggleTriggerChip(this)">Walking upper band</button>
+            <button type="button" class="trigger-chip" data-value="walking_lower" onclick="toggleTriggerChip(this)">Walking lower band</button>
+            <button type="button" class="trigger-chip" data-value="w_bottom" onclick="toggleTriggerChip(this)">W bottom</button>
+            <button type="button" class="trigger-chip" data-value="m_top" onclick="toggleTriggerChip(this)">M top</button>
+            <button type="button" class="trigger-chip" data-value="breakout_margin" onclick="toggleTriggerChip(this)">Breakout margin %</button>
+            <button type="button" class="trigger-chip" data-value="pct_below_high" onclick="toggleTriggerChip(this)">% below high</button>
+            <button type="button" class="trigger-chip" data-value="pct_above_low" onclick="toggleTriggerChip(this)">% above low</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Squeeze lookback (bars)</span>
@@ -954,9 +975,21 @@ window.addEventListener('resize', () => {
           <span class="param-label">Walk tolerance %</span>
           <input type="number" class="param-input" id="bbWalkTolerancePct" value="0.5" min="0" max="5" step="0.1">
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Pattern pivot lookback</span>
           <input type="number" class="param-input" id="bbPatternLookback" value="5" min="2" max="30">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Breakout margin %</span>
+          <input type="number" class="param-input" id="bbBreakoutMarginPct" value="0.5" min="0" max="5" step="0.1">
+        </div>
+        <div class="param-row">
+          <span class="param-label">% below high threshold</span>
+          <input type="number" class="param-input" id="bbPctBelowHigh" value="1.0" min="0" max="10" step="0.1">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">% above low threshold</span>
+          <input type="number" class="param-input" id="bbPctAboveLow" value="1.0" min="0" max="10" step="0.1">
         </div>
       </div>
 
@@ -991,14 +1024,14 @@ window.addEventListener('resize', () => {
         </div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="maTrigger" style="width:100%;">
-            <option value="dual_cross">Dual MA Crossover (default)</option>
-            <option value="price_cross">Price Crossing MA</option>
-            <option value="two_ma_bull">Two MA bull crossover</option>
-            <option value="two_ma_bear">Two MA bear crossover</option>
-            <option value="three_ma_bull">Three MA bull trend</option>
-            <option value="three_ma_bear">Three MA bear trend</option>
-          </select>
+          <div class="trigger-chips" id="maTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="dual_cross" onclick="toggleTriggerChip(this)">Dual MA Crossover (default)</button>
+            <button type="button" class="trigger-chip" data-value="price_cross" onclick="toggleTriggerChip(this)">Price Crossing MA</button>
+            <button type="button" class="trigger-chip" data-value="two_ma_bull" onclick="toggleTriggerChip(this)">Two MA bull crossover</button>
+            <button type="button" class="trigger-chip" data-value="two_ma_bear" onclick="toggleTriggerChip(this)">Two MA bear crossover</button>
+            <button type="button" class="trigger-chip" data-value="three_ma_bull" onclick="toggleTriggerChip(this)">Three MA bull trend</button>
+            <button type="button" class="trigger-chip" data-value="three_ma_bear" onclick="toggleTriggerChip(this)">Three MA bear trend</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Short period</span>
@@ -1018,22 +1051,6 @@ window.addEventListener('resize', () => {
         </div>
       </div>
 
-      <!-- Volume -->
-      <div class="ind-row" style="margin-bottom:0;">
-        <span class="ind-label" onclick="toggleIndSettings('vol')">
-          <span id="volLabel">Volume (surge ×1.5)</span>
-          <span class="ind-chevron" id="volChevron">▸</span>
-        </span>
-        <label class="toggle"><input type="checkbox" id="togVol" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="ind-params" id="volParams" style="margin-bottom:0;">
-        <div class="param-row">
-          <span class="param-label">Surge multiplier</span>
-          <input type="number" class="param-input" id="volSurge" value="1.5" min="1.0" max="10.0" step="0.1"
-                 oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
-        </div>
-      </div>
-
       <!-- ADX -->
       <div class="ind-row">
         <span class="ind-label" onclick="toggleIndSettings('adx')"><span>ADX</span><span class="ind-chevron" id="adxChevron">▸</span></span>
@@ -1044,16 +1061,16 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Trend threshold</span><input type="number" class="param-input" id="adxTrendThreshold" value="25" min="5" max="60"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="adxTrigger" style="width:100%;">
-            <option value="trend_threshold">Trend threshold (default)</option>
-            <option value="bull_di_cross">Bull DI Crossover</option>
-            <option value="bear_di_cross">Bear DI Crossover</option>
-            <option value="above_25">ADX above 25</option>
-            <option value="above_50">ADX above 50</option>
-            <option value="above_75">ADX above 75</option>
-            <option value="strong_di_plus">Strong ADX and DI+</option>
-            <option value="strong_di_minus">Strong ADX and DI-</option>
-          </select>
+          <div class="trigger-chips" id="adxTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="trend_threshold" onclick="toggleTriggerChip(this)">Trend threshold (default)</button>
+            <button type="button" class="trigger-chip" data-value="bull_di_cross" onclick="toggleTriggerChip(this)">Bull DI Crossover</button>
+            <button type="button" class="trigger-chip" data-value="bear_di_cross" onclick="toggleTriggerChip(this)">Bear DI Crossover</button>
+            <button type="button" class="trigger-chip" data-value="above_25" onclick="toggleTriggerChip(this)">ADX above 25</button>
+            <button type="button" class="trigger-chip" data-value="above_50" onclick="toggleTriggerChip(this)">ADX above 50</button>
+            <button type="button" class="trigger-chip" data-value="above_75" onclick="toggleTriggerChip(this)">ADX above 75</button>
+            <button type="button" class="trigger-chip" data-value="strong_di_plus" onclick="toggleTriggerChip(this)">Strong ADX and DI+</button>
+            <button type="button" class="trigger-chip" data-value="strong_di_minus" onclick="toggleTriggerChip(this)">Strong ADX and DI-</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">DI cross lookback (bars)</span>
@@ -1073,13 +1090,13 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="psarFlipLookback" value="3" min="1" max="20"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="psarTrigger" style="width:100%;">
-            <option value="flip">Flip (default)</option>
-            <option value="bull_flip">Bullish flip only</option>
-            <option value="bear_flip">Bearish flip only</option>
-            <option value="trend_state">Trend state</option>
-            <option value="trailing_stop">Trailing stop (Momentum change)</option>
-          </select>
+          <div class="trigger-chips" id="psarTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="flip" onclick="toggleTriggerChip(this)">Flip (default)</button>
+            <button type="button" class="trigger-chip" data-value="bull_flip" onclick="toggleTriggerChip(this)">Bullish flip only</button>
+            <button type="button" class="trigger-chip" data-value="bear_flip" onclick="toggleTriggerChip(this)">Bearish flip only</button>
+            <button type="button" class="trigger-chip" data-value="trend_state" onclick="toggleTriggerChip(this)">Trend state</button>
+            <button type="button" class="trigger-chip" data-value="trailing_stop" onclick="toggleTriggerChip(this)">Trailing stop (Momentum change)</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Gap narrowing lookback (bars)</span>
@@ -1098,12 +1115,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Senkou period</span><input type="number" class="param-input" id="ichimokuSenkou" value="52" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="ichimokuTrigger" style="width:100%;">
-            <option value="cloud_position">Cloud position (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="tk_cross">Tenkan/Kijun cross</option>
-          </select>
+          <div class="trigger-chips" id="ichimokuTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="cloud_position" onclick="toggleTriggerChip(this)">Cloud position (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="tk_cross" onclick="toggleTriggerChip(this)">Tenkan/Kijun cross</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">TK cross lookback (bars)</span>
@@ -1122,13 +1139,13 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Flip lookback (bars)</span><input type="number" class="param-input" id="supertrendFlipLookback" value="3" min="1" max="20"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="supertrendTrigger" style="width:100%;">
-            <option value="flip">Flip (default)</option>
-            <option value="bull_flip">Bullish flip only</option>
-            <option value="bear_flip">Bearish flip only</option>
-            <option value="trend_state">Trend state</option>
-            <option value="trailing_stop">Trailing stop (momentum change)</option>
-          </select>
+          <div class="trigger-chips" id="supertrendTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="flip" onclick="toggleTriggerChip(this)">Flip (default)</button>
+            <button type="button" class="trigger-chip" data-value="bull_flip" onclick="toggleTriggerChip(this)">Bullish flip only</button>
+            <button type="button" class="trigger-chip" data-value="bear_flip" onclick="toggleTriggerChip(this)">Bearish flip only</button>
+            <button type="button" class="trigger-chip" data-value="trend_state" onclick="toggleTriggerChip(this)">Trend state</button>
+            <button type="button" class="trigger-chip" data-value="trailing_stop" onclick="toggleTriggerChip(this)">Trailing stop (momentum change)</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Gap narrowing lookback (bars)</span>
@@ -1145,22 +1162,32 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Length</span><input type="number" class="param-input" id="donchianLength" value="20" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="donchianTrigger" style="width:100%;">
-            <option value="breakout">Breakout (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="middle_cross">Midline cross</option>
-            <option value="two_channel_bull">Two channel bull entry/exit</option>
-            <option value="two_channel_bear">Two channel bear entry/exit</option>
-          </select>
+          <div class="trigger-chips" id="donchianTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="breakout" onclick="toggleTriggerChip(this)">Breakout (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="middle_cross" onclick="toggleTriggerChip(this)">Midline cross</button>
+            <button type="button" class="trigger-chip" data-value="two_channel_bull" onclick="toggleTriggerChip(this)">Two channel bull entry/exit</button>
+            <button type="button" class="trigger-chip" data-value="two_channel_bear" onclick="toggleTriggerChip(this)">Two channel bear entry/exit</button>
+            <button type="button" class="trigger-chip" data-value="resistance_retest" onclick="toggleTriggerChip(this)">Resistance retest</button>
+            <button type="button" class="trigger-chip" data-value="support_retest" onclick="toggleTriggerChip(this)">Support retest</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Midline cross lookback (bars)</span>
           <input type="number" class="param-input" id="donchianMidCrossLookback" value="5" min="1" max="30">
         </div>
-        <div class="param-row" style="margin-bottom:0;">
+        <div class="param-row">
           <span class="param-label">Exit channel length</span>
           <input type="number" class="param-input" id="donchianExitLength" value="10" min="2" max="200">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Retest lookback (bars)</span>
+          <input type="number" class="param-input" id="donchianRetestLookback" value="10" min="1" max="60">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Retest tolerance %</span>
+          <input type="number" class="param-input" id="donchianRetestTolerancePct" value="1.0" min="0" max="10" step="0.1">
         </div>
       </div>
 
@@ -1174,14 +1201,14 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Slope lookback (bars)</span><input type="number" class="param-input" id="hmaSlopeLookback" value="3" min="1" max="20"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="hmaTrigger" style="width:100%;">
-            <option value="slope">Slope (default)</option>
-            <option value="bullish_slope">Bullish slope only</option>
-            <option value="bearish_slope">Bearish slope only</option>
-            <option value="price_cross">Price crossing HMA</option>
-            <option value="two_hma_bull">Two HMA bull cross</option>
-            <option value="two_hma_bear">Two HMA bear cross</option>
-          </select>
+          <div class="trigger-chips" id="hmaTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="slope" onclick="toggleTriggerChip(this)">Slope (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_slope" onclick="toggleTriggerChip(this)">Bullish slope only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_slope" onclick="toggleTriggerChip(this)">Bearish slope only</button>
+            <button type="button" class="trigger-chip" data-value="price_cross" onclick="toggleTriggerChip(this)">Price crossing HMA</button>
+            <button type="button" class="trigger-chip" data-value="two_hma_bull" onclick="toggleTriggerChip(this)">Two HMA bull cross</button>
+            <button type="button" class="trigger-chip" data-value="two_hma_bear" onclick="toggleTriggerChip(this)">Two HMA bear cross</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Price cross lookback (bars)</span>
@@ -1207,12 +1234,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochOverbought" value="80" min="55" max="99"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="stochTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought/Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="signal_cross">%K/%D signal cross</option>
-          </select>
+          <div class="trigger-chips" id="stochTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="signal_cross" onclick="toggleTriggerChip(this)">%K/%D signal cross</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Signal cross lookback (bars)</span>
@@ -1233,14 +1260,14 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="stochrsiOverbought" value="80" min="55" max="99"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="stochrsiTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought/Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="signal_cross">%K/%D signal cross</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-          </select>
+          <div class="trigger-chips" id="stochrsiTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="signal_cross" onclick="toggleTriggerChip(this)">%K/%D signal cross</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Signal cross lookback (bars)</span>
@@ -1263,14 +1290,14 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="cciOverbought" value="100" min="20" max="300"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="cciTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought/Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="breakout_bull">+100 Breakout Bull</option>
-            <option value="breakout_bear">-100 Breakout Bear</option>
-          </select>
+          <div class="trigger-chips" id="cciTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="breakout_bull" onclick="toggleTriggerChip(this)">+100 Breakout Bull</button>
+            <button type="button" class="trigger-chip" data-value="breakout_bear" onclick="toggleTriggerChip(this)">-100 Breakout Bear</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Centerline cross lookback (bars)</span>
@@ -1289,18 +1316,18 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="willrOverbought" value="-20" min="-49" max="-1"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="willrTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought/Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="midline_cross">-50 midline crossover</option>
-            <option value="momentum_failure_bull">Momentum Failure Bull</option>
-            <option value="momentum_failure_bear">Momentum Failure Bear</option>
-            <option value="trend_confirmation_bull">Trend Confirmation Bull</option>
-            <option value="trend_confirmation_bear">Trend Confirmation Bear</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-          </select>
+          <div class="trigger-chips" id="willrTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="midline_cross" onclick="toggleTriggerChip(this)">-50 midline crossover</button>
+            <button type="button" class="trigger-chip" data-value="momentum_failure_bull" onclick="toggleTriggerChip(this)">Momentum Failure Bull</button>
+            <button type="button" class="trigger-chip" data-value="momentum_failure_bear" onclick="toggleTriggerChip(this)">Momentum Failure Bear</button>
+            <button type="button" class="trigger-chip" data-value="trend_confirmation_bull" onclick="toggleTriggerChip(this)">Trend Confirmation Bull</button>
+            <button type="button" class="trigger-chip" data-value="trend_confirmation_bear" onclick="toggleTriggerChip(this)">Trend Confirmation Bear</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Midline cross lookback (bars)</span>
@@ -1323,16 +1350,16 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Momentum threshold %</span><input type="number" class="param-input" id="rocThreshold" value="2.0" min="0.1" max="20" step="0.1"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="rocTrigger" style="width:100%;">
-            <option value="threshold">Threshold (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="bull_momentum">Bull Momentum</option>
-            <option value="bear_momentum">Bear Momentum</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-          </select>
+          <div class="trigger-chips" id="rocTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="threshold" onclick="toggleTriggerChip(this)">Threshold (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="bull_momentum" onclick="toggleTriggerChip(this)">Bull Momentum</button>
+            <button type="button" class="trigger-chip" data-value="bear_momentum" onclick="toggleTriggerChip(this)">Bear Momentum</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Centerline cross lookback (bars)</span>
@@ -1356,14 +1383,14 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="mfiOverbought" value="80" min="55" max="99"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="mfiTrigger" style="width:100%;">
-            <option value="overbought_oversold">Overbought/Oversold (default)</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-          </select>
+          <div class="trigger-chips" id="mfiTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="overbought_oversold" onclick="toggleTriggerChip(this)">Overbought/Oversold (default)</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Centerline cross lookback (bars)</span>
@@ -1388,16 +1415,16 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Overbought level</span><input type="number" class="param-input" id="tsiOverbought" value="25" min="1" max="99"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="tsiTrigger" style="width:100%;">
-            <option value="signal_cross">Signal cross (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-            <option value="overbought">Overbought only</option>
-            <option value="oversold">Oversold only</option>
-            <option value="bullish_divergence">Bullish Divergence</option>
-            <option value="bearish_divergence">Bearish Divergence</option>
-          </select>
+          <div class="trigger-chips" id="tsiTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="signal_cross" onclick="toggleTriggerChip(this)">Signal cross (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+            <button type="button" class="trigger-chip" data-value="overbought" onclick="toggleTriggerChip(this)">Overbought only</button>
+            <button type="button" class="trigger-chip" data-value="oversold" onclick="toggleTriggerChip(this)">Oversold only</button>
+            <button type="button" class="trigger-chip" data-value="bullish_divergence" onclick="toggleTriggerChip(this)">Bullish Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bearish_divergence" onclick="toggleTriggerChip(this)">Bearish Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Centerline cross lookback (bars)</span>
@@ -1419,18 +1446,18 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Slow length</span><input type="number" class="param-input" id="aoSlow" value="34" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="aoTrigger" style="width:100%;">
-            <option value="zero_state">Zero-line state (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="zero_cross">Zero-line crossover</option>
-            <option value="bull_saucer">Bull Saucer</option>
-            <option value="bear_saucer">Bear Saucer</option>
-            <option value="bull_twin_peaks">Bull Twin Peaks</option>
-            <option value="bear_twin_peaks">Bear Twin Peaks</option>
-            <option value="bull_divergence">Bull Divergence</option>
-            <option value="bear_divergence">Bear Divergence</option>
-          </select>
+          <div class="trigger-chips" id="aoTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="zero_state" onclick="toggleTriggerChip(this)">Zero-line state (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="zero_cross" onclick="toggleTriggerChip(this)">Zero-line crossover</button>
+            <button type="button" class="trigger-chip" data-value="bull_saucer" onclick="toggleTriggerChip(this)">Bull Saucer</button>
+            <button type="button" class="trigger-chip" data-value="bear_saucer" onclick="toggleTriggerChip(this)">Bear Saucer</button>
+            <button type="button" class="trigger-chip" data-value="bull_twin_peaks" onclick="toggleTriggerChip(this)">Bull Twin Peaks</button>
+            <button type="button" class="trigger-chip" data-value="bear_twin_peaks" onclick="toggleTriggerChip(this)">Bear Twin Peaks</button>
+            <button type="button" class="trigger-chip" data-value="bull_divergence" onclick="toggleTriggerChip(this)">Bull Divergence</button>
+            <button type="button" class="trigger-chip" data-value="bear_divergence" onclick="toggleTriggerChip(this)">Bear Divergence</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Zero cross lookback (bars)</span>
@@ -1453,12 +1480,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="atrTrendLookback" value="5" min="1" max="50"></div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="atrTrigger" style="width:100%;">
-            <option value="expansion">Expansion + direction (default)</option>
-            <option value="bullish_expansion">Bullish expansion only</option>
-            <option value="bearish_expansion">Bearish expansion only</option>
-            <option value="contraction">Contraction (squeeze)</option>
-          </select>
+          <div class="trigger-chips" id="atrTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="expansion" onclick="toggleTriggerChip(this)">Expansion + direction (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_expansion" onclick="toggleTriggerChip(this)">Bullish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_expansion" onclick="toggleTriggerChip(this)">Bearish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="contraction" onclick="toggleTriggerChip(this)">Contraction (squeeze)</button>
+          </div>
         </div>
       </div>
 
@@ -1473,17 +1500,17 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Multiplier</span><input type="number" class="param-input" id="keltnerMult" value="2.0" min="0.5" max="10" step="0.1"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="keltnerTrigger" style="width:100%;">
-            <option value="breakout">Breakout (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="middle_cross">Midline cross</option>
-            <option value="bull_band_riding">Bull Band Riding</option>
-            <option value="bear_band_riding">Bear Band Riding</option>
-            <option value="bull_mean_reversion">Bull Mean Reversion</option>
-            <option value="bear_mean_reversion">Bear Mean Reversion</option>
-            <option value="keltner_squeeze">Keltner Squeeze</option>
-          </select>
+          <div class="trigger-chips" id="keltnerTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="breakout" onclick="toggleTriggerChip(this)">Breakout (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="middle_cross" onclick="toggleTriggerChip(this)">Midline cross</button>
+            <button type="button" class="trigger-chip" data-value="bull_band_riding" onclick="toggleTriggerChip(this)">Bull Band Riding</button>
+            <button type="button" class="trigger-chip" data-value="bear_band_riding" onclick="toggleTriggerChip(this)">Bear Band Riding</button>
+            <button type="button" class="trigger-chip" data-value="bull_mean_reversion" onclick="toggleTriggerChip(this)">Bull Mean Reversion</button>
+            <button type="button" class="trigger-chip" data-value="bear_mean_reversion" onclick="toggleTriggerChip(this)">Bear Mean Reversion</button>
+            <button type="button" class="trigger-chip" data-value="keltner_squeeze" onclick="toggleTriggerChip(this)">Keltner Squeeze</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Midline cross lookback (bars)</span>
@@ -1507,12 +1534,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="stdevTrendLookback" value="5" min="1" max="50"></div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="stdevTrigger" style="width:100%;">
-            <option value="expansion">Expansion + direction (default)</option>
-            <option value="bullish_expansion">Bullish expansion only</option>
-            <option value="bearish_expansion">Bearish expansion only</option>
-            <option value="contraction">Contraction (squeeze)</option>
-          </select>
+          <div class="trigger-chips" id="stdevTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="expansion" onclick="toggleTriggerChip(this)">Expansion + direction (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_expansion" onclick="toggleTriggerChip(this)">Bullish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_expansion" onclick="toggleTriggerChip(this)">Bearish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="contraction" onclick="toggleTriggerChip(this)">Contraction (squeeze)</button>
+          </div>
         </div>
       </div>
 
@@ -1527,12 +1554,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="chaikinVolTrendLookback" value="5" min="1" max="50"></div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="chaikinVolTrigger" style="width:100%;">
-            <option value="expansion">Expansion + direction (default)</option>
-            <option value="bullish_expansion">Bullish expansion only</option>
-            <option value="bearish_expansion">Bearish expansion only</option>
-            <option value="contraction">Contraction (squeeze)</option>
-          </select>
+          <div class="trigger-chips" id="chaikinVolTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="expansion" onclick="toggleTriggerChip(this)">Expansion + direction (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_expansion" onclick="toggleTriggerChip(this)">Bullish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_expansion" onclick="toggleTriggerChip(this)">Bearish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="contraction" onclick="toggleTriggerChip(this)">Contraction (squeeze)</button>
+          </div>
         </div>
       </div>
 
@@ -1546,12 +1573,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Trend lookback (bars)</span><input type="number" class="param-input" id="histVolTrendLookback" value="5" min="1" max="50"></div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="histVolTrigger" style="width:100%;">
-            <option value="expansion">Expansion + direction (default)</option>
-            <option value="bullish_expansion">Bullish expansion only</option>
-            <option value="bearish_expansion">Bearish expansion only</option>
-            <option value="contraction">Contraction (squeeze)</option>
-          </select>
+          <div class="trigger-chips" id="histVolTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="expansion" onclick="toggleTriggerChip(this)">Expansion + direction (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_expansion" onclick="toggleTriggerChip(this)">Bullish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_expansion" onclick="toggleTriggerChip(this)">Bearish expansion only</button>
+            <button type="button" class="trigger-chip" data-value="contraction" onclick="toggleTriggerChip(this)">Contraction (squeeze)</button>
+          </div>
         </div>
       </div>
 
@@ -1564,12 +1591,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="obvSmaLength" value="20" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="obvTrigger" style="width:100%;">
-            <option value="trend">Trend vs average (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="divergence">Divergence</option>
-          </select>
+          <div class="trigger-chips" id="obvTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="trend" onclick="toggleTriggerChip(this)">Trend vs average (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="divergence" onclick="toggleTriggerChip(this)">Divergence</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Divergence pivot lookback</span>
@@ -1586,14 +1613,14 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Rolling window (bars)</span><input type="number" class="param-input" id="vwapLength" value="20" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="vwapTrigger" style="width:100%;">
-            <option value="position">Position (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="band_touch">Band touch</option>
-            <option value="pullback_buy">Pullback buy</option>
-            <option value="pullback_sell">Pullback sell</option>
-          </select>
+          <div class="trigger-chips" id="vwapTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="position" onclick="toggleTriggerChip(this)">Position (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="band_touch" onclick="toggleTriggerChip(this)">Band touch</button>
+            <button type="button" class="trigger-chip" data-value="pullback_buy" onclick="toggleTriggerChip(this)">Pullback buy</button>
+            <button type="button" class="trigger-chip" data-value="pullback_sell" onclick="toggleTriggerChip(this)">Pullback sell</button>
+          </div>
         </div>
         <div class="param-row">
           <span class="param-label">Band %</span>
@@ -1614,12 +1641,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Average length</span><input type="number" class="param-input" id="adSmaLength" value="20" min="2" max="200"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="adTrigger" style="width:100%;">
-            <option value="trend">Trend vs average (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="divergence">Divergence</option>
-          </select>
+          <div class="trigger-chips" id="adTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="trend" onclick="toggleTriggerChip(this)">Trend vs average (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="divergence" onclick="toggleTriggerChip(this)">Divergence</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Divergence pivot lookback</span>
@@ -1637,12 +1664,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Threshold</span><input type="number" class="param-input" id="cmfThreshold" value="0.05" min="0.01" max="0.5" step="0.01"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="cmfTrigger" style="width:100%;">
-            <option value="threshold">Threshold (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="centerline_cross">Centerline crossover</option>
-          </select>
+          <div class="trigger-chips" id="cmfTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="threshold" onclick="toggleTriggerChip(this)">Threshold (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="centerline_cross" onclick="toggleTriggerChip(this)">Centerline crossover</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Centerline cross lookback (bars)</span>
@@ -1660,12 +1687,12 @@ window.addEventListener('resize', () => {
         <div class="param-row"><span class="param-label">Price bins</span><input type="number" class="param-input" id="volProfileBins" value="24" min="5" max="100"></div>
         <div class="param-row">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="volProfileTrigger" style="width:100%;">
-            <option value="position">Position vs POC (default)</option>
-            <option value="bullish">Bullish only</option>
-            <option value="bearish">Bearish only</option>
-            <option value="poc_breakout">POC breakout</option>
-          </select>
+          <div class="trigger-chips" id="volProfileTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="position" onclick="toggleTriggerChip(this)">Position vs POC (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish" onclick="toggleTriggerChip(this)">Bullish only</button>
+            <button type="button" class="trigger-chip" data-value="bearish" onclick="toggleTriggerChip(this)">Bearish only</button>
+            <button type="button" class="trigger-chip" data-value="poc_breakout" onclick="toggleTriggerChip(this)">POC breakout</button>
+          </div>
         </div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Breakout lookback (bars)</span>
@@ -1674,21 +1701,37 @@ window.addEventListener('resize', () => {
       </div>
 
       <!-- Fibonacci Retracement -->
-      <div class="ind-row" style="margin-bottom:0;">
+      <div class="ind-row">
         <span class="ind-label" onclick="toggleIndSettings('fib')"><span>Fibonacci Retracement</span><span class="ind-chevron" id="fibChevron">▸</span></span>
         <label class="toggle"><input type="checkbox" id="togFib"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params" id="fibParams" style="margin-bottom:0;">
+      <div class="ind-params" id="fibParams">
         <div class="param-row"><span class="param-label">Swing lookback (bars)</span><input type="number" class="param-input" id="fibLookback" value="50" min="10" max="300"></div>
         <div class="param-row"><span class="param-label">Level tolerance %</span><input type="number" class="param-input" id="fibTolerancePct" value="1.0" min="0.1" max="10" step="0.1"></div>
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Trigger</span>
-          <select class="param-input" id="fibTrigger" style="width:100%;">
-            <option value="bounce_reject">Bounce/Reject (default)</option>
-            <option value="bullish_bounce">Bullish bounce only</option>
-            <option value="bearish_reject">Bearish reject only</option>
-            <option value="any_touch">Any level touch</option>
-          </select>
+          <div class="trigger-chips" id="fibTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="bounce_reject" onclick="toggleTriggerChip(this)">Bounce/Reject (default)</button>
+            <button type="button" class="trigger-chip" data-value="bullish_bounce" onclick="toggleTriggerChip(this)">Bullish bounce only</button>
+            <button type="button" class="trigger-chip" data-value="bearish_reject" onclick="toggleTriggerChip(this)">Bearish reject only</button>
+            <button type="button" class="trigger-chip" data-value="any_touch" onclick="toggleTriggerChip(this)">Any level touch</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Volume -->
+      <div class="ind-row" style="margin-bottom:0;">
+        <span class="ind-label" onclick="toggleIndSettings('vol')">
+          <span id="volLabel">Volume (surge ×1.5)</span>
+          <span class="ind-chevron" id="volChevron">▸</span>
+        </span>
+        <label class="toggle"><input type="checkbox" id="togVol" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="volParams" style="margin-bottom:0;">
+        <div class="param-row">
+          <span class="param-label">Surge multiplier</span>
+          <input type="number" class="param-input" id="volSurge" value="1.5" min="1.0" max="10.0" step="0.1"
+                 oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
         </div>
       </div>
     </div>
@@ -1959,6 +2002,10 @@ function serializeBacktestConfig() {
   const cfg = {};
   document.querySelectorAll('.lab-sidebar [id]').forEach(el => {
     if (BT_STRATEGY_CONTROL_IDS.has(el.id)) return;
+    if (el.classList && el.classList.contains('trigger-chips')) {
+      cfg[el.id] = getActiveTriggers(el.id);
+      return;
+    }
     if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
       cfg[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
     }
@@ -1974,6 +2021,14 @@ function applyBacktestConfig(cfg) {
     if (id === '_periodMode') return;
     const el = document.getElementById(id);
     if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
+    if (el.classList && el.classList.contains('trigger-chips')) {
+      const modes = new Set(Array.isArray(val) ? val : [val]);
+      el.querySelectorAll('.trigger-chip').forEach(chip => {
+        chip.classList.toggle('active', modes.has(chip.dataset.value));
+      });
+      updateParamRelevance(id);
+      return;
+    }
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!val;
     else el.value = val;
     el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2416,6 +2471,138 @@ function toggleIndSettings(id) {
   if (chevron) chevron.style.transform = open ? 'rotate(90deg)' : '';
 }
 
+// ── Trigger mode chips — several can be active at once per indicator ──────────
+// Maps each chip-container id to the query key sent to /api/backtest (one
+// repeated param per active mode, parsed via request.args.getlist() server-side).
+const TRIGGER_GROUPS = [
+  ['rsi_trigger', 'rsiTriggerChips'], ['macd_trigger', 'macdTriggerChips'], ['bb_trigger', 'bbTriggerChips'],
+  ['ma_trigger', 'maTriggerChips'], ['adx_trigger', 'adxTriggerChips'], ['psar_trigger', 'psarTriggerChips'],
+  ['ichimoku_trigger', 'ichimokuTriggerChips'], ['supertrend_trigger', 'supertrendTriggerChips'],
+  ['donchian_trigger', 'donchianTriggerChips'], ['hma_trigger', 'hmaTriggerChips'],
+  ['stoch_trigger', 'stochTriggerChips'], ['stochrsi_trigger', 'stochrsiTriggerChips'],
+  ['cci_trigger', 'cciTriggerChips'], ['willr_trigger', 'willrTriggerChips'], ['roc_trigger', 'rocTriggerChips'],
+  ['mfi_trigger', 'mfiTriggerChips'], ['tsi_trigger', 'tsiTriggerChips'], ['ao_trigger', 'aoTriggerChips'],
+  ['atr_trigger', 'atrTriggerChips'], ['keltner_trigger', 'keltnerTriggerChips'],
+  ['stdev_trigger', 'stdevTriggerChips'], ['chaikin_vol_trigger', 'chaikinVolTriggerChips'],
+  ['hist_vol_trigger', 'histVolTriggerChips'], ['obv_trigger', 'obvTriggerChips'],
+  ['vwap_trigger', 'vwapTriggerChips'], ['ad_trigger', 'adTriggerChips'], ['cmf_trigger', 'cmfTriggerChips'],
+  ['vol_profile_trigger', 'volProfileTriggerChips'], ['fib_trigger', 'fibTriggerChips'],
+];
+
+// Numeric/select params that only matter when specific trigger modes are active —
+// their .param-row gets dimmed and disabled otherwise (same idiom as trailSLRow).
+const TRIGGER_PARAM_RELEVANCE = {
+  rsiTriggerChips: {
+    rsiOversold: ['overbought', 'oversold', 'overbought_oversold'], rsiOverbought: ['overbought', 'oversold', 'overbought_oversold'],
+    rsiDivLookback: ['bullish_divergence', 'bearish_divergence', 'failure_swings'],
+  },
+  macdTriggerChips: {
+    macdDivLookback: ['bullish_divergence', 'bearish_divergence'],
+    macdZscoreLength: ['overbought', 'oversold'],
+  },
+  bbTriggerChips: {
+    bbSqueezeLookback: ['volatility_breakout'], bbSqueezePercentile: ['volatility_breakout'], bbBreakoutWindow: ['volatility_breakout'],
+    bbWalkMinConsecutive: ['walking_upper', 'walking_lower'], bbWalkTolerancePct: ['walking_upper', 'walking_lower'],
+    bbPatternLookback: ['w_bottom', 'm_top'],
+    bbBreakoutMarginPct: ['breakout_margin'], bbPctBelowHigh: ['pct_below_high'], bbPctAboveLow: ['pct_above_low'],
+  },
+  maTriggerChips: {
+    maTriggerLookback: ['price_cross', 'two_ma_bull', 'two_ma_bear'],
+    maShortLength: ['three_ma_bull', 'three_ma_bear'], maMediumLength: ['three_ma_bull', 'three_ma_bear'], maLongLength: ['three_ma_bull', 'three_ma_bear'],
+  },
+  adxTriggerChips: {
+    adxTrendThreshold: ['trend_threshold', 'strong_di_plus', 'strong_di_minus'],
+    adxDiCrossLookback: ['bull_di_cross', 'bear_di_cross'],
+  },
+  psarTriggerChips: {
+    psarFlipLookback: ['flip', 'bull_flip', 'bear_flip'], psarGapLookback: ['trailing_stop'],
+  },
+  ichimokuTriggerChips: { ichimokuTkCrossLookback: ['tk_cross'] },
+  supertrendTriggerChips: {
+    supertrendFlipLookback: ['flip', 'bull_flip', 'bear_flip'], supertrendGapLookback: ['trailing_stop'],
+  },
+  donchianTriggerChips: {
+    donchianMidCrossLookback: ['middle_cross'], donchianExitLength: ['two_channel_bull', 'two_channel_bear'],
+    donchianRetestLookback: ['resistance_retest', 'support_retest'], donchianRetestTolerancePct: ['resistance_retest', 'support_retest'],
+  },
+  hmaTriggerChips: {
+    hmaPriceCrossLookback: ['price_cross'], hmaFastLength: ['two_hma_bull', 'two_hma_bear'], hmaTwoCrossLookback: ['two_hma_bull', 'two_hma_bear'],
+  },
+  stochTriggerChips: {
+    stochOversold: ['overbought', 'oversold', 'overbought_oversold'], stochOverbought: ['overbought', 'oversold', 'overbought_oversold'],
+    stochSignalCrossLookback: ['signal_cross'],
+  },
+  stochrsiTriggerChips: {
+    stochrsiOversold: ['overbought', 'oversold', 'overbought_oversold'], stochrsiOverbought: ['overbought', 'oversold', 'overbought_oversold'],
+    stochrsiSignalCrossLookback: ['signal_cross'], stochrsiDivLookback: ['bullish_divergence', 'bearish_divergence'],
+  },
+  cciTriggerChips: {
+    cciOversold: ['overbought', 'oversold', 'overbought_oversold', 'breakout_bull', 'breakout_bear'],
+    cciOverbought: ['overbought', 'oversold', 'overbought_oversold', 'breakout_bull', 'breakout_bear'],
+    cciCenterlineLookback: ['centerline_cross'],
+  },
+  willrTriggerChips: {
+    willrOversold: ['overbought', 'oversold', 'overbought_oversold'], willrOverbought: ['overbought', 'oversold', 'overbought_oversold'],
+    willrMidlineLookback: ['midline_cross'], willrDivLookback: ['bullish_divergence', 'bearish_divergence'],
+    willrConfirmLookback: ['trend_confirmation_bull', 'trend_confirmation_bear'],
+  },
+  rocTriggerChips: {
+    rocThreshold: ['threshold', 'bull_momentum', 'bear_momentum'],
+    rocCenterlineLookback: ['centerline_cross'], rocDivLookback: ['bullish_divergence', 'bearish_divergence'],
+  },
+  mfiTriggerChips: {
+    mfiOversold: ['overbought', 'oversold', 'overbought_oversold'], mfiOverbought: ['overbought', 'oversold', 'overbought_oversold'],
+    mfiCenterlineLookback: ['centerline_cross'], mfiDivLookback: ['bullish_divergence', 'bearish_divergence'],
+  },
+  tsiTriggerChips: {
+    tsiOversold: ['overbought', 'oversold'], tsiOverbought: ['overbought', 'oversold'],
+    tsiCenterlineLookback: ['centerline_cross'], tsiDivLookback: ['bullish_divergence', 'bearish_divergence'],
+  },
+  aoTriggerChips: {
+    aoZeroCrossLookback: ['zero_cross'], aoDivLookback: ['bull_divergence', 'bear_divergence'],
+  },
+  keltnerTriggerChips: {
+    keltnerMidCrossLookback: ['middle_cross'],
+    keltnerWalkMinConsecutive: ['bull_band_riding', 'bear_band_riding'], keltnerWalkTolerancePct: ['bull_band_riding', 'bear_band_riding'],
+    keltnerSqueezeLookback: ['keltner_squeeze'],
+  },
+  obvTriggerChips: { obvDivLookback: ['divergence'] },
+  vwapTriggerChips: { vwapBandPct: ['band_touch'] },
+  adTriggerChips: { adDivLookback: ['divergence'] },
+  cmfTriggerChips: { cmfThreshold: ['threshold'], cmfCenterlineLookback: ['centerline_cross'] },
+  volProfileTriggerChips: { volProfileBreakoutLookback: ['poc_breakout'] },
+};
+
+function getActiveTriggers(containerId) {
+  const box = document.getElementById(containerId);
+  if (!box) return [];
+  return Array.from(box.querySelectorAll('.trigger-chip.active')).map(el => el.dataset.value);
+}
+
+function toggleTriggerChip(el) {
+  const box = el.closest('.trigger-chips');
+  if (el.classList.contains('active') && box.querySelectorAll('.trigger-chip.active').length === 1) return; // keep ≥1 active
+  el.classList.toggle('active');
+  updateParamRelevance(box.id);
+}
+
+function updateParamRelevance(containerId) {
+  const relevance = TRIGGER_PARAM_RELEVANCE[containerId];
+  if (!relevance) return;
+  const active = new Set(getActiveTriggers(containerId));
+  Object.entries(relevance).forEach(([paramId, modes]) => {
+    const input = document.getElementById(paramId);
+    const row = input && input.closest('.param-row');
+    if (!row) return;
+    row.classList.toggle('irrelevant', !modes.some(m => active.has(m)));
+  });
+}
+
+function initTriggerChipRelevance() {
+  TRIGGER_GROUPS.forEach(([, containerId]) => updateParamRelevance(containerId));
+}
+initTriggerChipRelevance();
+
 // ── Run backtest ──────────────────────────────────────────────────────────────
 // yfinance's `period` param only understands a fixed set of tokens (1d, 5d, 1mo, ...) —
 // there's no native "2 days" or "3 weeks". These short presets are implemented as an
@@ -2457,28 +2644,27 @@ async function runBacktest() {
   const rsiOs          = parseInt(document.getElementById('rsiOversold').value)   || 30;
   const rsiOb          = parseInt(document.getElementById('rsiOverbought').value) || 70;
   const rsiSmoothing   = document.getElementById('rsiSmoothing').value || 'wilder';
-  const rsiTrigger     = document.getElementById('rsiTrigger').value || 'overbought_oversold';
   const rsiDivLookback = parseInt(document.getElementById('rsiDivLookback').value) || 5;
 
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
   const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
-  const macdTrigger      = document.getElementById('macdTrigger').value || 'signal_cross';
   const macdDivLookback  = parseInt(document.getElementById('macdDivLookback').value)  || 5;
   const macdZscoreLength = parseInt(document.getElementById('macdZscoreLength').value) || 100;
   const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
   const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
-  const bbTrigger              = document.getElementById('bbTrigger').value || 'percent_b';
   const bbSqueezeLookback      = parseInt(document.getElementById('bbSqueezeLookback').value)      || 100;
   const bbSqueezePercentile    = parseFloat(document.getElementById('bbSqueezePercentile').value)  || 20;
   const bbBreakoutWindow       = parseInt(document.getElementById('bbBreakoutWindow').value)       || 10;
   const bbWalkMinConsecutive   = parseInt(document.getElementById('bbWalkMinConsecutive').value)    || 3;
   const bbWalkTolerancePct     = parseFloat(document.getElementById('bbWalkTolerancePct').value)   || 0.5;
   const bbPatternLookback      = parseInt(document.getElementById('bbPatternLookback').value)       || 5;
+  const bbBreakoutMarginPct    = parseFloat(document.getElementById('bbBreakoutMarginPct').value)   || 0.5;
+  const bbPctBelowHigh         = parseFloat(document.getElementById('bbPctBelowHigh').value)        || 1.0;
+  const bbPctAboveLow          = parseFloat(document.getElementById('bbPctAboveLow').value)         || 1.0;
   const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
   const emaLong   = parseInt(document.getElementById('emaLong').value)       || 21;
   const maType           = document.getElementById('maType').value || 'exponential';
-  const maTrigger        = document.getElementById('maTrigger').value || 'dual_cross';
   const maShortLength    = parseInt(document.getElementById('maShortLength').value)    || 9;
   const maMediumLength   = parseInt(document.getElementById('maMediumLength').value)   || 20;
   const maLongLength     = parseInt(document.getElementById('maLongLength').value)     || 50;
@@ -2495,93 +2681,79 @@ async function runBacktest() {
   const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _on = (id) => document.getElementById(id).checked ? 1 : 0;
-  const _tv = (id, fb) => document.getElementById(id).value || fb;
 
   const extParams = {
     adx_on: _on('togAdx'), adx_length: _iv('adxLength', 14), adx_trend_threshold: _iv('adxTrendThreshold', 25),
-    adx_trigger: document.getElementById('adxTrigger').value || 'trend_threshold',
     adx_di_cross_lookback: _iv('adxDiCrossLookback', 5),
     psar_on: _on('togPsar'), psar_start: _fv('psarStart', 0.02), psar_inc: _fv('psarInc', 0.02),
       psar_max: _fv('psarMax', 0.2), psar_flip_lookback: _iv('psarFlipLookback', 3),
-      psar_trigger: _tv('psarTrigger', 'flip'), psar_gap_lookback: _iv('psarGapLookback', 3),
+      psar_gap_lookback: _iv('psarGapLookback', 3),
     ichimoku_on: _on('togIchimoku'), ichimoku_tenkan: _iv('ichimokuTenkan', 9),
       ichimoku_kijun: _iv('ichimokuKijun', 26), ichimoku_senkou: _iv('ichimokuSenkou', 52),
-      ichimoku_trigger: _tv('ichimokuTrigger', 'cloud_position'),
       ichimoku_tk_cross_lookback: _iv('ichimokuTkCrossLookback', 5),
     supertrend_on: _on('togSupertrend'), supertrend_length: _iv('supertrendLength', 10),
       supertrend_mult: _fv('supertrendMult', 3.0), supertrend_flip_lookback: _iv('supertrendFlipLookback', 3),
-      supertrend_trigger: _tv('supertrendTrigger', 'flip'), supertrend_gap_lookback: _iv('supertrendGapLookback', 3),
+      supertrend_gap_lookback: _iv('supertrendGapLookback', 3),
     donchian_on: _on('togDonchian'), donchian_length: _iv('donchianLength', 20),
-      donchian_trigger: _tv('donchianTrigger', 'breakout'),
       donchian_mid_cross_lookback: _iv('donchianMidCrossLookback', 5),
       donchian_exit_length: _iv('donchianExitLength', 10),
+      donchian_retest_lookback: _iv('donchianRetestLookback', 10),
+      donchian_retest_tolerance_pct: _fv('donchianRetestTolerancePct', 1.0),
     hma_on: _on('togHma'), hma_length: _iv('hmaLength', 20), hma_slope_lookback: _iv('hmaSlopeLookback', 3),
-      hma_trigger: _tv('hmaTrigger', 'slope'), hma_price_cross_lookback: _iv('hmaPriceCrossLookback', 5),
+      hma_price_cross_lookback: _iv('hmaPriceCrossLookback', 5),
       hma_fast_length: _iv('hmaFastLength', 9), hma_two_cross_lookback: _iv('hmaTwoCrossLookback', 5),
     stoch_on: _on('togStoch'), stoch_k: _iv('stochK', 14), stoch_d: _iv('stochD', 3), stoch_smooth: _iv('stochSmooth', 3),
       stoch_oversold: _iv('stochOversold', 20), stoch_overbought: _iv('stochOverbought', 80),
-      stoch_trigger: _tv('stochTrigger', 'overbought_oversold'),
       stoch_signal_cross_lookback: _iv('stochSignalCrossLookback', 5),
     stochrsi_on: _on('togStochrsi'), stochrsi_length: _iv('stochrsiLength', 14),
       stochrsi_k: _iv('stochrsiK', 3), stochrsi_d: _iv('stochrsiD', 3),
       stochrsi_oversold: _iv('stochrsiOversold', 20), stochrsi_overbought: _iv('stochrsiOverbought', 80),
-      stochrsi_trigger: _tv('stochrsiTrigger', 'overbought_oversold'),
       stochrsi_signal_cross_lookback: _iv('stochrsiSignalCrossLookback', 5),
       stochrsi_div_lookback: _iv('stochrsiDivLookback', 5),
     cci_on: _on('togCci'), cci_length: _iv('cciLength', 20),
       cci_oversold: _iv('cciOversold', -100), cci_overbought: _iv('cciOverbought', 100),
-      cci_trigger: _tv('cciTrigger', 'overbought_oversold'),
       cci_centerline_lookback: _iv('cciCenterlineLookback', 5),
     willr_on: _on('togWillr'), willr_length: _iv('willrLength', 14),
       willr_oversold: _iv('willrOversold', -80), willr_overbought: _iv('willrOverbought', -20),
-      willr_trigger: _tv('willrTrigger', 'overbought_oversold'),
       willr_midline_lookback: _iv('willrMidlineLookback', 5),
       willr_div_lookback: _iv('willrDivLookback', 5), willr_confirm_lookback: _iv('willrConfirmLookback', 5),
     roc_on: _on('togRoc'), roc_length: _iv('rocLength', 12), roc_threshold: _fv('rocThreshold', 2.0),
-      roc_trigger: _tv('rocTrigger', 'threshold'), roc_centerline_lookback: _iv('rocCenterlineLookback', 5),
+      roc_centerline_lookback: _iv('rocCenterlineLookback', 5),
       roc_momentum_lookback: _iv('rocMomentumLookback', 3), roc_div_lookback: _iv('rocDivLookback', 5),
     mfi_on: _on('togMfi'), mfi_length: _iv('mfiLength', 14),
       mfi_oversold: _iv('mfiOversold', 20), mfi_overbought: _iv('mfiOverbought', 80),
-      mfi_trigger: _tv('mfiTrigger', 'overbought_oversold'),
       mfi_centerline_lookback: _iv('mfiCenterlineLookback', 5),
       mfi_div_lookback: _iv('mfiDivLookback', 5),
     tsi_on: _on('togTsi'), tsi_long: _iv('tsiLong', 25), tsi_short: _iv('tsiShort', 13), tsi_signal: _iv('tsiSignal', 13),
       tsi_oversold: _iv('tsiOversold', -25), tsi_overbought: _iv('tsiOverbought', 25),
-      tsi_trigger: _tv('tsiTrigger', 'signal_cross'), tsi_centerline_lookback: _iv('tsiCenterlineLookback', 5),
+      tsi_centerline_lookback: _iv('tsiCenterlineLookback', 5),
       tsi_div_lookback: _iv('tsiDivLookback', 5),
     ao_on: _on('togAo'), ao_fast: _iv('aoFast', 5), ao_slow: _iv('aoSlow', 34),
-      ao_trigger: _tv('aoTrigger', 'zero_state'), ao_zero_cross_lookback: _iv('aoZeroCrossLookback', 5),
+      ao_zero_cross_lookback: _iv('aoZeroCrossLookback', 5),
       ao_twin_peaks_lookback: _iv('aoTwinPeaksLookback', 5), ao_div_lookback: _iv('aoDivLookback', 5),
     atr_on: _on('togAtr'), atr_length: _iv('atrLength', 14), atr_trend_lookback: _iv('atrTrendLookback', 5),
-      atr_trigger: _tv('atrTrigger', 'expansion'),
     keltner_on: _on('togKeltner'), keltner_length: _iv('keltnerLength', 20),
       keltner_atr_length: _iv('keltnerAtrLength', 10), keltner_mult: _fv('keltnerMult', 2.0),
-      keltner_trigger: _tv('keltnerTrigger', 'breakout'),
       keltner_mid_cross_lookback: _iv('keltnerMidCrossLookback', 5),
       keltner_walk_min_consecutive: _iv('keltnerWalkMinConsecutive', 3),
       keltner_walk_tolerance_pct: _fv('keltnerWalkTolerancePct', 0.5),
       keltner_squeeze_lookback: _iv('keltnerSqueezeLookback', 10),
     stdev_on: _on('togStdev'), stdev_length: _iv('stdevLength', 20), stdev_trend_lookback: _iv('stdevTrendLookback', 5),
-      stdev_trigger: _tv('stdevTrigger', 'expansion'),
     chaikin_vol_on: _on('togChaikinVol'), chaikin_vol_ema_length: _iv('chaikinVolEmaLength', 10),
       chaikin_vol_roc_length: _iv('chaikinVolRocLength', 10), chaikin_vol_trend_lookback: _iv('chaikinVolTrendLookback', 5),
-      chaikin_vol_trigger: _tv('chaikinVolTrigger', 'expansion'),
     hist_vol_on: _on('togHistVol'), hist_vol_length: _iv('histVolLength', 20), hist_vol_trend_lookback: _iv('histVolTrendLookback', 5),
-      hist_vol_trigger: _tv('histVolTrigger', 'expansion'),
     obv_on: _on('togObv'), obv_sma_length: _iv('obvSmaLength', 20),
-      obv_trigger: _tv('obvTrigger', 'trend'), obv_div_lookback: _iv('obvDivLookback', 5),
+      obv_div_lookback: _iv('obvDivLookback', 5),
     vwap_on: _on('togVwap'), vwap_length: _iv('vwapLength', 20),
-      vwap_trigger: _tv('vwapTrigger', 'position'), vwap_band_pct: _fv('vwapBandPct', 1.0),
+      vwap_band_pct: _fv('vwapBandPct', 1.0),
       vwap_anchored: _on('vwapAnchored'),
     ad_on: _on('togAd'), ad_sma_length: _iv('adSmaLength', 20),
-      ad_trigger: _tv('adTrigger', 'trend'), ad_div_lookback: _iv('adDivLookback', 5),
+      ad_div_lookback: _iv('adDivLookback', 5),
     cmf_on: _on('togCmf'), cmf_length: _iv('cmfLength', 20), cmf_threshold: _fv('cmfThreshold', 0.05),
-      cmf_trigger: _tv('cmfTrigger', 'threshold'), cmf_centerline_lookback: _iv('cmfCenterlineLookback', 5),
+      cmf_centerline_lookback: _iv('cmfCenterlineLookback', 5),
     vol_profile_on: _on('togVolProfile'), vol_profile_lookback: _iv('volProfileLookback', 50), vol_profile_bins: _iv('volProfileBins', 24),
-      vol_profile_trigger: _tv('volProfileTrigger', 'position'),
       vol_profile_breakout_lookback: _iv('volProfileBreakoutLookback', 5),
     fib_on: _on('togFib'), fib_lookback: _iv('fibLookback', 50), fib_tolerance_pct: _fv('fibTolerancePct', 1.0),
-      fib_trigger: _tv('fibTrigger', 'bounce_reject'),
   };
 
   if (!symbol) {
@@ -2608,19 +2780,26 @@ async function runBacktest() {
     stop_loss: sl, take_profit: tp, min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
-    rsi_trigger: rsiTrigger, rsi_div_lookback: rsiDivLookback,
+    rsi_div_lookback: rsiDivLookback,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
-    macd_trigger: macdTrigger, macd_div_lookback: macdDivLookback, macd_zscore_length: macdZscoreLength,
+    macd_div_lookback: macdDivLookback, macd_zscore_length: macdZscoreLength,
     bb_length: bbLength, bb_std: bbStd,
-    bb_trigger: bbTrigger, bb_squeeze_lookback: bbSqueezeLookback, bb_squeeze_percentile: bbSqueezePercentile,
+    bb_squeeze_lookback: bbSqueezeLookback, bb_squeeze_percentile: bbSqueezePercentile,
     bb_breakout_window: bbBreakoutWindow, bb_walk_min_consecutive: bbWalkMinConsecutive,
     bb_walk_tolerance_pct: bbWalkTolerancePct, bb_pattern_lookback: bbPatternLookback,
+    bb_breakout_margin_pct: bbBreakoutMarginPct, bb_pct_below_high: bbPctBelowHigh, bb_pct_above_low: bbPctAboveLow,
     ema_short: emaShort, ema_long: emaLong,
-    ma_type: maType, ma_trigger: maTrigger, ma_trigger_lookback: maTriggerLookback,
+    ma_type: maType, ma_trigger_lookback: maTriggerLookback,
     ma_short_length: maShortLength, ma_medium_length: maMediumLength, ma_long_length: maLongLength,
     volume_surge: volSurge,
     rsi_on: rsiOn, macd_on: macdOn, bb_on: bbOn, ma_on: maOn, vol_on: volOn,
     ...extParams,
+  });
+
+  // Each active trigger chip becomes its own repeated query param — supports
+  // several simultaneously-active modes per indicator (see api/signals.py).
+  TRIGGER_GROUPS.forEach(([queryKey, containerId]) => {
+    getActiveTriggers(containerId).forEach(mode => params.append(queryKey, mode));
   });
 
   try {
