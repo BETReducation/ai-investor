@@ -229,35 +229,22 @@ _BT_FLOAT_CALC_KEYS = {
     "vwap_band_pct": 1.0,
 }
 
-_VALID_RSI_TRIGGERS = {
-    "overbought_oversold", "overbought", "oversold", "centerline_cross",
-    "bullish_divergence", "bearish_divergence", "failure_swings",
-}
-
-_VALID_MACD_TRIGGERS = {
-    "signal_cross", "bullish_signal_cross", "bearish_signal_cross", "centerline_cross",
-    "bullish_divergence", "bearish_divergence", "histogram_reversal", "overbought", "oversold",
-}
-
-_VALID_BB_TRIGGERS = {
-    "percent_b", "upper_touch", "lower_touch", "volatility_breakout",
-    "walking_upper", "walking_lower", "w_bottom", "m_top",
-}
-
-_VALID_MA_TRIGGERS = {
-    "dual_cross", "price_cross", "two_ma_bull", "two_ma_bear", "three_ma_bull", "three_ma_bear",
-}
-
-_VALID_ADX_TRIGGERS = {
-    "trend_threshold", "bull_di_cross", "bear_di_cross", "above_25", "above_50", "above_75",
-    "strong_di_plus", "strong_di_minus",
-}
-
 _TRIGGER_WHITELISTS = {
+    "rsi_trigger":         {"overbought_oversold", "overbought", "oversold", "centerline_cross",
+                             "bullish_divergence", "bearish_divergence", "failure_swings"},
+    "macd_trigger":        {"signal_cross", "bullish_signal_cross", "bearish_signal_cross", "centerline_cross",
+                             "bullish_divergence", "bearish_divergence", "histogram_reversal", "overbought", "oversold"},
+    "bb_trigger":          {"percent_b", "upper_touch", "lower_touch", "volatility_breakout",
+                             "walking_upper", "walking_lower", "w_bottom", "m_top",
+                             "breakout_margin", "pct_below_high", "pct_above_low"},
+    "ma_trigger":          {"dual_cross", "price_cross", "two_ma_bull", "two_ma_bear", "three_ma_bull", "three_ma_bear"},
+    "adx_trigger":         {"trend_threshold", "bull_di_cross", "bear_di_cross", "above_25", "above_50", "above_75",
+                             "strong_di_plus", "strong_di_minus"},
     "psar_trigger":        {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
     "ichimoku_trigger":    {"cloud_position", "bullish", "bearish", "tk_cross"},
     "supertrend_trigger":  {"flip", "bull_flip", "bear_flip", "trend_state", "trailing_stop"},
-    "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross", "two_channel_bull", "two_channel_bear"},
+    "donchian_trigger":    {"breakout", "bullish", "bearish", "middle_cross", "two_channel_bull", "two_channel_bear",
+                             "resistance_retest", "support_retest"},
     "hma_trigger":         {"slope", "bullish_slope", "bearish_slope", "price_cross", "two_hma_bull", "two_hma_bear"},
     "stoch_trigger":       {"overbought_oversold", "overbought", "oversold", "signal_cross"},
     "stochrsi_trigger":    {"overbought_oversold", "overbought", "oversold", "signal_cross", "bullish_divergence", "bearish_divergence"},
@@ -2023,6 +2010,8 @@ def backtest():
         "cci_centerline_lookback", "willr_midline_lookback", "roc_centerline_lookback",
         "mfi_centerline_lookback", "tsi_centerline_lookback", "ao_zero_cross_lookback",
         "keltner_mid_cross_lookback", "cmf_centerline_lookback", "vol_profile_breakout_lookback",
+        "bb_breakout_margin_pct", "bb_pct_below_high", "bb_pct_above_low",
+        "donchian_retest_lookback", "donchian_retest_tolerance_pct",
     ]:
         val = request.args.get(key)
         if val is not None:
@@ -2031,42 +2020,20 @@ def backtest():
             except ValueError:
                 return jsonify({"error": f"Invalid value for '{key}'"}), 400
 
-    rsi_trigger = request.args.get("rsi_trigger")
-    if rsi_trigger is not None:
-        if rsi_trigger not in _VALID_RSI_TRIGGERS:
-            return jsonify({"error": "Invalid value for 'rsi_trigger'"}), 400
-        thresholds["rsi_trigger"] = rsi_trigger
-
-    macd_trigger = request.args.get("macd_trigger")
-    if macd_trigger is not None:
-        if macd_trigger not in _VALID_MACD_TRIGGERS:
-            return jsonify({"error": "Invalid value for 'macd_trigger'"}), 400
-        thresholds["macd_trigger"] = macd_trigger
-
-    bb_trigger = request.args.get("bb_trigger")
-    if bb_trigger is not None:
-        if bb_trigger not in _VALID_BB_TRIGGERS:
-            return jsonify({"error": "Invalid value for 'bb_trigger'"}), 400
-        thresholds["bb_trigger"] = bb_trigger
-
-    ma_trigger = request.args.get("ma_trigger")
-    if ma_trigger is not None:
-        if ma_trigger not in _VALID_MA_TRIGGERS:
-            return jsonify({"error": "Invalid value for 'ma_trigger'"}), 400
-        thresholds["ma_trigger"] = ma_trigger
-
-    adx_trigger = request.args.get("adx_trigger")
-    if adx_trigger is not None:
-        if adx_trigger not in _VALID_ADX_TRIGGERS:
-            return jsonify({"error": "Invalid value for 'adx_trigger'"}), 400
-        thresholds["adx_trigger"] = adx_trigger
-
+    # Each indicator's trigger can now have several modes active at once — the
+    # frontend sends one repeated query key per active mode (?rsi_trigger=a&rsi_trigger=b),
+    # which Flask collects with getlist(). Falls back to DEFAULT_THRESHOLDS' single-mode
+    # default (in score_signals) if the caller sends nothing for a given indicator.
     for trig_key, allowed in _TRIGGER_WHITELISTS.items():
-        val = request.args.get(trig_key)
-        if val is not None:
-            if val not in allowed:
-                return jsonify({"error": f"Invalid value for '{trig_key}'"}), 400
-            thresholds[trig_key] = val
+        vals = request.args.getlist(trig_key)
+        if vals:
+            cleaned = []
+            for v in vals:
+                if v not in allowed:
+                    return jsonify({"error": f"Invalid value for '{trig_key}'"}), 400
+                if v not in cleaned:
+                    cleaned.append(v)
+            thresholds[trig_key] = cleaned
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))
