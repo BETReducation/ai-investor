@@ -130,7 +130,13 @@
 .cat-info { flex:1; min-width:0; }
 .cat-name { font-size:9px; font-weight:700; color:var(--text-secondary); letter-spacing:1px; }
 .cat-desc { font-size:8px; color:var(--text-muted); margin-top:1px; }
-.cat-pct-num   { font-size:11px; font-weight:700; color:var(--text-primary); text-align:right; }
+.cat-val-input {
+  font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; color:var(--text-primary);
+  text-align:right; background:transparent; border:none; border-bottom:1px dashed transparent;
+  width:64px; padding:0; outline:none; transition:border-color .15s; cursor:text;
+}
+.cat-val-input:hover, .cat-val-input:focus { border-bottom-color:var(--accent-blue); }
+.cat-val-input:disabled { color:var(--text-muted); cursor:default; }
 .cat-pct-drift { font-size:8px; text-align:right; }
 .cat-chev { width:13px; height:13px; color:var(--text-muted); transition:transform .2s; flex-shrink:0; }
 .cat-chev.open { transform:rotate(180deg); }
@@ -640,7 +646,10 @@ function buildPanel() {
           <div class="cat-desc">${cat.desc}</div>
         </div>
         <div>
-          <div class="cat-pct-num" id="cpct-${cat.id}">20.0%</div>
+          <input type="text" inputmode="decimal" class="cat-val-input" id="cpct-${cat.id}" value="£20,000"
+                 ${off ? 'disabled' : ''} onclick="event.stopPropagation();"
+                 onchange="setCategoryValue('${cat.id}', this.value)"
+                 title="Set this category's £ value directly">
           <div class="cat-pct-drift fl" id="cdrift-${cat.id}">±0.0%</div>
         </div>
         <label class="toggle" title="${off?'Include':'Exclude'} this category in the balanced portfolio" onclick="event.stopPropagation();">
@@ -705,6 +714,28 @@ function setTotalValue(val) {
     if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
   });
   addEvt('PORTFOLIO VALUE', `Investment amount set to ${fmt(newTotal)} — positions re-equalised across ${active.length} enabled assets`);
+  updateUI();
+}
+
+function setCategoryValue(catId, rawVal) {
+  const cat = CATS.find(c => c.id === catId);
+  if (!cat || !catEnabled[catId]) return;
+  const cleaned = String(rawVal).replace(/[^0-9.\-]/g, '');
+  const newVal = Math.max(0, parseFloat(cleaned) || 0);
+  const active = cat.assets.filter(a => enabled[a.id] !== false);
+  liveMode = false;
+  if (active.length) {
+    const newBase = newVal / active.length;
+    active.forEach(a => {
+      baseVals[a.id] = newBase;
+      mults[a.id] = 1.0;
+      const sl = document.getElementById(`sl-${a.id}`);
+      const ap = document.getElementById(`ap-${a.id}`);
+      if (sl) sl.value = 0;
+      if (ap) { ap.textContent = '±0%'; ap.className = 'asset-pct fl'; }
+    });
+  }
+  addEvt('CATEGORY VALUE', `${cat.label} set to ${fmt(newVal)} — positions re-equalised across ${active.length} enabled asset${active.length === 1 ? '' : 's'}`);
   updateUI();
 }
 
@@ -847,7 +878,8 @@ function updateUI() {
   // Category headers
   CATS.forEach(cat => {
     const val = p.catVals[cat.id], drift = catEnabled[cat.id] ? val - targetVal : 0;
-    const pe = document.getElementById(`cpct-${cat.id}`); if (pe) pe.textContent = catEnabled[cat.id] ? fmt(val) : 'OFF';
+    const pe = document.getElementById(`cpct-${cat.id}`);
+    if (pe && document.activeElement !== pe) pe.value = catEnabled[cat.id] ? fmt(val) : 'OFF';
     const de = document.getElementById(`cdrift-${cat.id}`);
     if (de) { de.textContent = catEnabled[cat.id] ? fmtGain(drift) : ''; de.className = `cat-pct-drift ${Math.abs(drift)<targetVal*.01?'fl':drift>0?'up':'dn'}`; }
   });
