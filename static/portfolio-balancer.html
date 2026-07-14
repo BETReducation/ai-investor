@@ -616,12 +616,13 @@ function startAutoRefresh() {
 
 /* ══ BUILD UI ════════════════════════════════════════════════════════════════ */
 function buildPanel() {
-  const target = catTargetPct();
+  const activeCatCount = activeCategories().length;
+  const targetVal = activeCatCount ? PORTFOLIO_START / activeCatCount : 0;
   document.getElementById('heroBadges').innerHTML = CATS.map(c => {
     const off = !catEnabled[c.id];
     return `<div class="pb-badge" style="background:${c.color}18;border-color:${c.color}44;color:${c.color};${off?'opacity:.4;':''}">
       <span style="width:6px;height:6px;border-radius:50%;background:${c.color};display:inline-block;"></span>
-      ${c.short} — ${off ? 'OFF' : target.toFixed(0)+'%'}
+      ${c.short} — ${off ? 'OFF' : fmt(targetVal)}
     </div>`;
   }).join('');
 
@@ -816,6 +817,8 @@ function applyScene(name) {
 function updateUI() {
   const p       = calcPortfolio();
   const target  = catTargetPct();
+  const activeCatCount = activeCategories().length;
+  const targetVal = activeCatCount ? PORTFOLIO_START / activeCatCount : 0;
   const gain    = p.total - PORTFOLIO_START;
   const gainPct = PORTFOLIO_START ? (gain / PORTFOLIO_START) * 100 : 0;
 
@@ -843,26 +846,25 @@ function updateUI() {
 
   // Category headers
   CATS.forEach(cat => {
-    const pct = p.catPcts[cat.id], drift = catEnabled[cat.id] ? pct - target : 0;
-    const pe = document.getElementById(`cpct-${cat.id}`); if (pe) pe.textContent = catEnabled[cat.id] ? pct.toFixed(1)+'%' : 'OFF';
+    const val = p.catVals[cat.id], drift = catEnabled[cat.id] ? val - targetVal : 0;
+    const pe = document.getElementById(`cpct-${cat.id}`); if (pe) pe.textContent = catEnabled[cat.id] ? fmt(val) : 'OFF';
     const de = document.getElementById(`cdrift-${cat.id}`);
-    if (de) { de.textContent = catEnabled[cat.id] ? fmtP(drift) : ''; de.className = `cat-pct-drift ${Math.abs(drift)<.2?'fl':drift>0?'up':'dn'}`; }
+    if (de) { de.textContent = catEnabled[cat.id] ? fmtGain(drift) : ''; de.className = `cat-pct-drift ${Math.abs(drift)<targetVal*.01?'fl':drift>0?'up':'dn'}`; }
   });
 
   // Allocation table
   document.getElementById('allocTbl').innerHTML = `
-    <thead><tr><th></th><th>CATEGORY</th><th style="text-align:right;">ALLOC</th><th style="text-align:right;">DRIFT</th><th style="text-align:right;">VALUE</th></tr></thead>
+    <thead><tr><th></th><th>CATEGORY</th><th style="text-align:right;">VALUE</th><th style="text-align:right;">DRIFT</th></tr></thead>
     <tbody>${CATS.map((cat, i) => {
-      const pct = p.catPcts[cat.id], drift = pct-target, barW = Math.min(100, target ? (pct/(target*2))*100 : 0);
+      const pct = p.catPcts[cat.id], val = p.catVals[cat.id], drift = val-targetVal, barW = Math.min(100, target ? (pct/(target*2))*100 : 0);
       const last = i === CATS.length-1;
       return `<tr${last?' class="last-row"':''}>
         <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cat.color};${catEnabled[cat.id]?'':'opacity:.35;'}"></span></td>
         <td${catEnabled[cat.id]?'':' style="opacity:.5;"'}>${cat.label}${catEnabled[cat.id]?'':' (off)'}</td>
-        <td style="text-align:right;font-weight:700;color:var(--text-primary);">${pct.toFixed(1)}%</td>
-        <td style="text-align:right;" class="${!catEnabled[cat.id]||Math.abs(drift)<.1?'':'drift-'+(drift>0?'pos':'neg')}">${catEnabled[cat.id]?fmtP(drift):'—'}</td>
-        <td style="text-align:right;">${fmt(p.catVals[cat.id])}</td>
+        <td style="text-align:right;font-weight:700;color:var(--text-primary);">${fmt(val)}</td>
+        <td style="text-align:right;" class="${!catEnabled[cat.id]||Math.abs(drift)<targetVal*.005?'':'drift-'+(drift>0?'pos':'neg')}">${catEnabled[cat.id]?fmtGain(drift):'—'}</td>
       </tr>
-      <tr${last?' class="last-row"':''}><td colspan="5" style="padding:0 4px 5px;">
+      <tr${last?' class="last-row"':''}><td colspan="4" style="padding:0 4px 5px;">
         <div class="bar-wrap"><div class="bar-fill" style="width:${barW}%;background:${cat.color};opacity:.65;"></div></div>
       </td></tr>`;
     }).join('')}</tbody>`;
@@ -981,7 +983,10 @@ function initChart() {
           callbacks: { label: ctx => {
             const cat = CATS[ctx.dataIndex];
             if (cat && !catEnabled[cat.id]) return `  ${ctx.label}: OFF — excluded from balanced total`;
-            return `  ${ctx.label}: ${ctx.parsed.toFixed(1)}%  (target ${catTargetPct().toFixed(1)}%)`;
+            const p = calcPortfolio();
+            const activeCatCount = activeCategories().length;
+            const targetVal = activeCatCount ? PORTFOLIO_START / activeCatCount : 0;
+            return `  ${ctx.label}: ${fmt(p.catVals[cat.id])}  (target ${fmt(targetVal)})`;
           } },
           bodyFont:{family:"'IBM Plex Mono',monospace",size:11},
           backgroundColor:'rgba(10,14,20,.96)', borderColor:'rgba(30,42,58,1)', borderWidth:1, padding:10,
