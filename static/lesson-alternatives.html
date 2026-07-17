@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alternative Assets — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+.num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple2); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+
+/* PRACTICAL TIPS GRID */
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+.tip-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
+.tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+.calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Asset 5 of 5</div>
+    <h1 class="hero-title">Alternative Assets — Real Estate, Commodities & <span class="accent">Crypto</span></h1>
+    <p class="hero-sub">Beyond stocks, bonds, and cash, a fourth category can behave completely differently when markets get rough — for better and for worse. Here's what real, verified data says about diversification, higher yields, and dramatically higher risk.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Actually Counts as an "Alternative" Asset?</h2>
+    <p class="body-text">Alternative assets are everything outside the traditional stocks/bonds/cash trio — most commonly real estate, commodities (gold, oil, agricultural goods), and more recently cryptocurrency. You no longer need to literally buy a building or bars of gold to hold them: Real Estate Investment Trusts (REITs) let you own a slice of commercial property portfolios that trade like a stock; commodity ETFs track the price of gold or oil without you storing anything; and crypto exchanges and ETFs make Bitcoin and similar assets a few clicks away.</p>
+    <p class="body-text">A useful analogy: think of your traditional stocks-bonds-cash portfolio as a well-balanced meal, and alternatives as the seasoning — a little can genuinely improve the dish by adding something the main ingredients don't have, but too much can overwhelm everything else.</p>
+
+    <div class="example-card">
+      <h3>🏆 Real example: Gold vs. Stocks in a Crisis</h3>
+      <p class="body-text" style="margin-bottom:0;">2008 is the classic real-world illustration of why alternatives can matter. While the S&amp;P 500 crashed, gold quietly went the other way.</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">🥇 Gold (GLD) — 2008</div>
+          <div class="ep-row"><span>Asset type</span><b>Commodity</b></div>
+          <div class="ep-row"><span>Full-year 2008 return</span><b>+2.0%</b></div>
+          <div class="ep-total">
+            <div class="val">+2.0%</div>
+            <div class="lbl">while the crisis unfolded</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">📉 S&P 500 (SPY) — 2008</div>
+          <div class="ep-row"><span>Asset type</span><b>Stocks</b></div>
+          <div class="ep-row"><span>Full-year 2008 return</span><b>-36.2%</b></div>
+          <div class="ep-total">
+            <div class="val">-36.2%</div>
+            <div class="lbl">during the financial crisis</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Same year, same global crisis — gold rose while stocks fell more than a third. That's the core diversification appeal of alternatives: an asset that doesn't move in lockstep with your traditional holdings can cushion a portfolio precisely when it's needed most. It's a real historical pattern, not a guarantee for the next crisis.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>📊 3 Alternative Assets at a Glance</h3>
+      <p>Each alternative asset type has a defining real-world trait — here's one verified number for each, alongside the S&amp;P 500 for comparison.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Asset class</th><th>Example</th><th>Key trait</th><th>vs. S&P 500</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>Real Estate (REITs)</td><td>VNQ</td><td>3.6% dividend yield</td><td>1.0%</td></tr>
+          <tr class="highlight-row"><td>Commodities (Gold)</td><td>GLD</td><td>+2.0% in the 2008 crisis</td><td>-36.2%</td></tr>
+          <tr><td>Cryptocurrency</td><td>Bitcoin</td><td>55.5% annualized volatility (2019-2024)</td><td>21.0%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">REITs are legally required to distribute at least 90% of their taxable income as dividends, which is exactly why VNQ's yield runs well above a typical stock index. Bitcoin's volatility and max drawdown (-76.6% vs. SPY's -33.7% over the same 2019-2024 window) show the other side of "alternative" — some of these assets carry meaningfully more risk, not less.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
+    <h3 class="subhead">5 Things to Know About Alternative Assets</h3>
+    <ol class="num-checklist">
+      <li><b>Real estate through REITs is legally required to distribute at least 90% of taxable income as dividends</b> — which is why REIT yields tend to run well above typical stocks.</li>
+      <li><b>Gold and other commodities have historically shown low or even negative correlation to stocks during crises</b>, though this isn't guaranteed every time.</li>
+      <li><b>Cryptocurrency is dramatically more volatile than stocks or bonds</b> — multiples higher, not just a bit higher.</li>
+      <li><b>Many alternatives are harder to value than a stock or bond</b> — there's no earnings report or coupon rate to anchor a "fair price."</li>
+      <li><b>"Alternative" doesn't mean "safer"</b> — some alternatives, like crypto, carry meaningfully more risk, not less, in exchange for their diversification potential.</li>
+    </ol>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Things to Check Before Adding Alternatives</h3>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>📏 Size the Position Deliberately</h4>
+        <ul>
+          <li>Given the higher volatility of many alternatives, a common approach is keeping them to a small slice of a portfolio.</li>
+          <li>5-10% is a figure often cited as a starting point, not a rule.</li>
+          <li>Treat alternatives as seasoning, not the main dish.</li>
+          <li>A larger allocation means a larger swing in your overall portfolio.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🔍 Understand What You Actually Own</h4>
+        <ul>
+          <li>A REIT ETF, a gold ETF, and a crypto exchange account are structurally very different products.</li>
+          <li>Each carries its own liquidity, custody, and regulatory profile.</li>
+          <li>"Alternative" is a broad label covering very different underlying risks.</li>
+          <li>Read what you're actually buying, not just the category name.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>📉 Expect Bigger Swings</h4>
+        <ul>
+          <li>The same volatility that can boost diversification can also mean sharper drawdowns.</li>
+          <li>Make sure you can stomach the ride before you buy, not after.</li>
+          <li>A -76% drawdown, like Bitcoin's, is a real historical event, not a worst-case hypothetical.</li>
+          <li>Ask yourself how you'd react in the moment, not just in theory.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🧾 Check the Fees and Structure</h4>
+        <ul>
+          <li>Some alternative products carry higher expense ratios than a plain stock or bond ETF.</li>
+          <li>Physical or custody-based alternatives can add storage or custody costs on top.</li>
+          <li>Compare the all-in cost, not just the headline exposure.</li>
+          <li>A great diversification story can still be a poor deal if the fees are high enough.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> none of this is a recommendation to buy gold, REITs, or crypto specifically — GLD, VNQ, and Bitcoin are used purely because they're real, well-known, and have public data. Past correlation and volatility patterns aren't guaranteed to repeat, and alternative assets in particular can behave very differently in a future crisis than they did in past ones.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Diversification Blend Calculator</h2>
+    <p class="section-desc">See how a small allocation to an alternative asset changes your overall portfolio's return, in both a crisis year and a bad year for the alternative itself.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcPortfolio">Total portfolio value ($)</label>
+          <input type="number" id="calcPortfolio" value="10000" min="1">
+        </div>
+        <div class="calc-field">
+          <label for="calcAltPct">Allocation to the alternative asset (%)</label>
+          <input type="number" id="calcAltPct" value="10" min="0" max="100" step="1">
+        </div>
+        <div class="calc-field">
+          <label for="calcTradReturn">Traditional portfolio return this year (%)</label>
+          <input type="number" id="calcTradReturn" value="-36" step="1">
+        </div>
+        <div class="calc-field">
+          <label for="calcAltReturn">Alternative asset return this year (%)</label>
+          <input type="number" id="calcAltReturn" value="2" step="1">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Result →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csA">—</div><div class="cs-lbl">With the alternative</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csB">—</div><div class="cs-lbl">100% traditional</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csDiff">—</div><div class="cs-lbl">Difference</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barA"></div>
+          <div class="calc-bar-growth" id="barB"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>With the alternative</span>
+          <span><span class="dot" style="background:var(--green)"></span>100% traditional</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+        <p class="calc-note">Model: your blended return is the weighted average of the traditional portfolio's return and the alternative's return, based on your allocation. The default numbers replay the real 2008 example above — try setting the alternative's return to something like -76 to see what happens when the alternative itself is the one having a bad year instead.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">1. What are the three types of "alternative assets" covered in this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Stocks, bonds, and cash</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Only cryptocurrency</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Real estate (REITs), commodities (like gold), and cryptocurrency</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Savings accounts and CDs only</label>
+        </div>
+        <div class="quiz-explain">This lesson covers real estate through REITs, commodities like gold, and cryptocurrency — three of the most common categories investors reach for outside stocks, bonds, and cash.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. Why do REITs like VNQ tend to pay meaningfully higher dividend yields than a typical stock index like SPY?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> REITs are riskier so they pay more by law</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> REITs are legally required to distribute at least 90% of their taxable income as dividends</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> It's random and has no structural reason</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> REITs never reinvest any profit</label>
+        </div>
+        <div class="quiz-explain">It's baked into the legal structure: to qualify as a REIT, a company must distribute at least 90% of its taxable income to shareholders, which structurally pushes yields higher than a typical company that retains more profit.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. In 2008, while the S&P 500 fell about 36%, gold (GLD) actually rose about 2%. What does this illustrate?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Gold always rises when stocks fall, every single time</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Gold and stocks are legally required to move oppositely</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The S&P 500 and GLD track the exact same underlying asset</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Alternative assets can sometimes behave very differently from stocks, which is the core diversification appeal</label>
+        </div>
+        <div class="quiz-explain">2008 is one real historical example of an alternative asset moving very differently from stocks during a crisis — a real pattern, but not a guaranteed one for every future downturn.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. From 2019-2024, Bitcoin's annualized volatility was about 55.5% compared to SPY's 21.0%, and its max drawdown was -76.6% versus SPY's -33.7%. What does this show?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Cryptocurrency carries dramatically more risk/volatility than stocks</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Bitcoin is safer than the S&P 500</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Bitcoin and stocks have identical risk profiles</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Volatility doesn't matter for long-term investors</label>
+        </div>
+        <div class="quiz-explain">Both Bitcoin's annualized volatility and its max drawdown were roughly 2-2.5x larger than the S&P 500's over the same period — a real, measured gap, not just a subjective impression.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. What's a commonly cited approach to sizing an allocation to higher-volatility alternative assets like crypto?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Put your entire portfolio into it for maximum growth</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Avoid alternatives entirely, always</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Keep it to a small slice of an overall portfolio, given the higher volatility</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Match it exactly to your bond allocation</label>
+        </div>
+        <div class="quiz-explain">A small slice — often cited around 5-10% — lets you access the diversification potential of alternatives without letting their much bigger swings dominate your whole portfolio.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/alternatives-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the gold vs. stocks 2008 example, the 3-asset comparison table, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/alternatives-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to research a real alternative asset and check it against the 4-point checklist.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/alternatives-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore REITs, commodities, and crypto in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">You've Explored All 5 Asset Classes!</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">From stocks to crypto, you've now got a full picture of where money can go. Ready to see what the charts actually mean?</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner#tab-assets" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to Types of Assets</div>
+        <div class="card-desc">Review any of the 5 asset classes before moving on.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/learn/beginner#tab-charts" class="hub-card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Explore Reading a Chart</div>
+        <div class="card-desc">See how candlesticks, trend lines, and more help you actually read what's happening in a market.</div>
+        <div class="card-link">Open the tab →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function runCalc() {
+  const portfolio = parseFloat(document.getElementById('calcPortfolio').value) || 0;
+  const altPct = parseFloat(document.getElementById('calcAltPct').value) || 0;
+  const tradReturn = parseFloat(document.getElementById('calcTradReturn').value) || 0;
+  const altReturn = parseFloat(document.getElementById('calcAltReturn').value) || 0;
+
+  const blendedReturnPct = (1 - altPct / 100) * tradReturn + (altPct / 100) * altReturn;
+  const valueWithAlt = portfolio * (1 + blendedReturnPct / 100);
+  const valueTradOnly = portfolio * (1 + tradReturn / 100);
+  const diff = valueWithAlt - valueTradOnly;
+
+  document.getElementById('csA').textContent = fmtMoney(valueWithAlt);
+  document.getElementById('csB').textContent = fmtMoney(valueTradOnly);
+  document.getElementById('csDiff').textContent = (diff >= 0 ? '+' + fmtMoney(diff) : '-' + fmtMoney(Math.abs(diff)));
+
+  const total = Math.max(valueWithAlt, 0) + Math.max(valueTradOnly, 0);
+  const pctA = total > 0 ? (Math.max(valueWithAlt, 0) / total) * 100 : 50;
+  const pctB = 100 - pctA;
+  const barA = document.getElementById('barA');
+  const barB = document.getElementById('barB');
+  barA.style.width = pctA + '%';
+  barB.style.width = pctB + '%';
+  barA.textContent = fmtMoney(valueWithAlt);
+  barB.textContent = fmtMoney(valueTradOnly);
+
+  const callout = document.getElementById('calcCallout');
+  if (Math.abs(diff) < 1) {
+    callout.innerHTML = 'With a ' + altPct + '% allocation and matching returns, the blend makes no real difference here — try changing the alternative\'s return to see the effect.';
+  } else if (diff > 0) {
+    callout.innerHTML = 'With a ' + altPct + '% allocation earning ' + altReturn + '% while the rest of your portfolio returned ' + tradReturn + '%, the blend leaves you ' + fmtMoney(diff) + ' better off than being 100% traditional — this is the diversification benefit in action.';
+  } else {
+    callout.innerHTML = 'With a ' + altPct + '% allocation earning ' + altReturn + '% while the rest of your portfolio returned ' + tradReturn + '%, the blend actually leaves you ' + fmtMoney(Math.abs(diff)) + ' worse off than being 100% traditional — the same allocation that can help in one year can hurt in another.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
