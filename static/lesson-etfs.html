@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETFs & Index Funds — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+.num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple2); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+
+/* PRACTICAL TIPS GRID */
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+.tip-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
+.tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+.calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Asset 2 of 5</div>
+    <h1 class="hero-title">ETFs & Index Funds — One Trade, <span class="accent">Hundreds</span> of Companies</h1>
+    <p class="hero-sub">A single ETF share can hand you proportional ownership in hundreds of companies at once — for a fraction of the cost and effort of buying them individually. Here's exactly how that works, with real numbers from one of the world's most popular funds.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Is an ETF, Really?</h2>
+    <p class="body-text">An ETF (Exchange-Traded Fund) is a single security that holds a whole basket of other investments — often hundreds of individual stocks — inside it. When you buy one share of an ETF, you're not betting on one company; you're buying a small, proportional slice of every company the fund holds, all in a single trade that clears just like buying an ordinary stock.</p>
+    <p class="body-text">A useful analogy: think of an ETF like a fruit basket instead of a single apple. Buy the basket and you get a bit of everything inside it — apples, oranges, bananas — in one purchase, instead of visiting five different stalls to build the same variety yourself.</p>
+
+    <div class="example-card">
+      <h3>🛒 Real example: One Trade vs. Ten Trades</h3>
+      <p class="body-text" style="margin-bottom:0;">VOO, Vanguard's S&amp;P 500 ETF, holds around 500 U.S. companies inside a single fund. One share currently costs about $690. Just to buy 1 share each of VOO's 10 largest individual holdings — Nvidia, Apple, Microsoft, Amazon, and the rest — costs $4,183, and you'd still only own 10 of the fund's roughly 500 companies.</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">📦 1 share of VOO</div>
+          <div class="ep-row"><span>Cost</span><b>$690</b></div>
+          <div class="ep-row"><span>Companies owned</span><b>~500</b></div>
+          <div class="ep-row"><span>Trades needed</span><b>1</b></div>
+          <div class="ep-total">
+            <div class="val">$690</div>
+            <div class="lbl">for ~500 companies</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">🧾 Top 10 holdings, bought individually</div>
+          <div class="ep-row"><span>Cost</span><b>$4,183</b></div>
+          <div class="ep-row"><span>Companies owned</span><b>10</b></div>
+          <div class="ep-row"><span>Trades needed</span><b>10</b></div>
+          <div class="ep-total">
+            <div class="val">$4,183</div>
+            <div class="lbl">for just 10 companies</div>
+          </div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Six times the cost, ten separate trades to manage, and you'd still be missing the other ~490 companies inside VOO entirely. One ETF share isn't just simpler — it's structurally a completely different scale of diversification.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>🛡️ Real example: Why One Company Can't Sink the Fund</h3>
+      <p style="margin-bottom:16px;">Here are VOO's actual top 10 holdings and their real weight inside the fund. Notice how small even the single largest position is.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Company</th><th>Weight in VOO</th></tr>
+          </thead>
+          <tbody>
+          <tr class="highlight-row"><td>Nvidia (largest holding)</td><td>7.5%</td></tr>
+          <tr><td>Apple</td><td>6.6%</td></tr>
+          <tr><td>Microsoft</td><td>4.3%</td></tr>
+          <tr><td>Amazon</td><td>3.6%</td></tr>
+          <tr><td>Alphabet (both share classes)</td><td>5.8%</td></tr>
+          <tr><td>Broadcom</td><td>2.8%</td></tr>
+          <tr><td>Micron</td><td>2.0%</td></tr>
+          <tr><td>Meta</td><td>1.9%</td></tr>
+          <tr><td>Tesla</td><td>1.8%</td></tr>
+          <tr><td>All other ~490 companies</td><td>63.7%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">Nvidia — the single largest company in the entire fund — is still only 7.5% of it. If Nvidia's stock fell to $0 overnight, VOO would fall by roughly 7.5%, not 100%, because the other ~499 companies would be completely unaffected. Compare that to owning 100% Nvidia stock directly, where the same event wipes out your entire position.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
+    <h3 class="subhead">5 Things to Know About ETFs</h3>
+    <ol class="num-checklist">
+      <li><b>An ETF trades all day on an exchange</b>, just like a stock — unlike old-style mutual funds, which only price once a day after the market closes.</li>
+      <li><b>Broad index ETFs charge a tiny annual fee</b> — VOO's expense ratio is just 0.03%, about $3 a year on a $10,000 investment.</li>
+      <li><b>You don't get to pick which companies are inside</b> — the fund's rules (its "index") decide that for you.</li>
+      <li><b>Not all ETFs are broadly diversified</b> — some track a single sector, country, or theme, and can be just as concentrated as owning individual stocks.</li>
+      <li><b>ETFs can pay dividends too</b>, passed through from the dividends of the companies held inside them.</li>
+    </ol>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Things to Check Before You Buy an ETF</h3>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>📇 Check What Index It Actually Tracks</h4>
+        <ul>
+          <li>"S&amp;P 500", "Nasdaq 100", and a niche thematic index can behave very differently.</li>
+          <li>Two ETFs can both say "diversified" and hold completely different companies.</li>
+          <li>Read the fund's one-line description before assuming what's inside it.</li>
+          <li>The name on the label isn't always the full story.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>💸 Compare the Expense Ratio</h4>
+        <ul>
+          <li>Even among broad index ETFs, fees can vary meaningfully.</li>
+          <li>A fraction of a percent compounds over decades — see the Keep Costs Low lesson.</li>
+          <li>0.03%–0.10% is typical for a broad, low-cost index ETF.</li>
+          <li>Anything materially higher deserves a reason why.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>📊 Check How Many Holdings It Actually Has</h4>
+        <ul>
+          <li>"Diversified" ETFs can range from 30 holdings to 3,000+.</li>
+          <li>More holdings generally means risk is spread more thinly.</li>
+          <li>This number is usually listed right on the fund's fact sheet.</li>
+          <li>Ten holdings is not the same product as five hundred.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>💰 Look at Trading Volume</h4>
+        <ul>
+          <li>A popular, heavily-traded ETF is easier to buy and sell at a fair price.</li>
+          <li>Thinly-traded, niche ETFs can have wider bid-ask spreads.</li>
+          <li>That spread is a real, if quiet, extra cost — see Habit 4.</li>
+          <li>Check daily volume before committing serious money to an obscure fund.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> VOO is used here purely because it's one of the largest, most recognizable ETFs with public numbers — not a recommendation to buy it specifically. Not every ETF is broadly diversified like a total-market or S&amp;P 500 fund; some concentrate in a single sector or theme and can carry risk much closer to an individual stock.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Diversification Impact Calculator</h2>
+    <p class="section-desc">See what happens to your money if one company inside a fund has a bad day — versus what happens if that company was your <i>whole</i> investment.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcInvestment">Your total investment ($)</label>
+          <input type="number" id="calcInvestment" value="10000" min="1">
+        </div>
+        <div class="calc-field">
+          <label for="calcWeight">That company's weight in your fund (%)</label>
+          <input type="number" id="calcWeight" value="7.5" step="0.1" min="0" max="100">
+        </div>
+        <div class="calc-field" style="grid-column: span 2;">
+          <label for="calcDrop">That company's stock price change (%)</label>
+          <input type="number" id="calcDrop" value="-100" step="5" min="-100" max="100">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Result →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csA">—</div><div class="cs-lbl">Held via a diversified fund</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csB">—</div><div class="cs-lbl">Held 100% in that one stock</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csDiff">—</div><div class="cs-lbl">Difference</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barA"></div>
+          <div class="calc-bar-growth" id="barB"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>Diversified fund</span>
+          <span><span class="dot" style="background:var(--green)"></span>100% single stock</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+        <p class="calc-note">Model: the diversified fund only feels the price change on the sliver it holds in that one company (your investment × its weight × the price change); everything else in the fund is assumed unaffected. The single-stock scenario applies the full price change to your entire investment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">1. What do you actually get when you buy one share of a broad-market ETF like VOO?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> A loan to the fund company</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A single company's stock</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A proportional slice of every company the fund holds, all in one trade</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A guaranteed fixed return</label>
+        </div>
+        <div class="quiz-explain">An ETF share gives you proportional ownership in every company inside the fund at once — not a loan, and not exposure to just one company.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">2. In the VOO example, why did buying 1 share each of the top 10 holdings cost $4,183, while 1 share of the whole fund cost only $690?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The combined price of 10 individual company shares can easily exceed the price of one diversified ETF share</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> VOO's fee eats away the difference</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The top 10 companies are actually excluded from VOO</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> ETF prices are fixed by regulation</label>
+        </div>
+        <div class="quiz-explain">Each of the 10 individual shares has its own market price — added together they came to $4,183, versus $690 for one share representing all ~500 companies at once.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. If VOO's single largest holding fell to $0 overnight, roughly what would happen to the fund overall?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The whole fund would also fall to $0</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> The fund would be completely unaffected</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The fund would automatically double its position in every other company</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> The fund would fall by roughly that holding's weight in the fund, not all the way to zero</label>
+        </div>
+        <div class="quiz-explain">Since that holding is only around 7.5% of the fund, its total collapse would drag the whole fund down by about 7.5% — not to zero — because the other ~499 companies are unaffected.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">4. What's true about an ETF's expense ratio?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It's usually the single biggest cost for a broad index ETF investor over decades</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It's a small annual fee, and for a low-cost broad index ETF it can be as little as a few basis points (e.g. 0.03%)</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It doesn't exist for ETFs, only mutual funds</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It's charged only once, when you first buy</label>
+        </div>
+        <div class="quiz-explain">VOO's expense ratio is just 0.03% a year — about $3 annually on a $10,000 investment. It's an ongoing fee, not a one-time charge, but for a low-cost broad index ETF it's typically small.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. Which of these statements about ETFs is true?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Every ETF is automatically broadly diversified across hundreds of companies</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> ETFs can only be bought once a day, after the market closes</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Some ETFs track a single sector or theme and can be just as concentrated as an individual stock</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> ETFs never pay dividends</label>
+        </div>
+        <div class="quiz-explain">Not every ETF is broad and diversified — sector or thematic ETFs can hold a small number of companies and carry risk much closer to owning an individual stock.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/etfs-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the VOO cost comparison, the top-10-holdings weight table, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/etfs-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to research a real ETF and check it against the 4-point buying checklist.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/etfs-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore ETFs and index investing in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Explore More Asset Classes</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">ETFs are one way to diversify — see how the other building blocks fit alongside them.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner#tab-assets" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to Types of Assets</div>
+        <div class="card-desc">Return to the Beginner hub and explore Stocks, Bonds, Cash, and Alternative Assets.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a real portfolio mix and track how it performs over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function runCalc() {
+  const investment = parseFloat(document.getElementById('calcInvestment').value) || 0;
+  const weightPct = parseFloat(document.getElementById('calcWeight').value) || 0;
+  const dropPct = parseFloat(document.getElementById('calcDrop').value) || 0;
+
+  const valueA = investment * (1 + (weightPct / 100) * (dropPct / 100));
+  const valueB = investment * (1 + (dropPct / 100));
+  const diff = valueA - valueB;
+
+  document.getElementById('csA').textContent = fmtMoney(valueA);
+  document.getElementById('csB').textContent = fmtMoney(valueB);
+  document.getElementById('csDiff').textContent = (diff >= 0 ? '+' : '') + fmtMoney(diff);
+
+  const total = Math.max(valueA, 0) + Math.max(valueB, 0);
+  const pctA = total > 0 ? (Math.max(valueA, 0) / total) * 100 : 50;
+  const pctB = 100 - pctA;
+  const barA = document.getElementById('barA');
+  const barB = document.getElementById('barB');
+  barA.style.width = pctA + '%';
+  barB.style.width = pctB + '%';
+  barA.textContent = fmtMoney(valueA);
+  barB.textContent = fmtMoney(valueB);
+
+  const callout = document.getElementById('calcCallout');
+  if (Math.abs(diff) < 1) {
+    callout.innerHTML = 'At 100% weight, holding it via a fund and holding it directly come out the same — try lowering the weight to see diversification kick in.';
+  } else if (diff > 0) {
+    callout.innerHTML = 'With a ' + weightPct + '% weight and a ' + dropPct + '% price change, holding it inside a diversified fund leaves you ' + fmtMoney(diff) + ' better off than holding 100% of that one stock directly — the rest of the fund cushions the blow.';
+  } else {
+    callout.innerHTML = 'With a ' + weightPct + '% weight and a ' + dropPct + '% price change, the single-stock position actually comes out ahead here — this calculator only isolates one company\'s move; a positive price change helps a concentrated bet more than a diluted one.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
