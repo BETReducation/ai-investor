@@ -983,6 +983,9 @@ def learn_beginner_invest_consistently(): return send_from_directory("static", "
 @app.route("/learn/beginner/keep-costs-low")
 def learn_beginner_keep_costs_low(): return send_from_directory("static", "lesson-keep-costs-low.html")
 
+@app.route("/learn/beginner/think-in-decades")
+def learn_beginner_think_in_decades(): return send_from_directory("static", "lesson-think-in-decades.html")
+
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
 
