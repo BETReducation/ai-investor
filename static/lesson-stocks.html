@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stocks — Owning a Piece of a Company — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
+.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.example-person .ep-row:last-child { border-bottom: none; }
+.example-person .ep-row b { color: var(--text); }
+.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
+.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+
+.num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple2); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+
+/* PRACTICAL TIPS GRID */
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+.tip-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
+.tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+
+/* ACTIVITY / CALCULATOR */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.calc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 700px) { .calc-stats { grid-template-columns: 1fr; } }
+.calc-stat { background: var(--bg3); border-radius: 12px; padding: 18px; text-align: center; }
+.calc-stat .cs-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); }
+.calc-stat .cs-lbl { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.calc-bar-wrap { background: var(--bg3); border-radius: 12px; overflow: hidden; height: 40px; display: flex; margin-bottom: 10px; }
+.calc-bar-contrib { background: var(--purple2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-bar-growth { background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #03130f; white-space: nowrap; overflow: hidden; }
+.calc-legend { display: flex; gap: 20px; justify-content: center; font-size: 13px; color: var(--muted); }
+.calc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.calc-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+.calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+  <a href="/" class="nav-logo">
+    <img id="navLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy">
+  </a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li class="has-dropdown">
+      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/learn/beginner">Beginner</a></li>
+        <li><a href="/learn/intermediate">Intermediate</a></li>
+        <li><a href="/learn/pro">Pro</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/tools/signals">Signals</a></li>
+        <li><a href="/backtester">Backtester</a></li>
+        <li><a href="/tools/portfolio">Portfolio Manager</a></li>
+        <li><a href="/tools/calculator">Calculator</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/arena/market-xi">Market XI</a></li>
+        <li><a href="/arena/competitions">Trading Competitions</a></li>
+        <li><a href="/arena/predictions">Predictions Markets</a></li>
+      </ul>
+    </li>
+    <li class="has-dropdown">
+      <a href="/alpha">Alpha <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/connor">Connor</a></li>
+        <li><a href="/alpha/dave">Dave</a></li>
+        <li><a href="/alpha/gary">Gary</a></li>
+        <li><a href="/alpha/tom">Tom</a></li>
+        <li><a href="/alpha/podcast">Podcast</a></li>
+      </ul>
+    </li>
+    <li><a href="/partners">Partners</a></li>
+    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/sitemap">Site Map</a></li>
+  </ul>
+  </div>
+  <div class="nav-cta">
+    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>
+    <a href="/login" class="btn-ghost" id="navSignIn">Sign In</a>
+    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner">Learn / Beginner</a> / Asset 1 of 5</div>
+    <h1 class="hero-title">Stocks — Owning a <span class="accent">Piece</span> of a Company</h1>
+    <p class="hero-sub">When you buy a share of stock, you're not just watching a ticker symbol — you own a real, legal slice of that company's profits, assets, and future. Here's what that ownership actually means, with real numbers from companies you already know.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Does It Actually Mean to Own a Stock?</h2>
+    <p class="body-text">A share of stock is a literal, legal unit of ownership in a company. If a company has issued 1 billion shares and you own 100 of them, you own 100 one-billionths of that company — its cash, its brand, its factories, and crucially, its future profits. You didn't lend the company money (that's a bond, covered in the next lesson) — you bought a permanent stake in it, for as long as you hold the shares.</p>
+    <p class="body-text">A useful analogy: think of a company like a pizza sliced into a huge number of pieces so millions of people can each own a bite-sized slice. Your slice might be tiny, but it's a real slice — if the pizza (the company) grows bigger, your slice grows with it. If the pizza shrinks, so does your slice.</p>
+
+    <div class="example-card">
+      <h3>🍎 Real example: What 100 Shares of Apple Actually Means</h3>
+      <p class="body-text" style="margin-bottom:0;">Apple has about 14.69 billion shares outstanding. If you owned 100 of them — worth roughly $33,000 at a recent price of $333 a share — here's what that stake actually represents.</p>
+      <div class="calc-stats" style="margin-top:20px;margin-bottom:0;">
+        <div class="calc-stat"><div class="cs-val">0.0000007%</div><div class="cs-lbl">Your ownership stake in Apple</div></div>
+        <div class="calc-stat"><div class="cs-val">$840/yr</div><div class="cs-lbl">Profit attributable to your 100 shares</div></div>
+        <div class="calc-stat"><div class="cs-val">$108/yr</div><div class="cs-lbl">Actual cash dividend you'd receive</div></div>
+      </div>
+      <p class="body-text" style="margin-top:18px;margin-bottom:0;">Apple only pays out about 13% of its profit as dividends (its "payout ratio") — the other <b>~$732</b> of your attributable earnings stays inside the company, reinvested into new products and growth. That retained profit is part of why a healthy company's share price tends to rise over time, even between dividend payments.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>🥤 Real example: Coca-Cola — The Other 59% of Your Return</h3>
+      <p style="margin-bottom:16px;">Sarah invests $10,000 in Coca-Cola (KO) stock in January 2004 and holds it, completely untouched, for 20 years to December 2023. Coca-Cola's share price rose from $25.17 to $58.93 over that time — solid, but not spectacular on its own. The real story is what happened once her dividends were reinvested every quarter instead of ignored.</p>
+      <div class="example-grid">
+        <div class="example-person">
+          <div class="ep-name">📈 Price appreciation only</div>
+          <div class="ep-row"><span>Share price</span><b>$25.17 → $58.93</b></div>
+          <div class="ep-row"><span>Price return</span><b>+134.1%</b></div>
+          <div class="ep-total">
+            <div class="val">$23,408</div>
+            <div class="lbl">value after 20 years</div>
+          </div>
+        </div>
+        <div class="example-person">
+          <div class="ep-name">💰 Price + reinvested dividends</div>
+          <div class="ep-row"><span>Share price</span><b>$25.17 → $58.93</b></div>
+          <div class="ep-row"><span>Total return</span><b>+325.2%</b></div>
+          <div class="ep-total">
+            <div class="val">$42,523</div>
+            <div class="lbl">value after 20 years</div>
+          </div>
+        </div>
+      </div>
+      <p class="reinvest-note" style="margin-top:16px;">Same stock, same 20 years, same starting $10,000. The extra <b>$19,115</b> — <b>58.8%</b> of Sarah's total gain — came purely from being a part-owner entitled to a share of Coca-Cola's profits, not from the stock price alone.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
+    <h3 class="subhead">5 Things Every Shareholder Should Know</h3>
+    <ol class="num-checklist">
+      <li><b>You own a proportional slice of real assets and profits</b> — not a loan, not an IOU.</li>
+      <li><b>Shareholders typically get voting rights</b> on major decisions, like electing the board.</li>
+      <li><b>Dividends are never guaranteed</b> — a company can cut or cancel them at any time.</li>
+      <li><b>Your maximum loss is capped at what you invested</b> — you can't be personally billed for a company's debts (limited liability).</li>
+      <li><b>You're one of potentially billions of owners</b> — a single small shareholder rarely has any real influence alone.</li>
+    </ol>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Things to Check Before You Buy a Stock</h3>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>🔍 Look at the Actual Business</h4>
+        <ul>
+          <li>What does the company actually sell, and to whom?</li>
+          <li>Could you explain its business model to a friend in one sentence?</li>
+          <li>If you can't, that's worth pausing on before you buy.</li>
+          <li>A rising chart is not a business model.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>💵 Check If It Pays a Dividend</h4>
+        <ul>
+          <li>Look up the dividend yield and the payout ratio (% of profit paid out).</li>
+          <li>A very high payout ratio can be a warning sign it's unsustainable.</li>
+          <li>No dividend isn't automatically bad — some companies reinvest everything into growth instead.</li>
+          <li>Know which type of company you're buying, and why.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>📉 Understand It Can Go to Zero</h4>
+        <ul>
+          <li>A single company can fail — a diversified fund (next lesson) spreads that risk across hundreds.</li>
+          <li>Individual stock picks carry company-specific risk on top of normal market risk.</li>
+          <li>Never invest money in a single stock that you can't afford to lose entirely.</li>
+          <li>Position size matters as much as stock selection.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>📑 Read the Summary Financials</h4>
+        <ul>
+          <li>Revenue trend, profit trend, and debt level tell you more than a price chart.</li>
+          <li>Most brokers show these for free on a stock's overview page.</li>
+          <li>You don't need to be an accountant — just check the trend is going the right way.</li>
+          <li>Five minutes of reading beats zero minutes, every time.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> none of this is a recommendation to buy Apple, Coca-Cola, or any specific stock — they're used here purely because they're real, well-known companies with public numbers. Every individual stock carries company-specific risk that a diversified fund doesn't, which is exactly what the next lesson on ETFs & Index Funds covers.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Price Return vs. Total Return</h2>
+    <p class="section-desc">Plug in your own numbers to see how much of a stock's real return could come from dividends, not just the price you see quoted.</p>
+
+    <div class="calc-box">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="calcStartPrice">Starting share price ($)</label>
+          <input type="number" id="calcStartPrice" value="25.17" min="0.01" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="calcEndPrice">Ending share price ($)</label>
+          <input type="number" id="calcEndPrice" value="58.93" min="0.01" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="calcYearsHeld">Years held</label>
+          <input type="number" id="calcYearsHeld" value="20" min="1" max="60">
+        </div>
+        <div class="calc-field">
+          <label for="calcDivYield">Average dividend yield (%)</label>
+          <input type="number" id="calcDivYield" value="3.0" step="0.1" min="0">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="runCalc()">See My Result →</button>
+      </div>
+
+      <div class="calc-results" id="calcResults">
+        <div class="calc-stats">
+          <div class="calc-stat"><div class="cs-val" id="csA">—</div><div class="cs-lbl">Price appreciation only</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csB">—</div><div class="cs-lbl">Price + reinvested dividends</div></div>
+          <div class="calc-stat"><div class="cs-val" id="csDiff">—</div><div class="cs-lbl">Extra from dividends</div></div>
+        </div>
+        <div class="calc-bar-wrap">
+          <div class="calc-bar-contrib" id="barA"></div>
+          <div class="calc-bar-growth" id="barB"></div>
+        </div>
+        <div class="calc-legend">
+          <span><span class="dot" style="background:var(--purple2)"></span>Price only</span>
+          <span><span class="dot" style="background:var(--green)"></span>Price + dividends</span>
+        </div>
+        <div class="calc-callout" id="calcCallout"></div>
+        <p class="calc-note">Model: on $10,000 invested at the starting price, price-only return is simply the share price change. The total-return figure additionally compounds the dividend yield annually, approximating dividends being reinvested into more shares each year — the same mechanism that turned Coca-Cola's 134% price return into a 325% total return above.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. What does it actually mean to own a share of a company's stock?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> You're guaranteed a fixed interest payment</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> You own a proportional slice of the company's assets, profits, and voting rights</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> You've made a short-term loan to the company</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> You own a piece of that company's debt</label>
+        </div>
+        <div class="quiz-explain">A share is a unit of ownership, not a loan — you own a proportional slice of the company itself, unlike a bond, where you're a lender owed a fixed interest payment.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. In the Apple example, why was the $840 in "attributable earnings" from 100 shares so much bigger than the $108 actual dividend received?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because the dividend was paid in a different currency</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because Apple's stock price fell that year</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because Apple only pays out about 13% of its profit as dividends and retains the rest</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because the shares were sold before the dividend date</label>
+        </div>
+        <div class="quiz-explain">Apple's payout ratio is only around 13% — the company keeps most of its profit to reinvest in the business, rather than paying it all out as cash dividends.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. What are the two ways a stock can make you money?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Only price appreciation</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Only dividends</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> A guaranteed interest rate and a maturity payment</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Price appreciation and dividends</label>
+        </div>
+        <div class="quiz-explain">Stocks can gain value two ways at once: the share price can rise, and the company can pay out part of its profit directly to you as a dividend.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. In the Coca-Cola example, roughly how much of the 20-year total return came from dividends being reinvested rather than price appreciation alone?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> More than half of the total gain</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> None of it</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Exactly 10%</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It's impossible to know</label>
+        </div>
+        <div class="quiz-explain">58.8% of Sarah's total 20-year gain came from reinvested dividends, not the share price itself — more than half of her real return.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. If a company you own stock in goes bankrupt, what's the most you can lose as a shareholder?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> You owe the company's creditors money out of pocket</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> You lose your entire investment, but no more (limited liability)</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> You're personally responsible for the company's debts</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Nothing — losses are automatically reimbursed</label>
+        </div>
+        <div class="quiz-explain">Shareholders have limited liability: your downside is capped at what you invested. You can lose it all, but a company's creditors can never come after you personally for more.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/stocks-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the Apple ownership example, the Coca-Cola total-return breakdown, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/stocks-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to research a real stock and check it against the 4-point buying checklist.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/stocks-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore stock ownership and dividends in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Explore More Asset Classes</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Stocks are just one building block — see how the others fit alongside them.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner#tab-assets" class="hub-card">
+        <div class="card-icon">📚</div>
+        <div class="card-title">Back to Types of Assets</div>
+        <div class="card-desc">Return to the Beginner hub and explore ETFs, Bonds, Cash, and Alternative Assets.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/tools/portfolio" class="hub-card">
+        <div class="card-icon">💼</div>
+        <div class="card-title">Try the Portfolio Manager</div>
+        <div class="card-desc">See these ideas in action — build a real portfolio mix and track how it performs over time.</div>
+        <div class="card-link">Open the tool →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+function fmtMoney(n) {
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function runCalc() {
+  const startPrice = parseFloat(document.getElementById('calcStartPrice').value) || 0;
+  const endPrice = parseFloat(document.getElementById('calcEndPrice').value) || 0;
+  const years = parseFloat(document.getElementById('calcYearsHeld').value) || 0;
+  const divYield = (parseFloat(document.getElementById('calcDivYield').value) || 0) / 100;
+  const principal = 10000;
+
+  if (startPrice <= 0) { return; }
+  const priceFactor = endPrice / startPrice;
+  const totalFactor = priceFactor * Math.pow(1 + divYield, years);
+
+  const valueA = principal * priceFactor;
+  const valueB = principal * totalFactor;
+  const diff = valueB - valueA;
+
+  document.getElementById('csA').textContent = fmtMoney(valueA);
+  document.getElementById('csB').textContent = fmtMoney(valueB);
+  document.getElementById('csDiff').textContent = fmtMoney(diff);
+
+  const total = valueA + valueB;
+  const pctA = total > 0 ? (valueA / total) * 100 : 50;
+  const pctB = 100 - pctA;
+  const barA = document.getElementById('barA');
+  const barB = document.getElementById('barB');
+  barA.style.width = pctA + '%';
+  barB.style.width = pctB + '%';
+  barA.textContent = fmtMoney(valueA);
+  barB.textContent = fmtMoney(valueB);
+
+  const callout = document.getElementById('calcCallout');
+  if (divYield <= 0) {
+    callout.innerHTML = 'With a 0% dividend yield, all of the return comes from price appreciation — try raising the dividend yield to see reinvested dividends start compounding on top.';
+  } else {
+    const pctOfGain = (diff / (valueB - principal)) * 100;
+    callout.innerHTML = 'Over ' + years + ' years, a ' + (divYield * 100).toFixed(1) + '% average dividend yield, reinvested, adds ' + fmtMoney(diff) + ' on top of price appreciation alone — roughly ' + pctOfGain.toFixed(0) + '% of the total gain, just from being a part-owner entitled to a share of the profits.';
+  }
+
+  document.getElementById('calcResults').classList.add('visible');
+}
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLink');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+document.querySelectorAll('.nav-chevron').forEach(chevron => {
+  chevron.addEventListener('click', (e) => {
+    if (window.innerWidth <= 900) {
+      e.preventDefault();
+      e.stopPropagation();
+      chevron.closest('.has-dropdown').classList.toggle('open');
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
