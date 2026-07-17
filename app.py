@@ -979,6 +979,9 @@ def learn_beginner_stocks(): return send_from_directory("static", "lesson-stocks
 @app.route("/learn/beginner/etfs")
 def learn_beginner_etfs(): return send_from_directory("static", "lesson-etfs.html")
 
+@app.route("/learn/beginner/bonds")
+def learn_beginner_bonds(): return send_from_directory("static", "lesson-bonds.html")
+
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
 
