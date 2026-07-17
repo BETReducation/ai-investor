@@ -398,6 +398,8 @@ def run_backtest(
 
     tk_cross_bars        = _cross_bars("ICH_tenkan", "ICH_kijun")
     donchian_mid_bars    = _bars_since_cross_series(combined["Close"], combined["DC_mid"]) if "DC_mid" in combined else pd.Series(999, index=combined.index)
+    donchian_upper_bars  = _bars_since_cross_series(combined["Close"], combined["DC_upper"]) if "DC_upper" in combined else pd.Series(999, index=combined.index)
+    donchian_lower_bars  = _bars_since_cross_series(combined["Close"], combined["DC_lower"]) if "DC_lower" in combined else pd.Series(999, index=combined.index)
     hma_price_bars       = _bars_since_cross_series(combined["Close"], combined["HMA"])    if "HMA"    in combined else pd.Series(999, index=combined.index)
     stoch_signal_bars    = _bars_since_cross_series(combined[stoch_k_col], combined[stoch_d_col]) if stoch_k_col and stoch_d_col else pd.Series(999, index=combined.index)
     stochrsi_signal_bars = _bars_since_cross_series(combined[srsi_k_col], combined[srsi_d_col])    if srsi_k_col and srsi_d_col   else pd.Series(999, index=combined.index)
@@ -587,6 +589,8 @@ def run_backtest(
                 "mid_cross_bars_since": int(donchian_mid_bars.iloc[i]),
                 "mid_cross_direction":  1 if (close is not None and row.get("DC_mid") == row.get("DC_mid") and close > row.get("DC_mid")) else -1,
                 "exit_upper": _sf(row.get("DC_exit_upper")), "exit_lower": _sf(row.get("DC_exit_lower")),
+                "upper_cross_bars_since": int(donchian_upper_bars.iloc[i]),
+                "lower_cross_bars_since": int(donchian_lower_bars.iloc[i]),
             },
             "hma": {
                 "value": _sf(row.get("HMA")),
