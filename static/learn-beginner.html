@@ -412,14 +412,27 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+function activateTab(tabName) {
+  const btn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+  const panel = document.getElementById('tab-' + tabName);
+  if (!btn || !panel) return false;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  panel.classList.add('active');
+  return true;
+}
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    activateTab(btn.dataset.tab);
+    history.replaceState(null, '', '#tab-' + btn.dataset.tab);
   });
 });
+// Restore the active tab from the URL hash on load, so a refresh (or a link like
+// /learn/beginner#tab-assets from a lesson page's "back to hub" card) lands on the
+// same tab instead of always resetting to the first one.
+const initialTab = location.hash.replace('#tab-', '');
+if (initialTab) activateTab(initialTab);
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
