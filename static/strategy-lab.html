@@ -1875,7 +1875,7 @@ window.addEventListener('resize', () => {
               Strategy
             </div>
             <div class="legend-item">
-              <div class="legend-dot" style="background:rgba(122,143,168,0.6);"></div>
+              <div class="legend-dot" style="background:var(--text-secondary);opacity:0.7;"></div>
               Buy &amp; Hold
             </div>
           </div>
@@ -2287,6 +2287,7 @@ function renderMySymbols() {
 
 // ── Chart instance ────────────────────────────────────────────────────────────
 let equityChart = null;
+let lastChartArgs = null;   // retained so we can rebuild on theme change
 
 function fmtChartMoney(v) {
   if (v >= 1000000) return '£' + (v / 1000000).toFixed(2) + 'M';
@@ -2294,8 +2295,34 @@ function fmtChartMoney(v) {
   return '£' + v.toFixed(0);
 }
 
+// Read theme-aware colours so the chart adapts to the light/dark toggle
+// instead of using hardcoded dark-mode values.
+function chartPalette() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const css = getComputedStyle(document.documentElement);
+  const v = (name, fallback) => (css.getPropertyValue(name).trim() || fallback);
+  return {
+    isLight,
+    line:      v('--accent-green', isLight ? '#00874a' : '#00ff88'),
+    // Solid fill tints keyed to each theme's green (rgba, so the gradient works)
+    fillTop:   isLight ? 'rgba(0,135,74,0.16)'  : 'rgba(0,255,136,0.18)',
+    fillMid:   isLight ? 'rgba(0,135,74,0.04)'  : 'rgba(0,255,136,0.04)',
+    fillBot:   isLight ? 'rgba(0,135,74,0)'     : 'rgba(0,255,136,0)',
+    bah:       isLight ? 'rgba(61,84,112,0.55)' : 'rgba(122,143,168,0.5)',
+    grid:      isLight ? 'rgba(120,144,170,0.28)' : 'rgba(122,143,168,0.14)',
+    axisBorder:isLight ? 'rgba(120,144,170,0.5)'  : 'rgba(122,143,168,0.3)',
+    ticks:     v('--text-muted', isLight ? '#7a90aa' : '#7a8fa8'),
+    tipBg:     isLight ? '#ffffff' : '#0d1117',
+    tipBorder: v('--border-bright', isLight ? '#b8c4d8' : '#2a3a52'),
+    tipTitle:  v('--text-muted', '#7a8fa8'),
+    tipBody:   v('--text-primary', isLight ? '#0f1c2e' : '#e2e8f0'),
+  };
+}
+
 function buildChart(labels, stratData, bahData, capital) {
+  lastChartArgs = { labels, stratData, bahData, capital };
   const ctx = document.getElementById('equityChart').getContext('2d');
+  const pal = chartPalette();
 
   // Scale normalised equity (1.0 = start) to £ values
   const stratScaled = stratData.map(v => v * capital);
@@ -2303,9 +2330,9 @@ function buildChart(labels, stratData, bahData, capital) {
 
   // Strategy gradient fill
   const stratGrad = ctx.createLinearGradient(0, 0, 0, 280);
-  stratGrad.addColorStop(0,   'rgba(0,255,136,0.18)');
-  stratGrad.addColorStop(0.6, 'rgba(0,255,136,0.04)');
-  stratGrad.addColorStop(1,   'rgba(0,255,136,0)');
+  stratGrad.addColorStop(0,   pal.fillTop);
+  stratGrad.addColorStop(0.6, pal.fillMid);
+  stratGrad.addColorStop(1,   pal.fillBot);
 
   if (equityChart) equityChart.destroy();
 
@@ -2317,12 +2344,12 @@ function buildChart(labels, stratData, bahData, capital) {
         {
           label: 'Strategy',
           data: stratScaled,
-          borderColor: '#00ff88',
+          borderColor: pal.line,
           backgroundColor: stratGrad,
-          borderWidth: 1.5,
+          borderWidth: pal.isLight ? 2 : 1.5,
           pointRadius: 0,
           pointHoverRadius: 4,
-          pointHoverBackgroundColor: '#00ff88',
+          pointHoverBackgroundColor: pal.line,
           fill: true,
           tension: 0.15,
           order: 2,
@@ -2330,7 +2357,7 @@ function buildChart(labels, stratData, bahData, capital) {
         {
           label: 'Buy & Hold',
           data: bahScaled,
-          borderColor: 'rgba(122,143,168,0.5)',
+          borderColor: pal.bah,
           backgroundColor: 'transparent',
           borderWidth: 1,
           borderDash: [4, 4],
@@ -2350,11 +2377,11 @@ function buildChart(labels, stratData, bahData, capital) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0d1117',
-          borderColor: '#2a3a52',
+          backgroundColor: pal.tipBg,
+          borderColor: pal.tipBorder,
           borderWidth: 1,
-          titleColor: '#7a8fa8',
-          bodyColor: '#e2e8f0',
+          titleColor: pal.tipTitle,
+          bodyColor: pal.tipBody,
           titleFont: { family: 'IBM Plex Mono', size: 10 },
           bodyFont:  { family: 'IBM Plex Mono', size: 10 },
           padding: 10,
@@ -2370,10 +2397,10 @@ function buildChart(labels, stratData, bahData, capital) {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(30,42,58,0.4)', drawTicks: false },
-          border: { color: 'rgba(30,42,58,0.6)' },
+          grid: { color: pal.grid, drawTicks: false },
+          border: { color: pal.axisBorder },
           ticks: {
-            color: '#3d5068',
+            color: pal.ticks,
             maxTicksLimit: 10,
             maxRotation: 0,
             font: { family: 'IBM Plex Mono', size: 9 },
@@ -2384,10 +2411,10 @@ function buildChart(labels, stratData, bahData, capital) {
           },
         },
         y: {
-          grid: { color: 'rgba(30,42,58,0.4)', drawTicks: false },
-          border: { color: 'rgba(30,42,58,0.6)' },
+          grid: { color: pal.grid, drawTicks: false },
+          border: { color: pal.axisBorder },
           ticks: {
-            color: '#3d5068',
+            color: pal.ticks,
             font: { family: 'IBM Plex Mono', size: 9 },
             callback: (v) => fmtChartMoney(v),
           },
@@ -2396,6 +2423,14 @@ function buildChart(labels, stratData, bahData, capital) {
     },
   });
 }
+
+// Rebuild the equity chart with fresh theme colours when the toggle fires.
+document.addEventListener('gca-theme-change', () => {
+  if (equityChart && lastChartArgs) {
+    const { labels, stratData, bahData, capital } = lastChartArgs;
+    buildChart(labels, stratData, bahData, capital);
+  }
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function pctStr(v, decimals = 2) {
