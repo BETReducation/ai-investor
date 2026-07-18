@@ -705,6 +705,14 @@ window.addEventListener('resize', () => {
   <div class="lab-sidebar">
     <div class="sidebar-header">BACKTEST PARAMETERS</div>
 
+    <!-- Basic / Detailed indicator mode -->
+    <div style="display:flex;gap:4px;padding:10px 16px 0;">
+      <button id="modeBasic" onclick="setIndicatorMode('basic')"
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">BASIC</button>
+      <button id="modeDetailed" onclick="setIndicatorMode('detailed')"
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">DETAILED</button>
+    </div>
+
     <!-- Symbol + Period + Interval -->
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
@@ -820,8 +828,25 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
+    <!-- Basic indicators (RSI only) -->
+    <div class="ctrl-section" id="basicIndicators">
+      <div class="ctrl-label">RSI SETTINGS</div>
+      <div class="param-row">
+        <span class="param-label">Length</span>
+        <input type="number" class="param-input" id="rsiLengthBasic" value="14" min="2" max="200">
+      </div>
+      <div class="param-row">
+        <span class="param-label">Oversold level</span>
+        <input type="number" class="param-input" id="rsiOversoldBasic" value="30" min="10" max="45">
+      </div>
+      <div class="param-row" style="margin-bottom:0;">
+        <span class="param-label">Overbought level</span>
+        <input type="number" class="param-input" id="rsiOverboughtBasic" value="70" min="55" max="90">
+      </div>
+    </div>
+
     <!-- Indicators with expandable params -->
-    <div class="ctrl-section" id="detailedIndicators">
+    <div class="ctrl-section" id="detailedIndicators" style="display:none;">
       <div class="ctrl-label">INDICATORS — click name to configure</div>
 
       <!-- RSI -->
@@ -2456,6 +2481,19 @@ function setState(id) {
   });
 }
 
+// ── Indicator mode toggle (Basic = RSI-only, Detailed = full panel) ───────────
+let indicatorMode = 'basic';
+function setIndicatorMode(mode) {
+  indicatorMode = mode;
+  const isDetailed = mode === 'detailed';
+  document.getElementById('basicIndicators').style.display    = isDetailed ? 'none' : '';
+  document.getElementById('detailedIndicators').style.display = isDetailed ? '' : 'none';
+  document.getElementById('modeBasic').style.background = isDetailed ? 'var(--bg-secondary)' : 'var(--accent-green)';
+  document.getElementById('modeBasic').style.color = isDetailed ? 'var(--text-secondary)' : '#000';
+  document.getElementById('modeDetailed').style.background = isDetailed ? 'var(--accent-green)' : 'var(--bg-secondary)';
+  document.getElementById('modeDetailed').style.color = isDetailed ? '#000' : 'var(--text-secondary)';
+}
+
 // ── Period mode toggle ────────────────────────────────────────────────────────
 function setPeriodMode(mode) {
   const isCustom = mode === 'custom';
@@ -2675,11 +2713,21 @@ async function runBacktest() {
   const trailSL   = document.getElementById('trailSL').checked;
   const trailDist = document.getElementById('trailDist').value;
 
-  const rsiLength      = parseInt(document.getElementById('rsiLength').value)     || 14;
-  const rsiOs          = parseInt(document.getElementById('rsiOversold').value)   || 30;
-  const rsiOb          = parseInt(document.getElementById('rsiOverbought').value) || 70;
-  const rsiSmoothing   = document.getElementById('rsiSmoothing').value || 'wilder';
-  const rsiDivLookback = parseInt(document.getElementById('rsiDivLookback').value) || 5;
+  // Basic mode is an RSI-only, overbought/oversold strategy — it reads its own
+  // simplified inputs and forces every other indicator off (see below).
+  const isBasic = indicatorMode !== 'detailed';
+
+  const rsiLength      = isBasic
+    ? (parseInt(document.getElementById('rsiLengthBasic').value)     || 14)
+    : (parseInt(document.getElementById('rsiLength').value)          || 14);
+  const rsiOs          = isBasic
+    ? (parseInt(document.getElementById('rsiOversoldBasic').value)   || 30)
+    : (parseInt(document.getElementById('rsiOversold').value)        || 30);
+  const rsiOb          = isBasic
+    ? (parseInt(document.getElementById('rsiOverboughtBasic').value) || 70)
+    : (parseInt(document.getElementById('rsiOverbought').value)      || 70);
+  const rsiSmoothing   = isBasic ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
+  const rsiDivLookback = isBasic ? 5 : (parseInt(document.getElementById('rsiDivLookback').value) || 5);
 
   const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
   const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
@@ -2706,16 +2754,18 @@ async function runBacktest() {
   const maTriggerLookback = parseInt(document.getElementById('maTriggerLookback').value) || 5;
   const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
 
-  const rsiOn  = document.getElementById('togRsi').checked  ? 1 : 0;
-  const macdOn = document.getElementById('togMacd').checked ? 1 : 0;
-  const bbOn   = document.getElementById('togBb').checked   ? 1 : 0;
-  const maOn   = document.getElementById('togMa').checked   ? 1 : 0;
-  const volOn  = document.getElementById('togVol').checked  ? 1 : 0;
+  // In Basic mode force RSI on and everything else off, ignoring the
+  // detailed panel's toggles entirely.
+  const rsiOn  = isBasic ? 1 : (document.getElementById('togRsi').checked  ? 1 : 0);
+  const macdOn = isBasic ? 0 : (document.getElementById('togMacd').checked ? 1 : 0);
+  const bbOn   = isBasic ? 0 : (document.getElementById('togBb').checked   ? 1 : 0);
+  const maOn   = isBasic ? 0 : (document.getElementById('togMa').checked   ? 1 : 0);
+  const volOn  = isBasic ? 0 : (document.getElementById('togVol').checked  ? 1 : 0);
 
   // ── Extended indicator set ──────────────────────────────────────────────
   const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
-  const _on = (id) => document.getElementById(id).checked ? 1 : 0;
+  const _on = (id) => isBasic ? 0 : (document.getElementById(id).checked ? 1 : 0);
 
   const extParams = {
     adx_on: _on('togAdx'), adx_length: _iv('adxLength', 14), adx_trend_threshold: _iv('adxTrendThreshold', 25),
@@ -2833,9 +2883,14 @@ async function runBacktest() {
 
   // Each active trigger chip becomes its own repeated query param — supports
   // several simultaneously-active modes per indicator (see api/signals.py).
-  TRIGGER_GROUPS.forEach(([queryKey, containerId]) => {
-    getActiveTriggers(containerId).forEach(mode => params.append(queryKey, mode));
-  });
+  // Basic mode ignores the chips and runs a single RSI overbought/oversold rule.
+  if (isBasic) {
+    params.append('rsi_trigger', 'overbought_oversold');
+  } else {
+    TRIGGER_GROUPS.forEach(([queryKey, containerId]) => {
+      getActiveTriggers(containerId).forEach(mode => params.append(queryKey, mode));
+    });
+  }
 
   try {
     const res  = await fetch(`/api/backtest?${params}`);
