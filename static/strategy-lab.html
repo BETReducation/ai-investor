@@ -2120,15 +2120,17 @@ function serializeBacktestConfig() {
       cfg[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
     }
   });
-  // periodMode isn't a form field (it's two plain buttons toggling panel visibility)
-  // so it needs to be captured/restored explicitly alongside the generic fields.
+  // periodMode and indicatorMode aren't form fields (they're plain buttons toggling
+  // panel visibility) so they need to be captured/restored explicitly alongside the
+  // generic fields.
   cfg._periodMode = document.getElementById('customPanel').style.display !== 'none' ? 'custom' : 'preset';
+  cfg._indicatorMode = indicatorMode;
   return cfg;
 }
 
 function applyBacktestConfig(cfg) {
   Object.entries(cfg).forEach(([id, val]) => {
-    if (id === '_periodMode') return;
+    if (id === '_periodMode' || id === '_indicatorMode') return;
     const el = document.getElementById(id);
     if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
     if (el.classList && el.classList.contains('trigger-chips')) {
@@ -2145,6 +2147,9 @@ function applyBacktestConfig(cfg) {
     el.dispatchEvent(new Event('change', { bubbles: true }));
   });
   if (cfg._periodMode) setPeriodMode(cfg._periodMode);
+  // Legacy strategies saved before Basic mode existed have no _indicatorMode —
+  // treat them as Detailed.
+  setIndicatorMode(cfg._indicatorMode || 'detailed');
 }
 
 function renderBacktestStrategyDropdown() {
@@ -2152,7 +2157,10 @@ function renderBacktestStrategyDropdown() {
   if (!sel) return;
   const current = sel.value;
   sel.innerHTML = '<option value="">— New Strategy —</option>' +
-    savedBacktests.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+    savedBacktests.map(s => {
+      const mode = (s.config && s.config._indicatorMode === 'basic') ? 'Basic' : 'Detailed';
+      return `<option value="${s.name}">${s.name}  ·  ${mode}</option>`;
+    }).join('');
   if (savedBacktests.find(s => s.name === current)) sel.value = current;
 }
 

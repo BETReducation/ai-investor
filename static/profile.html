@@ -84,7 +84,11 @@
 .saved-strat-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
 .saved-strat-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; }
 .saved-strat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.saved-strat-name { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved-strat-name-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.saved-strat-name { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.strat-mode-badge { flex-shrink: 0; display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; }
+.strat-mode-badge.basic { background: rgba(0,212,170,0.12); color: var(--green); border: 1px solid rgba(0,212,170,0.3); }
+.strat-mode-badge.detailed { background: rgba(0,136,255,0.1); color: #0088ff; border: 1px solid rgba(0,136,255,0.35); }
 .saved-strat-date { font-size: 11px; color: var(--muted); }
 .saved-strat-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .saved-strat-actions a, .saved-strat-actions button { font-size: 12px; font-weight: 600; font-family: inherit; padding: 6px 12px; border-radius: 7px; cursor: pointer; text-decoration: none; border: none; }
@@ -689,17 +693,24 @@ function renderSavedStrategies(prefs) {
   const btEl = document.getElementById('savedBacktestsList');
   btEl.innerHTML = backtests.length === 0
     ? '<div class="saved-strat-empty">No saved backtests yet — save one from the Backtester.</div>'
-    : backtests.map(s => `
+    : backtests.map(s => {
+      const isBasic = s.config && s.config._indicatorMode === 'basic';
+      const modeCls = isBasic ? 'basic' : 'detailed';
+      const modeLabel = isBasic ? 'Basic' : 'Detailed';
+      return `
       <div class="saved-strat-row">
         <div class="saved-strat-info">
-          <div class="saved-strat-name">${escapeHtml(s.name)}</div>
+          <div class="saved-strat-name-row">
+            <span class="saved-strat-name">${escapeHtml(s.name)}</span>
+            <span class="strat-mode-badge ${modeCls}">${modeLabel}</span>
+          </div>
           <div class="saved-strat-date">${fmtSavedDate(s.savedAt)}</div>
         </div>
         <div class="saved-strat-actions">
           <a class="saved-strat-open" href="/backtester?loadStrategy=${encodeURIComponent(s.name)}">Open</a>
           <button class="saved-strat-delete" onclick="deleteSavedBacktest('${escJsAttr(s.name)}')">Delete</button>
         </div>
-      </div>`).join('');
+      </div>`; }).join('');
 
   const sigEl = document.getElementById('savedSignalsList');
   sigEl.innerHTML = signals.length === 0
