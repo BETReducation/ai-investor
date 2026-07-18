@@ -97,6 +97,7 @@
 .signal-toast-type.warn { color: var(--accent-amber); }
 .qs-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 3px; cursor: pointer; transition: all 0.15s; }
 .qs-chip:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,136,255,0.08); }
+.tv-loading-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--bg-secondary); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -1809,6 +1810,8 @@ function updateRiskBar() {
 
 // --- TRADINGVIEW CHART ---
 let tvWidget = null;
+let lastTvSym = null;
+let tvLoadTimer = null;
 
 function initChart() {
   if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
@@ -1825,9 +1828,15 @@ function showChartPlaceholder() {
     </div>`;
 }
 
+function retryTvChart() {
+  if (lastTvSym) loadTvChart(lastTvSym);
+}
+
 function loadTvChart(tvSym) {
   const container = document.getElementById('tvChart');
   container.innerHTML = '';
+  lastTvSym = tvSym;
+  if (tvLoadTimer) { clearTimeout(tvLoadTimer); tvLoadTimer = null; }
   const mobile = window.innerWidth <= 768;
   const dark = document.documentElement.getAttribute('data-theme') !== 'light';
   tvWidget = new TradingView.widget({
@@ -1851,6 +1860,40 @@ function loadTvChart(tvSym) {
     withdateranges: !mobile,
     hide_side_toolbar: false,
   });
+
+  // Graceful fallback: TradingView's embed shows only its own blue spinner while
+  // loading, and spins forever if the iframe is blocked (ad/privacy extension) or
+  // the feed is unreachable. Overlay a "loading" state on top, clear it once the
+  // iframe's embed page fires 'load', and if nothing loads within 12s swap in an
+  // actionable message with a Retry so users aren't stuck on an unexplained spinner.
+  const overlay = document.createElement('div');
+  overlay.className = 'tv-loading-overlay';
+  overlay.innerHTML = `<div class="empty-state">LOADING CHART…<br><span style="font-size:8px;">Fetching ${tvSym} from TradingView</span></div>`;
+  container.appendChild(overlay);
+
+  const clearOverlay = () => {
+    if (tvLoadTimer) { clearTimeout(tvLoadTimer); tvLoadTimer = null; }
+    overlay.remove();
+  };
+  // The widget appends its iframe synchronously, so attach the load handler now
+  // (catches a fast load); fall back to a short poll if it isn't there yet.
+  const attachLoad = () => {
+    const frame = container.querySelector('iframe');
+    if (frame) { frame.addEventListener('load', clearOverlay); return true; }
+    return false;
+  };
+  if (!attachLoad()) {
+    const attachPoll = setInterval(() => { if (attachLoad()) clearInterval(attachPoll); }, 150);
+    setTimeout(() => clearInterval(attachPoll), 3000);
+  }
+
+  tvLoadTimer = setTimeout(() => {
+    clearInterval(attachPoll);
+    overlay.innerHTML = `<div class="empty-state" style="line-height:1.9;">CHART DIDN'T LOAD<br>
+      <span style="font-size:8px;color:var(--text-muted);">TradingView may be blocked by a browser extension (ad/privacy blocker) or temporarily unavailable.</span><br>
+      <button onclick="retryTvChart()" style="margin-top:8px;padding:5px 14px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);border-radius:2px;cursor:pointer;">↻ RETRY</button></div>`;
+    tvLoadTimer = null;
+  }, 12000);
 }
 
 document.addEventListener('gca-theme-change', function() {
