@@ -828,20 +828,105 @@ window.addEventListener('resize', () => {
       </div>
     </div>
 
-    <!-- Basic indicators (RSI only) -->
+    <!-- Basic indicators — curated subset, most-essential params only. Each runs
+         its default trigger; enable the ones you want. -->
     <div class="ctrl-section" id="basicIndicators">
-      <div class="ctrl-label">RSI SETTINGS</div>
-      <div class="param-row">
-        <span class="param-label">Length</span>
-        <input type="number" class="param-input" id="rsiLengthBasic" value="14" min="2" max="200">
+      <div class="ctrl-label">INDICATORS</div>
+
+      <!-- RSI -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">RSI</span>
+        <label class="toggle"><input type="checkbox" id="togRsiBasic" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="param-row">
-        <span class="param-label">Oversold level</span>
-        <input type="number" class="param-input" id="rsiOversoldBasic" value="30" min="10" max="45">
+      <div class="ind-params open">
+        <div class="param-row">
+          <span class="param-label">Length</span>
+          <input type="number" class="param-input" id="rsiLengthBasic" value="14" min="2" max="200">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Oversold level</span>
+          <input type="number" class="param-input" id="rsiOversoldBasic" value="30" min="10" max="45">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Overbought level</span>
+          <input type="number" class="param-input" id="rsiOverboughtBasic" value="70" min="55" max="90">
+        </div>
       </div>
-      <div class="param-row" style="margin-bottom:0;">
-        <span class="param-label">Overbought level</span>
-        <input type="number" class="param-input" id="rsiOverboughtBasic" value="70" min="55" max="90">
+
+      <!-- Bollinger Bands -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">Bollinger Bands</span>
+        <label class="toggle"><input type="checkbox" id="togBbBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params open">
+        <div class="param-row">
+          <span class="param-label">Length</span>
+          <input type="number" class="param-input" id="bbLengthBasic" value="20" min="2" max="200">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Std dev multiplier</span>
+          <input type="number" class="param-input" id="bbStdBasic" value="2.0" min="0.5" max="4.0" step="0.1">
+        </div>
+      </div>
+
+      <!-- Volume (Surge) -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">Volume (Surge)</span>
+        <label class="toggle"><input type="checkbox" id="togVolBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params open">
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Surge multiplier (×avg)</span>
+          <input type="number" class="param-input" id="volSurgeBasic" value="1.5" min="1" max="10" step="0.1">
+        </div>
+      </div>
+
+      <!-- MACD -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">MACD</span>
+        <label class="toggle"><input type="checkbox" id="togMacdBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params open">
+        <div class="param-row">
+          <span class="param-label">Fast period</span>
+          <input type="number" class="param-input" id="macdFastBasic" value="12" min="2" max="50">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Slow period</span>
+          <input type="number" class="param-input" id="macdSlowBasic" value="26" min="5" max="200">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Signal period</span>
+          <input type="number" class="param-input" id="macdSignalBasic" value="9" min="1" max="50">
+        </div>
+      </div>
+
+      <!-- MA Cross -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">MA Cross</span>
+        <label class="toggle"><input type="checkbox" id="togMaBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params open">
+        <div class="param-row">
+          <span class="param-label">Short period</span>
+          <input type="number" class="param-input" id="emaShortBasic" value="9" min="2" max="50">
+        </div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Long period</span>
+          <input type="number" class="param-input" id="emaLongBasic" value="21" min="5" max="200">
+        </div>
+      </div>
+
+      <!-- Donchian Channels -->
+      <div class="ind-row">
+        <span class="ind-label" style="cursor:default;">Donchian Channels</span>
+        <label class="toggle"><input type="checkbox" id="togDonchianBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params open">
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Length</span>
+          <input type="number" class="param-input" id="donchianLengthBasic" value="20" min="2" max="200">
+        </div>
       </div>
     </div>
 
@@ -2713,9 +2798,12 @@ async function runBacktest() {
   const trailSL   = document.getElementById('trailSL').checked;
   const trailDist = document.getElementById('trailDist').value;
 
-  // Basic mode is an RSI-only, overbought/oversold strategy — it reads its own
-  // simplified inputs and forces every other indicator off (see below).
+  // Basic mode exposes a curated subset of indicators with only their most
+  // essential params. Each enabled indicator runs its single default trigger;
+  // everything else is forced off. It reads its own `*Basic` inputs/toggles so
+  // it never touches the detailed panel's state.
   const isBasic = indicatorMode !== 'detailed';
+  const bOn = (id) => document.getElementById(id).checked;   // basic toggle read
 
   const rsiLength      = isBasic
     ? (parseInt(document.getElementById('rsiLengthBasic').value)     || 14)
@@ -2729,13 +2817,13 @@ async function runBacktest() {
   const rsiSmoothing   = isBasic ? 'wilder' : (document.getElementById('rsiSmoothing').value || 'wilder');
   const rsiDivLookback = isBasic ? 5 : (parseInt(document.getElementById('rsiDivLookback').value) || 5);
 
-  const macdFast  = parseInt(document.getElementById('macdFast').value)      || 12;
-  const macdSlow  = parseInt(document.getElementById('macdSlow').value)      || 26;
-  const macdSig   = parseInt(document.getElementById('macdSignal').value)    || 9;
+  const macdFast  = parseInt(document.getElementById(isBasic ? 'macdFastBasic'   : 'macdFast').value)   || 12;
+  const macdSlow  = parseInt(document.getElementById(isBasic ? 'macdSlowBasic'   : 'macdSlow').value)   || 26;
+  const macdSig   = parseInt(document.getElementById(isBasic ? 'macdSignalBasic' : 'macdSignal').value) || 9;
   const macdDivLookback  = parseInt(document.getElementById('macdDivLookback').value)  || 5;
   const macdZscoreLength = parseInt(document.getElementById('macdZscoreLength').value) || 100;
-  const bbLength  = parseInt(document.getElementById('bbLength').value)      || 20;
-  const bbStd     = parseFloat(document.getElementById('bbStd').value)       || 2.0;
+  const bbLength  = parseInt(document.getElementById(isBasic ? 'bbLengthBasic' : 'bbLength').value)  || 20;
+  const bbStd     = parseFloat(document.getElementById(isBasic ? 'bbStdBasic'  : 'bbStd').value)     || 2.0;
   const bbSqueezeLookback      = parseInt(document.getElementById('bbSqueezeLookback').value)      || 100;
   const bbSqueezePercentile    = parseFloat(document.getElementById('bbSqueezePercentile').value)  || 20;
   const bbBreakoutWindow       = parseInt(document.getElementById('bbBreakoutWindow').value)       || 10;
@@ -2745,24 +2833,26 @@ async function runBacktest() {
   const bbBreakoutMarginPct    = parseFloat(document.getElementById('bbBreakoutMarginPct').value)   || 0.5;
   const bbPctBelowHigh         = parseFloat(document.getElementById('bbPctBelowHigh').value)        || 1.0;
   const bbPctAboveLow          = parseFloat(document.getElementById('bbPctAboveLow').value)         || 1.0;
-  const emaShort  = parseInt(document.getElementById('emaShort').value)      || 9;
-  const emaLong   = parseInt(document.getElementById('emaLong').value)       || 21;
+  const emaShort  = parseInt(document.getElementById(isBasic ? 'emaShortBasic' : 'emaShort').value)  || 9;
+  const emaLong   = parseInt(document.getElementById(isBasic ? 'emaLongBasic'  : 'emaLong').value)   || 21;
   const maType           = document.getElementById('maType').value || 'exponential';
   const maShortLength    = parseInt(document.getElementById('maShortLength').value)    || 9;
   const maMediumLength   = parseInt(document.getElementById('maMediumLength').value)   || 20;
   const maLongLength     = parseInt(document.getElementById('maLongLength').value)     || 50;
   const maTriggerLookback = parseInt(document.getElementById('maTriggerLookback').value) || 5;
-  const volSurge  = parseFloat(document.getElementById('volSurge').value)    || 1.5;
+  const volSurge  = parseFloat(document.getElementById(isBasic ? 'volSurgeBasic' : 'volSurge').value) || 1.5;
 
-  // In Basic mode force RSI on and everything else off, ignoring the
-  // detailed panel's toggles entirely.
-  const rsiOn  = isBasic ? 1 : (document.getElementById('togRsi').checked  ? 1 : 0);
-  const macdOn = isBasic ? 0 : (document.getElementById('togMacd').checked ? 1 : 0);
-  const bbOn   = isBasic ? 0 : (document.getElementById('togBb').checked   ? 1 : 0);
-  const maOn   = isBasic ? 0 : (document.getElementById('togMa').checked   ? 1 : 0);
-  const volOn  = isBasic ? 0 : (document.getElementById('togVol').checked  ? 1 : 0);
+  // In Basic mode the on/off flags come from the Basic toggles; in Detailed
+  // they come from the full panel.
+  const rsiOn  = isBasic ? (bOn('togRsiBasic')  ? 1 : 0) : (document.getElementById('togRsi').checked  ? 1 : 0);
+  const macdOn = isBasic ? (bOn('togMacdBasic') ? 1 : 0) : (document.getElementById('togMacd').checked ? 1 : 0);
+  const bbOn   = isBasic ? (bOn('togBbBasic')   ? 1 : 0) : (document.getElementById('togBb').checked   ? 1 : 0);
+  const maOn   = isBasic ? (bOn('togMaBasic')   ? 1 : 0) : (document.getElementById('togMa').checked   ? 1 : 0);
+  const volOn  = isBasic ? (bOn('togVolBasic')  ? 1 : 0) : (document.getElementById('togVol').checked  ? 1 : 0);
 
   // ── Extended indicator set ──────────────────────────────────────────────
+  // Donchian is the one extended indicator exposed in Basic mode; every other
+  // extended indicator is forced off there (see donchian_on override below).
   const _iv = (id, fb) => { const v = parseInt(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _fv = (id, fb) => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? fb : v; };
   const _on = (id) => isBasic ? 0 : (document.getElementById(id).checked ? 1 : 0);
@@ -2779,7 +2869,8 @@ async function runBacktest() {
     supertrend_on: _on('togSupertrend'), supertrend_length: _iv('supertrendLength', 10),
       supertrend_mult: _fv('supertrendMult', 3.0), supertrend_flip_lookback: _iv('supertrendFlipLookback', 3),
       supertrend_gap_lookback: _iv('supertrendGapLookback', 3),
-    donchian_on: _on('togDonchian'), donchian_length: _iv('donchianLength', 20),
+    donchian_on: isBasic ? (bOn('togDonchianBasic') ? 1 : 0) : _on('togDonchian'),
+    donchian_length: isBasic ? (parseInt(document.getElementById('donchianLengthBasic').value) || 20) : _iv('donchianLength', 20),
       donchian_mid_cross_lookback: _iv('donchianMidCrossLookback', 5),
       donchian_exit_length: _iv('donchianExitLength', 10),
       donchian_retest_lookback: _iv('donchianRetestLookback', 10),
@@ -2883,9 +2974,14 @@ async function runBacktest() {
 
   // Each active trigger chip becomes its own repeated query param — supports
   // several simultaneously-active modes per indicator (see api/signals.py).
-  // Basic mode ignores the chips and runs a single RSI overbought/oversold rule.
+  // Basic mode ignores the chips: each enabled indicator runs its single default
+  // trigger (Volume is a confirmation filter with no trigger of its own).
   if (isBasic) {
-    params.append('rsi_trigger', 'overbought_oversold');
+    if (rsiOn)  params.append('rsi_trigger',      'overbought_oversold');
+    if (macdOn) params.append('macd_trigger',     'signal_cross');
+    if (bbOn)   params.append('bb_trigger',       'percent_b');
+    if (maOn)   params.append('ma_trigger',       'dual_cross');
+    if (bOn('togDonchianBasic')) params.append('donchian_trigger', 'breakout');
   } else {
     TRIGGER_GROUPS.forEach(([queryKey, containerId]) => {
       getActiveTriggers(containerId).forEach(mode => params.append(queryKey, mode));
