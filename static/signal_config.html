@@ -93,7 +93,11 @@
 .signal-toast { pointer-events: auto; width: 260px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.4); animation: signalToastIn 0.25s ease; }
 .signal-toast.buy { border-left: 3px solid var(--signal-buy); }
 .signal-toast.sell { border-left: 3px solid var(--signal-sell); }
+.signal-toast.warn { border-left: 3px solid var(--accent-amber); }
+.signal-toast-type.warn { color: var(--accent-amber); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
+@keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
+.flash-error > div { animation: flashError 0.5s ease 2; }
 @keyframes signalToastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes signalToastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(24px); } }
 .signal-toast-hdr { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); }
@@ -1162,6 +1166,18 @@ function toggleEngine() {
 async function startEngine() {
   await checkTier();
   if (!userAuthenticated) return;
+
+  // An empty strategy has nothing to scan for — block the run rather than
+  // sitting in "LAB RUNNING" while no signal can ever fire.
+  if (strategyConditions.length === 0) {
+    showEngineWarning('NO CONDITIONS SET',
+      'Add at least one condition to your strategy before running. An empty strategy has no indicators to scan for, so it can never fire a signal.');
+    addLog('err', 'LAB', 'Cannot run — strategy has no conditions. Add at least one condition, then press RUN STRATEGY.');
+    const cl = document.getElementById('conditionsList');
+    if (cl) { cl.classList.add('flash-error'); setTimeout(() => cl.classList.remove('flash-error'), 1100); }
+    return;
+  }
+
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine stop';
@@ -1501,6 +1517,24 @@ function playAlertTone(type) {
     osc.stop(ctx.currentTime + 0.36);
     osc.onended = () => ctx.close();
   } catch (e) {}
+}
+
+function showEngineWarning(title, body) {
+  const stack = document.getElementById('signalToastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = 'signal-toast warn';
+  el.innerHTML = `
+    <div class="signal-toast-hdr">
+      <span class="signal-toast-type warn">⚠ ${title}</span>
+      <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
+    </div>
+    <div class="signal-toast-body">${body}</div>`;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('closing');
+    setTimeout(() => el.remove(), 260);
+  }, 7000);
 }
 
 function showSignalToast(a) {
