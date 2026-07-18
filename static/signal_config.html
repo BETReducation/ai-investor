@@ -95,6 +95,8 @@
 .signal-toast.sell { border-left: 3px solid var(--signal-sell); }
 .signal-toast.warn { border-left: 3px solid var(--accent-amber); }
 .signal-toast-type.warn { color: var(--accent-amber); }
+.qs-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 3px; cursor: pointer; transition: all 0.15s; }
+.qs-chip:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -386,6 +388,17 @@ window.addEventListener('resize', () => {
           <option value="any">ANY condition</option>
         </select>
         <span>are met</span>
+      </div>
+
+      <!-- Quick start templates -->
+      <div style="margin-bottom:10px;">
+        <div style="font-size:8px;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:5px;">⚡ QUICK START <span style="opacity:0.7;">— one-click starter strategies</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          <button type="button" class="qs-chip" onclick="applyTemplate('oversold_bounce')" title="BUY when RSI is oversold and price is near the lower Bollinger Band — a mean-reversion bounce setup.">Oversold Bounce</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('momentum_breakout')" title="BUY on a MACD bull cross while price holds above its 50-period MA on a volume spike — a momentum breakout.">Momentum Breakout</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow.">Golden Cross Trend</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
+        </div>
       </div>
 
       <!-- Conditions list -->
@@ -887,12 +900,56 @@ function setStratType(type) {
   document.getElementById('stratSellBtn').classList.toggle('active', type === 'SELL');
 }
 
+// ── Quick-start strategy templates ───────────────────────────────────────────
+// Each condition is { type, value? } — value falls back to the condition's own
+// default. Params are filled from INDICATOR_PARAMS exactly as addCondition does,
+// so a template produces the identical shape as hand-built conditions.
+const STRATEGY_TEMPLATES = {
+  oversold_bounce: {
+    name: 'Oversold Bounce', type: 'BUY', match: 'all',
+    conditions: [ { type: 'rsi_below', value: 30 }, { type: 'bb_lower', value: 10 } ],
+  },
+  momentum_breakout: {
+    name: 'Momentum Breakout', type: 'BUY', match: 'all',
+    conditions: [ { type: 'macd_bull_cross', value: 5 }, { type: 'price_above_ma50' }, { type: 'volume_spike', value: 1.5 } ],
+  },
+  golden_cross: {
+    name: 'Golden Cross Trend', type: 'BUY', match: 'all',
+    conditions: [ { type: 'ma_golden', value: 10 }, { type: 'adx_above', value: 25 } ],
+  },
+  overbought_pullback: {
+    name: 'Overbought Pullback', type: 'SELL', match: 'all',
+    conditions: [ { type: 'rsi_above', value: 70 }, { type: 'bb_upper', value: 90 } ],
+  },
+};
+
+function _buildCondition(type, value) {
+  const def = CONDITION_DEFS[type] || {};
+  const params = {};
+  (INDICATOR_PARAMS[def.group] || []).forEach(p => { params[p.id] = p.default; });
+  return { type, value: value ?? def.defaultVal ?? 0, params };
+}
+
+function applyTemplate(key) {
+  const tpl = STRATEGY_TEMPLATES[key];
+  if (!tpl) return;
+  if (strategyConditions.length > 0 &&
+      !confirm(`Replace your current conditions with the "${tpl.name}" starter strategy?`)) return;
+  strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value));
+  strategyMatch = tpl.match;
+  const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
+  const nameEl  = document.getElementById('strategyName'); if (nameEl) nameEl.value = tpl.name;
+  const selEl   = document.getElementById('strategySelect'); if (selEl) selEl.value = '';
+  setStratType(tpl.type);
+  condExpanded = {};
+  renderConditions();
+  updateStrategyStatus();
+  addLog('info', 'STRAT', `Loaded starter strategy: ${tpl.name} (${tpl.type}, ${tpl.conditions.length} conditions)`);
+}
+
 function addCondition(type) {
   const t = type || Object.keys(CONDITION_DEFS)[0];
-  const def = CONDITION_DEFS[t] || {};
-  const initParams = {};
-  (INDICATOR_PARAMS[def.group] || []).forEach(p => { initParams[p.id] = p.default; });
-  strategyConditions.push({ type: t, value: def.defaultVal ?? 0, params: initParams });
+  strategyConditions.push(_buildCondition(t));
   renderConditions();
 }
 
@@ -980,7 +1037,7 @@ function renderConditions() {
   if (!list) return;
   if (strategyConditions.length === 0) {
     condExpanded = {};
-    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Click "+ Add Condition" below to start building your strategy</span></div>`;
+    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Pick a ⚡ Quick Start above, or click "+ Add Condition" to build your own</span></div>`;
     return;
   }
   strategyConditions.forEach((_, i) => { if (condExpanded[i] === undefined) condExpanded[i] = true; });
