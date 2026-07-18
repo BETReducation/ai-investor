@@ -606,12 +606,36 @@
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ── Results context bar ── */
+  .ctx-bar {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background: var(--bg-panel);
+    flex-shrink: 0;
+  }
+  .ctx-period-group { display: inline-flex; align-items: center; gap: 6px; }
+  .ctx-sep { color: var(--text-muted); font-size: 9px; }
+
+  /* Only the trade-log table scrolls horizontally — never the chart/metrics */
+  .tradelog-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* ── Responsive ── */
   @media (max-width: 768px) {
     body { overflow: auto; }
     .lab-layout { flex-direction: column; height: auto; overflow: visible; }
+    .lab-main { overflow-x: hidden; }
     .lab-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Stack the context bar so Period and the bar interval sit on their own lines */
+    .ctx-bar { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .ctx-period-group { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .ctx-sep, .ctx-spacer { display: none; }
   }
 </style>
 </head>
@@ -1919,11 +1943,15 @@ window.addEventListener('resize', () => {
     <div id="resultsPanel" style="display:none;">
 
       <!-- Context bar -->
-      <div style="padding:8px 20px;border-bottom:1px solid var(--border);display:flex;gap:20px;align-items:center;background:var(--bg-panel);flex-shrink:0;">
+      <div class="ctx-bar">
         <span id="ctxSymbol" style="font-size:13px;font-weight:700;color:var(--accent-green);letter-spacing:2px;"></span>
-        <span id="ctxPeriod"  style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+        <span class="ctx-period-group">
+          <span id="ctxPeriod" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+          <span class="ctx-sep">·</span>
+          <span id="ctxBars" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+        </span>
         <span id="ctxTrades"  style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
-        <span style="flex:1;"></span>
+        <span class="ctx-spacer" style="flex:1;"></span>
         <span id="ctxWarning" style="font-size:8px;color:var(--accent-amber);letter-spacing:0.5px;"></span>
       </div>
 
@@ -2019,21 +2047,23 @@ window.addEventListener('resize', () => {
           <span class="tradelog-title">TRADE LOG</span>
           <span id="tradeCount" style="font-size:9px;color:var(--accent-amber);letter-spacing:1px;"></span>
         </div>
-        <table class="trade-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>ENTRY DATE</th>
-              <th>EXIT DATE</th>
-              <th>ENTRY PRICE</th>
-              <th>EXIT PRICE</th>
-              <th>RETURN</th>
-              <th>£ P&amp;L</th>
-              <th>EXIT REASON</th>
-            </tr>
-          </thead>
-          <tbody id="tradeBody"></tbody>
-        </table>
+        <div class="tradelog-scroll">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ENTRY DATE</th>
+                <th>EXIT DATE</th>
+                <th>ENTRY PRICE</th>
+                <th>EXIT PRICE</th>
+                <th>RETURN</th>
+                <th>£ P&amp;L</th>
+                <th>EXIT REASON</th>
+              </tr>
+            </thead>
+            <tbody id="tradeBody"></tbody>
+          </table>
+        </div>
       </div>
 
     </div><!-- /resultsPanel -->
@@ -3055,7 +3085,8 @@ function renderResults(data) {
   // Context bar
   document.getElementById('ctxSymbol').textContent = symbol;
   const barsLabel = (INTERVAL_LABELS[interval] || interval || 'Daily') + ' bars';
-  document.getElementById('ctxPeriod').textContent = `Period: ${period}  ·  ${barsLabel}`;
+  document.getElementById('ctxPeriod').textContent = `Period: ${period}`;
+  document.getElementById('ctxBars').textContent = barsLabel;
   document.getElementById('ctxTrades').textContent = `${metrics.num_trades} trade${metrics.num_trades !== 1 ? 's' : ''}`;
 
   const noTradeWarn = metrics.num_trades === 0
