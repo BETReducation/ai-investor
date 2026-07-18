@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Growth Capital Academy — Strategy Lab</title>
+<title>Growth Capital Academy — Signals</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/gca.css">
@@ -399,8 +399,9 @@ window.addEventListener('resize', () => {
 
       <!-- Save strategy -->
       <button id="saveStratBtn" onclick="saveStrategy()"
+        title="Save these conditions as a named, reloadable strategy"
         style="width:100%;margin-top:10px;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;border-radius:2px;transition:all 0.15s;"
-        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE STRATEGY</button>
+        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE THIS STRATEGY</button>
     </div>
 
     <!-- TIMEFRAME -->
@@ -437,12 +438,12 @@ window.addEventListener('resize', () => {
       <button class="btn-engine start" id="engineBtn" onclick="toggleEngine()">▶ RUN STRATEGY</button>
     </div>
     <div class="save-btn-wrap">
-      <button class="btn-engine" id="saveBtn" onclick="savePreferences()" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE SETTINGS</button>
+      <button class="btn-engine" id="saveBtn" onclick="savePreferences()" title="Save your capital, risk, watchlist and timeframe as your defaults" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE MY DEFAULTS</button>
     </div>
 
     <!-- LOG -->
     <div class="log-area" id="logArea">
-      <div class="log-line"><span class="log-ts">00:00:00</span> <span class="log-info">[SYSTEM]</span> GROWTH CAPITAL ACADEMY Strategy Lab initialized. Configure a strategy and press RUN.</div>
+      <div class="log-line"><span class="log-ts">00:00:00</span> <span class="log-info">[SYSTEM]</span> GROWTH CAPITAL ACADEMY Signals initialized. Configure a strategy and press RUN.</div>
     </div>
   </div>
 
@@ -451,6 +452,11 @@ window.addEventListener('resize', () => {
 
   <!-- CENTER PANEL: Chart + Indicators -->
   <div class="center-panel">
+    <!-- SIMULATION NOTICE -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 12px;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--border);font-size:8px;letter-spacing:1.5px;color:var(--accent-amber);text-align:center;">
+      <span style="font-weight:700;border:1px solid var(--accent-amber);border-radius:2px;padding:1px 5px;">SIMULATION</span>
+      <span>Educational paper-trading only — no real orders are placed and no money changes hands.</span>
+    </div>
     <!-- STATS ROW -->
     <div class="stats-row">
       <div class="stat-cell">
@@ -484,9 +490,13 @@ window.addEventListener('resize', () => {
     </div>
 
     <!-- INDICATOR BAR -->
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 0;font-size:8px;letter-spacing:1.5px;color:var(--text-muted);">
+      <span style="font-weight:700;color:var(--text-secondary);">MARKET SNAPSHOT</span>
+      <span style="opacity:0.8;">reference only — your strategy fires on the conditions you set, not these</span>
+    </div>
     <div class="indicator-bar" id="indicatorBar">
       <div class="indicator-chip">
-        <div class="indicator-chip-label">RSI(14)</div>
+        <div class="indicator-chip-label">RSI</div>
         <div class="indicator-chip-value val-amber" id="indRsi">—</div>
         <div class="indicator-chip-signal val-amber" id="indRsiSig">NEUTRAL</div>
       </div>
@@ -525,7 +535,7 @@ window.addEventListener('resize', () => {
     <!-- POSITIONS TABLE -->
     <div style="border-top:1px solid var(--border); flex-shrink:0;">
       <div class="panel-header" style="background:var(--bg-secondary);">
-        <div class="panel-title">OPEN POSITIONS</div>
+        <div class="panel-title">OPEN POSITIONS <span style="font-weight:600;color:var(--accent-amber);letter-spacing:1px;">· SIMULATED</span></div>
         <div class="panel-badge" id="posBadge">0 ACTIVE</div>
       </div>
       <table class="positions-table" id="posTable">
@@ -556,7 +566,7 @@ window.addEventListener('resize', () => {
     <div id="tierLock" style="display:none;position:absolute;inset:0;background:rgba(5,6,8,0.88);backdrop-filter:blur(3px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;">
       <div style="font-size:24px;line-height:1;">&#128274;</div>
       <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent-amber);">SIGNAL TESTER REQUIRED</div>
-      <div style="font-size:9px;color:var(--text-muted);line-height:1.9;max-width:240px;">Live signal generation requires a <strong style="color:var(--text-secondary);">Signal Tester</strong> plan (£5/mo). Strategy Lab backtesting is free for all users.</div>
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.9;max-width:240px;">Live signal generation requires a <strong style="color:var(--text-secondary);">Signal Tester</strong> plan (£5/mo). The Backtester is free for all users.</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
         <button onclick="document.getElementById('loginOverlay').style.display='flex'" style="padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:600;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);cursor:pointer;border-radius:2px;">LOGIN / UPGRADE</button>
         <a href="/static/strategy-lab.html" style="font-size:9px;color:var(--text-muted);text-decoration:underline;letter-spacing:1px;">Go to free backtester →</a>
@@ -584,7 +594,7 @@ window.addEventListener('resize', () => {
 
     <div class="alert-list" id="alertList">
       <div class="empty-state" id="emptyAlerts">
-        LAB IDLE<br>
+        ENGINE IDLE<br>
         <span style="color:var(--text-muted);font-size:8px;">Run strategy to begin scanning</span>
       </div>
     </div>
@@ -850,7 +860,7 @@ function init() {
   updateTicker();
   setupToggles();
   checkTier();
-  addLog('info', 'SYSTEM', 'GROWTH CAPITAL ACADEMY Strategy Lab — Live API Mode');
+  addLog('info', 'SYSTEM', 'GROWTH CAPITAL ACADEMY Signals — Live API Mode');
   if (currentUser) addLog('info', 'AUTH', `Signed in as: ${currentUser.toUpperCase()}`);
   else             addLog('info', 'AUTH', 'Guest mode — sign in to save preferences');
   addLog('info', 'SYSTEM', 'Backend: ' + API_BASE);
@@ -970,7 +980,7 @@ function renderConditions() {
   if (!list) return;
   if (strategyConditions.length === 0) {
     condExpanded = {};
-    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Add one below or pick a Quick Start template</span></div>`;
+    list.innerHTML = `<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:9px;letter-spacing:1px;border:1px dashed var(--border);border-radius:2px;line-height:1.8;">No conditions yet<br><span style="font-size:8px;">Click "+ Add Condition" below to start building your strategy</span></div>`;
     return;
   }
   strategyConditions.forEach((_, i) => { if (condExpanded[i] === undefined) condExpanded[i] = true; });
@@ -1168,11 +1178,11 @@ async function startEngine() {
   if (!userAuthenticated) return;
 
   // An empty strategy has nothing to scan for — block the run rather than
-  // sitting in "LAB RUNNING" while no signal can ever fire.
+  // sitting in a "running" state while no signal can ever fire.
   if (strategyConditions.length === 0) {
     showEngineWarning('NO CONDITIONS SET',
       'Add at least one condition to your strategy before running. An empty strategy has no indicators to scan for, so it can never fire a signal.');
-    addLog('err', 'LAB', 'Cannot run — strategy has no conditions. Add at least one condition, then press RUN STRATEGY.');
+    addLog('err', 'ENGINE', 'Cannot run — strategy has no conditions. Add at least one condition, then press RUN STRATEGY.');
     const cl = document.getElementById('conditionsList');
     if (cl) { cl.classList.add('flash-error'); setTimeout(() => cl.classList.remove('flash-error'), 1100); }
     return;
@@ -1181,14 +1191,12 @@ async function startEngine() {
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine stop';
-  document.getElementById('engineDot').className = 'status-dot';
-  document.getElementById('engineStatus').textContent = 'LAB RUNNING';
   document.getElementById('emptyAlerts').style.display = 'none';
 
   const cfg = getConfig();
-  addLog('signal', 'LAB', `Strategy scan started — ${Object.keys(assets).length} assets | Live API`);
-  addLog('info', 'LAB', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
-  addLog('info', 'LAB', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: 30s`);
+  addLog('signal', 'ENGINE', `Strategy scan started — ${Object.keys(assets).length} assets | Live API`);
+  addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
+  addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: 30s`);
 
   await fetchAllAssets();
   await scanSignals();
@@ -1206,10 +1214,8 @@ function stopEngine() {
   pollTimer = null;
   document.getElementById('engineBtn').textContent = '▶ RUN STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine start';
-  document.getElementById('engineDot').className = 'status-dot inactive';
-  document.getElementById('engineStatus').textContent = 'LAB IDLE';
   setDataStatus('offline');
-  addLog('warn', 'LAB', 'Strategy scan stopped');
+  addLog('warn', 'ENGINE', 'Strategy scan stopped');
 }
 
 // --- API HELPERS ---
@@ -1334,9 +1340,12 @@ async function scanSignals() {
 }
 
 // --- DATA STATUS ---
+// The status pill these updated was removed with the old nav (commit f5790cc),
+// so guard against the missing elements rather than throwing mid-scan.
 function setDataStatus(state) {
   const dot = document.getElementById('dataDot');
   const label = document.getElementById('dataStatus');
+  if (!dot || !label) return;
   if (state === 'live')         { dot.className = 'status-dot';          label.textContent = 'LIVE DATA';   }
   else if (state === 'loading') { dot.className = 'status-dot';          label.textContent = 'FETCHING...'; }
   else if (state === 'error')   { dot.className = 'status-dot inactive'; label.textContent = 'API ERROR';   }
