@@ -831,14 +831,17 @@ window.addEventListener('resize', () => {
     <!-- Basic indicators — curated subset, most-essential params only. Each runs
          its default trigger; enable the ones you want. -->
     <div class="ctrl-section" id="basicIndicators">
-      <div class="ctrl-label">INDICATORS</div>
+      <div class="ctrl-label">INDICATORS — click name to configure</div>
 
       <!-- RSI -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">RSI</span>
+        <span class="ind-label" onclick="toggleIndSettings('rsiBasic')">
+          <span>RSI</span>
+          <span class="ind-chevron" id="rsiBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togRsiBasic" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="rsiBasicParams">
         <div class="param-row">
           <span class="param-label">Length</span>
           <input type="number" class="param-input" id="rsiLengthBasic" value="14" min="2" max="200">
@@ -855,10 +858,13 @@ window.addEventListener('resize', () => {
 
       <!-- Bollinger Bands -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">Bollinger Bands</span>
+        <span class="ind-label" onclick="toggleIndSettings('bbBasic')">
+          <span>Bollinger Bands</span>
+          <span class="ind-chevron" id="bbBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togBbBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="bbBasicParams">
         <div class="param-row">
           <span class="param-label">Length</span>
           <input type="number" class="param-input" id="bbLengthBasic" value="20" min="2" max="200">
@@ -871,10 +877,13 @@ window.addEventListener('resize', () => {
 
       <!-- Volume (Surge) -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">Volume (Surge)</span>
+        <span class="ind-label" onclick="toggleIndSettings('volBasic')">
+          <span>Volume (Surge)</span>
+          <span class="ind-chevron" id="volBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togVolBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="volBasicParams">
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Surge multiplier (×avg)</span>
           <input type="number" class="param-input" id="volSurgeBasic" value="1.5" min="1" max="10" step="0.1">
@@ -883,10 +892,13 @@ window.addEventListener('resize', () => {
 
       <!-- MACD -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">MACD</span>
+        <span class="ind-label" onclick="toggleIndSettings('macdBasic')">
+          <span>MACD</span>
+          <span class="ind-chevron" id="macdBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togMacdBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="macdBasicParams">
         <div class="param-row">
           <span class="param-label">Fast period</span>
           <input type="number" class="param-input" id="macdFastBasic" value="12" min="2" max="50">
@@ -903,10 +915,13 @@ window.addEventListener('resize', () => {
 
       <!-- MA Cross -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">MA Cross</span>
+        <span class="ind-label" onclick="toggleIndSettings('maBasic')">
+          <span>MA Cross</span>
+          <span class="ind-chevron" id="maBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togMaBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="maBasicParams">
         <div class="param-row">
           <span class="param-label">Short period</span>
           <input type="number" class="param-input" id="emaShortBasic" value="9" min="2" max="50">
@@ -919,10 +934,13 @@ window.addEventListener('resize', () => {
 
       <!-- Donchian Channels -->
       <div class="ind-row">
-        <span class="ind-label" style="cursor:default;">Donchian Channels</span>
+        <span class="ind-label" onclick="toggleIndSettings('donchianBasic')">
+          <span>Donchian Channels</span>
+          <span class="ind-chevron" id="donchianBasicChevron">▸</span>
+        </span>
         <label class="toggle"><input type="checkbox" id="togDonchianBasic"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="ind-params open">
+      <div class="ind-params" id="donchianBasicParams">
         <div class="param-row" style="margin-bottom:0;">
           <span class="param-label">Length</span>
           <input type="number" class="param-input" id="donchianLengthBasic" value="20" min="2" max="200">
