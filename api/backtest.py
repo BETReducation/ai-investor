@@ -17,6 +17,7 @@ from api.indicators import (
     calculate_ma_by_type, calculate_price_divergence,
     calculate_willr_failure_swings, calculate_trend_confirmation,
     calculate_ao_saucer, calculate_ao_twin_peaks, calculate_keltner_squeeze,
+    _inverse_hs_series,
 )
 from api.signals import score_signals, DEFAULT_THRESHOLDS
 
@@ -122,6 +123,8 @@ def run_backtest(
     vwap_anchored          = bool(int(cp.get("vwap_anchored", 0)))
     obv_div_lookback       = int(cp.get("obv_div_lookback", 5))
     ad_div_lookback        = int(cp.get("ad_div_lookback", 5))
+    hs_pivot               = int(cp.get("hs_pivot", 3))
+    hs_lookback            = int(cp.get("hs_lookback", 90))
 
     # ── Compute full indicator series upfront (O(n), not O(n²)) ──────────
     rsi_s   = calculate_rsi(df, length=rsi_length)
@@ -153,6 +156,12 @@ def run_backtest(
     )
     mas_df  = calculate_moving_averages(df, ema_short=ema_short, ema_long=ema_long)
     vol_df  = calculate_volume_indicators(df)
+
+    # Inverse head & shoulders — causal per-bar state (no lookahead). Aligned to df's
+    # positional index, which `combined` preserves (concat with no row drops).
+    hs_detected_s, hs_neckline_s, hs_pct_s, hs_broke_s = _inverse_hs_series(
+        df["High"], df["Low"], df["Close"], pivot=hs_pivot, lookback=hs_lookback,
+    )
 
     ma_short_s  = calculate_ma_by_type(df, ma_short_length,  ma_type)
     ma_medium_s = calculate_ma_by_type(df, ma_medium_length, ma_type)
@@ -550,6 +559,13 @@ def run_backtest(
             "price": {
                 "close": close, "open": _sf(row.get("Open")),
                 "high": high,   "low":  low,
+            },
+            "inverse_hs": {
+                "detected":          bool(hs_detected_s[i]),
+                "neckline":          _sf(hs_neckline_s[i]),
+                "close":             close,
+                "pct_from_neckline": _sf(hs_pct_s[i]),
+                "broke_neckline":    bool(hs_broke_s[i]),
             },
             "crossovers": {
                 "ema_bars_since_cross":  int(ema_cross.iloc[i]),

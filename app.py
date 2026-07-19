@@ -280,6 +280,7 @@ _TRIGGER_WHITELISTS = {
     "cmf_trigger":         {"threshold", "bullish", "bearish", "centerline_cross"},
     "vol_profile_trigger": {"position", "bullish", "bearish", "poc_breakout"},
     "fib_trigger":         {"bounce_reject", "bullish_bounce", "bearish_reject", "any_touch"},
+    "inv_hs_trigger":      {"neckline_touch", "neckline_break"},
 }
 
 
@@ -2019,6 +2020,7 @@ def backtest():
         "cmf_on", "cmf_threshold",
         "vol_profile_on",
         "fib_on", "fib_tolerance_pct",
+        "inv_hs_on", "inv_hs_tolerance_pct",
         "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
         "ma_trigger_lookback",
         "adx_di_cross_lookback",

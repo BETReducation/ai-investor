@@ -76,18 +76,67 @@ def _bars_since_cross(a: pd.Series, b: pd.Series) -> int:
     return len(diff) - 1 - last_cross_loc
 
 
+def _swing_pivots(hi, lo, w: int, start: int, end: int):
+    """Confirmed swing pivots in [start, end): a bar is a swing low if it is the
+    strict min of `w` bars on each side (swing high = strict max). Returns
+    (lows, highs) as lists of (idx, price)."""
+    piv_lows, piv_highs = [], []
+    for i in range(start, end):
+        seg_lo = lo[i - w:i + w + 1]
+        if lo[i] == seg_lo.min() and seg_lo.argmin() == w:
+            piv_lows.append((i, lo[i]))
+        seg_hi = hi[i - w:i + w + 1]
+        if hi[i] == seg_hi.max() and seg_hi.argmax() == w:
+            piv_highs.append((i, hi[i]))
+    return piv_lows, piv_highs
+
+
+def _match_inverse_hs(piv_lows, piv_highs, cur_idx: int):
+    """Find the most recent valid inverse head-and-shoulders in the given confirmed
+    pivots and return its neckline projected to `cur_idx`, or None. A valid pattern
+    is three swing lows (left shoulder / head / right shoulder) with the head lowest,
+    the shoulders roughly level, and a swing high in each gap forming the neckline."""
+    if len(piv_lows) < 3:
+        return None
+    best = None
+    recent_lows = piv_lows[-8:]
+    for a in range(len(recent_lows)):
+        for b in range(a + 1, len(recent_lows)):
+            for c in range(b + 1, len(recent_lows)):
+                ls_i, ls_p = recent_lows[a]
+                h_i,  h_p  = recent_lows[b]
+                rs_i, rs_p = recent_lows[c]
+                if not (h_p < ls_p and h_p < rs_p):               # head is lowest
+                    continue
+                if abs(ls_p - rs_p) / ((ls_p + rs_p) / 2.0) > 0.10:  # shoulders ~level
+                    continue
+                gap1 = [(pi, pp) for pi, pp in piv_highs if ls_i < pi < h_i]
+                gap2 = [(pi, pp) for pi, pp in piv_highs if h_i  < pi < rs_i]
+                if not gap1 or not gap2:                           # a neckline high in each gap
+                    continue
+                h1i, h1p = max(gap1, key=lambda tt: tt[1])
+                h2i, h2p = max(gap2, key=lambda tt: tt[1])
+                if not (h_p < h1p and h_p < h2p):                  # head below the neckline
+                    continue
+                if best is None or rs_i > best["rs_i"]:
+                    best = {"rs_i": rs_i, "h1i": h1i, "h1p": h1p, "h2i": h2i, "h2p": h2p}
+    if best is None:
+        return None
+    h1i, h1p, h2i, h2p = best["h1i"], best["h1p"], best["h2i"], best["h2p"]
+    if h2i == h1i:
+        return max(h1p, h2p)
+    slope = (h2p - h1p) / (h2i - h1i)
+    return h1p + slope * (cur_idx - h1i)
+
+
 def _detect_inverse_head_shoulders(high: pd.Series, low: pd.Series, close: pd.Series,
                                    pivot: int = 3, lookback: int = 90) -> dict:
-    """Heuristic inverse head-and-shoulders detector.
+    """Heuristic inverse head-and-shoulders detector (point-in-time, latest bar).
 
-    Scans recent swing lows for a left-shoulder / head / right-shoulder trough
-    sequence (head the lowest, the two shoulders roughly level) with a swing high
-    in each gap forming the neckline. Projects that neckline (the line through the
-    two swing highs) forward to the latest bar — the level a long entry watches.
-
-    Returns a dict describing the pattern and where price sits relative to the
-    neckline. `detected` is False for anything it can't confirm; callers decide
-    the trigger (touch vs. break) using `pct_from_neckline` / `broke_neckline`.
+    Projects the neckline (the line through the two swing highs) forward to the
+    latest bar — the level a long entry watches. `detected` is False for anything
+    it can't confirm; callers decide the trigger (touch vs. break) using
+    `pct_from_neckline` / `broke_neckline`.
     """
     result = {
         "detected": False, "neckline": None, "close": None,
@@ -103,59 +152,11 @@ def _detect_inverse_head_shoulders(high: pd.Series, low: pd.Series, close: pd.Se
         hi = high.to_numpy(dtype=float)
         cl = close.to_numpy(dtype=float)
         start = max(w, n - lookback)
-
-        # Confirmed swing pivots: a bar is a swing low if it is the strict min of
-        # `w` bars on each side (swing high = strict max). Bars within `w` of the
-        # end can't be confirmed yet — that's expected, the pattern completes then
-        # price rallies back toward the neckline.
-        piv_lows, piv_highs = [], []
-        for i in range(start, n - w):
-            seg_lo = lo[i - w:i + w + 1]
-            if lo[i] == seg_lo.min() and seg_lo.argmin() == w:
-                piv_lows.append((i, lo[i]))
-            seg_hi = hi[i - w:i + w + 1]
-            if hi[i] == seg_hi.max() and seg_hi.argmax() == w:
-                piv_highs.append((i, hi[i]))
-
-        if len(piv_lows) < 3:
+        piv_lows, piv_highs = _swing_pivots(hi, lo, w, start, n - w)
+        neckline = _match_inverse_hs(piv_lows, piv_highs, n - 1)
+        if neckline is None or neckline <= 0:
             return result
-
-        # Search recent swing-low triples (LS, H, RS); keep the most recent valid one.
-        best = None
-        recent_lows = piv_lows[-8:]
-        for a in range(len(recent_lows)):
-            for b in range(a + 1, len(recent_lows)):
-                for c in range(b + 1, len(recent_lows)):
-                    ls_i, ls_p = recent_lows[a]
-                    h_i,  h_p  = recent_lows[b]
-                    rs_i, rs_p = recent_lows[c]
-                    if not (h_p < ls_p and h_p < rs_p):           # head is lowest
-                        continue
-                    if abs(ls_p - rs_p) / ((ls_p + rs_p) / 2.0) > 0.10:  # shoulders ~level
-                        continue
-                    gap1 = [(pi, pp) for pi, pp in piv_highs if ls_i < pi < h_i]
-                    gap2 = [(pi, pp) for pi, pp in piv_highs if h_i  < pi < rs_i]
-                    if not gap1 or not gap2:                       # a neckline high in each gap
-                        continue
-                    h1i, h1p = max(gap1, key=lambda t: t[1])
-                    h2i, h2p = max(gap2, key=lambda t: t[1])
-                    if not (h_p < h1p and h_p < h2p):              # head below the neckline
-                        continue
-                    if best is None or rs_i > best["rs_i"]:
-                        best = {"rs_i": rs_i, "h1i": h1i, "h1p": h1p, "h2i": h2i, "h2p": h2p}
-
-        if best is None:
-            return result
-
-        h1i, h1p, h2i, h2p = best["h1i"], best["h1p"], best["h2i"], best["h2p"]
-        if h2i == h1i:
-            neckline = max(h1p, h2p)
-        else:
-            slope = (h2p - h1p) / (h2i - h1i)
-            neckline = h1p + slope * ((n - 1) - h1i)
         last = cl[-1]
-        if not neckline or neckline <= 0:
-            return result
         pct = (last - neckline) / neckline * 100.0
         result.update({
             "detected": True,
@@ -167,6 +168,46 @@ def _detect_inverse_head_shoulders(high: pd.Series, low: pd.Series, close: pd.Se
         return result
     except Exception:
         return result
+
+
+def _inverse_hs_series(high: pd.Series, low: pd.Series, close: pd.Series,
+                       pivot: int = 3, lookback: int = 90):
+    """Causal (no-lookahead) per-bar inverse head-and-shoulders state, for the
+    backtester. At each bar j only pivots confirmed as of j (index <= j - w) and
+    within `lookback` are considered, and the neckline is projected to j.
+
+    Returns (detected, neckline, pct_from_neckline, broke_neckline) as numpy arrays
+    aligned to the input index."""
+    n = len(close)
+    detected  = np.zeros(n, dtype=bool)
+    neckline  = np.full(n, np.nan)
+    pct       = np.full(n, np.nan)
+    broke     = np.zeros(n, dtype=bool)
+    try:
+        if n < 20:
+            return detected, neckline, pct, broke
+        w = max(2, int(pivot))
+        lookback = max(30, int(lookback))
+        lo = low.to_numpy(dtype=float)
+        hi = high.to_numpy(dtype=float)
+        cl = close.to_numpy(dtype=float)
+        # All confirmed pivots over the whole series (computed once).
+        all_lows, all_highs = _swing_pivots(hi, lo, w, w, n - w)
+        for j in range(w, n):
+            lo_vis = [(i, p) for i, p in all_lows  if j - lookback <= i <= j - w]
+            if len(lo_vis) < 3:
+                continue
+            hi_vis = [(i, p) for i, p in all_highs if j - lookback <= i <= j - w]
+            neck = _match_inverse_hs(lo_vis, hi_vis, j)
+            if neck is None or neck <= 0:
+                continue
+            detected[j] = True
+            neckline[j] = neck
+            pct[j]      = (cl[j] - neck) / neck * 100.0
+            broke[j]    = cl[j] > neck
+        return detected, neckline, pct, broke
+    except Exception:
+        return detected, neckline, pct, broke
 
 
 def _recent_ohlcv(df: pd.DataFrame, n: int = 100) -> list:

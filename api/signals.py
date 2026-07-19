@@ -124,6 +124,8 @@ DEFAULT_THRESHOLDS = {
     "vol_profile_breakout_lookback": 5,
     "fib_on": 0, "fib_tolerance_pct": 1.0,
     "fib_trigger": "bounce_reject",  # bounce_reject | bullish_bounce | bearish_reject | any_touch
+    "inv_hs_on": 0, "inv_hs_tolerance_pct": 1.0,
+    "inv_hs_trigger": "neckline_break",  # neckline_touch | neckline_break
 }
 
 
@@ -1639,6 +1641,26 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                 sell_score += 1
             else:
                 signals.append({"indicator": "Fibonacci", "type": "NEUTRAL", "detail": "No level reaction", "weight": 0})
+
+    # ── Inverse Head & Shoulders (bullish reversal pattern) ───────────────────
+    inv_hs = indicators.get("inverse_hs", {})
+    inv_hs_modes = _active_modes(t, "inv_hs_trigger", "neckline_break")
+    if t.get("inv_hs_on", 0) and inv_hs.get("detected"):
+        pct   = inv_hs.get("pct_from_neckline")
+        broke = bool(inv_hs.get("broke_neckline"))
+        tol   = float(t.get("inv_hs_tolerance_pct", 1.0))
+        if "neckline_touch" in inv_hs_modes:
+            if pct is not None and abs(pct) <= tol:
+                signals.append({"indicator": "Inverse H&S", "type": "BUY", "detail": f"Price at the inverse H&S neckline ({pct:+.1f}%)", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "Inverse H&S", "type": "NEUTRAL", "detail": "Inverse H&S formed; price not yet at the neckline", "weight": 0})
+        if "neckline_break" in inv_hs_modes:
+            if broke:
+                signals.append({"indicator": "Inverse H&S", "type": "BUY", "detail": "Close above the inverse H&S neckline — bullish breakout", "weight": 2})
+                buy_score += 2
+            else:
+                signals.append({"indicator": "Inverse H&S", "type": "NEUTRAL", "detail": "Inverse H&S formed; neckline not yet broken", "weight": 0})
 
     total_weight = buy_score + sell_score
     confidence = round((max(buy_score, sell_score) / total_weight * 100) if total_weight > 0 else 50, 1)

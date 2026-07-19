@@ -1871,6 +1871,24 @@ window.addEventListener('resize', () => {
         </div>
       </div>
 
+      <!-- Inverse Head & Shoulders -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('invHs')"><span>Inverse Head &amp; Shoulders</span><span class="ind-chevron" id="invHsChevron">▸</span></span>
+        <label class="toggle"><input type="checkbox" id="togInvHs"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="invHsParams">
+        <div class="param-row"><span class="param-label">Swing sensitivity (bars)</span><input type="number" class="param-input" id="invHsPivot" value="3" min="2" max="10"></div>
+        <div class="param-row"><span class="param-label">Lookback (bars)</span><input type="number" class="param-input" id="invHsLookback" value="90" min="30" max="250" step="5"></div>
+        <div class="param-row"><span class="param-label">Neckline tolerance %</span><input type="number" class="param-input" id="invHsTolerancePct" value="1.0" min="0.1" max="5" step="0.1"></div>
+        <div class="param-row" style="margin-bottom:0;">
+          <span class="param-label">Trigger</span>
+          <div class="trigger-chips" id="invHsTriggerChips">
+            <button type="button" class="trigger-chip active" data-value="neckline_break" onclick="toggleTriggerChip(this)">Neckline break (default)</button>
+            <button type="button" class="trigger-chip" data-value="neckline_touch" onclick="toggleTriggerChip(this)">Neckline touch</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Volume -->
       <div class="ind-row" style="margin-bottom:0;">
         <span class="ind-label" onclick="toggleIndSettings('vol')">
@@ -2701,6 +2719,7 @@ const TRIGGER_GROUPS = [
   ['hist_vol_trigger', 'histVolTriggerChips'], ['obv_trigger', 'obvTriggerChips'],
   ['vwap_trigger', 'vwapTriggerChips'], ['ad_trigger', 'adTriggerChips'], ['cmf_trigger', 'cmfTriggerChips'],
   ['vol_profile_trigger', 'volProfileTriggerChips'], ['fib_trigger', 'fibTriggerChips'],
+  ['inv_hs_trigger', 'invHsTriggerChips'],
 ];
 
 // Numeric/select params that only matter when specific trigger modes are active —
@@ -2785,6 +2804,7 @@ const TRIGGER_PARAM_RELEVANCE = {
   adTriggerChips: { adDivLookback: ['divergence'] },
   cmfTriggerChips: { cmfThreshold: ['threshold'], cmfCenterlineLookback: ['centerline_cross'] },
   volProfileTriggerChips: { volProfileBreakoutLookback: ['poc_breakout'] },
+  invHsTriggerChips: { invHsTolerancePct: ['neckline_touch'] },
 };
 
 function getActiveTriggers(containerId) {
@@ -2986,6 +3006,8 @@ async function runBacktest() {
     vol_profile_on: _on('togVolProfile'), vol_profile_lookback: _iv('volProfileLookback', 50), vol_profile_bins: _iv('volProfileBins', 24),
       vol_profile_breakout_lookback: _iv('volProfileBreakoutLookback', 5),
     fib_on: _on('togFib'), fib_lookback: _iv('fibLookback', 50), fib_tolerance_pct: _fv('fibTolerancePct', 1.0),
+    inv_hs_on: _on('togInvHs'), hs_pivot: _iv('invHsPivot', 3), hs_lookback: _iv('invHsLookback', 90),
+      inv_hs_tolerance_pct: _fv('invHsTolerancePct', 1.0),
   };
 
   if (!symbol) {
