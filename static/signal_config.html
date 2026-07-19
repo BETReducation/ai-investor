@@ -312,13 +312,35 @@ window.addEventListener('resize', () => {
     <div class="section">
       <div class="section-label">CAPITAL & RISK</div>
       <div class="control-row">
-        <div class="control-label">Capital <span>(GBP)</span></div>
+        <div class="control-label">Currency</div>
+        <div class="input-group">
+          <select id="currency" onchange="setCurrency(this.value)" style="font-size:10px;padding:4px 6px;">
+            <option value="USD">USD ($)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD (C$)</option>
+            <option value="AUD">AUD (A$)</option>
+            <option value="CHF">CHF (Fr)</option>
+            <option value="INR">INR (₹)</option>
+            <option value="CUSTOM">Custom…</option>
+          </select>
+        </div>
+      </div>
+      <div class="control-row" id="customCurrencyRow" style="display:none;">
+        <div class="control-label">Symbol</div>
+        <div class="input-group">
+          <input type="text" id="customCurrencySymbol" value="$" maxlength="4" style="width:90px" onchange="setCustomCurrencySymbol(this.value)">
+        </div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
         <div class="input-group">
           <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px">
         </div>
       </div>
       <div class="toggle-row">
-        <div class="toggle-label">Position Size in £</div>
+        <div class="toggle-label">Position Size in <span id="posSizeGbpToggleSym">£</span></div>
         <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
       <div class="range-row" id="posSizePctRow">
@@ -329,7 +351,7 @@ window.addEventListener('resize', () => {
         <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'">
       </div>
       <div class="control-row" id="posSizeGbpRow" style="display:none;">
-        <div class="control-label">Position Size <span>(£)</span></div>
+        <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
         <div class="input-group">
           <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px">
         </div>
@@ -2190,7 +2212,7 @@ function updateChartOverlay() {
   const a = assets[currentAsset];
   if (!a || !a.price) return;
   const chgPct = a.change * 100;
-  document.getElementById('chartPrice').textContent = '£' + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('chartPrice').textContent = getCurrencySymbol() + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
@@ -2331,7 +2353,7 @@ function fireAlert(sym, sig) {
   document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 
   const col = sig.type === 'BUY' ? 'signal' : 'err';
-  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ £${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
+  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ ${getCurrencySymbol()}${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
 
   if (notificationSettings.sound_enabled) playAlertTone(sig.type);
@@ -2388,7 +2410,7 @@ function showSignalToast(a) {
       <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
     </div>
     <div class="signal-toast-body">
-      <span class="signal-toast-asset">${a.sym}</span> @ £${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
+      <span class="signal-toast-asset">${a.sym}</span> @ ${getCurrencySymbol()}${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
     </div>`;
   stack.appendChild(el);
   setTimeout(() => {
@@ -2414,9 +2436,9 @@ function renderAlerts() {
       </div>
       <div class="alert-body">
         <div class="alert-price-row">
-          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">£${formatPrice(a.price, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">£${formatPrice(a.target, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">£${formatPrice(a.sl, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">${getCurrencySymbol()}${formatPrice(a.price, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)}</div></div>
           <div class="alert-price-item"><div class="alert-price-key">QTY</div><div class="alert-price-val">${a.qty.toFixed(4)}</div></div>
         </div>
         <div class="alert-reasons">${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}</div>
@@ -2449,13 +2471,13 @@ function openModal(alertId) {
   document.getElementById('modalSummary').innerHTML = `
     <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
     <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
-    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">£${formatPrice(a.price, a.sym)}</div></div>
+    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">${getCurrencySymbol()}${formatPrice(a.price, a.sym)}</div></div>
     <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
-    <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">£${invested.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">£${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
-    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">£${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
-    <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+£${profit.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-£${risk.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">${getCurrencySymbol()}${invested.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
+    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
+    <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+${getCurrencySymbol()}${profit.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-${getCurrencySymbol()}${risk.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
   `;
   document.getElementById('modalWarning').innerHTML =
@@ -2483,8 +2505,8 @@ function confirmTrade() {
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ £${formatPrice(a.price, a.sym)}`);
-  addLog('info', 'ORDER', `Target: £${formatPrice(a.target, a.sym)} | Stop: £${formatPrice(a.sl, a.sym)}`);
+  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ ${getCurrencySymbol()}${formatPrice(a.price, a.sym)}`);
+  addLog('info', 'ORDER', `Target: ${getCurrencySymbol()}${formatPrice(a.target, a.sym)} | Stop: ${getCurrencySymbol()}${formatPrice(a.sl, a.sym)}`);
 }
 
 // --- DISMISS ALERT ---
@@ -2521,7 +2543,7 @@ function closePosition(pos, reason) {
   dailyPnl += pos.pnl;
   if (pos.pnl > 0) tradeWins++;
   const col = pos.pnl > 0 ? 'signal' : 'err';
-  addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}£${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
+  addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}${getCurrencySymbol()}${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
 }
 
 function updatePositionsTable() {
@@ -2533,15 +2555,15 @@ function updatePositionsTable() {
   }
   tbody.innerHTML = positions.map(pos => {
     const pnlCls = pos.pnl >= 0 ? 'pos' : 'neg';
-    const pnlStr = (pos.pnl >= 0 ? '+' : '') + '£' + pos.pnl.toFixed(2);
+    const pnlStr = (pos.pnl >= 0 ? '+' : '') + getCurrencySymbol() + pos.pnl.toFixed(2);
     return `<tr>
       <td style="color:var(--text-primary);font-weight:600;">${pos.sym}</td>
       <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side}</td>
-      <td>£${formatPrice(pos.entry, pos.sym)}</td>
-      <td style="color:var(--accent-cyan);">£${formatPrice(pos.current, pos.sym)}</td>
-      <td>£${pos.invested.toFixed(0)}</td>
-      <td style="color:var(--accent-green);">£${formatPrice(pos.target, pos.sym)}</td>
-      <td style="color:var(--accent-red);">£${formatPrice(pos.sl, pos.sym)}</td>
+      <td>${getCurrencySymbol()}${formatPrice(pos.entry, pos.sym)}</td>
+      <td style="color:var(--accent-cyan);">${getCurrencySymbol()}${formatPrice(pos.current, pos.sym)}</td>
+      <td>${getCurrencySymbol()}${pos.invested.toFixed(0)}</td>
+      <td style="color:var(--accent-green);">${getCurrencySymbol()}${formatPrice(pos.target, pos.sym)}</td>
+      <td style="color:var(--accent-red);">${getCurrencySymbol()}${formatPrice(pos.sl, pos.sym)}</td>
       <td class="pos-pnl ${pnlCls}">${pnlStr} (${pos.pnlPct.toFixed(2)}%)</td>
       <td><button onclick="manualClose('${pos.id}')" style="background:rgba(255,51,85,0.1);border:1px solid var(--accent-red);color:var(--accent-red);padding:3px 7px;font-family:inherit;font-size:9px;cursor:pointer;border-radius:2px;">CLOSE</button></td>
     </tr>`;
@@ -2558,13 +2580,13 @@ function updateStats() {
   const capital = parseFloat(document.getElementById('capital').value);
   const target = capital * parseFloat(document.getElementById('targetGain').value) / 100;
   const progress = Math.min((dailyPnl / target) * 100, 100);
-  document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + '£' + dailyPnl.toFixed(2);
+  document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + getCurrencySymbol() + dailyPnl.toFixed(2);
   document.getElementById('statPnl').className = 'stat-value ' + (dailyPnl >= 0 ? 'tag-green' : 'tag-red');
   document.getElementById('statPnlPct').textContent = (dailyPnl >= 0 ? '+' : '') + ((dailyPnl / capital) * 100).toFixed(2) + '%';
   document.getElementById('statSignals').textContent = signalsToday;
   document.getElementById('statTrades').textContent = tradesExecuted;
   document.getElementById('statWinRate').textContent = tradesExecuted > 0 ? Math.round(tradeWins / tradesExecuted * 100) + '% win rate' : '—% win rate';
-  document.getElementById('statTarget').textContent = '+£' + target.toFixed(2);
+  document.getElementById('statTarget').textContent = '+' + getCurrencySymbol() + target.toFixed(2);
   document.getElementById('statProgress').textContent = Math.round(progress) + '% progress';
 }
 
@@ -2697,7 +2719,7 @@ function renderWatchlist() {
         <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
       </div>
       <div class="wl-right">
-        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'}</div>
+        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'}</div>
         <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
@@ -2708,12 +2730,12 @@ function updateWatchlist() {
   Object.keys(assets).forEach(sym => {
     const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
     const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
-    if (el)    { el.textContent = assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (el)    { el.textContent = assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
     if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
     // also refresh price column inside dropdown if open
     if (wlDropdownOpen) {
       const dp = document.getElementById('wl-dp-' + sym.replace('/','_'));
-      if (dp) { dp.textContent = assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
+      if (dp) { dp.textContent = assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
     }
   });
 }
@@ -2730,7 +2752,7 @@ function renderWlDropdown() {
     const a = assets[sym];
     const checked = watchlistEnabled[sym];
     const isActive = sym === currentAsset;
-    const price = a.price ? '£' + formatPrice(a.price, sym) : '—';
+    const price = a.price ? getCurrencySymbol() + formatPrice(a.price, sym) : '—';
     const removeBtn = customSymbolKeys.has(sym)
       ? `<button class="wl-check-remove" onclick="removeCustomSymbol('${sym}', event)" title="Remove from my list">✕</button>`
       : `<span></span>`;
@@ -3087,7 +3109,7 @@ function updateTicker() {
   tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
-      <div class="ticker-price">${assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'}</div>
+      <div class="ticker-price">${assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'}</div>
       <div class="ticker-chg ${assets[sym].change >= 0 ? 'up' : 'down'}">${assets[sym].change >= 0 ? '▲' : '▼'}${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
     </div>
   `).join('');
@@ -3120,6 +3142,49 @@ function getConfig() {
     // Signal scoring (base defaults for the read-only indicator bar)
     rsiOversold: 30, rsiOverbought: 70, volSpike: 1.5,
   };
+}
+
+// ── Currency ──────────────────────────────────────────────────────────────
+const CURRENCY_SYMBOLS = { USD: '$', GBP: '£', EUR: '€', JPY: '¥', CAD: 'C$', AUD: 'A$', CHF: 'Fr', INR: '₹' };
+let selectedCurrency = 'GBP';
+let customCurrencySymbol = '$';
+
+function getCurrencySymbol() {
+  if (selectedCurrency === 'CUSTOM') return customCurrencySymbol || '$';
+  return CURRENCY_SYMBOLS[selectedCurrency] || '£';
+}
+
+function setCurrency(code) {
+  selectedCurrency = code;
+  document.getElementById('customCurrencyRow').style.display = code === 'CUSTOM' ? '' : 'none';
+  refreshCurrencyDisplays();
+}
+
+function setCustomCurrencySymbol(sym) {
+  customCurrencySymbol = (sym || '$').trim() || '$';
+  if (selectedCurrency === 'CUSTOM') refreshCurrencyDisplays();
+}
+
+// Re-renders every already-on-screen currency amount with the current symbol —
+// called on currency change so nothing waits for a fresh fetch/trade to update.
+function refreshCurrencyDisplays() {
+  const sym = getCurrencySymbol();
+  const label = `(${selectedCurrency === 'CUSTOM' ? sym : selectedCurrency})`;
+  const capLabel = document.getElementById('capitalCurrencyLabel');
+  if (capLabel) capLabel.textContent = label;
+  const toggleSym = document.getElementById('posSizeGbpToggleSym');
+  if (toggleSym) toggleSym.textContent = sym;
+  const posLabelSym = document.getElementById('posSizeGbpLabelSym');
+  if (posLabelSym) posLabelSym.textContent = `(${sym})`;
+
+  if (typeof updateChartOverlay === 'function')   updateChartOverlay();
+  if (typeof renderWatchlist === 'function')       renderWatchlist();
+  if (typeof updateWatchlist === 'function')       updateWatchlist();
+  if (typeof renderWlDropdown === 'function')      renderWlDropdown();
+  if (typeof updateTicker === 'function')          updateTicker();
+  if (typeof updatePositionsTable === 'function')  updatePositionsTable();
+  if (typeof updateStats === 'function')           updateStats();
+  if (typeof renderAlerts === 'function')          renderAlerts();
 }
 
 // Position Size mode toggle (% of capital vs a fixed £ amount per trade) —
@@ -3356,6 +3421,8 @@ async function saveStrategy() {
 async function savePreferences() {
   if (!currentUser) { addLog('warn', 'PREFS', 'Not logged in'); return; }
   const prefs = {
+    currency:             selectedCurrency,
+    customCurrencySymbol: customCurrencySymbol,
     capital:      parseFloat(document.getElementById('capital').value),
     posSize:      parseFloat(document.getElementById('posSize').value),
     posSizeGbpMode: document.getElementById('posSizeGbpMode').checked,
@@ -3410,6 +3477,22 @@ function applyPreferences(prefs) {
   const set    = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
   const setChk = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.checked = v; };
   const setText= (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.textContent = v; };
+
+  if (prefs.currency !== undefined) {
+    selectedCurrency = prefs.currency;
+    set('currency', prefs.currency);
+    document.getElementById('customCurrencyRow').style.display = prefs.currency === 'CUSTOM' ? '' : 'none';
+  }
+  if (prefs.customCurrencySymbol !== undefined) {
+    customCurrencySymbol = prefs.customCurrencySymbol;
+    set('customCurrencySymbol', prefs.customCurrencySymbol);
+  }
+  // Only the static labels need setting here — this runs before assets/positions
+  // are loaded, so the normal page-load render flow (fetchAllAssets, etc.) picks
+  // up `selectedCurrency` naturally once there's actually data to render.
+  setText('capitalCurrencyLabel', `(${selectedCurrency === 'CUSTOM' ? getCurrencySymbol() : selectedCurrency})`);
+  setText('posSizeGbpToggleSym', getCurrencySymbol());
+  setText('posSizeGbpLabelSym', `(${getCurrencySymbol()})`);
 
   set('capital',    prefs.capital);
   set('posSize',    prefs.posSize);

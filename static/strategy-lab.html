@@ -801,6 +801,24 @@ window.addEventListener('resize', () => {
       </select>
     </div>
 
+    <!-- Currency -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">CURRENCY</div>
+      <select id="btCurrency" class="lab-input" onchange="setBtCurrency(this.value)" style="margin-bottom:0;">
+        <option value="USD">USD ($)</option>
+        <option value="GBP" selected>GBP (£)</option>
+        <option value="EUR">EUR (€)</option>
+        <option value="JPY">JPY (¥)</option>
+        <option value="CAD">CAD (C$)</option>
+        <option value="AUD">AUD (A$)</option>
+        <option value="CHF">CHF (Fr)</option>
+        <option value="INR">INR (₹)</option>
+        <option value="CUSTOM">Custom…</option>
+      </select>
+      <input type="text" id="btCustomCurrencySymbol" class="lab-input" value="$" maxlength="4"
+             placeholder="Symbol" style="display:none;margin-top:6px;margin-bottom:0;" onchange="setBtCustomCurrencySymbol(this.value)">
+    </div>
+
     <!-- Capital -->
     <div class="ctrl-section">
       <div class="ctrl-label">STARTING CAPITAL</div>
@@ -814,7 +832,7 @@ window.addEventListener('resize', () => {
         <button id="modeTradeAmtPct" onclick="setTradeAmountMode('percent')"
           style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">% OF POT</button>
         <button id="modeTradeAmtGbp" onclick="setTradeAmountMode('gbp')"
-          style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">£ AMOUNT</button>
+          style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;"><span id="tradeAmtGbpBtnSym">£</span> AMOUNT</button>
       </div>
       <div class="slider-row" id="tradeAmountPctRow" style="margin-bottom:0;">
         <div class="slider-header">
@@ -2098,7 +2116,7 @@ window.addEventListener('resize', () => {
                 <th>ENTRY PRICE</th>
                 <th>EXIT PRICE</th>
                 <th>RETURN</th>
-                <th>£ P&amp;L</th>
+                <th id="pnlColHeader">£ P&amp;L</th>
                 <th>EXIT REASON</th>
               </tr>
             </thead>
@@ -2496,14 +2514,47 @@ function renderMySymbols() {
   `).join('');
 }
 
+// ── Currency ──────────────────────────────────────────────────────────────────
+const CURRENCY_SYMBOLS = { USD: '$', GBP: '£', EUR: '€', JPY: '¥', CAD: 'C$', AUD: 'A$', CHF: 'Fr', INR: '₹' };
+let selectedBtCurrency = 'GBP';
+let customBtCurrencySymbol = '$';
+let lastResultsData = null; // retained so currency changes can re-render without a fresh backtest run
+
+function getCurrencySymbol() {
+  if (selectedBtCurrency === 'CUSTOM') return customBtCurrencySymbol || '$';
+  return CURRENCY_SYMBOLS[selectedBtCurrency] || '£';
+}
+
+function setBtCurrency(code) {
+  selectedBtCurrency = code;
+  document.getElementById('btCustomCurrencySymbol').style.display = code === 'CUSTOM' ? '' : 'none';
+  refreshBtCurrencyDisplays();
+}
+
+function setBtCustomCurrencySymbol(sym) {
+  customBtCurrencySymbol = (sym || '$').trim() || '$';
+  if (selectedBtCurrency === 'CUSTOM') refreshBtCurrencyDisplays();
+}
+
+function refreshBtCurrencyDisplays() {
+  const sym = getCurrencySymbol();
+  const btnSym = document.getElementById('tradeAmtGbpBtnSym');
+  if (btnSym) btnSym.textContent = sym;
+  const colHeader = document.getElementById('pnlColHeader');
+  if (colHeader) colHeader.textContent = `${sym} P&L`;
+  if (lastResultsData) renderResults(lastResultsData);      // redraws metrics, trade log, chart
+  else if (lastChartArgs) buildChart(lastChartArgs.labels, lastChartArgs.stratData, lastChartArgs.bahData, lastChartArgs.capital);
+}
+
 // ── Chart instance ────────────────────────────────────────────────────────────
 let equityChart = null;
 let lastChartArgs = null;   // retained so we can rebuild on theme change
 
 function fmtChartMoney(v) {
-  if (v >= 1000000) return '£' + (v / 1000000).toFixed(2) + 'M';
-  if (v >= 1000)    return '£' + (v / 1000).toFixed(1) + 'k';
-  return '£' + v.toFixed(0);
+  const sym = getCurrencySymbol();
+  if (v >= 1000000) return sym + (v / 1000000).toFixed(2) + 'M';
+  if (v >= 1000)    return sym + (v / 1000).toFixed(1) + 'k';
+  return sym + v.toFixed(0);
 }
 
 // Read theme-aware colours so the chart adapts to the light/dark toggle
@@ -3133,9 +3184,10 @@ function fmtMoney(capital, pct) {
   const val = capital * pct / 100;
   const abs = Math.abs(val);
   const sign = val >= 0 ? '+' : '−';
-  if (abs >= 1000000) return sign + '£' + (abs / 1000000).toFixed(2) + 'M';
-  if (abs >= 1000)    return sign + '£' + (abs / 1000).toFixed(1) + 'k';
-  return sign + '£' + abs.toFixed(0);
+  const sym = getCurrencySymbol();
+  if (abs >= 1000000) return sign + sym + (abs / 1000000).toFixed(2) + 'M';
+  if (abs >= 1000)    return sign + sym + (abs / 1000).toFixed(1) + 'k';
+  return sign + sym + abs.toFixed(0);
 }
 
 const INTERVAL_LABELS = {
@@ -3145,6 +3197,7 @@ const INTERVAL_LABELS = {
 };
 
 function renderResults(data) {
+  lastResultsData = data; // retained so currency changes can re-render without a fresh backtest run
   const { symbol, period, interval, metrics, trades, equity_curve, bah_curve } = data;
   const capital = parseFloat(document.getElementById('btCapital').value) || 10000;
 
@@ -3198,14 +3251,14 @@ function renderResults(data) {
   const bestTrade  = trades.length ? trades.reduce((a, b) => b.return_pct > a.return_pct ? b : a) : null;
   const worstTrade = trades.length ? trades.reduce((a, b) => b.return_pct < a.return_pct ? b : a) : null;
   const avgPnlGbp  = trades.length ? trades.reduce((s, t) => s + t.pnl_gbp, 0) / trades.length : 0;
-  const fmtSigned = v => (v >= 0 ? '+' : '−') + '£' + Math.abs(v).toFixed(0);
+  const fmtSigned = v => (v >= 0 ? '+' : '−') + getCurrencySymbol() + Math.abs(v).toFixed(0);
 
   setMetric('mAvg',   pctStr(m.avg_trade_pct), colorClass(m.avg_trade_pct));
   document.getElementById('mAvgSub').textContent = fmtSigned(avgPnlGbp) + ' per trade';
   setMetric('mBest',  pctStr(m.best_trade_pct));
-  document.getElementById('mBest').nextElementSibling.textContent = bestTrade ? fmtSigned(bestTrade.pnl_gbp) : '£0';
+  document.getElementById('mBest').nextElementSibling.textContent = bestTrade ? fmtSigned(bestTrade.pnl_gbp) : getCurrencySymbol() + '0';
   setMetric('mWorst', pctStr(m.worst_trade_pct));
-  document.getElementById('mWorst').nextElementSibling.textContent = worstTrade ? fmtSigned(worstTrade.pnl_gbp) : '£0';
+  document.getElementById('mWorst').nextElementSibling.textContent = worstTrade ? fmtSigned(worstTrade.pnl_gbp) : getCurrencySymbol() + '0';
 
   // Financial row
   const wins  = trades.filter(t => t.return_pct > 0);
@@ -3215,11 +3268,11 @@ function renderResults(data) {
   document.getElementById('fNetPnlSub').textContent =
     `B&H would be: ${fmtMoney(capital, bahReturn)}`;
 
-  setMetric('fBestGain', bestTrade ? fmtSigned(bestTrade.pnl_gbp) : '£0', 'pos');
+  setMetric('fBestGain', bestTrade ? fmtSigned(bestTrade.pnl_gbp) : getCurrencySymbol() + '0', 'pos');
   document.getElementById('fBestGainSub').textContent =
     wins.length ? `from ${wins.length} winning trade${wins.length !== 1 ? 's' : ''}` : 'no winning trades';
 
-  setMetric('fWorstLoss', worstTrade ? fmtSigned(worstTrade.pnl_gbp) : '£0', 'neg');
+  setMetric('fWorstLoss', worstTrade ? fmtSigned(worstTrade.pnl_gbp) : getCurrencySymbol() + '0', 'neg');
   document.getElementById('fWorstLossSub').textContent =
     losses.length ? `from ${losses.length} losing trade${losses.length !== 1 ? 's' : ''}` : 'no losing trades';
 
@@ -3251,7 +3304,7 @@ function renderResults(data) {
     tbody.innerHTML = trades.map((t, i) => {
       const pnl = t.pnl_gbp;
       const pnlSign = pnl >= 0 ? '+' : '−';
-      const pnlStr  = pnlSign + '£' + Math.abs(pnl).toFixed(0);
+      const pnlStr  = pnlSign + getCurrencySymbol() + Math.abs(pnl).toFixed(0);
       return `
       <tr>
         <td style="color:var(--text-muted);">${i + 1}</td>
