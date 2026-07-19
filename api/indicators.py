@@ -262,6 +262,40 @@ def calculate_all(
     # Chart patterns
     hs_pivot: int = 3,
     hs_lookback: int = 90,
+    # ── Extended set (ported from Backtester) ───────────────────────────────
+    rsi_oversold: float = 30.0, rsi_overbought: float = 70.0, rsi_div_lookback: int = 5,
+    macd_div_lookback: int = 5, macd_zscore_length: int = 100,
+    bb_squeeze_lookback: int = 100, bb_breakout_window: int = 10,
+    bb_squeeze_percentile: float = 20.0, bb_walk_min_consecutive: int = 3,
+    bb_walk_tolerance_pct: float = 0.5, bb_pattern_lookback: int = 5,
+    ma_type: str = "exponential",
+    ma_short_length: int = 9, ma_medium_length: int = 20, ma_long_length: int = 50,
+    psar_gap_lookback: int = 3,
+    supertrend_gap_lookback: int = 3,
+    stochrsi_div_lookback: int = 5,
+    willr_oversold: float = -80.0, willr_overbought: float = -20.0,
+    willr_div_lookback: int = 5, willr_confirm_lookback: int = 5,
+    roc_div_lookback: int = 5, roc_momentum_lookback: int = 3,
+    mfi_div_lookback: int = 5,
+    hma_fast_length: int = 9, hma_slope_lookback: int = 3,
+    ichimoku_tenkan: int = 9, ichimoku_kijun: int = 26, ichimoku_senkou: int = 52,
+    donchian_length: int = 20,
+    keltner_length: int = 20, keltner_atr_length: int = 10, keltner_mult: float = 2.0,
+    keltner_walk_min_consecutive: int = 3, keltner_walk_tolerance_pct: float = 0.5,
+    keltner_squeeze_lookback: int = 10,
+    stdev_length: int = 20,
+    chaikin_vol_ema_length: int = 10, chaikin_vol_roc_length: int = 10,
+    hist_vol_length: int = 20,
+    atr_trend_lookback: int = 5, stdev_trend_lookback: int = 5,
+    chaikin_vol_trend_lookback: int = 5, hist_vol_trend_lookback: int = 5,
+    vwap_length: int = 20, vwap_anchored: int = 0, vwap_band_pct: float = 1.0,
+    ad_sma_length: int = 20, ad_div_lookback: int = 5,
+    cmf_length: int = 20,
+    tsi_long: int = 25, tsi_short: int = 13, tsi_signal: int = 13, tsi_div_lookback: int = 5,
+    ao_fast: int = 5, ao_slow: int = 34, ao_div_lookback: int = 5, ao_twin_peaks_lookback: int = 5,
+    obv_sma_length: int = 20, obv_div_lookback: int = 5,
+    vol_profile_lookback: int = 50, vol_profile_bins: int = 24,
+    fib_lookback: int = 50, fib_tolerance_pct: float = 0.5,
 ) -> dict:
 
     close = df["Close"]
@@ -313,6 +347,317 @@ def calculate_all(
         "detected": False, "neckline": None, "close": None,
         "pct_from_neckline": None, "broke_neckline": False,
     }
+
+    # ── Extended indicators (ported from the Backtester's extended set) ────────
+    # Same calc functions Backtester already uses (below, in this file) — computed
+    # independently of `combined` above so this block can't affect the existing
+    # RSI/MACD/BB/MA/Volume pipeline. Only the latest bar's value/state is kept;
+    # `_bars_since_cross` (defined above) gives an O(n) "bars since" int straight
+    # from two full series, so no per-bar simulation loop is needed here.
+    macd_line_s = macd_df.iloc[:, 0] if macd_df is not None else None
+    macd_hist_s = macd_df.iloc[:, 1] if macd_df is not None and macd_df.shape[1] > 1 else None
+    bb_lower_s, bb_mid_s, bb_upper_s, bb_bw_s = (None, None, None, None)
+    if bb_df is not None and bb_df.shape[1] >= 4:
+        bb_lower_s, bb_mid_s, bb_upper_s, bb_bw_s = bb_df.iloc[:, 0], bb_df.iloc[:, 1], bb_df.iloc[:, 2], bb_df.iloc[:, 3]
+
+    rsi_centerline_bars = _bars_since_cross(rsi_s, pd.Series(50.0, index=rsi_s.index)) if rsi_s is not None else 999
+    rsi_bull_div = rsi_bear_div = rsi_bull_fs = rsi_bear_fs = False
+    if rsi_s is not None:
+        d = _try(lambda: calculate_rsi_divergence(close, rsi_s, lookback=rsi_div_lookback))
+        if d: rsi_bull_div, rsi_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+        fs = _try(lambda: calculate_rsi_failure_swings(rsi_s, oversold=rsi_oversold, overbought=rsi_overbought))
+        if fs: rsi_bull_fs, rsi_bear_fs = bool(fs[0].iloc[-1]), bool(fs[1].iloc[-1])
+
+    macd_centerline_bars = macd_zscore_v = None
+    macd_bull_div = macd_bear_div = macd_bull_hr = macd_bear_hr = False
+    if macd_line_s is not None:
+        macd_centerline_bars = _bars_since_cross(macd_line_s, pd.Series(0.0, index=macd_line_s.index))
+        d = _try(lambda: calculate_macd_divergence(close, macd_line_s, lookback=macd_div_lookback))
+        if d: macd_bull_div, macd_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+        if macd_hist_s is not None:
+            hr = _try(lambda: calculate_macd_histogram_reversal(macd_hist_s))
+            if hr: macd_bull_hr, macd_bear_hr = bool(hr[0].iloc[-1]), bool(hr[1].iloc[-1])
+        z = _try(lambda: calculate_macd_zscore(macd_line_s, length=macd_zscore_length))
+        if z is not None: macd_zscore_v = _safe_float(z.iloc[-1])
+
+    bb_bull_breakout = bb_bear_breakout = bb_walking_upper = bb_walking_lower = False
+    bb_w_bottom = bb_m_top = False
+    if bb_upper_s is not None:
+        brk = _try(lambda: calculate_bb_squeeze_breakout(
+            close, bb_upper_s, bb_lower_s, bb_bw_s,
+            squeeze_lookback=bb_squeeze_lookback, squeeze_percentile=bb_squeeze_percentile,
+            breakout_window=bb_breakout_window))
+        if brk: bb_bull_breakout, bb_bear_breakout = bool(brk[0].iloc[-1]), bool(brk[1].iloc[-1])
+        walk = _try(lambda: calculate_bb_walking_band(
+            close, bb_upper_s, bb_lower_s,
+            min_consecutive=bb_walk_min_consecutive, tolerance_pct=bb_walk_tolerance_pct))
+        if walk: bb_walking_upper, bb_walking_lower = bool(walk[0].iloc[-1]), bool(walk[1].iloc[-1])
+        pat = _try(lambda: calculate_bb_double_patterns(
+            close, low, high, bb_lower_s, bb_mid_s, bb_upper_s, lookback=bb_pattern_lookback))
+        if pat: bb_w_bottom, bb_m_top = bool(pat[0].iloc[-1]), bool(pat[1].iloc[-1])
+
+    ma_short_s  = _try(lambda: calculate_ma_by_type(df, ma_short_length,  ma_type))
+    ma_medium_s = _try(lambda: calculate_ma_by_type(df, ma_medium_length, ma_type))
+    ma_long_s   = _try(lambda: calculate_ma_by_type(df, ma_long_length,   ma_type))
+    price_ma_short_bars = _bars_since_cross(close, ma_short_s) if ma_short_s is not None else 999
+    two_ma_bars         = _bars_since_cross(ma_short_s, ma_long_s) if (ma_short_s is not None and ma_long_s is not None) else 999
+    three_ma_bull = three_ma_bear = False
+    ma_short_v = ma_medium_v = ma_long_v = None
+    if ma_short_s is not None and ma_medium_s is not None and ma_long_s is not None:
+        three_ma_bull = bool(ma_short_s.iloc[-1] > ma_medium_s.iloc[-1] > ma_long_s.iloc[-1])
+        three_ma_bear = bool(ma_short_s.iloc[-1] < ma_medium_s.iloc[-1] < ma_long_s.iloc[-1])
+        ma_short_v  = _safe_float(ma_short_s.iloc[-1])
+        ma_medium_v = _safe_float(ma_medium_s.iloc[-1])
+        ma_long_v   = _safe_float(ma_long_s.iloc[-1])
+
+    di_cross_bars = 999
+    if adx_df is not None:
+        _ac = list(adx_df.columns)
+        _dmp = next((c for c in _ac if c.upper().startswith("DMP")), None)
+        _dmn = next((c for c in _ac if c.upper().startswith("DMN")), None)
+        if _dmp and _dmn:
+            di_cross_bars = _bars_since_cross(adx_df[_dmp], adx_df[_dmn])
+
+    psar_flip_bars = 999
+    psar_narrowing = False
+    if psar_df is not None:
+        _pc = list(psar_df.columns)
+        _pl = next((c for c in _pc if c.upper().startswith("PSARL")), None)
+        _ps = next((c for c in _pc if c.upper().startswith("PSARS")), None)
+        if _pl and _ps:
+            _long_notna  = psar_df[_pl].notna()
+            _short_notna = psar_df[_ps].notna()
+            _psar_dir_s  = pd.Series(np.where(_long_notna, 1.0, np.where(_short_notna, -1.0, np.nan)), index=psar_df.index)
+            psar_flip_bars = _bars_since_cross(_psar_dir_s, pd.Series(0.0, index=_psar_dir_s.index))
+            _psar_value_s = psar_df[_pl].where(_long_notna, psar_df[_ps])
+            _psar_gap_s   = (close - _psar_value_s).abs()
+            if len(_psar_gap_s) > psar_gap_lookback:
+                psar_narrowing = bool(_psar_gap_s.iloc[-1] < _psar_gap_s.shift(psar_gap_lookback).iloc[-1])
+
+    st_flip_bars = 999
+    st_narrowing = False
+    if supertrend_df is not None:
+        _sc = list(supertrend_df.columns)
+        _std = next((c for c in _sc if c.upper().startswith("SUPERTD")), None)
+        _stv = next((c for c in _sc if c.upper().startswith("SUPERT_")), None)
+        if _std:
+            st_flip_bars = _bars_since_cross(supertrend_df[_std], pd.Series(0.0, index=supertrend_df.index))
+        if _stv:
+            _st_gap_s = (close - supertrend_df[_stv]).abs()
+            if len(_st_gap_s) > supertrend_gap_lookback:
+                st_narrowing = bool(_st_gap_s.iloc[-1] < _st_gap_s.shift(supertrend_gap_lookback).iloc[-1])
+
+    stoch_signal_bars = 999
+    if stoch_df is not None and stoch_df.shape[1] >= 2:
+        stoch_signal_bars = _bars_since_cross(stoch_df.iloc[:, 0], stoch_df.iloc[:, 1])
+
+    stochrsi_signal_bars = 999
+    stochrsi_bull_div = stochrsi_bear_div = False
+    if stochrsi_df is not None and stochrsi_df.shape[1] >= 2:
+        stochrsi_signal_bars = _bars_since_cross(stochrsi_df.iloc[:, 0], stochrsi_df.iloc[:, 1])
+        d = _try(lambda: calculate_price_divergence(close, stochrsi_df.iloc[:, 0], lookback=stochrsi_div_lookback))
+        if d: stochrsi_bull_div, stochrsi_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    cci_centerline_bars = _bars_since_cross(cci_s, pd.Series(0.0, index=cci_s.index)) if cci_s is not None else 999
+    cci_breakout_bull = cci_breakout_bear = False
+    if cci_s is not None and len(cci_s) > 1:
+        cci_breakout_bull = bool(cci_s.iloc[-1] > 100 and cci_s.iloc[-2] <= 100)
+        cci_breakout_bear = bool(cci_s.iloc[-1] < -100 and cci_s.iloc[-2] >= -100)
+
+    willr_midline_bars = _bars_since_cross(willr_s, pd.Series(-50.0, index=willr_s.index)) if willr_s is not None else 999
+    willr_bull_div = willr_bear_div = willr_bull_conf = willr_bear_conf = willr_bull_fs = willr_bear_fs = False
+    if willr_s is not None:
+        d = _try(lambda: calculate_price_divergence(close, willr_s, lookback=willr_div_lookback))
+        if d: willr_bull_div, willr_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+        c = _try(lambda: calculate_trend_confirmation(close, willr_s, lookback=willr_confirm_lookback))
+        if c: willr_bull_conf, willr_bear_conf = bool(c[0].iloc[-1]), bool(c[1].iloc[-1])
+        fs = _try(lambda: calculate_willr_failure_swings(willr_s, oversold=willr_oversold, overbought=willr_overbought))
+        if fs: willr_bull_fs, willr_bear_fs = bool(fs[0].iloc[-1]), bool(fs[1].iloc[-1])
+
+    roc_centerline_bars = _bars_since_cross(roc_s, pd.Series(0.0, index=roc_s.index)) if roc_s is not None else 999
+    roc_bull_momentum = roc_bear_momentum = roc_bull_div = roc_bear_div = False
+    if roc_s is not None and len(roc_s) > roc_momentum_lookback:
+        _roc_prev = roc_s.shift(roc_momentum_lookback).iloc[-1]
+        roc_bull_momentum = bool(roc_s.iloc[-1] > _roc_prev and _roc_prev is not None and roc_s.iloc[-1] > 0)
+        roc_bear_momentum = bool(roc_s.iloc[-1] < _roc_prev and roc_s.iloc[-1] < 0)
+        d = _try(lambda: calculate_price_divergence(close, roc_s, lookback=roc_div_lookback))
+        if d: roc_bull_div, roc_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    mfi_centerline_bars = _bars_since_cross(mfi_s, pd.Series(50.0, index=mfi_s.index)) if mfi_s is not None else 999
+    mfi_bull_div = mfi_bear_div = False
+    if mfi_s is not None:
+        d = _try(lambda: calculate_price_divergence(close, mfi_s, lookback=mfi_div_lookback))
+        if d: mfi_bull_div, mfi_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    hma_fast_s = _try(lambda: ta.hma(close, length=hma_fast_length))
+    hma_fast_v = _safe_float(hma_fast_s.iloc[-1]) if hma_fast_s is not None else None
+    hma_slope_bull = hma_slope_bear = False
+    hma_price_bars = hma_two_bars = 999
+    if hma_s is not None:
+        hma_price_bars = _bars_since_cross(close, hma_s)
+        if len(hma_s) > hma_slope_lookback:
+            _hma_prev = hma_s.shift(hma_slope_lookback).iloc[-1]
+            hma_slope_bull = bool(hma_s.iloc[-1] > _hma_prev)
+            hma_slope_bear = bool(hma_s.iloc[-1] < _hma_prev)
+        if hma_fast_s is not None:
+            hma_two_bars = _bars_since_cross(hma_fast_s, hma_s)
+
+    ichimoku_df = _try(lambda: calculate_ichimoku(df, tenkan=ichimoku_tenkan, kijun=ichimoku_kijun, senkou=ichimoku_senkou))
+    tk_cross_bars = 999
+    ich_cloud_bullish = ich_cloud_bearish = None
+    ich_tenkan_v = ich_kijun_v = ich_senkou_a_v = ich_senkou_b_v = None
+    if ichimoku_df is not None:
+        tk_cross_bars = _bars_since_cross(ichimoku_df["ICH_tenkan"], ichimoku_df["ICH_kijun"])
+        ich_tenkan_v   = _safe_float(ichimoku_df["ICH_tenkan"].iloc[-1])
+        ich_kijun_v    = _safe_float(ichimoku_df["ICH_kijun"].iloc[-1])
+        ich_senkou_a_v = _safe_float(ichimoku_df["ICH_senkou_a"].iloc[-1])
+        ich_senkou_b_v = _safe_float(ichimoku_df["ICH_senkou_b"].iloc[-1])
+        _cloud_top    = ichimoku_df[["ICH_senkou_a", "ICH_senkou_b"]].max(axis=1)
+        _cloud_bottom = ichimoku_df[["ICH_senkou_a", "ICH_senkou_b"]].min(axis=1)
+        if not pd.isna(_cloud_top.iloc[-1]):
+            ich_cloud_bullish = bool(close.iloc[-1] > _cloud_top.iloc[-1])
+            ich_cloud_bearish = bool(close.iloc[-1] < _cloud_bottom.iloc[-1])
+
+    donchian_df = _try(lambda: calculate_donchian(df, length=donchian_length))
+    donchian_mid_bars = donchian_upper_bars = donchian_lower_bars = 999
+    dc_upper_v = dc_mid_v = dc_lower_v = None
+    if donchian_df is not None:
+        donchian_mid_bars   = _bars_since_cross(close, donchian_df["DC_mid"])
+        donchian_upper_bars = _bars_since_cross(close, donchian_df["DC_upper"])
+        donchian_lower_bars = _bars_since_cross(close, donchian_df["DC_lower"])
+        dc_upper_v = _safe_float(donchian_df["DC_upper"].iloc[-1])
+        dc_mid_v   = _safe_float(donchian_df["DC_mid"].iloc[-1])
+        dc_lower_v = _safe_float(donchian_df["DC_lower"].iloc[-1])
+
+    keltner_df = _try(lambda: calculate_keltner(df, length=keltner_length, atr_length=keltner_atr_length, mult=keltner_mult))
+    keltner_mid_bars = 999
+    kc_upper_v = kc_mid_v = kc_lower_v = None
+    kc_walking_upper = kc_walking_lower = kc_squeeze_on = kc_squeeze_bull = kc_squeeze_bear = False
+    if keltner_df is not None:
+        keltner_mid_bars = _bars_since_cross(close, keltner_df["KC_mid"])
+        kc_upper_v = _safe_float(keltner_df["KC_upper"].iloc[-1])
+        kc_mid_v   = _safe_float(keltner_df["KC_mid"].iloc[-1])
+        kc_lower_v = _safe_float(keltner_df["KC_lower"].iloc[-1])
+        walk = _try(lambda: calculate_bb_walking_band(
+            close, keltner_df["KC_upper"], keltner_df["KC_lower"],
+            min_consecutive=keltner_walk_min_consecutive, tolerance_pct=keltner_walk_tolerance_pct))
+        if walk: kc_walking_upper, kc_walking_lower = bool(walk[0].iloc[-1]), bool(walk[1].iloc[-1])
+        if bb_upper_s is not None:
+            sq = _try(lambda: calculate_keltner_squeeze(
+                close, bb_upper_s, bb_lower_s, keltner_df["KC_upper"], keltner_df["KC_lower"],
+                breakout_window=keltner_squeeze_lookback))
+            if sq: kc_squeeze_on, kc_squeeze_bull, kc_squeeze_bear = bool(sq[0].iloc[-1]), bool(sq[1].iloc[-1]), bool(sq[2].iloc[-1])
+
+    stdev_s       = _try(lambda: calculate_stdev(df, length=stdev_length))
+    chaikin_vol_s = _try(lambda: calculate_chaikin_volatility(df, ema_length=chaikin_vol_ema_length, roc_length=chaikin_vol_roc_length))
+    hist_vol_s    = _try(lambda: calculate_historical_volatility(df, length=hist_vol_length))
+
+    def _vol_expansion(s, trend_lb):
+        """(value, is_expanding, bullish_expansion, bearish_expansion, is_contracting)"""
+        if s is None or len(s) < 11:
+            return None, None, False, False, None
+        sma = s.rolling(10).mean()
+        v, sma_v = _safe_float(s.iloc[-1]), _safe_float(sma.iloc[-1])
+        expanding = bool(v is not None and sma_v is not None and v > sma_v)
+        contracting = bool(v is not None and sma_v is not None and v < sma_v)
+        bull = bear = False
+        if expanding and len(close) > trend_lb:
+            prev_close = close.shift(trend_lb).iloc[-1]
+            bull = bool(close.iloc[-1] > prev_close)
+            bear = bool(close.iloc[-1] < prev_close)
+        return v, expanding, bull, bear, contracting
+
+    _, _, atr_bull_exp, atr_bear_exp, atr_contracting = _vol_expansion(atr_s, atr_trend_lookback)
+    stdev_v, stdev_expanding, stdev_bull_exp, stdev_bear_exp, stdev_contracting = _vol_expansion(stdev_s, stdev_trend_lookback)
+    chaikin_vol_v, chaikin_vol_expanding, chaikin_vol_bull_exp, chaikin_vol_bear_exp, chaikin_vol_contracting = _vol_expansion(chaikin_vol_s, chaikin_vol_trend_lookback)
+    hist_vol_v, hist_vol_expanding, hist_vol_bull_exp, hist_vol_bear_exp, hist_vol_contracting = _vol_expansion(hist_vol_s, hist_vol_trend_lookback)
+
+    vwap_roll_s = _try(lambda: calculate_rolling_vwap(df, length=vwap_length, anchored=bool(vwap_anchored)))
+    vwap_roll_v = vwap_bull = vwap_bear = vwap_band_touch = None
+    if vwap_roll_s is not None:
+        vwap_roll_v = _safe_float(vwap_roll_s.iloc[-1])
+        if vwap_roll_v is not None:
+            vwap_bull = close.iloc[-1] > vwap_roll_v
+            vwap_bear = close.iloc[-1] < vwap_roll_v
+            _band = vwap_roll_v * vwap_band_pct / 100
+            vwap_band_touch = bool(close.iloc[-1] >= vwap_roll_v + _band or close.iloc[-1] <= vwap_roll_v - _band)
+
+    ad_line_s = _try(lambda: calculate_ad_line(df))
+    ad_line_v = ad_trend_bull = None
+    ad_bull_div = ad_bear_div = False
+    if ad_line_s is not None:
+        ad_line_v = _safe_float(ad_line_s.iloc[-1])
+        ad_sma = ad_line_s.rolling(ad_sma_length).mean()
+        if not pd.isna(ad_sma.iloc[-1]):
+            ad_trend_bull = bool(ad_line_s.iloc[-1] > ad_sma.iloc[-1])
+        d = _try(lambda: calculate_price_divergence(close, ad_line_s, lookback=ad_div_lookback))
+        if d: ad_bull_div, ad_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    cmf_s = _try(lambda: calculate_cmf(df, length=cmf_length))
+    cmf_v = None
+    cmf_centerline_bars = 999
+    if cmf_s is not None:
+        cmf_v = _safe_float(cmf_s.iloc[-1])
+        cmf_centerline_bars = _bars_since_cross(cmf_s, pd.Series(0.0, index=cmf_s.index))
+
+    tsi_df = _try(lambda: calculate_tsi(df, long=tsi_long, short=tsi_short, signal=tsi_signal))
+    tsi_v = tsi_signal_v = None
+    tsi_signal_cross_bars = tsi_centerline_bars = 999
+    tsi_bull_div = tsi_bear_div = False
+    if tsi_df is not None:
+        _tsi_line, _tsi_sig = tsi_df.iloc[:, 0], tsi_df.iloc[:, 1]
+        tsi_v = _safe_float(_tsi_line.iloc[-1])
+        tsi_signal_v = _safe_float(_tsi_sig.iloc[-1])
+        tsi_signal_cross_bars = _bars_since_cross(_tsi_line, _tsi_sig)
+        tsi_centerline_bars   = _bars_since_cross(_tsi_line, pd.Series(0.0, index=_tsi_line.index))
+        d = _try(lambda: calculate_price_divergence(close, _tsi_line, lookback=tsi_div_lookback))
+        if d: tsi_bull_div, tsi_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    ao_s = _try(lambda: calculate_awesome_oscillator(df, fast=ao_fast, slow=ao_slow))
+    ao_v = None
+    ao_zero_bars = 999
+    ao_bull_saucer = ao_bear_saucer = ao_bull_twin = ao_bear_twin = ao_bull_div = ao_bear_div = False
+    if ao_s is not None:
+        ao_v = _safe_float(ao_s.iloc[-1])
+        ao_zero_bars = _bars_since_cross(ao_s, pd.Series(0.0, index=ao_s.index))
+        sc = _try(lambda: calculate_ao_saucer(ao_s))
+        if sc: ao_bull_saucer, ao_bear_saucer = bool(sc[0].iloc[-1]), bool(sc[1].iloc[-1])
+        tw = _try(lambda: calculate_ao_twin_peaks(ao_s, lookback=ao_twin_peaks_lookback))
+        if tw: ao_bull_twin, ao_bear_twin = bool(tw[0].iloc[-1]), bool(tw[1].iloc[-1])
+        d = _try(lambda: calculate_price_divergence(close, ao_s, lookback=ao_div_lookback))
+        if d: ao_bull_div, ao_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    obv_full_s = vol_df["OBV"]
+    obv_trend_bull = None
+    obv_bull_div = obv_bear_div = False
+    if not obv_full_s.empty:
+        obv_sma = obv_full_s.rolling(obv_sma_length).mean()
+        if not pd.isna(obv_sma.iloc[-1]):
+            obv_trend_bull = bool(obv_full_s.iloc[-1] > obv_sma.iloc[-1])
+        d = _try(lambda: calculate_price_divergence(close, obv_full_s, lookback=obv_div_lookback))
+        if d: obv_bull_div, obv_bear_div = bool(d[0].iloc[-1]), bool(d[1].iloc[-1])
+
+    vp_s = _try(lambda: calculate_volume_profile_poc(df, lookback=vol_profile_lookback, bins=vol_profile_bins))
+    vp_poc_v = vp_bullish = None
+    vp_poc_bars = 999
+    if vp_s is not None and not pd.isna(vp_s.iloc[-1]):
+        vp_poc_v = _safe_float(vp_s.iloc[-1])
+        vp_bullish = close.iloc[-1] > vp_poc_v
+        vp_poc_bars = _bars_since_cross(close, vp_s)
+
+    fib_df = _try(lambda: calculate_fibonacci_levels(df, lookback=fib_lookback))
+    fib_levels = {}
+    fib_any_touch = False
+    if fib_df is not None:
+        for col in fib_df.columns:
+            fib_levels[col.lower()] = _safe_float(fib_df[col].iloc[-1])
+        _cur = _safe_float(close.iloc[-1])
+        for _k in ("fib_236", "fib_382", "fib_500", "fib_618", "fib_786"):
+            _lvl = fib_levels.get(_k)
+            if _cur is not None and _lvl:
+                if abs(_cur - _lvl) / _lvl * 100 <= fib_tolerance_pct:
+                    fib_any_touch = True
+                    break
 
     # ── Combine for crossover tracking ────────────────────────────────────────
     frames = [df, mas, vol_df]
@@ -480,6 +825,81 @@ def calculate_all(
         "aroon":      {"up": ar_up, "down": ar_dn, "osc": ar_osc},
         "roc":        _safe_float(roc_s.iloc[-1])   if roc_s   is not None else None,
         "inverse_hs": inverse_hs,
+        # ── Extended (ported from Backtester) ───────────────────────────────
+        "rsi_centerline_bars_since_cross": rsi_centerline_bars,
+        "rsi_bullish_divergence": rsi_bull_div, "rsi_bearish_divergence": rsi_bear_div,
+        "rsi_failure_swing_bull": rsi_bull_fs,  "rsi_failure_swing_bear": rsi_bear_fs,
+        "macd_centerline_bars_since_cross": macd_centerline_bars,
+        "macd_bullish_divergence": macd_bull_div, "macd_bearish_divergence": macd_bear_div,
+        "macd_histogram_reversal_bull": macd_bull_hr, "macd_histogram_reversal_bear": macd_bear_hr,
+        "macd_zscore": macd_zscore_v,
+        "bb_volatility_breakout_bull": bb_bull_breakout, "bb_volatility_breakout_bear": bb_bear_breakout,
+        "bb_walking_upper": bb_walking_upper, "bb_walking_lower": bb_walking_lower,
+        "bb_w_bottom": bb_w_bottom, "bb_m_top": bb_m_top,
+        "ma_price_cross_bars_since_cross": price_ma_short_bars,
+        "ma_two_bars_since_cross": two_ma_bars,
+        "ma_three_bull": three_ma_bull, "ma_three_bear": three_ma_bear,
+        "ma_multi": {"short": ma_short_v, "medium": ma_medium_v, "long": ma_long_v, "hma_fast": hma_fast_v},
+        "adx_di_cross_bars_since_cross": di_cross_bars,
+        "psar_flip_bars_since_cross": psar_flip_bars, "psar_narrowing": psar_narrowing,
+        "supertrend_flip_bars_since_cross": st_flip_bars, "supertrend_narrowing": st_narrowing,
+        "stoch_signal_bars_since_cross": stoch_signal_bars,
+        "stochrsi_signal_bars_since_cross": stochrsi_signal_bars,
+        "stochrsi_bullish_divergence": stochrsi_bull_div, "stochrsi_bearish_divergence": stochrsi_bear_div,
+        "cci_centerline_bars_since_cross": cci_centerline_bars,
+        "cci_breakout_bull": cci_breakout_bull, "cci_breakout_bear": cci_breakout_bear,
+        "willr_midline_bars_since_cross": willr_midline_bars,
+        "willr_bullish_divergence": willr_bull_div, "willr_bearish_divergence": willr_bear_div,
+        "willr_trend_confirmation_bull": willr_bull_conf, "willr_trend_confirmation_bear": willr_bear_conf,
+        "willr_failure_swing_bull": willr_bull_fs, "willr_failure_swing_bear": willr_bear_fs,
+        "roc_centerline_bars_since_cross": roc_centerline_bars,
+        "roc_bull_momentum": roc_bull_momentum, "roc_bear_momentum": roc_bear_momentum,
+        "roc_bullish_divergence": roc_bull_div, "roc_bearish_divergence": roc_bear_div,
+        "mfi_centerline_bars_since_cross": mfi_centerline_bars,
+        "mfi_bullish_divergence": mfi_bull_div, "mfi_bearish_divergence": mfi_bear_div,
+        "hma_slope_bull": hma_slope_bull, "hma_slope_bear": hma_slope_bear,
+        "hma_price_bars_since_cross": hma_price_bars, "hma_two_bars_since_cross": hma_two_bars,
+        "atr_bullish_expansion": atr_bull_exp, "atr_bearish_expansion": atr_bear_exp, "atr_contracting": atr_contracting,
+        "ichimoku": {
+            "tenkan": ich_tenkan_v, "kijun": ich_kijun_v,
+            "senkou_a": ich_senkou_a_v, "senkou_b": ich_senkou_b_v,
+            "cloud_bullish": ich_cloud_bullish, "cloud_bearish": ich_cloud_bearish,
+            "tk_cross_bars_since_cross": tk_cross_bars,
+        },
+        "donchian": {
+            "upper": dc_upper_v, "mid": dc_mid_v, "lower": dc_lower_v,
+            "mid_bars_since_cross": donchian_mid_bars,
+            "upper_bars_since_cross": donchian_upper_bars,
+            "lower_bars_since_cross": donchian_lower_bars,
+        },
+        "keltner": {
+            "upper": kc_upper_v, "mid": kc_mid_v, "lower": kc_lower_v,
+            "mid_bars_since_cross": keltner_mid_bars,
+            "walking_upper": kc_walking_upper, "walking_lower": kc_walking_lower,
+            "squeeze_on": kc_squeeze_on, "squeeze_release_bull": kc_squeeze_bull, "squeeze_release_bear": kc_squeeze_bear,
+        },
+        "stdev": {"value": stdev_v, "expanding": stdev_expanding, "bullish_expansion": stdev_bull_exp,
+                  "bearish_expansion": stdev_bear_exp, "contracting": stdev_contracting},
+        "chaikin_vol": {"value": chaikin_vol_v, "expanding": chaikin_vol_expanding, "bullish_expansion": chaikin_vol_bull_exp,
+                         "bearish_expansion": chaikin_vol_bear_exp, "contracting": chaikin_vol_contracting},
+        "hist_vol": {"value": hist_vol_v, "expanding": hist_vol_expanding, "bullish_expansion": hist_vol_bull_exp,
+                     "bearish_expansion": hist_vol_bear_exp, "contracting": hist_vol_contracting},
+        "vwap_rolling": {"value": vwap_roll_v, "bullish": vwap_bull, "bearish": vwap_bear, "band_touch": vwap_band_touch},
+        "ad_line": {"value": ad_line_v, "trend_bull": ad_trend_bull,
+                    "bullish_divergence": ad_bull_div, "bearish_divergence": ad_bear_div},
+        "cmf": {"value": cmf_v, "centerline_bars_since_cross": cmf_centerline_bars},
+        "tsi": {"value": tsi_v, "signal": tsi_signal_v,
+                "signal_cross_bars_since_cross": tsi_signal_cross_bars,
+                "centerline_bars_since_cross": tsi_centerline_bars,
+                "bullish_divergence": tsi_bull_div, "bearish_divergence": tsi_bear_div},
+        "ao": {"value": ao_v, "zero_cross_bars_since_cross": ao_zero_bars,
+               "bull_saucer": ao_bull_saucer, "bear_saucer": ao_bear_saucer,
+               "bull_twin_peaks": ao_bull_twin, "bear_twin_peaks": ao_bear_twin,
+               "bullish_divergence": ao_bull_div, "bearish_divergence": ao_bear_div},
+        "obv_trend_bull": obv_trend_bull,
+        "obv_bullish_divergence": obv_bull_div, "obv_bearish_divergence": obv_bear_div,
+        "volume_profile": {"poc": vp_poc_v, "bullish": vp_bullish, "poc_bars_since_cross": vp_poc_bars},
+        "fibonacci": {**fib_levels, "any_touch": fib_any_touch},
         "history":    _recent_ohlcv(combined),
     }
 

@@ -807,6 +807,29 @@ window.addEventListener('resize', () => {
       <input type="number" id="btCapital" class="lab-input" value="10000" min="100" step="100" style="margin-bottom:0;">
     </div>
 
+    <!-- Trade Amount -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">TRADE AMOUNT</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px;">
+        <button id="modeTradeAmtPct" onclick="setTradeAmountMode('percent')"
+          style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">% OF POT</button>
+        <button id="modeTradeAmtGbp" onclick="setTradeAmountMode('gbp')"
+          style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">£ AMOUNT</button>
+      </div>
+      <div class="slider-row" id="tradeAmountPctRow" style="margin-bottom:0;">
+        <div class="slider-header">
+          <span class="ctrl-name">Per trade</span>
+          <span class="ctrl-val" id="tradeAmountPctVal">100%</span>
+        </div>
+        <input type="range" id="tradeAmountPct" min="1" max="100" step="1" value="100"
+               oninput="document.getElementById('tradeAmountPctVal').textContent=this.value+'%'">
+      </div>
+      <div class="ctrl-row" id="tradeAmountGbpRow" style="display:none;margin-bottom:0;">
+        <input type="number" id="tradeAmountGbp" class="lab-input" value="10000" min="1" step="100" style="margin-bottom:0;">
+      </div>
+      <div style="font-size:8px;color:var(--text-muted);margin-top:6px;line-height:1.5;">Compounds off current equity each trade — a fixed £ amount becomes a smaller share of the pot as it grows.</div>
+    </div>
+
     <!-- Risk controls -->
     <div class="ctrl-section">
       <div class="ctrl-label">RISK MANAGEMENT</div>
@@ -816,7 +839,7 @@ window.addEventListener('resize', () => {
           <span class="ctrl-name">Stop Loss</span>
           <span class="ctrl-val" id="slVal">2.0%</span>
         </div>
-        <input type="range" id="stopLoss" min="0.5" max="20" step="0.5" value="2.0"
+        <input type="range" id="stopLoss" min="0.5" max="50" step="0.5" value="2.0"
                oninput="document.getElementById('slVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
       </div>
 
@@ -838,7 +861,7 @@ window.addEventListener('resize', () => {
           <span class="ctrl-name">Take Profit</span>
           <span class="ctrl-val" id="tpVal">4.0%</span>
         </div>
-        <input type="range" id="takeProfit" min="1" max="20" step="0.5" value="4.0"
+        <input type="range" id="takeProfit" min="1" max="50" step="0.5" value="4.0"
                oninput="document.getElementById('tpVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
       </div>
 
@@ -2186,17 +2209,18 @@ function serializeBacktestConfig() {
       cfg[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? el.checked : el.value;
     }
   });
-  // periodMode and indicatorMode aren't form fields (they're plain buttons toggling
-  // panel visibility) so they need to be captured/restored explicitly alongside the
-  // generic fields.
+  // periodMode, indicatorMode and tradeAmountMode aren't form fields (they're plain
+  // buttons toggling panel visibility) so they need to be captured/restored explicitly
+  // alongside the generic fields.
   cfg._periodMode = document.getElementById('customPanel').style.display !== 'none' ? 'custom' : 'preset';
   cfg._indicatorMode = indicatorMode;
+  cfg._tradeAmountMode = document.getElementById('tradeAmountGbpRow').style.display !== 'none' ? 'gbp' : 'percent';
   return cfg;
 }
 
 function applyBacktestConfig(cfg) {
   Object.entries(cfg).forEach(([id, val]) => {
-    if (id === '_periodMode' || id === '_indicatorMode') return;
+    if (id === '_periodMode' || id === '_indicatorMode' || id === '_tradeAmountMode') return;
     const el = document.getElementById(id);
     if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
     if (el.classList && el.classList.contains('trigger-chips')) {
@@ -2216,6 +2240,9 @@ function applyBacktestConfig(cfg) {
   // Legacy strategies saved before Basic mode existed have no _indicatorMode —
   // treat them as Detailed.
   setIndicatorMode(cfg._indicatorMode || 'detailed');
+  // Legacy strategies saved before Trade Amount existed have no _tradeAmountMode —
+  // treat them as 100%-of-pot (percent), which reproduces their original behaviour.
+  setTradeAmountMode(cfg._tradeAmountMode || 'percent');
 }
 
 function renderBacktestStrategyDropdown() {
@@ -2653,6 +2680,17 @@ function setIndicatorMode(mode) {
   document.getElementById('modeDetailed').style.color = isDetailed ? '#000' : 'var(--text-secondary)';
 }
 
+// ── Trade Amount mode toggle ──────────────────────────────────────────────────
+function setTradeAmountMode(mode) {
+  const isGbp = mode === 'gbp';
+  document.getElementById('tradeAmountPctRow').style.display = isGbp ? 'none' : '';
+  document.getElementById('tradeAmountGbpRow').style.display = isGbp ? '' : 'none';
+  document.getElementById('modeTradeAmtPct').style.background = isGbp ? 'var(--bg-secondary)' : 'var(--accent-green)';
+  document.getElementById('modeTradeAmtPct').style.color = isGbp ? 'var(--text-secondary)' : '#000';
+  document.getElementById('modeTradeAmtGbp').style.background = isGbp ? 'var(--accent-green)' : 'var(--bg-secondary)';
+  document.getElementById('modeTradeAmtGbp').style.color = isGbp ? '#000' : 'var(--text-secondary)';
+}
+
 // ── Period mode toggle ────────────────────────────────────────────────────────
 function setPeriodMode(mode) {
   const isCustom = mode === 'custom';
@@ -2873,6 +2911,11 @@ async function runBacktest() {
   const conf     = document.getElementById('minConf').value;
   const trailSL   = document.getElementById('trailSL').checked;
   const trailDist = document.getElementById('trailDist').value;
+  const btCapital = document.getElementById('btCapital').value;
+  const tradeAmountMode = document.getElementById('tradeAmountGbpRow').style.display !== 'none' ? 'gbp' : 'percent';
+  const tradeAmount = tradeAmountMode === 'gbp'
+    ? document.getElementById('tradeAmountGbp').value
+    : document.getElementById('tradeAmountPct').value;
 
   // Basic mode exposes a curated subset of indicators with only their most
   // essential params. Each enabled indicator runs its single default trigger;
@@ -3033,6 +3076,7 @@ async function runBacktest() {
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
+    capital: btCapital, trade_amount_mode: tradeAmountMode, trade_amount: tradeAmount,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     rsi_div_lookback: rsiDivLookback,
     macd_fast: macdFast, macd_slow: macdSlow, macd_signal: macdSig,
@@ -3147,12 +3191,21 @@ function renderResults(data) {
   setMetric('mDD',    '-' + m.max_drawdown_pct.toFixed(2) + '%', m.max_drawdown_pct > 20 ? 'neg' : m.max_drawdown_pct > 10 ? 'neu' : 'pos');
   document.getElementById('mDD').nextElementSibling.textContent =
     `max loss: ${fmtMoney(capital, -m.max_drawdown_pct)}`;
+  // £ figures below are read from each trade's actual sized pnl_gbp (from the
+  // server, reflecting Trade Amount sizing) rather than capital * raw_pct — the
+  // metrics' *_trade_pct values are unsized "quality of the setup" numbers, so
+  // scaling them by full capital would overstate £ once Trade Amount is < 100%.
+  const bestTrade  = trades.length ? trades.reduce((a, b) => b.return_pct > a.return_pct ? b : a) : null;
+  const worstTrade = trades.length ? trades.reduce((a, b) => b.return_pct < a.return_pct ? b : a) : null;
+  const avgPnlGbp  = trades.length ? trades.reduce((s, t) => s + t.pnl_gbp, 0) / trades.length : 0;
+  const fmtSigned = v => (v >= 0 ? '+' : '−') + '£' + Math.abs(v).toFixed(0);
+
   setMetric('mAvg',   pctStr(m.avg_trade_pct), colorClass(m.avg_trade_pct));
-  document.getElementById('mAvgSub').textContent = fmtMoney(capital, m.avg_trade_pct) + ' per trade';
+  document.getElementById('mAvgSub').textContent = fmtSigned(avgPnlGbp) + ' per trade';
   setMetric('mBest',  pctStr(m.best_trade_pct));
-  document.getElementById('mBest').nextElementSibling.textContent = fmtMoney(capital, m.best_trade_pct);
+  document.getElementById('mBest').nextElementSibling.textContent = bestTrade ? fmtSigned(bestTrade.pnl_gbp) : '£0';
   setMetric('mWorst', pctStr(m.worst_trade_pct));
-  document.getElementById('mWorst').nextElementSibling.textContent = fmtMoney(capital, m.worst_trade_pct);
+  document.getElementById('mWorst').nextElementSibling.textContent = worstTrade ? fmtSigned(worstTrade.pnl_gbp) : '£0';
 
   // Financial row
   const wins  = trades.filter(t => t.return_pct > 0);
@@ -3162,15 +3215,15 @@ function renderResults(data) {
   document.getElementById('fNetPnlSub').textContent =
     `B&H would be: ${fmtMoney(capital, bahReturn)}`;
 
-  setMetric('fBestGain', fmtMoney(capital, m.best_trade_pct), 'pos');
+  setMetric('fBestGain', bestTrade ? fmtSigned(bestTrade.pnl_gbp) : '£0', 'pos');
   document.getElementById('fBestGainSub').textContent =
     wins.length ? `from ${wins.length} winning trade${wins.length !== 1 ? 's' : ''}` : 'no winning trades';
 
-  setMetric('fWorstLoss', fmtMoney(capital, m.worst_trade_pct), 'neg');
+  setMetric('fWorstLoss', worstTrade ? fmtSigned(worstTrade.pnl_gbp) : '£0', 'neg');
   document.getElementById('fWorstLossSub').textContent =
     losses.length ? `from ${losses.length} losing trade${losses.length !== 1 ? 's' : ''}` : 'no losing trades';
 
-  setMetric('fAvgPnl', fmtMoney(capital, m.avg_trade_pct), colorClass(m.avg_trade_pct));
+  setMetric('fAvgPnl', fmtSigned(avgPnlGbp), colorClass(avgPnlGbp));
   document.getElementById('fAvgPnlSub').textContent =
     `across ${trades.length} trade${trades.length !== 1 ? 's' : ''}`;
 
@@ -3187,14 +3240,8 @@ function renderResults(data) {
 
   buildChart(labels, stratVals, bahAligned, capital);
 
-  // Trade log — compute compounding £ P&L per trade
-  let runningEquity = capital;
-  const tradePnls = trades.map(t => {
-    const pnl = runningEquity * t.return_pct / 100;
-    runningEquity = runningEquity * (1 + t.return_pct / 100);
-    return pnl;
-  });
-
+  // Trade log — £ P&L per trade comes straight from the server (each trade's
+  // pnl_gbp already reflects its Trade Amount sizing at the time it was taken).
   document.getElementById('tradeCount').textContent = `${trades.length} TRADE${trades.length !== 1 ? 'S' : ''}`;
 
   const tbody = document.getElementById('tradeBody');
@@ -3202,7 +3249,7 @@ function renderResults(data) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
   } else {
     tbody.innerHTML = trades.map((t, i) => {
-      const pnl = tradePnls[i];
+      const pnl = t.pnl_gbp;
       const pnlSign = pnl >= 0 ? '+' : '−';
       const pnlStr  = pnlSign + '£' + Math.abs(pnl).toFixed(0);
       return `

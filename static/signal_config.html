@@ -312,24 +312,34 @@ window.addEventListener('resize', () => {
     <div class="section">
       <div class="section-label">CAPITAL & RISK</div>
       <div class="control-row">
-        <div class="control-label">Capital <span>(USD)</span></div>
+        <div class="control-label">Capital <span>(GBP)</span></div>
         <div class="input-group">
           <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px">
         </div>
       </div>
-      <div class="range-row">
+      <div class="toggle-row">
+        <div class="toggle-label">Position Size in £</div>
+        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="posSizePctRow">
         <div class="range-header">
           <div class="control-label">Position Size</div>
           <div class="range-value" id="posSizeVal">20%</div>
         </div>
         <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'">
       </div>
+      <div class="control-row" id="posSizeGbpRow" style="display:none;">
+        <div class="control-label">Position Size <span>(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px">
+        </div>
+      </div>
       <div class="range-row">
         <div class="range-header">
           <div class="control-label">Target Gain <span>(per trade)</span></div>
           <div class="range-value tag-green" id="targetVal">1.0%</div>
         </div>
-        <input type="range" id="targetGain" min="0.5" max="20" step="0.1" value="1.0" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="targetGain" min="0.5" max="50" step="0.1" value="1.0" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
       </div>
       <div class="sep"></div>
       <div class="toggle-row">
@@ -341,7 +351,7 @@ window.addEventListener('resize', () => {
           <div class="control-label">Stop-Loss %</div>
           <div class="range-value tag-red" id="slVal">-0.5%</div>
         </div>
-        <input type="range" id="stopLoss" min="0.1" max="20" step="0.1" value="0.5" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="stopLoss" min="0.1" max="50" step="0.1" value="0.5" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
       </div>
       <div class="toggle-row">
         <div class="toggle-label">Trailing Stop-Loss</div>
@@ -372,6 +382,10 @@ window.addEventListener('resize', () => {
           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">×</button>
       </div>
 
+      <button type="button" onclick="openImportBacktestModal()"
+        title="Import a strategy you saved on the Backtester page — its indicators/conditions get translated into this page's condition builder"
+        style="width:100%;margin-bottom:10px;padding:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;background:rgba(0,255,136,0.06);border:1px dashed var(--accent-green);color:var(--accent-green);cursor:pointer;border-radius:2px;">⇩ IMPORT FROM BACKTESTER</button>
+
       <!-- Strategy name + BUY / SELL type -->
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
         <input type="text" id="strategyName" placeholder="My Strategy" style="flex:1;font-size:10px;">
@@ -389,6 +403,17 @@ window.addEventListener('resize', () => {
           <option value="any">ANY condition</option>
         </select>
         <span>are met</span>
+      </div>
+
+      <!-- Min confidence -->
+      <div class="range-row" style="margin-bottom:10px;">
+        <div class="range-header">
+          <div class="control-label">Min Confidence</div>
+          <div class="range-value" id="minConfidenceVal">60%</div>
+        </div>
+        <input type="range" id="minConfidence" min="50" max="100" step="5" value="60"
+               oninput="document.getElementById('minConfidenceVal').textContent=this.value+'%'; updateStrategyStatus();"
+               title="For 'ANY condition', requires at least this % of conditions to match before firing. No effect on 'ALL conditions' (always 100% when it fires).">
       </div>
 
       <!-- Quick start templates -->
@@ -476,7 +501,7 @@ window.addEventListener('resize', () => {
     <div class="stats-row">
       <div class="stat-cell">
         <div class="stat-label">DAILY P&L</div>
-        <div class="stat-value tag-green" id="statPnl">+$0.00</div>
+        <div class="stat-value tag-green" id="statPnl">+£0.00</div>
         <div class="stat-sub" id="statPnlPct">+0.00%</div>
       </div>
       <div class="stat-cell">
@@ -491,7 +516,7 @@ window.addEventListener('resize', () => {
       </div>
       <div class="stat-cell">
         <div class="stat-label">STRATEGY TARGET</div>
-        <div class="stat-value tag-amber" id="statTarget">$0.00</div>
+        <div class="stat-value tag-amber" id="statTarget">£0.00</div>
         <div class="stat-sub" id="statProgress">0% progress</div>
       </div>
     </div>
@@ -635,6 +660,22 @@ window.addEventListener('resize', () => {
   </div>
 </div>
 
+<!-- IMPORT FROM BACKTESTER MODAL -->
+<div class="modal-overlay" id="importBtModal" style="display:none;" onclick="if(event.target===this)closeImportBacktestModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">IMPORT FROM BACKTESTER</div>
+      <button class="modal-close" onclick="closeImportBacktestModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
+        Pick a strategy you saved on the Backtester page. Its enabled indicators/trigger-modes are translated into conditions here — review them before saving. Combined OR-style Backtester modes (e.g. "overbought or oversold") become separate conditions; set "Fire when" to ANY condition if you want that OR behaviour.
+      </div>
+      <div id="importBtList" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // GROWTH CAPITAL ACADEMY — STRATEGY LAB (Live API Mode)
@@ -761,6 +802,185 @@ const CONDITION_DEFS = {
   price_dip:        { label: 'Price Dip from High',      group: 'Price',       desc: 'Price has dropped by this % from a recent peak (last 30 bars) — potential bounce',  inputLabel: 'Drop more than',  defaultVal: 20,   min: 5,    max: 80,  step: 1,   suffix: '%' },
   // ── Chart patterns ────────────────────────────────────────────────────────
   inv_hs_neckline:  { label: 'Inverse H&S at Neckline',  group: 'Inverse H&S', desc: 'Bullish reversal: an inverse head-and-shoulders has formed and price has reached its neckline. "Touch" fires as price reaches the neckline; "Break" fires only on a close above it. Pattern detection is heuristic — best combined with a confirming condition.', inputLabel: null, defaultVal: 0 },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Extended set — ported from the Backtester's advanced trigger-modes so the
+  // same indicators/signals available there can drive a live strategy here too.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── RSI (extended) ──────────────────────────────────────────────────────────
+  rsi_centerline_up:   { label: 'RSI Crossed Above 50',  group: 'RSI', desc: 'RSI crossed above the 50 centerline recently — momentum turning bullish',  inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  rsi_centerline_down: { label: 'RSI Crossed Below 50',  group: 'RSI', desc: 'RSI crossed below the 50 centerline recently — momentum turning bearish', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  rsi_bull_divergence: { label: 'RSI Bullish Divergence', group: 'RSI', desc: 'Price made a lower low while RSI made a higher low — hidden bullish momentum', inputLabel: null, defaultVal: 0 },
+  rsi_bear_divergence: { label: 'RSI Bearish Divergence', group: 'RSI', desc: 'Price made a higher high while RSI made a lower high — hidden bearish momentum', inputLabel: null, defaultVal: 0 },
+  rsi_failure_swing_bull: { label: 'RSI Bullish Failure Swing', group: 'RSI', desc: "Wilder's failure swing: RSI dipped oversold, recovered, pulled back without re-entering oversold, then broke its prior peak — a classic reversal confirmation", inputLabel: null, defaultVal: 0 },
+  rsi_failure_swing_bear: { label: 'RSI Bearish Failure Swing', group: 'RSI', desc: "Wilder's failure swing (mirrored): RSI's overbought rally failed to hold and broke its prior trough", inputLabel: null, defaultVal: 0 },
+
+  // ── MACD (extended) ─────────────────────────────────────────────────────────
+  macd_centerline_up:   { label: 'MACD Crossed Above Zero', group: 'MACD', desc: 'MACD line crossed above zero recently — trend turning bullish',  inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  macd_centerline_down: { label: 'MACD Crossed Below Zero', group: 'MACD', desc: 'MACD line crossed below zero recently — trend turning bearish',  inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  macd_bull_divergence: { label: 'MACD Bullish Divergence', group: 'MACD', desc: 'Price made a lower low while the MACD line made a higher low', inputLabel: null, defaultVal: 0 },
+  macd_bear_divergence: { label: 'MACD Bearish Divergence', group: 'MACD', desc: 'Price made a higher high while the MACD line made a lower high', inputLabel: null, defaultVal: 0 },
+  macd_histogram_reversal_bull: { label: 'MACD Histogram Turning Up',   group: 'MACD', desc: 'The MACD histogram just turned up off a local trough — early momentum shift', inputLabel: null, defaultVal: 0 },
+  macd_histogram_reversal_bear: { label: 'MACD Histogram Turning Down', group: 'MACD', desc: 'The MACD histogram just turned down off a local peak — early momentum shift',  inputLabel: null, defaultVal: 0 },
+  macd_zscore_overbought: { label: 'MACD Z-Score Overbought', group: 'MACD', desc: 'MACD line is statistically stretched above its own trailing average — momentum may be overextended', inputLabel: 'Z-Score above', defaultVal: 2, min: 1, max: 4, step: 0.1, suffix: '' },
+  macd_zscore_oversold:   { label: 'MACD Z-Score Oversold',   group: 'MACD', desc: 'MACD line is statistically stretched below its own trailing average — momentum may be overextended', inputLabel: 'Z-Score below', defaultVal: -2, min: -4, max: -1, step: 0.1, suffix: '' },
+
+  // ── Bollinger (extended) ────────────────────────────────────────────────────
+  bb_volatility_breakout_bull: { label: 'BB Volatility Breakout (Bull)', group: 'Bollinger', desc: 'Bands were squeezed (low volatility) recently and price has now closed above the upper band — a breakout',  inputLabel: null, defaultVal: 0 },
+  bb_volatility_breakout_bear: { label: 'BB Volatility Breakout (Bear)', group: 'Bollinger', desc: 'Bands were squeezed (low volatility) recently and price has now closed below the lower band — a breakdown', inputLabel: null, defaultVal: 0 },
+  bb_walking_upper: { label: 'Walking the Upper Band', group: 'Bollinger', desc: 'Price has hugged/exceeded the upper band for several consecutive bars — strong trend continuation, not mean-reversion', inputLabel: null, defaultVal: 0 },
+  bb_walking_lower: { label: 'Walking the Lower Band', group: 'Bollinger', desc: 'Price has hugged/exceeded the lower band for several consecutive bars — strong downtrend continuation', inputLabel: null, defaultVal: 0 },
+  bb_w_bottom: { label: 'BB W-Bottom Pattern', group: 'Bollinger', desc: 'A double-bottom reversal: a low touched the lower band, price rallied back above the mid band, then a higher low formed without touching the lower band', inputLabel: null, defaultVal: 0 },
+  bb_m_top:    { label: 'BB M-Top Pattern',    group: 'Bollinger', desc: 'A double-top reversal: a high touched the upper band, price fell back below the mid band, then a lower high formed without touching the upper band', inputLabel: null, defaultVal: 0 },
+
+  // ── MA (extended: 2-MA / 3-MA cross using configurable short/medium/long lengths) ──
+  ma_two_bull: { label: 'Two-MA Bull Cross',  group: 'MA', desc: 'The short MA crossed above the long MA recently (configurable lengths, separate from the Golden/Death Cross MA20/50 pair)', inputLabel: 'Within (bars)', defaultVal: 10, min: 1, max: 30, step: 1, suffix: '' },
+  ma_two_bear: { label: 'Two-MA Bear Cross',  group: 'MA', desc: 'The short MA crossed below the long MA recently (configurable lengths)', inputLabel: 'Within (bars)', defaultVal: 10, min: 1, max: 30, step: 1, suffix: '' },
+  ma_three_bull: { label: 'Three-MA Bullish Stack', group: 'MA', desc: 'Short > Medium > Long MA — a fully aligned bullish stack, a strong trend confirmation', inputLabel: null, defaultVal: 0 },
+  ma_three_bear: { label: 'Three-MA Bearish Stack', group: 'MA', desc: 'Short < Medium < Long MA — a fully aligned bearish stack', inputLabel: null, defaultVal: 0 },
+  ma_price_cross_bull: { label: 'Price Crossed Above Short MA', group: 'MA', desc: 'Price crossed above the configurable short MA recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  ma_price_cross_bear: { label: 'Price Crossed Below Short MA', group: 'MA', desc: 'Price crossed below the configurable short MA recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── ADX (extended) ──────────────────────────────────────────────────────────
+  adx_di_bull_cross: { label: 'ADX +DI Crossed Above −DI', group: 'ADX', desc: '+DI crossed above −DI recently — a fresh bullish directional signal', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  adx_di_bear_cross: { label: 'ADX −DI Crossed Above +DI', group: 'ADX', desc: '−DI crossed above +DI recently — a fresh bearish directional signal', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── ATR (extended) ──────────────────────────────────────────────────────────
+  atr_bullish_expansion: { label: 'ATR Expanding (Bullish)', group: 'ATR', desc: 'ATR is expanding while price is trending up — a genuine bullish volatility breakout, not just noise', inputLabel: null, defaultVal: 0 },
+  atr_bearish_expansion: { label: 'ATR Expanding (Bearish)', group: 'ATR', desc: 'ATR is expanding while price is trending down — a genuine bearish volatility breakout',            inputLabel: null, defaultVal: 0 },
+  atr_contracting:       { label: 'ATR Contracting (Volatility)', group: 'ATR', desc: 'ATR is falling below its own 10-bar average — volatility is calming, often precedes a breakout', inputLabel: null, defaultVal: 0 },
+
+  // ── Parabolic SAR (extended) ─────────────────────────────────────────────────
+  psar_bull_flip: { label: 'PSAR Flipped Bullish', group: 'Parabolic SAR', desc: 'The SAR dots flipped from above to below price recently — a fresh trend-following buy signal', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  psar_bear_flip: { label: 'PSAR Flipped Bearish', group: 'Parabolic SAR', desc: 'The SAR dots flipped from below to above price recently — a fresh trend-following sell signal', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  psar_narrowing: { label: 'PSAR Narrowing (Early Warning)', group: 'Parabolic SAR', desc: "The gap between price and the SAR trailing stop is narrowing — momentum decelerating ahead of a possible flip", inputLabel: null, defaultVal: 0 },
+
+  // ── Supertrend (extended) ────────────────────────────────────────────────────
+  supertrend_bull_flip: { label: 'Supertrend Flipped Bullish', group: 'Supertrend', desc: 'Supertrend flipped from red to green recently — a fresh trend-following buy signal', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  supertrend_bear_flip: { label: 'Supertrend Flipped Bearish', group: 'Supertrend', desc: 'Supertrend flipped from green to red recently — a fresh trend-following sell signal', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  supertrend_narrowing: { label: 'Supertrend Narrowing (Early Warning)', group: 'Supertrend', desc: 'The gap between price and the Supertrend trailing stop is narrowing — momentum decelerating ahead of a possible flip', inputLabel: null, defaultVal: 0 },
+
+  // ── StochRSI (extended) ──────────────────────────────────────────────────────
+  stochrsi_bull_cross: { label: 'StochRSI Bull Cross (K>D)', group: 'StochRSI', desc: 'Stochastic RSI K crossed above D recently', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  stochrsi_bear_cross: { label: 'StochRSI Bear Cross (K<D)', group: 'StochRSI', desc: 'Stochastic RSI K crossed below D recently', inputLabel: 'Within (bars)', defaultVal: 3, min: 1, max: 20, step: 1, suffix: '' },
+  stochrsi_bull_divergence: { label: 'StochRSI Bullish Divergence', group: 'StochRSI', desc: 'Price made a lower low while Stochastic RSI K made a higher low', inputLabel: null, defaultVal: 0 },
+  stochrsi_bear_divergence: { label: 'StochRSI Bearish Divergence', group: 'StochRSI', desc: 'Price made a higher high while Stochastic RSI K made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── CCI (extended) ───────────────────────────────────────────────────────────
+  cci_centerline_up:   { label: 'CCI Crossed Above Zero', group: 'CCI', desc: 'CCI crossed above the zero centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  cci_centerline_down: { label: 'CCI Crossed Below Zero', group: 'CCI', desc: 'CCI crossed below the zero centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  cci_breakout_bull: { label: 'CCI Breakout Above +100', group: 'CCI', desc: 'CCI just broke above +100 this bar — a fresh momentum breakout', inputLabel: null, defaultVal: 0 },
+  cci_breakout_bear: { label: 'CCI Breakout Below −100', group: 'CCI', desc: 'CCI just broke below −100 this bar — a fresh momentum breakdown', inputLabel: null, defaultVal: 0 },
+
+  // ── Williams %R (extended) ───────────────────────────────────────────────────
+  willr_midline_bull: { label: 'Williams %R Crossed Above −50', group: 'Williams %R', desc: 'Williams %R crossed above the −50 midline recently — momentum turning bullish', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  willr_midline_bear: { label: 'Williams %R Crossed Below −50', group: 'Williams %R', desc: 'Williams %R crossed below the −50 midline recently — momentum turning bearish', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  willr_bull_divergence: { label: 'Williams %R Bullish Divergence', group: 'Williams %R', desc: 'Price made a lower low while Williams %R made a higher low', inputLabel: null, defaultVal: 0 },
+  willr_bear_divergence: { label: 'Williams %R Bearish Divergence', group: 'Williams %R', desc: 'Price made a higher high while Williams %R made a lower high', inputLabel: null, defaultVal: 0 },
+  willr_trend_confirm_bull: { label: 'Williams %R Confirms Uptrend',   group: 'Williams %R', desc: 'A new price high is echoed by a new Williams %R high — momentum still backs the trend', inputLabel: null, defaultVal: 0 },
+  willr_trend_confirm_bear: { label: 'Williams %R Confirms Downtrend', group: 'Williams %R', desc: 'A new price low is echoed by a new Williams %R low — momentum still backs the downtrend', inputLabel: null, defaultVal: 0 },
+  willr_failure_swing_bull: { label: 'Williams %R Bullish Failure Swing', group: 'Williams %R', desc: "Wilder's failure swing on Williams %R — a reversal confirmation off oversold", inputLabel: null, defaultVal: 0 },
+  willr_failure_swing_bear: { label: 'Williams %R Bearish Failure Swing', group: 'Williams %R', desc: "Wilder's failure swing on Williams %R — a reversal confirmation off overbought", inputLabel: null, defaultVal: 0 },
+
+  // ── ROC (extended) ───────────────────────────────────────────────────────────
+  roc_bull_momentum: { label: 'ROC Accelerating Up',   group: 'ROC', desc: 'Rate of Change is positive and higher than a few bars ago — momentum is accelerating',   inputLabel: null, defaultVal: 0 },
+  roc_bear_momentum: { label: 'ROC Accelerating Down', group: 'ROC', desc: 'Rate of Change is negative and lower than a few bars ago — momentum is accelerating down', inputLabel: null, defaultVal: 0 },
+  roc_bull_divergence: { label: 'ROC Bullish Divergence', group: 'ROC', desc: 'Price made a lower low while ROC made a higher low', inputLabel: null, defaultVal: 0 },
+  roc_bear_divergence: { label: 'ROC Bearish Divergence', group: 'ROC', desc: 'Price made a higher high while ROC made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── MFI (extended) ───────────────────────────────────────────────────────────
+  mfi_centerline_up:   { label: 'MFI Crossed Above 50', group: 'MFI', desc: 'Money Flow Index crossed above the 50 centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  mfi_centerline_down: { label: 'MFI Crossed Below 50', group: 'MFI', desc: 'Money Flow Index crossed below the 50 centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  mfi_bull_divergence: { label: 'MFI Bullish Divergence', group: 'MFI', desc: 'Price made a lower low while MFI made a higher low', inputLabel: null, defaultVal: 0 },
+  mfi_bear_divergence: { label: 'MFI Bearish Divergence', group: 'MFI', desc: 'Price made a higher high while MFI made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── VWAP (extended) ──────────────────────────────────────────────────────────
+  vwap_rolling_band_touch: { label: 'Rolling VWAP Band Touch', group: 'VWAP', desc: 'Price has touched a band around the rolling VWAP — a common mean-reversion/fade zone', inputLabel: null, defaultVal: 0 },
+
+  // ── HMA (new group) ──────────────────────────────────────────────────────────
+  hma_slope_bull: { label: 'HMA Slope Turning Up',   group: 'HMA', desc: 'The Hull MA is higher than it was a few bars ago — its low-lag slope is turning bullish',   inputLabel: null, defaultVal: 0 },
+  hma_slope_bear: { label: 'HMA Slope Turning Down', group: 'HMA', desc: 'The Hull MA is lower than it was a few bars ago — its low-lag slope is turning bearish',   inputLabel: null, defaultVal: 0 },
+  hma_price_cross_bull: { label: 'Price Crossed Above HMA', group: 'HMA', desc: 'Price crossed above the Hull MA recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  hma_price_cross_bear: { label: 'Price Crossed Below HMA', group: 'HMA', desc: 'Price crossed below the Hull MA recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  hma_two_cross_bull: { label: 'Fast HMA Crossed Above HMA', group: 'HMA', desc: 'A faster Hull MA crossed above the primary Hull MA recently — early trend-follow entry', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  hma_two_cross_bear: { label: 'Fast HMA Crossed Below HMA', group: 'HMA', desc: 'A faster Hull MA crossed below the primary Hull MA recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── Ichimoku (new group) ─────────────────────────────────────────────────────
+  ichimoku_cloud_bullish: { label: 'Price Above the Cloud', group: 'Ichimoku', desc: 'Price is above the Ichimoku cloud — a bullish trend regime', inputLabel: null, defaultVal: 0 },
+  ichimoku_cloud_bearish: { label: 'Price Below the Cloud', group: 'Ichimoku', desc: 'Price is below the Ichimoku cloud — a bearish trend regime', inputLabel: null, defaultVal: 0 },
+  ichimoku_tk_bull_cross: { label: 'Tenkan Crossed Above Kijun', group: 'Ichimoku', desc: 'The Tenkan-sen crossed above the Kijun-sen recently — a bullish signal (the Ichimoku equivalent of a fast/slow MA cross)', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  ichimoku_tk_bear_cross: { label: 'Tenkan Crossed Below Kijun', group: 'Ichimoku', desc: 'The Tenkan-sen crossed below the Kijun-sen recently — a bearish signal', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── Donchian Channel (new group) ─────────────────────────────────────────────
+  donchian_breakout_bull: { label: 'Donchian Upper Breakout', group: 'Donchian', desc: 'Price crossed above the top of its N-bar range recently — a classic breakout entry', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  donchian_breakout_bear: { label: 'Donchian Lower Breakout', group: 'Donchian', desc: 'Price crossed below the bottom of its N-bar range recently — a classic breakdown entry', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  donchian_mid_cross_bull: { label: 'Price Crossed Above Donchian Mid', group: 'Donchian', desc: 'Price crossed above the midpoint of the Donchian channel recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  donchian_mid_cross_bear: { label: 'Price Crossed Below Donchian Mid', group: 'Donchian', desc: 'Price crossed below the midpoint of the Donchian channel recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── Keltner Channel (new group) ──────────────────────────────────────────────
+  keltner_breakout_bull: { label: 'Keltner Upper Breakout', group: 'Keltner', desc: 'Price has closed above the upper Keltner Channel band', inputLabel: null, defaultVal: 0 },
+  keltner_breakout_bear: { label: 'Keltner Lower Breakout', group: 'Keltner', desc: 'Price has closed below the lower Keltner Channel band', inputLabel: null, defaultVal: 0 },
+  keltner_walking_upper: { label: 'Walking the Keltner Upper Band', group: 'Keltner', desc: 'Price has hugged/exceeded the upper Keltner band for several consecutive bars — strong trend continuation', inputLabel: null, defaultVal: 0 },
+  keltner_walking_lower: { label: 'Walking the Keltner Lower Band', group: 'Keltner', desc: 'Price has hugged/exceeded the lower Keltner band for several consecutive bars — strong downtrend continuation', inputLabel: null, defaultVal: 0 },
+  keltner_squeeze: { label: 'TTM-Style Squeeze Active', group: 'Keltner', desc: 'Bollinger Bands are compressed inside the Keltner Channel — a volatility contraction, often the calm before a breakout', inputLabel: null, defaultVal: 0 },
+  keltner_squeeze_release_bull: { label: 'Bullish Squeeze Release', group: 'Keltner', desc: 'A squeeze was active recently and price has now broken out above the Keltner upper band', inputLabel: null, defaultVal: 0 },
+  keltner_squeeze_release_bear: { label: 'Bearish Squeeze Release', group: 'Keltner', desc: 'A squeeze was active recently and price has now broken down below the Keltner lower band', inputLabel: null, defaultVal: 0 },
+
+  // ── Stdev / Chaikin Volatility / Historical Volatility (new groups) ─────────
+  stdev_bullish_expansion: { label: 'Stdev Expanding (Bullish)', group: 'Stdev', desc: 'Price standard deviation is expanding while price trends up',   inputLabel: null, defaultVal: 0 },
+  stdev_bearish_expansion: { label: 'Stdev Expanding (Bearish)', group: 'Stdev', desc: 'Price standard deviation is expanding while price trends down', inputLabel: null, defaultVal: 0 },
+  stdev_contracting:       { label: 'Stdev Contracting', group: 'Stdev', desc: 'Price standard deviation is falling — volatility calming', inputLabel: null, defaultVal: 0 },
+  chaikin_vol_bullish_expansion: { label: 'Chaikin Vol Expanding (Bullish)', group: 'Chaikin Volatility', desc: 'The high-low trading range is expanding while price trends up', inputLabel: null, defaultVal: 0 },
+  chaikin_vol_bearish_expansion: { label: 'Chaikin Vol Expanding (Bearish)', group: 'Chaikin Volatility', desc: 'The high-low trading range is expanding while price trends down', inputLabel: null, defaultVal: 0 },
+  chaikin_vol_contracting:       { label: 'Chaikin Vol Contracting', group: 'Chaikin Volatility', desc: 'The high-low trading range is narrowing — volatility calming', inputLabel: null, defaultVal: 0 },
+  hist_vol_bullish_expansion: { label: 'Historical Vol Expanding (Bullish)', group: 'Historical Volatility', desc: 'Annualised historical volatility is rising while price trends up', inputLabel: null, defaultVal: 0 },
+  hist_vol_bearish_expansion: { label: 'Historical Vol Expanding (Bearish)', group: 'Historical Volatility', desc: 'Annualised historical volatility is rising while price trends down', inputLabel: null, defaultVal: 0 },
+  hist_vol_contracting:       { label: 'Historical Vol Contracting', group: 'Historical Volatility', desc: 'Annualised historical volatility is falling — a calming market', inputLabel: null, defaultVal: 0 },
+
+  // ── A/D Line (new group) ─────────────────────────────────────────────────────
+  ad_line_trend_bull: { label: 'A/D Line Above its Average', group: 'A/D Line', desc: 'The Accumulation/Distribution line is above its own trailing average — net buying pressure', inputLabel: null, defaultVal: 0 },
+  ad_line_trend_bear: { label: 'A/D Line Below its Average', group: 'A/D Line', desc: 'The Accumulation/Distribution line is below its own trailing average — net selling pressure', inputLabel: null, defaultVal: 0 },
+  ad_line_bull_divergence: { label: 'A/D Line Bullish Divergence', group: 'A/D Line', desc: 'Price made a lower low while the A/D line made a higher low', inputLabel: null, defaultVal: 0 },
+  ad_line_bear_divergence: { label: 'A/D Line Bearish Divergence', group: 'A/D Line', desc: 'Price made a higher high while the A/D line made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── CMF (new group) ──────────────────────────────────────────────────────────
+  cmf_above: { label: 'CMF Above Threshold', group: 'CMF', desc: 'Chaikin Money Flow above threshold — sustained buying pressure', inputLabel: 'CMF above', defaultVal: 0.1, min: 0, max: 0.5, step: 0.01, suffix: '' },
+  cmf_below: { label: 'CMF Below Threshold', group: 'CMF', desc: 'Chaikin Money Flow below threshold — sustained selling pressure', inputLabel: 'CMF below', defaultVal: -0.1, min: -0.5, max: 0, step: 0.01, suffix: '' },
+  cmf_centerline_up:   { label: 'CMF Crossed Above Zero', group: 'CMF', desc: 'Chaikin Money Flow crossed above zero recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  cmf_centerline_down: { label: 'CMF Crossed Below Zero', group: 'CMF', desc: 'Chaikin Money Flow crossed below zero recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── TSI (new group) ───────────────────────────────────────────────────────────
+  tsi_bull_cross: { label: 'TSI Bull Signal Cross', group: 'TSI', desc: 'The TSI line crossed above its signal line recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  tsi_bear_cross: { label: 'TSI Bear Signal Cross', group: 'TSI', desc: 'The TSI line crossed below its signal line recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  tsi_centerline_up:   { label: 'TSI Crossed Above Zero', group: 'TSI', desc: 'TSI crossed above the zero centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  tsi_centerline_down: { label: 'TSI Crossed Below Zero', group: 'TSI', desc: 'TSI crossed below the zero centerline recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  tsi_bull_divergence: { label: 'TSI Bullish Divergence', group: 'TSI', desc: 'Price made a lower low while TSI made a higher low', inputLabel: null, defaultVal: 0 },
+  tsi_bear_divergence: { label: 'TSI Bearish Divergence', group: 'TSI', desc: 'Price made a higher high while TSI made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── Awesome Oscillator (new group) ───────────────────────────────────────────
+  ao_zero_cross_bull: { label: 'AO Crossed Above Zero', group: 'Awesome Oscillator', desc: 'The Awesome Oscillator crossed above zero recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  ao_zero_cross_bear: { label: 'AO Crossed Below Zero', group: 'Awesome Oscillator', desc: 'The Awesome Oscillator crossed below zero recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  ao_bull_saucer: { label: 'AO Bullish Saucer', group: 'Awesome Oscillator', desc: "Bill Williams' bullish saucer: a 3-bar momentum dip-and-recover above zero", inputLabel: null, defaultVal: 0 },
+  ao_bear_saucer: { label: 'AO Bearish Saucer', group: 'Awesome Oscillator', desc: "Bill Williams' bearish saucer: a 3-bar momentum dip-and-recover below zero", inputLabel: null, defaultVal: 0 },
+  ao_bull_twin_peaks: { label: 'AO Bullish Twin Peaks', group: 'Awesome Oscillator', desc: "Bill Williams' twin peaks: two troughs below zero, the second shallower than the first — fading bearish momentum", inputLabel: null, defaultVal: 0 },
+  ao_bear_twin_peaks: { label: 'AO Bearish Twin Peaks', group: 'Awesome Oscillator', desc: "Bill Williams' twin peaks (mirrored): two peaks above zero, the second lower than the first — fading bullish momentum", inputLabel: null, defaultVal: 0 },
+  ao_bull_divergence: { label: 'AO Bullish Divergence', group: 'Awesome Oscillator', desc: 'Price made a lower low while AO made a higher low', inputLabel: null, defaultVal: 0 },
+  ao_bear_divergence: { label: 'AO Bearish Divergence', group: 'Awesome Oscillator', desc: 'Price made a higher high while AO made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── OBV (new group — Volume group already covers the volume-spike condition) ──
+  obv_trend_bull: { label: 'OBV Above its Average', group: 'OBV', desc: 'On-Balance Volume is above its own trailing average — accumulation in progress', inputLabel: null, defaultVal: 0 },
+  obv_trend_bear: { label: 'OBV Below its Average', group: 'OBV', desc: 'On-Balance Volume is below its own trailing average — distribution in progress', inputLabel: null, defaultVal: 0 },
+  obv_bull_divergence: { label: 'OBV Bullish Divergence', group: 'OBV', desc: 'Price made a lower low while OBV made a higher low', inputLabel: null, defaultVal: 0 },
+  obv_bear_divergence: { label: 'OBV Bearish Divergence', group: 'OBV', desc: 'Price made a higher high while OBV made a lower high', inputLabel: null, defaultVal: 0 },
+
+  // ── Volume Profile (new group) ───────────────────────────────────────────────
+  vp_poc_bullish: { label: 'Price Above Volume POC', group: 'Volume Profile', desc: 'Price is above the rolling point-of-control (the price level with the most traded volume) — buyers in control of the high-volume zone', inputLabel: null, defaultVal: 0 },
+  vp_poc_breakout_bull: { label: 'Broke Above Volume POC', group: 'Volume Profile', desc: 'Price crossed above the point-of-control recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+  vp_poc_breakout_bear: { label: 'Broke Below Volume POC', group: 'Volume Profile', desc: 'Price crossed below the point-of-control recently', inputLabel: 'Within (bars)', defaultVal: 5, min: 1, max: 30, step: 1, suffix: '' },
+
+  // ── Fibonacci (new group) ────────────────────────────────────────────────────
+  fib_any_touch: { label: 'Price Touching a Fib Level', group: 'Fibonacci', desc: 'Price is within tolerance of a Fibonacci retracement level (23.6/38.2/50/61.8/78.6%) of the recent swing — a common support/resistance zone', inputLabel: null, defaultVal: 0 },
 };
 
 // Per-indicator parameter definitions, keyed by CONDITION_DEFS group name.
@@ -822,6 +1042,12 @@ const INDICATOR_PARAMS = {
   'MA': [
     { id: 'short', label: 'Short MA', default: 20, min: 2, max: 200, step: 1, apiKey: 'ema_short' },
     { id: 'long',  label: 'Long MA',  default: 50, min: 5, max: 500, step: 1, apiKey: 'ema_long'  },
+    // Separate configurable trio for the Two-MA/Three-MA/Price-Cross conditions below
+    // (independent of the Golden/Death Cross pair above, which is fixed at MA20/MA50).
+    { id: 'maType',   label: 'MA Type',   type: 'select', default: 'exponential', options: ['exponential','simple','smoothed','weighted','volume_weighted'], apiKey: 'ma_type' },
+    { id: 'maShort',  label: 'MA Short',  default: 9,  min: 2, max: 200, step: 1, apiKey: 'ma_short_length'  },
+    { id: 'maMedium', label: 'MA Medium', default: 20, min: 2, max: 300, step: 1, apiKey: 'ma_medium_length' },
+    { id: 'maLong',   label: 'MA Long',   default: 50, min: 5, max: 500, step: 1, apiKey: 'ma_long_length'   },
   ],
   // Swing/Lookback tune the pattern detection (sent to the server); Tol % and
   // Trigger are evaluated on the client, so they carry no apiKey.
@@ -830,6 +1056,64 @@ const INDICATOR_PARAMS = {
     { id: 'lookback', label: 'Lookback', default: 90,  min: 30,  max: 250, step: 5,   apiKey: 'hs_lookback' },
     { id: 'tol',      label: 'Tol %',    default: 1.0, min: 0.1, max: 5,   step: 0.1  },
     { id: 'mode',     label: 'Trigger',  type: 'select', default: 'touch', options: ['touch','break'] },
+  ],
+  // ── Extended set — new indicator groups ──────────────────────────────────
+  'VWAP': [
+    { id: 'length',   label: 'Length',  default: 20,  min: 2,   max: 200, step: 1,   apiKey: 'vwap_length'    },
+    { id: 'bandPct',  label: 'Band %',  default: 1.0, min: 0.1, max: 5,   step: 0.1, apiKey: 'vwap_band_pct' },
+  ],
+  'HMA': [
+    { id: 'length',     label: 'Length',      default: 20, min: 2, max: 200, step: 1, apiKey: 'hma_length'      },
+    { id: 'fastLength', label: 'Fast Length', default: 9,  min: 2, max: 100, step: 1, apiKey: 'hma_fast_length' },
+  ],
+  'Ichimoku': [
+    { id: 'tenkan', label: 'Tenkan', default: 9,  min: 2,  max: 50,  step: 1, apiKey: 'ichimoku_tenkan' },
+    { id: 'kijun',  label: 'Kijun',  default: 26, min: 5,  max: 100, step: 1, apiKey: 'ichimoku_kijun'  },
+    { id: 'senkou', label: 'Senkou', default: 52, min: 10, max: 200, step: 1, apiKey: 'ichimoku_senkou' },
+  ],
+  'Donchian': [
+    { id: 'length', label: 'Length', default: 20, min: 5, max: 200, step: 1, apiKey: 'donchian_length' },
+  ],
+  'Keltner': [
+    { id: 'length',    label: 'Length',     default: 20, min: 5,   max: 200, step: 1,   apiKey: 'keltner_length'     },
+    { id: 'atrLength', label: 'ATR Length', default: 10, min: 2,   max: 100, step: 1,   apiKey: 'keltner_atr_length' },
+    { id: 'mult',      label: 'Multiplier', default: 2.0, min: 0.5, max: 5,  step: 0.1, apiKey: 'keltner_mult'       },
+  ],
+  'Stdev': [
+    { id: 'length', label: 'Length', default: 20, min: 5, max: 200, step: 1, apiKey: 'stdev_length' },
+  ],
+  'Chaikin Volatility': [
+    { id: 'emaLength', label: 'EMA Length', default: 10, min: 2, max: 100, step: 1, apiKey: 'chaikin_vol_ema_length' },
+    { id: 'rocLength', label: 'ROC Length', default: 10, min: 2, max: 100, step: 1, apiKey: 'chaikin_vol_roc_length' },
+  ],
+  'Historical Volatility': [
+    { id: 'length', label: 'Length', default: 20, min: 5, max: 200, step: 1, apiKey: 'hist_vol_length' },
+  ],
+  'A/D Line': [
+    { id: 'smaLength', label: 'SMA Length', default: 20, min: 2, max: 200, step: 1, apiKey: 'ad_sma_length' },
+  ],
+  'CMF': [
+    { id: 'length', label: 'Length', default: 20, min: 2, max: 200, step: 1, apiKey: 'cmf_length' },
+  ],
+  'TSI': [
+    { id: 'long',   label: 'Long',   default: 25, min: 5, max: 100, step: 1, apiKey: 'tsi_long'   },
+    { id: 'short',  label: 'Short',  default: 13, min: 2, max: 50,  step: 1, apiKey: 'tsi_short'  },
+    { id: 'signal', label: 'Signal', default: 13, min: 2, max: 50,  step: 1, apiKey: 'tsi_signal' },
+  ],
+  'Awesome Oscillator': [
+    { id: 'fast', label: 'Fast', default: 5,  min: 2, max: 50,  step: 1, apiKey: 'ao_fast' },
+    { id: 'slow', label: 'Slow', default: 34, min: 5, max: 100, step: 1, apiKey: 'ao_slow' },
+  ],
+  'OBV': [
+    { id: 'smaLength', label: 'SMA Length', default: 20, min: 2, max: 200, step: 1, apiKey: 'obv_sma_length' },
+  ],
+  'Volume Profile': [
+    { id: 'lookback', label: 'Lookback', default: 50, min: 10, max: 200, step: 5, apiKey: 'vol_profile_lookback' },
+    { id: 'bins',     label: 'Bins',     default: 24, min: 5,  max: 100, step: 1, apiKey: 'vol_profile_bins'     },
+  ],
+  'Fibonacci': [
+    { id: 'lookback', label: 'Lookback', default: 50, min: 10, max: 200, step: 5, apiKey: 'fib_lookback' },
+    { id: 'tolPct',   label: 'Tol %',    default: 0.5, min: 0.1, max: 3, step: 0.1, apiKey: 'fib_tolerance_pct' },
   ],
 };
 
@@ -1125,6 +1409,292 @@ async function deleteCurrentStrategy() {
   await savePreferences();
 }
 
+// ── Import from Backtester ───────────────────────────────────────────────────
+// Backtester strategies (static/strategy-lab.html) are a flat snapshot of every
+// sidebar control — structurally different from this page's curated condition
+// list. This table translates each Backtester indicator toggle + active
+// trigger-chip mode into one or more CONDITION_DEFS keys. A single Backtester
+// mode occasionally maps to TWO conditions here (e.g. "overbought_oversold" ->
+// rsi_below + rsi_above) since Backtester trigger-modes can be inherently
+// OR-style while a condition here is a single test; the modal explains this.
+// Modes with an empty array have no equivalent condition here yet and are
+// skipped rather than guessed at.
+const BT_INDICATOR_MAP = {
+  togRsi:        { group: 'RSI',                  chips: 'rsiTriggerChips',       modes: {
+    overbought_oversold: ['rsi_below', 'rsi_above'], overbought: ['rsi_above'], oversold: ['rsi_below'],
+    centerline_cross: ['rsi_centerline_up', 'rsi_centerline_down'],
+    bullish_divergence: ['rsi_bull_divergence'], bearish_divergence: ['rsi_bear_divergence'],
+    failure_swings: ['rsi_failure_swing_bull', 'rsi_failure_swing_bear'],
+  }},
+  togMacd:       { group: 'MACD',                 chips: 'macdTriggerChips',      modes: {
+    signal_cross: ['macd_bull_cross', 'macd_bear_cross'],
+    bullish_signal_cross: ['macd_bull_cross'], bearish_signal_cross: ['macd_bear_cross'],
+    centerline_cross: ['macd_centerline_up', 'macd_centerline_down'],
+    bullish_divergence: ['macd_bull_divergence'], bearish_divergence: ['macd_bear_divergence'],
+    histogram_reversal: ['macd_histogram_reversal_bull', 'macd_histogram_reversal_bear'],
+    overbought: ['macd_zscore_overbought'], oversold: ['macd_zscore_oversold'],
+  }},
+  togBb:         { group: 'Bollinger',            chips: 'bbTriggerChips',        modes: {
+    percent_b: ['bb_lower', 'bb_upper'], upper_touch: ['bb_broke_upper'], lower_touch: ['bb_broke_lower'],
+    volatility_breakout: ['bb_volatility_breakout_bull', 'bb_volatility_breakout_bear'],
+    walking_upper: ['bb_walking_upper'], walking_lower: ['bb_walking_lower'],
+    w_bottom: ['bb_w_bottom'], m_top: ['bb_m_top'],
+    breakout_margin: [], pct_below_high: [], pct_above_low: [],
+  }},
+  togMa:         { group: 'MA',                   chips: 'maTriggerChips',        modes: {
+    dual_cross: ['ma_golden', 'ma_death'], price_cross: ['ma_price_cross_bull', 'ma_price_cross_bear'],
+    two_ma_bull: ['ma_two_bull'], two_ma_bear: ['ma_two_bear'],
+    three_ma_bull: ['ma_three_bull'], three_ma_bear: ['ma_three_bear'],
+  }},
+  togAdx:        { group: 'ADX',                  chips: 'adxTriggerChips',       modes: {
+    trend_threshold: ['adx_above'], above_25: ['adx_above'], above_50: ['adx_above'], above_75: ['adx_above'],
+    bull_di_cross: ['adx_di_bull_cross'], bear_di_cross: ['adx_di_bear_cross'],
+    strong_di_plus: ['adx_di_bull'], strong_di_minus: ['adx_di_bear'],
+  }},
+  togPsar:       { group: 'Parabolic SAR',        chips: 'psarTriggerChips',      modes: {
+    flip: ['psar_bull_flip', 'psar_bear_flip'], bull_flip: ['psar_bull_flip'], bear_flip: ['psar_bear_flip'],
+    trend_state: ['psar_bull', 'psar_bear'], trailing_stop: ['psar_narrowing'],
+  }},
+  togIchimoku:   { group: 'Ichimoku',             chips: 'ichimokuTriggerChips',  modes: {
+    cloud_position: ['ichimoku_cloud_bullish', 'ichimoku_cloud_bearish'],
+    bullish: ['ichimoku_cloud_bullish'], bearish: ['ichimoku_cloud_bearish'],
+    tk_cross: ['ichimoku_tk_bull_cross', 'ichimoku_tk_bear_cross'],
+  }},
+  togSupertrend: { group: 'Supertrend',           chips: 'supertrendTriggerChips', modes: {
+    flip: ['supertrend_bull_flip', 'supertrend_bear_flip'], bull_flip: ['supertrend_bull_flip'], bear_flip: ['supertrend_bear_flip'],
+    trend_state: ['supertrend_bull', 'supertrend_bear'], trailing_stop: ['supertrend_narrowing'],
+  }},
+  togDonchian:   { group: 'Donchian',             chips: 'donchianTriggerChips',  modes: {
+    breakout: ['donchian_breakout_bull', 'donchian_breakout_bear'],
+    bullish: ['donchian_breakout_bull'], bearish: ['donchian_breakout_bear'],
+    middle_cross: ['donchian_mid_cross_bull', 'donchian_mid_cross_bear'],
+    two_channel_bull: [], two_channel_bear: [], resistance_retest: [], support_retest: [],
+  }},
+  togHma:        { group: 'HMA',                  chips: 'hmaTriggerChips',       modes: {
+    slope: ['hma_slope_bull', 'hma_slope_bear'], bullish_slope: ['hma_slope_bull'], bearish_slope: ['hma_slope_bear'],
+    price_cross: ['hma_price_cross_bull', 'hma_price_cross_bear'],
+    two_hma_bull: ['hma_two_cross_bull'], two_hma_bear: ['hma_two_cross_bear'],
+  }},
+  togStoch:      { group: 'Stochastic',           chips: 'stochTriggerChips',     modes: {
+    overbought_oversold: ['stoch_k_below', 'stoch_k_above'], overbought: ['stoch_k_above'], oversold: ['stoch_k_below'],
+    signal_cross: ['stoch_bull_cross', 'stoch_bear_cross'],
+  }},
+  togStochrsi:   { group: 'StochRSI',             chips: 'stochrsiTriggerChips',  modes: {
+    overbought_oversold: ['stochrsi_below', 'stochrsi_above'], overbought: ['stochrsi_above'], oversold: ['stochrsi_below'],
+    signal_cross: ['stochrsi_bull_cross', 'stochrsi_bear_cross'],
+    bullish_divergence: ['stochrsi_bull_divergence'], bearish_divergence: ['stochrsi_bear_divergence'],
+  }},
+  togCci:        { group: 'CCI',                  chips: 'cciTriggerChips',       modes: {
+    overbought_oversold: ['cci_below', 'cci_above'], overbought: ['cci_above'], oversold: ['cci_below'],
+    centerline_cross: ['cci_centerline_up', 'cci_centerline_down'],
+    breakout_bull: ['cci_breakout_bull'], breakout_bear: ['cci_breakout_bear'],
+  }},
+  togWillr:      { group: 'Williams %R',          chips: 'willrTriggerChips',     modes: {
+    overbought_oversold: ['willr_below', 'willr_above'], overbought: ['willr_above'], oversold: ['willr_below'],
+    midline_cross: ['willr_midline_bull', 'willr_midline_bear'],
+    momentum_failure_bull: ['willr_failure_swing_bull'], momentum_failure_bear: ['willr_failure_swing_bear'],
+    trend_confirmation_bull: ['willr_trend_confirm_bull'], trend_confirmation_bear: ['willr_trend_confirm_bear'],
+    bullish_divergence: ['willr_bull_divergence'], bearish_divergence: ['willr_bear_divergence'],
+  }},
+  togRoc:        { group: 'ROC',                  chips: 'rocTriggerChips',       modes: {
+    threshold: [], bullish: ['roc_positive'], bearish: ['roc_negative'],
+    centerline_cross: ['roc_positive', 'roc_negative'],
+    bull_momentum: ['roc_bull_momentum'], bear_momentum: ['roc_bear_momentum'],
+    bullish_divergence: ['roc_bull_divergence'], bearish_divergence: ['roc_bear_divergence'],
+  }},
+  togMfi:        { group: 'MFI',                  chips: 'mfiTriggerChips',       modes: {
+    overbought_oversold: ['mfi_below', 'mfi_above'], overbought: ['mfi_above'], oversold: ['mfi_below'],
+    centerline_cross: ['mfi_centerline_up', 'mfi_centerline_down'],
+    bullish_divergence: ['mfi_bull_divergence'], bearish_divergence: ['mfi_bear_divergence'],
+  }},
+  togTsi:        { group: 'TSI',                  chips: 'tsiTriggerChips',       modes: {
+    signal_cross: ['tsi_bull_cross', 'tsi_bear_cross'], bullish: ['tsi_bull_cross'], bearish: ['tsi_bear_cross'],
+    centerline_cross: ['tsi_centerline_up', 'tsi_centerline_down'],
+    overbought: [], oversold: [],
+    bullish_divergence: ['tsi_bull_divergence'], bearish_divergence: ['tsi_bear_divergence'],
+  }},
+  togAo:         { group: 'Awesome Oscillator',   chips: 'aoTriggerChips',        modes: {
+    zero_state: ['ao_zero_cross_bull', 'ao_zero_cross_bear'], bullish: ['ao_zero_cross_bull'], bearish: ['ao_zero_cross_bear'],
+    zero_cross: ['ao_zero_cross_bull', 'ao_zero_cross_bear'],
+    bull_saucer: ['ao_bull_saucer'], bear_saucer: ['ao_bear_saucer'],
+    bull_twin_peaks: ['ao_bull_twin_peaks'], bear_twin_peaks: ['ao_bear_twin_peaks'],
+    bull_divergence: ['ao_bull_divergence'], bear_divergence: ['ao_bear_divergence'],
+  }},
+  togAtr:        { group: 'ATR',                  chips: 'atrTriggerChips',       modes: {
+    expansion: ['atr_expanding'], bullish_expansion: ['atr_bullish_expansion'], bearish_expansion: ['atr_bearish_expansion'],
+    contraction: ['atr_contracting'],
+  }},
+  togKeltner:    { group: 'Keltner',              chips: 'keltnerTriggerChips',   modes: {
+    breakout: ['keltner_breakout_bull', 'keltner_breakout_bear'],
+    bullish: ['keltner_breakout_bull'], bearish: ['keltner_breakout_bear'],
+    middle_cross: [], bull_band_riding: ['keltner_walking_upper'], bear_band_riding: ['keltner_walking_lower'],
+    bull_mean_reversion: [], bear_mean_reversion: [], keltner_squeeze: ['keltner_squeeze'],
+  }},
+  togStdev:      { group: 'Stdev',                chips: 'stdevTriggerChips',     modes: {
+    expansion: ['stdev_bullish_expansion', 'stdev_bearish_expansion'],
+    bullish_expansion: ['stdev_bullish_expansion'], bearish_expansion: ['stdev_bearish_expansion'],
+    contraction: ['stdev_contracting'],
+  }},
+  togChaikinVol: { group: 'Chaikin Volatility',   chips: 'chaikinVolTriggerChips', modes: {
+    expansion: ['chaikin_vol_bullish_expansion', 'chaikin_vol_bearish_expansion'],
+    bullish_expansion: ['chaikin_vol_bullish_expansion'], bearish_expansion: ['chaikin_vol_bearish_expansion'],
+    contraction: ['chaikin_vol_contracting'],
+  }},
+  togHistVol:    { group: 'Historical Volatility', chips: 'histVolTriggerChips',  modes: {
+    expansion: ['hist_vol_bullish_expansion', 'hist_vol_bearish_expansion'],
+    bullish_expansion: ['hist_vol_bullish_expansion'], bearish_expansion: ['hist_vol_bearish_expansion'],
+    contraction: ['hist_vol_contracting'],
+  }},
+  togObv:        { group: 'OBV',                  chips: 'obvTriggerChips',       modes: {
+    trend: ['obv_trend_bull', 'obv_trend_bear'], bullish: ['obv_trend_bull'], bearish: ['obv_trend_bear'],
+    divergence: ['obv_bull_divergence', 'obv_bear_divergence'],
+  }},
+  togVwap:       { group: 'VWAP',                 chips: 'vwapTriggerChips',      modes: {
+    position: ['price_above_vwap', 'price_below_vwap'], bullish: ['price_above_vwap'], bearish: ['price_below_vwap'],
+    band_touch: ['vwap_rolling_band_touch'], pullback_buy: [], pullback_sell: [],
+  }},
+  togAd:         { group: 'A/D Line',             chips: 'adTriggerChips',        modes: {
+    trend: ['ad_line_trend_bull', 'ad_line_trend_bear'], bullish: ['ad_line_trend_bull'], bearish: ['ad_line_trend_bear'],
+    divergence: ['ad_line_bull_divergence', 'ad_line_bear_divergence'],
+  }},
+  togCmf:        { group: 'CMF',                  chips: 'cmfTriggerChips',       modes: {
+    threshold: ['cmf_above', 'cmf_below'], bullish: ['cmf_above'], bearish: ['cmf_below'],
+    centerline_cross: ['cmf_centerline_up', 'cmf_centerline_down'],
+  }},
+  togVolProfile: { group: 'Volume Profile',       chips: 'volProfileTriggerChips', modes: {
+    position: ['vp_poc_bullish'], bullish: ['vp_poc_bullish'], bearish: [],
+    poc_breakout: ['vp_poc_breakout_bull', 'vp_poc_breakout_bear'],
+  }},
+  togFib:        { group: 'Fibonacci',            chips: 'fibTriggerChips',       modes: {
+    bounce_reject: ['fib_any_touch'], bullish_bounce: ['fib_any_touch'], bearish_reject: ['fib_any_touch'], any_touch: ['fib_any_touch'],
+  }},
+  togInvHs:      { group: 'Inverse H&S',          chips: 'invHsTriggerChips',     modes: {
+    neckline_touch: ['inv_hs_neckline'], neckline_break: ['inv_hs_neckline'],
+  }},
+};
+
+function _snakeToCamel(s) {
+  return s.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+}
+
+// Builds params for a translated condition from the matching Backtester DOM
+// snapshot fields — every INDICATOR_PARAMS apiKey (snake_case) has a Backtester
+// sidebar control whose id is the same name camelCased (verified against
+// strategy-lab.html's own TRIGGER_PARAM_RELEVANCE table, e.g. bb_std -> bbStd,
+// ma_short_length -> maShortLength).
+function _paramsFromBacktestConfig(group, cfg) {
+  const overrides = {};
+  (INDICATOR_PARAMS[group] || []).forEach(p => {
+    if (!p.apiKey) return;
+    const btId = _snakeToCamel(p.apiKey);
+    if (cfg[btId] !== undefined) overrides[p.id] = cfg[btId];
+  });
+  return overrides;
+}
+
+// "Basic" mode (strategy-lab.html's simplified sidebar) uses its own togXBasic
+// toggles and runs each enabled indicator's single default trigger — the same
+// defaults runBacktest() sends per strategy-lab.html's isBasic branch.
+const BT_BASIC_TOGGLE_MAP = {
+  togRsiBasic:      { togId: 'togRsi',      chips: 'rsiTriggerChips',      defaultMode: 'overbought_oversold' },
+  togMacdBasic:     { togId: 'togMacd',     chips: 'macdTriggerChips',     defaultMode: 'signal_cross' },
+  togBbBasic:       { togId: 'togBb',       chips: 'bbTriggerChips',       defaultMode: 'percent_b' },
+  togMaBasic:       { togId: 'togMa',       chips: 'maTriggerChips',       defaultMode: 'dual_cross' },
+  togDonchianBasic: { togId: 'togDonchian', chips: 'donchianTriggerChips', defaultMode: 'breakout' },
+  // togVolBasic has no trigger of its own in Basic mode (volume is a confirmation
+  // filter only) — no CONDITION_DEFS equivalent to translate it to.
+};
+
+function translateBacktestConfig(cfg) {
+  const conditions = [];
+  const skippedModes = [];
+  const isBasic = cfg._indicatorMode === 'basic';
+
+  Object.entries(BT_INDICATOR_MAP).forEach(([togId, spec]) => {
+    let modesToUse;
+    if (isBasic) {
+      const basicEntry = Object.values(BT_BASIC_TOGGLE_MAP).find(b => b.togId === togId);
+      const basicTogId = basicEntry && Object.keys(BT_BASIC_TOGGLE_MAP).find(k => BT_BASIC_TOGGLE_MAP[k].togId === togId);
+      if (!basicEntry || !cfg[basicTogId]) return; // not enabled in Basic mode (or no Basic equivalent)
+      modesToUse = [basicEntry.defaultMode];
+    } else {
+      if (!cfg[togId]) return; // indicator not enabled in this Detailed Backtester strategy
+      const activeModes = Array.isArray(cfg[spec.chips]) ? cfg[spec.chips] : [];
+      modesToUse = activeModes.length ? activeModes : Object.keys(spec.modes).slice(0, 1);
+    }
+    const paramOverrides = _paramsFromBacktestConfig(spec.group, cfg);
+    modesToUse.forEach(mode => {
+      const types = spec.modes[mode];
+      if (!types) return;
+      if (types.length === 0) { skippedModes.push(`${spec.group}: ${mode}`); return; }
+      types.forEach(type => conditions.push(_buildCondition(type, undefined, paramOverrides)));
+    });
+  });
+  return { conditions, skippedModes };
+}
+
+async function openImportBacktestModal() {
+  const listEl = document.getElementById('importBtList');
+  listEl.innerHTML = '<div style="font-size:9px;color:var(--text-muted);">Loading…</div>';
+  document.getElementById('importBtModal').style.display = 'flex';
+  try {
+    const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
+    const data = await res.json();
+    const backtests = Array.isArray(data.preferences?.saved_backtests) ? data.preferences.saved_backtests : [];
+    if (backtests.length === 0) {
+      listEl.innerHTML = '<div style="font-size:9px;color:var(--text-muted);">No saved Backtester strategies yet — save one from the Backtester page first.</div>';
+      return;
+    }
+    listEl.innerHTML = backtests.map(s => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;padding:8px 10px;">
+        <div style="min-width:0;">
+          <div style="font-size:10px;font-weight:700;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</div>
+          <div style="font-size:8px;color:var(--text-muted);">${s.config?.btSymbol || ''} ${s.savedAt ? '· ' + new Date(s.savedAt).toLocaleDateString() : ''}</div>
+        </div>
+        <button onclick="importBacktestStrategy('${s.name.replace(/'/g, "\\'")}')"
+          style="flex-shrink:0;font-size:9px;font-weight:700;letter-spacing:1px;padding:5px 10px;background:rgba(0,255,136,0.1);border:1px solid var(--accent-green);color:var(--accent-green);cursor:pointer;border-radius:2px;">IMPORT</button>
+      </div>`).join('');
+    openImportBacktestModal._cache = backtests;
+  } catch (e) {
+    listEl.innerHTML = `<div style="font-size:9px;color:var(--accent-red);">Failed to load: ${e.message}</div>`;
+  }
+}
+
+function closeImportBacktestModal() {
+  document.getElementById('importBtModal').style.display = 'none';
+}
+
+function importBacktestStrategy(name) {
+  const backtests = openImportBacktestModal._cache || [];
+  const saved = backtests.find(s => s.name === name);
+  if (!saved || !saved.config) { addLog('err', 'STRAT', `Could not find Backtester strategy "${name}"`); return; }
+  const cfg = saved.config;
+
+  const { conditions, skippedModes } = translateBacktestConfig(cfg);
+  if (conditions.length === 0) {
+    addLog('warn', 'STRAT', `"${name}" translated to zero usable conditions — it may only use indicators/modes not yet supported here`);
+    closeImportBacktestModal();
+    return;
+  }
+
+  strategyConditions = conditions;
+  document.getElementById('strategyName').value = `${name} (from Backtester)`;
+
+  // Carry over risk settings (both pages are £ now).
+  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').textContent = '-' + parseFloat(cfg.stopLoss).toFixed(1) + '%'; }
+  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').textContent = parseFloat(cfg.takeProfit).toFixed(1) + '%'; }
+  if (cfg.trailSL !== undefined)    { document.getElementById('trailSL').checked = !!cfg.trailSL; document.getElementById('trailSLRow').style.opacity = cfg.trailSL ? '1' : '0.3'; document.getElementById('trailSLRow').style.pointerEvents = cfg.trailSL ? 'auto' : 'none'; }
+  if (cfg.trailDist !== undefined)  { document.getElementById('trailDist').value = cfg.trailDist; document.getElementById('trailVal').textContent = parseFloat(cfg.trailDist).toFixed(1) + '%'; }
+  if (cfg.minConf !== undefined)    { document.getElementById('minConfidence').value = cfg.minConf; document.getElementById('minConfidenceVal').textContent = cfg.minConf + '%'; }
+  if (cfg.btCapital !== undefined)  { document.getElementById('capital').value = cfg.btCapital; }
+
+  renderConditions();
+  updateStrategyStatus();
+  closeImportBacktestModal();
+  addLog('info', 'STRAT', `Imported "${name}" from Backtester — ${conditions.length} condition${conditions.length !== 1 ? 's' : ''}` +
+    (skippedModes.length ? `, skipped ${skippedModes.length} unsupported mode(s)` : ''));
+}
+
 function evaluateCondition(cond, cache, sym) {
   const ind = cache.indicators || {};
   const cx  = ind.crossovers || {};
@@ -1207,18 +1777,200 @@ function evaluateCondition(cond, cache, sym) {
       const tol = (cond.params && parseFloat(cond.params.tol)) || 1.0;
       return Math.abs(hs.pct_from_neckline) <= tol; // price within tol% of the neckline
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Extended set — ported from the Backtester's advanced trigger-modes
+    // ══════════════════════════════════════════════════════════════════════
+
+    // RSI (extended)
+    case 'rsi_centerline_up':   return (ind.rsi_centerline_bars_since_cross ?? 999) <= val && ind.rsi != null && ind.rsi > 50;
+    case 'rsi_centerline_down': return (ind.rsi_centerline_bars_since_cross ?? 999) <= val && ind.rsi != null && ind.rsi < 50;
+    case 'rsi_bull_divergence': return ind.rsi_bullish_divergence === true;
+    case 'rsi_bear_divergence': return ind.rsi_bearish_divergence === true;
+    case 'rsi_failure_swing_bull': return ind.rsi_failure_swing_bull === true;
+    case 'rsi_failure_swing_bear': return ind.rsi_failure_swing_bear === true;
+
+    // MACD (extended)
+    case 'macd_centerline_up':   return (ind.macd_centerline_bars_since_cross ?? 999) <= val && ind.macd?.macd != null && ind.macd.macd > 0;
+    case 'macd_centerline_down': return (ind.macd_centerline_bars_since_cross ?? 999) <= val && ind.macd?.macd != null && ind.macd.macd < 0;
+    case 'macd_bull_divergence': return ind.macd_bullish_divergence === true;
+    case 'macd_bear_divergence': return ind.macd_bearish_divergence === true;
+    case 'macd_histogram_reversal_bull': return ind.macd_histogram_reversal_bull === true;
+    case 'macd_histogram_reversal_bear': return ind.macd_histogram_reversal_bear === true;
+    case 'macd_zscore_overbought': return ind.macd_zscore != null && ind.macd_zscore > val;
+    case 'macd_zscore_oversold':   return ind.macd_zscore != null && ind.macd_zscore < val;
+
+    // Bollinger Bands (extended)
+    case 'bb_volatility_breakout_bull': return ind.bb_volatility_breakout_bull === true;
+    case 'bb_volatility_breakout_bear': return ind.bb_volatility_breakout_bear === true;
+    case 'bb_walking_upper': return ind.bb_walking_upper === true;
+    case 'bb_walking_lower': return ind.bb_walking_lower === true;
+    case 'bb_w_bottom': return ind.bb_w_bottom === true;
+    case 'bb_m_top':    return ind.bb_m_top === true;
+
+    // Moving Averages (extended — configurable short/medium/long trio)
+    case 'ma_two_bull': return (ind.ma_two_bars_since_cross ?? 999) <= val && ind.ma_multi?.short != null && ind.ma_multi?.long != null && ind.ma_multi.short > ind.ma_multi.long;
+    case 'ma_two_bear': return (ind.ma_two_bars_since_cross ?? 999) <= val && ind.ma_multi?.short != null && ind.ma_multi?.long != null && ind.ma_multi.short < ind.ma_multi.long;
+    case 'ma_three_bull': return ind.ma_three_bull === true;
+    case 'ma_three_bear': return ind.ma_three_bear === true;
+    case 'ma_price_cross_bull': return (ind.ma_price_cross_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.ma_multi?.short != null && ind.price.close > ind.ma_multi.short;
+    case 'ma_price_cross_bear': return (ind.ma_price_cross_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.ma_multi?.short != null && ind.price.close < ind.ma_multi.short;
+
+    // ADX (extended)
+    case 'adx_di_bull_cross': return (ind.adx_di_cross_bars_since_cross ?? 999) <= val && ind.adx?.dmp != null && ind.adx?.dmn != null && ind.adx.dmp > ind.adx.dmn;
+    case 'adx_di_bear_cross': return (ind.adx_di_cross_bars_since_cross ?? 999) <= val && ind.adx?.dmp != null && ind.adx?.dmn != null && ind.adx.dmn > ind.adx.dmp;
+
+    // ATR (extended)
+    case 'atr_bullish_expansion': return ind.atr_bullish_expansion === true;
+    case 'atr_bearish_expansion': return ind.atr_bearish_expansion === true;
+    case 'atr_contracting':       return ind.atr_contracting === true;
+
+    // Parabolic SAR (extended)
+    case 'psar_bull_flip': return (ind.psar_flip_bars_since_cross ?? 999) <= val && ind.psar?.is_bull === true;
+    case 'psar_bear_flip': return (ind.psar_flip_bars_since_cross ?? 999) <= val && ind.psar?.is_bull === false;
+    case 'psar_narrowing': return ind.psar_narrowing === true;
+
+    // Supertrend (extended)
+    case 'supertrend_bull_flip': return (ind.supertrend_flip_bars_since_cross ?? 999) <= val && ind.supertrend?.is_bull === true;
+    case 'supertrend_bear_flip': return (ind.supertrend_flip_bars_since_cross ?? 999) <= val && ind.supertrend?.is_bull === false;
+    case 'supertrend_narrowing': return ind.supertrend_narrowing === true;
+
+    // StochRSI (extended)
+    case 'stochrsi_bull_cross': return (ind.stochrsi_signal_bars_since_cross ?? 999) <= val && ind.stochrsi?.k != null && ind.stochrsi?.d != null && ind.stochrsi.k > ind.stochrsi.d;
+    case 'stochrsi_bear_cross': return (ind.stochrsi_signal_bars_since_cross ?? 999) <= val && ind.stochrsi?.k != null && ind.stochrsi?.d != null && ind.stochrsi.k < ind.stochrsi.d;
+    case 'stochrsi_bull_divergence': return ind.stochrsi_bullish_divergence === true;
+    case 'stochrsi_bear_divergence': return ind.stochrsi_bearish_divergence === true;
+
+    // CCI (extended)
+    case 'cci_centerline_up':   return (ind.cci_centerline_bars_since_cross ?? 999) <= val && ind.cci != null && ind.cci > 0;
+    case 'cci_centerline_down': return (ind.cci_centerline_bars_since_cross ?? 999) <= val && ind.cci != null && ind.cci < 0;
+    case 'cci_breakout_bull': return ind.cci_breakout_bull === true;
+    case 'cci_breakout_bear': return ind.cci_breakout_bear === true;
+
+    // Williams %R (extended)
+    case 'willr_midline_bull': return (ind.willr_midline_bars_since_cross ?? 999) <= val && ind.willr != null && ind.willr > -50;
+    case 'willr_midline_bear': return (ind.willr_midline_bars_since_cross ?? 999) <= val && ind.willr != null && ind.willr < -50;
+    case 'willr_bull_divergence': return ind.willr_bullish_divergence === true;
+    case 'willr_bear_divergence': return ind.willr_bearish_divergence === true;
+    case 'willr_trend_confirm_bull': return ind.willr_trend_confirmation_bull === true;
+    case 'willr_trend_confirm_bear': return ind.willr_trend_confirmation_bear === true;
+    case 'willr_failure_swing_bull': return ind.willr_failure_swing_bull === true;
+    case 'willr_failure_swing_bear': return ind.willr_failure_swing_bear === true;
+
+    // ROC (extended)
+    case 'roc_bull_momentum': return ind.roc_bull_momentum === true;
+    case 'roc_bear_momentum': return ind.roc_bear_momentum === true;
+    case 'roc_bull_divergence': return ind.roc_bullish_divergence === true;
+    case 'roc_bear_divergence': return ind.roc_bearish_divergence === true;
+
+    // MFI (extended)
+    case 'mfi_centerline_up':   return (ind.mfi_centerline_bars_since_cross ?? 999) <= val && ind.mfi != null && ind.mfi > 50;
+    case 'mfi_centerline_down': return (ind.mfi_centerline_bars_since_cross ?? 999) <= val && ind.mfi != null && ind.mfi < 50;
+    case 'mfi_bull_divergence': return ind.mfi_bullish_divergence === true;
+    case 'mfi_bear_divergence': return ind.mfi_bearish_divergence === true;
+
+    // VWAP (extended)
+    case 'vwap_rolling_band_touch': return ind.vwap_rolling?.band_touch === true;
+
+    // HMA
+    case 'hma_slope_bull': return ind.hma_slope_bull === true;
+    case 'hma_slope_bear': return ind.hma_slope_bear === true;
+    case 'hma_price_cross_bull': return (ind.hma_price_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.moving_averages?.hma != null && ind.price.close > ind.moving_averages.hma;
+    case 'hma_price_cross_bear': return (ind.hma_price_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.moving_averages?.hma != null && ind.price.close < ind.moving_averages.hma;
+    case 'hma_two_cross_bull': return (ind.hma_two_bars_since_cross ?? 999) <= val && ind.ma_multi?.hma_fast != null && ind.moving_averages?.hma != null && ind.ma_multi.hma_fast > ind.moving_averages.hma;
+    case 'hma_two_cross_bear': return (ind.hma_two_bars_since_cross ?? 999) <= val && ind.ma_multi?.hma_fast != null && ind.moving_averages?.hma != null && ind.ma_multi.hma_fast < ind.moving_averages.hma;
+
+    // Ichimoku
+    case 'ichimoku_cloud_bullish': return ind.ichimoku?.cloud_bullish === true;
+    case 'ichimoku_cloud_bearish': return ind.ichimoku?.cloud_bearish === true;
+    case 'ichimoku_tk_bull_cross': return (ind.ichimoku?.tk_cross_bars_since_cross ?? 999) <= val && ind.ichimoku?.tenkan != null && ind.ichimoku?.kijun != null && ind.ichimoku.tenkan > ind.ichimoku.kijun;
+    case 'ichimoku_tk_bear_cross': return (ind.ichimoku?.tk_cross_bars_since_cross ?? 999) <= val && ind.ichimoku?.tenkan != null && ind.ichimoku?.kijun != null && ind.ichimoku.tenkan < ind.ichimoku.kijun;
+
+    // Donchian Channel
+    case 'donchian_breakout_bull': return (ind.donchian?.upper_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.donchian?.upper != null && ind.price.close > ind.donchian.upper;
+    case 'donchian_breakout_bear': return (ind.donchian?.lower_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.donchian?.lower != null && ind.price.close < ind.donchian.lower;
+    case 'donchian_mid_cross_bull': return (ind.donchian?.mid_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.donchian?.mid != null && ind.price.close > ind.donchian.mid;
+    case 'donchian_mid_cross_bear': return (ind.donchian?.mid_bars_since_cross ?? 999) <= val && ind.price?.close != null && ind.donchian?.mid != null && ind.price.close < ind.donchian.mid;
+
+    // Keltner Channel
+    case 'keltner_breakout_bull': return ind.price?.close != null && ind.keltner?.upper != null && ind.price.close > ind.keltner.upper;
+    case 'keltner_breakout_bear': return ind.price?.close != null && ind.keltner?.lower != null && ind.price.close < ind.keltner.lower;
+    case 'keltner_walking_upper': return ind.keltner?.walking_upper === true;
+    case 'keltner_walking_lower': return ind.keltner?.walking_lower === true;
+    case 'keltner_squeeze': return ind.keltner?.squeeze_on === true;
+    case 'keltner_squeeze_release_bull': return ind.keltner?.squeeze_release_bull === true;
+    case 'keltner_squeeze_release_bear': return ind.keltner?.squeeze_release_bear === true;
+
+    // Stdev / Chaikin Volatility / Historical Volatility
+    case 'stdev_bullish_expansion': return ind.stdev?.bullish_expansion === true;
+    case 'stdev_bearish_expansion': return ind.stdev?.bearish_expansion === true;
+    case 'stdev_contracting':       return ind.stdev?.contracting === true;
+    case 'chaikin_vol_bullish_expansion': return ind.chaikin_vol?.bullish_expansion === true;
+    case 'chaikin_vol_bearish_expansion': return ind.chaikin_vol?.bearish_expansion === true;
+    case 'chaikin_vol_contracting':       return ind.chaikin_vol?.contracting === true;
+    case 'hist_vol_bullish_expansion': return ind.hist_vol?.bullish_expansion === true;
+    case 'hist_vol_bearish_expansion': return ind.hist_vol?.bearish_expansion === true;
+    case 'hist_vol_contracting':       return ind.hist_vol?.contracting === true;
+
+    // A/D Line
+    case 'ad_line_trend_bull': return ind.ad_line?.trend_bull === true;
+    case 'ad_line_trend_bear': return ind.ad_line?.trend_bull === false;
+    case 'ad_line_bull_divergence': return ind.ad_line?.bullish_divergence === true;
+    case 'ad_line_bear_divergence': return ind.ad_line?.bearish_divergence === true;
+
+    // CMF
+    case 'cmf_above': return ind.cmf?.value != null && ind.cmf.value > val;
+    case 'cmf_below': return ind.cmf?.value != null && ind.cmf.value < val;
+    case 'cmf_centerline_up':   return (ind.cmf?.centerline_bars_since_cross ?? 999) <= val && ind.cmf?.value != null && ind.cmf.value > 0;
+    case 'cmf_centerline_down': return (ind.cmf?.centerline_bars_since_cross ?? 999) <= val && ind.cmf?.value != null && ind.cmf.value < 0;
+
+    // TSI
+    case 'tsi_bull_cross': return (ind.tsi?.signal_cross_bars_since_cross ?? 999) <= val && ind.tsi?.value != null && ind.tsi?.signal != null && ind.tsi.value > ind.tsi.signal;
+    case 'tsi_bear_cross': return (ind.tsi?.signal_cross_bars_since_cross ?? 999) <= val && ind.tsi?.value != null && ind.tsi?.signal != null && ind.tsi.value < ind.tsi.signal;
+    case 'tsi_centerline_up':   return (ind.tsi?.centerline_bars_since_cross ?? 999) <= val && ind.tsi?.value != null && ind.tsi.value > 0;
+    case 'tsi_centerline_down': return (ind.tsi?.centerline_bars_since_cross ?? 999) <= val && ind.tsi?.value != null && ind.tsi.value < 0;
+    case 'tsi_bull_divergence': return ind.tsi?.bullish_divergence === true;
+    case 'tsi_bear_divergence': return ind.tsi?.bearish_divergence === true;
+
+    // Awesome Oscillator
+    case 'ao_zero_cross_bull': return (ind.ao?.zero_cross_bars_since_cross ?? 999) <= val && ind.ao?.value != null && ind.ao.value > 0;
+    case 'ao_zero_cross_bear': return (ind.ao?.zero_cross_bars_since_cross ?? 999) <= val && ind.ao?.value != null && ind.ao.value < 0;
+    case 'ao_bull_saucer': return ind.ao?.bull_saucer === true;
+    case 'ao_bear_saucer': return ind.ao?.bear_saucer === true;
+    case 'ao_bull_twin_peaks': return ind.ao?.bull_twin_peaks === true;
+    case 'ao_bear_twin_peaks': return ind.ao?.bear_twin_peaks === true;
+    case 'ao_bull_divergence': return ind.ao?.bullish_divergence === true;
+    case 'ao_bear_divergence': return ind.ao?.bearish_divergence === true;
+
+    // OBV
+    case 'obv_trend_bull': return ind.obv_trend_bull === true;
+    case 'obv_trend_bear': return ind.obv_trend_bull === false;
+    case 'obv_bull_divergence': return ind.obv_bullish_divergence === true;
+    case 'obv_bear_divergence': return ind.obv_bearish_divergence === true;
+
+    // Volume Profile
+    case 'vp_poc_bullish': return ind.volume_profile?.bullish === true;
+    case 'vp_poc_breakout_bull': return (ind.volume_profile?.poc_bars_since_cross ?? 999) <= val && ind.volume_profile?.bullish === true;
+    case 'vp_poc_breakout_bear': return (ind.volume_profile?.poc_bars_since_cross ?? 999) <= val && ind.volume_profile?.bullish === false;
+
+    // Fibonacci
+    case 'fib_any_touch': return ind.fibonacci?.any_touch === true;
+
     default: return false;
   }
 }
 
 function evaluateStrategy(sym) {
   const cache = liveCache[sym];
-  if (!cache || strategyConditions.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], results: [] };
+  if (!cache || strategyConditions.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], results: [], confidence: 0 };
   const match = document.getElementById('stratMatch')?.value || strategyMatch;
   const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
   const matched = results.filter(r => r.met);
-  const fired   = match === 'all' ? matched.length === strategyConditions.length : matched.length > 0;
-  return { fired, matchedCount: matched.length, matchedConditions: matched, results };
+  const confidence = strategyConditions.length ? (matched.length / strategyConditions.length * 100) : 0;
+  const minConfidence = parseFloat(document.getElementById('minConfidence')?.value) || 50;
+  const meetsMatch = match === 'all' ? matched.length === strategyConditions.length : matched.length > 0;
+  const fired = meetsMatch && confidence >= minConfidence;
+  return { fired, matchedCount: matched.length, matchedConditions: matched, results, confidence };
 }
 
 function updateStrategyStatus() {
@@ -1438,7 +2190,7 @@ function updateChartOverlay() {
   const a = assets[currentAsset];
   if (!a || !a.price) return;
   const chgPct = a.change * 100;
-  document.getElementById('chartPrice').textContent = '$' + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('chartPrice').textContent = '£' + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
@@ -1561,9 +2313,7 @@ function fireAlert(sym, sig) {
   const price = assets[sym].price;
   if (!price) return;
   const cfg = getConfig();
-  const capital = parseFloat(document.getElementById('capital').value);
-  const posSize = cfg.posSize / 100;
-  const qty = (capital * posSize) / price;
+  const qty = computeInvested() / price;
   const target = price * (1 + (sig.type === 'BUY' ? 1 : -1) * cfg.targetGain / 100);
   const sl = price * (1 + (sig.type === 'BUY' ? -1 : 1) * cfg.stopLoss / 100);
   const conf = Math.round(sig.confidence * 100);
@@ -1581,7 +2331,7 @@ function fireAlert(sym, sig) {
   document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 
   const col = sig.type === 'BUY' ? 'signal' : 'err';
-  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ $${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
+  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ £${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
 
   if (notificationSettings.sound_enabled) playAlertTone(sig.type);
@@ -1638,7 +2388,7 @@ function showSignalToast(a) {
       <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
     </div>
     <div class="signal-toast-body">
-      <span class="signal-toast-asset">${a.sym}</span> @ $${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
+      <span class="signal-toast-asset">${a.sym}</span> @ £${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
     </div>`;
   stack.appendChild(el);
   setTimeout(() => {
@@ -1664,9 +2414,9 @@ function renderAlerts() {
       </div>
       <div class="alert-body">
         <div class="alert-price-row">
-          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">$${formatPrice(a.price, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">$${formatPrice(a.target, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">$${formatPrice(a.sl, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">£${formatPrice(a.price, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">£${formatPrice(a.target, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">£${formatPrice(a.sl, a.sym)}</div></div>
           <div class="alert-price-item"><div class="alert-price-key">QTY</div><div class="alert-price-val">${a.qty.toFixed(4)}</div></div>
         </div>
         <div class="alert-reasons">${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}</div>
@@ -1691,9 +2441,7 @@ function openModal(alertId) {
   const a = alerts.find(x => String(x.id) === String(alertId));
   if (!a) return;
   pendingTrade = a;
-  const capital = parseFloat(document.getElementById('capital').value);
-  const posSize = getConfig().posSize;
-  const invested = capital * posSize / 100;
+  const invested = computeInvested();
   const profit = Math.abs(a.target - a.price) * a.qty;
   const risk = Math.abs(a.price - a.sl) * a.qty;
 
@@ -1701,13 +2449,13 @@ function openModal(alertId) {
   document.getElementById('modalSummary').innerHTML = `
     <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
     <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
-    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">$${formatPrice(a.price, a.sym)}</div></div>
+    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">£${formatPrice(a.price, a.sym)}</div></div>
     <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
-    <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">$${invested.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">$${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
-    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">$${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
-    <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+$${profit.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-$${risk.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">£${invested.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">£${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
+    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">£${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
+    <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+£${profit.toFixed(2)}</div></div>
+    <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-£${risk.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
   `;
   document.getElementById('modalWarning').innerHTML =
@@ -1723,8 +2471,7 @@ function closeModal() {
 function confirmTrade() {
   if (!pendingTrade) return;
   const a = pendingTrade;
-  const capital = parseFloat(document.getElementById('capital').value);
-  const invested = capital * getConfig().posSize / 100;
+  const invested = computeInvested();
   positions.push({
     id: a.id, sym: a.sym, side: a.type,
     entry: a.price, current: a.price,
@@ -1736,8 +2483,8 @@ function confirmTrade() {
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ $${formatPrice(a.price, a.sym)}`);
-  addLog('info', 'ORDER', `Target: $${formatPrice(a.target, a.sym)} | Stop: $${formatPrice(a.sl, a.sym)}`);
+  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ £${formatPrice(a.price, a.sym)}`);
+  addLog('info', 'ORDER', `Target: £${formatPrice(a.target, a.sym)} | Stop: £${formatPrice(a.sl, a.sym)}`);
 }
 
 // --- DISMISS ALERT ---
@@ -1774,7 +2521,7 @@ function closePosition(pos, reason) {
   dailyPnl += pos.pnl;
   if (pos.pnl > 0) tradeWins++;
   const col = pos.pnl > 0 ? 'signal' : 'err';
-  addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}$${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
+  addLog(col, 'CLOSE', `${reason}: ${pos.sym} closed | P&L: ${pos.pnl >= 0 ? '+' : ''}£${pos.pnl.toFixed(2)} (${pos.pnlPct.toFixed(2)}%)`);
 }
 
 function updatePositionsTable() {
@@ -1786,15 +2533,15 @@ function updatePositionsTable() {
   }
   tbody.innerHTML = positions.map(pos => {
     const pnlCls = pos.pnl >= 0 ? 'pos' : 'neg';
-    const pnlStr = (pos.pnl >= 0 ? '+' : '') + '$' + pos.pnl.toFixed(2);
+    const pnlStr = (pos.pnl >= 0 ? '+' : '') + '£' + pos.pnl.toFixed(2);
     return `<tr>
       <td style="color:var(--text-primary);font-weight:600;">${pos.sym}</td>
       <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side}</td>
-      <td>$${formatPrice(pos.entry, pos.sym)}</td>
-      <td style="color:var(--accent-cyan);">$${formatPrice(pos.current, pos.sym)}</td>
-      <td>$${pos.invested.toFixed(0)}</td>
-      <td style="color:var(--accent-green);">$${formatPrice(pos.target, pos.sym)}</td>
-      <td style="color:var(--accent-red);">$${formatPrice(pos.sl, pos.sym)}</td>
+      <td>£${formatPrice(pos.entry, pos.sym)}</td>
+      <td style="color:var(--accent-cyan);">£${formatPrice(pos.current, pos.sym)}</td>
+      <td>£${pos.invested.toFixed(0)}</td>
+      <td style="color:var(--accent-green);">£${formatPrice(pos.target, pos.sym)}</td>
+      <td style="color:var(--accent-red);">£${formatPrice(pos.sl, pos.sym)}</td>
       <td class="pos-pnl ${pnlCls}">${pnlStr} (${pos.pnlPct.toFixed(2)}%)</td>
       <td><button onclick="manualClose('${pos.id}')" style="background:rgba(255,51,85,0.1);border:1px solid var(--accent-red);color:var(--accent-red);padding:3px 7px;font-family:inherit;font-size:9px;cursor:pointer;border-radius:2px;">CLOSE</button></td>
     </tr>`;
@@ -1811,13 +2558,13 @@ function updateStats() {
   const capital = parseFloat(document.getElementById('capital').value);
   const target = capital * parseFloat(document.getElementById('targetGain').value) / 100;
   const progress = Math.min((dailyPnl / target) * 100, 100);
-  document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + '$' + dailyPnl.toFixed(2);
+  document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + '£' + dailyPnl.toFixed(2);
   document.getElementById('statPnl').className = 'stat-value ' + (dailyPnl >= 0 ? 'tag-green' : 'tag-red');
   document.getElementById('statPnlPct').textContent = (dailyPnl >= 0 ? '+' : '') + ((dailyPnl / capital) * 100).toFixed(2) + '%';
   document.getElementById('statSignals').textContent = signalsToday;
   document.getElementById('statTrades').textContent = tradesExecuted;
   document.getElementById('statWinRate').textContent = tradesExecuted > 0 ? Math.round(tradeWins / tradesExecuted * 100) + '% win rate' : '—% win rate';
-  document.getElementById('statTarget').textContent = '+$' + target.toFixed(2);
+  document.getElementById('statTarget').textContent = '+£' + target.toFixed(2);
   document.getElementById('statProgress').textContent = Math.round(progress) + '% progress';
 }
 
@@ -1950,7 +2697,7 @@ function renderWatchlist() {
         <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
       </div>
       <div class="wl-right">
-        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
+        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'}</div>
         <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
@@ -1961,12 +2708,12 @@ function updateWatchlist() {
   Object.keys(assets).forEach(sym => {
     const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
     const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
-    if (el)    { el.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (el)    { el.textContent = assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
     if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
     // also refresh price column inside dropdown if open
     if (wlDropdownOpen) {
       const dp = document.getElementById('wl-dp-' + sym.replace('/','_'));
-      if (dp) { dp.textContent = assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
+      if (dp) { dp.textContent = assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
     }
   });
 }
@@ -1983,7 +2730,7 @@ function renderWlDropdown() {
     const a = assets[sym];
     const checked = watchlistEnabled[sym];
     const isActive = sym === currentAsset;
-    const price = a.price ? '$' + formatPrice(a.price, sym) : '—';
+    const price = a.price ? '£' + formatPrice(a.price, sym) : '—';
     const removeBtn = customSymbolKeys.has(sym)
       ? `<button class="wl-check-remove" onclick="removeCustomSymbol('${sym}', event)" title="Remove from my list">✕</button>`
       : `<span></span>`;
@@ -2340,7 +3087,7 @@ function updateTicker() {
   tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
-      <div class="ticker-price">${assets[sym].price ? '$' + formatPrice(assets[sym].price, sym) : '—'}</div>
+      <div class="ticker-price">${assets[sym].price ? '£' + formatPrice(assets[sym].price, sym) : '—'}</div>
       <div class="ticker-chg ${assets[sym].change >= 0 ? 'up' : 'down'}">${assets[sym].change >= 0 ? '▲' : '▼'}${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
     </div>
   `).join('');
@@ -2363,14 +3110,32 @@ function getConfig() {
   // here anymore — each strategy condition carries its own params, so only the
   // indicators the user selected in the strategy influence the request.
   return {
-    capital:    parseFloat(document.getElementById('capital').value),
-    posSize:    parseFloat(document.getElementById('posSize').value),
+    capital:       parseFloat(document.getElementById('capital').value),
+    posSize:       parseFloat(document.getElementById('posSize').value),
+    posSizeGbpMode: document.getElementById('posSizeGbpMode').checked,
+    posSizeGbp:    parseFloat(document.getElementById('posSizeGbp').value),
     targetGain: parseFloat(document.getElementById('targetGain').value),
     stopLoss:   parseFloat(document.getElementById('stopLoss').value),
     trailDist:  parseFloat(document.getElementById('trailDist').value),
     // Signal scoring (base defaults for the read-only indicator bar)
     rsiOversold: 30, rsiOverbought: 70, volSpike: 1.5,
   };
+}
+
+// Position Size mode toggle (% of capital vs a fixed £ amount per trade) —
+// non-compounding either way, matching this page's static-capital live/paper
+// trading model (contrast with the Backtester's compounding Trade Amount).
+function togglePosSizeMode(isGbp) {
+  document.getElementById('posSizePctRow').style.display = isGbp ? 'none' : '';
+  document.getElementById('posSizeGbpRow').style.display = isGbp ? '' : 'none';
+}
+
+// £ amount committed to a trade: % mode reads capital * posSize%; £ mode uses
+// the fixed amount directly (no capital involved).
+function computeInvested() {
+  const cfg = getConfig();
+  if (cfg.posSizeGbpMode) return cfg.posSizeGbp;
+  return cfg.capital * cfg.posSize / 100;
 }
 
 function formatPrice(p, sym) {
@@ -2593,6 +3358,8 @@ async function savePreferences() {
   const prefs = {
     capital:      parseFloat(document.getElementById('capital').value),
     posSize:      parseFloat(document.getElementById('posSize').value),
+    posSizeGbpMode: document.getElementById('posSizeGbpMode').checked,
+    posSizeGbp:   parseFloat(document.getElementById('posSizeGbp').value),
     targetGain:   parseFloat(document.getElementById('targetGain').value),
     stopLoss:     parseFloat(document.getElementById('stopLoss').value),
     trailDist:    parseFloat(document.getElementById('trailDist').value),
@@ -2604,6 +3371,7 @@ async function savePreferences() {
     strategyName:       document.getElementById('strategyName').value,
     strategyType,
     strategyMatch:      document.getElementById('stratMatch').value,
+    minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
     savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
   };
@@ -2646,6 +3414,9 @@ function applyPreferences(prefs) {
   set('capital',    prefs.capital);
   set('posSize',    prefs.posSize);
   if (prefs.posSize   !== undefined) setText('posSizeVal', prefs.posSize + '%');
+  setChk('posSizeGbpMode', prefs.posSizeGbpMode);
+  set('posSizeGbp', prefs.posSizeGbp);
+  togglePosSizeMode(!!prefs.posSizeGbpMode);
   set('targetGain', prefs.targetGain);
   if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
   set('stopLoss',   prefs.stopLoss);
@@ -2672,6 +3443,10 @@ function applyPreferences(prefs) {
   if (prefs.strategyName)       set('strategyName', prefs.strategyName);
   if (prefs.strategyType)       setStratType(prefs.strategyType);
   if (prefs.strategyMatch)      { set('stratMatch', prefs.strategyMatch); strategyMatch = prefs.strategyMatch; }
+  if (prefs.minConfidence !== undefined) {
+    set('minConfidence', prefs.minConfidence);
+    setText('minConfidenceVal', prefs.minConfidence + '%');
+  }
   if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length > 0) {
     strategyConditions = prefs.strategyConditions.map(c => ({ ...c }));
     renderConditions();

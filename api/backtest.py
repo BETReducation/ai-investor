@@ -31,11 +31,19 @@ def run_backtest(
     min_confidence: float = 60.0,
     trailing_stop: bool = False,
     trail_distance_pct: float = 1.5,
+    capital: float = 10000.0,
+    trade_amount_mode: str = "percent",
+    trade_amount: float = 100.0,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
     Returns (trades, equity_curve, bah_curve) where bah = buy-and-hold baseline.
     Entry at close when BUY fires; exit at close on SELL, or intrabar SL/TP.
+
+    trade_amount_mode="percent": each trade risks trade_amount% of CURRENT equity
+    (compounds — matches trade_amount_mode="gbp" behaviour as the pot grows/shrinks).
+    trade_amount_mode="gbp": each trade risks a fixed trade_amount, converted to a
+    fraction of the current pot value at entry time, so it still compounds naturally.
     """
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
@@ -778,8 +786,10 @@ def run_backtest(
                 exit_price  = close
 
             if exit_reason:
-                ret     = (exit_price - ep) / ep * 100
-                equity *= 1 + ret / 100
+                ret           = (exit_price - ep) / ep * 100
+                f             = position["size_fraction"]
+                equity_before = equity
+                equity       *= 1 + f * ret / 100
                 trades.append({
                     "entry_date":  position["entry_date"],
                     "exit_date":   date_str,
@@ -787,20 +797,34 @@ def run_backtest(
                     "exit_price":  round(exit_price, 4),
                     "return_pct":  round(ret, 2),
                     "exit_reason": exit_reason,
+                    "size_pct":      round(f * 100, 2),
+                    "equity_before": round(equity_before, 6),
+                    "equity_after":  round(equity, 6),
+                    "pnl_gbp":       round(capital * (equity - equity_before), 2),
                 })
                 position = None
 
         else:
             if overall == "BUY" and confidence >= min_confidence:
-                position = {"entry_price": close, "entry_date": date_str, "peak": close}
+                if trade_amount_mode == "gbp":
+                    pot_value = equity * capital
+                    size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
+                else:
+                    size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
+                position = {
+                    "entry_price": close, "entry_date": date_str, "peak": close,
+                    "size_fraction": size_fraction,
+                }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
 
     # Close any position still open at end of data
     if position is not None:
-        lc  = _sf(combined.iloc[-1].get("Close")) or position["entry_price"]
-        ret = (lc - position["entry_price"]) / position["entry_price"] * 100
-        equity *= 1 + ret / 100
+        lc            = _sf(combined.iloc[-1].get("Close")) or position["entry_price"]
+        ret           = (lc - position["entry_price"]) / position["entry_price"] * 100
+        f             = position["size_fraction"]
+        equity_before = equity
+        equity       *= 1 + f * ret / 100
         trades.append({
             "entry_date":  position["entry_date"],
             "exit_date":   str(combined.index[-1]),
@@ -808,6 +832,10 @@ def run_backtest(
             "exit_price":  round(lc, 4),
             "return_pct":  round(ret, 2),
             "exit_reason": "End of Data",
+            "size_pct":      round(f * 100, 2),
+            "equity_before": round(equity_before, 6),
+            "equity_after":  round(equity, 6),
+            "pnl_gbp":       round(capital * (equity - equity_before), 2),
         })
         if equity_curve:
             equity_curve[-1]["equity"] = round(equity, 6)

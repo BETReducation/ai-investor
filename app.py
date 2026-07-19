@@ -163,10 +163,49 @@ _INT_CALC_KEYS = {
     "atr_length": 14, "mfi_length": 14, "aroon_length": 25,
     "supertrend_length": 10, "wma_length": 20, "hma_length": 20, "roc_length": 12,
     "hs_pivot": 3, "hs_lookback": 90,
+    # ── Extended set (calculate_all now exposes the same indicators/trigger-modes
+    # Backtester does — same keys as _BT_INT_CALC_KEYS below, plus a few that only
+    # this endpoint needs since Backtester computes them from `thresholds` instead).
+    "rsi_div_lookback": 5,
+    "macd_div_lookback": 5, "macd_zscore_length": 100,
+    "stochrsi_div_lookback": 5,
+    "willr_div_lookback": 5, "willr_confirm_lookback": 5,
+    "roc_div_lookback": 5, "roc_momentum_lookback": 3,
+    "mfi_div_lookback": 5,
+    "tsi_div_lookback": 5,
+    "ao_div_lookback": 5, "ao_twin_peaks_lookback": 5,
+    "ichimoku_tenkan": 9, "ichimoku_kijun": 26, "ichimoku_senkou": 52,
+    "donchian_length": 20,
+    "keltner_length": 20, "keltner_atr_length": 10,
+    "keltner_walk_min_consecutive": 3, "keltner_squeeze_lookback": 10,
+    "stdev_length": 20,
+    "chaikin_vol_ema_length": 10, "chaikin_vol_roc_length": 10,
+    "hist_vol_length": 20,
+    "vwap_length": 20, "vwap_anchored": 0,
+    "ad_sma_length": 20, "ad_div_lookback": 5,
+    "cmf_length": 20,
+    "tsi_long": 25, "tsi_short": 13, "tsi_signal": 13,
+    "ao_fast": 5, "ao_slow": 34,
+    "obv_sma_length": 20, "obv_div_lookback": 5,
+    "vol_profile_lookback": 50, "vol_profile_bins": 24,
+    "fib_lookback": 50,
+    "hma_slope_lookback": 3, "hma_fast_length": 9,
+    "bb_squeeze_lookback": 100, "bb_breakout_window": 10,
+    "bb_walk_min_consecutive": 3, "bb_pattern_lookback": 5,
+    "ma_short_length": 9, "ma_medium_length": 20, "ma_long_length": 50,
+    "psar_gap_lookback": 3, "supertrend_gap_lookback": 3,
+    "atr_trend_lookback": 5, "stdev_trend_lookback": 5,
+    "chaikin_vol_trend_lookback": 5, "hist_vol_trend_lookback": 5,
 }
 _FLOAT_CALC_KEYS = {
     "bb_std": 2.0, "supertrend_mult": 3.0,
     "psar_start": 0.02, "psar_inc": 0.02, "psar_max": 0.2,
+    # ── Extended set ──────────────────────────────────────────────────────
+    "rsi_oversold": 30.0, "rsi_overbought": 70.0,
+    "willr_oversold": -80.0, "willr_overbought": -20.0,
+    "keltner_mult": 2.0, "keltner_walk_tolerance_pct": 0.5,
+    "bb_squeeze_percentile": 20.0, "bb_walk_tolerance_pct": 0.5,
+    "vwap_band_pct": 1.0, "fib_tolerance_pct": 0.5,
 }
 
 
@@ -189,6 +228,9 @@ def _extract_calc_params(args) -> dict:
     smoothing = args.get("rsi_smoothing", "").strip().lower()
     if smoothing in ("wilder", "ema", "sma"):
         params["rsi_smoothing"] = smoothing
+    ma_type = args.get("ma_type", "").strip().lower()
+    if ma_type in ("simple", "smoothed", "exponential", "weighted", "volume_weighted"):
+        params["ma_type"] = ma_type
     return params
 
 
@@ -1990,8 +2032,14 @@ def backtest():
         min_confidence  = float(request.args.get("min_confidence", 60.0))
         trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
         trail_distance_pct = float(request.args.get("trail_distance", 1.5))
+        capital            = float(request.args.get("capital", 10000.0))
+        trade_amount        = float(request.args.get("trade_amount", 100.0))
+        trade_amount_mode   = request.args.get("trade_amount_mode", "percent").strip().lower()
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid parameter: {e}"}), 400
+
+    if trade_amount_mode not in ("percent", "gbp"):
+        return jsonify({"error": "trade_amount_mode must be 'percent' or 'gbp'"}), 400
 
     thresholds = {}
     for key in [
@@ -2075,6 +2123,9 @@ def backtest():
             min_confidence=min_confidence,
             trailing_stop=trailing_stop,
             trail_distance_pct=trail_distance_pct,
+            capital=capital,
+            trade_amount_mode=trade_amount_mode,
+            trade_amount=trade_amount,
         )
         metrics = calculate_metrics(trades, equity_curve)
         period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
