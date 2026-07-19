@@ -76,6 +76,99 @@ def _bars_since_cross(a: pd.Series, b: pd.Series) -> int:
     return len(diff) - 1 - last_cross_loc
 
 
+def _detect_inverse_head_shoulders(high: pd.Series, low: pd.Series, close: pd.Series,
+                                   pivot: int = 3, lookback: int = 90) -> dict:
+    """Heuristic inverse head-and-shoulders detector.
+
+    Scans recent swing lows for a left-shoulder / head / right-shoulder trough
+    sequence (head the lowest, the two shoulders roughly level) with a swing high
+    in each gap forming the neckline. Projects that neckline (the line through the
+    two swing highs) forward to the latest bar — the level a long entry watches.
+
+    Returns a dict describing the pattern and where price sits relative to the
+    neckline. `detected` is False for anything it can't confirm; callers decide
+    the trigger (touch vs. break) using `pct_from_neckline` / `broke_neckline`.
+    """
+    result = {
+        "detected": False, "neckline": None, "close": None,
+        "pct_from_neckline": None, "broke_neckline": False,
+    }
+    try:
+        n = len(close)
+        if n < 20:
+            return result
+        w = max(2, int(pivot))
+        lookback = max(30, int(lookback))
+        lo = low.to_numpy(dtype=float)
+        hi = high.to_numpy(dtype=float)
+        cl = close.to_numpy(dtype=float)
+        start = max(w, n - lookback)
+
+        # Confirmed swing pivots: a bar is a swing low if it is the strict min of
+        # `w` bars on each side (swing high = strict max). Bars within `w` of the
+        # end can't be confirmed yet — that's expected, the pattern completes then
+        # price rallies back toward the neckline.
+        piv_lows, piv_highs = [], []
+        for i in range(start, n - w):
+            seg_lo = lo[i - w:i + w + 1]
+            if lo[i] == seg_lo.min() and seg_lo.argmin() == w:
+                piv_lows.append((i, lo[i]))
+            seg_hi = hi[i - w:i + w + 1]
+            if hi[i] == seg_hi.max() and seg_hi.argmax() == w:
+                piv_highs.append((i, hi[i]))
+
+        if len(piv_lows) < 3:
+            return result
+
+        # Search recent swing-low triples (LS, H, RS); keep the most recent valid one.
+        best = None
+        recent_lows = piv_lows[-8:]
+        for a in range(len(recent_lows)):
+            for b in range(a + 1, len(recent_lows)):
+                for c in range(b + 1, len(recent_lows)):
+                    ls_i, ls_p = recent_lows[a]
+                    h_i,  h_p  = recent_lows[b]
+                    rs_i, rs_p = recent_lows[c]
+                    if not (h_p < ls_p and h_p < rs_p):           # head is lowest
+                        continue
+                    if abs(ls_p - rs_p) / ((ls_p + rs_p) / 2.0) > 0.10:  # shoulders ~level
+                        continue
+                    gap1 = [(pi, pp) for pi, pp in piv_highs if ls_i < pi < h_i]
+                    gap2 = [(pi, pp) for pi, pp in piv_highs if h_i  < pi < rs_i]
+                    if not gap1 or not gap2:                       # a neckline high in each gap
+                        continue
+                    h1i, h1p = max(gap1, key=lambda t: t[1])
+                    h2i, h2p = max(gap2, key=lambda t: t[1])
+                    if not (h_p < h1p and h_p < h2p):              # head below the neckline
+                        continue
+                    if best is None or rs_i > best["rs_i"]:
+                        best = {"rs_i": rs_i, "h1i": h1i, "h1p": h1p, "h2i": h2i, "h2p": h2p}
+
+        if best is None:
+            return result
+
+        h1i, h1p, h2i, h2p = best["h1i"], best["h1p"], best["h2i"], best["h2p"]
+        if h2i == h1i:
+            neckline = max(h1p, h2p)
+        else:
+            slope = (h2p - h1p) / (h2i - h1i)
+            neckline = h1p + slope * ((n - 1) - h1i)
+        last = cl[-1]
+        if not neckline or neckline <= 0:
+            return result
+        pct = (last - neckline) / neckline * 100.0
+        result.update({
+            "detected": True,
+            "neckline": round(float(neckline), 6),
+            "close": round(float(last), 6),
+            "pct_from_neckline": round(float(pct), 4),
+            "broke_neckline": bool(last > neckline),
+        })
+        return result
+    except Exception:
+        return result
+
+
 def _recent_ohlcv(df: pd.DataFrame, n: int = 100) -> list:
     cols = [c for c in ["Open", "High", "Low", "Close", "Volume"] if c in df.columns]
     subset = df[cols].tail(n).copy()
@@ -125,6 +218,9 @@ def calculate_all(
     hma_length: int = 20,
     # Momentum
     roc_length: int = 12,
+    # Chart patterns
+    hs_pivot: int = 3,
+    hs_lookback: int = 90,
 ) -> dict:
 
     close = df["Close"]
@@ -170,6 +266,12 @@ def calculate_all(
     wma_s         = _try(lambda: ta.wma(close, length=wma_length))
     hma_s         = _try(lambda: ta.hma(close, length=hma_length))
     roc_s         = _try(lambda: ta.roc(close, length=roc_length))
+
+    inverse_hs    = _try(lambda: _detect_inverse_head_shoulders(
+        high, low, close, pivot=hs_pivot, lookback=hs_lookback)) or {
+        "detected": False, "neckline": None, "close": None,
+        "pct_from_neckline": None, "broke_neckline": False,
+    }
 
     # ── Combine for crossover tracking ────────────────────────────────────────
     frames = [df, mas, vol_df]
@@ -336,6 +438,7 @@ def calculate_all(
         "supertrend": {"value": st_v,   "is_bull": st_bull},
         "aroon":      {"up": ar_up, "down": ar_dn, "osc": ar_osc},
         "roc":        _safe_float(roc_s.iloc[-1])   if roc_s   is not None else None,
+        "inverse_hs": inverse_hs,
         "history":    _recent_ohlcv(combined),
     }
 

@@ -162,6 +162,7 @@ _INT_CALC_KEYS = {
     "cci_length": 20, "willr_length": 14, "adx_length": 14,
     "atr_length": 14, "mfi_length": 14, "aroon_length": 25,
     "supertrend_length": 10, "wma_length": 20, "hma_length": 20, "roc_length": 12,
+    "hs_pivot": 3, "hs_lookback": 90,
 }
 _FLOAT_CALC_KEYS = {
     "bb_std": 2.0, "supertrend_mult": 3.0,

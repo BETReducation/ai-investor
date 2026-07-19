@@ -758,6 +758,8 @@ const CONDITION_DEFS = {
   volume_spike:     { label: 'Volume Spike',             group: 'Volume',      desc: 'Current volume is significantly above the 20-bar average — strong participation',   inputLabel: 'At least',        defaultVal: 1.5,  min: 1.1,  max: 5,   step: 0.1, suffix: '× avg' },
   // ── Price ───────────────────────────────────────────────────────────────────
   price_dip:        { label: 'Price Dip from High',      group: 'Price',       desc: 'Price has dropped by this % from a recent peak (last 30 bars) — potential bounce',  inputLabel: 'Drop more than',  defaultVal: 20,   min: 5,    max: 80,  step: 1,   suffix: '%' },
+  // ── Chart patterns ────────────────────────────────────────────────────────
+  inv_hs_neckline:  { label: 'Inverse H&S at Neckline',  group: 'Inverse H&S', desc: 'Bullish reversal: an inverse head-and-shoulders has formed and price has reached its neckline. "Touch" fires as price reaches the neckline; "Break" fires only on a close above it. Pattern detection is heuristic — best combined with a confirming condition.', inputLabel: null, defaultVal: 0 },
 };
 
 // Per-indicator parameter definitions, keyed by CONDITION_DEFS group name.
@@ -819,6 +821,14 @@ const INDICATOR_PARAMS = {
   'MA': [
     { id: 'short', label: 'Short MA', default: 20, min: 2, max: 200, step: 1, apiKey: 'ema_short' },
     { id: 'long',  label: 'Long MA',  default: 50, min: 5, max: 500, step: 1, apiKey: 'ema_long'  },
+  ],
+  // Swing/Lookback tune the pattern detection (sent to the server); Tol % and
+  // Trigger are evaluated on the client, so they carry no apiKey.
+  'Inverse H&S': [
+    { id: 'pivot',    label: 'Swing',    default: 3,   min: 2,   max: 10,  step: 1,   apiKey: 'hs_pivot'    },
+    { id: 'lookback', label: 'Lookback', default: 90,  min: 30,  max: 250, step: 5,   apiKey: 'hs_lookback' },
+    { id: 'tol',      label: 'Tol %',    default: 1.0, min: 0.1, max: 5,   step: 0.1  },
+    { id: 'mode',     label: 'Trigger',  type: 'select', default: 'touch', options: ['touch','break'] },
   ],
 };
 
@@ -1181,6 +1191,15 @@ function evaluateCondition(cond, cache, sym) {
       const peak = Math.max(...hist);
       const cur  = hist[hist.length - 1];
       return peak > 0 && ((peak - cur) / peak * 100) >= val;
+    }
+    // Inverse head & shoulders
+    case 'inv_hs_neckline': {
+      const hs = ind.inverse_hs;
+      if (!hs || !hs.detected || hs.pct_from_neckline == null) return false;
+      const mode = (cond.params && cond.params.mode) || 'touch';
+      if (mode === 'break') return hs.broke_neckline === true;
+      const tol = (cond.params && parseFloat(cond.params.tol)) || 1.0;
+      return Math.abs(hs.pct_from_neckline) <= tol; // price within tol% of the neckline
     }
     default: return false;
   }
