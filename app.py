@@ -895,11 +895,16 @@ def _fetch_ohlcv(
                 _dt.date.fromisoformat(end_date)
         except ValueError:
             raise ValueError("start_date / end_date must be YYYY-MM-DD")
-        df = ticker.history(start=start_date, end=end_date or None, interval=fetch_interval, auto_adjust=True)
+        # auto_adjust=False: keep raw (split-adjusted only, not dividend-adjusted) closes
+        # so indicators computed here line up with what the TradingView chart is plotting —
+        # TradingView doesn't dividend-adjust by default, but yfinance's auto_adjust=True
+        # folds dividends into every historical Close, which can badly skew RSI/MACD/etc.
+        # for anything with a meaningful dividend/distribution history.
+        df = ticker.history(start=start_date, end=end_date or None, interval=fetch_interval, auto_adjust=False)
     else:
         if period not in VALID_PERIODS:
             raise ValueError(f"Invalid period: {period}")
-        df = ticker.history(period=period, interval=fetch_interval, auto_adjust=True)
+        df = ticker.history(period=period, interval=fetch_interval, auto_adjust=False)
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol}")
     if interval in _RESAMPLE_INTERVALS:
