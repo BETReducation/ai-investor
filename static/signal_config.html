@@ -399,6 +399,7 @@ window.addEventListener('resize', () => {
           <button type="button" class="qs-chip" onclick="applyTemplate('momentum_breakout')" title="BUY on a MACD bull cross while price holds above its 50-period MA on a volume spike — a momentum breakout.">Momentum Breakout</button>
           <button type="button" class="qs-chip" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow.">Golden Cross Trend</button>
           <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike.">Inverse H&amp;S Breakout</button>
         </div>
       </div>
 
@@ -932,19 +933,24 @@ const STRATEGY_TEMPLATES = {
     name: 'Overbought Pullback', type: 'SELL', match: 'all',
     conditions: [ { type: 'rsi_above', value: 70 }, { type: 'bb_upper', value: 90 } ],
   },
+  inverse_hs_breakout: {
+    name: 'Inverse H&S Breakout', type: 'BUY', match: 'all',
+    conditions: [ { type: 'inv_hs_neckline', params: { mode: 'break' } }, { type: 'volume_spike', value: 1.3 } ],
+  },
 };
 
-function _buildCondition(type, value) {
+function _buildCondition(type, value, paramOverrides) {
   const def = CONDITION_DEFS[type] || {};
   const params = {};
   (INDICATOR_PARAMS[def.group] || []).forEach(p => { params[p.id] = p.default; });
+  if (paramOverrides) Object.assign(params, paramOverrides);
   return { type, value: value ?? def.defaultVal ?? 0, params };
 }
 
 function applyTemplate(key) {
   const tpl = STRATEGY_TEMPLATES[key];
   if (!tpl) return;
-  strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value));
+  strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value, c.params));
   strategyMatch = tpl.match;
   const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
   const nameEl  = document.getElementById('strategyName'); if (nameEl) nameEl.value = tpl.name;
