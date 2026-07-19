@@ -934,8 +934,6 @@ function _buildCondition(type, value) {
 function applyTemplate(key) {
   const tpl = STRATEGY_TEMPLATES[key];
   if (!tpl) return;
-  if (strategyConditions.length > 0 &&
-      !confirm(`Replace your current conditions with the "${tpl.name}" starter strategy?`)) return;
   strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value));
   strategyMatch = tpl.match;
   const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
