@@ -139,6 +139,18 @@ def _active_modes(t: dict, key: str, default: str) -> list:
     return [raw]
 
 
+# CCI/Williams %R/ROC/MFI/ATR/VWAP reach score_signals in two shapes: a bare float
+# from calculate_all() (the live signals page) or a richer per-bar dict from
+# run_backtest() (the backtester). These normalizers accept either so the scorer
+# works on both paths without the caller having to care.
+def _ind_value(x):
+    return x.get("value") if isinstance(x, dict) else x
+
+
+def _ind_get(x, key, default=None):
+    return x.get(key, default) if isinstance(x, dict) else default
+
+
 def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     t = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
 
@@ -901,7 +913,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
 
     # ── Commodity Channel Index ───────────────────────────────────────────────
     cci = indicators.get("cci", {})
-    cci_v = cci.get("value")
+    cci_v = _ind_value(cci)
     cci_modes = _active_modes(t, "cci_trigger", "overbought_oversold")
     if t.get("cci_on", 0) and cci_v is not None:
         if "overbought" in cci_modes:
@@ -953,7 +965,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
 
     # ── Williams %R ───────────────────────────────────────────────────────────
     willr = indicators.get("willr", {})
-    willr_v = willr.get("value")
+    willr_v = _ind_value(willr)
     willr_modes = _active_modes(t, "willr_trigger", "overbought_oversold")
     if t.get("willr_on", 0) and willr_v is not None:
         if "overbought" in willr_modes:
@@ -1027,7 +1039,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
 
     # ── Rate of Change ────────────────────────────────────────────────────────
     roc = indicators.get("roc", {})
-    roc_v = roc.get("value")
+    roc_v = _ind_value(roc)
     roc_modes = _active_modes(t, "roc_trigger", "threshold")
     if t.get("roc_on", 0) and roc_v is not None:
         if "bullish" in roc_modes:
@@ -1093,7 +1105,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
 
     # ── Money Flow Index ──────────────────────────────────────────────────────
     mfi = indicators.get("mfi", {})
-    mfi_v = mfi.get("value")
+    mfi_v = _ind_value(mfi)
     mfi_modes = _active_modes(t, "mfi_trigger", "overbought_oversold")
     if t.get("mfi_on", 0) and mfi_v is not None:
         if "overbought" in mfi_modes:
@@ -1320,7 +1332,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
     close_now = indicators.get("price", {}).get("close")
 
     atr = indicators.get("atr", {})
-    _vol_direction_signal("ATR", "atr", atr.get("expanding"), close_now, atr.get("close_trend_ref"))
+    _vol_direction_signal("ATR", "atr", _ind_get(atr, "expanding"), close_now, _ind_get(atr, "close_trend_ref"))
 
     stdev = indicators.get("stdev", {})
     _vol_direction_signal("Std Dev", "stdev", stdev.get("expanding"), close_now, stdev.get("close_trend_ref"))
@@ -1442,7 +1454,7 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
 
     # ── VWAP ──────────────────────────────────────────────────────────────────
     vwap = indicators.get("vwap", {})
-    vwap_v = vwap.get("value")
+    vwap_v = _ind_value(vwap)
     vwap_modes = _active_modes(t, "vwap_trigger", "position")
     if t.get("vwap_on", 0) and vwap_v is not None and close_now is not None:
         if "bullish" in vwap_modes:
