@@ -26,8 +26,8 @@ def run_backtest(
     df: pd.DataFrame,
     thresholds: dict | None = None,
     calc_params: dict | None = None,
-    stop_loss_pct: float = 2.0,
-    take_profit_pct: float = 4.0,
+    stop_loss_pct: float = 100.0,
+    take_profit_pct: float = 200.0,
     min_confidence: float = 60.0,
     trailing_stop: bool = False,
     trail_distance_pct: float = 1.5,
@@ -45,13 +45,11 @@ def run_backtest(
     trade_amount_mode="gbp": each trade risks a fixed trade_amount, converted to a
     fraction of the current pot value at entry time, so it still compounds naturally.
 
-    stop_loss_pct/take_profit_pct are a % of STARTING capital (a fixed £ target),
-    not a % price move — e.g. take_profit_pct=34.5 with capital=10000 targets a
-    £3,450 gain on that trade. That £ target is converted into the price move
-    needed on the trade's actual invested amount (size_fraction * pot value at
-    entry) to reach it. When trade_amount is small relative to capital, this can
-    require a very large — even unreachable — price move; that's inherent to
-    defining SL/TP against total capital rather than the position actually at risk.
+    stop_loss_pct/take_profit_pct are a % of the TRADE AMOUNT (the position
+    actually at risk on this trade — size_fraction * pot value at entry), not
+    a % of starting capital. Since gain/loss on a trade scales 1:1 with the
+    price move on an unleveraged position, this % is also the price move
+    needed to reach it — e.g. take_profit_pct=200 needs the price to double.
     """
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
@@ -819,26 +817,15 @@ def run_backtest(
                     size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
                 else:
                     size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
-                invested_gbp = size_fraction * pot_value
 
-                # Stop Loss / Take Profit are a % of STARTING capital, not of the
-                # entry price — convert that £ target into whatever price move on
-                # THIS trade's actual invested amount is needed to reach it. With
-                # a small Trade Amount relative to capital this can require a very
-                # large price move (by design — see the £-vs-%-of-capital tradeoff
-                # this was built for).
-                if invested_gbp > 0:
-                    tp_price_move_pct = (capital * take_profit_pct / 100) / invested_gbp * 100
-                    sl_price_move_pct = (capital * stop_loss_pct   / 100) / invested_gbp * 100
-                else:
-                    tp_price_move_pct = take_profit_pct
-                    sl_price_move_pct = stop_loss_pct
-
+                # Stop Loss / Take Profit are a % of the trade amount (the
+                # position actually at risk), so for an unleveraged position
+                # the price move needed to reach them is the same percentage.
                 position = {
                     "entry_price": close, "entry_date": date_str, "peak": close,
                     "size_fraction": size_fraction,
-                    "sl_price": close * (1 - sl_price_move_pct / 100),
-                    "tp_price": close * (1 + tp_price_move_pct / 100),
+                    "sl_price": close * (1 - stop_loss_pct / 100),
+                    "tp_price": close * (1 + take_profit_pct / 100),
                 }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
