@@ -44,6 +44,14 @@ def run_backtest(
     (compounds — matches trade_amount_mode="gbp" behaviour as the pot grows/shrinks).
     trade_amount_mode="gbp": each trade risks a fixed trade_amount, converted to a
     fraction of the current pot value at entry time, so it still compounds naturally.
+
+    stop_loss_pct/take_profit_pct are a % of STARTING capital (a fixed £ target),
+    not a % price move — e.g. take_profit_pct=34.5 with capital=10000 targets a
+    £3,450 gain on that trade. That £ target is converted into the price move
+    needed on the trade's actual invested amount (size_fraction * pot value at
+    entry) to reach it. When trade_amount is small relative to capital, this can
+    require a very large — even unreachable — price move; that's inherent to
+    defining SL/TP against total capital rather than the position actually at risk.
     """
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
@@ -761,8 +769,8 @@ def run_backtest(
         # ── Manage open position ──────────────────────────────────────────
         if position is not None:
             ep       = position["entry_price"]
-            sl_price = ep * (1 - stop_loss_pct    / 100)
-            tp_price = ep * (1 + take_profit_pct  / 100)
+            sl_price = position["sl_price"]
+            tp_price = position["tp_price"]
 
             trail_price = None
             if trailing_stop:
@@ -806,14 +814,31 @@ def run_backtest(
 
         else:
             if overall == "BUY" and confidence >= min_confidence:
+                pot_value = equity * capital
                 if trade_amount_mode == "gbp":
-                    pot_value = equity * capital
                     size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
                 else:
                     size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
+                invested_gbp = size_fraction * pot_value
+
+                # Stop Loss / Take Profit are a % of STARTING capital, not of the
+                # entry price — convert that £ target into whatever price move on
+                # THIS trade's actual invested amount is needed to reach it. With
+                # a small Trade Amount relative to capital this can require a very
+                # large price move (by design — see the £-vs-%-of-capital tradeoff
+                # this was built for).
+                if invested_gbp > 0:
+                    tp_price_move_pct = (capital * take_profit_pct / 100) / invested_gbp * 100
+                    sl_price_move_pct = (capital * stop_loss_pct   / 100) / invested_gbp * 100
+                else:
+                    tp_price_move_pct = take_profit_pct
+                    sl_price_move_pct = stop_loss_pct
+
                 position = {
                     "entry_price": close, "entry_date": date_str, "peak": close,
                     "size_fraction": size_fraction,
+                    "sl_price": close * (1 - sl_price_move_pct / 100),
+                    "tp_price": close * (1 + tp_price_move_pct / 100),
                 }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
