@@ -358,7 +358,7 @@ window.addEventListener('resize', () => {
       </div>
       <div class="range-row">
         <div class="range-header">
-          <div class="control-label">Target Gain <span>(per trade)</span></div>
+          <div class="control-label" title="A £ target: this % of your STARTING CAPITAL, not a price move. With a Position Size smaller than your capital, reaching it can require a very large price move.">Target Gain <span>(per trade)</span></div>
           <div class="range-value tag-green" id="targetVal">1.0%</div>
         </div>
         <input type="range" id="targetGain" min="0.5" max="50" step="0.1" value="1.0" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
@@ -370,7 +370,7 @@ window.addEventListener('resize', () => {
       </div>
       <div class="range-row" id="fixedSLRow">
         <div class="range-header">
-          <div class="control-label">Stop-Loss %</div>
+          <div class="control-label" title="A £ target: this % of your STARTING CAPITAL, not a price move. With a Position Size smaller than your capital, reaching it can require a very large price move.">Stop-Loss %</div>
           <div class="range-value tag-red" id="slVal">-0.5%</div>
         </div>
         <input type="range" id="stopLoss" min="0.1" max="50" step="0.1" value="0.5" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
@@ -2335,9 +2335,15 @@ function fireAlert(sym, sig) {
   const price = assets[sym].price;
   if (!price) return;
   const cfg = getConfig();
-  const qty = computeInvested() / price;
-  const target = price * (1 + (sig.type === 'BUY' ? 1 : -1) * cfg.targetGain / 100);
-  const sl = price * (1 + (sig.type === 'BUY' ? -1 : 1) * cfg.stopLoss / 100);
+  const invested = computeInvested();
+  const qty = invested / price;
+  // Target Gain / Stop-Loss % are a % of STARTING CAPITAL (a fixed £ target),
+  // not a % price move — convert that £ target into the price move needed on
+  // this trade's actual invested amount to reach it (matches Backtester logic).
+  const targetPriceMovePct = invested > 0 ? (cfg.capital * cfg.targetGain / 100) / invested * 100 : cfg.targetGain;
+  const slPriceMovePct     = invested > 0 ? (cfg.capital * cfg.stopLoss   / 100) / invested * 100 : cfg.stopLoss;
+  const target = price * (1 + (sig.type === 'BUY' ? 1 : -1) * targetPriceMovePct / 100);
+  const sl = price * (1 + (sig.type === 'BUY' ? -1 : 1) * slPriceMovePct / 100);
   const conf = Math.round(sig.confidence * 100);
 
   const alert = {
@@ -2474,8 +2480,8 @@ function openModal(alertId) {
     <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">${getCurrencySymbol()}${formatPrice(a.price, a.sym)}</div></div>
     <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
     <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">${getCurrencySymbol()}${invested.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
-    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
+    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}% of capital)</div></div>
+    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}% of capital)</div></div>
     <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+${getCurrencySymbol()}${profit.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-${getCurrencySymbol()}${risk.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
