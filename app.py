@@ -349,7 +349,7 @@ def _extract_backtest_calc_params(args) -> dict:
     return params
 
 
-VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
+VALID_PERIODS = {"1d", "5d", "60d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
 
