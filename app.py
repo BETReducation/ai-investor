@@ -1669,7 +1669,11 @@ def api_alpha_content_item(item_id):
     _content_edit_keys = ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "clear_image")
     if existing.get("status") == "published" and "status" not in data and any(k in data for k in _content_edit_keys):
         staged = dict(existing.get("staged_edits") or {})
-        for field in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url"):
+        # image_filename is included so `clear_image` can stage removing an
+        # uploaded hero image (setting it to None) — cheap, since it never holds
+        # new binary data. A brand-new *upload* is blocked before it reaches here
+        # (see /image endpoint below): only removal is staged, not replacement.
+        for field in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename"):
             if field in updates:
                 staged[field] = updates[field]
         item = alpha_content_update(item_id, {"staged_edits": staged})
@@ -1752,6 +1756,12 @@ def api_alpha_content_image_upload(item_id):
         return jsonify({"error": "Not found"}), 404
     if existing.get("kind") != "post":
         return jsonify({"error": "Images can only be attached to posts"}), 400
+    if existing.get("status") == "published":
+        # This is the single hero-image slot, served live at .../image — unlike
+        # text/topic/URL edits it isn't staged, so replacing it here would go
+        # straight to the website. Unpublish first, or use an Image URL, which
+        # does stage.
+        return jsonify({"error": "Unpublish this post first to upload a new hero image, or use an Image URL instead."}), 400
     if "image" not in request.files or not request.files["image"].filename:
         return jsonify({"error": "No file provided"}), 400
     file = request.files["image"]

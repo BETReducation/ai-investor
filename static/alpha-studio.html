@@ -1117,6 +1117,11 @@ function buildCard(item, skipHead) {
     heroLabel.style.marginTop = '8px';
     card.appendChild(heroLabel);
 
+    // Uploaded-file changes aren't staged (unlike text/topic/URL edits), so on a
+    // published post a new upload would go straight to the live website. Only
+    // Image URL is offered there — it stages correctly like everything else.
+    const uploadBlockedOnPublished = !isDraft;
+
     const imageTabs = document.createElement('div');
     imageTabs.className = 'card-image-tabs edit-chrome';
     const urlTabBtn = document.createElement('button');
@@ -1126,6 +1131,10 @@ function buildCard(item, skipHead) {
     imageTabs.appendChild(urlTabBtn);
     imageTabs.appendChild(uploadTabBtn);
     card.appendChild(imageTabs);
+    if (uploadBlockedOnPublished) {
+      uploadTabBtn.disabled = true;
+      uploadTabBtn.title = 'Unpublish this post first to upload a new hero image, or use an Image URL instead — that stages your change.';
+    }
 
     imageUrlInput = document.createElement('input');
     imageUrlInput.className = 'form-input';
@@ -1168,31 +1177,15 @@ function buildCard(item, skipHead) {
     removeImageBtn.style.marginTop = '8px';
     removeImageBtn.style.display = hasHeroImage() ? 'inline-block' : 'none';
     card.appendChild(removeImageBtn);
-    removeImageBtn.onclick = async () => {
-      if (!confirm('Remove the hero image from this post?')) return;
-      removeImageBtn.disabled = true;
-      try {
-        const res = await fetch('/api/alpha/content/' + item.id, {
-          method: 'PUT', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clear_image: true }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to remove image');
-        item.image_filename = null;
-        item.image_url = null;
-        imageUrlInput.value = '';
-        imagePreview.src = '';
-        imagePreview.style.display = 'none';
-        removeImageBtn.style.display = 'none';
-        imageMsg.textContent = 'Hero image removed.';
-        imageMsg.className = 'form-msg success';
-        updatePublishGate();
-      } catch (e) {
-        imageMsg.textContent = e.message;
-        imageMsg.className = 'form-msg error';
-      } finally {
-        removeImageBtn.disabled = false;
-      }
+    removeImageBtn.onclick = () => {
+      const msg = isDraft
+        ? 'Remove the hero image from this post?'
+        : 'Remove the hero image? Like other edits, this is staged and won\'t come off the live post until you unpublish and re-publish.';
+      if (!confirm(msg)) return;
+      // Routed through the shared updateItem() (fetch + reload), not a manual
+      // DOM patch — on a published post this saves as a staged edit, and only
+      // a fresh reload reflects that correctly (see the "staged" banner).
+      updateItem(item.id, { clear_image: true });
     };
 
     function renderImageMode() {
@@ -1202,8 +1195,16 @@ function buildCard(item, skipHead) {
       uploadPanel.style.display = imageMode === 'upload' ? 'block' : 'none';
     }
     urlTabBtn.onclick = () => { imageMode = 'url'; renderImageMode(); };
-    uploadTabBtn.onclick = () => { imageMode = 'upload'; renderImageMode(); };
+    uploadTabBtn.onclick = () => { if (uploadBlockedOnPublished) return; imageMode = 'upload'; renderImageMode(); };
     renderImageMode();
+    if (uploadBlockedOnPublished) {
+      // The post may already have an uploaded file as its live image (so
+      // imageMode defaults to 'upload') — disable the controls too, not just
+      // the tab, and explain why instead of silently doing nothing.
+      imageFileInput.disabled = true;
+      uploadImageBtn.disabled = true;
+      imageMsg.textContent = 'Unpublish this post first to upload a new hero image, or use an Image URL instead.';
+    }
 
     uploadImageBtn.onclick = async () => {
       const f = imageFileInput.files[0];
