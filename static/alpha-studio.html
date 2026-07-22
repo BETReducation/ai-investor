@@ -1445,16 +1445,17 @@ function buildCard(item, skipHead) {
 
   const toggleBtn = document.createElement('button');
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
-  // Labelled "Save and Publish" (not just "Publish") because it does both in
-  // one call — see gatherFieldUpdates() above, added after a bug where
-  // clicking Publish alone silently discarded an unsaved field edit.
-  toggleBtn.textContent = isDraft ? 'Save and Publish' : 'Save and Unpublish';
+  // "Save and Publish" (not just "Publish") because it does both in one call
+  // — see gatherFieldUpdates() above, added after a bug where clicking
+  // Publish alone silently discarded an unsaved field edit. Unpublish has no
+  // such gap: a published item is locked until Edit is pressed, and any
+  // change is expected to go through Save (which stages it) first, so
+  // Unpublish only ever needs to flip the status.
+  toggleBtn.textContent = isDraft ? 'Save and Publish' : 'Unpublish';
   toggleBtn.title = isDraft ? '' : 'Take this post off the website (it stays saved here as a draft).';
-  toggleBtn.onclick = () => updateItem(
-    item.id,
-    { ...gatherFieldUpdates(), status: isDraft ? 'published' : 'draft' },
-    isDraft ? 'publish this' : 'unpublish this'
-  );
+  toggleBtn.onclick = () => isDraft
+    ? updateItem(item.id, { ...gatherFieldUpdates(), status: 'published' }, 'publish this')
+    : updateItem(item.id, { status: 'draft' }, 'unpublish this');
   if (isDraft && item.kind === 'post') {
     updatePublishGate = () => {
       const missing = [];
