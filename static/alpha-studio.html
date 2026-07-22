@@ -1044,6 +1044,14 @@ function buildCard(item, skipHead) {
     sectionsWrap.className = 'sections-wrap';
     card.appendChild(sectionsWrap);
 
+    // Marks where serializeSections() joins one authored section into the
+    // next. Deliberately distinct from the plain "---" the Divider toolbar
+    // button inserts (see alpha-post.html), so a manual divider typed inside
+    // a section's own text stays part of that section when the post is
+    // reopened — only this exact marker is treated as a section boundary.
+    // Both render identically (a plain <hr>) on the live post.
+    const SECTION_JOIN = '<!--section-->';
+
     function parseSections(body) {
       const src = (body || '').replace(/\r\n/g, '\n');
       const out = [];
@@ -1051,16 +1059,11 @@ function buildCard(item, skipHead) {
       let seen = false;
       src.split('\n').forEach(line => {
         const h = line.match(/^##\s+(.*)$/);
-        const isDivider = /^-{3,}$/.test(line.trim());
         if (h) {
           if (seen) out.push(cur);
           cur = { heading: h[1].trim(), body: [] };
           seen = true;
-        } else if (isDivider) {
-          // A "---" line is always a section boundary here — both the one
-          // serializeSections auto-inserts between sections, and one typed
-          // via the Divider toolbar button inside a section's own text (which
-          // means: reopening a post splits that section at the divider).
+        } else if (line.trim() === SECTION_JOIN) {
           if (seen) out.push(cur);
           cur = { heading: '', body: [] };
           seen = false;
@@ -1144,10 +1147,11 @@ function buildCard(item, skipHead) {
         if (body) chunk += (h ? '\n\n' : '') + body;
         if (chunk.trim()) parts.push(chunk);
       });
-      // A "---" divider between each authored section — renders as a
-      // greyed-out horizontal rule on the live post, marking where one
-      // section ends and the next begins.
-      return parts.join('\n\n---\n\n');
+      // Joins sections with the reserved SECTION_JOIN marker (renders as a
+      // greyed-out horizontal rule on the live post, same as a manual
+      // divider, but kept textually distinct so it round-trips through
+      // parseSections without swallowing a manual divider's section).
+      return parts.join('\n\n' + SECTION_JOIN + '\n\n');
     }
 
     // Expose a `.value` getter so the shared Save handler can read the body the

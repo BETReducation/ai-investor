@@ -341,11 +341,13 @@ function renderInlineText(container, text) {
       const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       const bulletMatch = line.match(/^[-*]\s+(.*)$/);
       const numberMatch = line.match(/^\d+\.\s+(.*)$/);
-      const isDivider = /^-{3,}$/.test(line);
+      // A standalone run of 3+ hyphens is a manual divider from the editor's
+      // Divider button; "<!--section-->" is the studio's own marker for where
+      // one authored content section ends and the next begins. Both render
+      // identically — a plain horizontal rule — the distinction only matters
+      // to the studio's own section editor (see SECTION_JOIN there).
+      const isDivider = /^-{3,}$/.test(line) || line === '<!--section-->';
       if (isDivider) {
-        // A standalone run of 3+ hyphens ("---") — inserted either between
-        // authored content sections or manually via the editor's Divider
-        // button — renders as a plain horizontal rule.
         closeList();
         bodyEl.appendChild(document.createElement('hr')).className = 'post-divider';
       } else if (line.startsWith('## ')) {
