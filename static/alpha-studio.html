@@ -833,9 +833,21 @@ function buildCard(item, skipHead) {
     function wrapSelection(before, after, placeholder) {
       const ta = activeTA();
       if (!ta) return;
-      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
-      const text = sel || placeholder;
-      insertAtActive(before, after, text, 0, text.length);
+      activeTextarea = ta;
+      let start = ta.selectionStart, end = ta.selectionEnd;
+      const raw = ta.value.slice(start, end);
+      const trimmed = raw.trim();
+      if (!trimmed) { insertAtActive(before, after, placeholder, 0, placeholder.length); return; }
+      if (trimmed !== raw) {
+        // A drag or triple-click selection can capture a leading/trailing
+        // newline or space along with the word. Wrapping that verbatim pushes
+        // the closing marker onto the next line, so nothing parses back out.
+        // Narrow to the trimmed core and leave the whitespace outside the wrap.
+        start += raw.length - raw.trimStart().length;
+        end = start + trimmed.length;
+        ta.setSelectionRange(start, end);
+      }
+      insertAtActive(before, after, trimmed, 0, trimmed.length);
     }
 
     // Prefixes each selected line to build a bullet or numbered list, stripping
@@ -869,6 +881,35 @@ function buildCard(item, skipHead) {
     underlineBtn.style.textDecoration = 'underline';
     const bulletBtn = mkToolBtn('• List', 'Bulleted list', () => prefixLines(() => '- '));
     const numberBtn = mkToolBtn('1. List', 'Numbered list', () => prefixLines(i => (i + 1) + '. '));
+
+    // Strips bold/italic/underline markers from the selection, unwrapping any
+    // nesting a layer at a time — a one-click way to recover from mangled
+    // markup (e.g. a selection that captured a newline and split delimiters
+    // across lines) instead of retyping the text.
+    function stripFormatting(text) {
+      let prev;
+      do {
+        prev = text;
+        text = text
+          .replace(/\*\*([^*]+)\*\*/g, '$1')
+          .replace(/_([^_]+)_/g, '$1')
+          .replace(/\+\+([^+]+)\+\+/g, '$1');
+      } while (text !== prev);
+      return text;
+    }
+    const clearFormatBtn = mkToolBtn('Clear format', 'Remove bold/italic/underline from the selected text', () => {
+      const ta = activeTA();
+      if (!ta) return;
+      activeTextarea = ta;
+      const start = ta.selectionStart, end = ta.selectionEnd;
+      if (start === end) return;
+      const cleaned = stripFormatting(ta.value.slice(start, end));
+      const pre = ta.value.slice(0, start), post = ta.value.slice(end);
+      ta.value = pre + cleaned + post;
+      ta.focus();
+      ta.setSelectionRange(start, start + cleaned.length);
+      autoGrowTextarea(ta, 600);
+    });
     const imageBtn = mkToolBtn('🖼 Image', 'Insert an image', () => {
       linkPanel.style.display = 'none';
       imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
@@ -877,7 +918,7 @@ function buildCard(item, skipHead) {
       imagePanel.style.display = 'none';
       linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
     });
-    [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
+    [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, clearFormatBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
     card.appendChild(toolbar);
 
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
