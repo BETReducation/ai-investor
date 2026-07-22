@@ -55,7 +55,13 @@
   border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
 }
 .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--teal); }
-.form-textarea { resize: vertical; line-height: 1.5; }
+.form-textarea {
+  resize: vertical; line-height: 1.5; min-height: 96px;
+  /* A clearer drag-to-resize handle in the bottom-right corner. */
+  background-image: repeating-linear-gradient(-45deg, transparent 0, transparent 3px, var(--teal) 3px, var(--teal) 4px);
+  background-size: 11px 11px; background-position: right 4px bottom 4px; background-repeat: no-repeat;
+}
+.form-textarea.section-body { min-height: 140px; }
 .form-msg { font-size: 12.5px; margin-top: 10px; min-height: 16px; }
 .form-msg.success { color: var(--green); }
 .form-msg.error { color: #ff3355; }
@@ -651,6 +657,11 @@ function buildCollapsibleCard(item) {
     body.style.display = opening ? 'block' : 'none';
     chevron.textContent = opening ? '▾' : '▸';
     wrapper.classList.toggle('open', opening);
+    // Textareas built while collapsed measure zero height, so re-run the
+    // auto-grow once they're actually visible.
+    if (opening) {
+      body.querySelectorAll('textarea').forEach(ta => autoGrowTextarea(ta, 600));
+    }
   };
 
   return wrapper;
