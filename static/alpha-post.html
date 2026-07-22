@@ -239,16 +239,19 @@ function showNotFound() {
   document.getElementById('postNotFound').style.display = 'block';
 }
 
-// Parses inline formatting — [text](url) links, **bold**, __underline__ and
-// *italic* — out of a paragraph and appends the result as DOM nodes, never
-// innerHTML, so nothing in a partner-submitted or AI-normalized body is ever
-// treated as trusted HTML. Formatting nests (e.g. bold inside a link).
+// Parses inline formatting — [text](url) links, **bold**, _italic_ and
+// ++underline++ — out of a paragraph and appends the result as DOM nodes,
+// never innerHTML, so nothing in a partner-submitted or AI-normalized body is
+// ever treated as trusted HTML. Each style's delimiter uses a character no
+// other style uses, so combinations (e.g. bold+italic+underline on the same
+// text) always nest unambiguously instead of colliding into a run of
+// asterisks with no clean boundary between styles.
 function renderInlineText(container, text) {
   const patterns = [
     { type: 'link',      re: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/ },
     { type: 'bold',      re: /\*\*([^*]+)\*\*/ },
-    { type: 'underline', re: /__([^_]+)__/ },
-    { type: 'italic',    re: /\*([^*]+)\*/ },
+    { type: 'italic',    re: /_([^_]+)_/ },
+    { type: 'underline', re: /\+\+([^+]+)\+\+/ },
   ];
   while (text) {
     let best = null;

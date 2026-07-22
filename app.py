@@ -1636,6 +1636,24 @@ def api_alpha_content_item(item_id):
         return jsonify({"success": True})
 
     data = request.get_json() or {}
+
+    # Fields a staged edit can hold and fold back into the live item — shared by
+    # the "save while published" path below, republish, and the unpublish fold.
+    _stageable_fields = ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename")
+
+    if data.get("republish"):
+        # Push any pending staged edits live in one step, without a detour
+        # through "draft" — an alternative to Unpublish-then-Publish when the
+        # author just wants their saved edits to go live.
+        if existing.get("status") != "published":
+            return jsonify({"error": "Only a published item can be re-published"}), 400
+        fold = {"staged_edits": None}
+        for k, v in (existing.get("staged_edits") or {}).items():
+            if k in _stageable_fields:
+                fold[k] = v
+        item = alpha_content_update(item_id, fold)
+        return jsonify({"success": True, "item": item})
+
     updates = {}
     for field in ("topic", "title", "subtitle", "snippet", "body", "url"):
         if field in data:
@@ -1673,7 +1691,7 @@ def api_alpha_content_item(item_id):
         # uploaded hero image (setting it to None) — cheap, since it never holds
         # new binary data. A brand-new *upload* is blocked before it reaches here
         # (see /image endpoint below): only removal is staged, not replacement.
-        for field in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename"):
+        for field in _stageable_fields:
             if field in updates:
                 staged[field] = updates[field]
         item = alpha_content_update(item_id, {"staged_edits": staged})
@@ -1704,7 +1722,7 @@ def api_alpha_content_item(item_id):
         # they're preserved and ready to go live again on the next publish.
         if status == "draft" and existing.get("staged_edits"):
             for k, v in existing["staged_edits"].items():
-                if k in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename"):
+                if k in _stageable_fields:
                     updates[k] = v
             updates["staged_edits"] = None
 

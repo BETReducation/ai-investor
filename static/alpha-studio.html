@@ -860,9 +860,12 @@ function buildCard(item, skipHead) {
 
     const boldBtn = mkToolBtn('B', 'Bold', () => wrapSelection('**', '**', 'bold text'));
     boldBtn.style.fontWeight = '800';
-    const italicBtn = mkToolBtn('I', 'Italic', () => wrapSelection('*', '*', 'italic text'));
+    // Each style uses a delimiter character no other style uses (bold '*',
+    // italic '_', underline '+') so combining them (e.g. bold+italic+underline
+    // on the same selection) always nests unambiguously when rendered.
+    const italicBtn = mkToolBtn('I', 'Italic', () => wrapSelection('_', '_', 'italic text'));
     italicBtn.style.fontStyle = 'italic';
-    const underlineBtn = mkToolBtn('U', 'Underline', () => wrapSelection('__', '__', 'underlined text'));
+    const underlineBtn = mkToolBtn('U', 'Underline', () => wrapSelection('++', '++', 'underlined text'));
     underlineBtn.style.textDecoration = 'underline';
     const bulletBtn = mkToolBtn('• List', 'Bulleted list', () => prefixLines(() => '- '));
     const numberBtn = mkToolBtn('1. List', 'Numbered list', () => prefixLines(i => (i + 1) + '. '));
@@ -1317,6 +1320,17 @@ function buildCard(item, skipHead) {
     updateItem(item.id, updates);
   };
   actions.appendChild(saveBtn);
+
+  // Only offered when there are staged edits to push — a one-click alternative
+  // to Unpublish-then-Publish for making saved edits go live.
+  if (!isDraft && item.staged_edits) {
+    const republishBtn = document.createElement('button');
+    republishBtn.className = 'btn-primary-sm';
+    republishBtn.textContent = 'Re-publish';
+    republishBtn.title = 'Push your saved edits live without unpublishing first.';
+    republishBtn.onclick = () => updateItem(item.id, { republish: true });
+    actions.appendChild(republishBtn);
+  }
 
   const toggleBtn = document.createElement('button');
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
