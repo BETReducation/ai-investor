@@ -1410,10 +1410,11 @@ function buildCard(item, skipHead) {
     actions.appendChild(editBtn);
   }
 
-  saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-ghost-sm';
-  saveBtn.textContent = 'Save';
-  saveBtn.onclick = () => {
+  // Shared by Save and Publish/Unpublish so a status change always carries
+  // whatever is currently typed in the fields — Publish used to send only
+  // {status:'published'} on its own, so an edited-but-never-Saved title (or
+  // any other field) was silently dropped when you went straight to Publish.
+  function gatherFieldUpdates() {
     const updates = { title: titleInput.value.trim() };
     if (topicSelect) updates.topic = topicSelect.value;
     if (subtitleInput) updates.subtitle = subtitleInput.value.trim();
@@ -1422,8 +1423,13 @@ function buildCard(item, skipHead) {
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
     if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
-    updateItem(item.id, updates, 'save your changes');
-  };
+    return updates;
+  }
+
+  saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-ghost-sm';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = () => updateItem(item.id, gatherFieldUpdates(), 'save your changes');
   actions.appendChild(saveBtn);
 
   // Only offered when there are staged edits to push — a one-click alternative
@@ -1441,7 +1447,11 @@ function buildCard(item, skipHead) {
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
   toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
   toggleBtn.title = isDraft ? '' : 'Take this post off the website (it stays saved here as a draft).';
-  toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' }, isDraft ? 'publish this' : 'unpublish this');
+  toggleBtn.onclick = () => updateItem(
+    item.id,
+    { ...gatherFieldUpdates(), status: isDraft ? 'published' : 'draft' },
+    isDraft ? 'publish this' : 'unpublish this'
+  );
   if (isDraft && item.kind === 'post') {
     updatePublishGate = () => {
       const missing = [];

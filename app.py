@@ -1719,10 +1719,13 @@ def api_alpha_content_item(item_id):
         updates["status"] = status
         updates["published_at"] = _dt.datetime.utcnow() if status == "published" else None
         # Unpublishing folds any staged edits into the (now draft) live fields so
-        # they're preserved and ready to go live again on the next publish.
+        # they're preserved and ready to go live again on the next publish. A
+        # field already present in `updates` (the studio sends the whole form,
+        # not a diff) is the author's current on-screen text and wins over an
+        # older staged copy of that same field.
         if status == "draft" and existing.get("staged_edits"):
             for k, v in existing["staged_edits"].items():
-                if k in _stageable_fields:
+                if k in _stageable_fields and k not in updates:
                     updates[k] = v
             updates["staged_edits"] = None
 
