@@ -379,17 +379,28 @@ function oversizeMessage(file) {
   if (file.size <= MAX_UPLOAD_BYTES) return null;
   return `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — please choose one under 5 MB.`;
 }
-// A raw network failure (connection reset, e.g. from exceeding the server's
-// upload limit) surfaces as an opaque browser error ("Failed to fetch" /
-// "NetworkError..." / "Load failed") rather than anything from our API —
-// swap it for something a user can actually act on.
+// True for a raw network failure (connection reset, e.g. from exceeding the
+// server's upload limit — opaque browser text like "Failed to fetch" /
+// "NetworkError..." / "Load failed") or an error response whose body wasn't
+// JSON (res.json() throws its own cryptic parse error in that case). Neither
+// carries anything useful from our API, so callers swap in their own message.
+function isNetworkishError(e) {
+  return /failed to fetch|networkerror|load failed|unexpected token|is not valid json/i.test((e && e.message) || '');
+}
 function friendlyUploadError(e) {
-  // Covers both a reset connection (opaque browser network error) and a 413
-  // response whose body isn't JSON (a parse error, since res.json() throws).
-  if (/failed to fetch|networkerror|load failed|unexpected token|is not valid json/i.test(e.message || '')) {
+  if (isNetworkishError(e)) {
     return 'Upload failed — the file may be too large (5 MB max), or there was a network issue. Try a smaller image.';
   }
   return e.message;
+}
+// Used by non-upload actions (save, publish, unpublish, delete, quick-add) so
+// a failure always names what was being attempted and why, instead of a bare
+// "Update failed" or raw browser network text.
+function actionErrorMessage(e, action) {
+  if (isNetworkishError(e)) {
+    return `Couldn't ${action} — there was a network or connection problem. Check you're still signed in and try again.`;
+  }
+  return `Couldn't ${action}: ${e.message}`;
 }
 
 async function initStudio() {
@@ -570,7 +581,7 @@ async function submitUpload() {
   try {
     const res = await fetch('/api/alpha/upload', { method: 'POST', credentials: 'include', body: form });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
     msg.textContent = 'Draft created — review it below.';
     msg.className = 'form-msg success';
     document.getElementById('uploadFile').value = '';
@@ -605,7 +616,7 @@ async function quickAdd(kind) {
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to add');
+    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
     msg.textContent = 'Added as a draft.';
     msg.className = 'form-msg success';
     document.getElementById(kind + 'Title').value = '';
@@ -616,7 +627,7 @@ async function quickAdd(kind) {
     }
     loadContent();
   } catch (e) {
-    msg.textContent = e.message;
+    msg.textContent = actionErrorMessage(e, 'add this ' + KIND_LABELS[kind].toLowerCase());
     msg.className = 'form-msg error';
   }
 }
@@ -934,6 +945,19 @@ function buildCard(item, skipHead) {
       ta.setSelectionRange(start, start + cleaned.length);
       autoGrowTextarea(ta, 600);
     });
+    // Inserts a standalone "---" line, rendered as a greyed-out horizontal
+    // rule on the live post — the same marker used to divide authored content
+    // sections from one another (see serializeSections below), so it also
+    // reads back as its own section boundary if the post is reopened.
+    const dividerBtn = mkToolBtn('― Line', 'Insert a horizontal divider line', () => {
+      const ta = activeTA();
+      if (!ta) return;
+      activeTextarea = ta;
+      const start = ta.selectionStart;
+      const before = ta.value.slice(0, start);
+      const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
+      insertAtActive(lead, '\n\n', '---', 3, 0);
+    });
     const imageBtn = mkToolBtn('🖼 Image', 'Insert an image', () => {
       linkPanel.style.display = 'none';
       imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
@@ -942,7 +966,7 @@ function buildCard(item, skipHead) {
       imagePanel.style.display = 'none';
       linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
     });
-    [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, clearFormatBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
+    [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, clearFormatBtn, dividerBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
     card.appendChild(toolbar);
 
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
@@ -1027,10 +1051,19 @@ function buildCard(item, skipHead) {
       let seen = false;
       src.split('\n').forEach(line => {
         const h = line.match(/^##\s+(.*)$/);
+        const isDivider = /^-{3,}$/.test(line.trim());
         if (h) {
           if (seen) out.push(cur);
           cur = { heading: h[1].trim(), body: [] };
           seen = true;
+        } else if (isDivider) {
+          // A "---" line is always a section boundary here — both the one
+          // serializeSections auto-inserts between sections, and one typed
+          // via the Divider toolbar button inside a section's own text (which
+          // means: reopening a post splits that section at the divider).
+          if (seen) out.push(cur);
+          cur = { heading: '', body: [] };
+          seen = false;
         } else {
           cur.body.push(line);
           if (line.trim()) seen = true;
@@ -1111,7 +1144,10 @@ function buildCard(item, skipHead) {
         if (body) chunk += (h ? '\n\n' : '') + body;
         if (chunk.trim()) parts.push(chunk);
       });
-      return parts.join('\n\n');
+      // A "---" divider between each authored section — renders as a
+      // greyed-out horizontal rule on the live post, marking where one
+      // section ends and the next begins.
+      return parts.join('\n\n---\n\n');
     }
 
     // Expose a `.value` getter so the shared Save handler can read the body the
@@ -1160,7 +1196,7 @@ function buildCard(item, skipHead) {
       try {
         const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
         insertImageMarkup(data.url);
         insertImageFileInput.value = '';
       } catch (e) {
@@ -1255,7 +1291,7 @@ function buildCard(item, skipHead) {
       // Routed through the shared updateItem() (fetch + reload), not a manual
       // DOM patch — on a published post this saves as a staged edit, and only
       // a fresh reload reflects that correctly (see the "staged" banner).
-      updateItem(item.id, { clear_image: true });
+      updateItem(item.id, { clear_image: true }, 'remove the hero image');
     };
 
     function renderImageMode() {
@@ -1288,7 +1324,7 @@ function buildCard(item, skipHead) {
       try {
         const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
         imageMsg.textContent = 'Image uploaded.';
         imageMsg.className = 'form-msg success';
         item.image_filename = data.item.image_filename;
@@ -1386,7 +1422,7 @@ function buildCard(item, skipHead) {
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
     if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
-    updateItem(item.id, updates);
+    updateItem(item.id, updates, 'save your changes');
   };
   actions.appendChild(saveBtn);
 
@@ -1397,7 +1433,7 @@ function buildCard(item, skipHead) {
     republishBtn.className = 'btn-primary-sm';
     republishBtn.textContent = 'Re-publish';
     republishBtn.title = 'Push your saved edits live without unpublishing first.';
-    republishBtn.onclick = () => updateItem(item.id, { republish: true });
+    republishBtn.onclick = () => updateItem(item.id, { republish: true }, 're-publish your edits');
     actions.appendChild(republishBtn);
   }
 
@@ -1405,7 +1441,7 @@ function buildCard(item, skipHead) {
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
   toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
   toggleBtn.title = isDraft ? '' : 'Take this post off the website (it stays saved here as a draft).';
-  toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' });
+  toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' }, isDraft ? 'publish this' : 'unpublish this');
   if (isDraft && item.kind === 'post') {
     updatePublishGate = () => {
       const missing = [];
@@ -1427,7 +1463,7 @@ function buildCard(item, skipHead) {
     const msg = isDraft
       ? 'Delete this ' + label + '? This cannot be undone.'
       : 'Delete this published ' + label + ' forever?\n\nIt will be removed from the website AND from the studio, and cannot be retrieved.';
-    if (confirm(msg)) deleteItem(item.id);
+    if (confirm(msg)) deleteItem(item.id, 'delete this ' + label);
   };
   actions.appendChild(delBtn);
 
@@ -1436,25 +1472,25 @@ function buildCard(item, skipHead) {
   return card;
 }
 
-async function updateItem(id, updates) {
+async function updateItem(id, updates, actionLabel) {
   try {
     const res = await fetch('/api/alpha/content/' + id, {
       method: 'PUT', credentials: 'include',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Update failed');
+    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
     loadContent();
-  } catch (e) { alert(e.message); }
+  } catch (e) { alert(actionErrorMessage(e, actionLabel || 'save your changes')); }
 }
 
-async function deleteItem(id) {
+async function deleteItem(id, actionLabel) {
   try {
     const res = await fetch('/api/alpha/content/' + id, { method: 'DELETE', credentials: 'include' });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Delete failed');
+    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
     loadContent();
-  } catch (e) { alert(e.message); }
+  } catch (e) { alert(actionErrorMessage(e, actionLabel || 'delete this item')); }
 }
 
 function updateLogos(theme) {}

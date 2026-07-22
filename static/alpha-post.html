@@ -44,6 +44,7 @@
 .post-body strong { font-weight: 700; }
 .post-body em { font-style: italic; }
 .post-body u { text-decoration: underline; text-underline-offset: 2px; }
+.post-divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
 .post-empty { text-align: center; padding: 60px 20px; }
 .post-empty-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 12px; }
 .post-empty-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
@@ -340,7 +341,14 @@ function renderInlineText(container, text) {
       const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       const bulletMatch = line.match(/^[-*]\s+(.*)$/);
       const numberMatch = line.match(/^\d+\.\s+(.*)$/);
-      if (line.startsWith('## ')) {
+      const isDivider = /^-{3,}$/.test(line);
+      if (isDivider) {
+        // A standalone run of 3+ hyphens ("---") — inserted either between
+        // authored content sections or manually via the editor's Divider
+        // button — renders as a plain horizontal rule.
+        closeList();
+        bodyEl.appendChild(document.createElement('hr')).className = 'post-divider';
+      } else if (line.startsWith('## ')) {
         closeList();
         const h = document.createElement('h2');
         h.className = 'post-subheading';
