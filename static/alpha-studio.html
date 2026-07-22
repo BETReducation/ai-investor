@@ -370,6 +370,28 @@ function esc(str) {
   return d.innerHTML;
 }
 
+// The server caps the whole request body at 5MB (app.py MAX_CONTENT_LENGTH).
+// A file over that doesn't get a clean error back — the connection is reset
+// mid-upload and fetch() just throws "Failed to fetch" — so check client-side
+// first and give a real message instead.
+const MAX_UPLOAD_BYTES = 4.5 * 1024 * 1024;
+function oversizeMessage(file) {
+  if (file.size <= MAX_UPLOAD_BYTES) return null;
+  return `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — please choose one under 5 MB.`;
+}
+// A raw network failure (connection reset, e.g. from exceeding the server's
+// upload limit) surfaces as an opaque browser error ("Failed to fetch" /
+// "NetworkError..." / "Load failed") rather than anything from our API —
+// swap it for something a user can actually act on.
+function friendlyUploadError(e) {
+  // Covers both a reset connection (opaque browser network error) and a 413
+  // response whose body isn't JSON (a parse error, since res.json() throws).
+  if (/failed to fetch|networkerror|load failed|unexpected token|is not valid json/i.test(e.message || '')) {
+    return 'Upload failed — the file may be too large (5 MB max), or there was a network issue. Try a smaller image.';
+  }
+  return e.message;
+}
+
 async function initStudio() {
   let me;
   try {
@@ -531,6 +553,8 @@ async function submitUpload() {
   if (uploadMode === 'file') {
     const f = document.getElementById('uploadFile').files[0];
     if (!f) { msg.textContent = 'Choose a file first.'; msg.className = 'form-msg error'; return; }
+    const oversize = oversizeMessage(f);
+    if (oversize) { msg.textContent = oversize; msg.className = 'form-msg error'; return; }
     form.append('file', f);
   } else if (uploadMode === 'link') {
     const link = document.getElementById('uploadLink').value.trim();
@@ -554,7 +578,7 @@ async function submitUpload() {
     document.getElementById('uploadPaste').value = '';
     loadContent();
   } catch (e) {
-    msg.textContent = e.message;
+    msg.textContent = friendlyUploadError(e);
     msg.className = 'form-msg error';
   } finally {
     btn.disabled = false;
@@ -1127,6 +1151,8 @@ function buildCard(item, skipHead) {
       }
       const f = insertImageFileInput.files[0];
       if (!f) { insertImageMsg.textContent = 'Choose a file first.'; insertImageMsg.className = 'form-msg error'; return; }
+      const oversize = oversizeMessage(f);
+      if (oversize) { insertImageMsg.textContent = oversize; insertImageMsg.className = 'form-msg error'; return; }
       insertImageBtn.disabled = true;
       insertImageBtn.textContent = 'Uploading…';
       const form = new FormData();
@@ -1138,7 +1164,7 @@ function buildCard(item, skipHead) {
         insertImageMarkup(data.url);
         insertImageFileInput.value = '';
       } catch (e) {
-        insertImageMsg.textContent = e.message;
+        insertImageMsg.textContent = friendlyUploadError(e);
         insertImageMsg.className = 'form-msg error';
       } finally {
         insertImageBtn.disabled = false;
@@ -1253,6 +1279,8 @@ function buildCard(item, skipHead) {
     uploadImageBtn.onclick = async () => {
       const f = imageFileInput.files[0];
       if (!f) { imageMsg.textContent = 'Choose a file first.'; imageMsg.className = 'form-msg error'; return; }
+      const oversize = oversizeMessage(f);
+      if (oversize) { imageMsg.textContent = oversize; imageMsg.className = 'form-msg error'; return; }
       uploadImageBtn.disabled = true;
       uploadImageBtn.textContent = 'Uploading…';
       const form = new FormData();
@@ -1270,7 +1298,7 @@ function buildCard(item, skipHead) {
         removeImageBtn.style.display = 'inline-block';
         updatePublishGate();
       } catch (e) {
-        imageMsg.textContent = e.message;
+        imageMsg.textContent = friendlyUploadError(e);
         imageMsg.className = 'form-msg error';
       } finally {
         uploadImageBtn.disabled = false;
