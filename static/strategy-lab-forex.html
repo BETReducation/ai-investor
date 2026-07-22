@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Growth Capital Academy — Strategy Lab</title>
+<title>Growth Capital Academy — Strategy Lab (Forex)</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/gca.css">
@@ -734,9 +734,9 @@ window.addEventListener('resize', () => {
          (% of trade amount vs pips). -->
     <div style="display:flex;gap:4px;padding:10px 16px 0;">
       <a href="/backtester"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">STOCKS/ETFs/FUTURES</a>
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">STOCKS/ETFs/FUTURES</a>
       <a href="/backtester/forex"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">FOREX</a>
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">FOREX</a>
     </div>
 
     <!-- Basic / Detailed indicator mode -->
@@ -751,7 +751,7 @@ window.addEventListener('resize', () => {
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
       <div class="bt-symbol-row">
-        <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. AAPL, BTC-USD" value="AAPL" autocomplete="off"
+        <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. EURUSD=X, GBPJPY=X" value="EURUSD=X" autocomplete="off"
                style="text-transform:uppercase;"
                oninput="this.value=this.value.toUpperCase(); onBtSymbolInput(this.value);"
                onfocus="if (this.value) onBtSymbolInput(this.value);">
@@ -864,11 +864,11 @@ window.addEventListener('resize', () => {
 
       <div class="slider-row">
         <div class="slider-header">
-          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop Loss</span>
-          <span class="ctrl-val" id="slVal">100.0%</span>
+          <span class="ctrl-name" title="Distance in PIPS from entry to stop-out — the standard way forex traders size risk, independent of position value. 1 pip = 0.0001 for most pairs, 0.01 for JPY pairs.">Stop Loss</span>
+          <span class="ctrl-val" id="slVal">20 pips</span>
         </div>
-        <input type="range" id="stopLoss" min="100" max="2000" step="10" value="100"
-               oninput="document.getElementById('slVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="stopLoss" min="1" max="500" step="1" value="20"
+               oninput="document.getElementById('slVal').textContent=this.value+' pips'">
       </div>
 
       <div class="ctrl-row" style="margin-bottom:8px;">
@@ -886,11 +886,11 @@ window.addEventListener('resize', () => {
 
       <div class="slider-row">
         <div class="slider-header">
-          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Take Profit</span>
-          <span class="ctrl-val" id="tpVal">200.0%</span>
+          <span class="ctrl-name" title="Distance in PIPS from entry to target — the standard way forex traders measure reward, independent of position value. 1 pip = 0.0001 for most pairs, 0.01 for JPY pairs.">Take Profit</span>
+          <span class="ctrl-val" id="tpVal">40 pips</span>
         </div>
-        <input type="range" id="takeProfit" min="100" max="2000" step="10" value="200"
-               oninput="document.getElementById('tpVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="takeProfit" min="1" max="500" step="1" value="40"
+               oninput="document.getElementById('tpVal').textContent=this.value+' pips'">
       </div>
 
       <div class="slider-row" style="margin-bottom:0;">
@@ -2406,10 +2406,11 @@ async function runBtSymbolSearch(query) {
   } catch (e) {
     results = [];
   }
-  const alias = matchIndexAlias(query);
-  if (alias && !results.some(r => r.symbol === alias.symbol)) {
-    results = [alias, ...results];
-  }
+  // Forex page: this backtester's Stop Loss / Take Profit are quoted in pips,
+  // which only makes sense for currency pairs — keep every other asset class
+  // out of the picker (index aliases like "nasdaq" are non-forex, so skip
+  // that merge here too).
+  results = results.filter(r => categoryFromQuoteType(r.symbol, r.type) === 'forex');
   btSearchResults = results;
   renderBtSearchResults(query);
 }
@@ -2516,9 +2517,9 @@ async function removeMySymbol(symbol, event) {
 function renderMySymbols() {
   const el = document.getElementById('btMySymbols');
   if (!el) return;
-  // Saved symbols are shared across both backtester pages — keep forex pairs
-  // out of this list, they have their own picker on the Forex backtester.
-  el.innerHTML = mySymbols.filter(s => s.category !== 'forex').map(s => `
+  // Saved symbols are shared across both backtester pages — only show the
+  // forex ones here, same reasoning as the search filter above.
+  el.innerHTML = mySymbols.filter(s => s.category === 'forex').map(s => `
     <span class="bt-mysym-chip" onclick="pickBtSymbol('${s.symbol}')">
       ${s.symbol}
       <button type="button" onclick="removeMySymbol('${s.symbol}', event)" title="Remove">✕</button>
@@ -3137,7 +3138,7 @@ async function runBacktest() {
     symbol, period, interval,
     ...(startDate && { start_date: startDate }),
     ...(endDate   && { end_date:   endDate   }),
-    stop_loss: sl, take_profit: tp, sl_tp_unit: 'percent', min_confidence: conf,
+    stop_loss: sl, take_profit: tp, sl_tp_unit: 'pips', min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
     capital: btCapital, trade_amount_mode: tradeAmountMode, trade_amount: tradeAmount,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,

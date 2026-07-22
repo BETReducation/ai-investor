@@ -26,14 +26,16 @@ def run_backtest(
     df: pd.DataFrame,
     thresholds: dict | None = None,
     calc_params: dict | None = None,
-    stop_loss_pct: float = 2.0,
-    take_profit_pct: float = 4.0,
+    stop_loss_pct: float = 100.0,
+    take_profit_pct: float = 200.0,
     min_confidence: float = 60.0,
     trailing_stop: bool = False,
     trail_distance_pct: float = 1.5,
     capital: float = 10000.0,
     trade_amount_mode: str = "percent",
     trade_amount: float = 100.0,
+    sl_tp_unit: str = "percent",
+    pip_size: float = 0.0001,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -44,6 +46,19 @@ def run_backtest(
     (compounds — matches trade_amount_mode="gbp" behaviour as the pot grows/shrinks).
     trade_amount_mode="gbp": each trade risks a fixed trade_amount, converted to a
     fraction of the current pot value at entry time, so it still compounds naturally.
+
+    sl_tp_unit="percent" (stocks/ETFs/futures): stop_loss_pct/take_profit_pct
+    are a % of the TRADE AMOUNT (the position actually at risk on this trade —
+    size_fraction * pot value at entry), not a % of starting capital. Since
+    gain/loss on a trade scales 1:1 with the price move on an unleveraged
+    position, this % is also the price move needed to reach it — e.g.
+    take_profit_pct=200 needs the price to double.
+
+    sl_tp_unit="pips" (forex): stop_loss_pct/take_profit_pct are read as a
+    pip count instead — forex traders size risk/reward in pips (a fixed
+    price increment: 0.0001 for most pairs, 0.01 for JPY pairs via pip_size)
+    rather than as a % of the position, since leverage decouples position
+    value from the price move.
     """
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
@@ -761,8 +776,8 @@ def run_backtest(
         # ── Manage open position ──────────────────────────────────────────
         if position is not None:
             ep       = position["entry_price"]
-            sl_price = ep * (1 - stop_loss_pct    / 100)
-            tp_price = ep * (1 + take_profit_pct  / 100)
+            sl_price = position["sl_price"]
+            tp_price = position["tp_price"]
 
             trail_price = None
             if trailing_stop:
@@ -806,14 +821,30 @@ def run_backtest(
 
         else:
             if overall == "BUY" and confidence >= min_confidence:
+                pot_value = equity * capital
                 if trade_amount_mode == "gbp":
-                    pot_value = equity * capital
                     size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
                 else:
                     size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
+
+                if sl_tp_unit == "pips":
+                    # Forex: SL/TP are a pip distance from entry, not a % of
+                    # the position — a fixed number of price increments.
+                    sl_price = close - stop_loss_pct * pip_size
+                    tp_price = close + take_profit_pct * pip_size
+                else:
+                    # Stocks/ETFs/futures: SL/TP are a % of the trade amount
+                    # (the position actually at risk), so for an unleveraged
+                    # position the price move needed to reach them is the
+                    # same percentage.
+                    sl_price = close * (1 - stop_loss_pct / 100)
+                    tp_price = close * (1 + take_profit_pct / 100)
+
                 position = {
                     "entry_price": close, "entry_date": date_str, "peak": close,
                     "size_fraction": size_fraction,
+                    "sl_price": sl_price,
+                    "tp_price": tp_price,
                 }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})

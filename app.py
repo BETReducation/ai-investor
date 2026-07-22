@@ -979,6 +979,10 @@ def portfolio_balancer():
 def backtester():
     return send_from_directory("static", "strategy-lab.html")
 
+@app.route("/backtester/forex")
+def backtester_forex():
+    return send_from_directory("static", "strategy-lab-forex.html")
+
 @app.route("/stories")
 def stories():
     return send_from_directory("static", "stories.html")
@@ -2032,19 +2036,26 @@ def backtest():
         return jsonify({"error": "symbol parameter is required"}), 400
 
     try:
-        stop_loss_pct   = float(request.args.get("stop_loss",     2.0))
-        take_profit_pct = float(request.args.get("take_profit",   4.0))
+        stop_loss_pct   = float(request.args.get("stop_loss",     100.0))
+        take_profit_pct = float(request.args.get("take_profit",   200.0))
         min_confidence  = float(request.args.get("min_confidence", 60.0))
         trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
         trail_distance_pct = float(request.args.get("trail_distance", 1.5))
         capital            = float(request.args.get("capital", 10000.0))
         trade_amount        = float(request.args.get("trade_amount", 100.0))
         trade_amount_mode   = request.args.get("trade_amount_mode", "percent").strip().lower()
+        sl_tp_unit          = request.args.get("sl_tp_unit", "percent").strip().lower()
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid parameter: {e}"}), 400
 
     if trade_amount_mode not in ("percent", "gbp"):
         return jsonify({"error": "trade_amount_mode must be 'percent' or 'gbp'"}), 400
+    if sl_tp_unit not in ("percent", "pips"):
+        return jsonify({"error": "sl_tp_unit must be 'percent' or 'pips'"}), 400
+
+    # Forex pip size: 0.01 for JPY pairs (quoted to 2-3 decimal places),
+    # 0.0001 for everything else (quoted to 4-5 decimal places).
+    pip_size = 0.01 if "JPY" in symbol.upper() else 0.0001
 
     thresholds = {}
     for key in [
@@ -2131,6 +2142,8 @@ def backtest():
             capital=capital,
             trade_amount_mode=trade_amount_mode,
             trade_amount=trade_amount,
+            sl_tp_unit=sl_tp_unit,
+            pip_size=pip_size,
         )
         metrics = calculate_metrics(trades, equity_curve)
         period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
