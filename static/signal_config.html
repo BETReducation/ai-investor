@@ -359,9 +359,9 @@ window.addEventListener('resize', () => {
       <div class="range-row">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Target Gain <span>(per trade)</span></div>
-          <div class="range-value tag-green" id="targetVal">200%</div>
+          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="200.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
         </div>
-        <input type="range" id="targetGain" min="100" max="2000" step="10" value="200" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="targetGain" min="1" max="4000" step="1" value="200" oninput="onPctSliderInput('targetGain','targetVal')">
       </div>
       <div class="sep"></div>
       <div class="toggle-row">
@@ -371,9 +371,9 @@ window.addEventListener('resize', () => {
       <div class="range-row" id="fixedSLRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop-Loss %</div>
-          <div class="range-value tag-red" id="slVal">-100.0%</div>
+          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="100.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
         </div>
-        <input type="range" id="stopLoss" min="100" max="2000" step="10" value="100" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="100" oninput="onPctSliderInput('stopLoss','slVal')">
       </div>
       <div class="toggle-row">
         <div class="toggle-label">Trailing Stop-Loss</div>
@@ -1703,8 +1703,8 @@ function importBacktestStrategy(name) {
   document.getElementById('strategyName').value = `${name} (from Backtester)`;
 
   // Carry over risk settings (both pages are £ now).
-  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').textContent = '-' + parseFloat(cfg.stopLoss).toFixed(1) + '%'; }
-  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').textContent = parseFloat(cfg.takeProfit).toFixed(1) + '%'; }
+  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(cfg.stopLoss).toFixed(1); }
+  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(cfg.takeProfit).toFixed(1); }
   if (cfg.trailSL !== undefined)    { document.getElementById('trailSL').checked = !!cfg.trailSL; document.getElementById('trailSLRow').style.opacity = cfg.trailSL ? '1' : '0.3'; document.getElementById('trailSLRow').style.pointerEvents = cfg.trailSL ? 'auto' : 'none'; }
   if (cfg.trailDist !== undefined)  { document.getElementById('trailDist').value = cfg.trailDist; document.getElementById('trailVal').textContent = parseFloat(cfg.trailDist).toFixed(1) + '%'; }
   if (cfg.minConf !== undefined)    { document.getElementById('minConfidence').value = cfg.minConf; document.getElementById('minConfidenceVal').textContent = cfg.minConf + '%'; }
@@ -3127,6 +3127,27 @@ function addLog(type, source, msg) {
 }
 
 // --- HELPERS ---
+// Keeps a range slider and its paired free-typed number box in sync. The slider
+// stays the source of truth read by getConfig() — the textbox only ever writes
+// through it, clamped to [lo, hi], so every downstream read keeps working unchanged.
+function clampPct(v, lo, hi) {
+  v = parseFloat(v);
+  return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null;
+}
+function onPctSliderInput(sliderId, textId) {
+  document.getElementById(textId).value = parseFloat(document.getElementById(sliderId).value).toFixed(1);
+}
+function onPctTextInput(sliderId, textId) {
+  const v = clampPct(document.getElementById(textId).value, 1, 4000);
+  if (v !== null) document.getElementById(sliderId).value = v;
+}
+function onPctTextChange(sliderId, textId) {
+  const slider = document.getElementById(sliderId);
+  const v = clampPct(document.getElementById(textId).value, 1, 4000) ?? parseFloat(slider.value);
+  slider.value = v;
+  document.getElementById(textId).value = v.toFixed(1);
+}
+
 function getConfig() {
   // Trade sizing + base scoring settings. Indicator parameters are NOT read
   // here anymore — each strategy condition carries its own params, so only the
@@ -3501,9 +3522,9 @@ function applyPreferences(prefs) {
   set('posSizeGbp', prefs.posSizeGbp);
   togglePosSizeMode(!!prefs.posSizeGbpMode);
   set('targetGain', prefs.targetGain);
-  if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
+  if (prefs.targetGain !== undefined) set('targetVal', parseFloat(prefs.targetGain).toFixed(1));
   set('stopLoss',   prefs.stopLoss);
-  if (prefs.stopLoss  !== undefined) setText('slVal', '-' + parseFloat(prefs.stopLoss).toFixed(1) + '%');
+  if (prefs.stopLoss  !== undefined) set('slVal', parseFloat(prefs.stopLoss).toFixed(1));
   set('trailDist',  prefs.trailDist);
   if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
 
