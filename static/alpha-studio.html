@@ -123,6 +123,14 @@
 .content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
 .content-section-block .section-remove { align-self: flex-start; }
 
+/* Published cards open read-only until Edit is pressed. */
+.studio-card.locked .form-input,
+.studio-card.locked .form-textarea,
+.studio-card.locked .form-select { background: var(--bg2); cursor: default; }
+.studio-card.locked .form-textarea { background-image: none; }
+.studio-card.locked .edit-chrome { display: none !important; }
+.staged-note { font-size: 12.5px; line-height: 1.5; color: #b7791f; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -677,6 +685,19 @@ function buildCard(item, skipHead) {
   card.className = 'studio-card';
   const isDraft = item.status === 'draft';
 
+  // Published items open read-only and are edited only after the Edit button is
+  // pressed. Their field values are drawn from any pending `staged_edits` so the
+  // author sees the version they're working on — the live page still shows
+  // item.* until they unpublish and re-publish.
+  const staged = (!isDraft && item.staged_edits) ? item.staged_edits : null;
+  const val = (k) => (staged && k in staged) ? staged[k] : item[k];
+  const stagedImage = !!(staged && ('image_url' in staged));
+  const effImageUrl = stagedImage ? staged.image_url : item.image_url;
+  const effImageFilename = stagedImage ? null : item.image_filename;
+  // Inputs registered here get locked (read-only) until editing is turned on.
+  const lockables = [];
+  const registerLock = (el) => { lockables.push(el); return el; };
+
   if (!skipHead) {
     const head = document.createElement('div');
     head.className = 'studio-card-head';
@@ -703,14 +724,23 @@ function buildCard(item, skipHead) {
     field.appendChild(label);
     field.appendChild(el);
     card.appendChild(field);
+    registerLock(el);
     return field;
+  }
+
+  // Note shown on a published post that has pending (staged) edits.
+  if (staged) {
+    const note = document.createElement('div');
+    note.className = 'staged-note';
+    note.textContent = 'You have unpublished edits saved here. The live page still shows the published version — unpublish and re-publish to make these edits live.';
+    card.appendChild(note);
   }
 
   const titleInput = document.createElement('input');
   titleInput.className = 'form-input card-title-input';
   titleInput.placeholder = 'Title';
   titleInput.spellcheck = true;
-  titleInput.value = item.title || '';
+  titleInput.value = val('title') || '';
   addField('Title — the headline of this post', titleInput);
 
   // Topic — editable on every card so a draft's theme (e.g. "Impact of AI")
@@ -724,7 +754,7 @@ function buildCard(item, skipHead) {
       topics.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t; opt.textContent = t;
-        if (item.topic === t) opt.selected = true;
+        if (val('topic') === t) opt.selected = true;
         topicSelect.appendChild(opt);
       });
       addField('Topic — which of your themes this belongs to', topicSelect);
@@ -734,14 +764,14 @@ function buildCard(item, skipHead) {
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
   let updatePublishGate = () => {};
   let subtitleInput = null, imageUrlInput = null;
-  let imageMode = item.image_filename ? 'upload' : 'url';
+  let imageMode = effImageFilename ? 'upload' : 'url';
 
   if (item.kind === 'post') {
     subtitleInput = document.createElement('input');
     subtitleInput.className = 'form-input';
     subtitleInput.placeholder = 'A catchy one-liner';
     subtitleInput.spellcheck = true;
-    subtitleInput.value = item.subtitle || '';
+    subtitleInput.value = val('subtitle') || '';
     addField('Sub-title — the one-line hook under the headline', subtitleInput);
 
     snippetInput = document.createElement('textarea');
@@ -749,7 +779,7 @@ function buildCard(item, skipHead) {
     snippetInput.rows = 2;
     snippetInput.placeholder = 'A short summary shown on your Alpha page card';
     snippetInput.spellcheck = true;
-    snippetInput.value = item.snippet || '';
+    snippetInput.value = val('snippet') || '';
     snippetInput.addEventListener('input', () => autoGrowTextarea(snippetInput, 240));
     addField('Snippet — the preview blurb on your Alpha page', snippetInput);
     setTimeout(() => autoGrowTextarea(snippetInput, 240), 0);
@@ -767,7 +797,7 @@ function buildCard(item, skipHead) {
     // Formatting toolbar acts on whichever section box was last focused.
     let activeTextarea = null;
     const toolbar = document.createElement('div');
-    toolbar.className = 'card-toolbar format-toolbar';
+    toolbar.className = 'card-toolbar format-toolbar edit-chrome';
 
     function mkToolBtn(label, title, handler) {
       const b = document.createElement('button');
@@ -850,7 +880,7 @@ function buildCard(item, skipHead) {
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
     // active section, not the post's hero image below.
     const imagePanel = document.createElement('div');
-    imagePanel.className = 'insert-panel';
+    imagePanel.className = 'insert-panel edit-chrome';
     imagePanel.style.display = 'none';
     let insertImageMode = 'url';
     const imgTabs = document.createElement('div');
@@ -897,7 +927,7 @@ function buildCard(item, skipHead) {
 
     // Insert Link panel — inline [text](url), not a standalone paragraph.
     const linkPanel = document.createElement('div');
-    linkPanel.className = 'insert-panel';
+    linkPanel.className = 'insert-panel edit-chrome';
     linkPanel.style.display = 'none';
     const insertLinkTextInput = document.createElement('input');
     insertLinkTextInput.className = 'form-input';
@@ -978,6 +1008,8 @@ function buildCard(item, skipHead) {
         block.remove();
         updateRemoveButtons();
       };
+      registerLock(hd);
+      registerLock(ta);
       block.appendChild(hd);
       block.appendChild(ta);
       block.appendChild(removeBtn);
@@ -987,12 +1019,12 @@ function buildCard(item, skipHead) {
       return block;
     }
 
-    parseSections(item.body).forEach(buildSection);
+    parseSections(val('body')).forEach(buildSection);
     updateRemoveButtons();
 
     const addSectionBtn = document.createElement('button');
     addSectionBtn.type = 'button';
-    addSectionBtn.className = 'btn-ghost-sm';
+    addSectionBtn.className = 'btn-ghost-sm add-section-btn edit-chrome';
     addSectionBtn.textContent = '+ Add section';
     addSectionBtn.onclick = () => {
       const block = buildSection({ heading: '', body: '' });
@@ -1086,7 +1118,7 @@ function buildCard(item, skipHead) {
     card.appendChild(heroLabel);
 
     const imageTabs = document.createElement('div');
-    imageTabs.className = 'card-image-tabs';
+    imageTabs.className = 'card-image-tabs edit-chrome';
     const urlTabBtn = document.createElement('button');
     urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
     const uploadTabBtn = document.createElement('button');
@@ -1098,10 +1130,12 @@ function buildCard(item, skipHead) {
     imageUrlInput = document.createElement('input');
     imageUrlInput.className = 'form-input';
     imageUrlInput.placeholder = 'https://example.com/image.jpg';
-    imageUrlInput.value = item.image_url || '';
+    imageUrlInput.value = effImageUrl || '';
+    registerLock(imageUrlInput);
     card.appendChild(imageUrlInput);
 
     const uploadPanel = document.createElement('div');
+    uploadPanel.className = 'edit-chrome';
     const imageFileInput = document.createElement('input');
     imageFileInput.type = 'file';
     imageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
@@ -1116,11 +1150,11 @@ function buildCard(item, skipHead) {
 
     const imagePreview = document.createElement('img');
     imagePreview.className = 'card-image-preview';
-    const hasHeroImage = () => !!(item.image_filename || (item.image_url || '').trim());
-    if (item.image_filename) {
+    const hasHeroImage = () => !!(effImageFilename || (imageUrlInput.value || '').trim());
+    if (effImageFilename) {
       imagePreview.src = '/api/alpha/content/' + item.id + '/image';
-    } else if (item.image_url) {
-      imagePreview.src = item.image_url;
+    } else if (effImageUrl) {
+      imagePreview.src = effImageUrl;
     } else {
       imagePreview.style.display = 'none';
     }
@@ -1129,7 +1163,7 @@ function buildCard(item, skipHead) {
     // Remove hero image — clears both a pasted URL and any uploaded file.
     const removeImageBtn = document.createElement('button');
     removeImageBtn.type = 'button';
-    removeImageBtn.className = 'btn-danger-sm';
+    removeImageBtn.className = 'btn-danger-sm edit-chrome';
     removeImageBtn.textContent = 'Remove hero image';
     removeImageBtn.style.marginTop = '8px';
     removeImageBtn.style.display = hasHeroImage() ? 'inline-block' : 'none';
@@ -1205,22 +1239,25 @@ function buildCard(item, skipHead) {
       const opt = document.createElement('option');
       opt.value = s;
       opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-      if (item.stance === s) opt.selected = true;
+      if (val('stance') === s) opt.selected = true;
       stanceSelect.appendChild(opt);
     });
+    registerLock(stanceSelect);
     card.appendChild(stanceSelect);
 
     snippetInput = document.createElement('textarea');
     snippetInput.className = 'form-textarea';
     snippetInput.rows = 2;
     snippetInput.placeholder = 'One-line note';
-    snippetInput.value = item.snippet || '';
+    snippetInput.value = val('snippet') || '';
+    registerLock(snippetInput);
     card.appendChild(snippetInput);
   } else {
     urlInput = document.createElement('input');
     urlInput.className = 'form-input';
     urlInput.placeholder = item.kind === 'video' ? 'YouTube video ID or URL' : 'URL';
-    urlInput.value = item.url || '';
+    urlInput.value = val('url') || '';
+    registerLock(urlInput);
     card.appendChild(urlInput);
 
     if (item.kind === 'link') {
@@ -1228,15 +1265,43 @@ function buildCard(item, skipHead) {
       snippetInput.className = 'form-textarea';
       snippetInput.rows = 2;
       snippetInput.placeholder = 'Short description';
-      snippetInput.value = item.snippet || '';
+      snippetInput.value = val('snippet') || '';
+      registerLock(snippetInput);
       card.appendChild(snippetInput);
     }
+  }
+
+  // Read-only gate: published items open locked (view-only) and are made
+  // editable only when Edit is pressed. Drafts are editable straight away.
+  let saveBtn = null;
+  function setEditing(on) {
+    card.classList.toggle('locked', !on);
+    lockables.forEach(el => {
+      const off = !on;
+      if (el.tagName === 'SELECT' || el.type === 'file') el.disabled = off;
+      else el.readOnly = off;
+    });
+    if (saveBtn) saveBtn.disabled = !on;
   }
 
   const actions = document.createElement('div');
   actions.className = 'studio-card-actions';
 
-  const saveBtn = document.createElement('button');
+  // Order: (Edit,) Save, Unpublish/Publish, Delete.
+  let editBtn = null;
+  if (!isDraft) {
+    editBtn = document.createElement('button');
+    editBtn.className = 'btn-ghost-sm';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => {
+      setEditing(true);
+      editBtn.style.display = 'none';
+      titleInput.focus();
+    };
+    actions.appendChild(editBtn);
+  }
+
+  saveBtn = document.createElement('button');
   saveBtn.className = 'btn-ghost-sm';
   saveBtn.textContent = 'Save';
   saveBtn.onclick = () => {
@@ -1255,6 +1320,7 @@ function buildCard(item, skipHead) {
   const toggleBtn = document.createElement('button');
   toggleBtn.className = isDraft ? 'btn-primary-sm' : 'btn-ghost-sm';
   toggleBtn.textContent = isDraft ? 'Publish' : 'Unpublish';
+  toggleBtn.title = isDraft ? '' : 'Take this post off the website (it stays saved here as a draft).';
   toggleBtn.onclick = () => updateItem(item.id, { status: isDraft ? 'published' : 'draft' });
   if (isDraft && item.kind === 'post') {
     updatePublishGate = () => {
@@ -1273,11 +1339,16 @@ function buildCard(item, skipHead) {
   delBtn.className = 'btn-danger-sm';
   delBtn.textContent = 'Delete';
   delBtn.onclick = () => {
-    if (confirm('Delete this ' + (KIND_LABELS[item.kind] || item.kind).toLowerCase() + '?')) deleteItem(item.id);
+    const label = (KIND_LABELS[item.kind] || item.kind).toLowerCase();
+    const msg = isDraft
+      ? 'Delete this ' + label + '? This cannot be undone.'
+      : 'Delete this published ' + label + ' forever?\n\nIt will be removed from the website AND from the studio, and cannot be retrieved.';
+    if (confirm(msg)) deleteItem(item.id);
   };
   actions.appendChild(delBtn);
 
   card.appendChild(actions);
+  setEditing(isDraft);
   return card;
 }
 

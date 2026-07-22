@@ -135,6 +135,7 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_url TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_filename TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_file BYTEA")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS staged_edits JSONB")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content_attachment (
                 id          SERIAL PRIMARY KEY,
@@ -492,6 +493,12 @@ _ALPHA_CONTENT_FIELDS = [
     "author", "kind", "status", "topic", "title", "subtitle", "snippet", "body", "stance", "url",
     "source_kind", "source_filename", "source_text",
     "image_url", "image_filename",
+    # Pending edits to a *published* item, held back from the live page until the
+    # author unpublishes (which folds them in) and re-publishes. Studio-only —
+    # the public endpoints whitelist their output via _ALPHA_PUBLIC_FIELDS, so
+    # this never leaks. Shape: {title, subtitle, snippet, body, topic, url,
+    # stance, image_url} — a subset, only the fields that were edited.
+    "staged_edits",
 ]
 
 
@@ -712,7 +719,11 @@ def alpha_content_update(item_id: int, updates: dict) -> dict | None:
         if not updates:
             return alpha_content_get(item_id)
         set_clauses = [f"{k} = %s" for k in updates] + ["updated_at = %s"]
-        vals = list(updates.values()) + [now, item_id]
+        # staged_edits is a JSONB column — wrap the dict so psycopg2 adapts it.
+        vals = [
+            psycopg2.extras.Json(v) if k == "staged_edits" and v is not None else v
+            for k, v in updates.items()
+        ] + [now, item_id]
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 f"UPDATE alpha_content SET {', '.join(set_clauses)} WHERE id = %s "
@@ -1649,6 +1660,21 @@ def api_alpha_content_item(item_id):
         updates["stance"] = stance or None
     if updates.get("topic") and updates["topic"] not in ALPHA_TOPICS.get(current_user.alpha_role, []):
         return jsonify({"error": "Topic must be one of your nominated topics"}), 400
+
+    # ── Staged edits ────────────────────────────────────────────────────────
+    # Editing a PUBLISHED item (a content change with no status change) saves to
+    # a pending `staged_edits` copy and leaves the live page untouched. The edits
+    # are folded into the item when it's next unpublished (see below), so the
+    # path to make them live is: edit → Save (staged) → Unpublish → Publish.
+    _content_edit_keys = ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "clear_image")
+    if existing.get("status") == "published" and "status" not in data and any(k in data for k in _content_edit_keys):
+        staged = dict(existing.get("staged_edits") or {})
+        for field in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url"):
+            if field in updates:
+                staged[field] = updates[field]
+        item = alpha_content_update(item_id, {"staged_edits": staged})
+        return jsonify({"success": True, "item": item})
+
     if "status" in data:
         status = data["status"]
         if status not in ("draft", "published"):
@@ -1670,6 +1696,13 @@ def api_alpha_content_item(item_id):
                     }), 400
         updates["status"] = status
         updates["published_at"] = _dt.datetime.utcnow() if status == "published" else None
+        # Unpublishing folds any staged edits into the (now draft) live fields so
+        # they're preserved and ready to go live again on the next publish.
+        if status == "draft" and existing.get("staged_edits"):
+            for k, v in existing["staged_edits"].items():
+                if k in ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename"):
+                    updates[k] = v
+            updates["staged_edits"] = None
 
     item = alpha_content_update(item_id, updates)
     return jsonify({"success": True, "item": item})
