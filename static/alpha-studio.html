@@ -109,7 +109,13 @@
 .card-image-tab.active { border-color: var(--teal); color: var(--teal); }
 .card-image-preview { max-width: 100%; max-height: 140px; border-radius: 10px; display: block; margin-top: 8px; object-fit: cover; }
 .card-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.format-toolbar { margin: 6px 0 10px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.fmt-btn { min-width: 34px; padding: 7px 12px; }
 .insert-panel { display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.sections-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
+.content-section-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
+.content-section-block .section-remove { align-self: flex-start; }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
@@ -676,12 +682,43 @@ function buildCard(item, skipHead) {
     card.appendChild(head);
   }
 
+  // Small labelled-field helper so every input says what it's for.
+  function addField(labelText, el) {
+    const field = document.createElement('div');
+    field.className = 'form-field';
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = labelText;
+    field.appendChild(label);
+    field.appendChild(el);
+    card.appendChild(field);
+    return field;
+  }
+
   const titleInput = document.createElement('input');
   titleInput.className = 'form-input card-title-input';
   titleInput.placeholder = 'Title';
   titleInput.spellcheck = true;
   titleInput.value = item.title || '';
-  card.appendChild(titleInput);
+  addField('Title — the headline of this post', titleInput);
+
+  // Topic — editable on every card so a draft's theme (e.g. "Impact of AI")
+  // can be changed after upload. Options are this author's nominated topics.
+  let topicSelect = null;
+  {
+    const topics = AUTHOR_TOPICS[currentAuthor] || [];
+    if (topics.length) {
+      topicSelect = document.createElement('select');
+      topicSelect.className = 'form-select';
+      topics.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        if (item.topic === t) opt.selected = true;
+        topicSelect.appendChild(opt);
+      });
+      addField('Topic — which of your themes this belongs to', topicSelect);
+    }
+  }
 
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
   let updatePublishGate = () => {};
@@ -691,43 +728,116 @@ function buildCard(item, skipHead) {
   if (item.kind === 'post') {
     subtitleInput = document.createElement('input');
     subtitleInput.className = 'form-input';
-    subtitleInput.placeholder = 'Sub-title — a catchy one-liner';
+    subtitleInput.placeholder = 'A catchy one-liner';
     subtitleInput.spellcheck = true;
     subtitleInput.value = item.subtitle || '';
-    card.appendChild(subtitleInput);
+    addField('Sub-title — the one-line hook under the headline', subtitleInput);
 
     snippetInput = document.createElement('textarea');
     snippetInput.className = 'form-textarea';
     snippetInput.rows = 2;
-    snippetInput.placeholder = 'Snippet';
+    snippetInput.placeholder = 'A short summary shown on your Alpha page card';
     snippetInput.spellcheck = true;
     snippetInput.value = item.snippet || '';
     snippetInput.addEventListener('input', () => autoGrowTextarea(snippetInput, 240));
-    card.appendChild(snippetInput);
+    addField('Snippet — the preview blurb on your Alpha page', snippetInput);
     setTimeout(() => autoGrowTextarea(snippetInput, 240), 0);
 
+    // ── Content sections ─────────────────────────────────────────────────
+    // The post body is edited as one or more sections so ideas can be
+    // organised. Each section = an optional heading + a block of text. On save
+    // they serialise into the single markdown `body` field ("## Heading" lines
+    // separate sections), and parseSections() reverses that on load.
+    const contentLabel = document.createElement('label');
+    contentLabel.className = 'form-label';
+    contentLabel.textContent = 'Content — break the post into sections to organise your ideas';
+    card.appendChild(contentLabel);
+
+    // Formatting toolbar acts on whichever section box was last focused.
+    let activeTextarea = null;
     const toolbar = document.createElement('div');
-    toolbar.className = 'card-toolbar';
-    const headingBtn = document.createElement('button');
-    headingBtn.type = 'button';
-    headingBtn.className = 'btn-ghost-sm';
-    headingBtn.textContent = '+ Sub-heading';
-    const imageBtn = document.createElement('button');
-    imageBtn.type = 'button';
-    imageBtn.className = 'btn-ghost-sm';
-    imageBtn.textContent = '+ Image';
-    const linkBtn = document.createElement('button');
-    linkBtn.type = 'button';
-    linkBtn.className = 'btn-ghost-sm';
-    linkBtn.textContent = '+ Link';
-    toolbar.appendChild(headingBtn);
-    toolbar.appendChild(imageBtn);
-    toolbar.appendChild(linkBtn);
+    toolbar.className = 'card-toolbar format-toolbar';
+
+    function mkToolBtn(label, title, handler) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-ghost-sm fmt-btn';
+      b.textContent = label;
+      b.title = title;
+      // preventDefault on mousedown so clicking a toolbar button doesn't blur
+      // (and lose the selection in) the active section textarea.
+      b.addEventListener('mousedown', e => e.preventDefault());
+      b.onclick = handler;
+      return b;
+    }
+
+    function activeTA() { return activeTextarea || sectionsWrap.querySelector('.section-body'); }
+
+    function insertAtActive(before, after, text, selectFrom, selectLen) {
+      const ta = activeTA();
+      if (!ta) return;
+      activeTextarea = ta;
+      const start = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+      const end = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+      const pre = ta.value.slice(0, start), post = ta.value.slice(end);
+      ta.value = pre + before + text + after + post;
+      const from = selectFrom != null ? selectFrom : text.length;
+      const len = selectLen != null ? selectLen : 0;
+      const selStart = pre.length + before.length + from;
+      ta.focus();
+      ta.setSelectionRange(selStart, selStart + len);
+      autoGrowTextarea(ta, 600);
+    }
+
+    function wrapSelection(before, after, placeholder) {
+      const ta = activeTA();
+      if (!ta) return;
+      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+      const text = sel || placeholder;
+      insertAtActive(before, after, text, 0, text.length);
+    }
+
+    // Prefixes each selected line to build a bullet or numbered list, stripping
+    // any existing list marker first so toggling between the two is clean.
+    function prefixLines(makePrefix) {
+      const ta = activeTA();
+      if (!ta) return;
+      activeTextarea = ta;
+      const val = ta.value;
+      const ls = val.lastIndexOf('\n', ta.selectionStart - 1) + 1;
+      let le = val.indexOf('\n', ta.selectionEnd);
+      if (le === -1) le = val.length;
+      const block = val.slice(ls, le) || 'List item';
+      const out = block.split('\n')
+        .map((l, i) => makePrefix(i) + l.replace(/^(\s*([-*]|\d+\.)\s+)/, ''))
+        .join('\n');
+      ta.value = val.slice(0, ls) + out + val.slice(le);
+      ta.focus();
+      ta.setSelectionRange(ls, ls + out.length);
+      autoGrowTextarea(ta, 600);
+    }
+
+    const boldBtn = mkToolBtn('B', 'Bold', () => wrapSelection('**', '**', 'bold text'));
+    boldBtn.style.fontWeight = '800';
+    const italicBtn = mkToolBtn('I', 'Italic', () => wrapSelection('*', '*', 'italic text'));
+    italicBtn.style.fontStyle = 'italic';
+    const underlineBtn = mkToolBtn('U', 'Underline', () => wrapSelection('__', '__', 'underlined text'));
+    underlineBtn.style.textDecoration = 'underline';
+    const bulletBtn = mkToolBtn('• List', 'Bulleted list', () => prefixLines(() => '- '));
+    const numberBtn = mkToolBtn('1. List', 'Numbered list', () => prefixLines(i => (i + 1) + '. '));
+    const imageBtn = mkToolBtn('🖼 Image', 'Insert an image', () => {
+      linkPanel.style.display = 'none';
+      imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
+    });
+    const linkBtn = mkToolBtn('🔗 Link', 'Insert a link', () => {
+      imagePanel.style.display = 'none';
+      linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
+    });
+    [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
     card.appendChild(toolbar);
 
-    // Insert Image panel — mirrors the main-image URL/Upload tabs, but inserts
-    // a standalone ![alt](url) paragraph at the body cursor instead of setting
-    // the post's single main-image slot.
+    // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
+    // active section, not the post's hero image below.
     const imagePanel = document.createElement('div');
     imagePanel.className = 'insert-panel';
     imagePanel.style.display = 'none';
@@ -796,53 +906,113 @@ function buildCard(item, skipHead) {
     linkPanel.appendChild(insertLinkMsg);
     card.appendChild(linkPanel);
 
-    bodyInput = document.createElement('textarea');
-    bodyInput.className = 'form-textarea';
-    bodyInput.rows = 6;
-    bodyInput.placeholder = 'Body';
-    bodyInput.spellcheck = true;
-    bodyInput.value = item.body || '';
-    bodyInput.addEventListener('input', () => autoGrowTextarea(bodyInput, 600));
-    card.appendChild(bodyInput);
-    setTimeout(() => autoGrowTextarea(bodyInput, 600), 0);
+    // ── Sections list ────────────────────────────────────────────────────
+    const sectionsWrap = document.createElement('div');
+    sectionsWrap.className = 'sections-wrap';
+    card.appendChild(sectionsWrap);
 
-    function insertAtCursor(before, after, text, selectFrom, selectLen) {
-      const start = bodyInput.selectionStart, end = bodyInput.selectionEnd;
-      const pre = bodyInput.value.slice(0, start), post = bodyInput.value.slice(end);
-      bodyInput.value = pre + before + text + after + post;
-      const from = selectFrom != null ? selectFrom : text.length;
-      const len = selectLen != null ? selectLen : 0;
-      const selStart = pre.length + before.length + from;
-      bodyInput.focus();
-      bodyInput.setSelectionRange(selStart, selStart + len);
+    function parseSections(body) {
+      const src = (body || '').replace(/\r\n/g, '\n');
+      const out = [];
+      let cur = { heading: '', body: [] };
+      let seen = false;
+      src.split('\n').forEach(line => {
+        const h = line.match(/^##\s+(.*)$/);
+        if (h) {
+          if (seen) out.push(cur);
+          cur = { heading: h[1].trim(), body: [] };
+          seen = true;
+        } else {
+          cur.body.push(line);
+          if (line.trim()) seen = true;
+        }
+      });
+      out.push(cur);
+      const cleaned = out
+        .map(s => ({ heading: s.heading, body: s.body.join('\n').replace(/^\n+|\n+$/g, '') }))
+        .filter(s => s.heading || s.body.trim());
+      return cleaned.length ? cleaned : [{ heading: '', body: '' }];
     }
 
-    headingBtn.onclick = () => {
-      imagePanel.style.display = 'none';
-      linkPanel.style.display = 'none';
-      const start = bodyInput.selectionStart;
-      const before = bodyInput.value.slice(0, start);
-      const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
-      insertAtCursor(lead + '## ', '\n\n', 'Sub-heading', 0, 'Sub-heading'.length);
-    };
+    function updateRemoveButtons() {
+      const blocks = sectionsWrap.querySelectorAll('.content-section-block');
+      blocks.forEach(b => {
+        b.querySelector('.section-remove').style.display = blocks.length > 1 ? 'inline-block' : 'none';
+      });
+    }
 
-    imageBtn.onclick = () => {
-      linkPanel.style.display = 'none';
-      imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
-    };
+    function buildSection(sec) {
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = 'Section heading (optional)';
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      const ta = document.createElement('textarea');
+      ta.className = 'form-textarea section-body';
+      ta.rows = 5;
+      ta.placeholder = 'Write this section — use the toolbar above for bold, lists, links…';
+      ta.spellcheck = true;
+      ta.value = sec.body || '';
+      ta.addEventListener('input', () => autoGrowTextarea(ta, 600));
+      ta.addEventListener('focus', () => { activeTextarea = ta; });
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger-sm section-remove';
+      removeBtn.textContent = 'Remove section';
+      removeBtn.onclick = () => {
+        if (sectionsWrap.querySelectorAll('.content-section-block').length <= 1) return;
+        if (activeTextarea === ta) activeTextarea = null;
+        block.remove();
+        updateRemoveButtons();
+      };
+      block.appendChild(hd);
+      block.appendChild(ta);
+      block.appendChild(removeBtn);
+      sectionsWrap.appendChild(block);
+      if (!activeTextarea) activeTextarea = ta;
+      setTimeout(() => autoGrowTextarea(ta, 600), 0);
+      return block;
+    }
 
-    linkBtn.onclick = () => {
-      imagePanel.style.display = 'none';
-      linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
+    parseSections(item.body).forEach(buildSection);
+    updateRemoveButtons();
+
+    const addSectionBtn = document.createElement('button');
+    addSectionBtn.type = 'button';
+    addSectionBtn.className = 'btn-ghost-sm';
+    addSectionBtn.textContent = '+ Add section';
+    addSectionBtn.onclick = () => {
+      const block = buildSection({ heading: '', body: '' });
+      updateRemoveButtons();
+      block.querySelector('.section-body').focus();
     };
+    card.appendChild(addSectionBtn);
+
+    function serializeSections() {
+      const parts = [];
+      sectionsWrap.querySelectorAll('.content-section-block').forEach(b => {
+        const h = b.querySelector('.section-heading').value.trim();
+        const body = b.querySelector('.section-body').value.replace(/\s+$/, '').replace(/^\n+/, '');
+        let chunk = '';
+        if (h) chunk += '## ' + h;
+        if (body) chunk += (h ? '\n\n' : '') + body;
+        if (chunk.trim()) parts.push(chunk);
+      });
+      return parts.join('\n\n');
+    }
+
+    // Expose a `.value` getter so the shared Save handler can read the body the
+    // same way it reads a plain textarea.
+    bodyInput = { get value() { return serializeSections(); } };
 
     insertLinkBtn.onclick = () => {
       const text = insertLinkTextInput.value.trim();
       const url = insertLinkUrlInput.value.trim();
       if (!text || !url) { insertLinkMsg.textContent = 'Enter both link text and a URL.'; insertLinkMsg.className = 'form-msg error'; return; }
       if (!/^https?:\/\//.test(url)) { insertLinkMsg.textContent = 'URL must start with http:// or https://'; insertLinkMsg.className = 'form-msg error'; return; }
-      const start = bodyInput.selectionStart;
-      insertAtCursor('', '', '[' + text + '](' + url + ')', 0, 0);
+      insertAtActive('', '', '[' + text + '](' + url + ')', 0, 0);
       insertLinkTextInput.value = '';
       insertLinkUrlInput.value = '';
       insertLinkMsg.textContent = '';
@@ -851,10 +1021,10 @@ function buildCard(item, skipHead) {
 
     function insertImageMarkup(url) {
       const alt = insertImageAltInput.value.trim();
-      const start = bodyInput.selectionStart;
-      const before = bodyInput.value.slice(0, start);
+      const ta = activeTA();
+      const before = ta ? ta.value.slice(0, ta.selectionStart) : '';
       const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
-      insertAtCursor(lead, '\n\n', '![' + alt + '](' + url + ')', 0, 0);
+      insertAtActive(lead, '\n\n', '![' + alt + '](' + url + ')', 0, 0);
       insertImageAltInput.value = '';
       insertImageMsg.textContent = '';
       imagePanel.style.display = 'none';
@@ -897,7 +1067,13 @@ function buildCard(item, skipHead) {
       card.appendChild(dl);
     }
 
-    // ── Main image: URL or upload-from-desktop, mutually exclusive ──────
+    // ── Hero image: URL or upload-from-desktop, mutually exclusive ──────
+    const heroLabel = document.createElement('label');
+    heroLabel.className = 'form-label';
+    heroLabel.textContent = 'Hero image — the banner shown at the top of your post and on your Alpha page card';
+    heroLabel.style.marginTop = '8px';
+    card.appendChild(heroLabel);
+
     const imageTabs = document.createElement('div');
     imageTabs.className = 'card-image-tabs';
     const urlTabBtn = document.createElement('button');
@@ -929,6 +1105,7 @@ function buildCard(item, skipHead) {
 
     const imagePreview = document.createElement('img');
     imagePreview.className = 'card-image-preview';
+    const hasHeroImage = () => !!(item.image_filename || (item.image_url || '').trim());
     if (item.image_filename) {
       imagePreview.src = '/api/alpha/content/' + item.id + '/image';
     } else if (item.image_url) {
@@ -937,6 +1114,41 @@ function buildCard(item, skipHead) {
       imagePreview.style.display = 'none';
     }
     card.appendChild(imagePreview);
+
+    // Remove hero image — clears both a pasted URL and any uploaded file.
+    const removeImageBtn = document.createElement('button');
+    removeImageBtn.type = 'button';
+    removeImageBtn.className = 'btn-danger-sm';
+    removeImageBtn.textContent = 'Remove hero image';
+    removeImageBtn.style.marginTop = '8px';
+    removeImageBtn.style.display = hasHeroImage() ? 'inline-block' : 'none';
+    card.appendChild(removeImageBtn);
+    removeImageBtn.onclick = async () => {
+      if (!confirm('Remove the hero image from this post?')) return;
+      removeImageBtn.disabled = true;
+      try {
+        const res = await fetch('/api/alpha/content/' + item.id, {
+          method: 'PUT', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clear_image: true }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to remove image');
+        item.image_filename = null;
+        item.image_url = null;
+        imageUrlInput.value = '';
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+        removeImageBtn.style.display = 'none';
+        imageMsg.textContent = 'Hero image removed.';
+        imageMsg.className = 'form-msg success';
+        updatePublishGate();
+      } catch (e) {
+        imageMsg.textContent = e.message;
+        imageMsg.className = 'form-msg error';
+      } finally {
+        removeImageBtn.disabled = false;
+      }
+    };
 
     function renderImageMode() {
       urlTabBtn.classList.toggle('active', imageMode === 'url');
@@ -965,6 +1177,7 @@ function buildCard(item, skipHead) {
         item.image_url = data.item.image_url;
         imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
         imagePreview.style.display = 'block';
+        removeImageBtn.style.display = 'inline-block';
         updatePublishGate();
       } catch (e) {
         imageMsg.textContent = e.message;
@@ -1017,6 +1230,7 @@ function buildCard(item, skipHead) {
   saveBtn.textContent = 'Save';
   saveBtn.onclick = () => {
     const updates = { title: titleInput.value.trim() };
+    if (topicSelect) updates.topic = topicSelect.value;
     if (subtitleInput) updates.subtitle = subtitleInput.value.trim();
     if (snippetInput) updates.snippet = snippetInput.value.trim();
     if (bodyInput) updates.body = bodyInput.value.trim();

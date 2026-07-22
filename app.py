@@ -1626,7 +1626,12 @@ def api_alpha_content_item(item_id):
         if field in data:
             value = data[field]
             updates[field] = (str(value).strip() or None) if value is not None else None
-    if "image_url" in data:
+    if data.get("clear_image"):
+        # Remove the hero image entirely — both a pasted URL and any uploaded file.
+        updates["image_url"] = None
+        updates["image_file"] = None
+        updates["image_filename"] = None
+    elif "image_url" in data:
         image_url = (data["image_url"] or "").strip()
         updates["image_url"] = image_url or None
         if image_url:

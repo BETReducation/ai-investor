@@ -38,6 +38,12 @@
 .post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; }
 .post-inline-image { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 8px 0 28px; display: block; }
 .post-inline-link { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
+.post-body ul.post-list, .post-body ol.post-list { margin: 0 0 20px 1.4em; padding: 0; }
+.post-body ul.post-list li, .post-body ol.post-list li { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 8px; }
+[data-theme="light"] .post-body ul.post-list li, [data-theme="light"] .post-body ol.post-list li { color: #2a2f45; }
+.post-body strong { font-weight: 700; }
+.post-body em { font-style: italic; }
+.post-body u { text-decoration: underline; text-underline-offset: 2px; }
 .post-empty { text-align: center; padding: 60px 20px; }
 .post-empty-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 12px; }
 .post-empty-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
@@ -233,28 +239,41 @@ function showNotFound() {
   document.getElementById('postNotFound').style.display = 'block';
 }
 
-// Parses [text](url) links out of a paragraph and appends the result as a mix
-// of text nodes and <a> elements — never innerHTML, so nothing in a
-// partner-submitted or AI-normalized body is ever treated as trusted HTML.
+// Parses inline formatting — [text](url) links, **bold**, __underline__ and
+// *italic* — out of a paragraph and appends the result as DOM nodes, never
+// innerHTML, so nothing in a partner-submitted or AI-normalized body is ever
+// treated as trusted HTML. Formatting nests (e.g. bold inside a link).
 function renderInlineText(container, text) {
-  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-  let lastIndex = 0;
-  let match;
-  while ((match = linkPattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+  const patterns = [
+    { type: 'link',      re: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/ },
+    { type: 'bold',      re: /\*\*([^*]+)\*\*/ },
+    { type: 'underline', re: /__([^_]+)__/ },
+    { type: 'italic',    re: /\*([^*]+)\*/ },
+  ];
+  while (text) {
+    let best = null;
+    for (const p of patterns) {
+      const m = p.re.exec(text);
+      if (m && (best === null || m.index < best.m.index)) best = { p, m };
     }
-    const a = document.createElement('a');
-    a.href = match[2];
-    a.textContent = match[1];
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.className = 'post-inline-link';
-    container.appendChild(a);
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < text.length) {
-    container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    if (!best) { container.appendChild(document.createTextNode(text)); break; }
+    const { p, m } = best;
+    if (m.index > 0) container.appendChild(document.createTextNode(text.slice(0, m.index)));
+    if (p.type === 'link') {
+      const a = document.createElement('a');
+      a.href = m[2];
+      a.textContent = m[1];
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'post-inline-link';
+      container.appendChild(a);
+    } else {
+      const tag = p.type === 'bold' ? 'strong' : p.type === 'underline' ? 'u' : 'em';
+      const el = document.createElement(tag);
+      renderInlineText(el, m[1]);
+      container.appendChild(el);
+    }
+    text = text.slice(m.index + m[0].length);
   }
 }
 
@@ -307,26 +326,45 @@ function renderInlineText(container, text) {
 
     const bodyEl = document.getElementById('postBody');
     const text = item.body || item.snippet || '';
-    text.split(/\n+/).map(p => p.trim()).filter(Boolean).forEach(para => {
-      const imageMatch = para.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-      if (para.startsWith('## ')) {
+    // Line-based parser: headings (## ), standalone images, unordered lists
+    // (- / * ) and ordered lists (1. ) are block-level; everything else is a
+    // paragraph. Consecutive list items of the same type collapse into one list.
+    let listEl = null, listType = null;
+    const closeList = () => { if (listEl) { bodyEl.appendChild(listEl); listEl = null; listType = null; } };
+    text.split('\n').forEach(raw => {
+      const line = raw.trim();
+      if (!line) { closeList(); return; }
+      const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+      const numberMatch = line.match(/^\d+\.\s+(.*)$/);
+      if (line.startsWith('## ')) {
+        closeList();
         const h = document.createElement('h2');
         h.className = 'post-subheading';
-        h.textContent = para.slice(3).trim();
+        h.textContent = line.slice(3).trim();
         bodyEl.appendChild(h);
       } else if (imageMatch && /^(https?:\/\/|\/api\/)/.test(imageMatch[2])) {
+        closeList();
         const img = document.createElement('img');
         img.className = 'post-inline-image';
         img.src = imageMatch[2];
         img.alt = imageMatch[1];
         img.loading = 'lazy';
         bodyEl.appendChild(img);
+      } else if (bulletMatch || numberMatch) {
+        const wantType = bulletMatch ? 'ul' : 'ol';
+        if (listType !== wantType) { closeList(); listEl = document.createElement(wantType); listEl.className = 'post-list'; listType = wantType; }
+        const li = document.createElement('li');
+        renderInlineText(li, (bulletMatch ? bulletMatch[1] : numberMatch[1]).trim());
+        listEl.appendChild(li);
       } else {
+        closeList();
         const p = document.createElement('p');
-        renderInlineText(p, para);
+        renderInlineText(p, line);
         bodyEl.appendChild(p);
       }
     });
+    closeList();
 
     document.getElementById('postLoaded').style.display = 'block';
   } catch {
