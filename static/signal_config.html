@@ -783,6 +783,7 @@ let currentUser = null;
 let dashboardInitialized = false;
 let engineRunning = false;
 let pollTimer = null;
+let livePriceTimer = null;
 let currentAsset = null;
 let currentView = 'price';
 let pendingTrade = null;
@@ -1250,6 +1251,7 @@ function init() {
   renderStrategyDropdown();
   renderConditions();
   fetchSignals(currentAsset).then(() => updateStrategyStatus()).catch(() => {});
+  startLivePricePolling();
 }
 
 
@@ -2104,12 +2106,14 @@ async function startEngine() {
   addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
   addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: 30s`);
 
-  await fetchAllAssets();
+  await fetchAllAssets(); // fresh prices right away, don't wait for the next livePriceTimer tick
   await scanSignals();
 
+  // Prices are already kept live by the always-on livePriceTimer (started from
+  // init(), runs regardless of engine state) — this only needs to re-run the signal
+  // scan itself every 30s, not re-fetch prices too.
   pollTimer = setInterval(async () => {
     if (!engineRunning) return;
-    await fetchAllAssets();
     await scanSignals();
   }, 30000);
 }
@@ -2494,6 +2498,21 @@ function updatePriceAlertBadge() {
   const count = Object.values(priceAlerts).reduce((n, arr) => n + arr.filter(a => a.active).length, 0);
   badge.style.display = count > 0 ? 'flex' : 'none';
   badge.textContent = count > 9 ? '9+' : String(count);
+}
+
+// Watchlist prices/chart-overlay/stats used to only ever refresh when the strategy
+// engine was actively running (fetchAllAssets lived inside startEngine's own 30s
+// pollTimer) — so with the engine idle, which is the page's default state, everything
+// looked frozen: prices only ever fetched once, on first select. This is an
+// independent, always-on poll (started once from init(), unrelated to engineRunning)
+// that keeps prices live regardless — same pattern as portfolio-balancer.html's
+// loadLivePrices/refreshTimer. Runs alongside pollTimer rather than replacing it:
+// pollTimer's tick was simplified to just scanSignals() so the two don't double-fetch
+// prices every 30s while the engine happens to also be running.
+function startLivePricePolling() {
+  if (livePriceTimer) return;
+  livePriceTimer = setInterval(fetchAllAssets, 30000);
+  fetchAllAssets();
 }
 
 function startPriceAlertPolling() {
