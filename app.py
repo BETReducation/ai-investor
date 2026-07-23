@@ -774,12 +774,32 @@ def extract_text_from_upload(file_storage) -> str:
     try:
         if ext == "docx":
             import docx
+            from docx.table import Table as DocxTable
+            from docx.text.paragraph import Paragraph as DocxParagraph
             document = docx.Document(file_storage)
-            parts = [p.text for p in document.paragraphs if p.text.strip()]
-            for table in document.tables:
-                for row in table.rows:
-                    parts.append(" | ".join(cell.text.strip() for cell in row.cells))
-            text = "\n".join(parts)
+            # Walk paragraphs and tables in actual document order (python-docx's
+            # .paragraphs/.tables only give each kind separately, losing where a
+            # table sits relative to the surrounding text) and render each table
+            # as a real markdown table (header + `---` separator row) so it's
+            # unambiguous downstream — see auto_section_tables(), which wraps a
+            # block matching this exact shape into its own Table section.
+            parts = []
+            for child in document.element.body.iterchildren():
+                if child.tag.endswith("}p"):
+                    p = DocxParagraph(child, document)
+                    if p.text.strip():
+                        parts.append(p.text.strip())
+                elif child.tag.endswith("}tbl"):
+                    table = DocxTable(child, document)
+                    rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+                    rows = [r for r in rows if any(c for c in r)]
+                    if not rows:
+                        continue
+                    md = ["| " + " | ".join(rows[0]) + " |", "|" + "|".join(" --- " for _ in rows[0]) + "|"]
+                    for r in rows[1:]:
+                        md.append("| " + " | ".join(r) + " |")
+                    parts.append("\n".join(md))
+            text = "\n\n".join(parts)
         elif ext == "pdf":
             from pypdf import PdfReader
             reader = PdfReader(file_storage)
@@ -861,9 +881,84 @@ def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     if len(snippet_words) > 40:
         snippet += "…"
     paragraphs = [p.strip() for p in raw_text.split("\n") if p.strip()]
-    body = "\n\n".join(paragraphs) if paragraphs else text
+    body_parts = []
+    for i, p in enumerate(paragraphs):
+        if i > 0:
+            # Keep consecutive markdown-table-row lines tight (single \n) so a
+            # table survives this reflow intact — the normal blank-line-per-
+            # paragraph spacing would otherwise pull each row apart, breaking
+            # the table shape auto_section_tables() looks for below.
+            prev_is_row = _looks_like_table_row(paragraphs[i - 1])
+            this_is_row = _looks_like_table_row(p)
+            body_parts.append("\n" if (prev_is_row and this_is_row) else "\n\n")
+        body_parts.append(p)
+    body = "".join(body_parts) if body_parts else text
     topic = topics[0] if topics else None
     return {"title": title, "subtitle": subtitle, "topic": topic, "snippet": snippet, "body": body}
+
+
+def _looks_like_table_row(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("|") and s.endswith("|") and s.count("|") >= 2
+
+
+def _is_table_separator_row(line: str) -> bool:
+    """`| --- | :--- | ---: |` — a markdown table's header/body divider row.
+    Checked cell-by-cell rather than with one big character class, since a
+    naive `^\\|[\\s:-]+\\|$` also has to reject the '|' *between* cells."""
+    s = line.strip()
+    if not (s.startswith("|") and s.endswith("|")):
+        return False
+    cells = [c.strip() for c in s.strip("|").split("|")]
+    return len(cells) >= 1 and all(re.match(r"^:?-{2,}:?$", c) for c in cells)
+
+
+# Matches the SECTION_JOIN / type-marker microsyntax the studio's section
+# editor uses (static/alpha-studio.html — keep in sync with SECTION_JOIN and
+# the type marker patterns there).
+_SECTION_JOIN = "<!--section-->"
+
+
+def auto_section_tables(body: str) -> str:
+    """Wraps any markdown-table-shaped block (a `| ... |` row, a `|---|---|`
+    separator row, then more `| ... |` rows) in its own Table section, so a
+    table detected in an uploaded document lands directly in a Table section
+    for editing instead of as garbled pipe-delimited text in a Normal one.
+    No-op if the body has no such block.
+    """
+    lines = body.split("\n")
+    out_lines = []
+    i = 0
+    found_any = False
+    while i < len(lines):
+        line = lines[i]
+        if _looks_like_table_row(line) and i + 1 < len(lines) and _is_table_separator_row(lines[i + 1]):
+            # Found a table: header row + separator row, then consume further row lines.
+            table_lines = [line, lines[i + 1]]
+            j = i + 2
+            while j < len(lines) and _looks_like_table_row(lines[j]):
+                table_lines.append(lines[j])
+                j += 1
+            while out_lines and not out_lines[-1].strip():
+                out_lines.pop()
+            if out_lines:
+                out_lines.append("")
+                out_lines.append(_SECTION_JOIN)
+                out_lines.append("")
+            out_lines.append("<!--type:table-->")
+            out_lines.extend(table_lines)
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines):
+                out_lines.append("")
+                out_lines.append(_SECTION_JOIN)
+                out_lines.append("")
+            found_any = True
+            i = j
+            continue
+        out_lines.append(line)
+        i += 1
+    return "\n".join(out_lines) if found_any else body
 
 
 def _send_email(to_addr: str, subject: str, body: str) -> None:
@@ -1586,11 +1681,12 @@ def api_alpha_upload():
     author_topics = ALPHA_TOPICS.get(author, [])
     normalized = normalize_content(raw_text, author, author_topics)
     topic = requested_topic if requested_topic in author_topics else normalized["topic"]
+    body = auto_section_tables(normalized["body"]) if kind == "post" else normalized["body"]
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
         "title": normalized["title"], "subtitle": normalized["subtitle"],
-        "snippet": normalized["snippet"], "body": normalized["body"],
+        "snippet": normalized["snippet"], "body": body,
         "stance": None, "url": None,
         "source_kind": source_kind, "source_filename": source_filename, "source_text": raw_text,
     }

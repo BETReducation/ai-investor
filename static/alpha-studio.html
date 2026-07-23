@@ -122,6 +122,21 @@
 .content-section-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
 .content-section-block .section-remove { align-self: flex-start; }
+.section-type-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.section-type-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.content-section-block[data-type="tip"] { border-width: 1px; }
+.content-section-block[data-type="tip"][data-topic-accent="a"] { border-color: rgba(45,212,191,0.4); background: rgba(45,212,191,0.06); }
+.content-section-block[data-type="tip"][data-topic-accent="b"] { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06); }
+.content-section-block[data-type="tip"][data-topic-accent="c"] { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.06); }
+.section-side-tabs { display: flex; gap: 8px; }
+.table-grid-wrap { overflow-x: auto; }
+.table-grid { border-collapse: collapse; width: 100%; }
+.table-grid td { border: 1px solid var(--border); padding: 2px; }
+.table-grid input { width: 100%; min-width: 90px; border: none; background: transparent; color: var(--text); font-size: 13px; padding: 8px; font-family: inherit; }
+.table-grid input:focus { outline: 2px solid var(--teal); outline-offset: -2px; }
+.table-grid tr:first-child input { font-weight: 700; }
+.table-grid-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.section-image-preview { max-width: 100%; max-height: 160px; border-radius: 8px; display: block; margin-top: 4px; object-fit: cover; }
 
 /* Published cards open read-only until Edit is pressed. */
 .studio-card.locked .form-input,
@@ -355,6 +370,13 @@ const AUTHOR_TOPICS = {
   connor: ['Macro & Micro', 'Quant Statistics', 'Finance & Formulae'],
 };
 const AUTHOR_NAMES = { tom: 'Tom', dave: 'Dave', gary: 'Gary', connor: 'Connor' };
+// Same index -> a/b/c mapping as topicAccentClass() in alpha-post.html, so a
+// Top Tip section's border/background always matches the live post's topic
+// pill color.
+function topicAccentClass(topic) {
+  const idx = (AUTHOR_TOPICS[currentAuthor] || []).indexOf(topic);
+  return idx === 1 ? 'b' : idx === 2 ? 'c' : 'a';
+}
 const KIND_LABELS = { post: 'Post', video: 'Video', link: 'Link', watchlist: 'Watchlist' };
 
 let currentAuthor = null;
@@ -1052,31 +1074,109 @@ function buildCard(item, skipHead) {
     // Both render identically (a plain <hr>) on the live post.
     const SECTION_JOIN = '<!--section-->';
 
-    function parseSections(body) {
+    // A chunk's own first line optionally tags its type — absent means
+    // 'normal', matching every pre-existing post's body untouched. Must stay
+    // in sync with stripTypeMarker()/renderBody() in alpha-post.html and
+    // auto_section_tables() in app.py.
+    function stripTypeMarker(chunkText) {
+      const lines = chunkText.replace(/^\n+/, '').split('\n');
+      let type = 'normal', side = null;
+      if (lines[0] && lines[0].trim() === '<!--type:tip-->') { type = 'tip'; lines.shift(); }
+      else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
+      else {
+        const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
+        if (im) { type = 'image'; side = im[1]; lines.shift(); }
+      }
+      while (lines.length && !lines[0].trim()) lines.shift();
+      return { type, side, rest: lines.join('\n') };
+    }
+
+    function rowToMd(cells) {
+      return '| ' + cells.map(c => (c || '').trim().replace(/\|/g, '\\|')).join(' | ') + ' |';
+    }
+    function rowsToMarkdown(rows) {
+      const lines = [rowToMd(rows[0]), '|' + rows[0].map(() => ' --- ').join('|') + '|'];
+      for (let i = 1; i < rows.length; i++) lines.push(rowToMd(rows[i]));
+      return lines.join('\n');
+    }
+    function splitTableRow(line) {
+      return line.trim().replace(/^\|/, '').replace(/\|$/, '')
+        .split(/(?<!\\)\|/)
+        .map(c => c.trim().replace(/\\\|/g, '|'));
+    }
+
+    function parseSectionChunk(chunkText) {
+      const { type, side, rest } = stripTypeMarker(chunkText);
+      const lines = rest.split('\n');
+      if (type === 'table') {
+        let heading = '';
+        if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); while (lines.length && !lines[0].trim()) lines.shift(); }
+        const rowLines = lines.filter((l, i) => l.trim() && i !== 1);
+        const rows = rowLines.map(splitTableRow);
+        return { type: 'table', heading, rows: rows.length ? rows : [['Column A', 'Column B'], ['', '']] };
+      }
+      if (type === 'image') {
+        let heading = '';
+        if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); }
+        while (lines.length && !lines[0].trim()) lines.shift();
+        let imageUrl = '', alt = '';
+        if (lines[0]) {
+          const m = lines[0].trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+          if (m) { alt = m[1]; imageUrl = m[2]; lines.shift(); }
+        }
+        while (lines.length && !lines[0].trim()) lines.shift();
+        return { type: 'image', side: side || 'left', heading, imageUrl, alt, body: lines.join('\n').replace(/\n+$/, '') };
+      }
+      // normal / tip
+      let heading = '';
+      if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); while (lines.length && !lines[0].trim()) lines.shift(); }
+      return { type, heading, body: lines.join('\n').replace(/^\n+|\n+$/g, '') };
+    }
+
+    // Splits raw text on SECTION_JOIN only — no heading-based splitting — so a
+    // heading inside a typed (tip/table/image) section never gets mistaken
+    // for a new section boundary.
+    function splitOnJoin(body) {
       const src = (body || '').replace(/\r\n/g, '\n');
-      const out = [];
-      let cur = { heading: '', body: [] };
-      let seen = false;
+      const chunks = [];
+      let cur = [];
       src.split('\n').forEach(line => {
-        const h = line.match(/^##\s+(.*)$/);
-        if (h) {
-          if (seen) out.push(cur);
-          cur = { heading: h[1].trim(), body: [] };
+        if (line.trim() === SECTION_JOIN) { chunks.push(cur.join('\n')); cur = []; }
+        else cur.push(line);
+      });
+      chunks.push(cur.join('\n'));
+      return chunks;
+    }
+
+    // Legacy fallback (pre-dates SECTION_JOIN): a body with no join markers
+    // at all splits on "## " headings instead, same as the very first
+    // version of this feature, so old posts still open as separate boxes.
+    function splitLegacyOnHeadings(chunkText) {
+      const out = [];
+      let cur = [];
+      let seen = false;
+      chunkText.split('\n').forEach(line => {
+        if (/^##\s+/.test(line)) {
+          if (seen) out.push(cur.join('\n'));
+          cur = [line];
           seen = true;
-        } else if (line.trim() === SECTION_JOIN) {
-          if (seen) out.push(cur);
-          cur = { heading: '', body: [] };
-          seen = false;
         } else {
-          cur.body.push(line);
+          cur.push(line);
           if (line.trim()) seen = true;
         }
       });
-      out.push(cur);
-      const cleaned = out
-        .map(s => ({ heading: s.heading, body: s.body.join('\n').replace(/^\n+|\n+$/g, '') }))
-        .filter(s => s.heading || s.body.trim());
-      return cleaned.length ? cleaned : [{ heading: '', body: '' }];
+      out.push(cur.join('\n'));
+      return out.filter(c => c.trim());
+    }
+
+    function parseSections(body) {
+      const src = (body || '').replace(/\r\n/g, '\n');
+      const hasJoin = src.split('\n').some(l => l.trim() === SECTION_JOIN);
+      const rawChunks = hasJoin ? splitOnJoin(src) : splitLegacyOnHeadings(src);
+      const parsed = rawChunks
+        .map(parseSectionChunk)
+        .filter(s => s.type !== 'normal' || s.heading || s.body.trim());
+      return parsed.length ? parsed : [{ type: 'normal', heading: '', body: '' }];
     }
 
     function updateRemoveButtons() {
@@ -1086,9 +1186,33 @@ function buildCard(item, skipHead) {
       });
     }
 
-    function buildSection(sec) {
+    function appendRemoveButton(block) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-danger-sm section-remove';
+      removeBtn.textContent = 'Remove section';
+      removeBtn.onclick = () => {
+        if (sectionsWrap.querySelectorAll('.content-section-block').length <= 1) return;
+        if (activeTextarea && block.contains(activeTextarea)) activeTextarea = null;
+        block.remove();
+        updateRemoveButtons();
+      };
+      block.appendChild(removeBtn);
+    }
+
+    function buildTextSection(sec) {
+      const type = sec.type === 'tip' ? 'tip' : 'normal';
       const block = document.createElement('div');
       block.className = 'content-section-block';
+      block.dataset.type = type;
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = type === 'tip' ? '💡 Top Tip' : 'Normal';
+      block.appendChild(label);
+
+      if (type === 'tip') block.dataset.topicAccent = topicAccentClass(topicSelect ? topicSelect.value : '');
+
       const hd = document.createElement('input');
       hd.className = 'form-input section-heading';
       hd.placeholder = 'Section heading (optional)';
@@ -1102,55 +1226,307 @@ function buildCard(item, skipHead) {
       ta.value = sec.body || '';
       ta.addEventListener('input', () => autoGrowTextarea(ta, 600));
       ta.addEventListener('focus', () => { activeTextarea = ta; });
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'btn-danger-sm section-remove';
-      removeBtn.textContent = 'Remove section';
-      removeBtn.onclick = () => {
-        if (sectionsWrap.querySelectorAll('.content-section-block').length <= 1) return;
-        if (activeTextarea === ta) activeTextarea = null;
-        block.remove();
-        updateRemoveButtons();
-      };
       registerLock(hd);
       registerLock(ta);
       block.appendChild(hd);
       block.appendChild(ta);
-      block.appendChild(removeBtn);
+      appendRemoveButton(block);
       sectionsWrap.appendChild(block);
       if (!activeTextarea) activeTextarea = ta;
       setTimeout(() => autoGrowTextarea(ta, 600), 0);
       return block;
     }
 
+    function buildTableSection(sec) {
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      block.dataset.type = 'table';
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = 'Table';
+      block.appendChild(label);
+
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = 'Table heading (optional)';
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      registerLock(hd);
+      block.appendChild(hd);
+
+      const gridWrap = document.createElement('div');
+      gridWrap.className = 'table-grid-wrap';
+      const table = document.createElement('table');
+      table.className = 'table-grid';
+      gridWrap.appendChild(table);
+      block.appendChild(gridWrap);
+
+      function addCell(tr, value) {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value || '';
+        input.spellcheck = true;
+        registerLock(input);
+        td.appendChild(input);
+        tr.appendChild(td);
+      }
+      function addRow(values) {
+        const tr = document.createElement('tr');
+        const width = table.rows.length ? table.rows[0].cells.length : ((values && values.length) || 2);
+        const vals = values && values.length ? values : new Array(width).fill('');
+        vals.forEach(v => addCell(tr, v));
+        table.appendChild(tr);
+      }
+      function addColumn() {
+        [...table.rows].forEach(tr => addCell(tr, ''));
+      }
+      function removeLastRow() {
+        if (table.rows.length > 1) table.deleteRow(table.rows.length - 1);
+      }
+      function removeLastColumn() {
+        if (table.rows.length && table.rows[0].cells.length > 1) {
+          [...table.rows].forEach(tr => tr.deleteCell(tr.cells.length - 1));
+        }
+      }
+
+      (sec.rows && sec.rows.length ? sec.rows : [['Column A', 'Column B'], ['', ''], ['', '']]).forEach(r => addRow(r));
+
+      const actions = document.createElement('div');
+      actions.className = 'table-grid-actions edit-chrome';
+      const addRowBtn = document.createElement('button'); addRowBtn.type = 'button'; addRowBtn.className = 'btn-ghost-sm'; addRowBtn.textContent = '+ Row';
+      addRowBtn.onclick = () => addRow();
+      const addColBtn = document.createElement('button'); addColBtn.type = 'button'; addColBtn.className = 'btn-ghost-sm'; addColBtn.textContent = '+ Column';
+      addColBtn.onclick = () => addColumn();
+      const delRowBtn = document.createElement('button'); delRowBtn.type = 'button'; delRowBtn.className = 'btn-ghost-sm'; delRowBtn.textContent = 'Remove last row';
+      delRowBtn.onclick = () => removeLastRow();
+      const delColBtn = document.createElement('button'); delColBtn.type = 'button'; delColBtn.className = 'btn-ghost-sm'; delColBtn.textContent = 'Remove last column';
+      delColBtn.onclick = () => removeLastColumn();
+      [addRowBtn, addColBtn, delRowBtn, delColBtn].forEach(b => actions.appendChild(b));
+      block.appendChild(actions);
+
+      const hint = document.createElement('div');
+      hint.className = 'form-msg';
+      hint.textContent = 'First row is the table header.';
+      block.appendChild(hint);
+
+      appendRemoveButton(block);
+      sectionsWrap.appendChild(block);
+      return block;
+    }
+
+    function buildImageSection(sec) {
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      block.dataset.type = 'image';
+      block.dataset.side = sec.side || 'left';
+      block.dataset.imageUrl = sec.imageUrl || '';
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = 'Image';
+      block.appendChild(label);
+
+      const sideTabs = document.createElement('div');
+      sideTabs.className = 'section-side-tabs edit-chrome';
+      const leftBtn = document.createElement('button'); leftBtn.type = 'button'; leftBtn.className = 'card-image-tab'; leftBtn.textContent = 'Image on Left';
+      const rightBtn = document.createElement('button'); rightBtn.type = 'button'; rightBtn.className = 'card-image-tab'; rightBtn.textContent = 'Image on Right';
+      function renderSide() {
+        leftBtn.classList.toggle('active', block.dataset.side === 'left');
+        rightBtn.classList.toggle('active', block.dataset.side === 'right');
+      }
+      leftBtn.onclick = () => { block.dataset.side = 'left'; renderSide(); };
+      rightBtn.onclick = () => { block.dataset.side = 'right'; renderSide(); };
+      renderSide();
+      sideTabs.appendChild(leftBtn); sideTabs.appendChild(rightBtn);
+      block.appendChild(sideTabs);
+
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = 'Title';
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      registerLock(hd);
+      block.appendChild(hd);
+
+      const imgTabs = document.createElement('div');
+      imgTabs.className = 'card-image-tabs edit-chrome';
+      const urlTab = document.createElement('button'); urlTab.type = 'button'; urlTab.className = 'card-image-tab'; urlTab.textContent = 'Image URL';
+      const uploadTab = document.createElement('button'); uploadTab.type = 'button'; uploadTab.className = 'card-image-tab'; uploadTab.textContent = 'Upload';
+      imgTabs.appendChild(urlTab); imgTabs.appendChild(uploadTab);
+      block.appendChild(imgTabs);
+
+      let imgMode = 'url';
+      const imgUrlInput = document.createElement('input');
+      imgUrlInput.className = 'form-input';
+      imgUrlInput.placeholder = 'https://example.com/image.jpg';
+      imgUrlInput.value = sec.imageUrl || '';
+      registerLock(imgUrlInput);
+      block.appendChild(imgUrlInput);
+
+      const uploadRow = document.createElement('div');
+      uploadRow.className = 'edit-chrome';
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+      const uploadBtn = document.createElement('button');
+      uploadBtn.type = 'button'; uploadBtn.className = 'btn-ghost-sm'; uploadBtn.textContent = 'Upload Image';
+      const imgMsg = document.createElement('span'); imgMsg.className = 'form-msg';
+      uploadRow.appendChild(fileInput); uploadRow.appendChild(uploadBtn); uploadRow.appendChild(imgMsg);
+      block.appendChild(uploadRow);
+
+      const preview = document.createElement('img');
+      preview.className = 'section-image-preview';
+      if (sec.imageUrl) preview.src = sec.imageUrl; else preview.style.display = 'none';
+      block.appendChild(preview);
+
+      function renderImgMode() {
+        urlTab.classList.toggle('active', imgMode === 'url');
+        uploadTab.classList.toggle('active', imgMode === 'upload');
+        imgUrlInput.style.display = imgMode === 'url' ? 'block' : 'none';
+        uploadRow.style.display = imgMode === 'upload' ? 'flex' : 'none';
+      }
+      urlTab.onclick = () => { imgMode = 'url'; renderImgMode(); };
+      uploadTab.onclick = () => { imgMode = 'upload'; renderImgMode(); };
+      renderImgMode();
+
+      imgUrlInput.addEventListener('input', () => {
+        block.dataset.imageUrl = imgUrlInput.value.trim();
+        if (block.dataset.imageUrl) { preview.src = block.dataset.imageUrl; preview.style.display = 'block'; }
+        else preview.style.display = 'none';
+      });
+
+      uploadBtn.onclick = async () => {
+        const f = fileInput.files[0];
+        if (!f) { imgMsg.textContent = 'Choose a file first.'; imgMsg.className = 'form-msg error'; return; }
+        const oversize = oversizeMessage(f);
+        if (oversize) { imgMsg.textContent = oversize; imgMsg.className = 'form-msg error'; return; }
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading…';
+        const form = new FormData();
+        form.append('image', f);
+        try {
+          const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          block.dataset.imageUrl = data.url;
+          imgUrlInput.value = data.url;
+          preview.src = data.url;
+          preview.style.display = 'block';
+          imgMsg.textContent = 'Image uploaded.';
+          imgMsg.className = 'form-msg success';
+        } catch (e) {
+          imgMsg.textContent = friendlyUploadError(e);
+          imgMsg.className = 'form-msg error';
+        } finally {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'Upload Image';
+        }
+      };
+
+      const desc = document.createElement('textarea');
+      desc.className = 'form-textarea section-body';
+      desc.rows = 4;
+      desc.placeholder = 'Description';
+      desc.spellcheck = true;
+      desc.value = sec.body || '';
+      desc.addEventListener('input', () => autoGrowTextarea(desc, 400));
+      desc.addEventListener('focus', () => { activeTextarea = desc; });
+      registerLock(desc);
+      block.appendChild(desc);
+
+      appendRemoveButton(block);
+      sectionsWrap.appendChild(block);
+      setTimeout(() => autoGrowTextarea(desc, 400), 0);
+      return block;
+    }
+
+    function buildSection(sec) {
+      if (sec.type === 'table') return buildTableSection(sec);
+      if (sec.type === 'image') return buildImageSection(sec);
+      return buildTextSection(sec);
+    }
+
+    function emptySection(type) {
+      if (type === 'table') return { type: 'table', heading: '', rows: [['Column A', 'Column B'], ['', ''], ['', '']] };
+      if (type === 'image') return { type: 'image', side: 'left', heading: '', imageUrl: '', alt: '', body: '' };
+      return { type, heading: '', body: '' };
+    }
+
     parseSections(val('body')).forEach(buildSection);
     updateRemoveButtons();
 
-    const addSectionBtn = document.createElement('button');
-    addSectionBtn.type = 'button';
-    addSectionBtn.className = 'btn-ghost-sm add-section-btn edit-chrome';
-    addSectionBtn.textContent = '+ Add section';
-    addSectionBtn.onclick = () => {
-      const block = buildSection({ heading: '', body: '' });
-      updateRemoveButtons();
-      block.querySelector('.section-body').focus();
-    };
-    card.appendChild(addSectionBtn);
+    // A Top Tip's accent color follows the post's own topic — keep every
+    // tip box in sync when the author changes the topic dropdown.
+    if (topicSelect) {
+      topicSelect.addEventListener('change', () => {
+        const accent = topicAccentClass(topicSelect.value);
+        sectionsWrap.querySelectorAll('.content-section-block[data-type="tip"]').forEach(b => { b.dataset.topicAccent = accent; });
+      });
+    }
+
+    const sectionTypePicker = document.createElement('div');
+    sectionTypePicker.className = 'section-type-picker edit-chrome';
+    [
+      { type: 'normal', label: '+ Normal' },
+      { type: 'tip', label: '+ Top Tip' },
+      { type: 'table', label: '+ Table' },
+      { type: 'image', label: '+ Image' },
+    ].forEach(({ type, label }) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-ghost-sm';
+      btn.textContent = label;
+      btn.onclick = () => {
+        const block = buildSection(emptySection(type));
+        updateRemoveButtons();
+        const focusEl = block.querySelector('.section-heading, .section-body, .table-grid input');
+        if (focusEl) focusEl.focus();
+      };
+      sectionTypePicker.appendChild(btn);
+    });
+    card.appendChild(sectionTypePicker);
 
     function serializeSections() {
       const parts = [];
       sectionsWrap.querySelectorAll('.content-section-block').forEach(b => {
+        const type = b.dataset.type || 'normal';
+        if (type === 'table') {
+          const heading = (b.querySelector('.section-heading').value || '').trim();
+          const grid = [...b.querySelectorAll('.table-grid tr')].map(tr => [...tr.querySelectorAll('input')].map(i => i.value));
+          const cleaned = grid.filter(r => r.some(c => c.trim()));
+          if (!cleaned.length) return;
+          let chunk = '<!--type:table-->';
+          if (heading) chunk += '\n## ' + heading;
+          chunk += '\n' + rowsToMarkdown(cleaned);
+          parts.push(chunk);
+          return;
+        }
+        if (type === 'image') {
+          const heading = b.querySelector('.section-heading').value.trim();
+          const desc = b.querySelector('.section-body').value.trim();
+          const url = (b.dataset.imageUrl || '').trim();
+          if (!heading && !desc && !url) return;
+          let chunk = '<!--type:image:' + (b.dataset.side === 'right' ? 'right' : 'left') + '-->';
+          if (heading) chunk += '\n## ' + heading;
+          if (url) chunk += '\n![' + heading.replace(/[[\]]/g, '') + '](' + url + ')';
+          if (desc) chunk += (heading || url ? '\n\n' : '\n') + desc;
+          parts.push(chunk);
+          return;
+        }
+        // normal / tip
         const h = b.querySelector('.section-heading').value.trim();
         const body = b.querySelector('.section-body').value.replace(/\s+$/, '').replace(/^\n+/, '');
-        let chunk = '';
-        if (h) chunk += '## ' + h;
-        if (body) chunk += (h ? '\n\n' : '') + body;
+        let chunk = type === 'tip' ? '<!--type:tip-->' : '';
+        if (h) chunk += (chunk ? '\n' : '') + '## ' + h;
+        if (body) chunk += (chunk ? '\n\n' : '') + body;
         if (chunk.trim()) parts.push(chunk);
       });
       // Joins sections with the reserved SECTION_JOIN marker (renders as a
-      // greyed-out horizontal rule on the live post, same as a manual
-      // divider, but kept textually distinct so it round-trips through
-      // parseSections without swallowing a manual divider's section).
+      // greyed-out horizontal rule between them on the live post, same as a
+      // manual divider, but kept textually distinct so it round-trips through
+      // parseSections without swallowing a manual divider's section — or a
+      // typed section's own type marker).
       return parts.join('\n\n' + SECTION_JOIN + '\n\n');
     }
 
