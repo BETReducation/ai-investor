@@ -972,8 +972,13 @@ def auto_section_tables(body: str) -> str:
 # the image). Content between one Heading 2 and the next belongs to that
 # section. Keep these tags in sync with stripTypeMarker()'s marker strings in
 # static/alpha-studio.html and static/alpha-post.html.
+#
+# Two more tags don't create a section at all — they fill the draft's own
+# Subtitle/Snippet fields instead: "[SUBTITLE] ..." and "[SNIPPET] ...". Put
+# the text right on the heading line, or leave the heading bare and write it
+# as the paragraph(s) underneath — either works (see flush()'s "meta:" case).
 _TYPE_MARKERS = {"tip": "<!--type:tip-->", "quote": "<!--type:quote-->", "table": "<!--type:table-->"}
-_HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IMAGE)\]\s*", re.IGNORECASE)
+_HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IMAGE|SUBTITLE|SNIPPET)\]\s*", re.IGNORECASE)
 _BLIP_TAG = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
 _R_EMBED_ATTR = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
 
@@ -996,15 +1001,19 @@ def _paragraph_image(paragraph, document):
 
 
 def extract_structured_docx(file_storage):
-    """Parses a docx built from the section template into a list of section
-    dicts, or returns None if the doc has no "Heading 2" paragraph at all
-    (i.e. it wasn't built from the template) — callers should fall back to
-    the plain extract_text_from_upload() + normalize_content() path then.
+    """Parses a docx built from the section template into (sections, meta),
+    or returns None if the doc has no "Heading 2" paragraph at all (i.e. it
+    wasn't built from the template) — callers should fall back to the plain
+    extract_text_from_upload() + normalize_content() path then.
 
-    Each dict: {type, heading, body_lines: [str, ...], rows: [[str,...],...]
-    or None, image: (bytes, ext) or None, side: 'left'|'right'}. Images
-    aren't uploaded here (no content row/id exists yet at extraction time —
-    see _serialize_structured_sections, called after alpha_content_create).
+    sections: list of {type, heading, body_lines: [str, ...],
+    rows: [[str,...],...] or None, image: (bytes, ext) or None,
+    side: 'left'|'right'}. Images aren't uploaded here (no content row/id
+    exists yet at extraction time — see _serialize_structured_sections,
+    called after alpha_content_create).
+
+    meta: {"subtitle": str or None, "snippet": str or None} — filled from any
+    "[SUBTITLE]"/"[SNIPPET]" tagged block instead of becoming a section.
     """
     import docx
     from docx.table import Table as DocxTable
@@ -1023,11 +1032,17 @@ def extract_structured_docx(file_storage):
         return None
 
     sections = []
+    meta = {"subtitle": None, "snippet": None}
     cur = blank_section()
 
     def flush():
         nonlocal cur
-        if cur["heading"] or cur["body_lines"] or cur["rows"] or cur["image"]:
+        if cur["type"].startswith("meta:"):
+            field = cur["type"].split(":", 1)[1]
+            value = (cur["heading"] or "").strip() or "\n".join(cur["body_lines"]).strip()
+            if value:
+                meta[field] = value
+        elif cur["heading"] or cur["body_lines"] or cur["rows"] or cur["image"]:
             sections.append(cur)
         cur = blank_section()
 
@@ -1048,6 +1063,10 @@ def extract_structured_docx(file_storage):
                         cur["type"] = "quote"
                     elif tag == "TABLE":
                         cur["type"] = "table"
+                    elif tag == "SUBTITLE":
+                        cur["type"] = "meta:subtitle"
+                    elif tag == "SNIPPET":
+                        cur["type"] = "meta:snippet"
                     elif tag.startswith("IMAGE"):
                         cur["type"] = "image"
                         cur["side"] = "right" if "RIGHT" in tag else "left"
@@ -1079,7 +1098,7 @@ def extract_structured_docx(file_storage):
                 cur["rows"] = rows
                 flush()
     flush()
-    return sections
+    return sections, meta
 
 
 def _serialize_structured_sections(sections, upload_image) -> str:
@@ -1829,6 +1848,7 @@ def api_alpha_upload():
     file_bytes = None
     source_filename = None
     structured_sections = None
+    structured_meta = {}
     try:
         if "file" in request.files and request.files["file"].filename:
             f = request.files["file"]
@@ -1841,7 +1861,9 @@ def api_alpha_upload():
             if file_ext == "docx" and kind == "post":
                 f.seek(0)
                 try:
-                    structured_sections = extract_structured_docx(f)
+                    result = extract_structured_docx(f)
+                    if result is not None:
+                        structured_sections, structured_meta = result
                 except Exception:
                     structured_sections = None  # not a template doc, or unreadable structure — fall back below
         elif (request.form.get("link") or "").strip():
@@ -1859,11 +1881,16 @@ def api_alpha_upload():
     normalized = normalize_content(raw_text, author, author_topics)
     topic = requested_topic if requested_topic in author_topics else normalized["topic"]
     body = auto_section_tables(normalized["body"]) if kind == "post" else normalized["body"]
-    # normalize_content's title is a naive first-sentence split of the whole
-    # flattened document — for a structured upload, the first Normal
-    # section's own Heading 2 text is a much better title candidate.
+    # normalize_content's title/subtitle/snippet are a naive split of the
+    # whole flattened document — a structured upload has much better
+    # candidates: the first Normal section's own heading for the title, and
+    # any explicit "[SUBTITLE]"/"[SNIPPET]" tagged block for those fields.
     if structured_sections and structured_sections[0].get("type") == "normal" and structured_sections[0].get("heading"):
         normalized["title"] = structured_sections[0]["heading"][:100]
+    if structured_meta.get("subtitle"):
+        normalized["subtitle"] = structured_meta["subtitle"][:140]
+    if structured_meta.get("snippet"):
+        normalized["snippet"] = structured_meta["snippet"][:280]
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
