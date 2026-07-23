@@ -1563,32 +1563,41 @@ function buildCard(item, skipHead) {
       });
     }
 
-    // Placed above the sections list (not below) so it stays easy to find —
-    // an Image or Table section can grow tall enough to push a
-    // below-the-list "+ Add" row well out of view.
-    const sectionTypePicker = document.createElement('div');
-    sectionTypePicker.className = 'section-type-picker edit-chrome';
-    [
-      { type: 'normal', label: '+ Normal' },
-      { type: 'tip', label: '+ Top Tip' },
-      { type: 'quote', label: '+ Quote' },
-      { type: 'table', label: '+ Table' },
-      { type: 'image', label: '+ Image' },
-    ].forEach(({ type, label }) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn-ghost-sm';
-      btn.textContent = label;
-      btn.onclick = () => {
-        const block = buildSection(emptySection(type));
-        updateRemoveButtons();
-        block.scrollIntoView({ block: 'center' });
-        const focusEl = block.querySelector('.section-heading, .section-body, .table-grid input');
-        if (focusEl) focusEl.focus();
-      };
-      sectionTypePicker.appendChild(btn);
-    });
-    card.insertBefore(sectionTypePicker, sectionsWrap);
+    // Shown both above AND below the sections list — a template upload can
+    // easily produce 5+ sections, long enough that whichever end an author
+    // starts scanning from, a single copy at the *other* end is easy to miss
+    // entirely (this has happened twice with a below-only row and once with
+    // an above-only one).
+    function buildSectionTypePicker() {
+      const picker = document.createElement('div');
+      picker.className = 'section-type-picker edit-chrome';
+      [
+        { type: 'normal', label: '+ Normal' },
+        { type: 'tip', label: '+ Top Tip' },
+        { type: 'quote', label: '+ Quote' },
+        { type: 'table', label: '+ Table' },
+        { type: 'image', label: '+ Image' },
+      ].forEach(({ type, label }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-ghost-sm';
+        btn.textContent = label;
+        btn.onclick = () => {
+          const block = buildSection(emptySection(type));
+          updateRemoveButtons();
+          block.scrollIntoView({ block: 'center' });
+          const focusEl = block.querySelector('.section-heading, .section-body, .table-grid input');
+          if (focusEl) focusEl.focus();
+        };
+        picker.appendChild(btn);
+      });
+      return picker;
+    }
+    card.insertBefore(buildSectionTypePicker(), sectionsWrap);
+    // sectionsWrap is still the last child of card at this point (the file
+    // link, hero image UI, etc. are all appended later below), so this lands
+    // immediately after the section list either way.
+    card.appendChild(buildSectionTypePicker());
 
     function serializeSections() {
       const parts = [];
