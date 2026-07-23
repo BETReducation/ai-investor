@@ -371,44 +371,64 @@ window.addEventListener('resize', () => {
       <div class="control-row">
         <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
         <div class="input-group">
-          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px">
+          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
         </div>
       </div>
       <div class="toggle-row">
-        <div class="toggle-label">Position Size in <span id="posSizeGbpToggleSym">£</span></div>
-        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        <div class="toggle-label">Position Size in Currency</div>
+        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked); syncFixedTargetsFromPositionValue()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
       <div class="range-row" id="posSizePctRow">
         <div class="range-header">
           <div class="control-label">Position Size</div>
           <div class="range-value" id="posSizeVal">20%</div>
         </div>
-        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'">
+        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'; syncFixedTargetsFromPositionValue()">
       </div>
       <div class="control-row" id="posSizeGbpRow" style="display:none;">
         <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
         <div class="input-group">
-          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px">
+          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
         </div>
       </div>
-      <div class="range-row">
+      <div class="toggle-row">
+        <div class="toggle-label">Target Gain in Currency</div>
+        <label class="toggle"><input type="checkbox" id="targetGainCcyMode" onchange="onToggleTargetGainMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="targetGainPctRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Target Gain <span>(per trade)</span></div>
           <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="200.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
         </div>
         <input type="range" id="targetGain" min="1" max="4000" step="1" value="200" oninput="onPctSliderInput('targetGain','targetVal')">
       </div>
+      <div class="control-row" id="targetGainCcyRow" style="display:none;">
+        <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()">
+        </div>
+      </div>
       <div class="sep"></div>
       <div class="toggle-row">
         <div class="toggle-label">Fixed Stop-Loss</div>
         <label class="toggle"><input type="checkbox" id="fixedSL" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="range-row" id="fixedSLRow">
+      <div class="toggle-row">
+        <div class="toggle-label">Stop-Loss in Currency</div>
+        <label class="toggle"><input type="checkbox" id="stopLossCcyMode" onchange="onToggleStopLossMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="stopLossPctRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop-Loss %</div>
           <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="100.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
         </div>
         <input type="range" id="stopLoss" min="1" max="4000" step="1" value="100" oninput="onPctSliderInput('stopLoss','slVal')">
+      </div>
+      <div class="control-row" id="stopLossCcyRow" style="display:none;">
+        <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()">
+        </div>
       </div>
       <div class="toggle-row">
         <div class="toggle-label">Trailing Stop-Loss</div>
@@ -3285,28 +3305,35 @@ function ensureAdvancedOverlayTypes() {
     },
   });
 
-  // Long/Short Position: 3 clicks (entry, target, stop). Long and short are the exact
-  // same geometry — profit/loss zones are derived from where the user clicks relative
-  // to entry, not a hardcoded up/down assumption — so both names share one builder.
+  // Long/Short Position: 3 clicks (entry, target, stop). The zones themselves are
+  // still pure geometry — wherever you click "target" draws green, wherever you
+  // click "stop" draws red, no hardcoded up/down assumption. But the P&L NUMBERS in
+  // those zones do need to know direction: a short profits when price FALLS, so a
+  // target clicked below entry (a negative raw price move) is a GAIN for a short,
+  // not a loss — flipping the sign here is what that fix is. Before this, both
+  // overlays used the raw price-delta % directly, so a short's target box showed a
+  // negative $/% for what was actually a winning move.
   const positionFigures = ({ overlay, coordinates }) => {
     if (!overlay || !overlay.points || overlay.points.length < 3 || !coordinates || coordinates.length < 3) return [];
     const [pEntry, pTarget, pStop] = overlay.points;
     const [cEntry, cTarget, cStop] = coordinates;
-    const cfg = getConfig();
-    const positionValue = cfg.posSizeGbpMode ? cfg.posSizeGbp : cfg.capital * (cfg.posSize / 100);
-    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 : 0;
-    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const positionValue = computeInvested();
+    const dir = overlay.name === 'shortPosition' ? -1 : 1;
+    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 * dir : 0;
+    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 * dir : 0;
     const profitAmt = positionValue * profitPct / 100;
     const lossAmt = positionValue * lossPct / 100;
     const rr = lossPct !== 0 ? Math.abs(profitPct / lossPct) : 0;
     const green = cssVar('--accent-green', '#00ff88'), red = cssVar('--accent-red', '#ff3355');
     const boxWidth = 70;
     const sym = getCurrencySymbol();
+    const fmtPct = n => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+    const fmtAmt = n => (n >= 0 ? '+' : '') + sym + Math.abs(n).toFixed(2);
     return [
       { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cTarget.y), width: boxWidth, height: Math.max(1, Math.abs(cTarget.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(green, 0.22) }, ignoreEvent: true },
       { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cStop.y), width: boxWidth, height: Math.max(1, Math.abs(cStop.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(red, 0.22) }, ignoreEvent: true },
-      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `+${profitPct.toFixed(2)}%  ${sym}${profitAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
-      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${lossPct.toFixed(2)}%  ${sym}${lossAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `${fmtPct(profitPct)}  ${fmtAmt(profitAmt)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${fmtPct(lossPct)}  ${fmtAmt(lossAmt)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
       { type: 'text', attrs: { x: cEntry.x + boxWidth / 2, y: Math.min(cEntry.y, cTarget.y, cStop.y) - 6, text: `R:R 1:${rr.toFixed(2)}`, align: 'center', baseline: 'bottom' }, styles: { color: cssVar('--text-primary', '#e2e8f0'), size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
     ];
   };
@@ -3868,10 +3895,12 @@ function refreshCurrencyDisplays() {
   const label = `(${selectedCurrency === 'CUSTOM' ? sym : selectedCurrency})`;
   const capLabel = document.getElementById('capitalCurrencyLabel');
   if (capLabel) capLabel.textContent = label;
-  const toggleSym = document.getElementById('posSizeGbpToggleSym');
-  if (toggleSym) toggleSym.textContent = sym;
   const posLabelSym = document.getElementById('posSizeGbpLabelSym');
   if (posLabelSym) posLabelSym.textContent = `(${sym})`;
+  const targetLabelSym = document.getElementById('targetGainCcyLabelSym');
+  if (targetLabelSym) targetLabelSym.textContent = `(${sym})`;
+  const slLabelSym = document.getElementById('stopLossCcyLabelSym');
+  if (slLabelSym) slLabelSym.textContent = `(${sym})`;
 
   if (typeof updateChartOverlay === 'function')   updateChartOverlay();
   if (typeof renderWatchlist === 'function')       renderWatchlist();
@@ -3897,6 +3926,67 @@ function computeInvested() {
   const cfg = getConfig();
   if (cfg.posSizeGbpMode) return cfg.posSizeGbp;
   return cfg.capital * cfg.posSize / 100;
+}
+
+// Target Gain / Stop-Loss mode toggle (% of the trade amount vs an exact currency
+// figure) — same idea as Position Size's %/£ toggle above, but these two feed a
+// PERCENTAGE into every other consumer (fireAlert's target/sl price calc, the order
+// modal, the STRATEGY TARGET stat, saved preferences, etc.), so currency mode doesn't
+// replace the underlying #targetGain/#stopLoss <input type=range> — it computes the
+// equivalent % from computeInvested() and writes it straight through that same
+// slider (+ its paired text box), exactly like onPctTextChange already does for a
+// free-typed %. Every existing reader of cfg.targetGain/cfg.stopLoss keeps working
+// unchanged, regardless of which mode was used to set it.
+function showTargetGainMode(isCcy) {
+  document.getElementById('targetGainPctRow').style.display = isCcy ? 'none' : '';
+  document.getElementById('targetGainCcyRow').style.display = isCcy ? '' : 'none';
+}
+function showStopLossMode(isCcy) {
+  document.getElementById('stopLossPctRow').style.display = isCcy ? 'none' : '';
+  document.getElementById('stopLossCcyRow').style.display = isCcy ? '' : 'none';
+}
+// Switching INTO currency mode mid-session seeds the £ box from the slider's
+// current % (so it starts equivalent instead of some arbitrary default). Switching
+// back to % needs no action — the slider's already been kept in sync the whole time.
+function onToggleTargetGainMode(isCcy) {
+  showTargetGainMode(isCcy);
+  if (isCcy) {
+    const pct = parseFloat(document.getElementById('targetGain').value);
+    document.getElementById('targetGainCcy').value = (computeInvested() * pct / 100).toFixed(2);
+  }
+}
+function onToggleStopLossMode(isCcy) {
+  showStopLossMode(isCcy);
+  if (isCcy) {
+    const pct = parseFloat(document.getElementById('stopLoss').value);
+    document.getElementById('stopLossCcy').value = (computeInvested() * pct / 100).toFixed(2);
+  }
+}
+// Writes the £ box's value through to the %-slider (clamped the same [1,4000] range
+// onPctTextChange uses for a free-typed %).
+function applyTargetGainCcy() {
+  const invested = computeInvested();
+  const amt = parseFloat(document.getElementById('targetGainCcy').value);
+  if (!invested || !isFinite(amt)) return;
+  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('targetGain').value);
+  document.getElementById('targetGain').value = pct;
+  document.getElementById('targetVal').value = pct.toFixed(1);
+}
+function applyStopLossCcy() {
+  const invested = computeInvested();
+  const amt = parseFloat(document.getElementById('stopLossCcy').value);
+  if (!invested || !isFinite(amt)) return;
+  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('stopLoss').value);
+  document.getElementById('stopLoss').value = pct;
+  document.getElementById('slVal').value = pct.toFixed(1);
+}
+// Re-derives whichever of Target Gain / Stop-Loss is in currency mode whenever the
+// trade amount itself changes (capital, position size, or its %/£ mode) — otherwise
+// a saved "£500 target" would silently drift once the position size it was computed
+// against changes. Called from those inputs' own oninput/onchange.
+function syncFixedTargetsFromPositionValue() {
+  if (document.getElementById('targetGainCcyMode').checked) applyTargetGainCcy();
+  if (document.getElementById('stopLossCcyMode').checked) applyStopLossCcy();
 }
 
 function formatPrice(p, sym) {
@@ -4125,6 +4215,10 @@ async function savePreferences() {
     posSizeGbp:   parseFloat(document.getElementById('posSizeGbp').value),
     targetGain:   parseFloat(document.getElementById('targetGain').value),
     stopLoss:     parseFloat(document.getElementById('stopLoss').value),
+    targetGainCcyMode: document.getElementById('targetGainCcyMode').checked,
+    targetGainCcy:     parseFloat(document.getElementById('targetGainCcy').value),
+    stopLossCcyMode:   document.getElementById('stopLossCcyMode').checked,
+    stopLossCcy:       parseFloat(document.getElementById('stopLossCcy').value),
     trailDist:    parseFloat(document.getElementById('trailDist').value),
     fixedSL:      document.getElementById('fixedSL').checked,
     trailSL:      document.getElementById('trailSL').checked,
@@ -4188,8 +4282,9 @@ function applyPreferences(prefs) {
   // are loaded, so the normal page-load render flow (fetchAllAssets, etc.) picks
   // up `selectedCurrency` naturally once there's actually data to render.
   setText('capitalCurrencyLabel', `(${selectedCurrency === 'CUSTOM' ? getCurrencySymbol() : selectedCurrency})`);
-  setText('posSizeGbpToggleSym', getCurrencySymbol());
   setText('posSizeGbpLabelSym', `(${getCurrencySymbol()})`);
+  setText('targetGainCcyLabelSym', `(${getCurrencySymbol()})`);
+  setText('stopLossCcyLabelSym', `(${getCurrencySymbol()})`);
 
   set('capital',    prefs.capital);
   set('posSize',    prefs.posSize);
@@ -4201,6 +4296,12 @@ function applyPreferences(prefs) {
   if (prefs.targetGain !== undefined) set('targetVal', parseFloat(prefs.targetGain).toFixed(1));
   set('stopLoss',   prefs.stopLoss);
   if (prefs.stopLoss  !== undefined) set('slVal', parseFloat(prefs.stopLoss).toFixed(1));
+  setChk('targetGainCcyMode', prefs.targetGainCcyMode);
+  set('targetGainCcy', prefs.targetGainCcy);
+  showTargetGainMode(!!prefs.targetGainCcyMode);
+  setChk('stopLossCcyMode', prefs.stopLossCcyMode);
+  set('stopLossCcy', prefs.stopLossCcy);
+  showStopLossMode(!!prefs.stopLossCcyMode);
   set('trailDist',  prefs.trailDist);
   if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
 
