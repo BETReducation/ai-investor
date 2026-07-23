@@ -142,6 +142,12 @@
 .table-grid tr:first-child input { font-weight: 700; }
 .table-grid-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .section-image-preview { max-width: 100%; max-height: 160px; border-radius: 8px; display: block; margin-top: 4px; object-fit: cover; }
+.section-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.7; color: var(--text); }
+.section-preview p, .section-preview ul, .section-preview ol { margin-bottom: 10px; }
+.section-preview p:last-child, .section-preview ul:last-child, .section-preview ol:last-child { margin-bottom: 0; }
+.section-preview h4 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+.section-preview img { max-width: 100%; border-radius: 6px; }
+.section-preview a { color: var(--teal); }
 
 /* Published cards open read-only until Edit is pressed. */
 .studio-card.locked .form-input,
@@ -390,6 +396,12 @@ let publishedTopicFilter = '';
 let publishedDateFrom = '';
 let publishedDateTo = '';
 let allItems = [];
+// Published-item ids currently expanded — every Save/Publish/etc. calls
+// loadContent(), which rebuilds every card from scratch and used to always
+// re-collapse them, so a newly-appeared Re-publish button (or anything else
+// that only shows once expanded) stayed hidden until the author clicked
+// back into the post they were just editing.
+const openPublishedIds = new Set();
 
 function esc(str) {
   const d = document.createElement('div');
@@ -405,6 +417,20 @@ const MAX_UPLOAD_BYTES = 4.5 * 1024 * 1024;
 function oversizeMessage(file) {
   if (file.size <= MAX_UPLOAD_BYTES) return null;
   return `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — please choose one under 5 MB.`;
+}
+const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+const IMAGE_HELP_TEXT = 'PNG, JPG, GIF or WEBP — 5 MB max.';
+// SVGs can carry embedded scripts, so uploads are restricted to raster
+// formats (matches the server's own ALLOWED_IMAGE_EXTENSIONS in app.py) —
+// checked up front here so the file picker's "All Files" option can't lead
+// to a confusing server rejection after the fact.
+function unsupportedTypeMessage(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ALLOWED_IMAGE_EXTENSIONS.includes(ext)) return null;
+  return `".${ext || '?'}" isn't a supported image type — please use ${IMAGE_HELP_TEXT.replace(' — 5 MB max.', '')}.`;
+}
+function imageFileError(file) {
+  return unsupportedTypeMessage(file) || oversizeMessage(file);
 }
 // True for a raw network failure (connection reset, e.g. from exceeding the
 // server's upload limit — opaque browser text like "Failed to fetch" /
@@ -718,15 +744,22 @@ function buildCollapsibleCard(item) {
 
   const body = document.createElement('div');
   body.className = 'collapsible-body';
-  body.style.display = 'none';
+  const startOpen = openPublishedIds.has(item.id);
+  body.style.display = startOpen ? 'block' : 'none';
   body.appendChild(buildCard(item, true));
   wrapper.appendChild(body);
+  if (startOpen) {
+    chevron.textContent = '▾';
+    wrapper.classList.add('open');
+    setTimeout(() => body.querySelectorAll('textarea').forEach(ta => autoGrowTextarea(ta, 600)), 0);
+  }
 
   header.onclick = () => {
     const opening = body.style.display === 'none';
     body.style.display = opening ? 'block' : 'none';
     chevron.textContent = opening ? '▾' : '▸';
     wrapper.classList.toggle('open', opening);
+    if (opening) openPublishedIds.add(item.id); else openPublishedIds.delete(item.id);
     // Textareas built while collapsed measure zero height, so re-run the
     // auto-grow once they're actually visible.
     if (opening) {
@@ -740,6 +773,78 @@ function buildCollapsibleCard(item) {
 function autoGrowTextarea(el, maxPx) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight + 2, maxPx || 600) + 'px';
+}
+
+// Renders a section's raw **bold**/_italic_/++underline++/[link](url)/list
+// markup as it will actually look on the live post — the same logic as
+// renderInlineText()/renderBlockLines() in alpha-post.html, kept in sync by
+// hand. Used by each text section's "Preview" toggle so an author can check
+// formatting without having to publish first.
+function renderPreviewInline(container, text) {
+  const patterns = [
+    { type: 'link', re: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/ },
+    { type: 'bold', re: /\*\*([^*]+)\*\*/ },
+    { type: 'italic', re: /_([^_]+)_/ },
+    { type: 'underline', re: /\+\+([^+]+)\+\+/ },
+  ];
+  while (text) {
+    let best = null;
+    for (const p of patterns) {
+      const m = p.re.exec(text);
+      if (m && (best === null || m.index < best.m.index)) best = { p, m };
+    }
+    if (!best) { container.appendChild(document.createTextNode(text)); break; }
+    const { p, m } = best;
+    if (m.index > 0) container.appendChild(document.createTextNode(text.slice(0, m.index)));
+    if (p.type === 'link') {
+      const a = document.createElement('a');
+      a.href = m[2]; a.textContent = m[1]; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      container.appendChild(a);
+    } else {
+      const tag = p.type === 'bold' ? 'strong' : p.type === 'underline' ? 'u' : 'em';
+      const el = document.createElement(tag);
+      renderPreviewInline(el, m[1]);
+      container.appendChild(el);
+    }
+    text = text.slice(m.index + m[0].length);
+  }
+}
+function renderPreviewBlocks(text, container) {
+  let listEl = null, listType = null;
+  const closeList = () => { if (listEl) { container.appendChild(listEl); listEl = null; listType = null; } };
+  (text || '').split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) { closeList(); return; }
+    const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    const numberMatch = line.match(/^\d+\.\s+(.*)$/);
+    if (/^-{3,}$/.test(line)) {
+      closeList();
+      container.appendChild(document.createElement('hr'));
+    } else if (line.startsWith('## ')) {
+      closeList();
+      const h = document.createElement('h4');
+      h.textContent = line.slice(3).trim();
+      container.appendChild(h);
+    } else if (imageMatch && /^(https?:\/\/|\/api\/)/.test(imageMatch[2])) {
+      closeList();
+      const img = document.createElement('img');
+      img.src = imageMatch[2]; img.alt = imageMatch[1];
+      container.appendChild(img);
+    } else if (bulletMatch || numberMatch) {
+      const wantType = bulletMatch ? 'ul' : 'ol';
+      if (listType !== wantType) { closeList(); listEl = document.createElement(wantType); listType = wantType; }
+      const li = document.createElement('li');
+      renderPreviewInline(li, (bulletMatch ? bulletMatch[1] : numberMatch[1]).trim());
+      listEl.appendChild(li);
+    } else {
+      closeList();
+      const p = document.createElement('p');
+      renderPreviewInline(p, line);
+      container.appendChild(p);
+    }
+  });
+  closeList();
 }
 
 function buildCard(item, skipHead) {
@@ -826,7 +931,6 @@ function buildCard(item, skipHead) {
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
   let updatePublishGate = () => {};
   let subtitleInput = null, imageUrlInput = null;
-  let imageMode = effImageFilename ? 'upload' : 'url';
 
   if (item.kind === 'post') {
     subtitleInput = document.createElement('input');
@@ -997,28 +1101,19 @@ function buildCard(item, skipHead) {
     card.appendChild(toolbar);
 
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
-    // active section, not the post's hero image below.
+    // active section, not the post's hero image below. Upload-only — a
+    // pasted URL isn't something most authors have to hand, and skipping it
+    // means one fewer choice to explain.
     const imagePanel = document.createElement('div');
     imagePanel.className = 'insert-panel edit-chrome';
     imagePanel.style.display = 'none';
-    let insertImageMode = 'url';
-    const imgTabs = document.createElement('div');
-    imgTabs.className = 'card-image-tabs';
-    const imgUrlTab = document.createElement('button');
-    imgUrlTab.type = 'button'; imgUrlTab.className = 'card-image-tab'; imgUrlTab.textContent = 'URL';
-    const imgUploadTab = document.createElement('button');
-    imgUploadTab.type = 'button'; imgUploadTab.className = 'card-image-tab'; imgUploadTab.textContent = 'Upload';
-    imgTabs.appendChild(imgUrlTab);
-    imgTabs.appendChild(imgUploadTab);
-    imagePanel.appendChild(imgTabs);
-    const insertImageUrlInput = document.createElement('input');
-    insertImageUrlInput.className = 'form-input';
-    insertImageUrlInput.placeholder = 'https://example.com/image.jpg';
-    imagePanel.appendChild(insertImageUrlInput);
+    const insertImageHelp = document.createElement('div');
+    insertImageHelp.className = 'form-msg';
+    insertImageHelp.textContent = IMAGE_HELP_TEXT;
+    imagePanel.appendChild(insertImageHelp);
     const insertImageFileInput = document.createElement('input');
     insertImageFileInput.type = 'file';
     insertImageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
-    insertImageFileInput.style.display = 'none';
     imagePanel.appendChild(insertImageFileInput);
     const insertImageAltInput = document.createElement('input');
     insertImageAltInput.className = 'form-input';
@@ -1033,16 +1128,6 @@ function buildCard(item, skipHead) {
     insertImageMsg.className = 'form-msg';
     imagePanel.appendChild(insertImageMsg);
     card.appendChild(imagePanel);
-
-    function renderInsertImageMode() {
-      imgUrlTab.classList.toggle('active', insertImageMode === 'url');
-      imgUploadTab.classList.toggle('active', insertImageMode === 'upload');
-      insertImageUrlInput.style.display = insertImageMode === 'url' ? 'block' : 'none';
-      insertImageFileInput.style.display = insertImageMode === 'upload' ? 'block' : 'none';
-    }
-    imgUrlTab.onclick = () => { insertImageMode = 'url'; renderInsertImageMode(); };
-    imgUploadTab.onclick = () => { insertImageMode = 'upload'; renderInsertImageMode(); };
-    renderInsertImageMode();
 
     // Insert Link panel — inline [text](url), not a standalone paragraph.
     const linkPanel = document.createElement('div');
@@ -1240,12 +1325,36 @@ function buildCard(item, skipHead) {
       ta.placeholder = meta.bodyPlaceholder;
       ta.spellcheck = true;
       ta.value = sec.body || '';
-      ta.addEventListener('input', () => autoGrowTextarea(ta, 600));
+
+      // Shows the same **bold**/_italic_/++underline++/list/link markup as it
+      // will actually render on the live post, so an author doesn't have to
+      // publish just to check formatting looks right.
+      const previewBtn = document.createElement('button');
+      previewBtn.type = 'button';
+      previewBtn.className = 'btn-ghost-sm edit-chrome';
+      previewBtn.textContent = '👁 Preview';
+      const preview = document.createElement('div');
+      preview.className = 'section-preview';
+      preview.style.display = 'none';
+      function refreshPreview() {
+        preview.innerHTML = '';
+        renderPreviewBlocks(ta.value, preview);
+      }
+      previewBtn.onclick = () => {
+        const showing = preview.style.display === 'none';
+        if (showing) refreshPreview();
+        preview.style.display = showing ? 'block' : 'none';
+        ta.style.display = showing ? 'none' : 'block';
+        previewBtn.textContent = showing ? '✏️ Edit' : '👁 Preview';
+      };
+      ta.addEventListener('input', () => { autoGrowTextarea(ta, 600); if (preview.style.display !== 'none') refreshPreview(); });
       ta.addEventListener('focus', () => { activeTextarea = ta; });
       registerLock(hd);
       registerLock(ta);
       block.appendChild(hd);
       block.appendChild(ta);
+      block.appendChild(preview);
+      block.appendChild(previewBtn);
       appendRemoveButton(block);
       sectionsWrap.appendChild(block);
       if (!activeTextarea) activeTextarea = ta;
@@ -1366,20 +1475,10 @@ function buildCard(item, skipHead) {
       registerLock(hd);
       block.appendChild(hd);
 
-      const imgTabs = document.createElement('div');
-      imgTabs.className = 'card-image-tabs edit-chrome';
-      const urlTab = document.createElement('button'); urlTab.type = 'button'; urlTab.className = 'card-image-tab'; urlTab.textContent = 'Image URL';
-      const uploadTab = document.createElement('button'); uploadTab.type = 'button'; uploadTab.className = 'card-image-tab'; uploadTab.textContent = 'Upload';
-      imgTabs.appendChild(urlTab); imgTabs.appendChild(uploadTab);
-      block.appendChild(imgTabs);
-
-      let imgMode = 'url';
-      const imgUrlInput = document.createElement('input');
-      imgUrlInput.className = 'form-input';
-      imgUrlInput.placeholder = 'https://example.com/image.jpg';
-      imgUrlInput.value = sec.imageUrl || '';
-      registerLock(imgUrlInput);
-      block.appendChild(imgUrlInput);
+      const imgHelp = document.createElement('div');
+      imgHelp.className = 'form-msg edit-chrome';
+      imgHelp.textContent = IMAGE_HELP_TEXT;
+      block.appendChild(imgHelp);
 
       const uploadRow = document.createElement('div');
       uploadRow.className = 'edit-chrome';
@@ -1396,27 +1495,11 @@ function buildCard(item, skipHead) {
       if (sec.imageUrl) preview.src = sec.imageUrl; else preview.style.display = 'none';
       block.appendChild(preview);
 
-      function renderImgMode() {
-        urlTab.classList.toggle('active', imgMode === 'url');
-        uploadTab.classList.toggle('active', imgMode === 'upload');
-        imgUrlInput.style.display = imgMode === 'url' ? 'block' : 'none';
-        uploadRow.style.display = imgMode === 'upload' ? 'flex' : 'none';
-      }
-      urlTab.onclick = () => { imgMode = 'url'; renderImgMode(); };
-      uploadTab.onclick = () => { imgMode = 'upload'; renderImgMode(); };
-      renderImgMode();
-
-      imgUrlInput.addEventListener('input', () => {
-        block.dataset.imageUrl = imgUrlInput.value.trim();
-        if (block.dataset.imageUrl) { preview.src = block.dataset.imageUrl; preview.style.display = 'block'; }
-        else preview.style.display = 'none';
-      });
-
       uploadBtn.onclick = async () => {
         const f = fileInput.files[0];
         if (!f) { imgMsg.textContent = 'Choose a file first.'; imgMsg.className = 'form-msg error'; return; }
-        const oversize = oversizeMessage(f);
-        if (oversize) { imgMsg.textContent = oversize; imgMsg.className = 'form-msg error'; return; }
+        const fileError = imageFileError(f);
+        if (fileError) { imgMsg.textContent = fileError; imgMsg.className = 'form-msg error'; return; }
         uploadBtn.disabled = true;
         uploadBtn.textContent = 'Uploading…';
         const form = new FormData();
@@ -1426,7 +1509,6 @@ function buildCard(item, skipHead) {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
           block.dataset.imageUrl = data.url;
-          imgUrlInput.value = data.url;
           preview.src = data.url;
           preview.style.display = 'block';
           imgMsg.textContent = 'Image uploaded.';
@@ -1481,6 +1563,9 @@ function buildCard(item, skipHead) {
       });
     }
 
+    // Placed above the sections list (not below) so it stays easy to find —
+    // an Image or Table section can grow tall enough to push a
+    // below-the-list "+ Add" row well out of view.
     const sectionTypePicker = document.createElement('div');
     sectionTypePicker.className = 'section-type-picker edit-chrome';
     [
@@ -1497,12 +1582,13 @@ function buildCard(item, skipHead) {
       btn.onclick = () => {
         const block = buildSection(emptySection(type));
         updateRemoveButtons();
+        block.scrollIntoView({ block: 'center' });
         const focusEl = block.querySelector('.section-heading, .section-body, .table-grid input');
         if (focusEl) focusEl.focus();
       };
       sectionTypePicker.appendChild(btn);
     });
-    card.appendChild(sectionTypePicker);
+    card.insertBefore(sectionTypePicker, sectionsWrap);
 
     function serializeSections() {
       const parts = [];
@@ -1575,17 +1661,10 @@ function buildCard(item, skipHead) {
     }
 
     insertImageBtn.onclick = async () => {
-      if (insertImageMode === 'url') {
-        const url = insertImageUrlInput.value.trim();
-        if (!/^https?:\/\//.test(url)) { insertImageMsg.textContent = 'URL must start with http:// or https://'; insertImageMsg.className = 'form-msg error'; return; }
-        insertImageMarkup(url);
-        insertImageUrlInput.value = '';
-        return;
-      }
       const f = insertImageFileInput.files[0];
       if (!f) { insertImageMsg.textContent = 'Choose a file first.'; insertImageMsg.className = 'form-msg error'; return; }
-      const oversize = oversizeMessage(f);
-      if (oversize) { insertImageMsg.textContent = oversize; insertImageMsg.className = 'form-msg error'; return; }
+      const fileError = imageFileError(f);
+      if (fileError) { insertImageMsg.textContent = fileError; insertImageMsg.className = 'form-msg error'; return; }
       insertImageBtn.disabled = true;
       insertImageBtn.textContent = 'Uploading…';
       const form = new FormData();
@@ -1613,37 +1692,23 @@ function buildCard(item, skipHead) {
       card.appendChild(dl);
     }
 
-    // ── Hero image: URL or upload-from-desktop, mutually exclusive ──────
+    // ── Hero image: upload-from-desktop only ─────────────────────────────
     const heroLabel = document.createElement('label');
     heroLabel.className = 'form-label';
     heroLabel.textContent = 'Hero image — the banner shown at the top of your post and on your Alpha page card';
     heroLabel.style.marginTop = '8px';
     card.appendChild(heroLabel);
 
-    // Uploaded-file changes aren't staged (unlike text/topic/URL edits), so on a
-    // published post a new upload would go straight to the live website. Only
-    // Image URL is offered there — it stages correctly like everything else.
-    const uploadBlockedOnPublished = !isDraft;
+    const heroHelp = document.createElement('div');
+    heroHelp.className = 'form-msg edit-chrome';
+    heroHelp.textContent = IMAGE_HELP_TEXT;
+    card.appendChild(heroHelp);
 
-    const imageTabs = document.createElement('div');
-    imageTabs.className = 'card-image-tabs edit-chrome';
-    const urlTabBtn = document.createElement('button');
-    urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
-    const uploadTabBtn = document.createElement('button');
-    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload';
-    imageTabs.appendChild(urlTabBtn);
-    imageTabs.appendChild(uploadTabBtn);
-    card.appendChild(imageTabs);
-    if (uploadBlockedOnPublished) {
-      uploadTabBtn.disabled = true;
-      uploadTabBtn.title = 'Unpublish this post first to upload a new hero image, or use an Image URL instead — that stages your change.';
-    }
-
+    // Hidden now that URL entry is gone, but kept as the single source of
+    // truth gatherFieldUpdates() reads for Save — set from an upload below.
     imageUrlInput = document.createElement('input');
-    imageUrlInput.className = 'form-input';
-    imageUrlInput.placeholder = 'https://example.com/image.jpg';
+    imageUrlInput.type = 'hidden';
     imageUrlInput.value = effImageUrl || '';
-    registerLock(imageUrlInput);
     card.appendChild(imageUrlInput);
 
     const uploadPanel = document.createElement('div');
@@ -1672,7 +1737,7 @@ function buildCard(item, skipHead) {
     }
     card.appendChild(imagePreview);
 
-    // Remove hero image — clears both a pasted URL and any uploaded file.
+    // Remove hero image — clears both a legacy uploaded file and image_url.
     const removeImageBtn = document.createElement('button');
     removeImageBtn.type = 'button';
     removeImageBtn.className = 'btn-danger-sm edit-chrome';
@@ -1691,45 +1756,41 @@ function buildCard(item, skipHead) {
       updateItem(item.id, { clear_image: true }, 'remove the hero image');
     };
 
-    function renderImageMode() {
-      urlTabBtn.classList.toggle('active', imageMode === 'url');
-      uploadTabBtn.classList.toggle('active', imageMode === 'upload');
-      imageUrlInput.style.display = imageMode === 'url' ? 'block' : 'none';
-      uploadPanel.style.display = imageMode === 'upload' ? 'block' : 'none';
-    }
-    urlTabBtn.onclick = () => { imageMode = 'url'; renderImageMode(); };
-    uploadTabBtn.onclick = () => { if (uploadBlockedOnPublished) return; imageMode = 'upload'; renderImageMode(); };
-    renderImageMode();
-    if (uploadBlockedOnPublished) {
-      // The post may already have an uploaded file as its live image (so
-      // imageMode defaults to 'upload') — disable the controls too, not just
-      // the tab, and explain why instead of silently doing nothing.
-      imageFileInput.disabled = true;
-      uploadImageBtn.disabled = true;
-      imageMsg.textContent = 'Unpublish this post first to upload a new hero image, or use an Image URL instead.';
-    }
-
     uploadImageBtn.onclick = async () => {
       const f = imageFileInput.files[0];
       if (!f) { imageMsg.textContent = 'Choose a file first.'; imageMsg.className = 'form-msg error'; return; }
-      const oversize = oversizeMessage(f);
-      if (oversize) { imageMsg.textContent = oversize; imageMsg.className = 'form-msg error'; return; }
+      const fileError = imageFileError(f);
+      if (fileError) { imageMsg.textContent = fileError; imageMsg.className = 'form-msg error'; return; }
       uploadImageBtn.disabled = true;
       uploadImageBtn.textContent = 'Uploading…';
       const form = new FormData();
       form.append('image', f);
       try {
-        const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
-        imageMsg.textContent = 'Image uploaded.';
-        imageMsg.className = 'form-msg success';
-        item.image_filename = data.item.image_filename;
-        item.image_url = data.item.image_url;
-        imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
-        imagePreview.style.display = 'block';
-        removeImageBtn.style.display = 'inline-block';
-        updatePublishGate();
+        if (isDraft) {
+          // A draft has no live version to protect — upload straight into the
+          // dedicated hero-image slot, same as before.
+          const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          item.image_filename = data.item.image_filename;
+          item.image_url = data.item.image_url;
+          imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
+          imagePreview.style.display = 'block';
+          imageMsg.textContent = 'Image uploaded.';
+          imageMsg.className = 'form-msg success';
+          removeImageBtn.style.display = 'inline-block';
+          updatePublishGate();
+        } else {
+          // Published: upload as an attachment (never touches the live row,
+          // same endpoint inline content images use) and stage its URL
+          // through the normal update path — so a new hero image no longer
+          // needs unpublishing first, it just stages like every other edit.
+          const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          imageUrlInput.value = data.url;
+          await updateItem(item.id, { image_url: data.url }, 'stage the new hero image');
+        }
       } catch (e) {
         imageMsg.textContent = friendlyUploadError(e);
         imageMsg.className = 'form-msg error';
@@ -1819,7 +1880,7 @@ function buildCard(item, skipHead) {
     if (bodyInput) updates.body = bodyInput.value.trim();
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
-    if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
+    if (imageUrlInput) updates.image_url = imageUrlInput.value.trim();
     return updates;
   }
 
