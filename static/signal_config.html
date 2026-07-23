@@ -2210,6 +2210,7 @@ async function fetchAllAssets() {
   updateTicker();
   updateWatchlist();
   updateChartOverlay();
+  refreshLiveChartBar();
   updatePositions();
   updateStats();
   setDataStatus(anyError ? 'error' : 'live');
@@ -2270,6 +2271,39 @@ function updateChartOverlay() {
   document.getElementById('chartPrice').textContent = getCurrencySymbol() + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
+}
+
+// updateChartOverlay() above only ever touched the price/change text next to the
+// chart — the candlestick data itself (currentChartBars/priceChart) was loaded once
+// in loadPriceChart() and never revisited, so the chart looked frozen between symbol
+// switches even though the watchlist price was ticking every 30s via livePriceTimer.
+// This pulls just the latest bar for whatever's on-screen and merges/appends it into
+// the existing series, same cadence as fetchAllAssets, without refetching full history
+// or showing the loading overlay.
+async function refreshLiveChartBar() {
+  if (!priceChart || !lastChartSym || !currentChartBars.length) return;
+  const yfSym = symbolMap[lastChartSym];
+  if (!yfSym) return;
+  const { period, interval } = intervalMap[chartTf] || { period: '5d', interval: '1d' };
+  try {
+    const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+    const rows = data.data || [];
+    if (!rows.length) return;
+    const r = rows[rows.length - 1];
+    const bar = {
+      timestamp: new Date(r.date).getTime(),
+      open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
+    };
+    if (!Number.isFinite(bar.timestamp) || !Number.isFinite(bar.close)) return;
+    const lastLoaded = currentChartBars[currentChartBars.length - 1];
+    if (bar.timestamp === lastLoaded.timestamp) currentChartBars[currentChartBars.length - 1] = bar;
+    else if (bar.timestamp > lastLoaded.timestamp) currentChartBars.push(bar);
+    else return; // stale/out-of-order response, ignore
+
+    priceChart.updateData(bar);
+    _volProfileCache.clear();
+    _vwapCache.clear();
+  } catch (e) { /* transient — the next livePriceTimer tick retries */ }
 }
 
 // --- FIRE ALERT ---
