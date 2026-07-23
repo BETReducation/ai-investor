@@ -2200,20 +2200,30 @@ async function fetchSignals(sym) {
 
 // --- FETCH ALL ASSETS ---
 async function fetchAllAssets() {
-  setDataStatus('loading');
-  let anyError = false;
-  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
-  await Promise.all(active.map(async sym => {
-    try { await fetchPrices(sym); }
-    catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
-  }));
-  updateTicker();
-  updateWatchlist();
-  updateChartOverlay();
-  refreshLiveChartBar();
-  updatePositions();
-  updateStats();
-  setDataStatus(anyError ? 'error' : 'live');
+  // At the 5s polling interval, a slow/throttled Yahoo response can take longer than
+  // the interval itself — without this guard, ticks would stack up into a burst of
+  // overlapping requests the moment one response arrived late, making any rate-limiting
+  // worse instead of better.
+  if (fetchInFlight) return;
+  fetchInFlight = true;
+  try {
+    setDataStatus('loading');
+    let anyError = false;
+    const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+    await Promise.all(active.map(async sym => {
+      try { await fetchPrices(sym); }
+      catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
+    }));
+    updateTicker();
+    updateWatchlist();
+    updateChartOverlay();
+    await refreshLiveChartBar();
+    updatePositions();
+    updateStats();
+    setDataStatus(anyError ? 'error' : 'live');
+  } finally {
+    fetchInFlight = false;
+  }
 }
 
 // --- SCAN SIGNALS ---
@@ -2543,9 +2553,15 @@ function updatePriceAlertBadge() {
 // loadLivePrices/refreshTimer. Runs alongside pollTimer rather than replacing it:
 // pollTimer's tick was simplified to just scanSignals() so the two don't double-fetch
 // prices every 30s while the engine happens to also be running.
+// 5s (down from 30s) so the selected chart/watchlist feels closer to live — yfinance's
+// own data doesn't truly change every second, but this is as fast as the app can safely
+// poll it without risking Yahoo's rate limiting (which would take down the watchlist and
+// engine along with the chart). The fetchInFlight guard keeps a slow/stalled response
+// from piling up overlapping calls at this shorter interval.
+let fetchInFlight = false;
 function startLivePricePolling() {
   if (livePriceTimer) return;
-  livePriceTimer = setInterval(fetchAllAssets, 30000);
+  livePriceTimer = setInterval(fetchAllAssets, 5000);
   fetchAllAssets();
 }
 
