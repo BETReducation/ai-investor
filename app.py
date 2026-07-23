@@ -961,6 +961,175 @@ def auto_section_tables(body: str) -> str:
     return "\n".join(out_lines) if found_any else body
 
 
+# ── Structured Word template ──────────────────────────────────────────────
+# Convention (see the "Alpha Post Template" doc): every section starts with a
+# "Heading 2" paragraph. Plain heading text = a Normal section. A bracket tag
+# at the start of that heading picks a different type — "[TIP] Careful with
+# leverage", "[QUOTE] Warren Buffett", "[TABLE] Key Metrics" (tables are also
+# auto-detected from a real Word table regardless of any heading — see
+# auto_section_tables above, which this mirrors), "[IMAGE LEFT] Our Office" /
+# "[IMAGE RIGHT] Our Office" (the first inline picture in that section becomes
+# the image). Content between one Heading 2 and the next belongs to that
+# section. Keep these tags in sync with stripTypeMarker()'s marker strings in
+# static/alpha-studio.html and static/alpha-post.html.
+_TYPE_MARKERS = {"tip": "<!--type:tip-->", "quote": "<!--type:quote-->", "table": "<!--type:table-->"}
+_HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IMAGE)\]\s*", re.IGNORECASE)
+_BLIP_TAG = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
+_R_EMBED_ATTR = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+
+
+def _paragraph_image(paragraph, document):
+    """Returns (bytes, extension) for the first inline picture in this
+    paragraph's runs, or (None, None) if it has none."""
+    for run in paragraph.runs:
+        for blip in run._element.iter(_BLIP_TAG):
+            rid = blip.get(_R_EMBED_ATTR)
+            if rid and rid in document.part.related_parts:
+                part = document.part.related_parts[rid]
+                ext = (part.content_type.split("/")[-1] or "png").lower()
+                if ext == "jpeg":
+                    ext = "jpg"
+                if ext not in ALLOWED_IMAGE_EXTENSIONS:
+                    ext = "png"
+                return part.blob, ext
+    return None, None
+
+
+def extract_structured_docx(file_storage):
+    """Parses a docx built from the section template into a list of section
+    dicts, or returns None if the doc has no "Heading 2" paragraph at all
+    (i.e. it wasn't built from the template) — callers should fall back to
+    the plain extract_text_from_upload() + normalize_content() path then.
+
+    Each dict: {type, heading, body_lines: [str, ...], rows: [[str,...],...]
+    or None, image: (bytes, ext) or None, side: 'left'|'right'}. Images
+    aren't uploaded here (no content row/id exists yet at extraction time —
+    see _serialize_structured_sections, called after alpha_content_create).
+    """
+    import docx
+    from docx.table import Table as DocxTable
+    from docx.text.paragraph import Paragraph as DocxParagraph
+    document = docx.Document(file_storage)
+
+    def blank_section():
+        return {"type": "normal", "heading": "", "body_lines": [], "rows": None, "image": None, "side": "left"}
+
+    children = list(document.element.body.iterchildren())
+    has_heading = any(
+        c.tag.endswith("}p") and DocxParagraph(c, document).style and DocxParagraph(c, document).style.name == "Heading 2"
+        for c in children
+    )
+    if not has_heading:
+        return None
+
+    sections = []
+    cur = blank_section()
+
+    def flush():
+        nonlocal cur
+        if cur["heading"] or cur["body_lines"] or cur["rows"] or cur["image"]:
+            sections.append(cur)
+        cur = blank_section()
+
+    for child in children:
+        if child.tag.endswith("}p"):
+            p = DocxParagraph(child, document)
+            style_name = p.style.name if p.style else ""
+            text = p.text.strip()
+            if style_name == "Heading 2":
+                flush()
+                m = _HEADING_TAG_RE.match(text)
+                if m:
+                    tag = re.sub(r"\s+", " ", m.group(1).upper())
+                    remainder = text[m.end():].strip()
+                    if tag == "TIP":
+                        cur["type"] = "tip"
+                    elif tag == "QUOTE":
+                        cur["type"] = "quote"
+                    elif tag == "TABLE":
+                        cur["type"] = "table"
+                    elif tag.startswith("IMAGE"):
+                        cur["type"] = "image"
+                        cur["side"] = "right" if "RIGHT" in tag else "left"
+                    cur["heading"] = remainder
+                else:
+                    cur["heading"] = text
+                continue
+            if cur["type"] == "image" and not cur["image"]:
+                img_bytes, img_ext = _paragraph_image(p, document)
+                if img_bytes:
+                    cur["image"] = (img_bytes, img_ext)
+                    continue
+            if text:
+                cur["body_lines"].append(text)
+        elif child.tag.endswith("}tbl"):
+            table = DocxTable(child, document)
+            rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+            rows = [r for r in rows if any(c for c in r)]
+            if not rows:
+                continue
+            if cur["type"] == "table" and cur["rows"] is None:
+                cur["rows"] = rows
+            else:
+                # A table with no preceding "[TABLE]" heading still gets its
+                # own section automatically, same rule as auto_section_tables()
+                # for a non-template upload.
+                flush()
+                cur["type"] = "table"
+                cur["rows"] = rows
+                flush()
+    flush()
+    return sections
+
+
+def _serialize_structured_sections(sections, upload_image) -> str:
+    """Builds the SECTION_JOIN-delimited body string from
+    extract_structured_docx() output. `upload_image(bytes, ext) -> url` is
+    called once per section that has an extracted image."""
+    parts = []
+    for sec in sections:
+        t = sec["type"]
+        heading = (sec.get("heading") or "").strip()
+        if t == "table":
+            rows = sec.get("rows") or []
+            if not rows:
+                continue
+            md = ["| " + " | ".join(rows[0]) + " |", "|" + "|".join(" --- " for _ in rows[0]) + "|"]
+            for r in rows[1:]:
+                md.append("| " + " | ".join(r) + " |")
+            chunk = "<!--type:table-->"
+            if heading:
+                chunk += "\n## " + heading
+            chunk += "\n" + "\n".join(md)
+            parts.append(chunk)
+            continue
+        if t == "image":
+            body = "\n".join(sec.get("body_lines") or [])
+            img = sec.get("image")
+            url = upload_image(*img) if img else None
+            if not heading and not body and not url:
+                continue
+            chunk = "<!--type:image:" + sec.get("side", "left") + "-->"
+            if heading:
+                chunk += "\n## " + heading
+            if url:
+                chunk += "\n![" + heading.replace("[", "").replace("]", "") + "](" + url + ")"
+            if body:
+                chunk += ("\n\n" if (heading or url) else "\n") + body
+            parts.append(chunk)
+            continue
+        # normal / tip / quote
+        body = "\n\n".join(sec.get("body_lines") or [])
+        chunk = _TYPE_MARKERS.get(t, "")
+        if heading:
+            chunk += ("\n" if chunk else "") + "## " + heading
+        if body:
+            chunk += ("\n\n" if chunk else "") + body
+        if chunk.strip():
+            parts.append(chunk)
+    return ("\n\n" + _SECTION_JOIN + "\n\n").join(parts)
+
+
 def _send_email(to_addr: str, subject: str, body: str) -> None:
     smtp_host = os.environ.get("SMTP_HOST", "")
     if not smtp_host:
@@ -1659,6 +1828,7 @@ def api_alpha_upload():
 
     file_bytes = None
     source_filename = None
+    structured_sections = None
     try:
         if "file" in request.files and request.files["file"].filename:
             f = request.files["file"]
@@ -1667,6 +1837,13 @@ def api_alpha_upload():
             f.seek(0)
             raw_text = extract_text_from_upload(f)
             source_kind = "file"
+            file_ext = source_filename.rsplit(".", 1)[-1].lower() if "." in source_filename else ""
+            if file_ext == "docx" and kind == "post":
+                f.seek(0)
+                try:
+                    structured_sections = extract_structured_docx(f)
+                except Exception:
+                    structured_sections = None  # not a template doc, or unreadable structure — fall back below
         elif (request.form.get("link") or "").strip():
             raw_text = extract_text_from_url(request.form.get("link").strip())
             source_kind = "link"
@@ -1682,6 +1859,11 @@ def api_alpha_upload():
     normalized = normalize_content(raw_text, author, author_topics)
     topic = requested_topic if requested_topic in author_topics else normalized["topic"]
     body = auto_section_tables(normalized["body"]) if kind == "post" else normalized["body"]
+    # normalize_content's title is a naive first-sentence split of the whole
+    # flattened document — for a structured upload, the first Normal
+    # section's own Heading 2 text is a much better title candidate.
+    if structured_sections and structured_sections[0].get("type") == "normal" and structured_sections[0].get("heading"):
+        normalized["title"] = structured_sections[0]["heading"][:100]
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
@@ -1691,6 +1873,18 @@ def api_alpha_upload():
         "source_kind": source_kind, "source_filename": source_filename, "source_text": raw_text,
     }
     item = alpha_content_create(fields, file_bytes=file_bytes)
+
+    if structured_sections:
+        # Images inside a structured doc's [IMAGE] sections need the new
+        # item's id to attach to, which only exists after the create above —
+        # hence building this replacement body as a second step.
+        def _upload_extracted_image(img_bytes, img_ext):
+            attachment_id = alpha_attachment_create(item["id"], f"template-image.{img_ext}", img_bytes)
+            return f"/api/alpha/content/{item['id']}/images/{attachment_id}"
+        structured_body = _serialize_structured_sections(structured_sections, _upload_extracted_image)
+        if structured_body.strip():
+            item = alpha_content_update(item["id"], {"body": structured_body})
+
     return jsonify({"success": True, "item": item})
 
 
