@@ -148,11 +148,17 @@ def _ensure_table() -> None:
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
-# yfinance has no native 2-hour/4-hour bars — synthesized by fetching hourly data and
-# resampling. Kept separate from VALID_INTERVALS since every other caller of that set
-# (elsewhere in the codebase, if any) should keep seeing only intervals yfinance itself
-# understands; only _fetch_ohlcv needs to know about the synthetic ones.
-_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h"}
+# yfinance has no native 2h/4h/10m/45m/6mo/1y bars — synthesized by fetching a smaller
+# native interval and resampling. Kept separate from VALID_INTERVALS since every other
+# caller of that set (elsewhere in the codebase, if any) should keep seeing only
+# intervals yfinance itself understands; only _fetch_ohlcv needs to know about the
+# synthetic ones.
+_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h", "10m": "5m", "45m": "15m", "6mo": "1mo", "1y": "1mo"}
+# pandas resample() rule strings for each synthetic interval above — NOT the same string
+# as the interval's own key: pandas 3.x rejects "10m"/"1y" outright ("m" means
+# month-end, "y" was removed in favour of "YE"), so this maps each key to the actual
+# offset alias pandas expects.
+_RESAMPLE_RULES = {"2h": "2h", "4h": "4h", "10m": "10min", "45m": "45min", "6mo": "6MS", "1y": "1YS"}
 ALL_VALID_INTERVALS = VALID_INTERVALS | set(_RESAMPLE_INTERVALS)
 
 _INT_CALC_KEYS = {
@@ -1233,6 +1239,45 @@ def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
     raise ValueError(f"Yahoo Finance data temporarily unavailable — try again in a moment ({last_err})")
 
 
+# Yahoo delisted the real XAUUSD=X/XAUGBP=X/XAGEUR=X-style spot-metal "currency"
+# crosses — every one of them now 404s outright ("Quote not found"), confirmed live
+# against yfinance for all of USD/GBP/EUR/JPY/CAD/AUD/CHF/INR. The metal futures
+# (GC=F, SI=F) and ordinary USD/<currency> FX crosses are both still fine, so
+# XAU*/XAG* symbols are synthesized from those two legs instead of fetched directly.
+_METAL_USD_FUTURES = {"XAU": "GC=F", "XAG": "SI=F"}
+_METAL_FX_CURRENCIES = {"USD", "GBP", "EUR", "JPY", "CAD", "AUD", "CHF", "INR"}
+
+
+def _parse_metal_currency_symbol(symbol: str) -> tuple[str, str] | None:
+    s = symbol.upper()
+    if s.endswith("=X"):
+        s = s[:-2]
+    if len(s) == 6 and s[:3] in _METAL_USD_FUTURES and s[3:] in _METAL_FX_CURRENCIES:
+        return s[:3], s[3:]
+    return None
+
+
+def _fetch_synthetic_metal_ohlcv(
+    metal: str, currency: str, period: str, interval: str,
+    start_date: str | None, end_date: str | None,
+) -> pd.DataFrame:
+    usd_df = _fetch_ohlcv(_METAL_USD_FUTURES[metal], period, interval, start_date, end_date)
+    if currency == "USD":
+        return usd_df
+    fx_df = _fetch_ohlcv(f"USD{currency}=X", period, interval, start_date, end_date)
+    # Align the FX rate onto every futures bar's timestamp — futures (CME Globex) and
+    # FX trade on different session calendars/timezones, so exact timestamp matches
+    # aren't guaranteed even though both are tz-aware DatetimeIndexes. ffill covers
+    # gaps going forward; bfill covers any futures bars older than the FX history.
+    fx_close = fx_df["Close"].reindex(usd_df.index, method="ffill").bfill()
+    if fx_close.isna().any():
+        raise ValueError(f"No FX rate available to convert {metal} into {currency}")
+    converted = usd_df.copy()
+    for col in ("Open", "High", "Low", "Close"):
+        converted[col] = converted[col] * fx_close
+    return converted
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -1242,6 +1287,9 @@ def _fetch_ohlcv(
 ) -> pd.DataFrame:
     if interval not in ALL_VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
+    metal_ccy = _parse_metal_currency_symbol(symbol)
+    if metal_ccy:
+        return _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
     fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
     ticker = yf.Ticker(symbol.upper())
     if start_date:
@@ -1265,7 +1313,7 @@ def _fetch_ohlcv(
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
     if interval in _RESAMPLE_INTERVALS:
-        df = _resample_ohlcv(df, interval)
+        df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol}")
     return df
