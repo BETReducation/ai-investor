@@ -349,7 +349,7 @@ def _extract_backtest_calc_params(args) -> dict:
     return params
 
 
-VALID_PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
+VALID_PERIODS = {"1d", "5d", "60d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
 TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
 
@@ -929,6 +929,27 @@ def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
     return resampled.dropna(subset=["Open"])
 
 
+# yfinance/Yahoo occasionally throws transient errors (rate limiting, connection resets,
+# brief service hiccups) that have nothing to do with the symbol or params being wrong —
+# retrying a couple of times with a short backoff clears most of them before a user ever
+# sees a failure. Only exhausted retries bubble up, as a ValueError clearly labeled
+# "temporarily unavailable" so callers/UI can tell that apart from "bad symbol/params".
+_YF_RETRY_ATTEMPTS = 3
+_YF_RETRY_BACKOFF_SECONDS = 0.75
+
+
+def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
+    last_err: Exception | None = None
+    for attempt in range(_YF_RETRY_ATTEMPTS):
+        try:
+            return ticker.history(auto_adjust=False, **kwargs)
+        except Exception as e:
+            last_err = e
+            if attempt < _YF_RETRY_ATTEMPTS - 1:
+                time.sleep(_YF_RETRY_BACKOFF_SECONDS * (attempt + 1))
+    raise ValueError(f"Yahoo Finance data temporarily unavailable — try again in a moment ({last_err})")
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -948,18 +969,18 @@ def _fetch_ohlcv(
                 _dt.date.fromisoformat(end_date)
         except ValueError:
             raise ValueError("start_date / end_date must be YYYY-MM-DD")
-        # auto_adjust=False: keep raw (split-adjusted only, not dividend-adjusted) closes
-        # so indicators computed here line up with what the TradingView chart is plotting —
-        # TradingView doesn't dividend-adjust by default, but yfinance's auto_adjust=True
-        # folds dividends into every historical Close, which can badly skew RSI/MACD/etc.
-        # for anything with a meaningful dividend/distribution history.
-        df = ticker.history(start=start_date, end=end_date or None, interval=fetch_interval, auto_adjust=False)
+        # auto_adjust=False: keep raw (split-adjusted only, not dividend-adjusted) closes.
+        # yfinance's auto_adjust=True folds dividends into every historical Close, which
+        # can badly skew RSI/MACD/etc. for anything with a meaningful dividend/distribution
+        # history — and it's also what our own price chart plots, so indicators computed
+        # here always line up with what's on screen.
+        df = _yf_history_with_retry(ticker, start=start_date, end=end_date or None, interval=fetch_interval)
     else:
         if period not in VALID_PERIODS:
             raise ValueError(f"Invalid period: {period}")
-        df = ticker.history(period=period, interval=fetch_interval, auto_adjust=False)
+        df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
     if df.empty:
-        raise ValueError(f"No data returned for symbol: {symbol}")
+        raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
     if interval in _RESAMPLE_INTERVALS:
         df = _resample_ohlcv(df, interval)
         if df.empty:

@@ -98,6 +98,27 @@
 .qs-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 3px; cursor: pointer; transition: all 0.15s; }
 .qs-chip:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .tv-loading-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--bg-secondary); }
+
+/* PRICE CHART — own chart toolbar (timeframe + chart type) and side drawing toolbar */
+.chart-topbar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
+.chart-topbar > * { pointer-events: auto; }
+.chart-tf-group { display: flex; flex-wrap: wrap; gap: 2px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); max-width: 60%; }
+.chart-tf-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 2px; transition: all 0.15s; }
+.chart-tf-btn:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
+.chart-tf-btn.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
+.chart-type-select { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 5px 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+.chart-type-select:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+.chart-type-select option:disabled { color: var(--text-muted); }
+.chart-sidebar { position: absolute; top: 44px; left: 8px; bottom: 8px; z-index: 6; display: flex; flex-direction: column; gap: 3px; }
+.chart-tool-btn { width: 26px; height: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; border-radius: 3px; transition: all 0.15s; }
+.chart-tool-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.08); }
+.chart-tool-sep { height: 1px; background: var(--border); margin: 3px 2px; }
+.chart-tool-clear:hover { color: var(--accent-red); border-color: var(--accent-red); background: rgba(208,18,43,0.08); }
+.chart-tool-bin { color: var(--accent-red); border-color: var(--accent-red); background: rgba(208,18,43,0.08); }
+.chart-tool-bin:hover { background: rgba(208,18,43,0.18); }
+.chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+.chart-tool-btn[data-cat] { color: var(--text-secondary); }
+.chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -112,7 +133,7 @@
 .signal-toast-body { padding: 8px 10px; font-size: 10px; color: var(--text-secondary); }
 .signal-toast-asset { font-weight: 700; color: var(--text-primary); }
 </style>
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/klinecharts@9.8.12/dist/umd/klinecharts.min.js"></script>
 <script src="/static/js/theme.js"></script>
 </head>
 <body>
@@ -359,9 +380,9 @@ window.addEventListener('resize', () => {
       <div class="range-row">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Target Gain <span>(per trade)</span></div>
-          <div class="range-value tag-green" id="targetVal">200%</div>
+          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="200.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
         </div>
-        <input type="range" id="targetGain" min="100" max="2000" step="10" value="200" oninput="document.getElementById('targetVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="targetGain" min="1" max="4000" step="1" value="200" oninput="onPctSliderInput('targetGain','targetVal')">
       </div>
       <div class="sep"></div>
       <div class="toggle-row">
@@ -371,9 +392,9 @@ window.addEventListener('resize', () => {
       <div class="range-row" id="fixedSLRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop-Loss %</div>
-          <div class="range-value tag-red" id="slVal">-100.0%</div>
+          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="100.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
         </div>
-        <input type="range" id="stopLoss" min="100" max="2000" step="10" value="100" oninput="document.getElementById('slVal').textContent='-'+parseFloat(this.value).toFixed(1)+'%'">
+        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="100" oninput="onPctSliderInput('stopLoss','slVal')">
       </div>
       <div class="toggle-row">
         <div class="toggle-label">Trailing Stop-Loss</div>
@@ -546,53 +567,13 @@ window.addEventListener('resize', () => {
     <!-- CHART -->
     <div class="chart-area">
       <div id="tvChart"></div>
+      <div class="chart-topbar" id="chartTopbar"></div>
+      <div class="chart-sidebar" id="chartSidebar"></div>
       <div id="chartAsset" style="display:none"></div>
       <div id="chartPrice" style="display:none"></div>
       <div id="chartChange" style="display:none"></div>
     </div>
 
-    <!-- INDICATOR BAR -->
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px 0;font-size:8px;letter-spacing:1.5px;color:var(--text-muted);">
-      <span style="font-weight:700;color:var(--text-secondary);">MARKET SNAPSHOT</span>
-      <span style="opacity:0.8;">reference only — your strategy fires on the conditions you set, not these</span>
-    </div>
-    <div class="indicator-bar" id="indicatorBar">
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">RSI</div>
-        <div class="indicator-chip-value val-amber" id="indRsi">—</div>
-        <div class="indicator-chip-signal val-amber" id="indRsiSig">NEUTRAL</div>
-      </div>
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">MACD</div>
-        <div class="indicator-chip-value val-cyan" id="indMacd">—</div>
-        <div class="indicator-chip-signal val-cyan" id="indMacdSig">NEUTRAL</div>
-      </div>
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">BB POSITION</div>
-        <div class="indicator-chip-value val-purple" id="indBb">—</div>
-        <div class="indicator-chip-signal val-purple" id="indBbSig">NEUTRAL</div>
-      </div>
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">MA CROSS</div>
-        <div class="indicator-chip-value val-green" id="indMa">—</div>
-        <div class="indicator-chip-signal val-green" id="indMaSig">NEUTRAL</div>
-      </div>
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">VOLUME</div>
-        <div class="indicator-chip-value val-amber" id="indVol">—</div>
-        <div class="indicator-chip-signal val-amber" id="indVolSig">NORMAL</div>
-      </div>
-      <div class="indicator-chip">
-        <div class="indicator-chip-label">S/R LEVEL</div>
-        <div class="indicator-chip-value val-blue" id="indSr">—</div>
-        <div class="indicator-chip-signal val-blue" id="indSrSig">CLEAR</div>
-      </div>
-      <div class="indicator-chip" style="min-width:80px;">
-        <div class="indicator-chip-label">SIGNAL SCORE</div>
-        <div class="indicator-chip-value" id="indScore" style="font-size:16px;">—</div>
-        <div class="indicator-chip-signal" id="indScoreSig">WAITING</div>
-      </div>
-    </div>
 
     <!-- POSITIONS TABLE -->
     <div style="border-top:1px solid var(--border); flex-shrink:0;">
@@ -709,7 +690,6 @@ const API_BASE = '';
 // via the search feature (see registerCustomSymbol/loadCustomSymbols below), which
 // fills these in at runtime for whatever they search for and save.
 const symbolMap = {};
-const tvSymbolMap = {};
 
 const intervalMap = {
   '1m':  { period: '1d',  interval: '1m'  },
@@ -720,6 +700,8 @@ const intervalMap = {
   '60m': { period: '3mo', interval: '60m' },
   '90m': { period: '1mo', interval: '90m' },
   '1h':  { period: '3mo', interval: '1h'  },
+  '2h':  { period: '3mo', interval: '2h'  },
+  '4h':  { period: '3mo', interval: '4h'  },
   '1d':  { period: '1y',  interval: '1d'  },
   '5d':  { period: '2y',  interval: '5d'  },
   '1wk': { period: '2y',  interval: '1wk' },
@@ -1198,7 +1180,7 @@ function init() {
   addLog('info', 'SYSTEM', 'Configure strategy parameters and press RUN STRATEGY');
   renderStrategyDropdown();
   renderConditions();
-  fetchSignals(currentAsset).then(() => { updateIndicatorBar(); updateStrategyStatus(); }).catch(() => {});
+  fetchSignals(currentAsset).then(() => updateStrategyStatus()).catch(() => {});
 }
 
 
@@ -1703,8 +1685,8 @@ function importBacktestStrategy(name) {
   document.getElementById('strategyName').value = `${name} (from Backtester)`;
 
   // Carry over risk settings (both pages are £ now).
-  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').textContent = '-' + parseFloat(cfg.stopLoss).toFixed(1) + '%'; }
-  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').textContent = parseFloat(cfg.takeProfit).toFixed(1) + '%'; }
+  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(cfg.stopLoss).toFixed(1); }
+  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(cfg.takeProfit).toFixed(1); }
   if (cfg.trailSL !== undefined)    { document.getElementById('trailSL').checked = !!cfg.trailSL; document.getElementById('trailSLRow').style.opacity = cfg.trailSL ? '1' : '0.3'; document.getElementById('trailSLRow').style.pointerEvents = cfg.trailSL ? 'auto' : 'none'; }
   if (cfg.trailDist !== undefined)  { document.getElementById('trailDist').value = cfg.trailDist; document.getElementById('trailVal').textContent = parseFloat(cfg.trailDist).toFixed(1) + '%'; }
   if (cfg.minConf !== undefined)    { document.getElementById('minConfidence').value = cfg.minConf; document.getElementById('minConfidenceVal').textContent = cfg.minConf + '%'; }
@@ -2105,8 +2087,9 @@ async function fetchPrices(sym) {
 }
 
 // --- FETCH SIGNALS ---
-// Uses daily candles for indicator bar so values match TradingView's default daily chart view.
-// Engine scan calls fetchSignalsEngine() which uses the trading timeframe.
+// Uses daily candles for the indicator bar regardless of the price chart's own timeframe —
+// a stable, consistent reference view. Engine scan calls fetchSignalsEngine() which uses
+// the trading timeframe.
 async function fetchSignals(sym) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return null;
@@ -2167,7 +2150,7 @@ async function scanSignals() {
 
   if (strategyConditions.length === 0) {
     addLog('warn', 'STRAT', 'No conditions set — add conditions to your strategy and restart');
-    updateIndicatorBar();
+    updateStrategyStatus();
     updateStats();
     return;
   }
@@ -2189,7 +2172,6 @@ async function scanSignals() {
       addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
     }
   }
-  updateIndicatorBar();
   updateStrategyStatus();
   updateStats();
 }
@@ -2215,116 +2197,6 @@ function updateChartOverlay() {
   document.getElementById('chartPrice').textContent = getCurrencySymbol() + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
-}
-
-// --- INDICATOR BAR ---
-function clearIndicatorBar() {
-  [
-    ['indRsi',   'indRsiSig',   'NEUTRAL'],
-    ['indMacd',  'indMacdSig',  'NEUTRAL'],
-    ['indBb',    'indBbSig',    'NEUTRAL'],
-    ['indMa',    'indMaSig',    'NEUTRAL'],
-    ['indVol',   'indVolSig',   'NORMAL'],
-    ['indSr',    'indSrSig',    'CLEAR'],
-    ['indScore', 'indScoreSig', 'LOADING'],
-  ].forEach(([valId, sigId, defSig]) => {
-    const v = document.getElementById(valId), s = document.getElementById(sigId);
-    if (v) { v.textContent = '—'; v.className = 'indicator-chip-value val-amber'; }
-    if (s) { s.textContent = defSig; s.className = 'indicator-chip-signal val-amber'; }
-  });
-}
-
-function updateIndicatorBar() {
-  const cache = liveCache[currentAsset];
-  if (!cache || !cache.indicators) return;
-  const ind = cache.indicators;
-  const cfg = getConfig();
-
-  const rsi = ind.rsi;
-  if (rsi != null) {
-    const el = document.getElementById('indRsi'), sig = document.getElementById('indRsiSig');
-    el.textContent = rsi.toFixed(1);
-    if (rsi < cfg.rsiOversold)        { el.className = 'indicator-chip-value val-green'; sig.textContent = 'OVERSOLD';   sig.className = 'indicator-chip-signal val-green'; }
-    else if (rsi > cfg.rsiOverbought) { el.className = 'indicator-chip-value val-red';   sig.textContent = 'OVERBOUGHT'; sig.className = 'indicator-chip-signal val-red'; }
-    else                              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEUTRAL';    sig.className = 'indicator-chip-signal val-amber'; }
-  }
-
-  const cx = ind.crossovers || {};
-  const cfg2 = getConfig();
-  const macdLookback = 5;
-  const maLookback   = 10;
-
-  // MACD: show histogram value; colour by whether a recent cross exists
-  const macdHist = ind.macd && ind.macd.histogram;
-  if (macdHist != null) {
-    const el = document.getElementById('indMacd'), sig = document.getElementById('indMacdSig');
-    el.textContent = macdHist.toFixed(4);
-    const macdBars = cx.macd_bars_since_cross != null ? cx.macd_bars_since_cross : 999;
-    const macdDir  = cx.macd_direction || 0;
-    if (macdBars <= macdLookback) {
-      // recent crossover — signal is active
-      if (macdDir > 0) { el.className = 'indicator-chip-value val-green'; sig.textContent = 'X-BULL'; sig.className = 'indicator-chip-signal val-green'; }
-      else             { el.className = 'indicator-chip-value val-red';   sig.textContent = 'X-BEAR'; sig.className = 'indicator-chip-signal val-red'; }
-    } else {
-      // no recent cross — show histogram direction as informational (amber)
-      if (macdHist > 0) { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'POS'; sig.className = 'indicator-chip-signal val-amber'; }
-      else              { el.className = 'indicator-chip-value val-amber'; sig.textContent = 'NEG'; sig.className = 'indicator-chip-signal val-amber'; }
-    }
-  }
-
-  const pctB = ind.bollinger_bands && ind.bollinger_bands.percent_b;
-  if (pctB != null) {
-    const bbPos = pctB * 100;
-    document.getElementById('indBb').textContent = bbPos.toFixed(0) + '%';
-    if (bbPos < 5)       { document.getElementById('indBb').className = 'indicator-chip-value val-green';  document.getElementById('indBbSig').textContent = 'LOWER'; }
-    else if (bbPos > 95) { document.getElementById('indBb').className = 'indicator-chip-value val-red';    document.getElementById('indBbSig').textContent = 'UPPER'; }
-    else                 { document.getElementById('indBb').className = 'indicator-chip-value val-purple'; document.getElementById('indBbSig').textContent = 'MID';   }
-  }
-
-  // MA: show alignment state but only colour green/red if a recent cross exists
-  const close = ind.price && ind.price.close;
-  const ma20  = ind.moving_averages && ind.moving_averages.ma_20;
-  const ma50  = ind.moving_averages && ind.moving_averages.ma_50;
-  if (ma20 && ma50) {
-    const maBars = cx.ma_bars_since_cross != null ? cx.ma_bars_since_cross : 999;
-    const maDir  = cx.ma_direction || 0;
-    const elMa = document.getElementById('indMa'), sigMa = document.getElementById('indMaSig');
-    if (maBars <= maLookback) {
-      // recent golden/death cross — active signal
-      if (maDir > 0) { elMa.textContent = '▲ CROSS'; elMa.className = 'indicator-chip-value val-green'; sigMa.textContent = 'GOLDEN'; sigMa.className = 'indicator-chip-signal val-green'; }
-      else           { elMa.textContent = '▼ CROSS'; elMa.className = 'indicator-chip-value val-red';   sigMa.textContent = 'DEATH';  sigMa.className = 'indicator-chip-signal val-red'; }
-    } else {
-      // no recent cross — show alignment as informational (amber)
-      const bull = close && close > ma20 && ma20 > ma50;
-      elMa.textContent = bull ? '▲' : '▼';
-      elMa.className = 'indicator-chip-value val-amber';
-      sigMa.textContent = 'ALIGNED';
-      sigMa.className = 'indicator-chip-signal val-amber';
-    }
-  }
-
-  const volRatio = ind.volume && ind.volume.ratio;
-  if (volRatio != null) {
-    document.getElementById('indVol').textContent = volRatio.toFixed(2) + '×';
-    if (volRatio >= cfg.volSpike) { document.getElementById('indVol').className = 'indicator-chip-value val-green';  document.getElementById('indVolSig').textContent = 'SPIKE';  }
-    else                          { document.getElementById('indVol').className = 'indicator-chip-value val-amber'; document.getElementById('indVolSig').textContent = 'NORMAL'; }
-  }
-
-  const overall = cache.overall;
-  const score = Math.max(cache.buy_score || 0, cache.sell_score || 0);
-  const scoreEl = document.getElementById('indScore'), scoreSig = document.getElementById('indScoreSig');
-  if (overall !== 'NEUTRAL' && score > 0) {
-    scoreEl.textContent = score.toFixed(1);
-    scoreSig.textContent = overall;
-    scoreEl.className = 'indicator-chip-value ' + (overall === 'BUY' ? 'val-green' : 'val-red');
-    scoreSig.className = 'indicator-chip-signal ' + (overall === 'BUY' ? 'val-green' : 'val-red');
-  } else {
-    scoreEl.textContent = score > 0 ? score.toFixed(1) : '—';
-    scoreSig.textContent = 'NEUTRAL';
-    scoreEl.className = 'indicator-chip-value val-amber';
-    scoreSig.className = 'indicator-chip-signal val-amber';
-  }
-  updateStrategyStatus();
 }
 
 // --- FIRE ALERT ---
@@ -2600,101 +2472,585 @@ function updateRiskBar() {
   document.getElementById('riskBar').style.backgroundPosition = (100 - pct) + '% 0%';
 }
 
-// --- TRADINGVIEW CHART ---
-let tvWidget = null;
-let lastTvSym = null;
-let tvLoadTimer = null;
+// --- PRICE CHART ---
+// Own candlestick chart (klinecharts), fed entirely by our own /api/prices endpoint,
+// which is itself backed by yfinance (Yahoo Finance) — the exact same data source the
+// strategy engine scores signals on. This replaces the old TradingView iframe embed:
+// TradingView's own feed could show candles that didn't quite match what the engine
+// had just computed on (different vendor, different adjustments), which was confusing,
+// and the iframe itself was a frequent casualty of ad/privacy browser extensions.
+let priceChart = null;
+let chartTf = '1d';
+let lastChartSym = null;
+let chartLoadSeq = 0;
+let currentChartBars = []; // rows of the currently-loaded chart, {timestamp,open,high,low,close,volume} — used by the volume-profile/VWAP tools to compute values beyond the chart's own click points
+let chartType = 'candle_solid'; // one of the <select> values in the topbar: candle_solid/candle_stroke/area/session_volume_profile/volume_footprint
+
+// Curated subset of intervalMap's keys — the ones that make sense as chart timeframes.
+const CHART_TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1wk', '1mo', '3mo'];
+const CHART_TF_LABELS = {
+  '1m': '1M', '5m': '5M', '15m': '15M', '30m': '30M', '1h': '1H', '2h': '2H', '4h': '4H',
+  '1d': '1D', '1wk': '1W', '1mo': '1MO', '3mo': '3MO',
+};
+
+// The chart wants as much history as Yahoo will actually give for each interval —
+// separate from intervalMap's periods (which stay conservative, since intervalMap is
+// also used for the 30s watchlist-ticker refresh, where fetching max history every
+// poll for every symbol would be wasteful). Verified live against yfinance:
+//  - 1m: an explicit period like '1mo' errors outright (Yahoo rejects it); 'max' is the
+//    only value that works, and it self-caps to ~8 days.
+//  - 2m/5m/15m/30m/90m: explicit '60d' actually returns MORE than 'max' does (a real
+//    yfinance/Yahoo quirk — 'max' under-resolves for these intervals).
+//  - 60m/1h and the resampled 2h/4h: 'max' == '2y', both hit the real 730-day cap.
+//  - 1d and coarser: 'max' gives full company history.
+const CHART_HISTORY_PERIOD = {
+  '1m': 'max', '2m': '60d', '5m': '60d', '15m': '60d', '30m': '60d', '90m': '60d',
+  '60m': 'max', '1h': 'max', '2h': 'max', '4h': 'max',
+  '1d': 'max', '5d': 'max', '1wk': 'max', '1mo': 'max', '3mo': 'max',
+};
+
+// klinecharts' built-in overlay templates — a TradingView-style side drawing toolbar.
+const CHART_DRAW_TOOLS = [
+  { name: 'segment',                label: 'Trend Line',       icon: 'TL',  category: 'lines' },
+  { name: 'rayLine',                label: 'Ray',              icon: 'RAY', category: 'lines' },
+  { name: 'horizontalStraightLine', label: 'Horizontal Line',  icon: 'H—',  category: 'lines' },
+  { name: 'horizontalRayLine',      label: 'Horizontal Ray',   icon: 'HR',  category: 'lines' },
+  { name: 'verticalStraightLine',   label: 'Vertical Line',    icon: 'V|',  category: 'lines' },
+  { name: 'parallelStraightLine',   label: 'Parallel Channel', icon: 'CH',  category: 'channels' },
+  { name: 'priceChannelLine',       label: 'Price Channel',    icon: 'PC',  category: 'channels' },
+  { name: 'fibonacciLine',          label: 'Fib Retracement',  icon: 'FIB', category: 'fib' },
+  { name: 'priceLine',              label: 'Price Line',       icon: 'PL',  category: 'annotations' },
+  { name: 'simpleAnnotation',       label: 'Text Note',        icon: 'T',   category: 'annotations' },
+  { name: 'longPosition',           label: 'Long Position',    icon: 'L+',  category: 'trading' },
+  { name: 'shortPosition',          label: 'Short Position',   icon: 'S-',  category: 'trading' },
+  { name: 'anchoredVwap',           label: 'Anchored VWAP',    icon: 'VW',  category: 'analysis' },
+  { name: 'anchoredVwapProfile',    label: 'Anchored VWAP Profile', icon: 'VWP', category: 'analysis' },
+  { name: 'measureTool',            label: 'Measure',          icon: 'MEA', category: 'analysis' },
+];
+const CHART_TOOL_CATEGORIES = [
+  { key: 'lines',       label: 'Lines',       icon: 'TL' },
+  { key: 'channels',    label: 'Channels',    icon: 'CH' },
+  { key: 'fib',         label: 'Fibonacci',   icon: 'FIB' },
+  { key: 'annotations', label: 'Annotations', icon: 'T' },
+  { key: 'trading',     label: 'Trading Tools', icon: 'L+' },
+  { key: 'analysis',    label: 'Analysis',    icon: 'VWP' },
+];
 
 function initChart() {
-  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
+  // Deliberately NOT seeded from #timeframe — that dropdown controls the strategy
+  // engine's own polling interval (defaults to 5m), which made a freshly opened chart
+  // show only ~5 days of 5-minute bars. The chart's timeframe is a fully separate,
+  // user-controlled concern (the topbar buttons), so it gets its own sane default.
+  chartTf = '1d';
+  renderChartToolbars();
+  if (currentAsset) loadPriceChart(currentAsset);
   else showChartPlaceholder();
+}
+
+function ensurePriceChart() {
+  if (priceChart) return priceChart;
+  if (typeof klinecharts === 'undefined') return null;
+  const container = document.getElementById('tvChart');
+  if (!container) return null;
+  container.innerHTML = '';
+  priceChart = klinecharts.init('tvChart');
+  // The volume pane itself (plain VOL vs. the Volume Footprint split) is created by
+  // refreshVolumePaneMode(), called after every applyNewData() in loadPriceChart() —
+  // not here, so there's a single place that ever creates it (creating it both here
+  // and there produced two overlapping volume panes).
+  applyChartTheme();
+  return priceChart;
+}
+
+function applyChartTheme() {
+  if (!priceChart) return;
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const cssVar = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
+  const grid = dark ? 'rgba(30,42,58,0.6)' : 'rgba(208,216,232,0.6)';
+  const text = cssVar('--text-muted', dark ? '#8b98a5' : '#5b6472');
+  const up = cssVar('--accent-green', '#00ff88');
+  const down = cssVar('--accent-red', '#ff3355');
+  const tipBg = dark ? '#0d1117' : '#eef0f5';
+  priceChart.setStyles({
+    grid: { horizontal: { color: grid }, vertical: { color: grid } },
+    candle: {
+      bar: { upColor: up, downColor: down, noChangeColor: text, upBorderColor: up, downBorderColor: down, upWickColor: up, downWickColor: down },
+      priceMark: { last: { upColor: up, downColor: down } },
+      tooltip: { text: { color: text } },
+    },
+    indicator: { tooltip: { text: { color: text } } },
+    xAxis: { axisLine: { color: grid }, tickText: { color: text } },
+    yAxis: { axisLine: { color: grid }, tickText: { color: text } },
+    crosshair: {
+      horizontal: { text: { backgroundColor: tipBg, color: text } },
+      vertical: { text: { backgroundColor: tipBg, color: text } },
+    },
+  });
+}
+
+// Chart types that are Yahoo/yfinance OHLCV-derived approximations, not real market
+// microstructure data — see CHART_TYPE_OPTIONS' labels/tooltips for the caveat shown
+// to users. "session_volume_profile" also only makes sense on intraday timeframes
+// (a "session" = one trading day), so it's disabled in the dropdown otherwise.
+const CHART_TYPE_OPTIONS = [
+  { value: 'candle_solid',           label: 'Candlestick' },
+  { value: 'candle_stroke',          label: 'Hollow Candles' },
+  { value: 'area',                   label: 'Area / Line' },
+  { value: 'session_volume_profile', label: 'Session Volume Profile' },
+  { value: 'volume_footprint',       label: 'Volume Footprint (approx.)' },
+];
+const INTRADAY_TIMEFRAMES = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '2h', '4h'];
+
+function renderChartToolbars() {
+  const topbar = document.getElementById('chartTopbar');
+  const sidebar = document.getElementById('chartSidebar');
+  if (topbar && !topbar.dataset.built) {
+    topbar.dataset.built = '1';
+    topbar.innerHTML = `
+      <div class="chart-tf-group" id="chartTfGroup">
+        ${CHART_TIMEFRAMES.map(tf => `<button class="chart-tf-btn" data-tf="${tf}" onclick="setChartTimeframe('${tf}')">${CHART_TF_LABELS[tf]}</button>`).join('')}
+      </div>
+      <select class="chart-type-select" id="chartTypeSelect" onchange="onChartTypeChange(this.value)"
+        title="Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data.">
+        ${CHART_TYPE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>`;
+  }
+  if (sidebar && !sidebar.dataset.built) {
+    sidebar.dataset.built = '1';
+    sidebar.innerHTML = CHART_TOOL_CATEGORIES.map(c => `<button class="chart-tool-btn" data-cat="${c.key}" title="${c.label}" onclick="toggleToolCategory('${c.key}', this)">${c.icon}</button>`).join('')
+      + `<div class="chart-tool-sep"></div>`
+      + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`
+      + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" title="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">🗑</button>`;
+  }
+  document.querySelectorAll('.chart-tf-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tf === chartTf));
+  const typeSelect = document.getElementById('chartTypeSelect');
+  if (typeSelect) {
+    typeSelect.value = chartType;
+    const profileOpt = typeSelect.querySelector('option[value="session_volume_profile"]');
+    if (profileOpt) profileOpt.disabled = !INTRADAY_TIMEFRAMES.includes(chartTf);
+  }
+}
+
+function setChartTimeframe(tf) {
+  chartTf = tf;
+  renderChartToolbars();
+  if (currentAsset) loadPriceChart(currentAsset);
+}
+
+function onChartTypeChange(type) {
+  if (type === 'session_volume_profile' && !INTRADAY_TIMEFRAMES.includes(chartTf)) {
+    addLog('warn', 'CHART', 'Session Volume Profile only applies to intraday timeframes (1m–4h).');
+    renderChartToolbars(); // snap the <select> back to the actually-active type
+    return;
+  }
+  chartType = type;
+  const chart = ensurePriceChart();
+  if (!chart) return;
+  if (type === 'candle_solid' || type === 'candle_stroke' || type === 'area') {
+    chart.setStyles({ candle: { type } });
+  }
+  refreshVolumePaneMode();
+  updateSessionVolumeProfile();
+}
+
+// Swaps the bottom pane between the plain Volume histogram and the Volume Footprint
+// (approx.) buy/sell-split histogram based on the active chart type. Called after
+// every data load too, so switching symbols/timeframes keeps the selected mode.
+function refreshVolumePaneMode() {
+  if (!priceChart) return;
+  // createIndicator() with no explicit pane id creates a BRAND NEW pane every call
+  // instead of reusing one — confirmed live (repeated calls left several stacked,
+  // empty-looking duplicate volume panes). A stable `id` here makes every call target
+  // the same pane, so removeIndicator+createIndicator actually swaps in place.
+  const wantFootprint = chartType === 'volume_footprint';
+  priceChart.removeIndicator({ paneId: 'volume_pane' });
+  if (wantFootprint) {
+    ensureFootprintIndicator();
+    priceChart.createIndicator('VOL_FOOTPRINT', false, { height: 80, id: 'volume_pane' });
+  } else {
+    priceChart.createIndicator('VOL', false, { height: 80, id: 'volume_pane' });
+  }
+}
+
+// --- CATEGORIZED TOOL FLYOUT ---
+let openToolFlyout = null;
+function toggleToolCategory(key, btn) {
+  if (openToolFlyout && openToolFlyout.dataset.cat === key) { closeToolFlyout(); return; }
+  closeToolFlyout();
+  const tools = CHART_DRAW_TOOLS.filter(t => t.category === key);
+  const flyout = document.createElement('div');
+  flyout.className = 'chart-tool-flyout';
+  flyout.dataset.cat = key;
+  flyout.innerHTML = tools.map(t => `<button class="chart-tool-btn" title="${t.label}" onclick="activateDrawTool('${t.name}'); closeToolFlyout();">${t.icon}</button>`).join('');
+  document.body.appendChild(flyout);
+  const rect = btn.getBoundingClientRect();
+  flyout.style.left = (rect.right + 4) + 'px';
+  flyout.style.top = rect.top + 'px';
+  openToolFlyout = flyout;
+  setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
+}
+function onDocClickCloseFlyout(e) {
+  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('[data-cat]')) closeToolFlyout();
+}
+function closeToolFlyout() {
+  if (openToolFlyout) { openToolFlyout.remove(); openToolFlyout = null; }
+  document.removeEventListener('click', onDocClickCloseFlyout);
+}
+
+// --- DRAWING TOOLS: activate / delete-selected / clear-all ---
+let selectedOverlayId = null;
+function activateDrawTool(name) {
+  const chart = ensurePriceChart();
+  if (!chart) return;
+  ensureAdvancedOverlayTypes();
+  chart.createOverlay({
+    name,
+    onSelected: (e) => { selectedOverlayId = (e.overlay || e).id; showBinButton(); },
+    onDeselected: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
+    onRemoved: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
+  });
+}
+
+function showBinButton() { const btn = document.getElementById('chartBinBtn'); if (btn) btn.style.display = 'flex'; }
+function hideBinButton() { const btn = document.getElementById('chartBinBtn'); if (btn) btn.style.display = 'none'; }
+
+function deleteSelectedDrawing() {
+  if (!priceChart || !selectedOverlayId) return;
+  priceChart.removeOverlay({ id: selectedOverlayId });
+  selectedOverlayId = null;
+  hideBinButton();
+}
+
+function clearDrawings() {
+  if (priceChart) priceChart.removeOverlay();
+  selectedOverlayId = null;
+  hideBinButton();
+}
+
+// --- VOLUME FOOTPRINT (approx.) ---
+// True footprint charts need tick-level bid/ask trade data, which yfinance doesn't
+// provide (OHLCV bars only). This estimates each bar's buy/sell volume split using the
+// Money Flow Multiplier — the same formula already underlying Chaikin Money Flow /
+// Accumulation-Distribution, not invented for this — then renders it as a mirrored
+// buy(+)/sell(-) bar pane in place of the plain Volume histogram. It's a directional-
+// pressure estimate per bar, not real per-price-level order flow.
+let footprintRegistered = false;
+function ensureFootprintIndicator() {
+  if (footprintRegistered) return;
+  footprintRegistered = true;
+  klinecharts.registerIndicator({
+    name: 'VOL_FOOTPRINT',
+    shortName: 'FOOTPRINT (approx.)',
+    figures: [
+      { key: 'buyVol',  title: 'Buy(est) ',  type: 'bar', baseValue: 0, styles: () => ({ style: 'fill', color: cssVar('--accent-green', '#00ff88') }) },
+      { key: 'sellVol', title: 'Sell(est) ', type: 'bar', baseValue: 0, styles: () => ({ style: 'fill', color: cssVar('--accent-red', '#ff3355') }) },
+    ],
+    calc: (dataList) => dataList.map(bar => {
+      const range = bar.high - bar.low;
+      const mfm = range > 0 ? ((bar.close - bar.low) - (bar.high - bar.close)) / range : 0;
+      const buyVol = bar.volume * (mfm + 1) / 2;
+      return { buyVol, sellVol: -(bar.volume - buyVol) };
+    }),
+  });
+}
+
+// --- SESSION VOLUME PROFILE / shared volume-at-price histogram builder ---
+// Also reused by the Anchored VWAP Profile drawing tool — same bucketing math, the
+// only difference is which bars/anchor index get passed in.
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function buildVolumeProfileFigures(chart, bars, anchorIndex, opts = {}) {
+  if (!bars.length) return [];
+  let lo = Infinity, hi = -Infinity;
+  bars.forEach(b => { if (b.low < lo) lo = b.low; if (b.high > hi) hi = b.high; });
+  if (!isFinite(lo) || hi <= lo) return [];
+
+  const binCount = 24;
+  const binSize = (hi - lo) / binCount;
+  const bins = new Array(binCount).fill(0);
+  bars.forEach(b => {
+    const bLo = Math.max(b.low, lo), bHi = Math.min(b.high, hi);
+    const startBin = Math.max(0, Math.min(binCount - 1, Math.floor((bLo - lo) / binSize)));
+    const endBin = Math.max(0, Math.min(binCount - 1, Math.floor((bHi - lo) / binSize)));
+    const span = Math.max(1, endBin - startBin + 1);
+    for (let i = startBin; i <= endBin; i++) bins[i] += b.volume / span;
+  });
+  const maxBin = Math.max(...bins, 1);
+  const maxWidthPx = opts.maxWidthPx || 60;
+  const color = opts.color || 'rgba(0,136,255,0.28)';
+
+  const anchorPx = chart.convertToPixel({ dataIndex: anchorIndex, value: hi }, { paneId: 'candle_pane' });
+  if (!anchorPx || anchorPx.x == null) return [];
+
+  const figures = [];
+  for (let i = 0; i < binCount; i++) {
+    const priceLo = lo + i * binSize, priceHi = priceLo + binSize;
+    const pxTop = chart.convertToPixel({ dataIndex: anchorIndex, value: priceHi }, { paneId: 'candle_pane' });
+    const pxBot = chart.convertToPixel({ dataIndex: anchorIndex, value: priceLo }, { paneId: 'candle_pane' });
+    if (!pxTop || !pxBot) continue;
+    const width = (bins[i] / maxBin) * maxWidthPx;
+    figures.push({
+      type: 'rect',
+      attrs: { x: anchorPx.x, y: Math.min(pxTop.y, pxBot.y), width, height: Math.max(1, Math.abs(pxBot.y - pxTop.y)) },
+      styles: { style: 'fill', color },
+      ignoreEvent: true,
+    });
+  }
+  return figures;
+}
+
+let volumeProfileOverlayRegistered = false;
+function ensureVolumeProfileOverlayType() {
+  if (volumeProfileOverlayRegistered) return;
+  volumeProfileOverlayRegistered = true;
+  klinecharts.registerOverlay({
+    name: 'volumeProfileAuto',
+    totalStep: 1, // created programmatically with its point already set, not by user clicks
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    // klinecharts calls this with a SINGLE options object — {overlay, coordinates,
+    // bounding, ...} — not three positional args (confirmed by reading the actual
+    // minified bundle; the docs summary was misleading here).
+    createPointFigures: ({ overlay }) => {
+      // klinecharts can invoke this mid-removal/mid-transition with no overlay instance
+      // yet (observed live while switching timeframe/chart-type quickly) — bail quietly
+      // rather than throwing, the next redraw after the real overlay exists will fill in.
+      if (!overlay || !overlay.points || !overlay.points[0]) return [];
+      const bars = (overlay.extendData || {}).bars || [];
+      const anchorIndex = overlay.points[0].dataIndex;
+      return buildVolumeProfileFigures(priceChart, bars, anchorIndex);
+    },
+  });
+}
+
+let sessionProfileOverlayId = null;
+function updateSessionVolumeProfile() {
+  if (!priceChart) return;
+  if (sessionProfileOverlayId) { priceChart.removeOverlay({ id: sessionProfileOverlayId }); sessionProfileOverlayId = null; }
+  if (chartType !== 'session_volume_profile' || !INTRADAY_TIMEFRAMES.includes(chartTf) || currentChartBars.length === 0) return;
+
+  ensureVolumeProfileOverlayType();
+  const lastDate = new Date(currentChartBars[currentChartBars.length - 1].timestamp).toDateString();
+  let startIdx = currentChartBars.length - 1;
+  while (startIdx > 0 && new Date(currentChartBars[startIdx - 1].timestamp).toDateString() === lastDate) startIdx--;
+  const sessionBars = currentChartBars.slice(startIdx);
+
+  sessionProfileOverlayId = priceChart.createOverlay({
+    name: 'volumeProfileAuto',
+    lock: true,
+    points: [{ dataIndex: startIdx, value: 0 }],
+    extendData: { bars: sessionBars },
+  });
+}
+
+// --- ANALYSIS / TRADING TOOLS (Measure, Anchored VWAP, Anchored VWAP Profile, Long/Short Position) ---
+// All registered via klinecharts.registerOverlay. One hard-won gotcha discovered while
+// building the Session Volume Profile overlay above: createPointFigures is invoked with
+// a SINGLE options object — ({overlay, coordinates, bounding, ...}) — not positional
+// arguments (confirmed by reading the actual minified bundle; the public docs summary
+// was misleading). Every callback below destructures accordingly.
+
+function withAlpha(hexColor, alpha) {
+  if (/^#([0-9a-f]{6})$/i.test(hexColor)) {
+    const r = parseInt(hexColor.slice(1, 3), 16), g = parseInt(hexColor.slice(3, 5), 16), b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  return hexColor;
+}
+
+function formatDuration(ms) {
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 90) return `${days}d`;
+  return `${(days / 30.44).toFixed(1)}mo`;
+}
+
+function buildAnchoredVwapFigures(chart, bars, anchorIndex, opts = {}) {
+  if (anchorIndex < 0 || anchorIndex >= bars.length) return [];
+  let cumPV = 0, cumVol = 0;
+  const points = [];
+  for (let i = anchorIndex; i < bars.length; i++) {
+    const b = bars[i];
+    const typical = (b.high + b.low + b.close) / 3;
+    cumPV += typical * b.volume;
+    cumVol += b.volume;
+    points.push({ dataIndex: i, value: cumVol > 0 ? cumPV / cumVol : typical });
+  }
+  if (points.length < 2) return [];
+  const pixelPoints = chart.convertToPixel(points, { paneId: 'candle_pane' });
+  if (!Array.isArray(pixelPoints)) return [];
+  const color = opts.color || cssVar('--accent-purple', '#aa55ff');
+  return [{ type: 'line', attrs: { coordinates: pixelPoints }, styles: { color, size: 1.5 }, ignoreEvent: true }];
+}
+
+let advancedOverlaysRegistered = false;
+function ensureAdvancedOverlayTypes() {
+  if (advancedOverlaysRegistered) return;
+  advancedOverlaysRegistered = true;
+
+  klinecharts.registerOverlay({
+    name: 'measureTool',
+    totalStep: 3, // 2 clicks (totalStep = numClicks + 1, confirmed against the bundle's step-completion logic)
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay, coordinates }) => {
+      if (!overlay || !overlay.points || overlay.points.length < 2 || !coordinates || coordinates.length < 2) return [];
+      const [p1, p2] = overlay.points;
+      const [c1, c2] = coordinates;
+      const pctChange = p1.value ? ((p2.value - p1.value) / p1.value) * 100 : 0;
+      const dollarChange = p2.value - p1.value;
+      const up = dollarChange >= 0;
+      const color = up ? cssVar('--accent-green', '#00ff88') : cssVar('--accent-red', '#ff3355');
+      const label = `${up ? '+' : ''}${pctChange.toFixed(2)}%   ${up ? '+' : ''}${dollarChange.toFixed(2)}   ${formatDuration(Math.abs(p2.timestamp - p1.timestamp))}`;
+      return [
+        { type: 'rect', attrs: { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), width: Math.abs(c2.x - c1.x), height: Math.max(1, Math.abs(c2.y - c1.y)) }, styles: { style: 'fill', color: withAlpha(color, 0.12) }, ignoreEvent: true },
+        { type: 'line', attrs: { coordinates: [c1, c2] }, styles: { color, size: 1.5 }, ignoreEvent: true },
+        { type: 'text', attrs: { x: (c1.x + c2.x) / 2, y: Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: 'bottom' }, styles: { color, size: 11 }, ignoreEvent: true },
+      ];
+    },
+  });
+
+  klinecharts.registerOverlay({
+    name: 'anchoredVwap',
+    totalStep: 2, // 1 click
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay }) => {
+      if (!overlay || !overlay.points || !overlay.points[0] || !currentChartBars.length) return [];
+      return buildAnchoredVwapFigures(priceChart, currentChartBars, overlay.points[0].dataIndex);
+    },
+  });
+
+  klinecharts.registerOverlay({
+    name: 'anchoredVwapProfile',
+    totalStep: 2, // 1 click
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay }) => {
+      if (!overlay || !overlay.points || !overlay.points[0] || !currentChartBars.length) return [];
+      const anchorIndex = overlay.points[0].dataIndex;
+      const profileFigs = buildVolumeProfileFigures(priceChart, currentChartBars.slice(anchorIndex), anchorIndex, { color: 'rgba(170,85,255,0.25)' });
+      const vwapFigs = buildAnchoredVwapFigures(priceChart, currentChartBars, anchorIndex);
+      return [...profileFigs, ...vwapFigs];
+    },
+  });
+
+  // Long/Short Position: 3 clicks (entry, target, stop). Long and short are the exact
+  // same geometry — profit/loss zones are derived from where the user clicks relative
+  // to entry, not a hardcoded up/down assumption — so both names share one builder.
+  const positionFigures = ({ overlay, coordinates }) => {
+    if (!overlay || !overlay.points || overlay.points.length < 3 || !coordinates || coordinates.length < 3) return [];
+    const [pEntry, pTarget, pStop] = overlay.points;
+    const [cEntry, cTarget, cStop] = coordinates;
+    const cfg = getConfig();
+    const positionValue = cfg.posSizeGbpMode ? cfg.posSizeGbp : cfg.capital * (cfg.posSize / 100);
+    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const profitAmt = positionValue * profitPct / 100;
+    const lossAmt = positionValue * lossPct / 100;
+    const rr = lossPct !== 0 ? Math.abs(profitPct / lossPct) : 0;
+    const green = cssVar('--accent-green', '#00ff88'), red = cssVar('--accent-red', '#ff3355');
+    const boxWidth = 70;
+    const sym = getCurrencySymbol();
+    return [
+      { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cTarget.y), width: boxWidth, height: Math.max(1, Math.abs(cTarget.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(green, 0.22) }, ignoreEvent: true },
+      { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cStop.y), width: boxWidth, height: Math.max(1, Math.abs(cStop.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(red, 0.22) }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `+${profitPct.toFixed(2)}%  ${sym}${profitAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10 }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${lossPct.toFixed(2)}%  ${sym}${lossAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10 }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth / 2, y: Math.min(cEntry.y, cTarget.y, cStop.y) - 6, text: `R:R 1:${rr.toFixed(2)}`, align: 'center', baseline: 'bottom' }, styles: { color: cssVar('--text-primary', '#e2e8f0'), size: 10 }, ignoreEvent: true },
+    ];
+  };
+  klinecharts.registerOverlay({ name: 'longPosition', totalStep: 4, needDefaultPointFigure: true, createPointFigures: positionFigures });
+  klinecharts.registerOverlay({ name: 'shortPosition', totalStep: 4, needDefaultPointFigure: true, createPointFigures: positionFigures });
 }
 
 function showChartPlaceholder() {
   const container = document.getElementById('tvChart');
   if (!container) return;
-  if (tvWidget) tvWidget = null;
+  priceChart = null;
+  lastChartSym = null;
   container.innerHTML = `
     <div class="chart-empty-state">
       <div class="empty-state">NO ASSET SELECTED<br><span style="font-size:8px;">Click WATCHLIST ▼ and search to add one</span></div>
     </div>`;
 }
 
-function retryTvChart() {
-  if (lastTvSym) loadTvChart(lastTvSym);
+function retryPriceChart() {
+  if (lastChartSym) loadPriceChart(lastChartSym);
 }
 
-function loadTvChart(tvSym) {
+function showChartLoadError(msg) {
   const container = document.getElementById('tvChart');
-  container.innerHTML = '';
-  lastTvSym = tvSym;
-  if (tvLoadTimer) { clearTimeout(tvLoadTimer); tvLoadTimer = null; }
-  const mobile = window.innerWidth <= 768;
-  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
-  tvWidget = new TradingView.widget({
-    autosize: true,
-    symbol: tvSym,
-    interval: 'D',
-    timezone: 'Etc/UTC',
-    theme: dark ? 'dark' : 'light',
-    style: '1',
-    locale: 'en',
-    toolbar_bg: dark ? '#0d1117' : '#eef0f5',
-    enable_publishing: false,
-    allow_symbol_change: true,
-    container_id: 'tvChart',
-    studies: ['Volume@tv-basicstudies'],
-    hide_top_toolbar: false,
-    hide_legend: false,
-    save_image: false,
-    backgroundColor: dark ? 'rgba(5,6,8,1)' : 'rgba(245,247,250,1)',
-    gridColor: dark ? 'rgba(30,42,58,0.8)' : 'rgba(208,216,232,0.8)',
-    withdateranges: !mobile,
-    hide_side_toolbar: false,
-  });
-
-  // Graceful fallback: TradingView's embed shows only its own blue spinner while
-  // loading, and spins forever if the iframe is blocked (ad/privacy extension) or
-  // the feed is unreachable. Overlay a "loading" state on top, clear it once the
-  // iframe's embed page fires 'load', and if nothing loads within 12s swap in an
-  // actionable message with a Retry so users aren't stuck on an unexplained spinner.
+  if (!container) return;
+  const existing = container.querySelector('.tv-loading-overlay');
+  if (existing) existing.remove();
   const overlay = document.createElement('div');
   overlay.className = 'tv-loading-overlay';
-  overlay.innerHTML = `<div class="empty-state">LOADING CHART…<br><span style="font-size:8px;">Fetching ${tvSym} from TradingView</span></div>`;
+  overlay.innerHTML = `<div class="empty-state" style="line-height:1.9;">CHART DIDN'T LOAD<br>
+    <span style="font-size:8px;color:var(--text-muted);">${msg || 'Yahoo Finance data is temporarily unavailable.'}</span><br>
+    <button onclick="retryPriceChart()" style="margin-top:8px;padding:5px 14px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);border-radius:2px;cursor:pointer;">↻ RETRY</button></div>`;
+  container.appendChild(overlay);
+}
+
+async function loadPriceChart(sym) {
+  const yfSym = symbolMap[sym];
+  if (!yfSym) { showChartPlaceholder(); return; }
+  lastChartSym = sym;
+  renderChartToolbars();
+
+  const chart = ensurePriceChart();
+  const container = document.getElementById('tvChart');
+  if (!chart) { showChartLoadError('Chart library failed to load — check your connection and retry.'); return; }
+
+  const seq = ++chartLoadSeq;
+  // A previous failed load may have left its own .tv-loading-overlay (the error/retry
+  // state) in the DOM — clear it before adding this attempt's, otherwise a successful
+  // retry finishes underneath the old error message instead of replacing it.
+  container.querySelectorAll('.tv-loading-overlay').forEach(el => el.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'tv-loading-overlay';
+  overlay.innerHTML = `<div class="empty-state">LOADING CHART…<br><span style="font-size:8px;">Fetching ${sym} (${CHART_TF_LABELS[chartTf] || chartTf}) from Yahoo Finance</span></div>`;
   container.appendChild(overlay);
 
-  const clearOverlay = () => {
-    if (tvLoadTimer) { clearTimeout(tvLoadTimer); tvLoadTimer = null; }
-    overlay.remove();
-  };
-  // The widget appends its iframe synchronously, so attach the load handler now
-  // (catches a fast load); fall back to a short poll if it isn't there yet.
-  const attachLoad = () => {
-    const frame = container.querySelector('iframe');
-    if (frame) { frame.addEventListener('load', clearOverlay); return true; }
-    return false;
-  };
-  if (!attachLoad()) {
-    const attachPoll = setInterval(() => { if (attachLoad()) clearInterval(attachPoll); }, 150);
-    setTimeout(() => clearInterval(attachPoll), 3000);
+  const interval = (intervalMap[chartTf] || { interval: '1d' }).interval;
+  const period = CHART_HISTORY_PERIOD[chartTf] || 'max';
+  // Yahoo occasionally throttles/blips — one quiet retry before surfacing an error,
+  // same hardening as the strategy engine's own price/signal fetches.
+  const attempts = 2;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+      if (seq !== chartLoadSeq) return; // a newer load superseded this one
+      const rows = (data.data || []).map(r => ({
+        timestamp: new Date(r.date).getTime(),
+        open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
+      })).filter(r => Number.isFinite(r.timestamp) && Number.isFinite(r.close));
+      overlay.remove();
+      if (!rows.length) { showChartLoadError(`No data returned for ${sym}.`); return; }
+      currentChartBars = rows;
+      chart.applyNewData(rows);
+      refreshVolumePaneMode();
+      return;
+    } catch (e) {
+      if (seq !== chartLoadSeq) return;
+      if (attempt === attempts) { showChartLoadError(e.message); return; }
+      await new Promise(r => setTimeout(r, 600));
+    }
   }
-
-  tvLoadTimer = setTimeout(() => {
-    clearInterval(attachPoll);
-    overlay.innerHTML = `<div class="empty-state" style="line-height:1.9;">CHART DIDN'T LOAD<br>
-      <span style="font-size:8px;color:var(--text-muted);">TradingView may be blocked by a browser extension (ad/privacy blocker) or temporarily unavailable.</span><br>
-      <button onclick="retryTvChart()" style="margin-top:8px;padding:5px 14px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);border-radius:2px;cursor:pointer;">↻ RETRY</button></div>`;
-    tvLoadTimer = null;
-  }, 12000);
 }
 
 document.addEventListener('gca-theme-change', function() {
-  if (currentAsset && tvSymbolMap[currentAsset]) loadTvChart(tvSymbolMap[currentAsset]);
-  else showChartPlaceholder();
+  applyChartTheme();
 });
 
-function drawChart() { /* replaced by TradingView */ }
-function resizeChart() { /* no-op */ }
+window.addEventListener('resize', () => { if (priceChart) priceChart.resize(); });
+
+function drawChart() { /* replaced by own klinecharts-based price chart */ }
+function resizeChart() { if (priceChart) priceChart.resize(); }
 function setChartView(view, btn) { /* no-op */ }
 function updateChart() { /* no-op */ }
 
@@ -2872,63 +3228,6 @@ function categoryFromQuoteType(symbol, quoteType) {
   return 'stock';
 }
 
-// A bare ticker with no exchange prefix ("MSFT" instead of "NASDAQ:MSFT") frequently
-// fails to resolve on first load in the TradingView widget — it shows its own "This
-// symbol doesn't exist" error rather than falling back gracefully. So stocks/ETFs/etc.
-// need a real EXCHANGE:SYMBOL mapping, built from the exchange Yahoo's search already
-// gave us; only unrecognized exchanges fall back to the bare symbol as a last resort
-// (the widget's own allow_symbol_change lets the user manually fix it from there).
-function exchangeToTvPrefix(exchange) {
-  const ex = (exchange || '').toUpperCase();
-  const map = [
-    ['NASDAQ', 'NASDAQ'],
-    ['NYSE ARCA', 'AMEX'], ['NYSEARCA', 'AMEX'], ['NYSE AMERICAN', 'AMEX'], ['AMEX', 'AMEX'],
-    ['NYSE', 'NYSE'],
-    ['BATS', 'BATS'], ['CBOE', 'CBOE'],
-    ['LONDON', 'LSE'], ['LSE', 'LSE'],
-    ['TORONTO', 'TSX'], ['TSX', 'TSX'], ['TSXV', 'TSXV'],
-    ['FRANKFURT', 'FWB'], ['XETRA', 'XETR'], ['GERMANY', 'XETR'],
-    ['PARIS', 'EURONEXT'], ['AMSTERDAM', 'EURONEXT'], ['BRUSSELS', 'EURONEXT'],
-    ['HONG KONG', 'HKEX'],
-    ['TOKYO', 'TSE'],
-    ['SWISS', 'SIX'],
-    ['AUSTRALIA', 'ASX'], ['ASX', 'ASX'],
-    ['SHANGHAI', 'SSE'], ['SHENZHEN', 'SZSE'],
-    ['INDIA', 'NSE'], ['NSE', 'NSE'], ['BSE', 'BSE'],
-    ['SINGAPORE', 'SGX'],
-  ];
-  for (const [needle, prefix] of map) {
-    if (ex.includes(needle)) return prefix;
-  }
-  return null;
-}
-
-// yfinance indices ("^"-prefixed) don't carry a normal stock exchange, so they need
-// their own explicit map onto a TradingView symbol. The obvious TVC:<index> feeds
-// (TVC:SPX, TVC:UKX, TVC:VIX, ...) are exchange-licensed data gated behind a
-// TradingView login/subscription — the widget shows "This symbol is only available
-// on TradingView" for them even though they look valid. Verified live (headless
-// browser against the actual embedded widget) that the FOREXCOM CFD feeds are what's
-// actually accessible on the free embed for indices; VIX uses the VIXY ETF as a proxy
-// since the raw index isn't available at all on the free tier.
-const INDEX_TV_MAP = {
-  '^GSPC': 'FOREXCOM:SPXUSD', '^DJI': 'FOREXCOM:DJI',
-  '^IXIC': 'FOREXCOM:NSXUSD', '^NDX': 'FOREXCOM:NSXUSD',
-  '^FTSE': 'FOREXCOM:UK100', '^GDAXI': 'FOREXCOM:GRXEUR', '^FCHI': 'FOREXCOM:FRXEUR',
-  '^N225': 'FOREXCOM:JPXJPY', '^HSI': 'FOREXCOM:HKXHKD',
-  '^RUT': 'FOREXCOM:US2000', '^VIX': 'AMEX:VIXY',
-};
-
-function guessTvSymbol(symbol, category, exchange) {
-  if (INDEX_TV_MAP[symbol]) return INDEX_TV_MAP[symbol];
-  if (category === 'crypto') return 'BINANCE:' + symbol.replace('-USD', 'USDT').replace(/[^A-Z0-9]/g, '');
-  if (category === 'forex') return 'FX:' + symbol.replace('=X', '');
-  if (category === 'futures') return symbol.replace('=F', '1!');
-  const prefix = exchangeToTvPrefix(exchange);
-  const cleanSymbol = symbol.split('.')[0]; // strip yfinance suffixes like .L, .TO, .SW
-  return prefix ? `${prefix}:${cleanSymbol}` : symbol;
-}
-
 function addSearchResult(idx) {
   const r = searchResults[idx];
   if (!r) return;
@@ -2986,7 +3285,6 @@ async function addCustomSymbol(symbol, label, category, exchange) {
 
 function registerCustomSymbol(symbol, category, exchange) {
   symbolMap[symbol] = symbol;
-  tvSymbolMap[symbol] = guessTvSymbol(symbol, category, exchange);
   assets[symbol] = { price: 0, vol: 1.0, category: category || 'stock', change: 0 };
   priceHistory[symbol] = [];
   customSymbolKeys.add(symbol);
@@ -3002,7 +3300,6 @@ async function removeCustomSymbol(symbol, event) {
 
   delete assets[symbol];
   delete symbolMap[symbol];
-  delete tvSymbolMap[symbol];
   delete watchlistEnabled[symbol];
   delete priceHistory[symbol];
   customSymbolKeys.delete(symbol);
@@ -3066,7 +3363,7 @@ function toggleWatchlistItem(sym, enabled) {
   watchlistEnabled[sym] = enabled;
   if (!enabled && sym === currentAsset) {
     const next = Object.keys(assets).find(s => watchlistEnabled[s] && s !== sym);
-    if (next) { currentAsset = next; loadTvChart(tvSymbolMap[next]); }
+    if (next) { currentAsset = next; loadPriceChart(next); }
     else { currentAsset = null; showChartPlaceholder(); }
   }
   _wlUpdateCount();
@@ -3090,16 +3387,14 @@ document.addEventListener('click', function(e) {
 
 function selectAsset(sym) {
   currentAsset = sym;
-  clearIndicatorBar();
   renderWatchlist();
   updateChartOverlay();
-  const tvSym = tvSymbolMap[sym] || sym;
-  loadTvChart(tvSym);
-  addLog('info', 'CHART', `Switched to ${sym} → ${tvSym}`);
+  loadPriceChart(sym);
+  addLog('info', 'CHART', `Switched to ${sym}`);
   // Show cached data immediately if we already have it, then refresh in the background
-  if (liveCache[sym]) updateIndicatorBar();
+  if (liveCache[sym]) updateStrategyStatus();
   fetchPrices(sym).then(() => updateChartOverlay()).catch(e => addLog('err', 'API', `Fetch failed ${sym}: ${e.message}`));
-  fetchSignals(sym).then(() => updateIndicatorBar()).catch(() => {});
+  fetchSignals(sym).then(() => updateStrategyStatus()).catch(() => {});
 }
 
 // --- TICKER TAPE ---
@@ -3127,6 +3422,27 @@ function addLog(type, source, msg) {
 }
 
 // --- HELPERS ---
+// Keeps a range slider and its paired free-typed number box in sync. The slider
+// stays the source of truth read by getConfig() — the textbox only ever writes
+// through it, clamped to [lo, hi], so every downstream read keeps working unchanged.
+function clampPct(v, lo, hi) {
+  v = parseFloat(v);
+  return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null;
+}
+function onPctSliderInput(sliderId, textId) {
+  document.getElementById(textId).value = parseFloat(document.getElementById(sliderId).value).toFixed(1);
+}
+function onPctTextInput(sliderId, textId) {
+  const v = clampPct(document.getElementById(textId).value, 1, 4000);
+  if (v !== null) document.getElementById(sliderId).value = v;
+}
+function onPctTextChange(sliderId, textId) {
+  const slider = document.getElementById(sliderId);
+  const v = clampPct(document.getElementById(textId).value, 1, 4000) ?? parseFloat(slider.value);
+  slider.value = v;
+  document.getElementById(textId).value = v.toFixed(1);
+}
+
 function getConfig() {
   // Trade sizing + base scoring settings. Indicator parameters are NOT read
   // here anymore — each strategy condition carries its own params, so only the
@@ -3501,9 +3817,9 @@ function applyPreferences(prefs) {
   set('posSizeGbp', prefs.posSizeGbp);
   togglePosSizeMode(!!prefs.posSizeGbpMode);
   set('targetGain', prefs.targetGain);
-  if (prefs.targetGain !== undefined) setText('targetVal', parseFloat(prefs.targetGain).toFixed(1) + '%');
+  if (prefs.targetGain !== undefined) set('targetVal', parseFloat(prefs.targetGain).toFixed(1));
   set('stopLoss',   prefs.stopLoss);
-  if (prefs.stopLoss  !== undefined) setText('slVal', '-' + parseFloat(prefs.stopLoss).toFixed(1) + '%');
+  if (prefs.stopLoss  !== undefined) set('slVal', parseFloat(prefs.stopLoss).toFixed(1));
   set('trailDist',  prefs.trailDist);
   if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
 

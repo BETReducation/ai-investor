@@ -577,8 +577,8 @@ def calculate_all(
     if vwap_roll_s is not None:
         vwap_roll_v = _safe_float(vwap_roll_s.iloc[-1])
         if vwap_roll_v is not None:
-            vwap_bull = close.iloc[-1] > vwap_roll_v
-            vwap_bear = close.iloc[-1] < vwap_roll_v
+            vwap_bull = bool(close.iloc[-1] > vwap_roll_v)
+            vwap_bear = bool(close.iloc[-1] < vwap_roll_v)
             _band = vwap_roll_v * vwap_band_pct / 100
             vwap_band_touch = bool(close.iloc[-1] >= vwap_roll_v + _band or close.iloc[-1] <= vwap_roll_v - _band)
 
@@ -642,7 +642,7 @@ def calculate_all(
     vp_poc_bars = 999
     if vp_s is not None and not pd.isna(vp_s.iloc[-1]):
         vp_poc_v = _safe_float(vp_s.iloc[-1])
-        vp_bullish = close.iloc[-1] > vp_poc_v
+        vp_bullish = bool(close.iloc[-1] > vp_poc_v)
         vp_poc_bars = _bars_since_cross(close, vp_s)
 
     fib_df = _try(lambda: calculate_fibonacci_levels(df, lookback=fib_lookback))
