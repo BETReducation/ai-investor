@@ -95,6 +95,8 @@
 .signal-toast.sell { border-left: 3px solid var(--signal-sell); }
 .signal-toast.warn { border-left: 3px solid var(--accent-amber); }
 .signal-toast-type.warn { color: var(--accent-amber); }
+.signal-toast.price { border-left: 3px solid var(--accent-blue); }
+.signal-toast-type.price { color: var(--accent-blue); }
 .qs-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 3px; cursor: pointer; transition: all 0.15s; }
 .qs-chip:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .tv-loading-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--bg-secondary); }
@@ -119,6 +121,13 @@
 .chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-tool-btn[data-cat] { color: var(--text-secondary); }
 .chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+/* Price-alert bell — scoped here (not gca.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
+.stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
+.stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
+.stat-cell-action span { position: absolute; top: -3px; right: -3px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: var(--accent-amber); color: #000; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.price-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 2px; padding: 6px 10px; }
+.price-alert-row .pa-remove { flex-shrink: 0; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; padding: 2px 4px; }
+.price-alert-row .pa-remove:hover { color: var(--accent-red); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -557,7 +566,8 @@ window.addEventListener('resize', () => {
         <div class="stat-value" id="statTrades">0</div>
         <div class="stat-sub" id="statWinRate">—% win rate</div>
       </div>
-      <div class="stat-cell">
+      <div class="stat-cell" style="position:relative;">
+        <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
         <div class="stat-label">STRATEGY TARGET</div>
         <div class="stat-value tag-amber" id="statTarget">£0.00</div>
         <div class="stat-sub" id="statProgress">0% progress</div>
@@ -675,6 +685,36 @@ window.addEventListener('resize', () => {
         Pick a strategy you saved on the Backtester page. Its enabled indicators/trigger-modes are translated into conditions here — review them before saving. Combined OR-style Backtester modes (e.g. "overbought or oversold") become separate conditions; set "Fire when" to ANY condition if you want that OR behaviour.
       </div>
       <div id="importBtList" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICE ALERTS MODAL -->
+<div class="modal-overlay" id="priceAlertsModal" style="display:none;" onclick="if(event.target===this)closePriceAlertsModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">PRICE ALERTS <span id="priceAlertsModalSym" style="color:var(--text-muted);font-weight:400;"></span></div>
+      <button class="modal-close" onclick="closePriceAlertsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
+        Alerts are per chart — set one for the symbol you're currently viewing. You'll get a popup + log entry when the price crosses your target; they keep checking even while the strategy engine isn't running.
+      </div>
+      <div id="priceAlertsList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <div style="flex:1;">
+          <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:3px;">DIRECTION</div>
+          <select id="paDirection" style="width:100%;">
+            <option value="above">Price rises above</option>
+            <option value="below">Price falls below</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:3px;">PRICE</div>
+          <input type="number" id="paPrice" step="0.01" min="0" style="width:100%;" placeholder="0.00">
+        </div>
+        <button class="btn-confirm" style="flex-shrink:0;" onclick="addPriceAlert()">ADD</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2291,6 +2331,143 @@ function showSignalToast(a) {
   }, 6000);
 }
 
+// --- PRICE ALERTS ---
+// Independent of the strategy engine's condition-based alerts above (`alerts`/
+// `fireAlert`) — these are simple per-symbol price-target triggers, customisable per
+// chart. Reuses the same toast/log notification pattern as fireAlert/showSignalToast.
+let priceAlerts = {}; // { [sym]: [{id, price, direction:'above'|'below', active, createdAt}] }
+let priceAlertPollTimer = null;
+
+function openPriceAlertsModal() {
+  if (!currentAsset) { addLog('warn', 'ALERT', 'Select a symbol on the chart before setting a price alert.'); return; }
+  document.getElementById('priceAlertsModalSym').textContent = `— ${currentAsset}`;
+  document.getElementById('paPrice').value = '';
+  renderPriceAlertsList();
+  document.getElementById('priceAlertsModal').style.display = 'flex';
+}
+function closePriceAlertsModal() {
+  document.getElementById('priceAlertsModal').style.display = 'none';
+}
+
+function renderPriceAlertsList() {
+  const list = document.getElementById('priceAlertsList');
+  if (!list) return;
+  const symAlerts = (priceAlerts[currentAsset] || []).filter(a => a.active);
+  if (symAlerts.length === 0) {
+    list.innerHTML = `<div style="font-size:9px;color:var(--text-muted);">No active alerts for ${currentAsset || 'this symbol'} yet.</div>`;
+  } else {
+    list.innerHTML = symAlerts.map(a => `
+      <div class="price-alert-row">
+        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${getCurrencySymbol()}${formatPrice(a.price, currentAsset)}</span>
+        <button class="pa-remove" title="Remove" onclick="removePriceAlert('${currentAsset}', '${a.id}')">✕</button>
+      </div>`).join('');
+  }
+  updatePriceAlertBadge();
+}
+
+function addPriceAlert() {
+  if (!currentAsset) return;
+  const price = parseFloat(document.getElementById('paPrice').value);
+  const direction = document.getElementById('paDirection').value;
+  if (!isFinite(price) || price <= 0) { addLog('warn', 'ALERT', 'Enter a valid price for the alert.'); return; }
+  if (!priceAlerts[currentAsset]) priceAlerts[currentAsset] = [];
+  priceAlerts[currentAsset].push({ id: 'pa_' + Date.now() + '_' + Math.floor(Math.random() * 1000), price, direction, active: true, createdAt: Date.now() });
+  document.getElementById('paPrice').value = '';
+  renderPriceAlertsList();
+  startPriceAlertPolling();
+  addLog('info', 'ALERT', `Price alert set: ${currentAsset} ${direction} ${getCurrencySymbol()}${price}`);
+}
+
+function removePriceAlert(sym, id) {
+  if (!priceAlerts[sym]) return;
+  priceAlerts[sym] = priceAlerts[sym].filter(a => a.id !== id);
+  if (priceAlerts[sym].length === 0) delete priceAlerts[sym];
+  renderPriceAlertsList();
+  if (Object.keys(priceAlerts).length === 0) stopPriceAlertPolling();
+}
+
+function updatePriceAlertBadge() {
+  const badge = document.getElementById('priceAlertBadge');
+  if (!badge) return;
+  const count = Object.values(priceAlerts).reduce((n, arr) => n + arr.filter(a => a.active).length, 0);
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  badge.textContent = count > 9 ? '9+' : String(count);
+}
+
+function startPriceAlertPolling() {
+  if (priceAlertPollTimer) return;
+  priceAlertPollTimer = setInterval(evaluatePriceAlerts, 30000);
+  evaluatePriceAlerts();
+}
+function stopPriceAlertPolling() {
+  if (priceAlertPollTimer) { clearInterval(priceAlertPollTimer); priceAlertPollTimer = null; }
+}
+
+async function evaluatePriceAlerts() {
+  const syms = Object.keys(priceAlerts).filter(sym => (priceAlerts[sym] || []).some(a => a.active));
+  let anyFired = false;
+  for (const sym of syms) {
+    try {
+      await fetchPrices(sym);
+    } catch (e) {
+      addLog('err', 'ALERT', `Price check failed for ${sym}: ${e.message}`);
+      continue;
+    }
+    const price = assets[sym] && assets[sym].price;
+    if (!price) continue;
+    for (const a of priceAlerts[sym]) {
+      if (!a.active) continue;
+      const crossed = a.direction === 'above' ? price >= a.price : price <= a.price;
+      if (!crossed) continue;
+      a.active = false;
+      anyFired = true;
+      showPriceAlertToast(sym, a, price);
+      addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${getCurrencySymbol()}${a.price} (now ${getCurrencySymbol()}${formatPrice(price, sym)})`);
+    }
+  }
+  updatePriceAlertBadge();
+  if (currentAsset) renderPriceAlertsList();
+  if (anyFired && currentUser) savePriceAlertsQuietly();
+}
+
+// A silent variant of savePreferences() for the background poll — that function
+// visibly disables/relabels the user's "SAVE" button (SAVING…/✓ SAVED), which would
+// flicker confusingly if triggered by a 30s background tick the user never asked for.
+// The backend does an unvalidated shallow merge of whatever's posted onto existing
+// preferences (app.py's /api/save-preferences), so posting just this one field is safe.
+async function savePriceAlertsQuietly() {
+  try {
+    await fetch(API_BASE + '/api/save-preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ priceAlerts: JSON.parse(JSON.stringify(priceAlerts)) }),
+    });
+  } catch (e) {
+    addLog('err', 'ALERT', 'Failed to persist alert state: ' + e.message);
+  }
+}
+
+function showPriceAlertToast(sym, alertObj, currentPrice) {
+  const stack = document.getElementById('signalToastStack');
+  if (!stack) return;
+  if (notificationSettings && notificationSettings.sound_enabled) playAlertTone('warn');
+  if (!(notificationSettings && notificationSettings.popup_enabled === false)) {
+    const el = document.createElement('div');
+    el.className = 'signal-toast price';
+    el.innerHTML = `
+      <div class="signal-toast-hdr">
+        <span class="signal-toast-type price">PRICE ALERT</span>
+        <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
+      </div>
+      <div class="signal-toast-body">
+        <span class="signal-toast-asset">${sym}</span> crossed ${alertObj.direction} ${getCurrencySymbol()}${formatPrice(alertObj.price, sym)} — now ${getCurrencySymbol()}${formatPrice(currentPrice, sym)}
+      </div>`;
+    stack.appendChild(el);
+    setTimeout(() => { el.classList.add('closing'); setTimeout(() => el.remove(), 260); }, 8000);
+  }
+}
+
 // --- RENDER ALERTS ---
 function renderAlerts() {
   const list = document.getElementById('alertList');
@@ -3757,6 +3934,7 @@ async function savePreferences() {
     minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
     savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
+    priceAlerts:        JSON.parse(JSON.stringify(priceAlerts)),
   };
 
   const btn = document.getElementById('saveBtn');
@@ -3864,6 +4042,12 @@ function applyPreferences(prefs) {
       sound_enabled: prefs.notification_settings.sound_enabled !== false,
       popup_enabled: prefs.notification_settings.popup_enabled !== false,
     };
+  }
+
+  if (prefs.priceAlerts && typeof prefs.priceAlerts === 'object') {
+    priceAlerts = prefs.priceAlerts;
+    updatePriceAlertBadge();
+    if (Object.values(priceAlerts).some(arr => (arr || []).some(a => a.active))) startPriceAlertPolling();
   }
 }
 
