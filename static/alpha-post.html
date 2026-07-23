@@ -586,10 +586,15 @@ function renderBody(body, bodyEl, postTopicAccentClass) {
     const bodyEl = document.getElementById('postBody');
     const text = item.body || item.snippet || '';
     renderBody(text, bodyEl, topicAccentClass(slug, item.topic).replace('topic-', ''));
-    closeList();
 
     document.getElementById('postLoaded').style.display = 'block';
-  } catch {
+  } catch (e) {
+    // A genuinely missing/unpublished post never reaches here (handled by
+    // the !res.ok check above and returned early) — anything that lands in
+    // this catch is a real rendering bug, not a missing post. Logging it
+    // means a future one shows up in the console instead of silently
+    // looking identical to "not found".
+    console.error('Failed to render post:', e);
     showNotFound();
   }
 })();
