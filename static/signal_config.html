@@ -2521,12 +2521,19 @@ const CHART_DRAW_TOOLS = [
   { name: 'fibonacciLine',          label: 'Fib Retracement',  icon: 'FIB', category: 'fib' },
   { name: 'priceLine',              label: 'Price Line',       icon: 'PL',  category: 'annotations' },
   { name: 'simpleAnnotation',       label: 'Text Note',        icon: 'T',   category: 'annotations' },
+  { name: 'longPosition',           label: 'Long Position',    icon: 'L+',  category: 'trading' },
+  { name: 'shortPosition',          label: 'Short Position',   icon: 'S-',  category: 'trading' },
+  { name: 'anchoredVwap',           label: 'Anchored VWAP',    icon: 'VW',  category: 'analysis' },
+  { name: 'anchoredVwapProfile',    label: 'Anchored VWAP Profile', icon: 'VWP', category: 'analysis' },
+  { name: 'measureTool',            label: 'Measure',          icon: 'MEA', category: 'analysis' },
 ];
 const CHART_TOOL_CATEGORIES = [
   { key: 'lines',       label: 'Lines',       icon: 'TL' },
   { key: 'channels',    label: 'Channels',    icon: 'CH' },
   { key: 'fib',         label: 'Fibonacci',   icon: 'FIB' },
   { key: 'annotations', label: 'Annotations', icon: 'T' },
+  { key: 'trading',     label: 'Trading Tools', icon: 'L+' },
+  { key: 'analysis',    label: 'Analysis',    icon: 'VWP' },
 ];
 
 function initChart() {
@@ -2695,6 +2702,7 @@ let selectedOverlayId = null;
 function activateDrawTool(name) {
   const chart = ensurePriceChart();
   if (!chart) return;
+  ensureAdvancedOverlayTypes();
   chart.createOverlay({
     name,
     onSelected: (e) => { selectedOverlayId = (e.overlay || e).id; showBinButton(); },
@@ -2837,6 +2845,127 @@ function updateSessionVolumeProfile() {
     points: [{ dataIndex: startIdx, value: 0 }],
     extendData: { bars: sessionBars },
   });
+}
+
+// --- ANALYSIS / TRADING TOOLS (Measure, Anchored VWAP, Anchored VWAP Profile, Long/Short Position) ---
+// All registered via klinecharts.registerOverlay. One hard-won gotcha discovered while
+// building the Session Volume Profile overlay above: createPointFigures is invoked with
+// a SINGLE options object — ({overlay, coordinates, bounding, ...}) — not positional
+// arguments (confirmed by reading the actual minified bundle; the public docs summary
+// was misleading). Every callback below destructures accordingly.
+
+function withAlpha(hexColor, alpha) {
+  if (/^#([0-9a-f]{6})$/i.test(hexColor)) {
+    const r = parseInt(hexColor.slice(1, 3), 16), g = parseInt(hexColor.slice(3, 5), 16), b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  return hexColor;
+}
+
+function formatDuration(ms) {
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 90) return `${days}d`;
+  return `${(days / 30.44).toFixed(1)}mo`;
+}
+
+function buildAnchoredVwapFigures(chart, bars, anchorIndex, opts = {}) {
+  if (anchorIndex < 0 || anchorIndex >= bars.length) return [];
+  let cumPV = 0, cumVol = 0;
+  const points = [];
+  for (let i = anchorIndex; i < bars.length; i++) {
+    const b = bars[i];
+    const typical = (b.high + b.low + b.close) / 3;
+    cumPV += typical * b.volume;
+    cumVol += b.volume;
+    points.push({ dataIndex: i, value: cumVol > 0 ? cumPV / cumVol : typical });
+  }
+  if (points.length < 2) return [];
+  const pixelPoints = chart.convertToPixel(points, { paneId: 'candle_pane' });
+  if (!Array.isArray(pixelPoints)) return [];
+  const color = opts.color || cssVar('--accent-purple', '#aa55ff');
+  return [{ type: 'line', attrs: { coordinates: pixelPoints }, styles: { color, size: 1.5 }, ignoreEvent: true }];
+}
+
+let advancedOverlaysRegistered = false;
+function ensureAdvancedOverlayTypes() {
+  if (advancedOverlaysRegistered) return;
+  advancedOverlaysRegistered = true;
+
+  klinecharts.registerOverlay({
+    name: 'measureTool',
+    totalStep: 3, // 2 clicks (totalStep = numClicks + 1, confirmed against the bundle's step-completion logic)
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay, coordinates }) => {
+      if (!overlay || !overlay.points || overlay.points.length < 2 || !coordinates || coordinates.length < 2) return [];
+      const [p1, p2] = overlay.points;
+      const [c1, c2] = coordinates;
+      const pctChange = p1.value ? ((p2.value - p1.value) / p1.value) * 100 : 0;
+      const dollarChange = p2.value - p1.value;
+      const up = dollarChange >= 0;
+      const color = up ? cssVar('--accent-green', '#00ff88') : cssVar('--accent-red', '#ff3355');
+      const label = `${up ? '+' : ''}${pctChange.toFixed(2)}%   ${up ? '+' : ''}${dollarChange.toFixed(2)}   ${formatDuration(Math.abs(p2.timestamp - p1.timestamp))}`;
+      return [
+        { type: 'rect', attrs: { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), width: Math.abs(c2.x - c1.x), height: Math.max(1, Math.abs(c2.y - c1.y)) }, styles: { style: 'fill', color: withAlpha(color, 0.12) }, ignoreEvent: true },
+        { type: 'line', attrs: { coordinates: [c1, c2] }, styles: { color, size: 1.5 }, ignoreEvent: true },
+        { type: 'text', attrs: { x: (c1.x + c2.x) / 2, y: Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: 'bottom' }, styles: { color, size: 11 }, ignoreEvent: true },
+      ];
+    },
+  });
+
+  klinecharts.registerOverlay({
+    name: 'anchoredVwap',
+    totalStep: 2, // 1 click
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay }) => {
+      if (!overlay || !overlay.points || !overlay.points[0] || !currentChartBars.length) return [];
+      return buildAnchoredVwapFigures(priceChart, currentChartBars, overlay.points[0].dataIndex);
+    },
+  });
+
+  klinecharts.registerOverlay({
+    name: 'anchoredVwapProfile',
+    totalStep: 2, // 1 click
+    needDefaultPointFigure: true,
+    createPointFigures: ({ overlay }) => {
+      if (!overlay || !overlay.points || !overlay.points[0] || !currentChartBars.length) return [];
+      const anchorIndex = overlay.points[0].dataIndex;
+      const profileFigs = buildVolumeProfileFigures(priceChart, currentChartBars.slice(anchorIndex), anchorIndex, { color: 'rgba(170,85,255,0.25)' });
+      const vwapFigs = buildAnchoredVwapFigures(priceChart, currentChartBars, anchorIndex);
+      return [...profileFigs, ...vwapFigs];
+    },
+  });
+
+  // Long/Short Position: 3 clicks (entry, target, stop). Long and short are the exact
+  // same geometry — profit/loss zones are derived from where the user clicks relative
+  // to entry, not a hardcoded up/down assumption — so both names share one builder.
+  const positionFigures = ({ overlay, coordinates }) => {
+    if (!overlay || !overlay.points || overlay.points.length < 3 || !coordinates || coordinates.length < 3) return [];
+    const [pEntry, pTarget, pStop] = overlay.points;
+    const [cEntry, cTarget, cStop] = coordinates;
+    const cfg = getConfig();
+    const positionValue = cfg.posSizeGbpMode ? cfg.posSizeGbp : cfg.capital * (cfg.posSize / 100);
+    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const profitAmt = positionValue * profitPct / 100;
+    const lossAmt = positionValue * lossPct / 100;
+    const rr = lossPct !== 0 ? Math.abs(profitPct / lossPct) : 0;
+    const green = cssVar('--accent-green', '#00ff88'), red = cssVar('--accent-red', '#ff3355');
+    const boxWidth = 70;
+    const sym = getCurrencySymbol();
+    return [
+      { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cTarget.y), width: boxWidth, height: Math.max(1, Math.abs(cTarget.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(green, 0.22) }, ignoreEvent: true },
+      { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cStop.y), width: boxWidth, height: Math.max(1, Math.abs(cStop.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(red, 0.22) }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `+${profitPct.toFixed(2)}%  ${sym}${profitAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10 }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${lossPct.toFixed(2)}%  ${sym}${lossAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10 }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth / 2, y: Math.min(cEntry.y, cTarget.y, cStop.y) - 6, text: `R:R 1:${rr.toFixed(2)}`, align: 'center', baseline: 'bottom' }, styles: { color: cssVar('--text-primary', '#e2e8f0'), size: 10 }, ignoreEvent: true },
+    ];
+  };
+  klinecharts.registerOverlay({ name: 'longPosition', totalStep: 4, needDefaultPointFigure: true, createPointFigures: positionFigures });
+  klinecharts.registerOverlay({ name: 'shortPosition', totalStep: 4, needDefaultPointFigure: true, createPointFigures: positionFigures });
 }
 
 function showChartPlaceholder() {
