@@ -774,12 +774,32 @@ def extract_text_from_upload(file_storage) -> str:
     try:
         if ext == "docx":
             import docx
+            from docx.table import Table as DocxTable
+            from docx.text.paragraph import Paragraph as DocxParagraph
             document = docx.Document(file_storage)
-            parts = [p.text for p in document.paragraphs if p.text.strip()]
-            for table in document.tables:
-                for row in table.rows:
-                    parts.append(" | ".join(cell.text.strip() for cell in row.cells))
-            text = "\n".join(parts)
+            # Walk paragraphs and tables in actual document order (python-docx's
+            # .paragraphs/.tables only give each kind separately, losing where a
+            # table sits relative to the surrounding text) and render each table
+            # as a real markdown table (header + `---` separator row) so it's
+            # unambiguous downstream — see auto_section_tables(), which wraps a
+            # block matching this exact shape into its own Table section.
+            parts = []
+            for child in document.element.body.iterchildren():
+                if child.tag.endswith("}p"):
+                    p = DocxParagraph(child, document)
+                    if p.text.strip():
+                        parts.append(p.text.strip())
+                elif child.tag.endswith("}tbl"):
+                    table = DocxTable(child, document)
+                    rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+                    rows = [r for r in rows if any(c for c in r)]
+                    if not rows:
+                        continue
+                    md = ["| " + " | ".join(rows[0]) + " |", "|" + "|".join(" --- " for _ in rows[0]) + "|"]
+                    for r in rows[1:]:
+                        md.append("| " + " | ".join(r) + " |")
+                    parts.append("\n".join(md))
+            text = "\n\n".join(parts)
         elif ext == "pdf":
             from pypdf import PdfReader
             reader = PdfReader(file_storage)
@@ -861,9 +881,272 @@ def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     if len(snippet_words) > 40:
         snippet += "…"
     paragraphs = [p.strip() for p in raw_text.split("\n") if p.strip()]
-    body = "\n\n".join(paragraphs) if paragraphs else text
+    body_parts = []
+    for i, p in enumerate(paragraphs):
+        if i > 0:
+            # Keep consecutive markdown-table-row lines tight (single \n) so a
+            # table survives this reflow intact — the normal blank-line-per-
+            # paragraph spacing would otherwise pull each row apart, breaking
+            # the table shape auto_section_tables() looks for below.
+            prev_is_row = _looks_like_table_row(paragraphs[i - 1])
+            this_is_row = _looks_like_table_row(p)
+            body_parts.append("\n" if (prev_is_row and this_is_row) else "\n\n")
+        body_parts.append(p)
+    body = "".join(body_parts) if body_parts else text
     topic = topics[0] if topics else None
     return {"title": title, "subtitle": subtitle, "topic": topic, "snippet": snippet, "body": body}
+
+
+def _looks_like_table_row(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("|") and s.endswith("|") and s.count("|") >= 2
+
+
+def _is_table_separator_row(line: str) -> bool:
+    """`| --- | :--- | ---: |` — a markdown table's header/body divider row.
+    Checked cell-by-cell rather than with one big character class, since a
+    naive `^\\|[\\s:-]+\\|$` also has to reject the '|' *between* cells."""
+    s = line.strip()
+    if not (s.startswith("|") and s.endswith("|")):
+        return False
+    cells = [c.strip() for c in s.strip("|").split("|")]
+    return len(cells) >= 1 and all(re.match(r"^:?-{2,}:?$", c) for c in cells)
+
+
+# Matches the SECTION_JOIN / type-marker microsyntax the studio's section
+# editor uses (static/alpha-studio.html — keep in sync with SECTION_JOIN and
+# the type marker patterns there).
+_SECTION_JOIN = "<!--section-->"
+
+
+def auto_section_tables(body: str) -> str:
+    """Wraps any markdown-table-shaped block (a `| ... |` row, a `|---|---|`
+    separator row, then more `| ... |` rows) in its own Table section, so a
+    table detected in an uploaded document lands directly in a Table section
+    for editing instead of as garbled pipe-delimited text in a Normal one.
+    No-op if the body has no such block.
+    """
+    lines = body.split("\n")
+    out_lines = []
+    i = 0
+    found_any = False
+    while i < len(lines):
+        line = lines[i]
+        if _looks_like_table_row(line) and i + 1 < len(lines) and _is_table_separator_row(lines[i + 1]):
+            # Found a table: header row + separator row, then consume further row lines.
+            table_lines = [line, lines[i + 1]]
+            j = i + 2
+            while j < len(lines) and _looks_like_table_row(lines[j]):
+                table_lines.append(lines[j])
+                j += 1
+            while out_lines and not out_lines[-1].strip():
+                out_lines.pop()
+            if out_lines:
+                out_lines.append("")
+                out_lines.append(_SECTION_JOIN)
+                out_lines.append("")
+            out_lines.append("<!--type:table-->")
+            out_lines.extend(table_lines)
+            while j < len(lines) and not lines[j].strip():
+                j += 1
+            if j < len(lines):
+                out_lines.append("")
+                out_lines.append(_SECTION_JOIN)
+                out_lines.append("")
+            found_any = True
+            i = j
+            continue
+        out_lines.append(line)
+        i += 1
+    return "\n".join(out_lines) if found_any else body
+
+
+# ── Structured Word template ──────────────────────────────────────────────
+# Convention (see the "Alpha Post Template" doc): every section starts with a
+# "Heading 2" paragraph. Plain heading text = a Normal section. A bracket tag
+# at the start of that heading picks a different type — "[TIP] Careful with
+# leverage", "[QUOTE] Warren Buffett", "[TABLE] Key Metrics" (tables are also
+# auto-detected from a real Word table regardless of any heading — see
+# auto_section_tables above, which this mirrors), "[IMAGE LEFT] Our Office" /
+# "[IMAGE RIGHT] Our Office" (the first inline picture in that section becomes
+# the image). Content between one Heading 2 and the next belongs to that
+# section. Keep these tags in sync with stripTypeMarker()'s marker strings in
+# static/alpha-studio.html and static/alpha-post.html.
+#
+# Two more tags don't create a section at all — they fill the draft's own
+# Subtitle/Snippet fields instead: "[SUBTITLE] ..." and "[SNIPPET] ...". Put
+# the text right on the heading line, or leave the heading bare and write it
+# as the paragraph(s) underneath — either works (see flush()'s "meta:" case).
+_TYPE_MARKERS = {"tip": "<!--type:tip-->", "quote": "<!--type:quote-->", "table": "<!--type:table-->"}
+_HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IMAGE|SUBTITLE|SNIPPET)\]\s*", re.IGNORECASE)
+_BLIP_TAG = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
+_R_EMBED_ATTR = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+
+
+def _paragraph_image(paragraph, document):
+    """Returns (bytes, extension) for the first inline picture in this
+    paragraph's runs, or (None, None) if it has none."""
+    for run in paragraph.runs:
+        for blip in run._element.iter(_BLIP_TAG):
+            rid = blip.get(_R_EMBED_ATTR)
+            if rid and rid in document.part.related_parts:
+                part = document.part.related_parts[rid]
+                ext = (part.content_type.split("/")[-1] or "png").lower()
+                if ext == "jpeg":
+                    ext = "jpg"
+                if ext not in ALLOWED_IMAGE_EXTENSIONS:
+                    ext = "png"
+                return part.blob, ext
+    return None, None
+
+
+def extract_structured_docx(file_storage):
+    """Parses a docx built from the section template into (sections, meta),
+    or returns None if the doc has no "Heading 2" paragraph at all (i.e. it
+    wasn't built from the template) — callers should fall back to the plain
+    extract_text_from_upload() + normalize_content() path then.
+
+    sections: list of {type, heading, body_lines: [str, ...],
+    rows: [[str,...],...] or None, image: (bytes, ext) or None,
+    side: 'left'|'right'}. Images aren't uploaded here (no content row/id
+    exists yet at extraction time — see _serialize_structured_sections,
+    called after alpha_content_create).
+
+    meta: {"subtitle": str or None, "snippet": str or None} — filled from any
+    "[SUBTITLE]"/"[SNIPPET]" tagged block instead of becoming a section.
+    """
+    import docx
+    from docx.table import Table as DocxTable
+    from docx.text.paragraph import Paragraph as DocxParagraph
+    document = docx.Document(file_storage)
+
+    def blank_section():
+        return {"type": "normal", "heading": "", "body_lines": [], "rows": None, "image": None, "side": "left"}
+
+    children = list(document.element.body.iterchildren())
+    has_heading = any(
+        c.tag.endswith("}p") and DocxParagraph(c, document).style and DocxParagraph(c, document).style.name == "Heading 2"
+        for c in children
+    )
+    if not has_heading:
+        return None
+
+    sections = []
+    meta = {"subtitle": None, "snippet": None}
+    cur = blank_section()
+
+    def flush():
+        nonlocal cur
+        if cur["type"].startswith("meta:"):
+            field = cur["type"].split(":", 1)[1]
+            value = (cur["heading"] or "").strip() or "\n".join(cur["body_lines"]).strip()
+            if value:
+                meta[field] = value
+        elif cur["heading"] or cur["body_lines"] or cur["rows"] or cur["image"]:
+            sections.append(cur)
+        cur = blank_section()
+
+    for child in children:
+        if child.tag.endswith("}p"):
+            p = DocxParagraph(child, document)
+            style_name = p.style.name if p.style else ""
+            text = p.text.strip()
+            if style_name == "Heading 2":
+                flush()
+                m = _HEADING_TAG_RE.match(text)
+                if m:
+                    tag = re.sub(r"\s+", " ", m.group(1).upper())
+                    remainder = text[m.end():].strip()
+                    if tag == "TIP":
+                        cur["type"] = "tip"
+                    elif tag == "QUOTE":
+                        cur["type"] = "quote"
+                    elif tag == "TABLE":
+                        cur["type"] = "table"
+                    elif tag == "SUBTITLE":
+                        cur["type"] = "meta:subtitle"
+                    elif tag == "SNIPPET":
+                        cur["type"] = "meta:snippet"
+                    elif tag.startswith("IMAGE"):
+                        cur["type"] = "image"
+                        cur["side"] = "right" if "RIGHT" in tag else "left"
+                    cur["heading"] = remainder
+                else:
+                    cur["heading"] = text
+                continue
+            if cur["type"] == "image" and not cur["image"]:
+                img_bytes, img_ext = _paragraph_image(p, document)
+                if img_bytes:
+                    cur["image"] = (img_bytes, img_ext)
+                    continue
+            if text:
+                cur["body_lines"].append(text)
+        elif child.tag.endswith("}tbl"):
+            table = DocxTable(child, document)
+            rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+            rows = [r for r in rows if any(c for c in r)]
+            if not rows:
+                continue
+            if cur["type"] == "table" and cur["rows"] is None:
+                cur["rows"] = rows
+            else:
+                # A table with no preceding "[TABLE]" heading still gets its
+                # own section automatically, same rule as auto_section_tables()
+                # for a non-template upload.
+                flush()
+                cur["type"] = "table"
+                cur["rows"] = rows
+                flush()
+    flush()
+    return sections, meta
+
+
+def _serialize_structured_sections(sections, upload_image) -> str:
+    """Builds the SECTION_JOIN-delimited body string from
+    extract_structured_docx() output. `upload_image(bytes, ext) -> url` is
+    called once per section that has an extracted image."""
+    parts = []
+    for sec in sections:
+        t = sec["type"]
+        heading = (sec.get("heading") or "").strip()
+        if t == "table":
+            rows = sec.get("rows") or []
+            if not rows:
+                continue
+            md = ["| " + " | ".join(rows[0]) + " |", "|" + "|".join(" --- " for _ in rows[0]) + "|"]
+            for r in rows[1:]:
+                md.append("| " + " | ".join(r) + " |")
+            chunk = "<!--type:table-->"
+            if heading:
+                chunk += "\n## " + heading
+            chunk += "\n" + "\n".join(md)
+            parts.append(chunk)
+            continue
+        if t == "image":
+            body = "\n".join(sec.get("body_lines") or [])
+            img = sec.get("image")
+            url = upload_image(*img) if img else None
+            if not heading and not body and not url:
+                continue
+            chunk = "<!--type:image:" + sec.get("side", "left") + "-->"
+            if heading:
+                chunk += "\n## " + heading
+            if url:
+                chunk += "\n![" + heading.replace("[", "").replace("]", "") + "](" + url + ")"
+            if body:
+                chunk += ("\n\n" if (heading or url) else "\n") + body
+            parts.append(chunk)
+            continue
+        # normal / tip / quote
+        body = "\n\n".join(sec.get("body_lines") or [])
+        chunk = _TYPE_MARKERS.get(t, "")
+        if heading:
+            chunk += ("\n" if chunk else "") + "## " + heading
+        if body:
+            chunk += ("\n\n" if chunk else "") + body
+        if chunk.strip():
+            parts.append(chunk)
+    return ("\n\n" + _SECTION_JOIN + "\n\n").join(parts)
 
 
 def _send_email(to_addr: str, subject: str, body: str) -> None:
@@ -1564,6 +1847,8 @@ def api_alpha_upload():
 
     file_bytes = None
     source_filename = None
+    structured_sections = None
+    structured_meta = {}
     try:
         if "file" in request.files and request.files["file"].filename:
             f = request.files["file"]
@@ -1572,6 +1857,15 @@ def api_alpha_upload():
             f.seek(0)
             raw_text = extract_text_from_upload(f)
             source_kind = "file"
+            file_ext = source_filename.rsplit(".", 1)[-1].lower() if "." in source_filename else ""
+            if file_ext == "docx" and kind == "post":
+                f.seek(0)
+                try:
+                    result = extract_structured_docx(f)
+                    if result is not None:
+                        structured_sections, structured_meta = result
+                except Exception:
+                    structured_sections = None  # not a template doc, or unreadable structure — fall back below
         elif (request.form.get("link") or "").strip():
             raw_text = extract_text_from_url(request.form.get("link").strip())
             source_kind = "link"
@@ -1586,15 +1880,38 @@ def api_alpha_upload():
     author_topics = ALPHA_TOPICS.get(author, [])
     normalized = normalize_content(raw_text, author, author_topics)
     topic = requested_topic if requested_topic in author_topics else normalized["topic"]
+    body = auto_section_tables(normalized["body"]) if kind == "post" else normalized["body"]
+    # normalize_content's title/subtitle/snippet are a naive split of the
+    # whole flattened document — a structured upload has much better
+    # candidates: the first Normal section's own heading for the title, and
+    # any explicit "[SUBTITLE]"/"[SNIPPET]" tagged block for those fields.
+    if structured_sections and structured_sections[0].get("type") == "normal" and structured_sections[0].get("heading"):
+        normalized["title"] = structured_sections[0]["heading"][:100]
+    if structured_meta.get("subtitle"):
+        normalized["subtitle"] = structured_meta["subtitle"][:140]
+    if structured_meta.get("snippet"):
+        normalized["snippet"] = structured_meta["snippet"][:280]
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
         "title": normalized["title"], "subtitle": normalized["subtitle"],
-        "snippet": normalized["snippet"], "body": normalized["body"],
+        "snippet": normalized["snippet"], "body": body,
         "stance": None, "url": None,
         "source_kind": source_kind, "source_filename": source_filename, "source_text": raw_text,
     }
     item = alpha_content_create(fields, file_bytes=file_bytes)
+
+    if structured_sections:
+        # Images inside a structured doc's [IMAGE] sections need the new
+        # item's id to attach to, which only exists after the create above —
+        # hence building this replacement body as a second step.
+        def _upload_extracted_image(img_bytes, img_ext):
+            attachment_id = alpha_attachment_create(item["id"], f"template-image.{img_ext}", img_bytes)
+            return f"/api/alpha/content/{item['id']}/images/{attachment_id}"
+        structured_body = _serialize_structured_sections(structured_sections, _upload_extracted_image)
+        if structured_body.strip():
+            item = alpha_content_update(item["id"], {"body": structured_body})
+
     return jsonify({"success": True, "item": item})
 
 

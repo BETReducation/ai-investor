@@ -95,7 +95,12 @@
 .studio-list { display: flex; flex-direction: column; gap: 16px; }
 .list-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
 .studio-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.collapsible-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+/* No overflow:hidden here (used to clip the header's hover tint to the
+   rounded corners) — some browsers refuse to let a sticky descendant escape
+   an overflow:hidden ancestor at all, and the format toolbar below needs to
+   stick while a published post's card is open and long. The corner-clipping
+   trade-off is a barely-visible sliver on the header's hover state. */
+.collapsible-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; }
 .collapsible-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; user-select: none; transition: background 0.15s; }
 .collapsible-header:hover { background: var(--bg2); }
 .collapsible-chevron { font-size: 11px; color: var(--muted); flex-shrink: 0; width: 10px; }
@@ -115,13 +120,43 @@
 .card-image-tab.active { border-color: var(--teal); color: var(--teal); }
 .card-image-preview { max-width: 100%; max-height: 140px; border-radius: 10px; display: block; margin-top: 8px; object-fit: cover; }
 .card-toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
-.format-toolbar { margin: 6px 0 10px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+/* Floats at the top of the viewport (just under the site nav, 68px) as the
+   author scrolls down through a post's sections, instead of scrolling out of
+   view after the first section. Stops floating once the whole card scrolls
+   past, so it never overlaps a different post's editor. */
+.format-toolbar { position: sticky; top: 76px; z-index: 10; margin: 6px 0 10px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 .fmt-btn { min-width: 34px; padding: 7px 12px; }
 .insert-panel { display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
 .sections-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
 .content-section-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
 .content-section-block .section-remove { align-self: flex-start; }
+.section-type-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+.section-type-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.content-section-block[data-type="tip"] { border-width: 1px; }
+.content-section-block[data-type="tip"][data-topic-accent="a"] { border-color: rgba(45,212,191,0.4); background: rgba(45,212,191,0.06); }
+.content-section-block[data-type="tip"][data-topic-accent="b"] { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06); }
+.content-section-block[data-type="tip"][data-topic-accent="c"] { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.06); }
+.content-section-block[data-type="quote"] { border-left-width: 4px; }
+.content-section-block[data-type="quote"][data-topic-accent="a"] { border-left-color: var(--teal); }
+.content-section-block[data-type="quote"][data-topic-accent="b"] { border-left-color: var(--gold); }
+.content-section-block[data-type="quote"][data-topic-accent="c"] { border-left-color: var(--purple2); }
+.content-section-block[data-type="quote"] .section-body { font-style: italic; font-size: 15px; }
+.section-side-tabs { display: flex; gap: 8px; }
+.table-grid-wrap { overflow-x: auto; }
+.table-grid { border-collapse: collapse; width: 100%; }
+.table-grid td { border: 1px solid var(--border); padding: 2px; }
+.table-grid input { width: 100%; min-width: 90px; border: none; background: transparent; color: var(--text); font-size: 13px; padding: 8px; font-family: inherit; }
+.table-grid input:focus { outline: 2px solid var(--teal); outline-offset: -2px; }
+.table-grid tr:first-child input { font-weight: 700; }
+.table-grid-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.section-image-preview { max-width: 100%; max-height: 160px; border-radius: 8px; display: block; margin-top: 4px; object-fit: cover; }
+.section-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 14px; line-height: 1.7; color: var(--text); }
+.section-preview p, .section-preview ul, .section-preview ol { margin-bottom: 10px; }
+.section-preview p:last-child, .section-preview ul:last-child, .section-preview ol:last-child { margin-bottom: 0; }
+.section-preview h4 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+.section-preview img { max-width: 100%; border-radius: 6px; }
+.section-preview a { color: var(--teal); }
 
 /* Published cards open read-only until Edit is pressed. */
 .studio-card.locked .form-input,
@@ -183,8 +218,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <li><a href="/alpha/podcast">Podcast</a></li>
       </ul>
     </li>
-    <li><a href="/partners">Partners</a></li>
     <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li><a href="/partners">Partners</a></li>
     <li><a href="/sitemap">Site Map</a></li>
   </ul>
   </div>
@@ -355,6 +390,13 @@ const AUTHOR_TOPICS = {
   connor: ['Macro & Micro', 'Quant Statistics', 'Finance & Formulae'],
 };
 const AUTHOR_NAMES = { tom: 'Tom', dave: 'Dave', gary: 'Gary', connor: 'Connor' };
+// Same index -> a/b/c mapping as topicAccentClass() in alpha-post.html, so a
+// Top Tip section's border/background always matches the live post's topic
+// pill color.
+function topicAccentClass(topic) {
+  const idx = (AUTHOR_TOPICS[currentAuthor] || []).indexOf(topic);
+  return idx === 1 ? 'b' : idx === 2 ? 'c' : 'a';
+}
 const KIND_LABELS = { post: 'Post', video: 'Video', link: 'Link', watchlist: 'Watchlist' };
 
 let currentAuthor = null;
@@ -363,6 +405,12 @@ let publishedTopicFilter = '';
 let publishedDateFrom = '';
 let publishedDateTo = '';
 let allItems = [];
+// Ids of drafts/published items currently expanded, in either list — every
+// Save/Publish/etc. calls loadContent(), which rebuilds every card from
+// scratch and used to always re-collapse them, so a newly-appeared
+// Re-publish button (or anything else that only shows once expanded) stayed
+// hidden until the author clicked back into the item they were just editing.
+const openCardIds = new Set();
 
 function esc(str) {
   const d = document.createElement('div');
@@ -378,6 +426,20 @@ const MAX_UPLOAD_BYTES = 4.5 * 1024 * 1024;
 function oversizeMessage(file) {
   if (file.size <= MAX_UPLOAD_BYTES) return null;
   return `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — please choose one under 5 MB.`;
+}
+const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+const IMAGE_HELP_TEXT = 'PNG, JPG, GIF or WEBP — 5 MB max.';
+// SVGs can carry embedded scripts, so uploads are restricted to raster
+// formats (matches the server's own ALLOWED_IMAGE_EXTENSIONS in app.py) —
+// checked up front here so the file picker's "All Files" option can't lead
+// to a confusing server rejection after the fact.
+function unsupportedTypeMessage(file) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ALLOWED_IMAGE_EXTENSIONS.includes(ext)) return null;
+  return `".${ext || '?'}" isn't a supported image type — please use ${IMAGE_HELP_TEXT.replace(' — 5 MB max.', '')}.`;
+}
+function imageFileError(file) {
+  return unsupportedTypeMessage(file) || oversizeMessage(file);
 }
 // True for a raw network failure (connection reset, e.g. from exceeding the
 // server's upload limit — opaque browser text like "Failed to fetch" /
@@ -647,7 +709,7 @@ function renderList(status, container, emptyEl) {
   const items = allItems.filter(i => i.status === status);
   container.innerHTML = '';
   emptyEl.style.display = items.length ? 'none' : 'block';
-  items.forEach(item => container.appendChild(buildCard(item)));
+  items.forEach(item => container.appendChild(buildCollapsibleCard(item)));
 }
 
 function buildCollapsibleCard(item) {
@@ -679,10 +741,13 @@ function buildCollapsibleCard(item) {
   titleSpan.textContent = item.title || '(untitled)';
   header.appendChild(titleSpan);
 
-  if (item.published_at) {
+  // Published date if it has one; otherwise when the draft was created —
+  // either way, some date is more useful in the collapsed row than none.
+  const dateValue = item.published_at || item.created_at;
+  if (dateValue) {
     const dateSpan = document.createElement('span');
     dateSpan.className = 'collapsible-date';
-    const d = new Date(item.published_at);
+    const d = new Date(dateValue);
     if (!isNaN(d)) dateSpan.textContent = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
     header.appendChild(dateSpan);
   }
@@ -691,15 +756,22 @@ function buildCollapsibleCard(item) {
 
   const body = document.createElement('div');
   body.className = 'collapsible-body';
-  body.style.display = 'none';
+  const startOpen = openCardIds.has(item.id);
+  body.style.display = startOpen ? 'block' : 'none';
   body.appendChild(buildCard(item, true));
   wrapper.appendChild(body);
+  if (startOpen) {
+    chevron.textContent = '▾';
+    wrapper.classList.add('open');
+    setTimeout(() => body.querySelectorAll('textarea').forEach(ta => autoGrowTextarea(ta, 600)), 0);
+  }
 
   header.onclick = () => {
     const opening = body.style.display === 'none';
     body.style.display = opening ? 'block' : 'none';
     chevron.textContent = opening ? '▾' : '▸';
     wrapper.classList.toggle('open', opening);
+    if (opening) openCardIds.add(item.id); else openCardIds.delete(item.id);
     // Textareas built while collapsed measure zero height, so re-run the
     // auto-grow once they're actually visible.
     if (opening) {
@@ -713,6 +785,78 @@ function buildCollapsibleCard(item) {
 function autoGrowTextarea(el, maxPx) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight + 2, maxPx || 600) + 'px';
+}
+
+// Renders a section's raw **bold**/_italic_/++underline++/[link](url)/list
+// markup as it will actually look on the live post — the same logic as
+// renderInlineText()/renderBlockLines() in alpha-post.html, kept in sync by
+// hand. Used by each text section's "Preview" toggle so an author can check
+// formatting without having to publish first.
+function renderPreviewInline(container, text) {
+  const patterns = [
+    { type: 'link', re: /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/ },
+    { type: 'bold', re: /\*\*([^*]+)\*\*/ },
+    { type: 'italic', re: /_([^_]+)_/ },
+    { type: 'underline', re: /\+\+([^+]+)\+\+/ },
+  ];
+  while (text) {
+    let best = null;
+    for (const p of patterns) {
+      const m = p.re.exec(text);
+      if (m && (best === null || m.index < best.m.index)) best = { p, m };
+    }
+    if (!best) { container.appendChild(document.createTextNode(text)); break; }
+    const { p, m } = best;
+    if (m.index > 0) container.appendChild(document.createTextNode(text.slice(0, m.index)));
+    if (p.type === 'link') {
+      const a = document.createElement('a');
+      a.href = m[2]; a.textContent = m[1]; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      container.appendChild(a);
+    } else {
+      const tag = p.type === 'bold' ? 'strong' : p.type === 'underline' ? 'u' : 'em';
+      const el = document.createElement(tag);
+      renderPreviewInline(el, m[1]);
+      container.appendChild(el);
+    }
+    text = text.slice(m.index + m[0].length);
+  }
+}
+function renderPreviewBlocks(text, container) {
+  let listEl = null, listType = null;
+  const closeList = () => { if (listEl) { container.appendChild(listEl); listEl = null; listType = null; } };
+  (text || '').split('\n').forEach(raw => {
+    const line = raw.trim();
+    if (!line) { closeList(); return; }
+    const imageMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    const numberMatch = line.match(/^\d+\.\s+(.*)$/);
+    if (/^-{3,}$/.test(line)) {
+      closeList();
+      container.appendChild(document.createElement('hr'));
+    } else if (line.startsWith('## ')) {
+      closeList();
+      const h = document.createElement('h4');
+      h.textContent = line.slice(3).trim();
+      container.appendChild(h);
+    } else if (imageMatch && /^(https?:\/\/|\/api\/)/.test(imageMatch[2])) {
+      closeList();
+      const img = document.createElement('img');
+      img.src = imageMatch[2]; img.alt = imageMatch[1];
+      container.appendChild(img);
+    } else if (bulletMatch || numberMatch) {
+      const wantType = bulletMatch ? 'ul' : 'ol';
+      if (listType !== wantType) { closeList(); listEl = document.createElement(wantType); listType = wantType; }
+      const li = document.createElement('li');
+      renderPreviewInline(li, (bulletMatch ? bulletMatch[1] : numberMatch[1]).trim());
+      listEl.appendChild(li);
+    } else {
+      closeList();
+      const p = document.createElement('p');
+      renderPreviewInline(p, line);
+      container.appendChild(p);
+    }
+  });
+  closeList();
 }
 
 function buildCard(item, skipHead) {
@@ -799,7 +943,6 @@ function buildCard(item, skipHead) {
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
   let updatePublishGate = () => {};
   let subtitleInput = null, imageUrlInput = null;
-  let imageMode = effImageFilename ? 'upload' : 'url';
 
   if (item.kind === 'post') {
     subtitleInput = document.createElement('input');
@@ -970,28 +1113,19 @@ function buildCard(item, skipHead) {
     card.appendChild(toolbar);
 
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
-    // active section, not the post's hero image below.
+    // active section, not the post's hero image below. Upload-only — a
+    // pasted URL isn't something most authors have to hand, and skipping it
+    // means one fewer choice to explain.
     const imagePanel = document.createElement('div');
     imagePanel.className = 'insert-panel edit-chrome';
     imagePanel.style.display = 'none';
-    let insertImageMode = 'url';
-    const imgTabs = document.createElement('div');
-    imgTabs.className = 'card-image-tabs';
-    const imgUrlTab = document.createElement('button');
-    imgUrlTab.type = 'button'; imgUrlTab.className = 'card-image-tab'; imgUrlTab.textContent = 'URL';
-    const imgUploadTab = document.createElement('button');
-    imgUploadTab.type = 'button'; imgUploadTab.className = 'card-image-tab'; imgUploadTab.textContent = 'Upload';
-    imgTabs.appendChild(imgUrlTab);
-    imgTabs.appendChild(imgUploadTab);
-    imagePanel.appendChild(imgTabs);
-    const insertImageUrlInput = document.createElement('input');
-    insertImageUrlInput.className = 'form-input';
-    insertImageUrlInput.placeholder = 'https://example.com/image.jpg';
-    imagePanel.appendChild(insertImageUrlInput);
+    const insertImageHelp = document.createElement('div');
+    insertImageHelp.className = 'form-msg';
+    insertImageHelp.textContent = IMAGE_HELP_TEXT;
+    imagePanel.appendChild(insertImageHelp);
     const insertImageFileInput = document.createElement('input');
     insertImageFileInput.type = 'file';
     insertImageFileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
-    insertImageFileInput.style.display = 'none';
     imagePanel.appendChild(insertImageFileInput);
     const insertImageAltInput = document.createElement('input');
     insertImageAltInput.className = 'form-input';
@@ -1006,16 +1140,6 @@ function buildCard(item, skipHead) {
     insertImageMsg.className = 'form-msg';
     imagePanel.appendChild(insertImageMsg);
     card.appendChild(imagePanel);
-
-    function renderInsertImageMode() {
-      imgUrlTab.classList.toggle('active', insertImageMode === 'url');
-      imgUploadTab.classList.toggle('active', insertImageMode === 'upload');
-      insertImageUrlInput.style.display = insertImageMode === 'url' ? 'block' : 'none';
-      insertImageFileInput.style.display = insertImageMode === 'upload' ? 'block' : 'none';
-    }
-    imgUrlTab.onclick = () => { insertImageMode = 'url'; renderInsertImageMode(); };
-    imgUploadTab.onclick = () => { insertImageMode = 'upload'; renderInsertImageMode(); };
-    renderInsertImageMode();
 
     // Insert Link panel — inline [text](url), not a standalone paragraph.
     const linkPanel = document.createElement('div');
@@ -1052,31 +1176,110 @@ function buildCard(item, skipHead) {
     // Both render identically (a plain <hr>) on the live post.
     const SECTION_JOIN = '<!--section-->';
 
-    function parseSections(body) {
+    // A chunk's own first line optionally tags its type — absent means
+    // 'normal', matching every pre-existing post's body untouched. Must stay
+    // in sync with stripTypeMarker()/renderBody() in alpha-post.html and
+    // auto_section_tables() in app.py.
+    function stripTypeMarker(chunkText) {
+      const lines = chunkText.replace(/^\n+/, '').split('\n');
+      let type = 'normal', side = null;
+      if (lines[0] && lines[0].trim() === '<!--type:tip-->') { type = 'tip'; lines.shift(); }
+      else if (lines[0] && lines[0].trim() === '<!--type:quote-->') { type = 'quote'; lines.shift(); }
+      else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
+      else {
+        const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
+        if (im) { type = 'image'; side = im[1]; lines.shift(); }
+      }
+      while (lines.length && !lines[0].trim()) lines.shift();
+      return { type, side, rest: lines.join('\n') };
+    }
+
+    function rowToMd(cells) {
+      return '| ' + cells.map(c => (c || '').trim().replace(/\|/g, '\\|')).join(' | ') + ' |';
+    }
+    function rowsToMarkdown(rows) {
+      const lines = [rowToMd(rows[0]), '|' + rows[0].map(() => ' --- ').join('|') + '|'];
+      for (let i = 1; i < rows.length; i++) lines.push(rowToMd(rows[i]));
+      return lines.join('\n');
+    }
+    function splitTableRow(line) {
+      return line.trim().replace(/^\|/, '').replace(/\|$/, '')
+        .split(/(?<!\\)\|/)
+        .map(c => c.trim().replace(/\\\|/g, '|'));
+    }
+
+    function parseSectionChunk(chunkText) {
+      const { type, side, rest } = stripTypeMarker(chunkText);
+      const lines = rest.split('\n');
+      if (type === 'table') {
+        let heading = '';
+        if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); while (lines.length && !lines[0].trim()) lines.shift(); }
+        const rowLines = lines.filter((l, i) => l.trim() && i !== 1);
+        const rows = rowLines.map(splitTableRow);
+        return { type: 'table', heading, rows: rows.length ? rows : [['Column A', 'Column B'], ['', '']] };
+      }
+      if (type === 'image') {
+        let heading = '';
+        if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); }
+        while (lines.length && !lines[0].trim()) lines.shift();
+        let imageUrl = '', alt = '';
+        if (lines[0]) {
+          const m = lines[0].trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+          if (m) { alt = m[1]; imageUrl = m[2]; lines.shift(); }
+        }
+        while (lines.length && !lines[0].trim()) lines.shift();
+        return { type: 'image', side: side || 'left', heading, imageUrl, alt, body: lines.join('\n').replace(/\n+$/, '') };
+      }
+      // normal / tip
+      let heading = '';
+      if (lines[0] && /^##\s+/.test(lines[0])) { heading = lines[0].replace(/^##\s+/, '').trim(); lines.shift(); while (lines.length && !lines[0].trim()) lines.shift(); }
+      return { type, heading, body: lines.join('\n').replace(/^\n+|\n+$/g, '') };
+    }
+
+    // Splits raw text on SECTION_JOIN only — no heading-based splitting — so a
+    // heading inside a typed (tip/table/image) section never gets mistaken
+    // for a new section boundary.
+    function splitOnJoin(body) {
       const src = (body || '').replace(/\r\n/g, '\n');
-      const out = [];
-      let cur = { heading: '', body: [] };
-      let seen = false;
+      const chunks = [];
+      let cur = [];
       src.split('\n').forEach(line => {
-        const h = line.match(/^##\s+(.*)$/);
-        if (h) {
-          if (seen) out.push(cur);
-          cur = { heading: h[1].trim(), body: [] };
+        if (line.trim() === SECTION_JOIN) { chunks.push(cur.join('\n')); cur = []; }
+        else cur.push(line);
+      });
+      chunks.push(cur.join('\n'));
+      return chunks;
+    }
+
+    // Legacy fallback (pre-dates SECTION_JOIN): a body with no join markers
+    // at all splits on "## " headings instead, same as the very first
+    // version of this feature, so old posts still open as separate boxes.
+    function splitLegacyOnHeadings(chunkText) {
+      const out = [];
+      let cur = [];
+      let seen = false;
+      chunkText.split('\n').forEach(line => {
+        if (/^##\s+/.test(line)) {
+          if (seen) out.push(cur.join('\n'));
+          cur = [line];
           seen = true;
-        } else if (line.trim() === SECTION_JOIN) {
-          if (seen) out.push(cur);
-          cur = { heading: '', body: [] };
-          seen = false;
         } else {
-          cur.body.push(line);
+          cur.push(line);
           if (line.trim()) seen = true;
         }
       });
-      out.push(cur);
-      const cleaned = out
-        .map(s => ({ heading: s.heading, body: s.body.join('\n').replace(/^\n+|\n+$/g, '') }))
-        .filter(s => s.heading || s.body.trim());
-      return cleaned.length ? cleaned : [{ heading: '', body: '' }];
+      out.push(cur.join('\n'));
+      return out.filter(c => c.trim());
+    }
+
+    function parseSections(body) {
+      const src = (body || '').replace(/\r\n/g, '\n');
+      const hasJoin = src.split('\n').some(l => l.trim() === SECTION_JOIN);
+      const rawChunks = hasJoin ? splitOnJoin(src) : splitLegacyOnHeadings(src);
+      const parsed = rawChunks
+        .map(parseSectionChunk)
+        .filter(s => s.type !== 'normal' || s.heading || s.body.trim());
+      return parsed.length ? parsed : [{ type: 'normal', heading: '', body: '' }];
     }
 
     function updateRemoveButtons() {
@@ -1086,71 +1289,368 @@ function buildCard(item, skipHead) {
       });
     }
 
-    function buildSection(sec) {
-      const block = document.createElement('div');
-      block.className = 'content-section-block';
-      const hd = document.createElement('input');
-      hd.className = 'form-input section-heading';
-      hd.placeholder = 'Section heading (optional)';
-      hd.spellcheck = true;
-      hd.value = sec.heading || '';
-      const ta = document.createElement('textarea');
-      ta.className = 'form-textarea section-body';
-      ta.rows = 5;
-      ta.placeholder = 'Write this section — use the toolbar above for bold, lists, links…';
-      ta.spellcheck = true;
-      ta.value = sec.body || '';
-      ta.addEventListener('input', () => autoGrowTextarea(ta, 600));
-      ta.addEventListener('focus', () => { activeTextarea = ta; });
+    function appendRemoveButton(block) {
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'btn-danger-sm section-remove';
       removeBtn.textContent = 'Remove section';
       removeBtn.onclick = () => {
         if (sectionsWrap.querySelectorAll('.content-section-block').length <= 1) return;
-        if (activeTextarea === ta) activeTextarea = null;
+        if (activeTextarea && block.contains(activeTextarea)) activeTextarea = null;
         block.remove();
         updateRemoveButtons();
       };
+      block.appendChild(removeBtn);
+    }
+
+    // Labelling/placeholders for the 3 plain-text-shaped section types (they
+    // all share the same heading+body DOM, just styled and captioned
+    // differently — see the CSS for [data-type="tip"/"quote"]).
+    const TEXT_SECTION_META = {
+      normal: { label: 'Normal', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
+      tip: { label: '💡 Top Tip', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
+      quote: { label: '❝ Quote', headingPlaceholder: 'Attribution (optional) — e.g. "Warren Buffett"', bodyPlaceholder: 'The quote text…' },
+    };
+
+    function buildTextSection(sec) {
+      const type = (sec.type === 'tip' || sec.type === 'quote') ? sec.type : 'normal';
+      const meta = TEXT_SECTION_META[type];
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      block.dataset.type = type;
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = meta.label;
+      block.appendChild(label);
+
+      if (type === 'tip' || type === 'quote') block.dataset.topicAccent = topicAccentClass(topicSelect ? topicSelect.value : '');
+
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = meta.headingPlaceholder;
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      const ta = document.createElement('textarea');
+      ta.className = 'form-textarea section-body';
+      ta.rows = 5;
+      ta.placeholder = meta.bodyPlaceholder;
+      ta.spellcheck = true;
+      ta.value = sec.body || '';
+
+      // Shows the same **bold**/_italic_/++underline++/list/link markup as it
+      // will actually render on the live post, so an author doesn't have to
+      // publish just to check formatting looks right.
+      const previewBtn = document.createElement('button');
+      previewBtn.type = 'button';
+      previewBtn.className = 'btn-ghost-sm edit-chrome';
+      previewBtn.textContent = '👁 Preview';
+      const preview = document.createElement('div');
+      preview.className = 'section-preview';
+      preview.style.display = 'none';
+      function refreshPreview() {
+        preview.innerHTML = '';
+        renderPreviewBlocks(ta.value, preview);
+      }
+      previewBtn.onclick = () => {
+        const showing = preview.style.display === 'none';
+        if (showing) refreshPreview();
+        preview.style.display = showing ? 'block' : 'none';
+        ta.style.display = showing ? 'none' : 'block';
+        previewBtn.textContent = showing ? '✏️ Edit' : '👁 Preview';
+      };
+      ta.addEventListener('input', () => { autoGrowTextarea(ta, 600); if (preview.style.display !== 'none') refreshPreview(); });
+      ta.addEventListener('focus', () => { activeTextarea = ta; });
       registerLock(hd);
       registerLock(ta);
       block.appendChild(hd);
       block.appendChild(ta);
-      block.appendChild(removeBtn);
+      block.appendChild(preview);
+      block.appendChild(previewBtn);
+      appendRemoveButton(block);
       sectionsWrap.appendChild(block);
       if (!activeTextarea) activeTextarea = ta;
       setTimeout(() => autoGrowTextarea(ta, 600), 0);
       return block;
     }
 
+    function buildTableSection(sec) {
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      block.dataset.type = 'table';
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = 'Table';
+      block.appendChild(label);
+
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = 'Table heading (optional)';
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      registerLock(hd);
+      block.appendChild(hd);
+
+      const gridWrap = document.createElement('div');
+      gridWrap.className = 'table-grid-wrap';
+      const table = document.createElement('table');
+      table.className = 'table-grid';
+      gridWrap.appendChild(table);
+      block.appendChild(gridWrap);
+
+      function addCell(tr, value) {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value || '';
+        input.spellcheck = true;
+        registerLock(input);
+        td.appendChild(input);
+        tr.appendChild(td);
+      }
+      function addRow(values) {
+        const tr = document.createElement('tr');
+        const width = table.rows.length ? table.rows[0].cells.length : ((values && values.length) || 2);
+        const vals = values && values.length ? values : new Array(width).fill('');
+        vals.forEach(v => addCell(tr, v));
+        table.appendChild(tr);
+      }
+      function addColumn() {
+        [...table.rows].forEach(tr => addCell(tr, ''));
+      }
+      function removeLastRow() {
+        if (table.rows.length > 1) table.deleteRow(table.rows.length - 1);
+      }
+      function removeLastColumn() {
+        if (table.rows.length && table.rows[0].cells.length > 1) {
+          [...table.rows].forEach(tr => tr.deleteCell(tr.cells.length - 1));
+        }
+      }
+
+      (sec.rows && sec.rows.length ? sec.rows : [['Column A', 'Column B'], ['', ''], ['', '']]).forEach(r => addRow(r));
+
+      const actions = document.createElement('div');
+      actions.className = 'table-grid-actions edit-chrome';
+      const addRowBtn = document.createElement('button'); addRowBtn.type = 'button'; addRowBtn.className = 'btn-ghost-sm'; addRowBtn.textContent = '+ Row';
+      addRowBtn.onclick = () => addRow();
+      const addColBtn = document.createElement('button'); addColBtn.type = 'button'; addColBtn.className = 'btn-ghost-sm'; addColBtn.textContent = '+ Column';
+      addColBtn.onclick = () => addColumn();
+      const delRowBtn = document.createElement('button'); delRowBtn.type = 'button'; delRowBtn.className = 'btn-ghost-sm'; delRowBtn.textContent = 'Remove last row';
+      delRowBtn.onclick = () => removeLastRow();
+      const delColBtn = document.createElement('button'); delColBtn.type = 'button'; delColBtn.className = 'btn-ghost-sm'; delColBtn.textContent = 'Remove last column';
+      delColBtn.onclick = () => removeLastColumn();
+      [addRowBtn, addColBtn, delRowBtn, delColBtn].forEach(b => actions.appendChild(b));
+      block.appendChild(actions);
+
+      const hint = document.createElement('div');
+      hint.className = 'form-msg';
+      hint.textContent = 'First row is the table header.';
+      block.appendChild(hint);
+
+      appendRemoveButton(block);
+      sectionsWrap.appendChild(block);
+      return block;
+    }
+
+    function buildImageSection(sec) {
+      const block = document.createElement('div');
+      block.className = 'content-section-block';
+      block.dataset.type = 'image';
+      block.dataset.side = sec.side || 'left';
+      block.dataset.imageUrl = sec.imageUrl || '';
+
+      const label = document.createElement('div');
+      label.className = 'section-type-label';
+      label.textContent = 'Image';
+      block.appendChild(label);
+
+      const sideTabs = document.createElement('div');
+      sideTabs.className = 'section-side-tabs edit-chrome';
+      const leftBtn = document.createElement('button'); leftBtn.type = 'button'; leftBtn.className = 'card-image-tab'; leftBtn.textContent = 'Image on Left';
+      const rightBtn = document.createElement('button'); rightBtn.type = 'button'; rightBtn.className = 'card-image-tab'; rightBtn.textContent = 'Image on Right';
+      function renderSide() {
+        leftBtn.classList.toggle('active', block.dataset.side === 'left');
+        rightBtn.classList.toggle('active', block.dataset.side === 'right');
+      }
+      leftBtn.onclick = () => { block.dataset.side = 'left'; renderSide(); };
+      rightBtn.onclick = () => { block.dataset.side = 'right'; renderSide(); };
+      renderSide();
+      sideTabs.appendChild(leftBtn); sideTabs.appendChild(rightBtn);
+      block.appendChild(sideTabs);
+
+      const hd = document.createElement('input');
+      hd.className = 'form-input section-heading';
+      hd.placeholder = 'Title';
+      hd.spellcheck = true;
+      hd.value = sec.heading || '';
+      registerLock(hd);
+      block.appendChild(hd);
+
+      const imgHelp = document.createElement('div');
+      imgHelp.className = 'form-msg edit-chrome';
+      imgHelp.textContent = IMAGE_HELP_TEXT;
+      block.appendChild(imgHelp);
+
+      const uploadRow = document.createElement('div');
+      uploadRow.className = 'edit-chrome';
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file'; fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp';
+      const uploadBtn = document.createElement('button');
+      uploadBtn.type = 'button'; uploadBtn.className = 'btn-ghost-sm'; uploadBtn.textContent = 'Upload Image';
+      const imgMsg = document.createElement('span'); imgMsg.className = 'form-msg';
+      uploadRow.appendChild(fileInput); uploadRow.appendChild(uploadBtn); uploadRow.appendChild(imgMsg);
+      block.appendChild(uploadRow);
+
+      const preview = document.createElement('img');
+      preview.className = 'section-image-preview';
+      if (sec.imageUrl) preview.src = sec.imageUrl; else preview.style.display = 'none';
+      block.appendChild(preview);
+
+      uploadBtn.onclick = async () => {
+        const f = fileInput.files[0];
+        if (!f) { imgMsg.textContent = 'Choose a file first.'; imgMsg.className = 'form-msg error'; return; }
+        const fileError = imageFileError(f);
+        if (fileError) { imgMsg.textContent = fileError; imgMsg.className = 'form-msg error'; return; }
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading…';
+        const form = new FormData();
+        form.append('image', f);
+        try {
+          const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          block.dataset.imageUrl = data.url;
+          preview.src = data.url;
+          preview.style.display = 'block';
+          imgMsg.textContent = 'Image uploaded.';
+          imgMsg.className = 'form-msg success';
+        } catch (e) {
+          imgMsg.textContent = friendlyUploadError(e);
+          imgMsg.className = 'form-msg error';
+        } finally {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = 'Upload Image';
+        }
+      };
+
+      const desc = document.createElement('textarea');
+      desc.className = 'form-textarea section-body';
+      desc.rows = 4;
+      desc.placeholder = 'Description';
+      desc.spellcheck = true;
+      desc.value = sec.body || '';
+      desc.addEventListener('input', () => autoGrowTextarea(desc, 400));
+      desc.addEventListener('focus', () => { activeTextarea = desc; });
+      registerLock(desc);
+      block.appendChild(desc);
+
+      appendRemoveButton(block);
+      sectionsWrap.appendChild(block);
+      setTimeout(() => autoGrowTextarea(desc, 400), 0);
+      return block;
+    }
+
+    function buildSection(sec) {
+      if (sec.type === 'table') return buildTableSection(sec);
+      if (sec.type === 'image') return buildImageSection(sec);
+      return buildTextSection(sec);
+    }
+
+    function emptySection(type) {
+      if (type === 'table') return { type: 'table', heading: '', rows: [['Column A', 'Column B'], ['', ''], ['', '']] };
+      if (type === 'image') return { type: 'image', side: 'left', heading: '', imageUrl: '', alt: '', body: '' };
+      return { type, heading: '', body: '' };
+    }
+
     parseSections(val('body')).forEach(buildSection);
     updateRemoveButtons();
 
-    const addSectionBtn = document.createElement('button');
-    addSectionBtn.type = 'button';
-    addSectionBtn.className = 'btn-ghost-sm add-section-btn edit-chrome';
-    addSectionBtn.textContent = '+ Add section';
-    addSectionBtn.onclick = () => {
-      const block = buildSection({ heading: '', body: '' });
-      updateRemoveButtons();
-      block.querySelector('.section-body').focus();
-    };
-    card.appendChild(addSectionBtn);
+    // A Top Tip's / Quote's accent color follows the post's own topic — keep
+    // them in sync when the author changes the topic dropdown.
+    if (topicSelect) {
+      topicSelect.addEventListener('change', () => {
+        const accent = topicAccentClass(topicSelect.value);
+        sectionsWrap.querySelectorAll('.content-section-block[data-type="tip"], .content-section-block[data-type="quote"]').forEach(b => { b.dataset.topicAccent = accent; });
+      });
+    }
+
+    // Shown both above AND below the sections list — a template upload can
+    // easily produce 5+ sections, long enough that whichever end an author
+    // starts scanning from, a single copy at the *other* end is easy to miss
+    // entirely (this has happened twice with a below-only row and once with
+    // an above-only one).
+    function buildSectionTypePicker() {
+      const picker = document.createElement('div');
+      picker.className = 'section-type-picker edit-chrome';
+      [
+        { type: 'normal', label: '+ Normal' },
+        { type: 'tip', label: '+ Top Tip' },
+        { type: 'quote', label: '+ Quote' },
+        { type: 'table', label: '+ Table' },
+        { type: 'image', label: '+ Image' },
+      ].forEach(({ type, label }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-ghost-sm';
+        btn.textContent = label;
+        btn.onclick = () => {
+          const block = buildSection(emptySection(type));
+          updateRemoveButtons();
+          block.scrollIntoView({ block: 'center' });
+          const focusEl = block.querySelector('.section-heading, .section-body, .table-grid input');
+          if (focusEl) focusEl.focus();
+        };
+        picker.appendChild(btn);
+      });
+      return picker;
+    }
+    card.insertBefore(buildSectionTypePicker(), sectionsWrap);
+    // sectionsWrap is still the last child of card at this point (the file
+    // link, hero image UI, etc. are all appended later below), so this lands
+    // immediately after the section list either way.
+    card.appendChild(buildSectionTypePicker());
 
     function serializeSections() {
       const parts = [];
       sectionsWrap.querySelectorAll('.content-section-block').forEach(b => {
+        const type = b.dataset.type || 'normal';
+        if (type === 'table') {
+          const heading = (b.querySelector('.section-heading').value || '').trim();
+          const grid = [...b.querySelectorAll('.table-grid tr')].map(tr => [...tr.querySelectorAll('input')].map(i => i.value));
+          const cleaned = grid.filter(r => r.some(c => c.trim()));
+          if (!cleaned.length) return;
+          let chunk = '<!--type:table-->';
+          if (heading) chunk += '\n## ' + heading;
+          chunk += '\n' + rowsToMarkdown(cleaned);
+          parts.push(chunk);
+          return;
+        }
+        if (type === 'image') {
+          const heading = b.querySelector('.section-heading').value.trim();
+          const desc = b.querySelector('.section-body').value.trim();
+          const url = (b.dataset.imageUrl || '').trim();
+          if (!heading && !desc && !url) return;
+          let chunk = '<!--type:image:' + (b.dataset.side === 'right' ? 'right' : 'left') + '-->';
+          if (heading) chunk += '\n## ' + heading;
+          if (url) chunk += '\n![' + heading.replace(/[[\]]/g, '') + '](' + url + ')';
+          if (desc) chunk += (heading || url ? '\n\n' : '\n') + desc;
+          parts.push(chunk);
+          return;
+        }
+        // normal / tip / quote
         const h = b.querySelector('.section-heading').value.trim();
         const body = b.querySelector('.section-body').value.replace(/\s+$/, '').replace(/^\n+/, '');
-        let chunk = '';
-        if (h) chunk += '## ' + h;
-        if (body) chunk += (h ? '\n\n' : '') + body;
+        let chunk = type === 'tip' ? '<!--type:tip-->' : type === 'quote' ? '<!--type:quote-->' : '';
+        if (h) chunk += (chunk ? '\n' : '') + '## ' + h;
+        if (body) chunk += (chunk ? '\n\n' : '') + body;
         if (chunk.trim()) parts.push(chunk);
       });
       // Joins sections with the reserved SECTION_JOIN marker (renders as a
-      // greyed-out horizontal rule on the live post, same as a manual
-      // divider, but kept textually distinct so it round-trips through
-      // parseSections without swallowing a manual divider's section).
+      // greyed-out horizontal rule between them on the live post, same as a
+      // manual divider, but kept textually distinct so it round-trips through
+      // parseSections without swallowing a manual divider's section — or a
+      // typed section's own type marker).
       return parts.join('\n\n' + SECTION_JOIN + '\n\n');
     }
 
@@ -1182,17 +1682,10 @@ function buildCard(item, skipHead) {
     }
 
     insertImageBtn.onclick = async () => {
-      if (insertImageMode === 'url') {
-        const url = insertImageUrlInput.value.trim();
-        if (!/^https?:\/\//.test(url)) { insertImageMsg.textContent = 'URL must start with http:// or https://'; insertImageMsg.className = 'form-msg error'; return; }
-        insertImageMarkup(url);
-        insertImageUrlInput.value = '';
-        return;
-      }
       const f = insertImageFileInput.files[0];
       if (!f) { insertImageMsg.textContent = 'Choose a file first.'; insertImageMsg.className = 'form-msg error'; return; }
-      const oversize = oversizeMessage(f);
-      if (oversize) { insertImageMsg.textContent = oversize; insertImageMsg.className = 'form-msg error'; return; }
+      const fileError = imageFileError(f);
+      if (fileError) { insertImageMsg.textContent = fileError; insertImageMsg.className = 'form-msg error'; return; }
       insertImageBtn.disabled = true;
       insertImageBtn.textContent = 'Uploading…';
       const form = new FormData();
@@ -1220,37 +1713,23 @@ function buildCard(item, skipHead) {
       card.appendChild(dl);
     }
 
-    // ── Hero image: URL or upload-from-desktop, mutually exclusive ──────
+    // ── Hero image: upload-from-desktop only ─────────────────────────────
     const heroLabel = document.createElement('label');
     heroLabel.className = 'form-label';
     heroLabel.textContent = 'Hero image — the banner shown at the top of your post and on your Alpha page card';
     heroLabel.style.marginTop = '8px';
     card.appendChild(heroLabel);
 
-    // Uploaded-file changes aren't staged (unlike text/topic/URL edits), so on a
-    // published post a new upload would go straight to the live website. Only
-    // Image URL is offered there — it stages correctly like everything else.
-    const uploadBlockedOnPublished = !isDraft;
+    const heroHelp = document.createElement('div');
+    heroHelp.className = 'form-msg edit-chrome';
+    heroHelp.textContent = IMAGE_HELP_TEXT;
+    card.appendChild(heroHelp);
 
-    const imageTabs = document.createElement('div');
-    imageTabs.className = 'card-image-tabs edit-chrome';
-    const urlTabBtn = document.createElement('button');
-    urlTabBtn.type = 'button'; urlTabBtn.className = 'card-image-tab'; urlTabBtn.textContent = 'Image URL';
-    const uploadTabBtn = document.createElement('button');
-    uploadTabBtn.type = 'button'; uploadTabBtn.className = 'card-image-tab'; uploadTabBtn.textContent = 'Upload';
-    imageTabs.appendChild(urlTabBtn);
-    imageTabs.appendChild(uploadTabBtn);
-    card.appendChild(imageTabs);
-    if (uploadBlockedOnPublished) {
-      uploadTabBtn.disabled = true;
-      uploadTabBtn.title = 'Unpublish this post first to upload a new hero image, or use an Image URL instead — that stages your change.';
-    }
-
+    // Hidden now that URL entry is gone, but kept as the single source of
+    // truth gatherFieldUpdates() reads for Save — set from an upload below.
     imageUrlInput = document.createElement('input');
-    imageUrlInput.className = 'form-input';
-    imageUrlInput.placeholder = 'https://example.com/image.jpg';
+    imageUrlInput.type = 'hidden';
     imageUrlInput.value = effImageUrl || '';
-    registerLock(imageUrlInput);
     card.appendChild(imageUrlInput);
 
     const uploadPanel = document.createElement('div');
@@ -1279,7 +1758,7 @@ function buildCard(item, skipHead) {
     }
     card.appendChild(imagePreview);
 
-    // Remove hero image — clears both a pasted URL and any uploaded file.
+    // Remove hero image — clears both a legacy uploaded file and image_url.
     const removeImageBtn = document.createElement('button');
     removeImageBtn.type = 'button';
     removeImageBtn.className = 'btn-danger-sm edit-chrome';
@@ -1298,45 +1777,41 @@ function buildCard(item, skipHead) {
       updateItem(item.id, { clear_image: true }, 'remove the hero image');
     };
 
-    function renderImageMode() {
-      urlTabBtn.classList.toggle('active', imageMode === 'url');
-      uploadTabBtn.classList.toggle('active', imageMode === 'upload');
-      imageUrlInput.style.display = imageMode === 'url' ? 'block' : 'none';
-      uploadPanel.style.display = imageMode === 'upload' ? 'block' : 'none';
-    }
-    urlTabBtn.onclick = () => { imageMode = 'url'; renderImageMode(); };
-    uploadTabBtn.onclick = () => { if (uploadBlockedOnPublished) return; imageMode = 'upload'; renderImageMode(); };
-    renderImageMode();
-    if (uploadBlockedOnPublished) {
-      // The post may already have an uploaded file as its live image (so
-      // imageMode defaults to 'upload') — disable the controls too, not just
-      // the tab, and explain why instead of silently doing nothing.
-      imageFileInput.disabled = true;
-      uploadImageBtn.disabled = true;
-      imageMsg.textContent = 'Unpublish this post first to upload a new hero image, or use an Image URL instead.';
-    }
-
     uploadImageBtn.onclick = async () => {
       const f = imageFileInput.files[0];
       if (!f) { imageMsg.textContent = 'Choose a file first.'; imageMsg.className = 'form-msg error'; return; }
-      const oversize = oversizeMessage(f);
-      if (oversize) { imageMsg.textContent = oversize; imageMsg.className = 'form-msg error'; return; }
+      const fileError = imageFileError(f);
+      if (fileError) { imageMsg.textContent = fileError; imageMsg.className = 'form-msg error'; return; }
       uploadImageBtn.disabled = true;
       uploadImageBtn.textContent = 'Uploading…';
       const form = new FormData();
       form.append('image', f);
       try {
-        const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
-        imageMsg.textContent = 'Image uploaded.';
-        imageMsg.className = 'form-msg success';
-        item.image_filename = data.item.image_filename;
-        item.image_url = data.item.image_url;
-        imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
-        imagePreview.style.display = 'block';
-        removeImageBtn.style.display = 'inline-block';
-        updatePublishGate();
+        if (isDraft) {
+          // A draft has no live version to protect — upload straight into the
+          // dedicated hero-image slot, same as before.
+          const res = await fetch('/api/alpha/content/' + item.id + '/image', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          item.image_filename = data.item.image_filename;
+          item.image_url = data.item.image_url;
+          imagePreview.src = '/api/alpha/content/' + item.id + '/image?t=' + Date.now();
+          imagePreview.style.display = 'block';
+          imageMsg.textContent = 'Image uploaded.';
+          imageMsg.className = 'form-msg success';
+          removeImageBtn.style.display = 'inline-block';
+          updatePublishGate();
+        } else {
+          // Published: upload as an attachment (never touches the live row,
+          // same endpoint inline content images use) and stage its URL
+          // through the normal update path — so a new hero image no longer
+          // needs unpublishing first, it just stages like every other edit.
+          const res = await fetch('/api/alpha/content/' + item.id + '/images', { method: 'POST', credentials: 'include', body: form });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+          imageUrlInput.value = data.url;
+          await updateItem(item.id, { image_url: data.url }, 'stage the new hero image');
+        }
       } catch (e) {
         imageMsg.textContent = friendlyUploadError(e);
         imageMsg.className = 'form-msg error';
@@ -1426,7 +1901,7 @@ function buildCard(item, skipHead) {
     if (bodyInput) updates.body = bodyInput.value.trim();
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
-    if (imageUrlInput && imageMode === 'url') updates.image_url = imageUrlInput.value.trim();
+    if (imageUrlInput) updates.image_url = imageUrlInput.value.trim();
     return updates;
   }
 
