@@ -2302,6 +2302,79 @@ function playAlertTone(type) {
   } catch (e) {}
 }
 
+// Price alerts get their own, more distinct tone ("Nova Hook") rather than the
+// generic BUY/SELL beep above — a 5-note melodic line over a soft pad swell,
+// resolving into a held, shimmering note. Picked from a set of previewed options.
+// Same approach as playAlertTone: pure oscillators/filters, no audio files.
+function playPriceAlertTone() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const t0 = ctx.currentTime;
+
+    const trim = ctx.createGain();
+    trim.gain.value = 0.5;
+    trim.connect(ctx.destination);
+
+    // Shimmer send — short feedback delay the closing note routes into for a tail.
+    const delay = ctx.createDelay();
+    delay.delayTime.value = 0.24;
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.38;
+    const delayFilter = ctx.createBiquadFilter();
+    delayFilter.type = 'lowpass';
+    delayFilter.frequency.value = 3000;
+    delay.connect(delayFilter);
+    delayFilter.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(trim);
+
+    const note = (dest, freq, start, dur, type, peak) => {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(start);
+      osc.stop(start + dur + 0.05);
+    };
+
+    // Soft pad swell underneath (A3)
+    const pad = ctx.createOscillator();
+    pad.type = 'sine';
+    pad.frequency.value = 220.0;
+    const padGain = ctx.createGain();
+    padGain.gain.setValueAtTime(0.0001, t0);
+    padGain.gain.exponentialRampToValueAtTime(0.09, t0 + 0.84);
+    padGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.4);
+    pad.connect(padGain);
+    padGain.connect(trim);
+    pad.start(t0);
+    pad.stop(t0 + 2.5);
+
+    // 5-note hook: C#5 E5 F#5 E5 → A5 held
+    const hook = [
+      { f: 554.37, s: 0.00, d: 0.20 },
+      { f: 659.25, s: 0.20, d: 0.20 },
+      { f: 739.99, s: 0.40, d: 0.20 },
+      { f: 659.25, s: 0.60, d: 0.20 },
+      { f: 880.00, s: 0.85, d: 1.10 },
+    ];
+    hook.forEach((n, i) => {
+      const isLast = i === hook.length - 1;
+      note(trim, n.f, t0 + n.s, n.d, 'triangle', isLast ? 0.5 : 0.42);
+      if (isLast) note(delay, n.f, t0 + n.s, n.d * 0.6, 'sine', 0.3);
+    });
+
+    setTimeout(() => ctx.close(), 2600); // after the pad's tail (longest-lived node) finishes
+  } catch (e) {}
+}
+
 function showEngineWarning(title, body) {
   const stack = document.getElementById('signalToastStack');
   if (!stack) return;
@@ -2460,7 +2533,7 @@ async function savePriceAlertsQuietly() {
 function showPriceAlertToast(sym, alertObj, currentPrice) {
   const stack = document.getElementById('signalToastStack');
   if (!stack) return;
-  if (notificationSettings && notificationSettings.sound_enabled) playAlertTone('warn');
+  if (notificationSettings && notificationSettings.sound_enabled) playPriceAlertTone();
   if (!(notificationSettings && notificationSettings.popup_enabled === false)) {
     const el = document.createElement('div');
     el.className = 'signal-toast price';
