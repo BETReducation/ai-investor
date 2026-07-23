@@ -128,6 +128,11 @@
 .content-section-block[data-type="tip"][data-topic-accent="a"] { border-color: rgba(45,212,191,0.4); background: rgba(45,212,191,0.06); }
 .content-section-block[data-type="tip"][data-topic-accent="b"] { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.06); }
 .content-section-block[data-type="tip"][data-topic-accent="c"] { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.06); }
+.content-section-block[data-type="quote"] { border-left-width: 4px; }
+.content-section-block[data-type="quote"][data-topic-accent="a"] { border-left-color: var(--teal); }
+.content-section-block[data-type="quote"][data-topic-accent="b"] { border-left-color: var(--gold); }
+.content-section-block[data-type="quote"][data-topic-accent="c"] { border-left-color: var(--purple2); }
+.content-section-block[data-type="quote"] .section-body { font-style: italic; font-size: 15px; }
 .section-side-tabs { display: flex; gap: 8px; }
 .table-grid-wrap { overflow-x: auto; }
 .table-grid { border-collapse: collapse; width: 100%; }
@@ -1082,6 +1087,7 @@ function buildCard(item, skipHead) {
       const lines = chunkText.replace(/^\n+/, '').split('\n');
       let type = 'normal', side = null;
       if (lines[0] && lines[0].trim() === '<!--type:tip-->') { type = 'tip'; lines.shift(); }
+      else if (lines[0] && lines[0].trim() === '<!--type:quote-->') { type = 'quote'; lines.shift(); }
       else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
       else {
         const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
@@ -1200,28 +1206,38 @@ function buildCard(item, skipHead) {
       block.appendChild(removeBtn);
     }
 
+    // Labelling/placeholders for the 3 plain-text-shaped section types (they
+    // all share the same heading+body DOM, just styled and captioned
+    // differently — see the CSS for [data-type="tip"/"quote"]).
+    const TEXT_SECTION_META = {
+      normal: { label: 'Normal', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
+      tip: { label: '💡 Top Tip', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
+      quote: { label: '❝ Quote', headingPlaceholder: 'Attribution (optional) — e.g. "Warren Buffett"', bodyPlaceholder: 'The quote text…' },
+    };
+
     function buildTextSection(sec) {
-      const type = sec.type === 'tip' ? 'tip' : 'normal';
+      const type = (sec.type === 'tip' || sec.type === 'quote') ? sec.type : 'normal';
+      const meta = TEXT_SECTION_META[type];
       const block = document.createElement('div');
       block.className = 'content-section-block';
       block.dataset.type = type;
 
       const label = document.createElement('div');
       label.className = 'section-type-label';
-      label.textContent = type === 'tip' ? '💡 Top Tip' : 'Normal';
+      label.textContent = meta.label;
       block.appendChild(label);
 
-      if (type === 'tip') block.dataset.topicAccent = topicAccentClass(topicSelect ? topicSelect.value : '');
+      if (type === 'tip' || type === 'quote') block.dataset.topicAccent = topicAccentClass(topicSelect ? topicSelect.value : '');
 
       const hd = document.createElement('input');
       hd.className = 'form-input section-heading';
-      hd.placeholder = 'Section heading (optional)';
+      hd.placeholder = meta.headingPlaceholder;
       hd.spellcheck = true;
       hd.value = sec.heading || '';
       const ta = document.createElement('textarea');
       ta.className = 'form-textarea section-body';
       ta.rows = 5;
-      ta.placeholder = 'Write this section — use the toolbar above for bold, lists, links…';
+      ta.placeholder = meta.bodyPlaceholder;
       ta.spellcheck = true;
       ta.value = sec.body || '';
       ta.addEventListener('input', () => autoGrowTextarea(ta, 600));
@@ -1456,12 +1472,12 @@ function buildCard(item, skipHead) {
     parseSections(val('body')).forEach(buildSection);
     updateRemoveButtons();
 
-    // A Top Tip's accent color follows the post's own topic — keep every
-    // tip box in sync when the author changes the topic dropdown.
+    // A Top Tip's / Quote's accent color follows the post's own topic — keep
+    // them in sync when the author changes the topic dropdown.
     if (topicSelect) {
       topicSelect.addEventListener('change', () => {
         const accent = topicAccentClass(topicSelect.value);
-        sectionsWrap.querySelectorAll('.content-section-block[data-type="tip"]').forEach(b => { b.dataset.topicAccent = accent; });
+        sectionsWrap.querySelectorAll('.content-section-block[data-type="tip"], .content-section-block[data-type="quote"]').forEach(b => { b.dataset.topicAccent = accent; });
       });
     }
 
@@ -1470,6 +1486,7 @@ function buildCard(item, skipHead) {
     [
       { type: 'normal', label: '+ Normal' },
       { type: 'tip', label: '+ Top Tip' },
+      { type: 'quote', label: '+ Quote' },
       { type: 'table', label: '+ Table' },
       { type: 'image', label: '+ Image' },
     ].forEach(({ type, label }) => {
@@ -1514,10 +1531,10 @@ function buildCard(item, skipHead) {
           parts.push(chunk);
           return;
         }
-        // normal / tip
+        // normal / tip / quote
         const h = b.querySelector('.section-heading').value.trim();
         const body = b.querySelector('.section-body').value.replace(/\s+$/, '').replace(/^\n+/, '');
-        let chunk = type === 'tip' ? '<!--type:tip-->' : '';
+        let chunk = type === 'tip' ? '<!--type:tip-->' : type === 'quote' ? '<!--type:quote-->' : '';
         if (h) chunk += (chunk ? '\n' : '') + '## ' + h;
         if (body) chunk += (chunk ? '\n\n' : '') + body;
         if (chunk.trim()) parts.push(chunk);

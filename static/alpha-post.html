@@ -56,6 +56,14 @@
 .post-tip.tip-c { border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.07); }
 .post-tip.tip-c .post-tip-badge { color: var(--purple2); }
 
+/* Quote section — a pull-quote styled with a topic-colored left border. */
+.post-quote { border-left: 4px solid var(--border); padding: 4px 0 4px 24px; margin: 36px 0; }
+.post-quote p { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 21px; font-style: italic; line-height: 1.55; color: var(--text); }
+.post-quote cite { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-style: normal; font-weight: 600; color: var(--muted); margin-top: 10px; }
+.post-quote.quote-a { border-left-color: var(--teal); }
+.post-quote.quote-b { border-left-color: var(--gold); }
+.post-quote.quote-c { border-left-color: var(--purple2); }
+
 /* Table section */
 .post-table { width: 100%; border-collapse: collapse; margin: 28px 0; font-size: 14.5px; }
 .post-table th, .post-table td { border: 1px solid var(--border); padding: 10px 14px; text-align: left; color: var(--text); }
@@ -334,6 +342,7 @@ function stripTypeMarker(chunk) {
   const lines = chunk.replace(/^\n+/, '').split('\n');
   let type = 'normal', side = null;
   if (lines[0] && lines[0].trim() === '<!--type:tip-->') { type = 'tip'; lines.shift(); }
+  else if (lines[0] && lines[0].trim() === '<!--type:quote-->') { type = 'quote'; lines.shift(); }
   else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
   else {
     const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
@@ -500,6 +509,26 @@ function renderBody(body, bodyEl, postTopicAccentClass) {
       badge.textContent = '💡 Top Tip';
       box.appendChild(badge);
       renderBlockLines(rest, box);
+      bodyEl.appendChild(box);
+      return;
+    }
+    if (type === 'quote') {
+      // The heading field doubles as an attribution here ("## Warren Buffett")
+      // rather than an in-box <h2> like tip/normal use it for — rendered as a
+      // <cite> line under the quote text instead.
+      const qLines = rest.split('\n');
+      let attribution = '';
+      if (qLines[0] && /^##\s+/.test(qLines[0])) { attribution = qLines[0].replace(/^##\s+/, '').trim(); qLines.shift(); while (qLines.length && !qLines[0].trim()) qLines.shift(); }
+      const quoteBody = qLines.join('\n').trim();
+      if (!attribution && !quoteBody) return;
+      const box = document.createElement('div');
+      box.className = 'post-quote quote-' + postTopicAccentClass;
+      renderBlockLines(quoteBody, box);
+      if (attribution) {
+        const cite = document.createElement('cite');
+        cite.textContent = '— ' + attribution;
+        box.appendChild(cite);
+      }
       bodyEl.appendChild(box);
       return;
     }
