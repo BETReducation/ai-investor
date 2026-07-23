@@ -405,12 +405,12 @@ let publishedTopicFilter = '';
 let publishedDateFrom = '';
 let publishedDateTo = '';
 let allItems = [];
-// Published-item ids currently expanded — every Save/Publish/etc. calls
-// loadContent(), which rebuilds every card from scratch and used to always
-// re-collapse them, so a newly-appeared Re-publish button (or anything else
-// that only shows once expanded) stayed hidden until the author clicked
-// back into the post they were just editing.
-const openPublishedIds = new Set();
+// Ids of drafts/published items currently expanded, in either list — every
+// Save/Publish/etc. calls loadContent(), which rebuilds every card from
+// scratch and used to always re-collapse them, so a newly-appeared
+// Re-publish button (or anything else that only shows once expanded) stayed
+// hidden until the author clicked back into the item they were just editing.
+const openCardIds = new Set();
 
 function esc(str) {
   const d = document.createElement('div');
@@ -709,7 +709,7 @@ function renderList(status, container, emptyEl) {
   const items = allItems.filter(i => i.status === status);
   container.innerHTML = '';
   emptyEl.style.display = items.length ? 'none' : 'block';
-  items.forEach(item => container.appendChild(buildCard(item)));
+  items.forEach(item => container.appendChild(buildCollapsibleCard(item)));
 }
 
 function buildCollapsibleCard(item) {
@@ -741,10 +741,13 @@ function buildCollapsibleCard(item) {
   titleSpan.textContent = item.title || '(untitled)';
   header.appendChild(titleSpan);
 
-  if (item.published_at) {
+  // Published date if it has one; otherwise when the draft was created —
+  // either way, some date is more useful in the collapsed row than none.
+  const dateValue = item.published_at || item.created_at;
+  if (dateValue) {
     const dateSpan = document.createElement('span');
     dateSpan.className = 'collapsible-date';
-    const d = new Date(item.published_at);
+    const d = new Date(dateValue);
     if (!isNaN(d)) dateSpan.textContent = d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
     header.appendChild(dateSpan);
   }
@@ -753,7 +756,7 @@ function buildCollapsibleCard(item) {
 
   const body = document.createElement('div');
   body.className = 'collapsible-body';
-  const startOpen = openPublishedIds.has(item.id);
+  const startOpen = openCardIds.has(item.id);
   body.style.display = startOpen ? 'block' : 'none';
   body.appendChild(buildCard(item, true));
   wrapper.appendChild(body);
@@ -768,7 +771,7 @@ function buildCollapsibleCard(item) {
     body.style.display = opening ? 'block' : 'none';
     chevron.textContent = opening ? '▾' : '▸';
     wrapper.classList.toggle('open', opening);
-    if (opening) openPublishedIds.add(item.id); else openPublishedIds.delete(item.id);
+    if (opening) openCardIds.add(item.id); else openCardIds.delete(item.id);
     // Textareas built while collapsed measure zero height, so re-run the
     // auto-grow once they're actually visible.
     if (opening) {
