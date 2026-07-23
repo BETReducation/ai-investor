@@ -102,10 +102,13 @@
 /* PRICE CHART — own chart toolbar (timeframe + chart type) and side drawing toolbar */
 .chart-topbar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
 .chart-topbar > * { pointer-events: auto; }
-.chart-tf-group, .chart-type-group { display: flex; gap: 2px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
-.chart-tf-btn, .chart-type-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 2px; transition: all 0.15s; }
-.chart-tf-btn:hover, .chart-type-btn:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
-.chart-tf-btn.active, .chart-type-btn.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
+.chart-tf-group { display: flex; flex-wrap: wrap; gap: 2px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); max-width: 60%; }
+.chart-tf-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 2px; transition: all 0.15s; }
+.chart-tf-btn:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
+.chart-tf-btn.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
+.chart-type-select { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 5px 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+.chart-type-select:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+.chart-type-select option:disabled { color: var(--text-muted); }
 .chart-sidebar { position: absolute; top: 44px; left: 8px; bottom: 8px; z-index: 6; display: flex; flex-direction: column; gap: 3px; }
 .chart-tool-btn { width: 26px; height: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; border-radius: 3px; transition: all 0.15s; }
 .chart-tool-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.08); }
@@ -2475,6 +2478,8 @@ let priceChart = null;
 let chartTf = '1d';
 let lastChartSym = null;
 let chartLoadSeq = 0;
+let currentChartBars = []; // rows of the currently-loaded chart, {timestamp,open,high,low,close,volume} — used by the volume-profile/VWAP tools to compute values beyond the chart's own click points
+let chartType = 'candle_solid'; // one of the <select> values in the topbar: candle_solid/candle_stroke/area/session_volume_profile/volume_footprint
 
 // Curated subset of intervalMap's keys — the ones that make sense as chart timeframes.
 const CHART_TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1wk', '1mo', '3mo'];
@@ -2531,7 +2536,10 @@ function ensurePriceChart() {
   if (!container) return null;
   container.innerHTML = '';
   priceChart = klinecharts.init('tvChart');
-  priceChart.createIndicator('VOL', false, { height: 80 });
+  // The volume pane itself (plain VOL vs. the Volume Footprint split) is created by
+  // refreshVolumePaneMode(), called after every applyNewData() in loadPriceChart() —
+  // not here, so there's a single place that ever creates it (creating it both here
+  // and there produced two overlapping volume panes).
   applyChartTheme();
   return priceChart;
 }
@@ -2562,6 +2570,19 @@ function applyChartTheme() {
   });
 }
 
+// Chart types that are Yahoo/yfinance OHLCV-derived approximations, not real market
+// microstructure data — see CHART_TYPE_OPTIONS' labels/tooltips for the caveat shown
+// to users. "session_volume_profile" also only makes sense on intraday timeframes
+// (a "session" = one trading day), so it's disabled in the dropdown otherwise.
+const CHART_TYPE_OPTIONS = [
+  { value: 'candle_solid',           label: 'Candlestick' },
+  { value: 'candle_stroke',          label: 'Hollow Candles' },
+  { value: 'area',                   label: 'Area / Line' },
+  { value: 'session_volume_profile', label: 'Session Volume Profile' },
+  { value: 'volume_footprint',       label: 'Volume Footprint (approx.)' },
+];
+const INTRADAY_TIMEFRAMES = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '2h', '4h'];
+
 function renderChartToolbars() {
   const topbar = document.getElementById('chartTopbar');
   const sidebar = document.getElementById('chartSidebar');
@@ -2571,11 +2592,10 @@ function renderChartToolbars() {
       <div class="chart-tf-group" id="chartTfGroup">
         ${CHART_TIMEFRAMES.map(tf => `<button class="chart-tf-btn" data-tf="${tf}" onclick="setChartTimeframe('${tf}')">${CHART_TF_LABELS[tf]}</button>`).join('')}
       </div>
-      <div class="chart-type-group" id="chartTypeGroup">
-        <button class="chart-type-btn active" data-type="candle_solid" title="Candlestick" onclick="setChartType('candle_solid', this)">▮</button>
-        <button class="chart-type-btn" data-type="candle_stroke" title="Hollow candles" onclick="setChartType('candle_stroke', this)">▯</button>
-        <button class="chart-type-btn" data-type="area" title="Area / line" onclick="setChartType('area', this)">∿</button>
-      </div>`;
+      <select class="chart-type-select" id="chartTypeSelect" onchange="onChartTypeChange(this.value)"
+        title="Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data.">
+        ${CHART_TYPE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>`;
   }
   if (sidebar && !sidebar.dataset.built) {
     sidebar.dataset.built = '1';
@@ -2584,6 +2604,12 @@ function renderChartToolbars() {
       + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`;
   }
   document.querySelectorAll('.chart-tf-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tf === chartTf));
+  const typeSelect = document.getElementById('chartTypeSelect');
+  if (typeSelect) {
+    typeSelect.value = chartType;
+    const profileOpt = typeSelect.querySelector('option[value="session_volume_profile"]');
+    if (profileOpt) profileOpt.disabled = !INTRADAY_TIMEFRAMES.includes(chartTf);
+  }
 }
 
 function setChartTimeframe(tf) {
@@ -2592,12 +2618,39 @@ function setChartTimeframe(tf) {
   if (currentAsset) loadPriceChart(currentAsset);
 }
 
-function setChartType(type, btn) {
+function onChartTypeChange(type) {
+  if (type === 'session_volume_profile' && !INTRADAY_TIMEFRAMES.includes(chartTf)) {
+    addLog('warn', 'CHART', 'Session Volume Profile only applies to intraday timeframes (1m–4h).');
+    renderChartToolbars(); // snap the <select> back to the actually-active type
+    return;
+  }
+  chartType = type;
   const chart = ensurePriceChart();
   if (!chart) return;
-  chart.setStyles({ candle: { type } });
-  document.querySelectorAll('.chart-type-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  if (type === 'candle_solid' || type === 'candle_stroke' || type === 'area') {
+    chart.setStyles({ candle: { type } });
+  }
+  refreshVolumePaneMode();
+  updateSessionVolumeProfile();
+}
+
+// Swaps the bottom pane between the plain Volume histogram and the Volume Footprint
+// (approx.) buy/sell-split histogram based on the active chart type. Called after
+// every data load too, so switching symbols/timeframes keeps the selected mode.
+function refreshVolumePaneMode() {
+  if (!priceChart) return;
+  // createIndicator() with no explicit pane id creates a BRAND NEW pane every call
+  // instead of reusing one — confirmed live (repeated calls left several stacked,
+  // empty-looking duplicate volume panes). A stable `id` here makes every call target
+  // the same pane, so removeIndicator+createIndicator actually swaps in place.
+  const wantFootprint = chartType === 'volume_footprint';
+  priceChart.removeIndicator({ paneId: 'volume_pane' });
+  if (wantFootprint) {
+    ensureFootprintIndicator();
+    priceChart.createIndicator('VOL_FOOTPRINT', false, { height: 80, id: 'volume_pane' });
+  } else {
+    priceChart.createIndicator('VOL', false, { height: 80, id: 'volume_pane' });
+  }
 }
 
 function activateDrawTool(name) {
@@ -2608,6 +2661,126 @@ function activateDrawTool(name) {
 
 function clearDrawings() {
   if (priceChart) priceChart.removeOverlay();
+}
+
+// --- VOLUME FOOTPRINT (approx.) ---
+// True footprint charts need tick-level bid/ask trade data, which yfinance doesn't
+// provide (OHLCV bars only). This estimates each bar's buy/sell volume split using the
+// Money Flow Multiplier — the same formula already underlying Chaikin Money Flow /
+// Accumulation-Distribution, not invented for this — then renders it as a mirrored
+// buy(+)/sell(-) bar pane in place of the plain Volume histogram. It's a directional-
+// pressure estimate per bar, not real per-price-level order flow.
+let footprintRegistered = false;
+function ensureFootprintIndicator() {
+  if (footprintRegistered) return;
+  footprintRegistered = true;
+  klinecharts.registerIndicator({
+    name: 'VOL_FOOTPRINT',
+    shortName: 'FOOTPRINT (approx.)',
+    figures: [
+      { key: 'buyVol',  title: 'Buy(est) ',  type: 'bar', baseValue: 0, styles: () => ({ style: 'fill', color: cssVar('--accent-green', '#00ff88') }) },
+      { key: 'sellVol', title: 'Sell(est) ', type: 'bar', baseValue: 0, styles: () => ({ style: 'fill', color: cssVar('--accent-red', '#ff3355') }) },
+    ],
+    calc: (dataList) => dataList.map(bar => {
+      const range = bar.high - bar.low;
+      const mfm = range > 0 ? ((bar.close - bar.low) - (bar.high - bar.close)) / range : 0;
+      const buyVol = bar.volume * (mfm + 1) / 2;
+      return { buyVol, sellVol: -(bar.volume - buyVol) };
+    }),
+  });
+}
+
+// --- SESSION VOLUME PROFILE / shared volume-at-price histogram builder ---
+// Also reused by the Anchored VWAP Profile drawing tool — same bucketing math, the
+// only difference is which bars/anchor index get passed in.
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+function buildVolumeProfileFigures(chart, bars, anchorIndex, opts = {}) {
+  if (!bars.length) return [];
+  let lo = Infinity, hi = -Infinity;
+  bars.forEach(b => { if (b.low < lo) lo = b.low; if (b.high > hi) hi = b.high; });
+  if (!isFinite(lo) || hi <= lo) return [];
+
+  const binCount = 24;
+  const binSize = (hi - lo) / binCount;
+  const bins = new Array(binCount).fill(0);
+  bars.forEach(b => {
+    const bLo = Math.max(b.low, lo), bHi = Math.min(b.high, hi);
+    const startBin = Math.max(0, Math.min(binCount - 1, Math.floor((bLo - lo) / binSize)));
+    const endBin = Math.max(0, Math.min(binCount - 1, Math.floor((bHi - lo) / binSize)));
+    const span = Math.max(1, endBin - startBin + 1);
+    for (let i = startBin; i <= endBin; i++) bins[i] += b.volume / span;
+  });
+  const maxBin = Math.max(...bins, 1);
+  const maxWidthPx = opts.maxWidthPx || 60;
+  const color = opts.color || 'rgba(0,136,255,0.28)';
+
+  const anchorPx = chart.convertToPixel({ dataIndex: anchorIndex, value: hi }, { paneId: 'candle_pane' });
+  if (!anchorPx || anchorPx.x == null) return [];
+
+  const figures = [];
+  for (let i = 0; i < binCount; i++) {
+    const priceLo = lo + i * binSize, priceHi = priceLo + binSize;
+    const pxTop = chart.convertToPixel({ dataIndex: anchorIndex, value: priceHi }, { paneId: 'candle_pane' });
+    const pxBot = chart.convertToPixel({ dataIndex: anchorIndex, value: priceLo }, { paneId: 'candle_pane' });
+    if (!pxTop || !pxBot) continue;
+    const width = (bins[i] / maxBin) * maxWidthPx;
+    figures.push({
+      type: 'rect',
+      attrs: { x: anchorPx.x, y: Math.min(pxTop.y, pxBot.y), width, height: Math.max(1, Math.abs(pxBot.y - pxTop.y)) },
+      styles: { style: 'fill', color },
+      ignoreEvent: true,
+    });
+  }
+  return figures;
+}
+
+let volumeProfileOverlayRegistered = false;
+function ensureVolumeProfileOverlayType() {
+  if (volumeProfileOverlayRegistered) return;
+  volumeProfileOverlayRegistered = true;
+  klinecharts.registerOverlay({
+    name: 'volumeProfileAuto',
+    totalStep: 1, // created programmatically with its point already set, not by user clicks
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    // klinecharts calls this with a SINGLE options object — {overlay, coordinates,
+    // bounding, ...} — not three positional args (confirmed by reading the actual
+    // minified bundle; the docs summary was misleading here).
+    createPointFigures: ({ overlay }) => {
+      // klinecharts can invoke this mid-removal/mid-transition with no overlay instance
+      // yet (observed live while switching timeframe/chart-type quickly) — bail quietly
+      // rather than throwing, the next redraw after the real overlay exists will fill in.
+      if (!overlay || !overlay.points || !overlay.points[0]) return [];
+      const bars = (overlay.extendData || {}).bars || [];
+      const anchorIndex = overlay.points[0].dataIndex;
+      return buildVolumeProfileFigures(priceChart, bars, anchorIndex);
+    },
+  });
+}
+
+let sessionProfileOverlayId = null;
+function updateSessionVolumeProfile() {
+  if (!priceChart) return;
+  if (sessionProfileOverlayId) { priceChart.removeOverlay({ id: sessionProfileOverlayId }); sessionProfileOverlayId = null; }
+  if (chartType !== 'session_volume_profile' || !INTRADAY_TIMEFRAMES.includes(chartTf) || currentChartBars.length === 0) return;
+
+  ensureVolumeProfileOverlayType();
+  const lastDate = new Date(currentChartBars[currentChartBars.length - 1].timestamp).toDateString();
+  let startIdx = currentChartBars.length - 1;
+  while (startIdx > 0 && new Date(currentChartBars[startIdx - 1].timestamp).toDateString() === lastDate) startIdx--;
+  const sessionBars = currentChartBars.slice(startIdx);
+
+  sessionProfileOverlayId = priceChart.createOverlay({
+    name: 'volumeProfileAuto',
+    lock: true,
+    points: [{ dataIndex: startIdx, value: 0 }],
+    extendData: { bars: sessionBars },
+  });
 }
 
 function showChartPlaceholder() {
@@ -2673,7 +2846,9 @@ async function loadPriceChart(sym) {
       })).filter(r => Number.isFinite(r.timestamp) && Number.isFinite(r.close));
       overlay.remove();
       if (!rows.length) { showChartLoadError(`No data returned for ${sym}.`); return; }
+      currentChartBars = rows;
       chart.applyNewData(rows);
+      refreshVolumePaneMode();
       return;
     } catch (e) {
       if (seq !== chartLoadSeq) return;
