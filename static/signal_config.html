@@ -114,6 +114,11 @@
 .chart-tool-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .chart-tool-sep { height: 1px; background: var(--border); margin: 3px 2px; }
 .chart-tool-clear:hover { color: var(--accent-red); border-color: var(--accent-red); background: rgba(208,18,43,0.08); }
+.chart-tool-bin { color: var(--accent-red); border-color: var(--accent-red); background: rgba(208,18,43,0.08); }
+.chart-tool-bin:hover { background: rgba(208,18,43,0.18); }
+.chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+.chart-tool-btn[data-cat] { color: var(--text-secondary); }
+.chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -2506,16 +2511,22 @@ const CHART_HISTORY_PERIOD = {
 
 // klinecharts' built-in overlay templates — a TradingView-style side drawing toolbar.
 const CHART_DRAW_TOOLS = [
-  { name: 'segment',                label: 'Trend Line',       icon: 'TL'  },
-  { name: 'rayLine',                label: 'Ray',              icon: 'RAY' },
-  { name: 'horizontalStraightLine', label: 'Horizontal Line',  icon: 'H—'  },
-  { name: 'horizontalRayLine',      label: 'Horizontal Ray',   icon: 'HR'  },
-  { name: 'verticalStraightLine',   label: 'Vertical Line',    icon: 'V|'  },
-  { name: 'parallelStraightLine',   label: 'Parallel Channel', icon: 'CH'  },
-  { name: 'priceChannelLine',       label: 'Price Channel',    icon: 'PC'  },
-  { name: 'fibonacciLine',          label: 'Fib Retracement',  icon: 'FIB' },
-  { name: 'priceLine',              label: 'Price Line',       icon: 'PL'  },
-  { name: 'simpleAnnotation',       label: 'Text Note',        icon: 'T'   },
+  { name: 'segment',                label: 'Trend Line',       icon: 'TL',  category: 'lines' },
+  { name: 'rayLine',                label: 'Ray',              icon: 'RAY', category: 'lines' },
+  { name: 'horizontalStraightLine', label: 'Horizontal Line',  icon: 'H—',  category: 'lines' },
+  { name: 'horizontalRayLine',      label: 'Horizontal Ray',   icon: 'HR',  category: 'lines' },
+  { name: 'verticalStraightLine',   label: 'Vertical Line',    icon: 'V|',  category: 'lines' },
+  { name: 'parallelStraightLine',   label: 'Parallel Channel', icon: 'CH',  category: 'channels' },
+  { name: 'priceChannelLine',       label: 'Price Channel',    icon: 'PC',  category: 'channels' },
+  { name: 'fibonacciLine',          label: 'Fib Retracement',  icon: 'FIB', category: 'fib' },
+  { name: 'priceLine',              label: 'Price Line',       icon: 'PL',  category: 'annotations' },
+  { name: 'simpleAnnotation',       label: 'Text Note',        icon: 'T',   category: 'annotations' },
+];
+const CHART_TOOL_CATEGORIES = [
+  { key: 'lines',       label: 'Lines',       icon: 'TL' },
+  { key: 'channels',    label: 'Channels',    icon: 'CH' },
+  { key: 'fib',         label: 'Fibonacci',   icon: 'FIB' },
+  { key: 'annotations', label: 'Annotations', icon: 'T' },
 ];
 
 function initChart() {
@@ -2599,9 +2610,10 @@ function renderChartToolbars() {
   }
   if (sidebar && !sidebar.dataset.built) {
     sidebar.dataset.built = '1';
-    sidebar.innerHTML = CHART_DRAW_TOOLS.map(t => `<button class="chart-tool-btn" title="${t.label}" onclick="activateDrawTool('${t.name}')">${t.icon}</button>`).join('')
+    sidebar.innerHTML = CHART_TOOL_CATEGORIES.map(c => `<button class="chart-tool-btn" data-cat="${c.key}" title="${c.label}" onclick="toggleToolCategory('${c.key}', this)">${c.icon}</button>`).join('')
       + `<div class="chart-tool-sep"></div>`
-      + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`;
+      + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`
+      + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" title="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">🗑</button>`;
   }
   document.querySelectorAll('.chart-tf-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tf === chartTf));
   const typeSelect = document.getElementById('chartTypeSelect');
@@ -2653,14 +2665,58 @@ function refreshVolumePaneMode() {
   }
 }
 
+// --- CATEGORIZED TOOL FLYOUT ---
+let openToolFlyout = null;
+function toggleToolCategory(key, btn) {
+  if (openToolFlyout && openToolFlyout.dataset.cat === key) { closeToolFlyout(); return; }
+  closeToolFlyout();
+  const tools = CHART_DRAW_TOOLS.filter(t => t.category === key);
+  const flyout = document.createElement('div');
+  flyout.className = 'chart-tool-flyout';
+  flyout.dataset.cat = key;
+  flyout.innerHTML = tools.map(t => `<button class="chart-tool-btn" title="${t.label}" onclick="activateDrawTool('${t.name}'); closeToolFlyout();">${t.icon}</button>`).join('');
+  document.body.appendChild(flyout);
+  const rect = btn.getBoundingClientRect();
+  flyout.style.left = (rect.right + 4) + 'px';
+  flyout.style.top = rect.top + 'px';
+  openToolFlyout = flyout;
+  setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
+}
+function onDocClickCloseFlyout(e) {
+  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('[data-cat]')) closeToolFlyout();
+}
+function closeToolFlyout() {
+  if (openToolFlyout) { openToolFlyout.remove(); openToolFlyout = null; }
+  document.removeEventListener('click', onDocClickCloseFlyout);
+}
+
+// --- DRAWING TOOLS: activate / delete-selected / clear-all ---
+let selectedOverlayId = null;
 function activateDrawTool(name) {
   const chart = ensurePriceChart();
   if (!chart) return;
-  chart.createOverlay(name);
+  chart.createOverlay({
+    name,
+    onSelected: (e) => { selectedOverlayId = (e.overlay || e).id; showBinButton(); },
+    onDeselected: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
+    onRemoved: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
+  });
+}
+
+function showBinButton() { const btn = document.getElementById('chartBinBtn'); if (btn) btn.style.display = 'flex'; }
+function hideBinButton() { const btn = document.getElementById('chartBinBtn'); if (btn) btn.style.display = 'none'; }
+
+function deleteSelectedDrawing() {
+  if (!priceChart || !selectedOverlayId) return;
+  priceChart.removeOverlay({ id: selectedOverlayId });
+  selectedOverlayId = null;
+  hideBinButton();
 }
 
 function clearDrawings() {
   if (priceChart) priceChart.removeOverlay();
+  selectedOverlayId = null;
+  hideBinButton();
 }
 
 // --- VOLUME FOOTPRINT (approx.) ---
