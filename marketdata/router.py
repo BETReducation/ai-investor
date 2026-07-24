@@ -98,6 +98,18 @@ def get_live_tail(symbol: str, interval: str, tz=None) -> "pd.DataFrame | None":
         return None
 
 
+def is_symbol_live(symbol: str) -> bool:
+    """Whether get_live_tail(symbol, ...) would currently serve a genuine live bar
+    for this symbol — i.e. the same condition it already checks, exposed on its own
+    so callers (the /api/prices route) can tell users "this is really live" without
+    misleadingly badging delayed yfinance data as live. Never raises."""
+    try:
+        buf = _buffers.get(symbol)
+        return buf is not None and not buf.is_stale()
+    except Exception:
+        return False
+
+
 def ensure_symbol_watched(symbol: str) -> None:
     """Called after a symbol is added to a watchlist so its stream starts (if a
     covering provider is running) without waiting for the next full restart."""

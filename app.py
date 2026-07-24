@@ -2364,6 +2364,7 @@ def prices():
             "interval": interval,
             "count": len(records),
             "data": records.to_dict(orient="records"),
+            "is_live": marketdata_router.is_symbol_live(symbol),
         })
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

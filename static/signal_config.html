@@ -106,6 +106,17 @@
 .chart-topbar > * { pointer-events: auto; }
 .chart-tf-toggle, .chart-type-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; min-width: 30px; height: 26px; padding: 0 5px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: all 0.15s; }
 .chart-tf-toggle:hover, .chart-type-toggle:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+/* Live-tick badge — only shown when a symbol has a genuine OANDA/Alpaca stream behind
+   it (never for delayed yfinance data, so this can't misleadingly claim "live"). The
+   dot pulses continuously so liveness reads at a glance even when the price itself
+   barely moves; the flash class (added briefly by JS on each real tick) is the part
+   that makes an actual update noticeable regardless of how small the price change is. */
+.chart-live-badge { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--accent-green); font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 1px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: border-color 0.15s, box-shadow 0.15s; }
+.chart-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); animation: chartLiveDotPulse 1.6s ease-in-out infinite; flex-shrink: 0; }
+#chartLiveAge { color: var(--text-muted); font-weight: 400; letter-spacing: 0; }
+@keyframes chartLiveDotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes chartLiveFlash { 0%, 100% { border-color: var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.25); } 50% { border-color: var(--accent-green); box-shadow: 0 0 0 1px var(--accent-green); } }
+.chart-live-badge.flash { animation: chartLiveFlash 0.4s ease; }
 .chart-tf-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 2px; transition: all 0.15s; }
 .chart-tf-btn:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .chart-tf-btn.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
@@ -2283,6 +2294,37 @@ function updateChartOverlay() {
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
 
+// --- LIVE BADGE ---
+// Shown only when the server reports this symbol is genuinely streaming from
+// OANDA/Alpaca (data.is_live) — never shown for delayed yfinance data, so it can't
+// misleadingly claim "live" when it isn't. The flash class makes each real tick
+// noticeable even when the price barely moves (see the "chart still looks frozen"
+// investigation this session: the data was live, but a $1 move on an $800-range
+// daily chart is visually imperceptible — this badge is the fix for that, not a
+// data fix).
+let lastLiveTickAt = null;
+
+function updateLiveBadge(isLive) {
+  const badge = document.getElementById('chartLiveBadge');
+  if (!badge) return;
+  if (!isLive) { lastLiveTickAt = null; badge.style.display = 'none'; return; }
+  lastLiveTickAt = Date.now();
+  badge.style.display = 'flex';
+  badge.classList.remove('flash');
+  void badge.offsetWidth; // restart the flash animation even if it's already mid-run
+  badge.classList.add('flash');
+  updateLiveBadgeAge();
+}
+
+function updateLiveBadgeAge() {
+  const ageEl = document.getElementById('chartLiveAge');
+  if (!ageEl || lastLiveTickAt === null) return;
+  const secs = Math.max(0, Math.round((Date.now() - lastLiveTickAt) / 1000));
+  ageEl.textContent = secs < 1 ? 'now' : `${secs}s ago`;
+}
+
+setInterval(updateLiveBadgeAge, 1000);
+
 // updateChartOverlay() above only ever touched the price/change text next to the
 // chart — the candlestick data itself (currentChartBars/priceChart) was loaded once
 // in loadPriceChart() and never revisited, so the chart looked frozen between symbol
@@ -2297,6 +2339,7 @@ async function refreshLiveChartBar() {
   const { period, interval } = intervalMap[chartTf] || { period: '5d', interval: '1d' };
   try {
     const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+    updateLiveBadge(!!data.is_live);
     const rows = data.data || [];
     if (!rows.length) return;
     const r = rows[rows.length - 1];
@@ -2828,7 +2871,7 @@ function updateRiskBar() {
 // had just computed on (different vendor, different adjustments), which was confusing,
 // and the iframe itself was a frequent casualty of ad/privacy browser extensions.
 let priceChart = null;
-let chartTf = '1d';
+let chartTf = '5m';
 let lastChartSym = null;
 let chartLoadSeq = 0;
 let currentChartBars = []; // rows of the currently-loaded chart, {timestamp,open,high,low,close,volume} — used by the volume-profile/VWAP tools to compute values beyond the chart's own click points
@@ -2888,10 +2931,20 @@ const CHART_TOOL_CATEGORIES = [
 
 function initChart() {
   // Deliberately NOT seeded from #timeframe — that dropdown controls the strategy
-  // engine's own polling interval (defaults to 5m), which made a freshly opened chart
-  // show only ~5 days of 5-minute bars. The chart's timeframe is a fully separate,
-  // user-controlled concern (the topbar buttons), so it gets its own sane default.
-  chartTf = '1d';
+  // engine's own polling interval, a fully separate, user-controlled concern (the
+  // topbar buttons) from the chart's own default.
+  //
+  // '5m' rather than '1d': on a daily view, a live tick moving the price by $1-3 is
+  // a fraction of a pixel against a chart spanning months of history — genuinely
+  // imperceptible even though the data really is live (confirmed directly against a
+  // real OANDA stream). '5m' still pulls a generous lookback (CHART_HISTORY_PERIOD's
+  // '60d', ~4600 bars — this does NOT reintroduce the sparse-view problem the old
+  // comment above guarded against, which was specifically about accidentally reusing
+  // the *trading* timeframe dropdown's own conservative period, not about '5m' being
+  // a bad interval choice) while making tick-scale moves an actually-visible fraction
+  // of the bar's own range. Users can still switch to 1D (or anything else) manually
+  // via the existing timeframe toggle.
+  chartTf = '5m';
   renderChartToolbars();
   if (currentAsset) loadPriceChart(currentAsset);
   else showChartPlaceholder();
@@ -2962,6 +3015,9 @@ function renderChartToolbars() {
     topbar.dataset.built = '1';
     topbar.innerHTML = `
       <button class="chart-tf-toggle" id="chartTfToggle" title="Timeframe" onclick="toggleTimeframeFlyout(this)"></button>
+      <div class="chart-live-badge" id="chartLiveBadge" style="display:none;" title="Streaming live from OANDA/Alpaca, not delayed yfinance data">
+        <span class="chart-live-dot"></span>LIVE <span id="chartLiveAge"></span>
+      </div>
       <button class="chart-type-toggle" id="chartTypeToggle"
         title="Chart type — Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data."
         onclick="toggleChartTypeFlyout(this)"></button>`;
@@ -3443,6 +3499,7 @@ async function loadPriceChart(sym) {
   if (!yfSym) { showChartPlaceholder(); return; }
   lastChartSym = sym;
   renderChartToolbars();
+  updateLiveBadge(false); // unknown until this symbol's own fetch resolves below
 
   const chart = ensurePriceChart();
   const container = document.getElementById('tvChart');
@@ -3467,6 +3524,7 @@ async function loadPriceChart(sym) {
     try {
       const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
       if (seq !== chartLoadSeq) return; // a newer load superseded this one
+      updateLiveBadge(!!data.is_live);
       const rows = (data.data || []).map(r => ({
         timestamp: new Date(r.date).getTime(),
         open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
