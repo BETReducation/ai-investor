@@ -952,7 +952,13 @@ section.alt-bg { background: var(--bg2); }
         <li><a href="/alpha/podcast">Podcast</a></li>
       </ul>
     </li>
-    <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+    <li class="has-dropdown" id="navStudioLi" style="display:none;">
+      <a href="#" onclick="return false;">Studio <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/studio">Alpha Studio</a></li>
+        <li><a href="/social-post-studio">Social Post Studio</a></li>
+      </ul>
+    </li>
     <li><a href="/partners">Partners</a></li>
     <li><a href="/sitemap">Site Map</a></li>
   </ul>
@@ -1390,7 +1396,7 @@ statNums.forEach(el => statsIO.observe(el));
           signIn.style.borderColor = 'var(--green)';
         }
         if (data.alpha_role) {
-          const studioLink = document.getElementById('navStudioLink');
+          const studioLink = document.getElementById('navStudioLi');
           if (studioLink) studioLink.style.display = '';
         }
       }
