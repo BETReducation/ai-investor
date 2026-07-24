@@ -253,7 +253,7 @@ const MODES = [
 
 let tone = "Friendly";
 let mode = "auto";
-let selected = new Set(Object.keys(PLATFORMS));
+let selected = new Set();
 let results = {};       // platform -> {title, body, cta, hashtags, image_prompt}
 let loading = {};       // platform -> bool (auto mode only)
 let prompts = {};       // platform -> prompt text (manual mode)
@@ -276,7 +276,7 @@ TONES.forEach(t => {
 const channelRow = document.getElementById("channelRow");
 Object.entries(PLATFORMS).forEach(([key, p]) => {
   const b = document.createElement("button");
-  b.className = "chan-chip on";
+  b.className = "chan-chip" + (selected.has(key) ? " on" : "");
   b.innerHTML = `<span class="dot" style="background:${p.dot}"></span>${p.label}`;
   b.onclick = () => {
     if (selected.has(key)) selected.delete(key); else selected.add(key);
