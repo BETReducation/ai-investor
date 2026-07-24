@@ -1272,6 +1272,17 @@ def _fetch_synthetic_metal_ohlcv(
     fx_close = fx_df["Close"].reindex(usd_df.index, method="ffill").bfill()
     if fx_close.isna().any():
         raise ValueError(f"No FX rate available to convert {metal} into {currency}")
+    # For daily-or-coarser intervals specifically, ffill silently goes stale on the
+    # trailing (today's still-forming) bar: Yahoo labels GC=F's daily bars at US-Eastern
+    # midnight and USD<ccy>=X's at Europe/London midnight, several hours apart — so right
+    # now, FX's own latest bar is labeled "tomorrow" relative to the futures bar even
+    # though both sessions are live at this instant, and ffill (correctly, by its own
+    # rules) refuses to use a "future" row and falls back a full day. Confirmed live:
+    # this drifted XAUGBP off the true rate by ~13pts/0.4%, permanently, until the next
+    # calendar rollover masked it again. Overriding just the trailing bar with fx_df's
+    # own raw latest close sidesteps the label mismatch entirely; it's a no-op for
+    # intraday intervals, where both legs already share real, closely-timestamped bars.
+    fx_close.iloc[-1] = fx_df["Close"].iloc[-1]
     converted = usd_df.copy()
     for col in ("Open", "High", "Low", "Close"):
         converted[col] = converted[col] * fx_close
