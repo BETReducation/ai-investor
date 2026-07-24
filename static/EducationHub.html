@@ -265,7 +265,13 @@ nav {
           <li><a href="/alpha/podcast">Podcast</a></li>
         </ul>
       </li>
-      <li><a href="/alpha/studio" id="navStudioLink" style="display:none;">Studio</a></li>
+      <li class="has-dropdown" id="navStudioLi" style="display:none;">
+      <a href="#" onclick="return false;">Studio <span class="nav-chevron">▾</span></a>
+      <ul class="nav-dropdown">
+        <li><a href="/alpha/studio">Alpha Studio</a></li>
+        <li><a href="/social-post-studio">Social Post Studio</a></li>
+      </ul>
+    </li>
       <li><a href="/partners">Partners</a></li>
       <li><a href="/sitemap">Site Map</a></li>
     </ul>
@@ -415,7 +421,7 @@ window.addEventListener('resize', () => { resize(); initParticles(); });
         const signIn = document.getElementById('navSignIn');
         if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
         if (data.alpha_role) {
-          const studioLink = document.getElementById('navStudioLink');
+          const studioLink = document.getElementById('navStudioLi');
           if (studioLink) studioLink.style.display = '';
         }
       }
