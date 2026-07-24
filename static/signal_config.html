@@ -95,6 +95,8 @@
 .signal-toast.sell { border-left: 3px solid var(--signal-sell); }
 .signal-toast.warn { border-left: 3px solid var(--accent-amber); }
 .signal-toast-type.warn { color: var(--accent-amber); }
+.signal-toast.price { border-left: 3px solid var(--accent-blue); }
+.signal-toast-type.price { color: var(--accent-blue); }
 .qs-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 3px; cursor: pointer; transition: all 0.15s; }
 .qs-chip:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .tv-loading-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--bg-secondary); }
@@ -102,13 +104,18 @@
 /* PRICE CHART — own chart toolbar (timeframe + chart type) and side drawing toolbar */
 .chart-topbar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
 .chart-topbar > * { pointer-events: auto; }
-.chart-tf-group { display: flex; flex-wrap: wrap; gap: 2px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 2px 10px rgba(0,0,0,0.25); max-width: 60%; }
+.chart-tf-toggle, .chart-type-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; min-width: 30px; height: 26px; padding: 0 5px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: all 0.15s; }
+.chart-tf-toggle:hover, .chart-type-toggle:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
 .chart-tf-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 4px 8px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 2px; transition: all 0.15s; }
 .chart-tf-btn:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .chart-tf-btn.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
-.chart-type-select { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; padding: 5px 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
-.chart-type-select:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
-.chart-type-select option:disabled { color: var(--text-muted); }
+.chart-tool-flyout.chart-tf-flyout { flex-direction: row; flex-wrap: wrap; max-width: 168px; }
+.chart-tool-flyout.chart-type-flyout { min-width: 168px; }
+.chart-type-opt { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.5px; text-align: left; padding: 5px 8px; background: transparent; border: none; border-radius: 2px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+.chart-type-opt:hover { color: var(--accent-blue); background: rgba(0,136,255,0.08); }
+.chart-type-opt.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
+.chart-type-opt:disabled { color: var(--text-muted); cursor: not-allowed; }
+.chart-type-opt:disabled:hover { background: transparent; }
 .chart-sidebar { position: absolute; top: 44px; left: 8px; bottom: 8px; z-index: 6; display: flex; flex-direction: column; gap: 3px; }
 .chart-tool-btn { width: 26px; height: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; border-radius: 3px; transition: all 0.15s; }
 .chart-tool-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.08); }
@@ -119,6 +126,13 @@
 .chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-tool-btn[data-cat] { color: var(--text-secondary); }
 .chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+/* Price-alert bell — scoped here (not gca.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
+.stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
+.stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
+.stat-cell-action span { position: absolute; top: -3px; right: -3px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: var(--accent-amber); color: #000; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.price-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 2px; padding: 6px 10px; }
+.price-alert-row .pa-remove { flex-shrink: 0; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; padding: 2px 4px; }
+.price-alert-row .pa-remove:hover { color: var(--accent-red); }
 .signal-toast.closing { animation: signalToastOut 0.25s ease forwards; }
 @keyframes flashError { 0%, 100% { border-color: var(--border); } 50% { border-color: var(--signal-sell); box-shadow: 0 0 0 1px var(--signal-sell); } }
 .flash-error > div { animation: flashError 0.5s ease 2; }
@@ -357,44 +371,64 @@ window.addEventListener('resize', () => {
       <div class="control-row">
         <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
         <div class="input-group">
-          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px">
+          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
         </div>
       </div>
       <div class="toggle-row">
-        <div class="toggle-label">Position Size in <span id="posSizeGbpToggleSym">£</span></div>
-        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        <div class="toggle-label">Position Size in Currency</div>
+        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked); syncFixedTargetsFromPositionValue()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
       <div class="range-row" id="posSizePctRow">
         <div class="range-header">
           <div class="control-label">Position Size</div>
           <div class="range-value" id="posSizeVal">20%</div>
         </div>
-        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'">
+        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'; syncFixedTargetsFromPositionValue()">
       </div>
       <div class="control-row" id="posSizeGbpRow" style="display:none;">
         <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
         <div class="input-group">
-          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px">
+          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
         </div>
       </div>
-      <div class="range-row">
+      <div class="toggle-row">
+        <div class="toggle-label">Target Gain in Currency</div>
+        <label class="toggle"><input type="checkbox" id="targetGainCcyMode" onchange="onToggleTargetGainMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="targetGainPctRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Target Gain <span>(per trade)</span></div>
           <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="200.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
         </div>
         <input type="range" id="targetGain" min="1" max="4000" step="1" value="200" oninput="onPctSliderInput('targetGain','targetVal')">
       </div>
+      <div class="control-row" id="targetGainCcyRow" style="display:none;">
+        <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()">
+        </div>
+      </div>
       <div class="sep"></div>
       <div class="toggle-row">
         <div class="toggle-label">Fixed Stop-Loss</div>
         <label class="toggle"><input type="checkbox" id="fixedSL" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
-      <div class="range-row" id="fixedSLRow">
+      <div class="toggle-row">
+        <div class="toggle-label">Stop-Loss in Currency</div>
+        <label class="toggle"><input type="checkbox" id="stopLossCcyMode" onchange="onToggleStopLossMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="stopLossPctRow">
         <div class="range-header">
           <div class="control-label" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop-Loss %</div>
           <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="100.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
         </div>
         <input type="range" id="stopLoss" min="1" max="4000" step="1" value="100" oninput="onPctSliderInput('stopLoss','slVal')">
+      </div>
+      <div class="control-row" id="stopLossCcyRow" style="display:none;">
+        <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()">
+        </div>
       </div>
       <div class="toggle-row">
         <div class="toggle-label">Trailing Stop-Loss</div>
@@ -557,7 +591,8 @@ window.addEventListener('resize', () => {
         <div class="stat-value" id="statTrades">0</div>
         <div class="stat-sub" id="statWinRate">—% win rate</div>
       </div>
-      <div class="stat-cell">
+      <div class="stat-cell" style="position:relative;">
+        <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
         <div class="stat-label">STRATEGY TARGET</div>
         <div class="stat-value tag-amber" id="statTarget">£0.00</div>
         <div class="stat-sub" id="statProgress">0% progress</div>
@@ -679,6 +714,36 @@ window.addEventListener('resize', () => {
   </div>
 </div>
 
+<!-- PRICE ALERTS MODAL -->
+<div class="modal-overlay" id="priceAlertsModal" style="display:none;" onclick="if(event.target===this)closePriceAlertsModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">PRICE ALERTS <span id="priceAlertsModalSym" style="color:var(--text-muted);font-weight:400;"></span></div>
+      <button class="modal-close" onclick="closePriceAlertsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
+        Alerts are per chart — set one for the symbol you're currently viewing. You'll get a popup + log entry when the price crosses your target; they keep checking even while the strategy engine isn't running.
+      </div>
+      <div id="priceAlertsList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <div style="flex:1;">
+          <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:3px;">DIRECTION</div>
+          <select id="paDirection" style="width:100%;">
+            <option value="above">Price rises above</option>
+            <option value="below">Price falls below</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:3px;">PRICE</div>
+          <input type="number" id="paPrice" step="0.01" min="0" style="width:100%;" placeholder="0.00">
+        </div>
+        <button class="btn-confirm" style="flex-shrink:0;" onclick="addPriceAlert()">ADD</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // GROWTH CAPITAL ACADEMY — STRATEGY LAB (Live API Mode)
@@ -695,8 +760,10 @@ const intervalMap = {
   '1m':  { period: '1d',  interval: '1m'  },
   '2m':  { period: '5d',  interval: '2m'  },
   '5m':  { period: '5d',  interval: '5m'  },
+  '10m': { period: '60d', interval: '10m' },
   '15m': { period: '1mo', interval: '15m' },
   '30m': { period: '1mo', interval: '30m' },
+  '45m': { period: '60d', interval: '45m' },
   '60m': { period: '3mo', interval: '60m' },
   '90m': { period: '1mo', interval: '90m' },
   '1h':  { period: '3mo', interval: '1h'  },
@@ -707,6 +774,8 @@ const intervalMap = {
   '1wk': { period: '2y',  interval: '1wk' },
   '1mo': { period: '5y',  interval: '1mo' },
   '3mo': { period: 'max', interval: '3mo' },
+  '6mo': { period: 'max', interval: '6mo' },
+  '1y':  { period: 'max', interval: '1y'  },
 };
 
 // --- STATE ---
@@ -714,6 +783,7 @@ let currentUser = null;
 let dashboardInitialized = false;
 let engineRunning = false;
 let pollTimer = null;
+let livePriceTimer = null;
 let currentAsset = null;
 let currentView = 'price';
 let pendingTrade = null;
@@ -1181,6 +1251,7 @@ function init() {
   renderStrategyDropdown();
   renderConditions();
   fetchSignals(currentAsset).then(() => updateStrategyStatus()).catch(() => {});
+  startLivePricePolling();
 }
 
 
@@ -2035,12 +2106,14 @@ async function startEngine() {
   addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
   addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: 30s`);
 
-  await fetchAllAssets();
+  await fetchAllAssets(); // fresh prices right away, don't wait for the next livePriceTimer tick
   await scanSignals();
 
+  // Prices are already kept live by the always-on livePriceTimer (started from
+  // init(), runs regardless of engine state) — this only needs to re-run the signal
+  // scan itself every 30s, not re-fetch prices too.
   pollTimer = setInterval(async () => {
     if (!engineRunning) return;
-    await fetchAllAssets();
     await scanSignals();
   }, 30000);
 }
@@ -2127,19 +2200,30 @@ async function fetchSignals(sym) {
 
 // --- FETCH ALL ASSETS ---
 async function fetchAllAssets() {
-  setDataStatus('loading');
-  let anyError = false;
-  const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
-  await Promise.all(active.map(async sym => {
-    try { await fetchPrices(sym); }
-    catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
-  }));
-  updateTicker();
-  updateWatchlist();
-  updateChartOverlay();
-  updatePositions();
-  updateStats();
-  setDataStatus(anyError ? 'error' : 'live');
+  // At the 5s polling interval, a slow/throttled Yahoo response can take longer than
+  // the interval itself — without this guard, ticks would stack up into a burst of
+  // overlapping requests the moment one response arrived late, making any rate-limiting
+  // worse instead of better.
+  if (fetchInFlight) return;
+  fetchInFlight = true;
+  try {
+    setDataStatus('loading');
+    let anyError = false;
+    const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
+    await Promise.all(active.map(async sym => {
+      try { await fetchPrices(sym); }
+      catch (e) { anyError = true; addLog('err', 'API', `Price fetch failed ${sym}: ${e.message}`); }
+    }));
+    updateTicker();
+    updateWatchlist();
+    updateChartOverlay();
+    await refreshLiveChartBar();
+    updatePositions();
+    updateStats();
+    setDataStatus(anyError ? 'error' : 'live');
+  } finally {
+    fetchInFlight = false;
+  }
 }
 
 // --- SCAN SIGNALS ---
@@ -2199,6 +2283,39 @@ function updateChartOverlay() {
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
 
+// updateChartOverlay() above only ever touched the price/change text next to the
+// chart — the candlestick data itself (currentChartBars/priceChart) was loaded once
+// in loadPriceChart() and never revisited, so the chart looked frozen between symbol
+// switches even though the watchlist price was ticking every 30s via livePriceTimer.
+// This pulls just the latest bar for whatever's on-screen and merges/appends it into
+// the existing series, same cadence as fetchAllAssets, without refetching full history
+// or showing the loading overlay.
+async function refreshLiveChartBar() {
+  if (!priceChart || !lastChartSym || !currentChartBars.length) return;
+  const yfSym = symbolMap[lastChartSym];
+  if (!yfSym) return;
+  const { period, interval } = intervalMap[chartTf] || { period: '5d', interval: '1d' };
+  try {
+    const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+    const rows = data.data || [];
+    if (!rows.length) return;
+    const r = rows[rows.length - 1];
+    const bar = {
+      timestamp: new Date(r.date).getTime(),
+      open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
+    };
+    if (!Number.isFinite(bar.timestamp) || !Number.isFinite(bar.close)) return;
+    const lastLoaded = currentChartBars[currentChartBars.length - 1];
+    if (bar.timestamp === lastLoaded.timestamp) currentChartBars[currentChartBars.length - 1] = bar;
+    else if (bar.timestamp > lastLoaded.timestamp) currentChartBars.push(bar);
+    else return; // stale/out-of-order response, ignore
+
+    priceChart.updateData(bar);
+    _volProfileCache.clear();
+    _vwapCache.clear();
+  } catch (e) { /* transient — the next livePriceTimer tick retries */ }
+}
+
 // --- FIRE ALERT ---
 function fireAlert(sym, sig) {
   if (alerts.find(a => a.sym === sym && a.type === sig.type && !a.dismissed)) return;
@@ -2253,6 +2370,79 @@ function playAlertTone(type) {
   } catch (e) {}
 }
 
+// Price alerts get their own, more distinct tone ("Nova Hook") rather than the
+// generic BUY/SELL beep above — a 5-note melodic line over a soft pad swell,
+// resolving into a held, shimmering note. Picked from a set of previewed options.
+// Same approach as playAlertTone: pure oscillators/filters, no audio files.
+function playPriceAlertTone() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const t0 = ctx.currentTime;
+
+    const trim = ctx.createGain();
+    trim.gain.value = 0.5;
+    trim.connect(ctx.destination);
+
+    // Shimmer send — short feedback delay the closing note routes into for a tail.
+    const delay = ctx.createDelay();
+    delay.delayTime.value = 0.24;
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.38;
+    const delayFilter = ctx.createBiquadFilter();
+    delayFilter.type = 'lowpass';
+    delayFilter.frequency.value = 3000;
+    delay.connect(delayFilter);
+    delayFilter.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(trim);
+
+    const note = (dest, freq, start, dur, type, peak) => {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.value = freq;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(start);
+      osc.stop(start + dur + 0.05);
+    };
+
+    // Soft pad swell underneath (A3)
+    const pad = ctx.createOscillator();
+    pad.type = 'sine';
+    pad.frequency.value = 220.0;
+    const padGain = ctx.createGain();
+    padGain.gain.setValueAtTime(0.0001, t0);
+    padGain.gain.exponentialRampToValueAtTime(0.09, t0 + 0.84);
+    padGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.4);
+    pad.connect(padGain);
+    padGain.connect(trim);
+    pad.start(t0);
+    pad.stop(t0 + 2.5);
+
+    // 5-note hook: C#5 E5 F#5 E5 → A5 held
+    const hook = [
+      { f: 554.37, s: 0.00, d: 0.20 },
+      { f: 659.25, s: 0.20, d: 0.20 },
+      { f: 739.99, s: 0.40, d: 0.20 },
+      { f: 659.25, s: 0.60, d: 0.20 },
+      { f: 880.00, s: 0.85, d: 1.10 },
+    ];
+    hook.forEach((n, i) => {
+      const isLast = i === hook.length - 1;
+      note(trim, n.f, t0 + n.s, n.d, 'triangle', isLast ? 0.5 : 0.42);
+      if (isLast) note(delay, n.f, t0 + n.s, n.d * 0.6, 'sine', 0.3);
+    });
+
+    setTimeout(() => ctx.close(), 2600); // after the pad's tail (longest-lived node) finishes
+  } catch (e) {}
+}
+
 function showEngineWarning(title, body) {
   const stack = document.getElementById('signalToastStack');
   if (!stack) return;
@@ -2289,6 +2479,164 @@ function showSignalToast(a) {
     el.classList.add('closing');
     setTimeout(() => el.remove(), 260);
   }, 6000);
+}
+
+// --- PRICE ALERTS ---
+// Independent of the strategy engine's condition-based alerts above (`alerts`/
+// `fireAlert`) — these are simple per-symbol price-target triggers, customisable per
+// chart. Reuses the same toast/log notification pattern as fireAlert/showSignalToast.
+let priceAlerts = {}; // { [sym]: [{id, price, direction:'above'|'below', active, createdAt}] }
+let priceAlertPollTimer = null;
+
+function openPriceAlertsModal() {
+  if (!currentAsset) { addLog('warn', 'ALERT', 'Select a symbol on the chart before setting a price alert.'); return; }
+  document.getElementById('priceAlertsModalSym').textContent = `— ${currentAsset}`;
+  document.getElementById('paPrice').value = '';
+  renderPriceAlertsList();
+  document.getElementById('priceAlertsModal').style.display = 'flex';
+}
+function closePriceAlertsModal() {
+  document.getElementById('priceAlertsModal').style.display = 'none';
+}
+
+function renderPriceAlertsList() {
+  const list = document.getElementById('priceAlertsList');
+  if (!list) return;
+  const symAlerts = (priceAlerts[currentAsset] || []).filter(a => a.active);
+  if (symAlerts.length === 0) {
+    list.innerHTML = `<div style="font-size:9px;color:var(--text-muted);">No active alerts for ${currentAsset || 'this symbol'} yet.</div>`;
+  } else {
+    list.innerHTML = symAlerts.map(a => `
+      <div class="price-alert-row">
+        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${getCurrencySymbol()}${formatPrice(a.price, currentAsset)}</span>
+        <button class="pa-remove" title="Remove" onclick="removePriceAlert('${currentAsset}', '${a.id}')">✕</button>
+      </div>`).join('');
+  }
+  updatePriceAlertBadge();
+}
+
+function addPriceAlert() {
+  if (!currentAsset) return;
+  const price = parseFloat(document.getElementById('paPrice').value);
+  const direction = document.getElementById('paDirection').value;
+  if (!isFinite(price) || price <= 0) { addLog('warn', 'ALERT', 'Enter a valid price for the alert.'); return; }
+  if (!priceAlerts[currentAsset]) priceAlerts[currentAsset] = [];
+  priceAlerts[currentAsset].push({ id: 'pa_' + Date.now() + '_' + Math.floor(Math.random() * 1000), price, direction, active: true, createdAt: Date.now() });
+  document.getElementById('paPrice').value = '';
+  renderPriceAlertsList();
+  startPriceAlertPolling();
+  addLog('info', 'ALERT', `Price alert set: ${currentAsset} ${direction} ${getCurrencySymbol()}${price}`);
+}
+
+function removePriceAlert(sym, id) {
+  if (!priceAlerts[sym]) return;
+  priceAlerts[sym] = priceAlerts[sym].filter(a => a.id !== id);
+  if (priceAlerts[sym].length === 0) delete priceAlerts[sym];
+  renderPriceAlertsList();
+  if (Object.keys(priceAlerts).length === 0) stopPriceAlertPolling();
+}
+
+function updatePriceAlertBadge() {
+  const badge = document.getElementById('priceAlertBadge');
+  if (!badge) return;
+  const count = Object.values(priceAlerts).reduce((n, arr) => n + arr.filter(a => a.active).length, 0);
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  badge.textContent = count > 9 ? '9+' : String(count);
+}
+
+// Watchlist prices/chart-overlay/stats used to only ever refresh when the strategy
+// engine was actively running (fetchAllAssets lived inside startEngine's own 30s
+// pollTimer) — so with the engine idle, which is the page's default state, everything
+// looked frozen: prices only ever fetched once, on first select. This is an
+// independent, always-on poll (started once from init(), unrelated to engineRunning)
+// that keeps prices live regardless — same pattern as portfolio-balancer.html's
+// loadLivePrices/refreshTimer. Runs alongside pollTimer rather than replacing it:
+// pollTimer's tick was simplified to just scanSignals() so the two don't double-fetch
+// prices every 30s while the engine happens to also be running.
+// 5s (down from 30s) so the selected chart/watchlist feels closer to live — yfinance's
+// own data doesn't truly change every second, but this is as fast as the app can safely
+// poll it without risking Yahoo's rate limiting (which would take down the watchlist and
+// engine along with the chart). The fetchInFlight guard keeps a slow/stalled response
+// from piling up overlapping calls at this shorter interval.
+let fetchInFlight = false;
+function startLivePricePolling() {
+  if (livePriceTimer) return;
+  livePriceTimer = setInterval(fetchAllAssets, 5000);
+  fetchAllAssets();
+}
+
+function startPriceAlertPolling() {
+  if (priceAlertPollTimer) return;
+  priceAlertPollTimer = setInterval(evaluatePriceAlerts, 30000);
+  evaluatePriceAlerts();
+}
+function stopPriceAlertPolling() {
+  if (priceAlertPollTimer) { clearInterval(priceAlertPollTimer); priceAlertPollTimer = null; }
+}
+
+async function evaluatePriceAlerts() {
+  const syms = Object.keys(priceAlerts).filter(sym => (priceAlerts[sym] || []).some(a => a.active));
+  let anyFired = false;
+  for (const sym of syms) {
+    try {
+      await fetchPrices(sym);
+    } catch (e) {
+      addLog('err', 'ALERT', `Price check failed for ${sym}: ${e.message}`);
+      continue;
+    }
+    const price = assets[sym] && assets[sym].price;
+    if (!price) continue;
+    for (const a of priceAlerts[sym]) {
+      if (!a.active) continue;
+      const crossed = a.direction === 'above' ? price >= a.price : price <= a.price;
+      if (!crossed) continue;
+      a.active = false;
+      anyFired = true;
+      showPriceAlertToast(sym, a, price);
+      addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${getCurrencySymbol()}${a.price} (now ${getCurrencySymbol()}${formatPrice(price, sym)})`);
+    }
+  }
+  updatePriceAlertBadge();
+  if (currentAsset) renderPriceAlertsList();
+  if (anyFired && currentUser) savePriceAlertsQuietly();
+}
+
+// A silent variant of savePreferences() for the background poll — that function
+// visibly disables/relabels the user's "SAVE" button (SAVING…/✓ SAVED), which would
+// flicker confusingly if triggered by a 30s background tick the user never asked for.
+// The backend does an unvalidated shallow merge of whatever's posted onto existing
+// preferences (app.py's /api/save-preferences), so posting just this one field is safe.
+async function savePriceAlertsQuietly() {
+  try {
+    await fetch(API_BASE + '/api/save-preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ priceAlerts: JSON.parse(JSON.stringify(priceAlerts)) }),
+    });
+  } catch (e) {
+    addLog('err', 'ALERT', 'Failed to persist alert state: ' + e.message);
+  }
+}
+
+function showPriceAlertToast(sym, alertObj, currentPrice) {
+  const stack = document.getElementById('signalToastStack');
+  if (!stack) return;
+  if (notificationSettings && notificationSettings.sound_enabled) playPriceAlertTone();
+  if (!(notificationSettings && notificationSettings.popup_enabled === false)) {
+    const el = document.createElement('div');
+    el.className = 'signal-toast price';
+    el.innerHTML = `
+      <div class="signal-toast-hdr">
+        <span class="signal-toast-type price">PRICE ALERT</span>
+        <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
+      </div>
+      <div class="signal-toast-body">
+        <span class="signal-toast-asset">${sym}</span> crossed ${alertObj.direction} ${getCurrencySymbol()}${formatPrice(alertObj.price, sym)} — now ${getCurrencySymbol()}${formatPrice(currentPrice, sym)}
+      </div>`;
+    stack.appendChild(el);
+    setTimeout(() => { el.classList.add('closing'); setTimeout(() => el.remove(), 260); }, 8000);
+  }
 }
 
 // --- RENDER ALERTS ---
@@ -2487,10 +2835,10 @@ let currentChartBars = []; // rows of the currently-loaded chart, {timestamp,ope
 let chartType = 'candle_solid'; // one of the <select> values in the topbar: candle_solid/candle_stroke/area/session_volume_profile/volume_footprint
 
 // Curated subset of intervalMap's keys — the ones that make sense as chart timeframes.
-const CHART_TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1wk', '1mo', '3mo'];
+const CHART_TIMEFRAMES = ['1m', '5m', '10m', '15m', '30m', '45m', '1h', '2h', '4h', '1d', '1wk', '1mo', '3mo', '6mo', '1y'];
 const CHART_TF_LABELS = {
-  '1m': '1M', '5m': '5M', '15m': '15M', '30m': '30M', '1h': '1H', '2h': '2H', '4h': '4H',
-  '1d': '1D', '1wk': '1W', '1mo': '1MO', '3mo': '3MO',
+  '1m': '1M', '5m': '5M', '10m': '10M', '15m': '15M', '30m': '30M', '45m': '45M', '1h': '1H', '2h': '2H', '4h': '4H',
+  '1d': '1D', '1wk': '1W', '1mo': '1MO', '3mo': '3MO', '6mo': '6MO', '1y': '1Y',
 };
 
 // The chart wants as much history as Yahoo will actually give for each interval —
@@ -2499,14 +2847,16 @@ const CHART_TF_LABELS = {
 // poll for every symbol would be wasteful). Verified live against yfinance:
 //  - 1m: an explicit period like '1mo' errors outright (Yahoo rejects it); 'max' is the
 //    only value that works, and it self-caps to ~8 days.
-//  - 2m/5m/15m/30m/90m: explicit '60d' actually returns MORE than 'max' does (a real
-//    yfinance/Yahoo quirk — 'max' under-resolves for these intervals).
+//  - 2m/5m/15m/30m/90m (and the resampled 10m/45m, built from 5m/15m): explicit '60d'
+//    actually returns MORE than 'max' does (a real yfinance/Yahoo quirk — 'max'
+//    under-resolves for these intervals).
 //  - 60m/1h and the resampled 2h/4h: 'max' == '2y', both hit the real 730-day cap.
-//  - 1d and coarser: 'max' gives full company history.
+//  - 1d and coarser (including the resampled 6mo/1y, built from 1mo): 'max' gives full
+//    company history.
 const CHART_HISTORY_PERIOD = {
-  '1m': 'max', '2m': '60d', '5m': '60d', '15m': '60d', '30m': '60d', '90m': '60d',
+  '1m': 'max', '2m': '60d', '5m': '60d', '10m': '60d', '15m': '60d', '30m': '60d', '45m': '60d', '90m': '60d',
   '60m': 'max', '1h': 'max', '2h': 'max', '4h': 'max',
-  '1d': 'max', '5d': 'max', '1wk': 'max', '1mo': 'max', '3mo': 'max',
+  '1d': 'max', '5d': 'max', '1wk': 'max', '1mo': 'max', '3mo': 'max', '6mo': 'max', '1y': 'max',
 };
 
 // klinecharts' built-in overlay templates — a TradingView-style side drawing toolbar.
@@ -2571,19 +2921,23 @@ function applyChartTheme() {
   const up = cssVar('--accent-green', '#00ff88');
   const down = cssVar('--accent-red', '#ff3355');
   const tipBg = dark ? '#0d1117' : '#eef0f5';
+  // Match the rest of the page — every panel/label/button on this tool is
+  // 'IBM Plex Mono' (see the body{} rule in gca.css); klinecharts defaults to
+  // 'Helvetica Neue' for every text style below unless overridden here.
+  const family = "'IBM Plex Mono', monospace";
   priceChart.setStyles({
     grid: { horizontal: { color: grid }, vertical: { color: grid } },
     candle: {
       bar: { upColor: up, downColor: down, noChangeColor: text, upBorderColor: up, downBorderColor: down, upWickColor: up, downWickColor: down },
-      priceMark: { last: { upColor: up, downColor: down } },
-      tooltip: { text: { color: text } },
+      priceMark: { last: { upColor: up, downColor: down, text: { family } } },
+      tooltip: { text: { color: text, family } },
     },
-    indicator: { tooltip: { text: { color: text } } },
-    xAxis: { axisLine: { color: grid }, tickText: { color: text } },
-    yAxis: { axisLine: { color: grid }, tickText: { color: text } },
+    indicator: { tooltip: { text: { color: text, family } } },
+    xAxis: { axisLine: { color: grid }, tickText: { color: text, family } },
+    yAxis: { axisLine: { color: grid }, tickText: { color: text, family } },
     crosshair: {
-      horizontal: { text: { backgroundColor: tipBg, color: text } },
-      vertical: { text: { backgroundColor: tipBg, color: text } },
+      horizontal: { text: { backgroundColor: tipBg, color: text, family } },
+      vertical: { text: { backgroundColor: tipBg, color: text, family } },
     },
   });
 }
@@ -2593,13 +2947,13 @@ function applyChartTheme() {
 // to users. "session_volume_profile" also only makes sense on intraday timeframes
 // (a "session" = one trading day), so it's disabled in the dropdown otherwise.
 const CHART_TYPE_OPTIONS = [
-  { value: 'candle_solid',           label: 'Candlestick' },
-  { value: 'candle_stroke',          label: 'Hollow Candles' },
-  { value: 'area',                   label: 'Area / Line' },
-  { value: 'session_volume_profile', label: 'Session Volume Profile' },
-  { value: 'volume_footprint',       label: 'Volume Footprint (approx.)' },
+  { value: 'candle_solid',           label: 'Candlestick',                short: 'CS'  },
+  { value: 'candle_stroke',          label: 'Hollow Candles',              short: 'HC'  },
+  { value: 'area',                   label: 'Area / Line',                 short: 'AR'  },
+  { value: 'session_volume_profile', label: 'Session Volume Profile',      short: 'SVP' },
+  { value: 'volume_footprint',       label: 'Volume Footprint (approx.)',  short: 'VFP' },
 ];
-const INTRADAY_TIMEFRAMES = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '2h', '4h'];
+const INTRADAY_TIMEFRAMES = ['1m', '2m', '5m', '10m', '15m', '30m', '45m', '60m', '90m', '1h', '2h', '4h'];
 
 function renderChartToolbars() {
   const topbar = document.getElementById('chartTopbar');
@@ -2607,13 +2961,10 @@ function renderChartToolbars() {
   if (topbar && !topbar.dataset.built) {
     topbar.dataset.built = '1';
     topbar.innerHTML = `
-      <div class="chart-tf-group" id="chartTfGroup">
-        ${CHART_TIMEFRAMES.map(tf => `<button class="chart-tf-btn" data-tf="${tf}" onclick="setChartTimeframe('${tf}')">${CHART_TF_LABELS[tf]}</button>`).join('')}
-      </div>
-      <select class="chart-type-select" id="chartTypeSelect" onchange="onChartTypeChange(this.value)"
-        title="Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data.">
-        ${CHART_TYPE_OPTIONS.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
-      </select>`;
+      <button class="chart-tf-toggle" id="chartTfToggle" title="Timeframe" onclick="toggleTimeframeFlyout(this)"></button>
+      <button class="chart-type-toggle" id="chartTypeToggle"
+        title="Chart type — Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data."
+        onclick="toggleChartTypeFlyout(this)"></button>`;
   }
   if (sidebar && !sidebar.dataset.built) {
     sidebar.dataset.built = '1';
@@ -2622,12 +2973,12 @@ function renderChartToolbars() {
       + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`
       + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" title="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">🗑</button>`;
   }
-  document.querySelectorAll('.chart-tf-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tf === chartTf));
-  const typeSelect = document.getElementById('chartTypeSelect');
-  if (typeSelect) {
-    typeSelect.value = chartType;
-    const profileOpt = typeSelect.querySelector('option[value="session_volume_profile"]');
-    if (profileOpt) profileOpt.disabled = !INTRADAY_TIMEFRAMES.includes(chartTf);
+  const tfToggle = document.getElementById('chartTfToggle');
+  if (tfToggle) tfToggle.textContent = CHART_TF_LABELS[chartTf] || chartTf;
+  const typeToggle = document.getElementById('chartTypeToggle');
+  if (typeToggle) {
+    const opt = CHART_TYPE_OPTIONS.find(o => o.value === chartType);
+    typeToggle.textContent = opt ? opt.short : 'CS';
   }
 }
 
@@ -2640,10 +2991,11 @@ function setChartTimeframe(tf) {
 function onChartTypeChange(type) {
   if (type === 'session_volume_profile' && !INTRADAY_TIMEFRAMES.includes(chartTf)) {
     addLog('warn', 'CHART', 'Session Volume Profile only applies to intraday timeframes (1m–4h).');
-    renderChartToolbars(); // snap the <select> back to the actually-active type
+    renderChartToolbars(); // snap the toggle's label back to the actually-active type
     return;
   }
   chartType = type;
+  renderChartToolbars(); // sync the toggle button's label to the newly-active type
   const chart = ensurePriceChart();
   if (!chart) return;
   if (type === 'candle_solid' || type === 'candle_stroke' || type === 'area') {
@@ -2690,11 +3042,49 @@ function toggleToolCategory(key, btn) {
   setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
 }
 function onDocClickCloseFlyout(e) {
-  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('[data-cat]')) closeToolFlyout();
+  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('[data-cat], #chartTfToggle, #chartTypeToggle')) closeToolFlyout();
 }
 function closeToolFlyout() {
   if (openToolFlyout) { openToolFlyout.remove(); openToolFlyout = null; }
   document.removeEventListener('click', onDocClickCloseFlyout);
+}
+
+// --- TIMEFRAME / CHART-TYPE FLYOUTS ---
+// Same singleton-flyout mechanism as the categorized drawing-tool sidebar above — the
+// topbar's timeframe and chart-type controls are single small square buttons (showing
+// the current selection) that open all of their options in a flyout on click, rather
+// than a permanently-expanded row/native <select>.
+function toggleTimeframeFlyout(btn) {
+  if (openToolFlyout && openToolFlyout.dataset.kind === 'tf') { closeToolFlyout(); return; }
+  closeToolFlyout();
+  const flyout = document.createElement('div');
+  flyout.className = 'chart-tool-flyout chart-tf-flyout';
+  flyout.dataset.kind = 'tf';
+  flyout.innerHTML = CHART_TIMEFRAMES.map(tf =>
+    `<button class="chart-tf-btn${tf === chartTf ? ' active' : ''}" onclick="setChartTimeframe('${tf}'); closeToolFlyout();">${CHART_TF_LABELS[tf]}</button>`
+  ).join('');
+  positionFlyoutBelow(flyout, btn, false);
+}
+function toggleChartTypeFlyout(btn) {
+  if (openToolFlyout && openToolFlyout.dataset.kind === 'type') { closeToolFlyout(); return; }
+  closeToolFlyout();
+  const flyout = document.createElement('div');
+  flyout.className = 'chart-tool-flyout chart-type-flyout';
+  flyout.dataset.kind = 'type';
+  flyout.innerHTML = CHART_TYPE_OPTIONS.map(o => {
+    const disabled = o.value === 'session_volume_profile' && !INTRADAY_TIMEFRAMES.includes(chartTf);
+    return `<button class="chart-type-opt${o.value === chartType ? ' active' : ''}"${disabled ? ' disabled' : ''} onclick="onChartTypeChange('${o.value}'); closeToolFlyout();">${o.label}</button>`;
+  }).join('');
+  positionFlyoutBelow(flyout, btn, true);
+}
+function positionFlyoutBelow(flyout, btn, alignRight) {
+  document.body.appendChild(flyout);
+  const rect = btn.getBoundingClientRect();
+  const left = alignRight ? rect.right - flyout.offsetWidth : rect.left;
+  flyout.style.left = Math.max(4, left) + 'px';
+  flyout.style.top = (rect.bottom + 4) + 'px';
+  openToolFlyout = flyout;
+  setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
 }
 
 // --- DRAWING TOOLS: activate / delete-selected / clear-all ---
@@ -2762,34 +3152,66 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
-function buildVolumeProfileFigures(chart, bars, anchorIndex, opts = {}) {
-  if (!bars.length) return [];
+// createPointFigures() (below, and on every registered overlay in this file) runs on
+// EVERY chart redraw — crosshair move, pan, zoom, not just when the data/anchor
+// actually changes. Anchored near the start of a long (multi-thousand-bar) history,
+// re-binning every bar on every single mouse move made the chart visibly lock up while
+// panning/hovering ("chart is frozen" reports traced back to this). The bin math below
+// is cached by (anchorIndex, bar count, last bar's timestamp) — cheap to compute once,
+// wrong to recompute per frame — and only the pixel-space conversion (which legitimately
+// depends on the current pan/zoom viewport) still runs every call, now batched into one
+// convertToPixel call instead of 2×binCount individual ones.
+// `startIndex` lets callers pass the FULL bars array plus an offset instead of a
+// pre-sliced copy — anchoredVwapProfile below used to call `currentChartBars.slice(
+// anchorIndex)` on every single frame, an O(n) array copy that ran just as often as the
+// binning math this cache is meant to avoid re-running. Default 0 keeps the
+// already-small session-profile call (a fixed, pre-sliced array of one day's bars) as-is.
+const _volProfileCache = new Map();
+function computeVolumeProfileBins(bars, anchorIndex, startIndex = 0) {
+  if (startIndex >= bars.length) return null;
+  const key = anchorIndex + ':' + startIndex + ':' + bars.length + ':' + bars[bars.length - 1].timestamp;
+  const cached = _volProfileCache.get(key);
+  if (cached) return cached;
   let lo = Infinity, hi = -Infinity;
-  bars.forEach(b => { if (b.low < lo) lo = b.low; if (b.high > hi) hi = b.high; });
-  if (!isFinite(lo) || hi <= lo) return [];
-
+  for (let i = startIndex; i < bars.length; i++) { const b = bars[i]; if (b.low < lo) lo = b.low; if (b.high > hi) hi = b.high; }
+  if (!isFinite(lo) || hi <= lo) return null;
   const binCount = 24;
   const binSize = (hi - lo) / binCount;
   const bins = new Array(binCount).fill(0);
-  bars.forEach(b => {
+  for (let i = startIndex; i < bars.length; i++) {
+    const b = bars[i];
     const bLo = Math.max(b.low, lo), bHi = Math.min(b.high, hi);
     const startBin = Math.max(0, Math.min(binCount - 1, Math.floor((bLo - lo) / binSize)));
     const endBin = Math.max(0, Math.min(binCount - 1, Math.floor((bHi - lo) / binSize)));
     const span = Math.max(1, endBin - startBin + 1);
-    for (let i = startBin; i <= endBin; i++) bins[i] += b.volume / span;
-  });
-  const maxBin = Math.max(...bins, 1);
+    for (let j = startBin; j <= endBin; j++) bins[j] += b.volume / span;
+  }
+  const result = { lo, hi, binSize, bins, binCount, maxBin: Math.max(...bins, 1) };
+  _volProfileCache.set(key, result);
+  return result;
+}
+
+function buildVolumeProfileFigures(chart, bars, anchorIndex, startIndex = 0, opts = {}) {
+  const profile = computeVolumeProfileBins(bars, anchorIndex, startIndex);
+  if (!profile) return [];
+  const { lo, hi, binSize, bins, binCount, maxBin } = profile;
   const maxWidthPx = opts.maxWidthPx || 60;
   const color = opts.color || 'rgba(0,136,255,0.28)';
 
   const anchorPx = chart.convertToPixel({ dataIndex: anchorIndex, value: hi }, { paneId: 'candle_pane' });
   if (!anchorPx || anchorPx.x == null) return [];
 
-  const figures = [];
+  const edgePoints = [];
   for (let i = 0; i < binCount; i++) {
     const priceLo = lo + i * binSize, priceHi = priceLo + binSize;
-    const pxTop = chart.convertToPixel({ dataIndex: anchorIndex, value: priceHi }, { paneId: 'candle_pane' });
-    const pxBot = chart.convertToPixel({ dataIndex: anchorIndex, value: priceLo }, { paneId: 'candle_pane' });
+    edgePoints.push({ dataIndex: anchorIndex, value: priceHi }, { dataIndex: anchorIndex, value: priceLo });
+  }
+  const edgePixels = chart.convertToPixel(edgePoints, { paneId: 'candle_pane' });
+  if (!Array.isArray(edgePixels)) return [];
+
+  const figures = [];
+  for (let i = 0; i < binCount; i++) {
+    const pxTop = edgePixels[i * 2], pxBot = edgePixels[i * 2 + 1];
     if (!pxTop || !pxBot) continue;
     const width = (bins[i] / maxBin) * maxWidthPx;
     figures.push({
@@ -2872,8 +3294,15 @@ function formatDuration(ms) {
   return `${(days / 30.44).toFixed(1)}mo`;
 }
 
-function buildAnchoredVwapFigures(chart, bars, anchorIndex, opts = {}) {
+// Cached the same way as computeVolumeProfileBins above — the cumulative VWAP series
+// only depends on the data, not the viewport, so it shouldn't be redone on every
+// crosshair-move redraw. Only convertToPixel (viewport-dependent) runs every call.
+const _vwapCache = new Map();
+function computeAnchoredVwapPoints(bars, anchorIndex) {
   if (anchorIndex < 0 || anchorIndex >= bars.length) return [];
+  const key = anchorIndex + ':' + bars.length + ':' + bars[bars.length - 1].timestamp;
+  const cached = _vwapCache.get(key);
+  if (cached) return cached;
   let cumPV = 0, cumVol = 0;
   const points = [];
   for (let i = anchorIndex; i < bars.length; i++) {
@@ -2883,6 +3312,12 @@ function buildAnchoredVwapFigures(chart, bars, anchorIndex, opts = {}) {
     cumVol += b.volume;
     points.push({ dataIndex: i, value: cumVol > 0 ? cumPV / cumVol : typical });
   }
+  _vwapCache.set(key, points);
+  return points;
+}
+
+function buildAnchoredVwapFigures(chart, bars, anchorIndex, opts = {}) {
+  const points = computeAnchoredVwapPoints(bars, anchorIndex);
   if (points.length < 2) return [];
   const pixelPoints = chart.convertToPixel(points, { paneId: 'candle_pane' });
   if (!Array.isArray(pixelPoints)) return [];
@@ -2911,7 +3346,7 @@ function ensureAdvancedOverlayTypes() {
       return [
         { type: 'rect', attrs: { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), width: Math.abs(c2.x - c1.x), height: Math.max(1, Math.abs(c2.y - c1.y)) }, styles: { style: 'fill', color: withAlpha(color, 0.12) }, ignoreEvent: true },
         { type: 'line', attrs: { coordinates: [c1, c2] }, styles: { color, size: 1.5 }, ignoreEvent: true },
-        { type: 'text', attrs: { x: (c1.x + c2.x) / 2, y: Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: 'bottom' }, styles: { color, size: 11 }, ignoreEvent: true },
+        { type: 'text', attrs: { x: (c1.x + c2.x) / 2, y: Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: 'bottom' }, styles: { color, size: 11, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
       ];
     },
   });
@@ -2933,35 +3368,42 @@ function ensureAdvancedOverlayTypes() {
     createPointFigures: ({ overlay }) => {
       if (!overlay || !overlay.points || !overlay.points[0] || !currentChartBars.length) return [];
       const anchorIndex = overlay.points[0].dataIndex;
-      const profileFigs = buildVolumeProfileFigures(priceChart, currentChartBars.slice(anchorIndex), anchorIndex, { color: 'rgba(170,85,255,0.25)' });
+      const profileFigs = buildVolumeProfileFigures(priceChart, currentChartBars, anchorIndex, anchorIndex, { color: 'rgba(170,85,255,0.25)' });
       const vwapFigs = buildAnchoredVwapFigures(priceChart, currentChartBars, anchorIndex);
       return [...profileFigs, ...vwapFigs];
     },
   });
 
-  // Long/Short Position: 3 clicks (entry, target, stop). Long and short are the exact
-  // same geometry — profit/loss zones are derived from where the user clicks relative
-  // to entry, not a hardcoded up/down assumption — so both names share one builder.
+  // Long/Short Position: 3 clicks (entry, target, stop). The zones themselves are
+  // still pure geometry — wherever you click "target" draws green, wherever you
+  // click "stop" draws red, no hardcoded up/down assumption. But the P&L NUMBERS in
+  // those zones do need to know direction: a short profits when price FALLS, so a
+  // target clicked below entry (a negative raw price move) is a GAIN for a short,
+  // not a loss — flipping the sign here is what that fix is. Before this, both
+  // overlays used the raw price-delta % directly, so a short's target box showed a
+  // negative $/% for what was actually a winning move.
   const positionFigures = ({ overlay, coordinates }) => {
     if (!overlay || !overlay.points || overlay.points.length < 3 || !coordinates || coordinates.length < 3) return [];
     const [pEntry, pTarget, pStop] = overlay.points;
     const [cEntry, cTarget, cStop] = coordinates;
-    const cfg = getConfig();
-    const positionValue = cfg.posSizeGbpMode ? cfg.posSizeGbp : cfg.capital * (cfg.posSize / 100);
-    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 : 0;
-    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 : 0;
+    const positionValue = computeInvested();
+    const dir = overlay.name === 'shortPosition' ? -1 : 1;
+    const profitPct = pEntry.value ? ((pTarget.value - pEntry.value) / pEntry.value) * 100 * dir : 0;
+    const lossPct = pEntry.value ? ((pStop.value - pEntry.value) / pEntry.value) * 100 * dir : 0;
     const profitAmt = positionValue * profitPct / 100;
     const lossAmt = positionValue * lossPct / 100;
     const rr = lossPct !== 0 ? Math.abs(profitPct / lossPct) : 0;
     const green = cssVar('--accent-green', '#00ff88'), red = cssVar('--accent-red', '#ff3355');
     const boxWidth = 70;
     const sym = getCurrencySymbol();
+    const fmtPct = n => (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+    const fmtAmt = n => (n >= 0 ? '+' : '') + sym + Math.abs(n).toFixed(2);
     return [
       { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cTarget.y), width: boxWidth, height: Math.max(1, Math.abs(cTarget.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(green, 0.22) }, ignoreEvent: true },
       { type: 'rect', attrs: { x: cEntry.x, y: Math.min(cEntry.y, cStop.y), width: boxWidth, height: Math.max(1, Math.abs(cStop.y - cEntry.y)) }, styles: { style: 'fill', color: withAlpha(red, 0.22) }, ignoreEvent: true },
-      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `+${profitPct.toFixed(2)}%  ${sym}${profitAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10 }, ignoreEvent: true },
-      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${lossPct.toFixed(2)}%  ${sym}${lossAmt.toFixed(2)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10 }, ignoreEvent: true },
-      { type: 'text', attrs: { x: cEntry.x + boxWidth / 2, y: Math.min(cEntry.y, cTarget.y, cStop.y) - 6, text: `R:R 1:${rr.toFixed(2)}`, align: 'center', baseline: 'bottom' }, styles: { color: cssVar('--text-primary', '#e2e8f0'), size: 10 }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cTarget.y, text: `${fmtPct(profitPct)}  ${fmtAmt(profitAmt)}`, align: 'left', baseline: 'middle' }, styles: { color: green, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth + 4, y: cStop.y, text: `${fmtPct(lossPct)}  ${fmtAmt(lossAmt)}`, align: 'left', baseline: 'middle' }, styles: { color: red, size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
+      { type: 'text', attrs: { x: cEntry.x + boxWidth / 2, y: Math.min(cEntry.y, cTarget.y, cStop.y) - 6, text: `R:R 1:${rr.toFixed(2)}`, align: 'center', baseline: 'bottom' }, styles: { color: cssVar('--text-primary', '#e2e8f0'), size: 10, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
     ];
   };
   klinecharts.registerOverlay({ name: 'longPosition', totalStep: 4, needDefaultPointFigure: true, createPointFigures: positionFigures });
@@ -3032,6 +3474,8 @@ async function loadPriceChart(sym) {
       overlay.remove();
       if (!rows.length) { showChartLoadError(`No data returned for ${sym}.`); return; }
       currentChartBars = rows;
+      _volProfileCache.clear();
+      _vwapCache.clear();
       chart.applyNewData(rows);
       refreshVolumePaneMode();
       return;
@@ -3174,6 +3618,36 @@ function matchIndexAlias(query) {
   return null;
 }
 
+// Yahoo delisted the real XAUUSD=X/XAUGBP=X/XAGEUR=X-style spot-metal "currency"
+// crosses (every one now 404s) — app.py's _fetch_ohlcv synthesizes them instead from
+// the USD futures leg (GC=F/SI=F) plus a live USD/<currency> FX cross. Yahoo's own
+// search endpoint has no idea these symbols exist though, so — same pattern as
+// INDEX_ALIASES above — they're injected into search results directly whenever the
+// query looks like gold/silver, in every currency the app's own Currency dropdown
+// supports (see the #currency <select> options).
+const METAL_NAMES = { XAU: 'Gold', XAG: 'Silver' };
+const METAL_CURRENCIES = ['USD', 'GBP', 'EUR', 'JPY', 'CAD', 'AUD', 'CHF', 'INR'];
+
+function matchMetalAliases(query) {
+  const norm = query.toLowerCase().replace(/=x$/, '').replace(/[^a-z0-9]/g, '');
+  if (!norm) return [];
+  let metal = null, rest = null;
+  for (const key of ['xau', 'gold', 'xag', 'silver']) {
+    if (norm.startsWith(key)) {
+      metal = (key === 'xau' || key === 'gold') ? 'XAU' : 'XAG';
+      rest = norm.slice(key.length);
+      break;
+    }
+  }
+  if (!metal) return [];
+  const toResult = ccy => ({ symbol: `${metal}${ccy}=X`, name: `${METAL_NAMES[metal]} Spot (${ccy})`, exchange: 'Synthetic (futures + FX)', type: 'CURRENCY' });
+  if (rest) {
+    const ccy = METAL_CURRENCIES.find(c => c.toLowerCase() === rest);
+    return ccy ? [toResult(ccy)] : [];
+  }
+  return METAL_CURRENCIES.map(toResult);
+}
+
 async function runSymbolSearch(query) {
   let results = [];
   try {
@@ -3187,6 +3661,8 @@ async function runSymbolSearch(query) {
   if (alias && !results.some(r => r.symbol === alias.symbol)) {
     results = [alias, ...results];
   }
+  const metalMatches = matchMetalAliases(query).filter(m => !results.some(r => r.symbol === m.symbol));
+  if (metalMatches.length) results = [...metalMatches, ...results];
   searchResults = results.filter(r => !assets[r.symbol]);
   renderSearchResults(query);
 }
@@ -3488,10 +3964,12 @@ function refreshCurrencyDisplays() {
   const label = `(${selectedCurrency === 'CUSTOM' ? sym : selectedCurrency})`;
   const capLabel = document.getElementById('capitalCurrencyLabel');
   if (capLabel) capLabel.textContent = label;
-  const toggleSym = document.getElementById('posSizeGbpToggleSym');
-  if (toggleSym) toggleSym.textContent = sym;
   const posLabelSym = document.getElementById('posSizeGbpLabelSym');
   if (posLabelSym) posLabelSym.textContent = `(${sym})`;
+  const targetLabelSym = document.getElementById('targetGainCcyLabelSym');
+  if (targetLabelSym) targetLabelSym.textContent = `(${sym})`;
+  const slLabelSym = document.getElementById('stopLossCcyLabelSym');
+  if (slLabelSym) slLabelSym.textContent = `(${sym})`;
 
   if (typeof updateChartOverlay === 'function')   updateChartOverlay();
   if (typeof renderWatchlist === 'function')       renderWatchlist();
@@ -3517,6 +3995,67 @@ function computeInvested() {
   const cfg = getConfig();
   if (cfg.posSizeGbpMode) return cfg.posSizeGbp;
   return cfg.capital * cfg.posSize / 100;
+}
+
+// Target Gain / Stop-Loss mode toggle (% of the trade amount vs an exact currency
+// figure) — same idea as Position Size's %/£ toggle above, but these two feed a
+// PERCENTAGE into every other consumer (fireAlert's target/sl price calc, the order
+// modal, the STRATEGY TARGET stat, saved preferences, etc.), so currency mode doesn't
+// replace the underlying #targetGain/#stopLoss <input type=range> — it computes the
+// equivalent % from computeInvested() and writes it straight through that same
+// slider (+ its paired text box), exactly like onPctTextChange already does for a
+// free-typed %. Every existing reader of cfg.targetGain/cfg.stopLoss keeps working
+// unchanged, regardless of which mode was used to set it.
+function showTargetGainMode(isCcy) {
+  document.getElementById('targetGainPctRow').style.display = isCcy ? 'none' : '';
+  document.getElementById('targetGainCcyRow').style.display = isCcy ? '' : 'none';
+}
+function showStopLossMode(isCcy) {
+  document.getElementById('stopLossPctRow').style.display = isCcy ? 'none' : '';
+  document.getElementById('stopLossCcyRow').style.display = isCcy ? '' : 'none';
+}
+// Switching INTO currency mode mid-session seeds the £ box from the slider's
+// current % (so it starts equivalent instead of some arbitrary default). Switching
+// back to % needs no action — the slider's already been kept in sync the whole time.
+function onToggleTargetGainMode(isCcy) {
+  showTargetGainMode(isCcy);
+  if (isCcy) {
+    const pct = parseFloat(document.getElementById('targetGain').value);
+    document.getElementById('targetGainCcy').value = (computeInvested() * pct / 100).toFixed(2);
+  }
+}
+function onToggleStopLossMode(isCcy) {
+  showStopLossMode(isCcy);
+  if (isCcy) {
+    const pct = parseFloat(document.getElementById('stopLoss').value);
+    document.getElementById('stopLossCcy').value = (computeInvested() * pct / 100).toFixed(2);
+  }
+}
+// Writes the £ box's value through to the %-slider (clamped the same [1,4000] range
+// onPctTextChange uses for a free-typed %).
+function applyTargetGainCcy() {
+  const invested = computeInvested();
+  const amt = parseFloat(document.getElementById('targetGainCcy').value);
+  if (!invested || !isFinite(amt)) return;
+  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('targetGain').value);
+  document.getElementById('targetGain').value = pct;
+  document.getElementById('targetVal').value = pct.toFixed(1);
+}
+function applyStopLossCcy() {
+  const invested = computeInvested();
+  const amt = parseFloat(document.getElementById('stopLossCcy').value);
+  if (!invested || !isFinite(amt)) return;
+  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('stopLoss').value);
+  document.getElementById('stopLoss').value = pct;
+  document.getElementById('slVal').value = pct.toFixed(1);
+}
+// Re-derives whichever of Target Gain / Stop-Loss is in currency mode whenever the
+// trade amount itself changes (capital, position size, or its %/£ mode) — otherwise
+// a saved "£500 target" would silently drift once the position size it was computed
+// against changes. Called from those inputs' own oninput/onchange.
+function syncFixedTargetsFromPositionValue() {
+  if (document.getElementById('targetGainCcyMode').checked) applyTargetGainCcy();
+  if (document.getElementById('stopLossCcyMode').checked) applyStopLossCcy();
 }
 
 function formatPrice(p, sym) {
@@ -3745,6 +4284,10 @@ async function savePreferences() {
     posSizeGbp:   parseFloat(document.getElementById('posSizeGbp').value),
     targetGain:   parseFloat(document.getElementById('targetGain').value),
     stopLoss:     parseFloat(document.getElementById('stopLoss').value),
+    targetGainCcyMode: document.getElementById('targetGainCcyMode').checked,
+    targetGainCcy:     parseFloat(document.getElementById('targetGainCcy').value),
+    stopLossCcyMode:   document.getElementById('stopLossCcyMode').checked,
+    stopLossCcy:       parseFloat(document.getElementById('stopLossCcy').value),
     trailDist:    parseFloat(document.getElementById('trailDist').value),
     fixedSL:      document.getElementById('fixedSL').checked,
     trailSL:      document.getElementById('trailSL').checked,
@@ -3757,6 +4300,7 @@ async function savePreferences() {
     minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
     savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
+    priceAlerts:        JSON.parse(JSON.stringify(priceAlerts)),
   };
 
   const btn = document.getElementById('saveBtn');
@@ -3807,8 +4351,9 @@ function applyPreferences(prefs) {
   // are loaded, so the normal page-load render flow (fetchAllAssets, etc.) picks
   // up `selectedCurrency` naturally once there's actually data to render.
   setText('capitalCurrencyLabel', `(${selectedCurrency === 'CUSTOM' ? getCurrencySymbol() : selectedCurrency})`);
-  setText('posSizeGbpToggleSym', getCurrencySymbol());
   setText('posSizeGbpLabelSym', `(${getCurrencySymbol()})`);
+  setText('targetGainCcyLabelSym', `(${getCurrencySymbol()})`);
+  setText('stopLossCcyLabelSym', `(${getCurrencySymbol()})`);
 
   set('capital',    prefs.capital);
   set('posSize',    prefs.posSize);
@@ -3820,6 +4365,12 @@ function applyPreferences(prefs) {
   if (prefs.targetGain !== undefined) set('targetVal', parseFloat(prefs.targetGain).toFixed(1));
   set('stopLoss',   prefs.stopLoss);
   if (prefs.stopLoss  !== undefined) set('slVal', parseFloat(prefs.stopLoss).toFixed(1));
+  setChk('targetGainCcyMode', prefs.targetGainCcyMode);
+  set('targetGainCcy', prefs.targetGainCcy);
+  showTargetGainMode(!!prefs.targetGainCcyMode);
+  setChk('stopLossCcyMode', prefs.stopLossCcyMode);
+  set('stopLossCcy', prefs.stopLossCcy);
+  showStopLossMode(!!prefs.stopLossCcyMode);
   set('trailDist',  prefs.trailDist);
   if (prefs.trailDist !== undefined) setText('trailVal', parseFloat(prefs.trailDist).toFixed(1) + '%');
 
@@ -3864,6 +4415,12 @@ function applyPreferences(prefs) {
       sound_enabled: prefs.notification_settings.sound_enabled !== false,
       popup_enabled: prefs.notification_settings.popup_enabled !== false,
     };
+  }
+
+  if (prefs.priceAlerts && typeof prefs.priceAlerts === 'object') {
+    priceAlerts = prefs.priceAlerts;
+    updatePriceAlertBadge();
+    if (Object.values(priceAlerts).some(arr => (arr || []).some(a => a.active))) startPriceAlertPolling();
   }
 }
 

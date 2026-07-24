@@ -32,6 +32,8 @@ from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 
+from marketdata import router as marketdata_router
+
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
 # Railway (and most PaaS hosts) terminate TLS at an edge proxy and forward requests
@@ -148,11 +150,17 @@ def _ensure_table() -> None:
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
-# yfinance has no native 2-hour/4-hour bars — synthesized by fetching hourly data and
-# resampling. Kept separate from VALID_INTERVALS since every other caller of that set
-# (elsewhere in the codebase, if any) should keep seeing only intervals yfinance itself
-# understands; only _fetch_ohlcv needs to know about the synthetic ones.
-_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h"}
+# yfinance has no native 2h/4h/10m/45m/6mo/1y bars — synthesized by fetching a smaller
+# native interval and resampling. Kept separate from VALID_INTERVALS since every other
+# caller of that set (elsewhere in the codebase, if any) should keep seeing only
+# intervals yfinance itself understands; only _fetch_ohlcv needs to know about the
+# synthetic ones.
+_RESAMPLE_INTERVALS = {"2h": "1h", "4h": "1h", "10m": "5m", "45m": "15m", "6mo": "1mo", "1y": "1mo"}
+# pandas resample() rule strings for each synthetic interval above — NOT the same string
+# as the interval's own key: pandas 3.x rejects "10m"/"1y" outright ("m" means
+# month-end, "y" was removed in favour of "YE"), so this maps each key to the actual
+# offset alias pandas expects.
+_RESAMPLE_RULES = {"2h": "2h", "4h": "4h", "10m": "10min", "45m": "45min", "6mo": "6MS", "1y": "1YS"}
 ALL_VALID_INTERVALS = VALID_INTERVALS | set(_RESAMPLE_INTERVALS)
 
 _INT_CALC_KEYS = {
@@ -1233,6 +1241,56 @@ def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
     raise ValueError(f"Yahoo Finance data temporarily unavailable — try again in a moment ({last_err})")
 
 
+# Yahoo delisted the real XAUUSD=X/XAUGBP=X/XAGEUR=X-style spot-metal "currency"
+# crosses — every one of them now 404s outright ("Quote not found"), confirmed live
+# against yfinance for all of USD/GBP/EUR/JPY/CAD/AUD/CHF/INR. The metal futures
+# (GC=F, SI=F) and ordinary USD/<currency> FX crosses are both still fine, so
+# XAU*/XAG* symbols are synthesized from those two legs instead of fetched directly.
+_METAL_USD_FUTURES = {"XAU": "GC=F", "XAG": "SI=F"}
+_METAL_FX_CURRENCIES = {"USD", "GBP", "EUR", "JPY", "CAD", "AUD", "CHF", "INR"}
+
+
+def _parse_metal_currency_symbol(symbol: str) -> tuple[str, str] | None:
+    s = symbol.upper()
+    if s.endswith("=X"):
+        s = s[:-2]
+    if len(s) == 6 and s[:3] in _METAL_USD_FUTURES and s[3:] in _METAL_FX_CURRENCIES:
+        return s[:3], s[3:]
+    return None
+
+
+def _fetch_synthetic_metal_ohlcv(
+    metal: str, currency: str, period: str, interval: str,
+    start_date: str | None, end_date: str | None,
+) -> pd.DataFrame:
+    usd_df = _fetch_ohlcv(_METAL_USD_FUTURES[metal], period, interval, start_date, end_date)
+    if currency == "USD":
+        return usd_df
+    fx_df = _fetch_ohlcv(f"USD{currency}=X", period, interval, start_date, end_date)
+    # Align the FX rate onto every futures bar's timestamp — futures (CME Globex) and
+    # FX trade on different session calendars/timezones, so exact timestamp matches
+    # aren't guaranteed even though both are tz-aware DatetimeIndexes. ffill covers
+    # gaps going forward; bfill covers any futures bars older than the FX history.
+    fx_close = fx_df["Close"].reindex(usd_df.index, method="ffill").bfill()
+    if fx_close.isna().any():
+        raise ValueError(f"No FX rate available to convert {metal} into {currency}")
+    # For daily-or-coarser intervals specifically, ffill silently goes stale on the
+    # trailing (today's still-forming) bar: Yahoo labels GC=F's daily bars at US-Eastern
+    # midnight and USD<ccy>=X's at Europe/London midnight, several hours apart — so right
+    # now, FX's own latest bar is labeled "tomorrow" relative to the futures bar even
+    # though both sessions are live at this instant, and ffill (correctly, by its own
+    # rules) refuses to use a "future" row and falls back a full day. Confirmed live:
+    # this drifted XAUGBP off the true rate by ~13pts/0.4%, permanently, until the next
+    # calendar rollover masked it again. Overriding just the trailing bar with fx_df's
+    # own raw latest close sidesteps the label mismatch entirely; it's a no-op for
+    # intraday intervals, where both legs already share real, closely-timestamped bars.
+    fx_close.iloc[-1] = fx_df["Close"].iloc[-1]
+    converted = usd_df.copy()
+    for col in ("Open", "High", "Low", "Close"):
+        converted[col] = converted[col] * fx_close
+    return converted
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -1242,6 +1300,9 @@ def _fetch_ohlcv(
 ) -> pd.DataFrame:
     if interval not in ALL_VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
+    metal_ccy = _parse_metal_currency_symbol(symbol)
+    if metal_ccy:
+        return _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
     fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
     ticker = yf.Ticker(symbol.upper())
     if start_date:
@@ -1265,10 +1326,35 @@ def _fetch_ohlcv(
     if df.empty:
         raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
     if interval in _RESAMPLE_INTERVALS:
-        df = _resample_ohlcv(df, interval)
+        df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol}")
+    if not start_date:
+        df = _stitch_live_tail(df, symbol, interval)
     return df
+
+
+def _stitch_live_tail(df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
+    """Replaces the trailing rows of `df` with a fresher live tail from
+    marketdata.router (OANDA/Alpaca), if one is available for this symbol — never
+    raises, and returns `df` unchanged on any failure or if nothing is available
+    (not configured, not a covered category, stream stale). Only called for
+    period-based "current" queries, not explicit start_date/end_date historical
+    ranges (e.g. the backtester), where stitching in "now" wouldn't make sense."""
+    try:
+        live_tail = marketdata_router.get_live_tail(symbol, interval)
+        if live_tail is None or live_tail.empty:
+            return df
+        # OANDA/Alpaca timestamps are UTC; match df's own tz so the join point doesn't
+        # show a visually-inconsistent offset between historical and live rows (purely
+        # cosmetic — pandas compares tz-aware instants correctly either way).
+        if df.index.tz is not None:
+            live_tail = live_tail.tz_localize("UTC") if live_tail.index.tz is None else live_tail
+            live_tail.index = live_tail.index.tz_convert(df.index.tz)
+        historical = df[df.index < live_tail.index[0]]
+        return pd.concat([historical, live_tail])
+    except Exception:
+        return df
 
 
 # ── Static ───────────────────────────────────────────────────────────────────
@@ -2344,6 +2430,7 @@ def add_custom_symbol():
         if df is None or df.empty:
             return jsonify({"error": f"No data found for '{symbol}' — check the ticker"}), 400
         custom.append({"symbol": symbol, "label": label, "category": category, "exchange": exchange})
+        marketdata_router.ensure_symbol_watched(symbol)
 
     prefs["custom_symbols"] = custom
     _save_preferences(current_user.id, prefs)
@@ -2685,6 +2772,31 @@ def social_posts():
 
 _ensure_table()
 _ensure_default_user()
+
+
+def _should_start_background_streams() -> bool:
+    if _is_production:
+        return True  # gunicorn / non-debug run: no reloader involved, start once
+    # Local `python app.py` with debug=True: Werkzeug's reloader re-execs the process
+    # with WERKZEUG_RUN_MAIN=true once it's the real serving process — app.debug isn't
+    # usable for this check here, since app.run(debug=...) below hasn't executed yet
+    # at module-load time, so only WERKZEUG_RUN_MAIN reliably tells the two passes
+    # apart. Only start in the real serving process, not the one about to be replaced
+    # by that re-exec.
+    return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+
+
+if _should_start_background_streams():
+    try:
+        _seed_users = _load_users()
+        _seed_symbols = [
+            s["symbol"]
+            for u in _seed_users.values()
+            for s in (u.get("preferences", {}) or {}).get("custom_symbols", [])
+        ]
+        marketdata_router.start_background_streams(seed_symbols=_seed_symbols)
+    except Exception:
+        pass  # marketdata is a pure optimization layer — never block startup on it
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
