@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Post Studio — AI Investor</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #F7F6F2;
+    padding: 0 0 60px;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  .header { background: #1A1C22; padding: 28px 24px 26px; margin-bottom: 28px; }
+  .header-inner { max-width: 1080px; margin: 0 auto; }
+  .eyebrow {
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #F5B841; margin-bottom: 6px;
+  }
+  h1 {
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-weight: 800; font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -0.02em; color: #F7F6F2; margin: 0;
+  }
+  .header p { color: #B9BBC0; font-size: 14px; margin: 8px 0 0; max-width: 560px; }
+
+  .studio-grid {
+    max-width: 1080px; margin: 0 auto; padding: 0 20px;
+    display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 28px;
+  }
+  @media (max-width: 820px) {
+    .studio-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .panel { background: #fff; border: 1.5px solid #E4E2DA; border-radius: 14px; padding: 20px; }
+
+  label.field {
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #5A5D63; display: block; margin-bottom: 6px;
+  }
+  textarea, input[type="text"] {
+    width: 100%;
+    font-family: 'Inter', system-ui, sans-serif; font-size: 14px;
+    padding: 10px 12px; border-radius: 8px; border: 1.5px solid #D8D6CE;
+    background: #fff; color: #1A1C22; outline: none; margin-bottom: 16px;
+  }
+  textarea { resize: vertical; }
+  textarea:focus, input:focus { border-color: #2743E3; }
+  button:focus-visible { outline: 2px solid #2743E3; outline-offset: 2px; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .tone-chip {
+    font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border-radius: 999px; border: 1.5px solid #D8D6CE;
+    background: #fff; color: #1A1C22; cursor: pointer;
+  }
+  .tone-chip.on { border-color: #2743E3; background: #2743E3; color: #fff; }
+
+  .chan-chip {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 600;
+    padding: 7px 12px; border-radius: 8px; border: 1.5px solid #D8D6CE;
+    background: #fff; color: #8A8D94; cursor: pointer;
+  }
+  .chan-chip.on { border-color: #1A1C22; background: #1A1C22; color: #F7F6F2; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; opacity: 0.35; }
+  .chan-chip.on .dot { opacity: 1; }
+
+  .generate-btn {
+    width: 100%;
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 15px; font-weight: 700;
+    letter-spacing: 0.03em; padding: 14px 0; border-radius: 10px; border: none;
+    background: #2743E3; color: #fff; cursor: pointer;
+  }
+  .generate-btn:disabled { background: #8A8D94; cursor: wait; }
+
+  .error-box {
+    margin-top: 12px; font-size: 13px; color: #B3261E;
+    background: #FBEAE8; padding: 10px 12px; border-radius: 8px;
+  }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .tab {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 13px; font-weight: 700;
+    padding: 9px 14px; border-radius: 8px; border: 1.5px solid #E4E2DA;
+    background: #fff; color: #B9BBC0; cursor: pointer;
+  }
+  .tab .dot { opacity: 1; }
+  .tab.has-result { color: #1A1C22; }
+  .tab.active { border-color: #1A1C22; background: #1A1C22; color: #F7F6F2; }
+
+  .placeholder {
+    border: 1.5px dashed #D8D6CE; border-radius: 14px; padding: 60px 24px;
+    text-align: center; color: #8A8D94; font-size: 14px;
+  }
+
+  .card { background: #fff; border: 1.5px solid #E4E2DA; border-radius: 14px; padding: 24px 24px 12px; }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 18px; padding-bottom: 14px;
+    border-bottom: 1.5px solid #EFEEE8;
+  }
+  .card-title { font-family: 'Archivo', system-ui, sans-serif; font-weight: 800; font-size: 18px; color: #1A1C22; }
+  .char-count { margin-left: 10px; font-size: 12px; font-weight: 600; color: #8A8D94; }
+  .char-count.over { color: #B3261E; }
+
+  .btn-outline, .btn-solid, .btn-muted {
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+  .btn-outline { border: 1.5px solid #1A1C22; background: transparent; color: #1A1C22; }
+  .btn-outline.copied { background: #1A1C22; color: #F7F6F2; }
+  .btn-solid { border: none; background: #2743E3; color: #fff; }
+  .btn-muted { border: 1.5px solid #D8D6CE; background: #fff; color: #5A5D63; }
+  .btn-small { font-size: 11px; padding: 5px 10px; }
+
+  .section { margin-bottom: 20px; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .section-eyebrow {
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #8A8D94;
+  }
+  .section-body { font-size: 15px; line-height: 1.65; color: #1A1C22; white-space: pre-wrap; }
+  .section-body.mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px;
+    background: #EFEEE8; padding: 12px 14px; border-radius: 8px;
+  }
+  .hashtags { color: #2743E3; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="eyebrow">Team tool</div>
+    <h1>Social Post Studio</h1>
+    <p>Type your ideas once. Get platform-ready posts — body, call to action and an AI image prompt — for every channel.</p>
+  </div>
+</div>
+
+<div class="studio-grid">
+  <!-- ---------- Input panel ---------- -->
+  <div>
+    <div class="panel">
+      <label class="field" for="ideas">Ideas &amp; bullet points *</label>
+      <textarea id="ideas" rows="7" placeholder="e.g.
+&bull; New beginners class starting Monday
+&bull; First session free
+&bull; Suitable for all fitness levels"></textarea>
+
+      <label class="field" for="audience">Audience (optional)</label>
+      <input type="text" id="audience" placeholder="e.g. local adults new to investing">
+
+      <label class="field" for="ctaGoal">What should the CTA achieve? (optional)</label>
+      <input type="text" id="ctaGoal" placeholder="e.g. sign up for the newsletter via the website">
+
+      <label class="field" for="brandVoice">Brand voice notes (optional)</label>
+      <input type="text" id="brandVoice" placeholder="e.g. down-to-earth, no hype, British English">
+
+      <label class="field">Tone</label>
+      <div class="chip-row" id="toneRow"></div>
+
+      <label class="field">Channels</label>
+      <div class="chip-row" id="channelRow" style="margin-bottom:20px;"></div>
+
+      <button class="generate-btn" id="generateBtn">Generate posts</button>
+      <div class="error-box" id="errorBox" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ---------- Output panel ---------- -->
+  <div>
+    <div class="tabs" id="tabs"></div>
+    <div id="output"></div>
+  </div>
+</div>
+
+<script>
+const PLATFORMS = {
+  x:         { label: "X",                dot: "#000000" },
+  instagram: { label: "Instagram",        dot: "#E1306C" },
+  facebook:  { label: "Facebook",         dot: "#1877F2" },
+  substack:  { label: "Substack",         dot: "#FF6719" },
+  email:     { label: "Email newsletter", dot: "#5B8DEF" },
+};
+const TONES = ["Professional", "Friendly", "Bold", "Playful", "Inspiring"];
+
+let tone = "Friendly";
+let selected = new Set(Object.keys(PLATFORMS));
+let results = {};       // platform -> {title, body, cta, hashtags, image_prompt}
+let loading = {};       // platform -> bool
+let activeTab = null;
+
+// ---------- Input widgets ----------
+const toneRow = document.getElementById("toneRow");
+TONES.forEach(t => {
+  const b = document.createElement("button");
+  b.className = "tone-chip" + (t === tone ? " on" : "");
+  b.textContent = t;
+  b.onclick = () => {
+    tone = t;
+    toneRow.querySelectorAll(".tone-chip").forEach(x => x.classList.toggle("on", x.textContent === t));
+  };
+  toneRow.appendChild(b);
+});
+
+const channelRow = document.getElementById("channelRow");
+Object.entries(PLATFORMS).forEach(([key, p]) => {
+  const b = document.createElement("button");
+  b.className = "chan-chip on";
+  b.innerHTML = `<span class="dot" style="background:${p.dot}"></span>${p.label}`;
+  b.onclick = () => {
+    if (selected.has(key)) selected.delete(key); else selected.add(key);
+    b.classList.toggle("on", selected.has(key));
+    renderTabs();
+  };
+  channelRow.appendChild(b);
+});
+
+// ---------- Helpers ----------
+function showError(msg, transient) {
+  const box = document.getElementById("errorBox");
+  if (!msg) { box.style.display = "none"; return; }
+  box.textContent = msg;
+  box.style.display = "block";
+  if (transient) setTimeout(() => { box.style.display = "none"; }, 2500);
+}
+
+function anyLoading() { return Object.values(loading).some(Boolean); }
+
+function assembleFull(r) {
+  const parts = [];
+  if (r.title) parts.push(r.title);
+  parts.push(r.body, r.cta);
+  if (r.hashtags && r.hashtags.length) parts.push(r.hashtags.join(" "));
+  return parts.join("\n\n");
+}
+
+function xLen(r) {
+  const tags = (r.hashtags || []).join(" ");
+  return (r.body || "").length + (r.cta || "").length + 2 + (tags ? tags.length + 2 : 0);
+}
+
+async function copyText(text, btn) {
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      const orig = btn.textContent;
+      btn.classList.add("copied");
+      btn.textContent = "Copied ✓";
+      setTimeout(() => { btn.classList.remove("copied"); btn.textContent = orig; }, 1600);
+    }
+  } catch (e) { console.error("Copy failed", e); }
+}
+
+async function sharePost(r) {
+  const text = assembleFull(r);
+  if (navigator.share) {
+    try { await navigator.share({ text }); } catch (e) { /* user cancelled */ }
+  } else {
+    await navigator.clipboard.writeText(text);
+    showError("Sharing isn't available in this browser — copied to clipboard instead.", true);
+  }
+}
+
+// ---------- API ----------
+async function runOne(key) {
+  loading[key] = true;
+  renderTabs(); renderCard(); renderButton();
+  try {
+    const resp = await fetch("/api/social-posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platform: key,
+        ideas: document.getElementById("ideas").value,
+        audience: document.getElementById("audience").value,
+        ctaGoal: document.getElementById("ctaGoal").value,
+        brandVoice: document.getElementById("brandVoice").value,
+        tone,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Request failed");
+    results[key] = data;
+    if (!activeTab) activeTab = key;
+  } catch (e) {
+    console.error(e);
+    showError(e.message.includes("API key")
+      ? e.message
+      : `Couldn't generate the ${PLATFORMS[key].label} post. Try again.`);
+  } finally {
+    loading[key] = false;
+    renderTabs(); renderCard(); renderButton();
+  }
+}
+
+async function runAll() {
+  const ideas = document.getElementById("ideas").value.trim();
+  if (!ideas) { showError("Add some ideas or bullet points first."); return; }
+  showError(null);
+  results = {};
+  const keys = Object.keys(PLATFORMS).filter(k => selected.has(k));
+  if (!keys.length) { showError("Pick at least one channel."); return; }
+  activeTab = keys[0];
+  await Promise.all(keys.map(k => runOne(k)));
+}
+
+document.getElementById("generateBtn").onclick = runAll;
+
+// ---------- Rendering ----------
+function renderButton() {
+  const btn = document.getElementById("generateBtn");
+  btn.disabled = anyLoading();
+  btn.textContent = anyLoading() ? "Writing your posts…" : "Generate posts";
+}
+
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  Object.keys(PLATFORMS).filter(k => selected.has(k)).forEach(key => {
+    const b = document.createElement("button");
+    b.className = "tab"
+      + (activeTab === key ? " active" : "")
+      + (results[key] ? " has-result" : "");
+    b.innerHTML = `<span class="dot" style="background:${PLATFORMS[key].dot}"></span>`
+      + PLATFORMS[key].label
+      + (loading[key] ? ' <span style="font-weight:400">…</span>' : "");
+    b.onclick = () => { activeTab = key; renderTabs(); renderCard(); };
+    tabs.appendChild(b);
+  });
+}
+
+function section(eyebrow, bodyNode, copyValue, mono) {
+  const wrap = document.createElement("div");
+  wrap.className = "section";
+  const head = document.createElement("div");
+  head.className = "section-head";
+  const eb = document.createElement("span");
+  eb.className = "section-eyebrow";
+  eb.textContent = eyebrow;
+  head.appendChild(eb);
+  if (copyValue) {
+    const cb = document.createElement("button");
+    cb.className = "btn-outline btn-small";
+    cb.textContent = "Copy";
+    cb.onclick = () => copyText(copyValue, cb);
+    head.appendChild(cb);
+  }
+  const body = document.createElement("div");
+  body.className = "section-body" + (mono ? " mono" : "");
+  body.appendChild(bodyNode);
+  wrap.append(head, body);
+  return wrap;
+}
+
+function renderCard() {
+  const out = document.getElementById("output");
+  out.innerHTML = "";
+  const r = activeTab && results[activeTab];
+
+  if (!r) {
+    const ph = document.createElement("div");
+    ph.className = "placeholder";
+    ph.textContent = anyLoading()
+      ? "Claude is drafting each channel in parallel…"
+      : "Your generated posts will appear here, one tab per channel.";
+    out.appendChild(ph);
+    return;
+  }
+
+  const card = document.createElement("div");
+  card.className = "card";
+
+  // Header
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("div");
+  title.className = "card-title";
+  title.textContent = PLATFORMS[activeTab].label;
+  if (activeTab === "x") {
+    const cc = document.createElement("span");
+    const n = xLen(r);
+    cc.className = "char-count" + (n > 280 ? " over" : "");
+    cc.textContent = `${n} / 280`;
+    title.appendChild(cc);
+  }
+  const actions = document.createElement("div");
+  actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;";
+  const copyBtn = document.createElement("button");
+  copyBtn.className = "btn-outline";
+  copyBtn.textContent = "Copy full post";
+  copyBtn.onclick = () => copyText(assembleFull(r), copyBtn);
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "btn-solid";
+  shareBtn.textContent = "Share";
+  shareBtn.onclick = () => sharePost(r);
+  const regenBtn = document.createElement("button");
+  regenBtn.className = "btn-muted";
+  regenBtn.textContent = loading[activeTab] ? "…" : "Regenerate";
+  regenBtn.disabled = !!loading[activeTab];
+  regenBtn.onclick = () => runOne(activeTab);
+  actions.append(copyBtn, shareBtn, regenBtn);
+  head.append(title, actions);
+  card.appendChild(head);
+
+  // Sections
+  if (r.title) {
+    const strong = document.createElement("strong");
+    strong.textContent = r.title;
+    card.appendChild(section(activeTab === "email" ? "Subject line" : "Title", strong, r.title));
+  }
+  card.appendChild(section("Main body", document.createTextNode(r.body || ""), r.body));
+  card.appendChild(section("Call to action", document.createTextNode(r.cta || ""), r.cta));
+  if (r.hashtags && r.hashtags.length) {
+    const span = document.createElement("span");
+    span.className = "hashtags";
+    span.textContent = r.hashtags.join("  ");
+    card.appendChild(section("Hashtags", span, r.hashtags.join(" ")));
+  }
+  card.appendChild(section(
+    "AI image prompt — paste into your image generator",
+    document.createTextNode(r.image_prompt || ""),
+    r.image_prompt,
+    true
+  ));
+
+  out.appendChild(card);
+}
+
+renderTabs();
+renderCard();
+</script>
+
+</body>
+</html>

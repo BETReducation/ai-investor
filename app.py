@@ -1410,6 +1410,9 @@ def partners(): return send_from_directory("static", "partners.html")
 @app.route("/sitemap")
 def sitemap(): return send_from_directory("static", "sitemap.html")
 
+@app.route("/social-post-studio")
+def social_post_studio(): return send_from_directory("static", "social-post-studio.html")
+
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
 
@@ -2562,6 +2565,120 @@ def backtest():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Backtest failed: {str(e)}"}), 500
+
+
+# ── Social Post Studio — generate platform-ready posts via Claude ────────────
+
+_SOCIAL_PLATFORMS = {
+    "x": {
+        "label": "X",
+        "guidance": (
+            "X (Twitter) post. HARD LIMIT: body + cta combined must be under 270 "
+            "characters. Punchy, one clear idea, strong hook. 1-2 hashtags max. "
+            "No title needed (set title to empty string)."
+        ),
+    },
+    "instagram": {
+        "label": "Instagram",
+        "guidance": (
+            "Instagram caption. First line must be a scroll-stopping hook (it gets "
+            "truncated). Short paragraphs with line breaks, tasteful emojis. 5-8 "
+            "relevant hashtags. No title (empty string)."
+        ),
+    },
+    "facebook": {
+        "label": "Facebook",
+        "guidance": (
+            "Facebook post. Conversational, 2-3 short paragraphs, invites "
+            "comments/shares. 0-3 hashtags. No title (empty string)."
+        ),
+    },
+    "substack": {
+        "label": "Substack",
+        "guidance": (
+            "Substack note/post. Include a compelling title. Body 150-300 words, "
+            "written like a mini-essay with a personal, direct voice. Hashtags "
+            "array should be empty."
+        ),
+    },
+    "email": {
+        "label": "Email newsletter",
+        "guidance": (
+            "Email newsletter section. 'title' = the subject line (under 60 chars, "
+            "curiosity-driven). Body 100-200 words, scannable, warm. CTA should "
+            "read like button text + one supporting line. Hashtags empty."
+        ),
+    },
+}
+
+_SOCIAL_POST_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "body": {"type": "string"},
+        "cta": {"type": "string"},
+        "hashtags": {"type": "array", "items": {"type": "string"}},
+        "image_prompt": {"type": "string"},
+    },
+    "required": ["title", "body", "cta", "hashtags", "image_prompt"],
+    "additionalProperties": False,
+}
+
+
+@app.route("/api/social-posts", methods=["POST"])
+def social_posts():
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify({"error": "No Anthropic API key is configured on the server "
+                                 "(set the ANTHROPIC_API_KEY environment variable)."}), 503
+
+    data = request.get_json(silent=True) or {}
+    platform = _SOCIAL_PLATFORMS.get(data.get("platform"))
+    if not platform:
+        return jsonify({"error": "Unknown platform"}), 400
+    ideas = (data.get("ideas") or "").strip()
+    if not ideas:
+        return jsonify({"error": "Add some ideas or bullet points first."}), 400
+
+    prompt_parts = [
+        "You are an expert social media copywriter.",
+        "",
+        f"Create a {platform['label']} post from the author's raw notes below.",
+        "",
+        "AUTHOR'S IDEAS / BULLET POINTS:",
+        ideas[:8000],
+    ]
+    for field, heading in (("audience", "TARGET AUDIENCE"),
+                           ("ctaGoal", "GOAL OF THE CALL TO ACTION"),
+                           ("brandVoice", "BRAND VOICE NOTES")):
+        value = (data.get(field) or "").strip()
+        if value:
+            prompt_parts.append(f"{heading}: {value[:500]}")
+    prompt_parts += [
+        f"TONE: {(data.get('tone') or 'Friendly')[:50]}",
+        "",
+        f"PLATFORM RULES: {platform['guidance']}",
+        "",
+        'Also write "image_prompt": a detailed prompt (40-70 words) the author can '
+        "paste into an AI image generator (Midjourney, DALL-E, etc.) to create a "
+        "matching visual. Describe subject, style, mood, colours, composition. "
+        "No text in the image.",
+    ]
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=2000,
+            output_config={"format": {"type": "json_schema", "schema": _SOCIAL_POST_SCHEMA}},
+            messages=[{"role": "user", "content": "\n".join(prompt_parts)}],
+        )
+        if response.stop_reason == "refusal":
+            return jsonify({"error": "The model declined to write this post."}), 502
+        text = next((b.text for b in response.content if b.type == "text"), "")
+        return jsonify(json.loads(text))
+    except Exception as e:
+        return jsonify({"error": f"Generation failed: {e}"}), 502
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
