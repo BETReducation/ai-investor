@@ -135,7 +135,6 @@
     font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px;
     background: #EFEEE8; padding: 12px 14px; border-radius: 8px;
   }
-  .hashtags { color: #2743E3; font-weight: 500; }
 
   .mode-row { display: flex; gap: 8px; margin-bottom: 20px; }
   .mode-btn {
@@ -226,23 +225,23 @@
 const PLATFORMS = {
   x: {
     label: "X", dot: "#000000",
-    guidance: "X (Twitter) post. HARD LIMIT: body + cta combined must be under 270 characters. Punchy, one clear idea, strong hook. 1-2 hashtags max. No title needed (set title to empty string).",
+    guidance: "X (Twitter) post. HARD LIMIT: body + cta combined must be under 270 characters. Punchy, one clear idea, strong hook. No hashtags. No title needed (set title to empty string).",
   },
   instagram: {
     label: "Instagram", dot: "#E1306C",
-    guidance: "Instagram caption. First line must be a scroll-stopping hook (it gets truncated). Short paragraphs with line breaks, tasteful emojis. 5-8 relevant hashtags. No title (empty string).",
+    guidance: "Instagram caption. First line must be a scroll-stopping hook (it gets truncated). Short paragraphs with line breaks, tasteful emojis. No hashtags. No title (empty string).",
   },
   facebook: {
     label: "Facebook", dot: "#1877F2",
-    guidance: "Facebook post. Conversational, 2-3 short paragraphs, invites comments/shares. 0-3 hashtags. No title (empty string).",
+    guidance: "Facebook post. Conversational, 2-3 short paragraphs, invites comments/shares. No hashtags. No title (empty string).",
   },
   substack: {
     label: "Substack", dot: "#FF6719",
-    guidance: "Substack note/post. Include a compelling title. Body 150-300 words, written like a mini-essay with a personal, direct voice. Hashtags array should be empty.",
+    guidance: "Substack note/post. Include a compelling title. Body 150-300 words, written like a mini-essay with a personal, direct voice. No hashtags.",
   },
   email: {
     label: "Email newsletter", dot: "#5B8DEF",
-    guidance: "Email newsletter section. 'title' = the subject line (under 60 chars, curiosity-driven). Body 100-200 words, scannable, warm. CTA should read like button text + one supporting line. Hashtags empty.",
+    guidance: "Email newsletter section. 'title' = the subject line (under 60 chars, curiosity-driven). Body 100-200 words, scannable, warm. CTA should read like button text + one supporting line. No hashtags.",
   },
 };
 const TONES = ["Professional", "Friendly", "Bold", "Playful", "Inspiring"];
@@ -254,7 +253,7 @@ const MODES = [
 let tone = "Friendly";
 let mode = "auto";
 let selected = new Set();
-let results = {};       // platform -> {title, body, cta, hashtags, image_prompt}
+let results = {};       // platform -> {title, body, cta, image_prompt}
 let loading = {};       // platform -> bool (auto mode only)
 let prompts = {};       // platform -> prompt text (manual mode)
 let parseErrors = {};   // platform -> error string (manual mode)
@@ -316,13 +315,11 @@ function assembleFull(r) {
   const parts = [];
   if (r.title) parts.push(r.title);
   parts.push(r.body, r.cta);
-  if (r.hashtags && r.hashtags.length) parts.push(r.hashtags.join(" "));
   return parts.join("\n\n");
 }
 
 function xLen(r) {
-  const tags = (r.hashtags || []).join(" ");
-  return (r.body || "").length + (r.cta || "").length + 2 + (tags ? tags.length + 2 : 0);
+  return (r.body || "").length + (r.cta || "").length + 2;
 }
 
 async function copyText(text, btn) {
@@ -378,7 +375,7 @@ function buildPrompt(key, inputs) {
     'Also write "image_prompt": a detailed prompt (40-70 words) the author can paste into an AI image generator (Midjourney, DALL-E, etc.) to create a matching visual. Describe subject, style, mood, colours, composition. No text in the image.',
     "",
     "Respond with ONLY valid JSON, no markdown code fences, no preamble, no commentary before or after — just the object:",
-    '{"title": "...", "body": "...", "cta": "...", "hashtags": ["..."], "image_prompt": "..."}'
+    '{"title": "...", "body": "...", "cta": "...", "image_prompt": "..."}'
   );
   return lines.join("\n");
 }
@@ -418,7 +415,6 @@ function parseManualResponse(key, raw) {
     renderCard();
     return;
   }
-  parsed.hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
   delete parseErrors[key];
   results[key] = parsed;
   renderTabs(); renderCard();
@@ -651,12 +647,6 @@ function renderCard() {
   }
   card.appendChild(section("Main body", document.createTextNode(r.body || ""), r.body));
   card.appendChild(section("Call to action", document.createTextNode(r.cta || ""), r.cta));
-  if (r.hashtags && r.hashtags.length) {
-    const span = document.createElement("span");
-    span.className = "hashtags";
-    span.textContent = r.hashtags.join("  ");
-    card.appendChild(section("Hashtags", span, r.hashtags.join(" ")));
-  }
   card.appendChild(section(
     "AI image prompt — paste into your image generator",
     document.createTextNode(r.image_prompt || ""),

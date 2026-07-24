@@ -2661,7 +2661,7 @@ _SOCIAL_PLATFORMS = {
         "label": "X",
         "guidance": (
             "X (Twitter) post. HARD LIMIT: body + cta combined must be under 270 "
-            "characters. Punchy, one clear idea, strong hook. 1-2 hashtags max. "
+            "characters. Punchy, one clear idea, strong hook. No hashtags. "
             "No title needed (set title to empty string)."
         ),
     },
@@ -2669,23 +2669,22 @@ _SOCIAL_PLATFORMS = {
         "label": "Instagram",
         "guidance": (
             "Instagram caption. First line must be a scroll-stopping hook (it gets "
-            "truncated). Short paragraphs with line breaks, tasteful emojis. 5-8 "
-            "relevant hashtags. No title (empty string)."
+            "truncated). Short paragraphs with line breaks, tasteful emojis. "
+            "No hashtags. No title (empty string)."
         ),
     },
     "facebook": {
         "label": "Facebook",
         "guidance": (
             "Facebook post. Conversational, 2-3 short paragraphs, invites "
-            "comments/shares. 0-3 hashtags. No title (empty string)."
+            "comments/shares. No hashtags. No title (empty string)."
         ),
     },
     "substack": {
         "label": "Substack",
         "guidance": (
             "Substack note/post. Include a compelling title. Body 150-300 words, "
-            "written like a mini-essay with a personal, direct voice. Hashtags "
-            "array should be empty."
+            "written like a mini-essay with a personal, direct voice. No hashtags."
         ),
     },
     "email": {
@@ -2693,7 +2692,7 @@ _SOCIAL_PLATFORMS = {
         "guidance": (
             "Email newsletter section. 'title' = the subject line (under 60 chars, "
             "curiosity-driven). Body 100-200 words, scannable, warm. CTA should "
-            "read like button text + one supporting line. Hashtags empty."
+            "read like button text + one supporting line. No hashtags."
         ),
     },
 }
@@ -2704,10 +2703,9 @@ _SOCIAL_POST_SCHEMA = {
         "title": {"type": "string"},
         "body": {"type": "string"},
         "cta": {"type": "string"},
-        "hashtags": {"type": "array", "items": {"type": "string"}},
         "image_prompt": {"type": "string"},
     },
-    "required": ["title", "body", "cta", "hashtags", "image_prompt"],
+    "required": ["title", "body", "cta", "image_prompt"],
     "additionalProperties": False,
 }
 
