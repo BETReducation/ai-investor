@@ -1302,33 +1302,39 @@ def _fetch_ohlcv(
         raise ValueError(f"Invalid interval: {interval}")
     metal_ccy = _parse_metal_currency_symbol(symbol)
     if metal_ccy:
-        return _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
-    fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
-    ticker = yf.Ticker(symbol.upper())
-    if start_date:
-        import datetime as _dt
-        try:
-            _dt.date.fromisoformat(start_date)
-            if end_date:
-                _dt.date.fromisoformat(end_date)
-        except ValueError:
-            raise ValueError("start_date / end_date must be YYYY-MM-DD")
-        # auto_adjust=False: keep raw (split-adjusted only, not dividend-adjusted) closes.
-        # yfinance's auto_adjust=True folds dividends into every historical Close, which
-        # can badly skew RSI/MACD/etc. for anything with a meaningful dividend/distribution
-        # history — and it's also what our own price chart plots, so indicators computed
-        # here always line up with what's on screen.
-        df = _yf_history_with_retry(ticker, start=start_date, end=end_date or None, interval=fetch_interval)
+        # Used to return directly here, which meant the metal-currency pair itself
+        # (e.g. 'XAUGBP=X') never reached _stitch_live_tail below — only the two
+        # internal legs (GC=F, USDGBP=X) did, via their own nested _fetch_ohlcv calls,
+        # and neither of those is the symbol OANDA is actually asked to watch. Falling
+        # through to the same tail logic as the plain path fixes that.
+        df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
     else:
-        if period not in VALID_PERIODS:
-            raise ValueError(f"Invalid period: {period}")
-        df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
-    if df.empty:
-        raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
-    if interval in _RESAMPLE_INTERVALS:
-        df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
+        fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
+        ticker = yf.Ticker(symbol.upper())
+        if start_date:
+            import datetime as _dt
+            try:
+                _dt.date.fromisoformat(start_date)
+                if end_date:
+                    _dt.date.fromisoformat(end_date)
+            except ValueError:
+                raise ValueError("start_date / end_date must be YYYY-MM-DD")
+            # auto_adjust=False: keep raw (split-adjusted only, not dividend-adjusted) closes.
+            # yfinance's auto_adjust=True folds dividends into every historical Close, which
+            # can badly skew RSI/MACD/etc. for anything with a meaningful dividend/distribution
+            # history — and it's also what our own price chart plots, so indicators computed
+            # here always line up with what's on screen.
+            df = _yf_history_with_retry(ticker, start=start_date, end=end_date or None, interval=fetch_interval)
+        else:
+            if period not in VALID_PERIODS:
+                raise ValueError(f"Invalid period: {period}")
+            df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
         if df.empty:
-            raise ValueError(f"No data returned for symbol: {symbol}")
+            raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
+        if interval in _RESAMPLE_INTERVALS:
+            df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
+            if df.empty:
+                raise ValueError(f"No data returned for symbol: {symbol}")
     if not start_date:
         df = _stitch_live_tail(df, symbol, interval)
     return df
@@ -1342,7 +1348,7 @@ def _stitch_live_tail(df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFr
     period-based "current" queries, not explicit start_date/end_date historical
     ranges (e.g. the backtester), where stitching in "now" wouldn't make sense."""
     try:
-        live_tail = marketdata_router.get_live_tail(symbol, interval)
+        live_tail = marketdata_router.get_live_tail(symbol, interval, tz=df.index.tz)
         if live_tail is None or live_tail.empty:
             return df
         # OANDA/Alpaca timestamps are UTC; match df's own tz so the join point doesn't
