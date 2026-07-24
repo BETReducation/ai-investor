@@ -32,6 +32,8 @@ from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 
+from marketdata import router as marketdata_router
+
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
 # Railway (and most PaaS hosts) terminate TLS at an edge proxy and forward requests
@@ -1327,7 +1329,32 @@ def _fetch_ohlcv(
         df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol}")
+    if not start_date:
+        df = _stitch_live_tail(df, symbol, interval)
     return df
+
+
+def _stitch_live_tail(df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
+    """Replaces the trailing rows of `df` with a fresher live tail from
+    marketdata.router (OANDA/Alpaca), if one is available for this symbol — never
+    raises, and returns `df` unchanged on any failure or if nothing is available
+    (not configured, not a covered category, stream stale). Only called for
+    period-based "current" queries, not explicit start_date/end_date historical
+    ranges (e.g. the backtester), where stitching in "now" wouldn't make sense."""
+    try:
+        live_tail = marketdata_router.get_live_tail(symbol, interval)
+        if live_tail is None or live_tail.empty:
+            return df
+        # OANDA/Alpaca timestamps are UTC; match df's own tz so the join point doesn't
+        # show a visually-inconsistent offset between historical and live rows (purely
+        # cosmetic — pandas compares tz-aware instants correctly either way).
+        if df.index.tz is not None:
+            live_tail = live_tail.tz_localize("UTC") if live_tail.index.tz is None else live_tail
+            live_tail.index = live_tail.index.tz_convert(df.index.tz)
+        historical = df[df.index < live_tail.index[0]]
+        return pd.concat([historical, live_tail])
+    except Exception:
+        return df
 
 
 # ── Static ───────────────────────────────────────────────────────────────────
@@ -2400,6 +2427,7 @@ def add_custom_symbol():
         if df is None or df.empty:
             return jsonify({"error": f"No data found for '{symbol}' — check the ticker"}), 400
         custom.append({"symbol": symbol, "label": label, "category": category, "exchange": exchange})
+        marketdata_router.ensure_symbol_watched(symbol)
 
     prefs["custom_symbols"] = custom
     _save_preferences(current_user.id, prefs)
@@ -2627,6 +2655,31 @@ def backtest():
 
 _ensure_table()
 _ensure_default_user()
+
+
+def _should_start_background_streams() -> bool:
+    if _is_production:
+        return True  # gunicorn / non-debug run: no reloader involved, start once
+    # Local `python app.py` with debug=True: Werkzeug's reloader re-execs the process
+    # with WERKZEUG_RUN_MAIN=true once it's the real serving process — app.debug isn't
+    # usable for this check here, since app.run(debug=...) below hasn't executed yet
+    # at module-load time, so only WERKZEUG_RUN_MAIN reliably tells the two passes
+    # apart. Only start in the real serving process, not the one about to be replaced
+    # by that re-exec.
+    return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+
+
+if _should_start_background_streams():
+    try:
+        _seed_users = _load_users()
+        _seed_symbols = [
+            s["symbol"]
+            for u in _seed_users.values()
+            for s in (u.get("preferences", {}) or {}).get("custom_symbols", [])
+        ]
+        marketdata_router.start_background_streams(seed_symbols=_seed_symbols)
+    except Exception:
+        pass  # marketdata is a pure optimization layer — never block startup on it
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
