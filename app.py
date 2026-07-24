@@ -2711,6 +2711,7 @@ _SOCIAL_POST_SCHEMA = {
 
 
 @app.route("/api/social-posts", methods=["POST"])
+@alpha_author_required
 def social_posts():
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return jsonify({"error": "No Anthropic API key is configured on the server "
