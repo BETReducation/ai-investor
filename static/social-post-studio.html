@@ -136,6 +136,39 @@
     background: #EFEEE8; padding: 12px 14px; border-radius: 8px;
   }
   .hashtags { color: #2743E3; font-weight: 500; }
+
+  .mode-row { display: flex; gap: 8px; margin-bottom: 20px; }
+  .mode-btn {
+    flex: 1; font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 600;
+    padding: 9px 10px; border-radius: 8px; border: 1.5px solid #D8D6CE;
+    background: #fff; color: #5A5D63; cursor: pointer; text-align: center;
+  }
+  .mode-btn.on { border-color: #2743E3; background: #2743E3; color: #fff; }
+  .mode-hint { font-size: 12px; color: #8A8D94; margin: -12px 0 18px; line-height: 1.5; }
+
+  .manual-step { margin-bottom: 18px; }
+  .manual-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; background: #1A1C22; color: #F7F6F2;
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 11px; font-weight: 700;
+    margin-right: 8px; flex: none;
+  }
+  .manual-label {
+    font-family: 'Archivo', system-ui, sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase; color: #1A1C22;
+    display: flex; align-items: center; margin-bottom: 8px;
+  }
+  .prompt-box {
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;
+    background: #EFEEE8; border: 1.5px solid #E4E2DA; border-radius: 8px;
+    padding: 12px 14px; white-space: pre-wrap; max-height: 220px; overflow-y: auto;
+    color: #1A1C22; margin-bottom: 10px;
+  }
+  .paste-area {
+    width: 100%; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;
+    padding: 10px 12px; border-radius: 8px; border: 1.5px solid #D8D6CE;
+    background: #fff; color: #1A1C22; resize: vertical; margin-bottom: 10px;
+  }
 </style>
 </head>
 <body>
@@ -173,6 +206,10 @@
       <label class="field">Channels</label>
       <div class="chip-row" id="channelRow" style="margin-bottom:20px;"></div>
 
+      <label class="field">Mode</label>
+      <div class="mode-row" id="modeRow"></div>
+      <div class="mode-hint" id="modeHint"></div>
+
       <button class="generate-btn" id="generateBtn">Generate posts</button>
       <div class="error-box" id="errorBox" style="display:none;"></div>
     </div>
@@ -187,18 +224,40 @@
 
 <script>
 const PLATFORMS = {
-  x:         { label: "X",                dot: "#000000" },
-  instagram: { label: "Instagram",        dot: "#E1306C" },
-  facebook:  { label: "Facebook",         dot: "#1877F2" },
-  substack:  { label: "Substack",         dot: "#FF6719" },
-  email:     { label: "Email newsletter", dot: "#5B8DEF" },
+  x: {
+    label: "X", dot: "#000000",
+    guidance: "X (Twitter) post. HARD LIMIT: body + cta combined must be under 270 characters. Punchy, one clear idea, strong hook. 1-2 hashtags max. No title needed (set title to empty string).",
+  },
+  instagram: {
+    label: "Instagram", dot: "#E1306C",
+    guidance: "Instagram caption. First line must be a scroll-stopping hook (it gets truncated). Short paragraphs with line breaks, tasteful emojis. 5-8 relevant hashtags. No title (empty string).",
+  },
+  facebook: {
+    label: "Facebook", dot: "#1877F2",
+    guidance: "Facebook post. Conversational, 2-3 short paragraphs, invites comments/shares. 0-3 hashtags. No title (empty string).",
+  },
+  substack: {
+    label: "Substack", dot: "#FF6719",
+    guidance: "Substack note/post. Include a compelling title. Body 150-300 words, written like a mini-essay with a personal, direct voice. Hashtags array should be empty.",
+  },
+  email: {
+    label: "Email newsletter", dot: "#5B8DEF",
+    guidance: "Email newsletter section. 'title' = the subject line (under 60 chars, curiosity-driven). Body 100-200 words, scannable, warm. CTA should read like button text + one supporting line. Hashtags empty.",
+  },
 };
 const TONES = ["Professional", "Friendly", "Bold", "Playful", "Inspiring"];
+const MODES = [
+  { key: "manual", label: "Manual (free)", hint: "No API key needed. We build the prompt for each platform — you paste it into claude.ai (or any Claude chat), then paste the reply back here." },
+  { key: "auto",   label: "Auto (API key)", hint: "Generates instantly via the site's own Claude API key. Requires ANTHROPIC_API_KEY to be configured on the server." },
+];
 
 let tone = "Friendly";
+let mode = "manual";
 let selected = new Set(Object.keys(PLATFORMS));
 let results = {};       // platform -> {title, body, cta, hashtags, image_prompt}
-let loading = {};       // platform -> bool
+let loading = {};       // platform -> bool (auto mode only)
+let prompts = {};       // platform -> prompt text (manual mode)
+let parseErrors = {};   // platform -> error string (manual mode)
 let activeTab = null;
 
 // ---------- Input widgets ----------
@@ -226,6 +285,21 @@ Object.entries(PLATFORMS).forEach(([key, p]) => {
   };
   channelRow.appendChild(b);
 });
+
+const modeRow = document.getElementById("modeRow");
+const modeHint = document.getElementById("modeHint");
+function renderModeRow() {
+  modeRow.innerHTML = "";
+  MODES.forEach(m => {
+    const b = document.createElement("button");
+    b.className = "mode-btn" + (mode === m.key ? " on" : "");
+    b.textContent = m.label;
+    b.onclick = () => { mode = m.key; renderModeRow(); renderButton(); };
+    modeRow.appendChild(b);
+  });
+  modeHint.textContent = MODES.find(m => m.key === mode).hint;
+}
+renderModeRow();
 
 // ---------- Helpers ----------
 function showError(msg, transient) {
@@ -273,7 +347,84 @@ async function sharePost(r) {
   }
 }
 
-// ---------- API ----------
+// ---------- Manual (copy-paste) mode ----------
+function currentInputs() {
+  return {
+    ideas: document.getElementById("ideas").value,
+    audience: document.getElementById("audience").value,
+    ctaGoal: document.getElementById("ctaGoal").value,
+    brandVoice: document.getElementById("brandVoice").value,
+    tone,
+  };
+}
+
+function buildPrompt(key, inputs) {
+  const p = PLATFORMS[key];
+  const lines = [
+    "You are an expert social media copywriter.",
+    "",
+    `Create a ${p.label} post from the author's raw notes below.`,
+    "",
+    "AUTHOR'S IDEAS / BULLET POINTS:",
+    inputs.ideas,
+  ];
+  if (inputs.audience) lines.push("", `TARGET AUDIENCE: ${inputs.audience}`);
+  if (inputs.ctaGoal) lines.push("", `GOAL OF THE CALL TO ACTION: ${inputs.ctaGoal}`);
+  if (inputs.brandVoice) lines.push("", `BRAND VOICE NOTES: ${inputs.brandVoice}`);
+  lines.push(
+    "", `TONE: ${inputs.tone}`,
+    "", `PLATFORM RULES: ${p.guidance}`,
+    "",
+    'Also write "image_prompt": a detailed prompt (40-70 words) the author can paste into an AI image generator (Midjourney, DALL-E, etc.) to create a matching visual. Describe subject, style, mood, colours, composition. No text in the image.',
+    "",
+    "Respond with ONLY valid JSON, no markdown code fences, no preamble, no commentary before or after — just the object:",
+    '{"title": "...", "body": "...", "cta": "...", "hashtags": ["..."], "image_prompt": "..."}'
+  );
+  return lines.join("\n");
+}
+
+function prepareManual() {
+  const ideas = document.getElementById("ideas").value.trim();
+  if (!ideas) { showError("Add some ideas or bullet points first."); return; }
+  const keys = Object.keys(PLATFORMS).filter(k => selected.has(k));
+  if (!keys.length) { showError("Pick at least one channel."); return; }
+  showError(null);
+  results = {};
+  prompts = {};
+  parseErrors = {};
+  const inputs = currentInputs();
+  keys.forEach(k => { prompts[k] = buildPrompt(k, inputs); });
+  activeTab = keys[0];
+  renderTabs(); renderCard(); renderButton();
+}
+
+function parseManualResponse(key, raw) {
+  const cleaned = raw.replace(/```json|```/g, "").trim();
+  if (!cleaned) {
+    parseErrors[key] = "Paste Claude's reply above first.";
+    renderCard();
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (e) {
+    parseErrors[key] = "Couldn't parse that as JSON — make sure you pasted Claude's full reply (JSON only, no extra text) and try again.";
+    renderCard();
+    return;
+  }
+  if (typeof parsed.body !== "string" || typeof parsed.cta !== "string") {
+    parseErrors[key] = "That JSON is missing expected fields (body/cta) — check you pasted the whole reply.";
+    renderCard();
+    return;
+  }
+  parsed.hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags : [];
+  delete parseErrors[key];
+  results[key] = parsed;
+  renderTabs(); renderCard();
+}
+
+// ---------- API (auto mode) ----------
 async function runOne(key) {
   loading[key] = true;
   renderTabs(); renderCard(); renderButton();
@@ -316,13 +467,17 @@ async function runAll() {
   await Promise.all(keys.map(k => runOne(k)));
 }
 
-document.getElementById("generateBtn").onclick = runAll;
+document.getElementById("generateBtn").onclick = () => {
+  if (mode === "manual") prepareManual();
+  else runAll();
+};
 
 // ---------- Rendering ----------
 function renderButton() {
   const btn = document.getElementById("generateBtn");
   btn.disabled = anyLoading();
-  btn.textContent = anyLoading() ? "Writing your posts…" : "Generate posts";
+  btn.textContent = anyLoading() ? "Writing your posts…"
+    : mode === "manual" ? "Prepare prompts" : "Generate posts";
 }
 
 function renderTabs() {
@@ -364,12 +519,78 @@ function section(eyebrow, bodyNode, copyValue, mono) {
   return wrap;
 }
 
+function renderManualCard(key) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("div");
+  title.className = "card-title";
+  title.textContent = PLATFORMS[key].label;
+  head.appendChild(title);
+  card.appendChild(head);
+
+  // Step 1: copy prompt
+  const step1 = document.createElement("div");
+  step1.className = "manual-step";
+  const l1 = document.createElement("div");
+  l1.className = "manual-label";
+  l1.innerHTML = '<span class="manual-num">1</span>Copy this prompt';
+  const promptBox = document.createElement("div");
+  promptBox.className = "prompt-box";
+  promptBox.textContent = prompts[key];
+  const copyPromptBtn = document.createElement("button");
+  copyPromptBtn.className = "btn-outline btn-small";
+  copyPromptBtn.textContent = "Copy prompt";
+  copyPromptBtn.onclick = () => copyText(prompts[key], copyPromptBtn);
+  step1.append(l1, promptBox, copyPromptBtn);
+
+  // Step 2: paste into claude.ai
+  const step2 = document.createElement("div");
+  step2.className = "manual-step";
+  const l2 = document.createElement("div");
+  l2.className = "manual-label";
+  l2.innerHTML = '<span class="manual-num">2</span>Paste into claude.ai (or any Claude chat) and send it';
+  step2.appendChild(l2);
+
+  // Step 3: paste reply back
+  const step3 = document.createElement("div");
+  step3.className = "manual-step";
+  const l3 = document.createElement("div");
+  l3.className = "manual-label";
+  l3.innerHTML = '<span class="manual-num">3</span>Paste Claude\'s reply here';
+  const pasteArea = document.createElement("textarea");
+  pasteArea.className = "paste-area";
+  pasteArea.rows = 5;
+  pasteArea.placeholder = '{"title": "...", "body": "...", ...}';
+  const useBtn = document.createElement("button");
+  useBtn.className = "btn-solid";
+  useBtn.textContent = "Use this response";
+  useBtn.onclick = () => parseManualResponse(key, pasteArea.value);
+  step3.append(l3, pasteArea, useBtn);
+  if (parseErrors[key]) {
+    const err = document.createElement("div");
+    err.className = "error-box";
+    err.style.marginTop = "10px";
+    err.textContent = parseErrors[key];
+    step3.appendChild(err);
+  }
+
+  card.append(step1, step2, step3);
+  return card;
+}
+
 function renderCard() {
   const out = document.getElementById("output");
   out.innerHTML = "";
   const r = activeTab && results[activeTab];
 
   if (!r) {
+    if (mode === "manual" && activeTab && prompts[activeTab]) {
+      out.appendChild(renderManualCard(activeTab));
+      return;
+    }
     const ph = document.createElement("div");
     ph.className = "placeholder";
     ph.textContent = anyLoading()
@@ -409,7 +630,15 @@ function renderCard() {
   regenBtn.className = "btn-muted";
   regenBtn.textContent = loading[activeTab] ? "…" : "Regenerate";
   regenBtn.disabled = !!loading[activeTab];
-  regenBtn.onclick = () => runOne(activeTab);
+  regenBtn.onclick = () => {
+    if (mode === "manual") {
+      delete results[activeTab];
+      prompts[activeTab] = buildPrompt(activeTab, currentInputs());
+      renderTabs(); renderCard();
+    } else {
+      runOne(activeTab);
+    }
+  };
   actions.append(copyBtn, shareBtn, regenBtn);
   head.append(title, actions);
   card.appendChild(head);
@@ -440,6 +669,7 @@ function renderCard() {
 
 renderTabs();
 renderCard();
+renderButton();
 </script>
 
 </body>
