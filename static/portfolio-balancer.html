@@ -304,6 +304,13 @@
         <li><a href="/alpha/podcast">Podcast</a></li>
       </ul>
     </li>
+    <li class="has-drop" id="navStudioLi" style="display:none;">
+      <a href="#" onclick="return false;">Studio <span class="nav-chev">▾</span></a>
+      <ul class="site-dropdown">
+        <li><a href="/alpha/studio">Alpha Studio</a></li>
+        <li><a href="/social-post-studio">Social Post Studio</a></li>
+      </ul>
+    </li>
     <li><a href="/partners">Partners</a></li>
     <li><a href="/sitemap">Site Map</a></li>
   </ul>
@@ -340,6 +347,22 @@ window.addEventListener('resize', () => {
     document.querySelectorAll('.has-drop.open').forEach(li => li.classList.remove('open'));
   }
 });
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLi');
+          if (studioLink) studioLink.style.display = '';
+        }
+      }
+    }
+  } catch {}
+})();
 </script>
 
 <!-- HERO -->
