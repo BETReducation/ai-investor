@@ -87,14 +87,7 @@ ALPHA_TOPICS = {
     "connor": ["Macro & Micro", "Quant Statistics", "Finance & Formulae"],
 }
 
-# The 3 visualisation pages linked from /tools/data-visualisation — each is its
-# own feed of dated posts at /tools/data-visualisation/<slug>. Matches the 3
-# placeholder rows on the hub page; must stay in sync with static/data-visualisation.html.
-DATAVIZ_PAGES = {
-    "viz-1": "Visualisation 01",
-    "viz-2": "Visualisation 02",
-    "viz-3": "Visualisation 03",
-}
+DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
 
 
 def _db_conn():
@@ -176,6 +169,18 @@ def _ensure_table() -> None:
             )
         """)
         cur.execute("ALTER TABLE dataviz_content ADD COLUMN IF NOT EXISTS page TEXT")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS dataviz_pages (
+                slug        TEXT PRIMARY KEY,
+                label       TEXT NOT NULL,
+                author      TEXT,
+                created_at  TIMESTAMP NOT NULL DEFAULT now()
+            )
+        """)
+        # Seed the 3 pages that existed before pages became self-service, so
+        # any content already tagged with these slugs keeps working.
+        for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03")):
+            cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -812,6 +817,81 @@ def alpha_content_delete(item_id: int) -> bool:
     data["items"] = [i for i in data["items"] if i.get("id") != item_id]
     _save_alpha_content_json(data)
     return len(data["items"]) < before
+
+
+# ── Data Visualisation pages ──────────────────────────────────────────────────
+# Self-service pages Tom/Gary spin up from the studio — each is a slug/label
+# pair that dataviz_content.page points at. JSON-fallback mirrors the seed
+# rows inserted by _ensure_table so dev-mode (no DATABASE_URL) still has the
+# original 3 pages available.
+
+_SEED_DATAVIZ_PAGES = [
+    {"slug": "viz-1", "label": "Visualisation 01", "author": None},
+    {"slug": "viz-2", "label": "Visualisation 02", "author": None},
+    {"slug": "viz-3", "label": "Visualisation 03", "author": None},
+]
+
+
+def _load_dataviz_pages_json() -> dict:
+    if not os.path.exists(DATAVIZ_PAGES_FILE):
+        return {"pages": list(_SEED_DATAVIZ_PAGES)}
+    with open(DATAVIZ_PAGES_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_dataviz_pages_json(data: dict) -> None:
+    with open(DATAVIZ_PAGES_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def _slugify(label: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+    return slug or "page"
+
+
+def dataviz_pages_list() -> list:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT slug, label, author, created_at FROM dataviz_pages ORDER BY created_at ASC")
+            return [
+                {"slug": r["slug"], "label": r["label"], "author": r["author"],
+                 "created_at": r["created_at"].isoformat() if r["created_at"] else None}
+                for r in cur.fetchall()
+            ]
+    data = _load_dataviz_pages_json()
+    return sorted(data["pages"], key=lambda p: p.get("created_at") or "")
+
+
+def dataviz_page_get(slug: str) -> dict | None:
+    for page in dataviz_pages_list():
+        if page["slug"] == slug:
+            return page
+    return None
+
+
+def dataviz_page_create(label: str, author: str) -> dict:
+    now = _dt.datetime.utcnow()
+    base_slug = _slugify(label)
+    existing_slugs = {p["slug"] for p in dataviz_pages_list()}
+    slug = base_slug
+    n = 2
+    while slug in existing_slugs:
+        slug = f"{base_slug}-{n}"
+        n += 1
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "INSERT INTO dataviz_pages (slug, label, author, created_at) VALUES (%s, %s, %s, %s) "
+                "RETURNING slug, label, author, created_at",
+                (slug, label, author, now),
+            )
+            row = cur.fetchone()
+            return {"slug": row["slug"], "label": row["label"], "author": row["author"], "created_at": row["created_at"].isoformat()}
+    data = _load_dataviz_pages_json()
+    page = {"slug": slug, "label": label, "author": author, "created_at": now.isoformat()}
+    data["pages"].append(page)
+    _save_dataviz_pages_json(data)
+    return page
 
 
 # ── Data Visualisation content store ─────────────────────────────────────────
@@ -1693,7 +1773,7 @@ def tools_data_visualisation(): return send_from_directory("static", "data-visua
 
 @app.route("/tools/data-visualisation/<slug>")
 def tools_data_visualisation_page(slug):
-    if slug not in DATAVIZ_PAGES:
+    if not dataviz_page_get(slug):
         return send_from_directory("static", "data-visualisation.html"), 404
     return send_from_directory("static", "data-visualisation-page.html")
 
@@ -2559,8 +2639,8 @@ def api_dataviz_content():
         return jsonify({"items": dataviz_content_list(status=status, page=page)})
     data = request.get_json() or {}
     page = (data.get("page") or "").strip()
-    if page not in DATAVIZ_PAGES:
-        return jsonify({"error": f"page must be one of: {sorted(DATAVIZ_PAGES)}"}), 400
+    if not dataviz_page_get(page):
+        return jsonify({"error": "Unknown page — create it first"}), 400
     fields = {
         "author": current_user.alpha_role,
         "page": page,
@@ -2592,8 +2672,8 @@ def api_dataviz_content_item(item_id):
         if key in data:
             updates[key] = (data.get(key) or "").strip() or None
     if "page" in data:
-        if data["page"] not in DATAVIZ_PAGES:
-            return jsonify({"error": f"page must be one of: {sorted(DATAVIZ_PAGES)}"}), 400
+        if not dataviz_page_get(data["page"]):
+            return jsonify({"error": "Unknown page — create it first"}), 400
         updates["page"] = data["page"]
     if "status" in data and data["status"] in ("draft", "published"):
         updates["status"] = data["status"]
@@ -2647,11 +2727,48 @@ _DATAVIZ_PUBLIC_FIELDS = ["id", "page", "title", "description", "positive_analys
 
 @app.route("/api/dataviz/<slug>/content", methods=["GET"])
 def api_dataviz_public_content(slug):
-    if slug not in DATAVIZ_PAGES:
+    page = dataviz_page_get(slug)
+    if not page:
         return jsonify({"error": "Unknown page"}), 404
     items = dataviz_content_list(status="published", page=slug)
     public = [{**{k: i.get(k) for k in _DATAVIZ_PUBLIC_FIELDS}, "image_url": _dataviz_public_image_url(i)} for i in items]
-    return jsonify({"page": slug, "label": DATAVIZ_PAGES[slug], "items": public})
+    return jsonify({"page": slug, "label": page["label"], "items": public})
+
+
+@app.route("/api/dataviz/pages", methods=["GET", "POST"])
+def api_dataviz_pages():
+    if request.method == "GET":
+        return jsonify({"pages": dataviz_pages_list()})
+    if not current_user.is_authenticated or getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
+        return jsonify({"error": "This account has no Data Visualisation author access"}), 403
+    data = request.get_json() or {}
+    label = (data.get("label") or "").strip()
+    if not label:
+        return jsonify({"error": "label is required"}), 400
+    if len(label) > 80:
+        return jsonify({"error": "label must be 80 characters or fewer"}), 400
+    page = dataviz_page_create(label, current_user.alpha_role)
+    return jsonify({"success": True, "page": page})
+
+
+@app.route("/api/dataviz/pages/overview", methods=["GET"])
+def api_dataviz_pages_overview():
+    """Hub-page feed: each page plus its most recently published post, if any."""
+    overview = []
+    for page in dataviz_pages_list():
+        items = dataviz_content_list(status="published", page=page["slug"])
+        latest = items[0] if items else None
+        overview.append({
+            "slug": page["slug"],
+            "label": page["label"],
+            "latest": None if not latest else {
+                "title": latest.get("title"),
+                "description": latest.get("description"),
+                "published_at": latest.get("published_at"),
+                "image_url": _dataviz_public_image_url(latest),
+            },
+        })
+    return jsonify({"pages": overview})
 
 
 @app.route("/api/subscription/cancel", methods=["POST"])

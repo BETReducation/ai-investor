@@ -171,6 +171,18 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <div id="studioApp" style="display:none;">
       <div class="author-line">Managing the <a href="/tools/data-visualisation" target="_blank">Data Visualisation page →</a></div>
 
+      <!-- Create a new page -->
+      <div class="studio-panel">
+        <h2>Create a New Page</h2>
+        <p class="panel-desc">Each page is its own dated feed on the site, linked from the Data Visualisation hub. Give it a short, clear name — you'll pick it from the dropdown below when adding a visualisation.</p>
+        <div class="form-field">
+          <label class="form-label" for="newPageLabel">Page name</label>
+          <input class="form-input" id="newPageLabel" placeholder="e.g. Gold vs Real Yields">
+        </div>
+        <button class="btn-primary-sm" id="createPageBtn" onclick="createPage()">Create Page</button>
+        <div class="form-msg" id="createPageMsg"></div>
+      </div>
+
       <!-- Add a visualisation -->
       <div class="studio-panel">
         <h2>Add a Visualisation</h2>
@@ -242,18 +254,70 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 </footer>
 
 <script>
-// Must stay in sync with DATAVIZ_PAGES in app.py — the 3 pages linked from
-// the Data Visualisation hub page, each its own dated post feed.
-const DATAVIZ_PAGES = { 'viz-1': 'Visualisation 01', 'viz-2': 'Visualisation 02', 'viz-3': 'Visualisation 03' };
+// Populated from /api/dataviz/pages on load — pages are created by Tom/Gary
+// from the studio, not hardcoded here.
+let DATAVIZ_PAGES = {};
 
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+async function refreshPages() {
+  try {
+    const res = await fetch('/api/dataviz/pages');
+    const data = await res.json();
+    DATAVIZ_PAGES = {};
+    (data.pages || []).forEach(p => { DATAVIZ_PAGES[p.slug] = p.label; });
+  } catch { DATAVIZ_PAGES = {}; }
+  populatePageSelects();
+}
+
 function populatePageSelects() {
   const opts = Object.entries(DATAVIZ_PAGES).map(([slug, label]) => `<option value="${esc(slug)}">${esc(label)}</option>`).join('');
-  document.querySelectorAll('.page-select').forEach(sel => { sel.innerHTML = opts; });
-  document.querySelectorAll('.page-select-all').forEach(sel => { sel.insertAdjacentHTML('beforeend', opts); });
+  document.querySelectorAll('.page-select').forEach(sel => {
+    const selected = sel.dataset.selected || sel.value;
+    sel.innerHTML = opts;
+    if (selected) sel.value = selected;
+  });
+  document.querySelectorAll('.page-select-all').forEach(sel => {
+    const selected = sel.value;
+    sel.innerHTML = '<option value="">All pages</option>' + opts;
+    sel.value = selected;
+  });
+}
+
+async function createPage() {
+  const btn = document.getElementById('createPageBtn');
+  const msg = document.getElementById('createPageMsg');
+  const label = document.getElementById('newPageLabel').value.trim();
+  if (!label) {
+    msg.textContent = 'Page name is required.';
+    msg.className = 'form-msg error';
+    return;
+  }
+  btn.disabled = true;
+  msg.textContent = '';
+  msg.className = 'form-msg';
+  try {
+    const res = await fetch('/api/dataviz/pages', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    document.getElementById('newPageLabel').value = '';
+    msg.textContent = `Page created — select "${data.page.label}" from the dropdown below.`;
+    msg.className = 'form-msg success';
+    await refreshPages();
+    document.getElementById('newPage').value = data.page.slug;
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function initStudio() {
@@ -276,7 +340,7 @@ async function initStudio() {
   if (studioLi) studioLi.style.display = '';
   const datavizStudioLi = document.getElementById('navDatavizStudioLi');
   if (datavizStudioLi) datavizStudioLi.style.display = '';
-  populatePageSelects();
+  await refreshPages();
   loadItems();
 }
 
@@ -339,11 +403,7 @@ async function loadItems() {
       return;
     }
     list.innerHTML = items.map(renderCard).join('');
-    document.querySelectorAll('#studioList .page-select').forEach(sel => {
-      const opts = Object.entries(DATAVIZ_PAGES).map(([slug, label]) => `<option value="${esc(slug)}">${esc(label)}</option>`).join('');
-      sel.innerHTML = opts;
-      sel.value = sel.dataset.selected || '';
-    });
+    populatePageSelects();
   } catch {
     list.innerHTML = '<div class="list-empty">Couldn\'t load your visualisations — check your connection and try again.</div>';
   }

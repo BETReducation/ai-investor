@@ -28,6 +28,7 @@
 .content-inner { max-width: 1100px; margin: 0 auto; }
 
 /* VISUALISATION ROWS */
+.list-loading { font-size: 14px; color: var(--muted); text-align: center; padding: 60px 20px; }
 .viz-row { display: flex; gap: 40px; align-items: center; padding: 48px 0; border-bottom: 1px solid var(--border); }
 .viz-row:last-child { border-bottom: none; }
 .viz-row.reverse { flex-direction: row-reverse; }
@@ -144,61 +145,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
 
 <section class="content-section">
   <div class="content-inner">
-
-    <div class="viz-row reveal">
-      <div class="viz-image">
-        <div class="placeholder-box">
-          <div class="placeholder-icon">🖼️</div>
-          <div class="placeholder-label">Image placeholder</div>
-        </div>
-      </div>
-      <div class="viz-text">
-        <div class="viz-kicker">Visualisation 01</div>
-        <div class="viz-title">[Placeholder Visualisation Title]</div>
-        <div class="viz-desc">Placeholder description of what this data visualisation shows and why it matters — this will be replaced with real copy once the underlying chart is built.</div>
-        <div class="viz-cta">[Placeholder catchy call to action]</div>
-        <a href="/tools/data-visualisation/viz-1" class="viz-btn">View Full Visualisation
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
-      </div>
+    <div class="viz-list" id="vizList">
+      <div class="list-loading">Loading visualisations…</div>
     </div>
-
-    <div class="viz-row reverse reveal">
-      <div class="viz-image">
-        <div class="placeholder-box">
-          <div class="placeholder-icon">🖼️</div>
-          <div class="placeholder-label">Image placeholder</div>
-        </div>
-      </div>
-      <div class="viz-text">
-        <div class="viz-kicker">Visualisation 02</div>
-        <div class="viz-title">[Placeholder Visualisation Title]</div>
-        <div class="viz-desc">Placeholder description of what this data visualisation shows and why it matters — this will be replaced with real copy once the underlying chart is built.</div>
-        <div class="viz-cta">[Placeholder catchy call to action]</div>
-        <a href="/tools/data-visualisation/viz-2" class="viz-btn">View Full Visualisation
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
-      </div>
-    </div>
-
-    <div class="viz-row reveal">
-      <div class="viz-image">
-        <div class="placeholder-box">
-          <div class="placeholder-icon">🖼️</div>
-          <div class="placeholder-label">Image placeholder</div>
-        </div>
-      </div>
-      <div class="viz-text">
-        <div class="viz-kicker">Visualisation 03</div>
-        <div class="viz-title">[Placeholder Visualisation Title]</div>
-        <div class="viz-desc">Placeholder description of what this data visualisation shows and why it matters — this will be replaced with real copy once the underlying chart is built.</div>
-        <div class="viz-cta">[Placeholder catchy call to action]</div>
-        <a href="/tools/data-visualisation/viz-3" class="viz-btn">View Full Visualisation
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
-      </div>
-    </div>
-
   </div>
 </section>
 
@@ -221,11 +170,60 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
 </footer>
 
 <script>
-const revealEls = document.querySelectorAll('.reveal');
+function esc(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
-revealEls.forEach(el => io.observe(el));
+
+async function loadPages() {
+  const list = document.getElementById('vizList');
+  try {
+    const res = await fetch('/api/dataviz/pages/overview');
+    const data = await res.json();
+    const pages = data.pages || [];
+    if (!pages.length) {
+      list.innerHTML = '<div class="list-loading">No visualisations published yet — check back soon.</div>';
+      return;
+    }
+    list.innerHTML = pages.map(renderPageRow).join('');
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  } catch {
+    list.innerHTML = '<div class="list-loading">Couldn\'t load visualisations — check your connection and try again.</div>';
+  }
+}
+
+function renderPageRow(page, index) {
+  const latest = page.latest;
+  const imageInner = latest && latest.image_url
+    ? `<img src="${esc(latest.image_url)}" alt="">`
+    : `<div class="placeholder-icon">🖼️</div><div class="placeholder-label">${latest ? 'No image yet' : 'Nothing published yet'}</div>`;
+  const desc = latest && latest.description
+    ? esc(latest.description)
+    : 'No visualisations have been published on this page yet — check back soon.';
+  const cta = latest ? 'See the latest update' : 'Be the first to see it when it lands';
+  return `
+    <div class="viz-row reveal${index % 2 === 1 ? ' reverse' : ''}">
+      <div class="viz-image">
+        <div class="placeholder-box">${imageInner}</div>
+      </div>
+      <div class="viz-text">
+        <div class="viz-kicker">${esc(page.label)}</div>
+        <div class="viz-title">${latest ? esc(latest.title) || 'Untitled update' : esc(page.label)}</div>
+        <div class="viz-desc">${desc}</div>
+        <div class="viz-cta">${cta}</div>
+        <a href="/tools/data-visualisation/${esc(page.slug)}" class="viz-btn">View Full Visualisation
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  `;
+}
+
+loadPages();
+
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });
