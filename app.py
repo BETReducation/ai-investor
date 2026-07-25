@@ -73,6 +73,7 @@ ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
 ALPHA_CONTENT_KINDS = {"post", "video", "link", "watchlist"}
 ALPHA_STANCES = {"bullish", "neutral", "bearish"}
 ALPHA_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "alpha_content.json")
+DATAVIZ_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "dataviz_content.json")
 ALPHA_ATTACHMENTS_FILE = os.path.join(os.path.dirname(__file__), "alpha_attachments.json")
 ALLOWED_DOC_EXTENSIONS = {"docx", "pdf", "xlsx", "xls"}
 MAX_UPLOAD_TEXT_CHARS = 40000  # cap extracted text sent to the normalize step
@@ -145,6 +146,23 @@ def _ensure_table() -> None:
                 filename    TEXT,
                 file        BYTEA NOT NULL,
                 created_at  TIMESTAMP NOT NULL DEFAULT now()
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS dataviz_content (
+                id                 SERIAL PRIMARY KEY,
+                author             TEXT NOT NULL,
+                status             TEXT NOT NULL DEFAULT 'draft',
+                title              TEXT,
+                description        TEXT,
+                positive_analysis  TEXT,
+                warning            TEXT,
+                link               TEXT,
+                image_filename     TEXT,
+                image_file         BYTEA,
+                created_at         TIMESTAMP NOT NULL DEFAULT now(),
+                updated_at         TIMESTAMP NOT NULL DEFAULT now(),
+                published_at       TIMESTAMP
             )
         """)
 
@@ -411,6 +429,18 @@ def alpha_author_required(f):
             return jsonify({"error": "Login required"}), 401
         if not getattr(current_user, "alpha_role", None):
             return jsonify({"error": "This account has no Alpha author access"}), 403
+        return f(*args, **kwargs)
+    return wrapped
+
+
+def dataviz_author_required(f):
+    """Gates the Data Visualisation studio to Tom's account (alpha_role 'tom')."""
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({"error": "Login required"}), 401
+        if getattr(current_user, "alpha_role", None) != "tom":
+            return jsonify({"error": "This account has no Data Visualisation author access"}), 403
         return f(*args, **kwargs)
     return wrapped
 
@@ -767,6 +797,179 @@ def alpha_content_delete(item_id: int) -> bool:
     before = len(data["items"])
     data["items"] = [i for i in data["items"] if i.get("id") != item_id]
     _save_alpha_content_json(data)
+    return len(data["items"]) < before
+
+
+# ── Data Visualisation content store ─────────────────────────────────────────
+# Same Postgres/JSON dual-path pattern as alpha_content above, trimmed down to
+# the 5 fields Tom's upload tool needs: image, description, positive analysis,
+# an accuracy/usefulness warning, and an optional further-reading link.
+
+_DATAVIZ_FIELDS = ["author", "status", "title", "description", "positive_analysis", "warning", "link", "image_filename"]
+
+
+def _dataviz_row_to_dict(row: dict) -> dict:
+    d = {k: row.get(k) for k in ["id", *_DATAVIZ_FIELDS]}
+    for key in ("created_at", "updated_at", "published_at"):
+        val = row.get(key)
+        d[key] = val.isoformat() if val is not None else None
+    return d
+
+
+def _load_dataviz_json() -> dict:
+    if not os.path.exists(DATAVIZ_CONTENT_FILE):
+        return {"items": [], "next_id": 1}
+    with open(DATAVIZ_CONTENT_FILE, "r") as f:
+        return json.load(f)
+
+
+def _save_dataviz_json(data: dict) -> None:
+    with open(DATAVIZ_CONTENT_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def dataviz_content_list(status: str | None = None) -> list:
+    if DATABASE_URL:
+        query = f"SELECT id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at FROM dataviz_content WHERE 1=1"
+        params = []
+        if status:
+            query += " AND status = %s"
+            params.append(status)
+        query += " ORDER BY created_at DESC"
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(query, params)
+            return [_dataviz_row_to_dict(row) for row in cur.fetchall()]
+    data = _load_dataviz_json()
+    items = data["items"]
+    if status:
+        items = [i for i in items if i.get("status") == status]
+    items = sorted(items, key=lambda i: i.get("created_at") or "", reverse=True)
+    return [{k: v for k, v in i.items() if k != "image_file"} for i in items]
+
+
+def dataviz_content_get(item_id: int) -> dict | None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"SELECT id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at "
+                f"FROM dataviz_content WHERE id = %s", (item_id,)
+            )
+            row = cur.fetchone()
+            return _dataviz_row_to_dict(row) if row else None
+    data = _load_dataviz_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            return {k: v for k, v in item.items() if k != "image_file"}
+    return None
+
+
+def dataviz_content_get_image(item_id: int):
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT image_filename, image_file FROM dataviz_content WHERE id = %s", (item_id,))
+            row = cur.fetchone()
+            if not row or row["image_file"] is None:
+                return None, None
+            return row["image_filename"], bytes(row["image_file"])
+    data = _load_dataviz_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            b64 = item.get("image_file")
+            if not b64:
+                return None, None
+            return item.get("image_filename"), base64.b64decode(b64)
+    return None, None
+
+
+def dataviz_content_set_image(item_id: int, filename: str, file_bytes: bytes) -> dict | None:
+    now = _dt.datetime.utcnow()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"UPDATE dataviz_content SET image_file = %s, image_filename = %s, updated_at = %s WHERE id = %s "
+                f"RETURNING id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at",
+                (psycopg2.Binary(file_bytes), filename, now, item_id),
+            )
+            row = cur.fetchone()
+            return _dataviz_row_to_dict(row) if row else None
+    data = _load_dataviz_json()
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            item["image_file"] = base64.b64encode(file_bytes).decode("ascii")
+            item["image_filename"] = filename
+            item["updated_at"] = now.isoformat()
+            _save_dataviz_json(data)
+            return {k: v for k, v in item.items() if k != "image_file"}
+    return None
+
+
+def dataviz_content_create(fields: dict) -> dict:
+    now = _dt.datetime.utcnow()
+    if DATABASE_URL:
+        cols = [*_DATAVIZ_FIELDS, "created_at", "updated_at"]
+        vals = [fields.get(k) for k in _DATAVIZ_FIELDS] + [now, now]
+        placeholders = ", ".join(["%s"] * len(vals))
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"INSERT INTO dataviz_content ({', '.join(cols)}) VALUES ({placeholders}) "
+                f"RETURNING id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at",
+                vals,
+            )
+            row = cur.fetchone()
+            return _dataviz_row_to_dict(row)
+    data = _load_dataviz_json()
+    new_id = data.get("next_id", 1)
+    item = {k: fields.get(k) for k in _DATAVIZ_FIELDS}
+    item["id"] = new_id
+    item["created_at"] = now.isoformat()
+    item["updated_at"] = now.isoformat()
+    item["published_at"] = None
+    data["items"].append(item)
+    data["next_id"] = new_id + 1
+    _save_dataviz_json(data)
+    return {k: v for k, v in item.items() if k != "image_file"}
+
+
+def dataviz_content_update(item_id: int, updates: dict) -> dict | None:
+    now = _dt.datetime.utcnow()
+    allowed = set(_DATAVIZ_FIELDS) | {"published_at"}
+    updates = {k: v for k, v in updates.items() if k in allowed}
+    if DATABASE_URL:
+        if not updates:
+            return dataviz_content_get(item_id)
+        set_clauses = [f"{k} = %s" for k in updates] + ["updated_at = %s"]
+        vals = list(updates.values()) + [now, item_id]
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"UPDATE dataviz_content SET {', '.join(set_clauses)} WHERE id = %s "
+                f"RETURNING id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at",
+                vals,
+            )
+            row = cur.fetchone()
+            return _dataviz_row_to_dict(row) if row else None
+    data = _load_dataviz_json()
+    json_updates = dict(updates)
+    if "published_at" in json_updates:
+        val = json_updates["published_at"]
+        json_updates["published_at"] = val.isoformat() if hasattr(val, "isoformat") else val
+    for item in data["items"]:
+        if item.get("id") == item_id:
+            item.update(json_updates)
+            item["updated_at"] = now.isoformat()
+            _save_dataviz_json(data)
+            return {k: v for k, v in item.items() if k != "image_file"}
+    return None
+
+
+def dataviz_content_delete(item_id: int) -> bool:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM dataviz_content WHERE id = %s", (item_id,))
+            return cur.rowcount > 0
+    data = _load_dataviz_json()
+    before = len(data["items"])
+    data["items"] = [i for i in data["items"] if i.get("id") != item_id]
+    _save_dataviz_json(data)
     return len(data["items"]) < before
 
 
@@ -1465,6 +1668,9 @@ def tools_portfolio(): return send_from_directory("static", "portfolio-balancer.
 
 @app.route("/tools/calculator")
 def tools_calculator(): return send_from_directory("static", "calculator.html")
+
+@app.route("/tools/data-visualisation")
+def tools_data_visualisation(): return send_from_directory("static", "data-visualisation.html")
 
 @app.route("/arena")
 def arena(): return send_from_directory("static", "arena.html")
@@ -2307,12 +2513,93 @@ def alpha_post_page(slug, post_id):
     return send_from_directory("static", "alpha-post.html")
 
 
+@app.route("/dataviz-studio")
+def dataviz_studio(): return send_from_directory("static", "dataviz-studio.html")
+
 @app.route("/alpha/studio")
 def alpha_studio():
     # Client-side checks /api/me for alpha_role, same convention as /profile —
     # no server-side @login_required here since page routes in this app rely
     # on the JS auth check rather than a redirect-on-401 pattern.
     return send_from_directory("static", "alpha-studio.html")
+
+
+@app.route("/api/dataviz/content", methods=["GET", "POST"])
+@login_required
+@dataviz_author_required
+def api_dataviz_content():
+    if request.method == "GET":
+        status = (request.args.get("status") or "").strip() or None
+        return jsonify({"items": dataviz_content_list(status=status)})
+    data = request.get_json() or {}
+    fields = {
+        "author": current_user.alpha_role,
+        "status": "draft",
+        "title": (data.get("title") or "").strip() or None,
+        "description": (data.get("description") or "").strip() or None,
+        "positive_analysis": (data.get("positive_analysis") or "").strip() or None,
+        "warning": (data.get("warning") or "").strip() or None,
+        "link": (data.get("link") or "").strip() or None,
+        "image_filename": None,
+    }
+    item = dataviz_content_create(fields)
+    return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/dataviz/content/<int:item_id>", methods=["PUT", "DELETE"])
+@login_required
+@dataviz_author_required
+def api_dataviz_content_item(item_id):
+    existing = dataviz_content_get(item_id)
+    if not existing or existing.get("author") != current_user.alpha_role:
+        return jsonify({"error": "Not found"}), 404
+    if request.method == "DELETE":
+        dataviz_content_delete(item_id)
+        return jsonify({"success": True})
+    data = request.get_json() or {}
+    updates = {}
+    for key in ("title", "description", "positive_analysis", "warning", "link"):
+        if key in data:
+            updates[key] = (data.get(key) or "").strip() or None
+    if "status" in data and data["status"] in ("draft", "published"):
+        updates["status"] = data["status"]
+        updates["published_at"] = _dt.datetime.utcnow() if data["status"] == "published" else None
+    item = dataviz_content_update(item_id, updates)
+    return jsonify({"success": True, "item": item})
+
+
+@app.route("/api/dataviz/content/<int:item_id>/image", methods=["GET"])
+def api_dataviz_content_image(item_id):
+    item = dataviz_content_get(item_id)
+    if not item:
+        return jsonify({"error": "Not found"}), 404
+    is_owner = current_user.is_authenticated and getattr(current_user, "alpha_role", None) == item.get("author")
+    if item.get("status") != "published" and not is_owner:
+        return jsonify({"error": "Not found"}), 404
+    filename, file_bytes = dataviz_content_get_image(item_id)
+    if file_bytes is None:
+        return jsonify({"error": "No image attached"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
+    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
+    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+
+
+@app.route("/api/dataviz/content/<int:item_id>/image", methods=["POST"])
+@login_required
+@dataviz_author_required
+def api_dataviz_content_image_upload(item_id):
+    existing = dataviz_content_get(item_id)
+    if not existing or existing.get("author") != current_user.alpha_role:
+        return jsonify({"error": "Not found"}), 404
+    if "image" not in request.files or not request.files["image"].filename:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["image"]
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
+    item = dataviz_content_set_image(item_id, secure_filename(file.filename), file.read())
+    return jsonify({"success": True, "item": item})
 
 
 @app.route("/api/subscription/cancel", methods=["POST"])
