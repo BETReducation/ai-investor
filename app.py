@@ -2372,6 +2372,67 @@ def prices():
         return jsonify({"error": f"Failed to fetch prices: {str(e)}"}), 500
 
 
+# SSE stream of the current still-forming bar, read straight from marketdata's
+# in-memory LiveBarBuffer — no Yahoo call ever happens in this loop, so 1s cadence
+# is free. Only useful for symbols a streamer (OANDA/Alpaca) covers; for anything
+# else it just sends heartbeats and the client keeps relying on its normal polling.
+# Streams are deliberately short-lived (~55s) and rely on EventSource's automatic
+# reconnect: that keeps any one gunicorn thread from being pinned forever and lets
+# deploys/restarts drain quickly. Requires threaded workers (see Procfile) — a
+# single sync worker would let one open stream block every other request.
+@app.route("/api/prices/stream", methods=["GET"])
+def prices_stream():
+    symbol = request.args.get("symbol", "").strip()
+    interval = request.args.get("interval", "1m")
+
+    if not symbol:
+        return jsonify({"error": "symbol parameter is required"}), 400
+
+    # Make sure this symbol's provider stream is running (no-op if none covers it).
+    marketdata_router.ensure_symbol_watched(symbol)
+
+    def generate():
+        last_payload = None
+        deadline = time.monotonic() + 55
+        yield "retry: 2000\n\n"
+        while time.monotonic() < deadline:
+            try:
+                tail = marketdata_router.get_live_tail(symbol, interval)
+                if tail is not None and not tail.empty:
+                    row = tail.iloc[-1]
+                    payload = json.dumps({
+                        "symbol": symbol.upper(),
+                        "interval": interval,
+                        "date": str(tail.index[-1]),
+                        "Open": float(row["Open"]),
+                        "High": float(row["High"]),
+                        "Low": float(row["Low"]),
+                        "Close": float(row["Close"]),
+                        "Volume": float(row["Volume"]),
+                        "is_live": True,
+                    })
+                    if payload != last_payload:
+                        last_payload = payload
+                        yield f"data: {payload}\n\n"
+                    else:
+                        yield ": hb\n\n"
+                else:
+                    # Not covered / stream not warm yet — heartbeat keeps the
+                    # connection (and any proxy in front of it) from timing out.
+                    yield ": idle\n\n"
+            except GeneratorExit:
+                raise
+            except Exception:
+                yield ": err\n\n"
+            time.sleep(1)
+
+    resp = Response(generate(), mimetype="text/event-stream")
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"  # disable proxy buffering (nginx et al.)
+    resp.headers["Connection"] = "keep-alive"
+    return resp
+
+
 @app.route("/api/symbol-search", methods=["GET"])
 def symbol_search():
     """Ticker/company autocomplete, proxied through yfinance's Search (which itself

@@ -2349,6 +2349,7 @@ setInterval(updateLiveBadgeAge, 1000);
 // or showing the loading overlay.
 async function refreshLiveChartBar() {
   if (!priceChart || !lastChartSym || !currentChartBars.length) return;
+  syncChartStream(); // idempotent — (re)attaches the SSE stream if symbol/TF changed
   const yfSym = symbolMap[lastChartSym];
   if (!yfSym) return;
   const { period, interval } = intervalMap[chartTf] || { period: '5d', interval: '1d' };
@@ -2363,15 +2364,58 @@ async function refreshLiveChartBar() {
       open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
     };
     if (!Number.isFinite(bar.timestamp) || !Number.isFinite(bar.close)) return;
-    const lastLoaded = currentChartBars[currentChartBars.length - 1];
-    if (bar.timestamp === lastLoaded.timestamp) currentChartBars[currentChartBars.length - 1] = bar;
-    else if (bar.timestamp > lastLoaded.timestamp) currentChartBars.push(bar);
-    else return; // stale/out-of-order response, ignore
-
-    priceChart.updateData(bar);
-    _volProfileCache.clear();
-    _vwapCache.clear();
+    mergeLiveBar(bar);
   } catch (e) { /* transient — the next livePriceTimer tick retries */ }
+}
+
+// Shared by the 5s poll above and the SSE stream below: merge one "current bar"
+// into the on-screen series (replace the forming bar, or append a new one).
+function mergeLiveBar(bar) {
+  if (!priceChart || !currentChartBars.length) return;
+  const lastLoaded = currentChartBars[currentChartBars.length - 1];
+  if (bar.timestamp === lastLoaded.timestamp) currentChartBars[currentChartBars.length - 1] = bar;
+  else if (bar.timestamp > lastLoaded.timestamp) currentChartBars.push(bar);
+  else return; // stale/out-of-order response, ignore
+
+  priceChart.updateData(bar);
+  _volProfileCache.clear();
+  _vwapCache.clear();
+}
+
+// ── SSE live stream ──────────────────────────────────────────────────────────
+// Sub-second chart updates for symbols the backend's OANDA/Alpaca streamers cover.
+// Purely additive on top of the existing 5s polling: the poll keeps running as the
+// fallback (and still serves watchlist prices), so if the stream isn't available
+// for a symbol, or EventSource errors out, nothing is worse than before. The server
+// closes each stream after ~55s and EventSource reconnects on its own.
+let chartES = null;
+let chartESKey = null;
+function syncChartStream() {
+  const yfSym = lastChartSym ? symbolMap[lastChartSym] : null;
+  const interval = (intervalMap[chartTf] || { interval: '1d' }).interval;
+  const key = (priceChart && yfSym) ? `${yfSym}|${interval}` : null;
+  if (key === chartESKey) return; // already streaming the right symbol/interval
+  if (chartES) { chartES.close(); chartES = null; }
+  chartESKey = key;
+  if (!key || typeof EventSource === 'undefined') return;
+  chartES = new EventSource(`${API_BASE}/api/prices/stream?symbol=${encodeURIComponent(yfSym)}&interval=${encodeURIComponent(interval)}`, { withCredentials: true });
+  chartES.onmessage = (ev) => {
+    try {
+      const r = JSON.parse(ev.data);
+      // Ignore late messages for a symbol/interval we've moved away from.
+      if (chartESKey !== `${r.symbol}|${r.interval}` && chartESKey !== key) return;
+      const bar = {
+        timestamp: new Date(r.date).getTime(),
+        open: r.Open, high: r.High, low: r.Low, close: r.Close, volume: r.Volume || 0,
+      };
+      if (!Number.isFinite(bar.timestamp) || !Number.isFinite(bar.close)) return;
+      mergeLiveBar(bar);
+      updateLiveBadge(true);
+      updateChartOverlay();
+    } catch (e) { /* malformed frame — ignore, polling still covers us */ }
+  };
+  // No onerror handler: EventSource retries automatically, and the 5s poll is the
+  // permanent fallback either way.
 }
 
 // --- FIRE ALERT ---
@@ -3486,6 +3530,7 @@ function showChartPlaceholder() {
   if (!container) return;
   priceChart = null;
   lastChartSym = null;
+  syncChartStream(); // closes any open SSE stream (key becomes null)
   container.innerHTML = `
     <div class="chart-empty-state">
       <div class="empty-state">NO ASSET SELECTED<br><span style="font-size:8px;">Click WATCHLIST ▼ and search to add one</span></div>
@@ -3551,6 +3596,7 @@ async function loadPriceChart(sym) {
       _vwapCache.clear();
       chart.applyNewData(rows);
       refreshVolumePaneMode();
+      syncChartStream();
       return;
     } catch (e) {
       if (seq !== chartLoadSeq) return;
