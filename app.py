@@ -3287,12 +3287,16 @@ def social_posts():
         "AUTHOR'S IDEAS / BULLET POINTS:",
         ideas[:8000],
     ]
-    for field, heading in (("audience", "TARGET AUDIENCE"),
-                           ("ctaGoal", "GOAL OF THE CALL TO ACTION"),
-                           ("brandVoice", "BRAND VOICE NOTES")):
+    prompt_parts.append(
+        "TARGET AUDIENCE: people aged 18-50 who are trying to get into investing "
+        "as a hobby, a career, or as a necessity"
+    )
+    for field, heading in (("ctaGoal", "GOAL OF THE CALL TO ACTION"),
+                           ("sourceUrl", "SOURCE URL (use as context/reference)")):
         value = (data.get(field) or "").strip()
         if value:
             prompt_parts.append(f"{heading}: {value[:500]}")
+    prompt_parts.append("BRAND VOICE NOTES: authoritative and friendly")
     prompt_parts += [
         f"TONE: {(data.get('tone') or 'Friendly')[:50]}",
         "",

@@ -276,14 +276,11 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 &bull; First session free
 &bull; Suitable for all fitness levels"></textarea>
 
-          <label class="field" for="audience">Audience (optional)</label>
-          <input type="text" id="audience" placeholder="e.g. local adults new to investing">
-
           <label class="field" for="ctaGoal">What should the CTA achieve? (optional)</label>
           <input type="text" id="ctaGoal" placeholder="e.g. sign up for the newsletter via the website">
 
-          <label class="field" for="brandVoice">Brand voice notes (optional)</label>
-          <input type="text" id="brandVoice" placeholder="e.g. down-to-earth, no hype, British English">
+          <label class="field" for="sourceUrl">Paste URL here (Optional)</label>
+          <input type="text" id="sourceUrl" placeholder="e.g. https://example.com/article">
 
           <label class="field">Tone</label>
           <div class="chip-row" id="toneRow"></div>
@@ -352,7 +349,9 @@ const PLATFORMS = {
     guidance: "Email newsletter section. 'title' = the subject line (under 60 chars, curiosity-driven). Body 100-200 words, scannable, warm. CTA should read like button text + one supporting line. No hashtags.",
   },
 };
-const TONES = ["Professional", "Friendly", "Bold", "Playful", "Inspiring"];
+const TONES = ["Professional", "Friendly", "Bold", "Playful", "Inspiring", "Positive", "Careful", "Warning", "Relief"];
+const FIXED_BRAND_VOICE = "authoritative and friendly";
+const FIXED_AUDIENCE = "people aged 18-50 who are trying to get into investing as a hobby, a career, or as a necessity";
 const MODES = [
   { key: "manual", label: "Manual (free)", hint: "No API key needed. We build the prompt for each platform — you paste it into claude.ai (or any Claude chat), then paste the reply back here." },
   { key: "auto",   label: "Auto (API key)", hint: "Generates instantly via the site's own Claude API key. Requires ANTHROPIC_API_KEY to be configured on the server." },
@@ -456,9 +455,8 @@ async function sharePost(r) {
 function currentInputs() {
   return {
     ideas: document.getElementById("ideas").value,
-    audience: document.getElementById("audience").value,
     ctaGoal: document.getElementById("ctaGoal").value,
-    brandVoice: document.getElementById("brandVoice").value,
+    sourceUrl: document.getElementById("sourceUrl").value,
     tone,
   };
 }
@@ -473,9 +471,10 @@ function buildPrompt(key, inputs) {
     "AUTHOR'S IDEAS / BULLET POINTS:",
     inputs.ideas,
   ];
-  if (inputs.audience) lines.push("", `TARGET AUDIENCE: ${inputs.audience}`);
+  lines.push("", `TARGET AUDIENCE: ${FIXED_AUDIENCE}`);
   if (inputs.ctaGoal) lines.push("", `GOAL OF THE CALL TO ACTION: ${inputs.ctaGoal}`);
-  if (inputs.brandVoice) lines.push("", `BRAND VOICE NOTES: ${inputs.brandVoice}`);
+  if (inputs.sourceUrl) lines.push("", `SOURCE URL (use as context/reference): ${inputs.sourceUrl}`);
+  lines.push("", `BRAND VOICE NOTES: ${FIXED_BRAND_VOICE}`);
   lines.push(
     "", `TONE: ${inputs.tone}`,
     "", `PLATFORM RULES: ${p.guidance}`,
@@ -540,9 +539,8 @@ async function runOne(key) {
       body: JSON.stringify({
         platform: key,
         ideas: document.getElementById("ideas").value,
-        audience: document.getElementById("audience").value,
         ctaGoal: document.getElementById("ctaGoal").value,
-        brandVoice: document.getElementById("brandVoice").value,
+        sourceUrl: document.getElementById("sourceUrl").value,
         tone,
       }),
     });
