@@ -72,6 +72,10 @@
 .studio-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
 .card-image-preview { max-width: 200px; max-height: 130px; border-radius: 10px; display: block; margin-top: 6px; object-fit: cover; }
 .card-image-input-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.page-manage-list { display: flex; flex-direction: column; gap: 8px; }
+.page-manage-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+.page-manage-row .page-name { font-size: 13.5px; color: var(--text); font-weight: 600; }
+.page-manage-row .page-count { font-size: 11.5px; color: var(--muted); margin-left: 8px; }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
@@ -181,6 +185,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
         <button class="btn-primary-sm" id="createPageBtn" onclick="createPage()">Create Page</button>
         <div class="form-msg" id="createPageMsg"></div>
+        <div class="page-manage-list" id="pageManageList" style="margin-top:20px;"></div>
       </div>
 
       <!-- Add a visualisation -->
@@ -262,14 +267,47 @@ function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+let DATAVIZ_PAGE_LIST = [];
+
 async function refreshPages() {
   try {
-    const res = await fetch('/api/dataviz/pages');
+    const res = await fetch('/api/dataviz/pages', { credentials: 'include' });
     const data = await res.json();
+    DATAVIZ_PAGE_LIST = data.pages || [];
     DATAVIZ_PAGES = {};
-    (data.pages || []).forEach(p => { DATAVIZ_PAGES[p.slug] = p.label; });
-  } catch { DATAVIZ_PAGES = {}; }
+    DATAVIZ_PAGE_LIST.forEach(p => { DATAVIZ_PAGES[p.slug] = p.label; });
+  } catch { DATAVIZ_PAGE_LIST = []; DATAVIZ_PAGES = {}; }
   populatePageSelects();
+  renderPageManageList();
+}
+
+function renderPageManageList() {
+  const el = document.getElementById('pageManageList');
+  if (!el) return;
+  if (!DATAVIZ_PAGE_LIST.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = DATAVIZ_PAGE_LIST.map(p => `
+    <div class="page-manage-row">
+      <div><span class="page-name">${esc(p.label)}</span><span class="page-count">${p.post_count} post${p.post_count === 1 ? '' : 's'}</span></div>
+      <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')" ${p.post_count ? 'disabled title="Delete or move its posts first"' : ''}>Delete</button>
+    </div>
+  `).join('');
+}
+
+async function deletePage(slug) {
+  if (!confirm('Delete this page? This can\'t be undone.')) return;
+  try {
+    const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't delete — try again.");
+    await refreshPages();
+  } catch (e) {
+    const msg = document.getElementById('createPageMsg');
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  }
 }
 
 function populatePageSelects() {

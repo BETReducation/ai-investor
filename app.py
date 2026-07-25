@@ -894,6 +894,18 @@ def dataviz_page_create(label: str, author: str) -> dict:
     return page
 
 
+def dataviz_page_delete(slug: str) -> bool:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM dataviz_pages WHERE slug = %s", (slug,))
+            return cur.rowcount > 0
+    data = _load_dataviz_pages_json()
+    before = len(data["pages"])
+    data["pages"] = [p for p in data["pages"] if p["slug"] != slug]
+    _save_dataviz_pages_json(data)
+    return len(data["pages"]) < before
+
+
 # ── Data Visualisation content store ─────────────────────────────────────────
 # Same Postgres/JSON dual-path pattern as alpha_content above, trimmed down to
 # the 5 fields Tom's upload tool needs: image, description, positive analysis,
@@ -2740,7 +2752,10 @@ def api_dataviz_public_content(slug):
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])
 def api_dataviz_pages():
     if request.method == "GET":
-        return jsonify({"pages": dataviz_pages_list()})
+        pages = dataviz_pages_list()
+        for page in pages:
+            page["post_count"] = len(dataviz_content_list(page=page["slug"]))
+        return jsonify({"pages": pages})
     if not current_user.is_authenticated or getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
         return jsonify({"error": "This account has no Data Visualisation author access"}), 403
     data = request.get_json() or {}
@@ -2751,6 +2766,19 @@ def api_dataviz_pages():
         return jsonify({"error": "label must be 80 characters or fewer"}), 400
     page = dataviz_page_create(label, current_user.alpha_role)
     return jsonify({"success": True, "page": page})
+
+
+@app.route("/api/dataviz/pages/<slug>", methods=["DELETE"])
+@login_required
+@dataviz_author_required
+def api_dataviz_page_delete(slug):
+    if not dataviz_page_get(slug):
+        return jsonify({"error": "Not found"}), 404
+    post_count = len(dataviz_content_list(page=slug))
+    if post_count:
+        return jsonify({"error": f"This page still has {post_count} post(s) — delete or move them first"}), 400
+    dataviz_page_delete(slug)
+    return jsonify({"success": True})
 
 
 @app.route("/api/dataviz/pages/overview", methods=["GET"])
