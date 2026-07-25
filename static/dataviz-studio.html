@@ -430,10 +430,11 @@ function renderCard(item) {
       <div class="form-field"><label class="form-label">Further information link</label><input class="form-input" type="url" value="${esc(item.link)}" onblur="updateField(${item.id}, 'link', this.value)"></div>
       <div class="studio-card-actions">
         ${item.status === 'draft'
-          ? `<button class="btn-primary-sm" onclick="setStatus(${item.id}, 'published')">Publish</button>`
+          ? `<button class="btn-primary-sm" onclick="setStatus(${item.id}, 'published')" ${item.image_filename ? '' : 'disabled title="Upload an image before publishing"'}>Publish</button>`
           : `<button class="btn-ghost-sm" onclick="setStatus(${item.id}, 'draft')">Unpublish</button>`}
         <button class="btn-danger-sm" onclick="deleteItem(${item.id})">Delete</button>
       </div>
+      ${item.status === 'draft' && !item.image_filename ? '<div class="form-hint">Upload an image above to enable Publish.</div>' : ''}
       <div class="form-msg" id="cardMsg${item.id}"></div>
     </div>
   `;
@@ -458,11 +459,12 @@ async function setStatus(id, status) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't update — try again.");
     loadItems();
-  } catch {
+  } catch (e) {
     const el = document.getElementById(`cardMsg${id}`);
-    if (el) { el.textContent = "Couldn't update — try again."; el.className = 'form-msg error'; }
+    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   }
 }
 

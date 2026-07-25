@@ -2676,6 +2676,8 @@ def api_dataviz_content_item(item_id):
             return jsonify({"error": "Unknown page — create it first"}), 400
         updates["page"] = data["page"]
     if "status" in data and data["status"] in ("draft", "published"):
+        if data["status"] == "published" and not existing.get("image_filename"):
+            return jsonify({"error": "Upload an image before publishing"}), 400
         updates["status"] = data["status"]
         updates["published_at"] = _dt.datetime.utcnow() if data["status"] == "published" else None
     item = dataviz_content_update(item_id, updates)
