@@ -3291,11 +3291,15 @@ def social_posts():
         "TARGET AUDIENCE: people aged 18-50 who are trying to get into investing "
         "as a hobby, a career, or as a necessity"
     )
-    for field, heading in (("ctaGoal", "GOAL OF THE CALL TO ACTION"),
-                           ("sourceUrl", "SOURCE URL (use as context/reference)")):
-        value = (data.get(field) or "").strip()
-        if value:
-            prompt_parts.append(f"{heading}: {value[:500]}")
+    cta_goal = (data.get("ctaGoal") or "").strip()
+    if cta_goal:
+        prompt_parts.append(f"GOAL OF THE CALL TO ACTION: {cta_goal[:500]}")
+    source_url = (data.get("sourceUrl") or "").strip()
+    if source_url:
+        prompt_parts.append(
+            f"URL TO INCLUDE: {source_url[:500]} — place this link at the very "
+            "end of the post (after the CTA text), on its own line."
+        )
     prompt_parts.append("BRAND VOICE NOTES: authoritative and friendly")
     prompt_parts += [
         f"TONE: {(data.get('tone') or 'Friendly')[:50]}",
