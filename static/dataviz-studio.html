@@ -176,6 +176,11 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <h2>Add a Visualisation</h2>
         <p class="panel-desc">Fill in the fields below. It'll be saved as a draft for you to review — nothing appears on the public page until you hit Publish.</p>
         <div class="form-field">
+          <label class="form-label" for="newPage">Page — which visualisation page does this belong to?</label>
+          <select class="form-select page-select" id="newPage"></select>
+          <span class="form-hint">This post will be added to the top of that page's feed, newest first.</span>
+        </div>
+        <div class="form-field">
           <label class="form-label" for="newTitle">1. Title</label>
           <input class="form-input" id="newTitle" placeholder="e.g. S&amp;P 500 Sector Rotation">
         </div>
@@ -202,7 +207,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <!-- Existing items -->
       <div class="studio-panel">
         <h2>Your Visualisations</h2>
-        <p class="panel-desc">Drafts are only visible to you here. Published items appear live on the Data Visualisation page.</p>
+        <p class="panel-desc">Drafts are only visible to you here. Published items appear live on the Data Visualisation page, newest at the top.</p>
+        <div class="form-field" style="max-width:280px;">
+          <label class="form-label" for="filterPage">Filter by page</label>
+          <select class="form-select page-select-all" id="filterPage" onchange="loadItems()">
+            <option value="">All pages</option>
+          </select>
+        </div>
         <div class="studio-list" id="studioList">
           <div class="list-empty">Loading…</div>
         </div>
@@ -231,8 +242,18 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 </footer>
 
 <script>
+// Must stay in sync with DATAVIZ_PAGES in app.py — the 3 pages linked from
+// the Data Visualisation hub page, each its own dated post feed.
+const DATAVIZ_PAGES = { 'viz-1': 'Visualisation 01', 'viz-2': 'Visualisation 02', 'viz-3': 'Visualisation 03' };
+
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function populatePageSelects() {
+  const opts = Object.entries(DATAVIZ_PAGES).map(([slug, label]) => `<option value="${esc(slug)}">${esc(label)}</option>`).join('');
+  document.querySelectorAll('.page-select').forEach(sel => { sel.innerHTML = opts; });
+  document.querySelectorAll('.page-select-all').forEach(sel => { sel.insertAdjacentHTML('beforeend', opts); });
 }
 
 async function initStudio() {
@@ -255,13 +276,20 @@ async function initStudio() {
   if (studioLi) studioLi.style.display = '';
   const datavizStudioLi = document.getElementById('navDatavizStudioLi');
   if (datavizStudioLi) datavizStudioLi.style.display = '';
+  populatePageSelects();
   loadItems();
 }
 
 async function createItem() {
   const btn = document.getElementById('createBtn');
   const msg = document.getElementById('createMsg');
+  const page = document.getElementById('newPage').value;
   const title = document.getElementById('newTitle').value.trim();
+  if (!page) {
+    msg.textContent = 'Choose which page this belongs to.';
+    msg.className = 'form-msg error';
+    return;
+  }
   if (!title) {
     msg.textContent = 'Title is required.';
     msg.className = 'form-msg error';
@@ -276,6 +304,7 @@ async function createItem() {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        page,
         title,
         description: document.getElementById('newDescription').value.trim(),
         positive_analysis: document.getElementById('newPositive').value.trim(),
@@ -299,8 +328,10 @@ async function createItem() {
 
 async function loadItems() {
   const list = document.getElementById('studioList');
+  const pageFilter = document.getElementById('filterPage').value;
+  const url = pageFilter ? `/api/dataviz/content?page=${encodeURIComponent(pageFilter)}` : '/api/dataviz/content';
   try {
-    const res = await fetch('/api/dataviz/content', { credentials: 'include' });
+    const res = await fetch(url, { credentials: 'include' });
     const data = await res.json();
     const items = data.items || [];
     if (!items.length) {
@@ -308,6 +339,11 @@ async function loadItems() {
       return;
     }
     list.innerHTML = items.map(renderCard).join('');
+    document.querySelectorAll('#studioList .page-select').forEach(sel => {
+      const opts = Object.entries(DATAVIZ_PAGES).map(([slug, label]) => `<option value="${esc(slug)}">${esc(label)}</option>`).join('');
+      sel.innerHTML = opts;
+      sel.value = sel.dataset.selected || '';
+    });
   } catch {
     list.innerHTML = '<div class="list-empty">Couldn\'t load your visualisations — check your connection and try again.</div>';
   }
@@ -327,6 +363,7 @@ function renderCard(item) {
         ${imageTag}
         <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadImage(${item.id}, this)">
       </div>
+      <div class="form-field"><label class="form-label">Page</label><select class="form-select page-select" onchange="updateField(${item.id}, 'page', this.value)" data-selected="${esc(item.page)}"></select></div>
       <div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'description', this.value)">${esc(item.description)}</textarea></div>
       <div class="form-field"><label class="form-label">Positive analysis</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'positive_analysis', this.value)">${esc(item.positive_analysis)}</textarea></div>
       <div class="form-field"><label class="form-label">Warning</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'warning', this.value)">${esc(item.warning)}</textarea></div>

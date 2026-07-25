@@ -87,6 +87,15 @@ ALPHA_TOPICS = {
     "connor": ["Macro & Micro", "Quant Statistics", "Finance & Formulae"],
 }
 
+# The 3 visualisation pages linked from /tools/data-visualisation — each is its
+# own feed of dated posts at /tools/data-visualisation/<slug>. Matches the 3
+# placeholder rows on the hub page; must stay in sync with static/data-visualisation.html.
+DATAVIZ_PAGES = {
+    "viz-1": "Visualisation 01",
+    "viz-2": "Visualisation 02",
+    "viz-3": "Visualisation 03",
+}
+
 
 def _db_conn():
     url = DATABASE_URL
@@ -152,6 +161,7 @@ def _ensure_table() -> None:
             CREATE TABLE IF NOT EXISTS dataviz_content (
                 id                 SERIAL PRIMARY KEY,
                 author             TEXT NOT NULL,
+                page               TEXT,
                 status             TEXT NOT NULL DEFAULT 'draft',
                 title              TEXT,
                 description        TEXT,
@@ -165,6 +175,7 @@ def _ensure_table() -> None:
                 published_at       TIMESTAMP
             )
         """)
+        cur.execute("ALTER TABLE dataviz_content ADD COLUMN IF NOT EXISTS page TEXT")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -808,7 +819,7 @@ def alpha_content_delete(item_id: int) -> bool:
 # the 5 fields Tom's upload tool needs: image, description, positive analysis,
 # an accuracy/usefulness warning, and an optional further-reading link.
 
-_DATAVIZ_FIELDS = ["author", "status", "title", "description", "positive_analysis", "warning", "link", "image_filename"]
+_DATAVIZ_FIELDS = ["author", "page", "status", "title", "description", "positive_analysis", "warning", "link", "image_filename"]
 
 
 def _dataviz_row_to_dict(row: dict) -> dict:
@@ -831,14 +842,17 @@ def _save_dataviz_json(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
-def dataviz_content_list(status: str | None = None) -> list:
+def dataviz_content_list(status: str | None = None, page: str | None = None) -> list:
     if DATABASE_URL:
         query = f"SELECT id, {', '.join(_DATAVIZ_FIELDS)}, created_at, updated_at, published_at FROM dataviz_content WHERE 1=1"
         params = []
         if status:
             query += " AND status = %s"
             params.append(status)
-        query += " ORDER BY created_at DESC"
+        if page:
+            query += " AND page = %s"
+            params.append(page)
+        query += " ORDER BY COALESCE(published_at, created_at) DESC"
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(query, params)
             return [_dataviz_row_to_dict(row) for row in cur.fetchall()]
@@ -846,7 +860,9 @@ def dataviz_content_list(status: str | None = None) -> list:
     items = data["items"]
     if status:
         items = [i for i in items if i.get("status") == status]
-    items = sorted(items, key=lambda i: i.get("created_at") or "", reverse=True)
+    if page:
+        items = [i for i in items if i.get("page") == page]
+    items = sorted(items, key=lambda i: i.get("published_at") or i.get("created_at") or "", reverse=True)
     return [{k: v for k, v in i.items() if k != "image_file"} for i in items]
 
 
@@ -1674,6 +1690,12 @@ def tools_calculator(): return send_from_directory("static", "calculator.html")
 
 @app.route("/tools/data-visualisation")
 def tools_data_visualisation(): return send_from_directory("static", "data-visualisation.html")
+
+@app.route("/tools/data-visualisation/<slug>")
+def tools_data_visualisation_page(slug):
+    if slug not in DATAVIZ_PAGES:
+        return send_from_directory("static", "data-visualisation.html"), 404
+    return send_from_directory("static", "data-visualisation-page.html")
 
 @app.route("/arena")
 def arena(): return send_from_directory("static", "arena.html")
@@ -2533,10 +2555,15 @@ def alpha_studio():
 def api_dataviz_content():
     if request.method == "GET":
         status = (request.args.get("status") or "").strip() or None
-        return jsonify({"items": dataviz_content_list(status=status)})
+        page = (request.args.get("page") or "").strip() or None
+        return jsonify({"items": dataviz_content_list(status=status, page=page)})
     data = request.get_json() or {}
+    page = (data.get("page") or "").strip()
+    if page not in DATAVIZ_PAGES:
+        return jsonify({"error": f"page must be one of: {sorted(DATAVIZ_PAGES)}"}), 400
     fields = {
         "author": current_user.alpha_role,
+        "page": page,
         "status": "draft",
         "title": (data.get("title") or "").strip() or None,
         "description": (data.get("description") or "").strip() or None,
@@ -2564,6 +2591,10 @@ def api_dataviz_content_item(item_id):
     for key in ("title", "description", "positive_analysis", "warning", "link"):
         if key in data:
             updates[key] = (data.get(key) or "").strip() or None
+    if "page" in data:
+        if data["page"] not in DATAVIZ_PAGES:
+            return jsonify({"error": f"page must be one of: {sorted(DATAVIZ_PAGES)}"}), 400
+        updates["page"] = data["page"]
     if "status" in data and data["status"] in ("draft", "published"):
         updates["status"] = data["status"]
         updates["published_at"] = _dt.datetime.utcnow() if data["status"] == "published" else None
@@ -2603,6 +2634,24 @@ def api_dataviz_content_image_upload(item_id):
         return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
     item = dataviz_content_set_image(item_id, secure_filename(file.filename), file.read())
     return jsonify({"success": True, "item": item})
+
+
+def _dataviz_public_image_url(item: dict) -> str | None:
+    if item.get("image_filename"):
+        return f"/api/dataviz/content/{item['id']}/image"
+    return None
+
+
+_DATAVIZ_PUBLIC_FIELDS = ["id", "page", "title", "description", "positive_analysis", "warning", "link", "published_at"]
+
+
+@app.route("/api/dataviz/<slug>/content", methods=["GET"])
+def api_dataviz_public_content(slug):
+    if slug not in DATAVIZ_PAGES:
+        return jsonify({"error": "Unknown page"}), 404
+    items = dataviz_content_list(status="published", page=slug)
+    public = [{**{k: i.get(k) for k in _DATAVIZ_PUBLIC_FIELDS}, "image_url": _dataviz_public_image_url(i)} for i in items]
+    return jsonify({"page": slug, "label": DATAVIZ_PAGES[slug], "items": public})
 
 
 @app.route("/api/subscription/cancel", methods=["POST"])
