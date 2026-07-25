@@ -150,7 +150,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;">
-    <div class="section-badge">Tom Only</div>
+    <div class="section-badge">Restricted Access</div>
     <h1 class="hero-title">Data Viz <span class="accent">Studio</span></h1>
     <p class="hero-sub">Add and update the visualisations shown on the Data Visualisation page. Everything starts as a draft — nothing goes live until you publish it.</p>
   </div>
@@ -246,7 +246,7 @@ async function initStudio() {
     document.getElementById('gateLoggedOut').style.display = 'block';
     return;
   }
-  if (me.alpha_role !== 'tom') {
+  if (!['tom', 'gary'].includes(me.alpha_role)) {
     document.getElementById('gateNoAccess').style.display = 'block';
     return;
   }

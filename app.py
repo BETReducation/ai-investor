@@ -433,13 +433,16 @@ def alpha_author_required(f):
     return wrapped
 
 
+DATAVIZ_AUTHORS = {"tom", "gary"}
+
+
 def dataviz_author_required(f):
-    """Gates the Data Visualisation studio to Tom's account (alpha_role 'tom')."""
+    """Gates the Data Visualisation studio to authorized accounts (alpha_role in DATAVIZ_AUTHORS)."""
     @wraps(f)
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return jsonify({"error": "Login required"}), 401
-        if getattr(current_user, "alpha_role", None) != "tom":
+        if getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
             return jsonify({"error": "This account has no Data Visualisation author access"}), 403
         return f(*args, **kwargs)
     return wrapped
