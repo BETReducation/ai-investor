@@ -805,6 +805,22 @@ def run_backtest(
                 f             = position["size_fraction"]
                 equity_before = equity
                 equity       *= 1 + f * ret / 100
+
+                exit_signals    = _fired_signals(result["signals"], "SELL") if exit_reason == "Signal" else []
+                exit_context    = _market_context(indicators)
+                exit_confidence = confidence if exit_reason == "Signal" else None
+
+                description_detailed, description_simple = _describe_trade(
+                    entry_signals=position["entry_signals"], entry_context=position["entry_context"],
+                    entry_confidence=position["entry_confidence"], entry_buy_score=position["entry_buy_score"],
+                    entry_sell_score=position["entry_sell_score"],
+                    exit_reason=exit_reason, exit_signals=exit_signals, exit_context=exit_context,
+                    exit_confidence=exit_confidence,
+                    exit_buy_score=result["buy_score"] if exit_reason == "Signal" else None,
+                    exit_sell_score=result["sell_score"] if exit_reason == "Signal" else None,
+                    return_pct=ret, sl_price=sl_price, tp_price=tp_price, trail_distance_pct=trail_distance_pct,
+                )
+
                 trades.append({
                     "entry_date":  position["entry_date"],
                     "exit_date":   date_str,
@@ -816,6 +832,10 @@ def run_backtest(
                     "equity_before": round(equity_before, 6),
                     "equity_after":  round(equity, 6),
                     "pnl_gbp":       round(capital * (equity - equity_before), 2),
+                    "entry_signals": position["entry_signals"],
+                    "exit_signals":  exit_signals,
+                    "description_detailed": description_detailed,
+                    "description_simple":   description_simple,
                 })
                 position = None
 
@@ -845,6 +865,11 @@ def run_backtest(
                     "size_fraction": size_fraction,
                     "sl_price": sl_price,
                     "tp_price": tp_price,
+                    "entry_signals":    _fired_signals(result["signals"], "BUY"),
+                    "entry_context":    _market_context(indicators),
+                    "entry_confidence": confidence,
+                    "entry_buy_score":  result["buy_score"],
+                    "entry_sell_score": result["sell_score"],
                 }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
@@ -856,6 +881,17 @@ def run_backtest(
         f             = position["size_fraction"]
         equity_before = equity
         equity       *= 1 + f * ret / 100
+
+        description_detailed, description_simple = _describe_trade(
+            entry_signals=position["entry_signals"], entry_context=position["entry_context"],
+            entry_confidence=position["entry_confidence"], entry_buy_score=position["entry_buy_score"],
+            entry_sell_score=position["entry_sell_score"],
+            exit_reason="End of Data", exit_signals=[], exit_context=None,
+            exit_confidence=None, exit_buy_score=None, exit_sell_score=None,
+            return_pct=ret, sl_price=position["sl_price"], tp_price=position["tp_price"],
+            trail_distance_pct=trail_distance_pct,
+        )
+
         trades.append({
             "entry_date":  position["entry_date"],
             "exit_date":   str(combined.index[-1]),
@@ -867,6 +903,10 @@ def run_backtest(
             "equity_before": round(equity_before, 6),
             "equity_after":  round(equity, 6),
             "pnl_gbp":       round(capital * (equity - equity_before), 2),
+            "entry_signals": position["entry_signals"],
+            "exit_signals":  [],
+            "description_detailed": description_detailed,
+            "description_simple":   description_simple,
         })
         if equity_curve:
             equity_curve[-1]["equity"] = round(equity, 6)
@@ -937,3 +977,151 @@ def _sf(val):
         return None if v != v else round(v, 6)  # NaN → None
     except Exception:
         return None
+
+
+# ── Trade-log narration ──────────────────────────────────────────────────────
+# Turns the per-bar `score_signals()` output and a snapshot of the broader
+# market backdrop into a human-readable explanation of why each trade was
+# taken and why it closed, for the Backtester's trade log.
+
+def _fired_signals(signals: list[dict], side: str) -> list[dict]:
+    """Signals that actually contributed to the BUY/SELL decision (non-zero weight)."""
+    return [
+        {"indicator": s["indicator"], "detail": s["detail"], "weight": s.get("weight", 0)}
+        for s in signals if s.get("type") == side and s.get("weight", 0) > 0
+    ]
+
+
+def _market_context(indicators: dict) -> dict:
+    """A snapshot of the broader market backdrop at a given bar — trend, trend
+    strength, volume and momentum — used to describe what was going on around
+    a trade, independent of which specific indicator triggered it."""
+    ma    = indicators.get("moving_averages", {}) or {}
+    close = (indicators.get("price", {}) or {}).get("close")
+    ma20, ma50, ma200 = ma.get("ma_20"), ma.get("ma_50"), ma.get("ma_200")
+
+    trend = None
+    if ma50 is not None and ma200 is not None:
+        if ma50 > ma200:
+            trend = "an uptrend (50-period average above the 200-period average)"
+        elif ma50 < ma200:
+            trend = "a downtrend (50-period average below the 200-period average)"
+        else:
+            trend = "a flat/sideways market"
+    elif ma20 is not None and ma50 is not None:
+        if ma20 > ma50:
+            trend = "a short-term uptrend (price above its recent average)"
+        elif ma20 < ma50:
+            trend = "a short-term downtrend (price below its recent average)"
+
+    adx_v = (indicators.get("adx", {}) or {}).get("adx")
+    if adx_v is None:
+        trend_strength = None
+    elif adx_v >= 25:
+        trend_strength = "strong"
+    elif adx_v >= 20:
+        trend_strength = "moderate"
+    else:
+        trend_strength = "weak/range-bound"
+
+    vol_ratio = (indicators.get("volume", {}) or {}).get("ratio")
+    if vol_ratio is None:
+        volume_desc = None
+    elif vol_ratio >= 1.2:
+        volume_desc = "above-average"
+    elif vol_ratio <= 0.8:
+        volume_desc = "below-average"
+    else:
+        volume_desc = "average"
+
+    return {
+        "trend": trend,
+        "adx": adx_v,
+        "trend_strength": trend_strength,
+        "rsi": indicators.get("rsi"),
+        "volume_ratio": vol_ratio,
+        "volume_desc": volume_desc,
+        "close": close,
+    }
+
+
+def _describe_context(ctx: dict | None) -> str:
+    if not ctx:
+        return ""
+    parts = []
+    if ctx.get("trend"):
+        strength = f" ({ctx['trend_strength']} trend — ADX {ctx['adx']:.0f})" if ctx.get("adx") is not None else ""
+        parts.append(f"the market was in {ctx['trend']}{strength}")
+    if ctx.get("volume_desc") and ctx.get("volume_ratio") is not None:
+        parts.append(f"volume was {ctx['volume_desc']} ({ctx['volume_ratio']:.2f}x the 20-bar average)")
+    if ctx.get("rsi") is not None:
+        parts.append(f"RSI stood at {ctx['rsi']:.1f}")
+    return "; ".join(parts)
+
+
+_EXIT_PLAIN = {
+    "Stop Loss":      "the price fell to the stop-loss level, closing the trade to cap further downside",
+    "Trailing Stop":  "the price pulled back from its peak by the trailing-stop distance, locking in gains as the move lost momentum",
+    "Take Profit":    "the price reached the take-profit target, locking in the planned gain",
+    "End of Data":    "the backtest period ended while the position was still open, so it was closed at the last available price",
+}
+
+
+def _describe_trade(
+    entry_signals: list[dict], entry_context: dict, entry_confidence: float,
+    entry_buy_score: float, entry_sell_score: float,
+    exit_reason: str, exit_signals: list[dict], exit_context: dict | None,
+    exit_confidence: float | None, exit_buy_score: float | None, exit_sell_score: float | None,
+    return_pct: float, sl_price: float, tp_price: float, trail_distance_pct: float,
+) -> tuple[str, str]:
+    outcome_word = "gain" if return_pct >= 0 else "loss"
+
+    # ── Detailed ──
+    entry_lines = "\n".join(f"  • {s['detail']}" for s in entry_signals) or "  • (no individual conditions logged)"
+    entry_ctx_str = _describe_context(entry_context)
+    detailed_entry = (
+        f"ENTRY — {len(entry_signals)} indicator condition(s) triggered a BUY "
+        f"(confidence {entry_confidence:.0f}%, {entry_buy_score:g} buy vs {entry_sell_score:g} sell points):\n"
+        f"{entry_lines}"
+        + (f"\nMarket backdrop at entry: {entry_ctx_str}." if entry_ctx_str else "")
+    )
+
+    if exit_reason == "Signal":
+        exit_lines = "\n".join(f"  • {s['detail']}" for s in exit_signals) or "  • (no individual conditions logged)"
+        exit_ctx_str = _describe_context(exit_context)
+        detailed_exit = (
+            f"EXIT — {len(exit_signals)} indicator condition(s) triggered a SELL "
+            f"(confidence {exit_confidence:.0f}%, {exit_sell_score:g} sell vs {exit_buy_score:g} buy points):\n"
+            f"{exit_lines}"
+            + (f"\nMarket backdrop at exit: {exit_ctx_str}." if exit_ctx_str else "")
+        )
+    else:
+        plain = _EXIT_PLAIN.get(exit_reason, "the position was closed")
+        extra = ""
+        if exit_reason == "Stop Loss":
+            extra = f" (stop level: {sl_price:.4g})"
+        elif exit_reason == "Take Profit":
+            extra = f" (target: {tp_price:.4g})"
+        elif exit_reason == "Trailing Stop":
+            extra = f" ({trail_distance_pct:g}% trailing distance)"
+        detailed_exit = f"EXIT — {exit_reason}: {plain}{extra}."
+    detailed_exit += f" Result: {return_pct:+.2f}% ({outcome_word})."
+
+    detailed = f"{detailed_entry}\n\n{detailed_exit}"
+
+    # ── Simple ──
+    top_entry = sorted(entry_signals, key=lambda s: -s.get("weight", 0))[:2]
+    entry_reason = "; ".join(s["detail"] for s in top_entry) or "a buy signal fired"
+    trend_phrase = f", while the market was in {entry_context.get('trend')}" if entry_context and entry_context.get("trend") else ""
+    simple_entry = f"Bought because {entry_reason}{trend_phrase}."
+
+    if exit_reason == "Signal":
+        top_exit = sorted(exit_signals, key=lambda s: -s.get("weight", 0))[:2]
+        exit_reason_str = "; ".join(s["detail"] for s in top_exit) or "a sell signal fired"
+        simple_exit = f"Sold because {exit_reason_str}."
+    else:
+        simple_exit = f"Sold — {_EXIT_PLAIN.get(exit_reason, 'the position was closed')}."
+
+    simple = f"{simple_entry} {simple_exit} Result: {return_pct:+.2f}% {outcome_word}."
+
+    return detailed, simple

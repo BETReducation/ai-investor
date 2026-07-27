@@ -593,6 +593,51 @@
   .reason-sig { background: rgba(0,136,255,0.12);   color: var(--accent-blue);  border: 1px solid rgba(0,136,255,0.2); }
   .reason-end { background: rgba(122,143,168,0.1);  color: var(--text-muted);   border: 1px solid var(--border); }
 
+  /* ── Trade log: "why" description toggle ── */
+  .trade-why-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .trade-why-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+  .trade-why-btn.active { background: rgba(0,136,255,0.12); border-color: var(--accent-blue); color: var(--accent-blue); }
+
+  .trade-desc-row td {
+    background: var(--bg-panel);
+    padding: 14px 20px 18px;
+    border-bottom: 1px solid rgba(30,42,58,0.5);
+  }
+
+  .trade-desc-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .trade-desc-tab {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 3px 9px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .trade-desc-tab.active { background: var(--accent-green); border-color: var(--accent-green); color: #000; font-weight: 700; }
+
+  .trade-desc-text {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    white-space: pre-line;
+    max-width: 900px;
+  }
+
   /* ── Loading spinner ── */
   .spinner {
     width: 20px;
@@ -2137,6 +2182,7 @@ window.addEventListener('resize', () => {
                 <th>RETURN</th>
                 <th id="pnlColHeader">£ P&amp;L</th>
                 <th>EXIT REASON</th>
+                <th>WHY</th>
               </tr>
             </thead>
             <tbody id="tradeBody"></tbody>
@@ -3330,7 +3376,7 @@ function renderResults(data) {
 
   const tbody = document.getElementById('tradeBody');
   if (trades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
   } else {
     tbody.innerHTML = trades.map((t, i) => {
       const pnl = t.pnl_gbp;
@@ -3346,6 +3392,16 @@ function renderResults(data) {
         <td class="${t.return_pct >= 0 ? 'ret-pos' : 'ret-neg'}">${pctStr(t.return_pct)}</td>
         <td class="${pnl >= 0 ? 'ret-pos' : 'ret-neg'}">${pnlStr}</td>
         <td><span class="reason-tag ${reasonClass(t.exit_reason)}">${t.exit_reason.toUpperCase()}</span></td>
+        <td><button type="button" class="trade-why-btn" id="whyBtn${i}" onclick="toggleTradeWhy(${i})">WHY ▾</button></td>
+      </tr>
+      <tr class="trade-desc-row" id="descRow${i}" style="display:none;">
+        <td colspan="9">
+          <div class="trade-desc-tabs">
+            <button type="button" class="trade-desc-tab active" id="simpleTab${i}" onclick="setTradeWhyMode(${i},'simple')">SIMPLE</button>
+            <button type="button" class="trade-desc-tab" id="detailedTab${i}" onclick="setTradeWhyMode(${i},'detailed')">DETAILED</button>
+          </div>
+          <div class="trade-desc-text" id="descText${i}">${escapeHtml(t.description_simple || 'No description available for this trade.')}</div>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -3355,6 +3411,37 @@ function renderResults(data) {
 
 function fmtPrice(p) {
   return p >= 100 ? p.toFixed(2) : p >= 1 ? p.toFixed(3) : p.toFixed(5);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Per-row trade "why" description toggle — expand/collapse, and switch between
+// the simple and detailed explanation of why a trade was entered/exited.
+const tradeWhyMode = {}; // row index -> 'simple' | 'detailed'
+
+function toggleTradeWhy(i) {
+  const row = document.getElementById(`descRow${i}`);
+  const btn = document.getElementById(`whyBtn${i}`);
+  const open = row.style.display !== 'none';
+  row.style.display = open ? 'none' : 'table-row';
+  btn.classList.toggle('active', !open);
+  btn.textContent = open ? 'WHY ▾' : 'WHY ▴';
+}
+
+function setTradeWhyMode(i, mode) {
+  if (!lastResultsData) return;
+  const t = lastResultsData.trades[i];
+  tradeWhyMode[i] = mode;
+  document.getElementById(`simpleTab${i}`).classList.toggle('active', mode === 'simple');
+  document.getElementById(`detailedTab${i}`).classList.toggle('active', mode === 'detailed');
+  const text = mode === 'detailed'
+    ? (t.description_detailed || 'No description available for this trade.')
+    : (t.description_simple   || 'No description available for this trade.');
+  document.getElementById(`descText${i}`).innerHTML = escapeHtml(text);
 }
 
 const INTRADAY_INTERVALS = new Set(['1m', '5m', '15m', '30m', '1h', '2h', '4h']);
