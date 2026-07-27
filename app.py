@@ -141,6 +141,7 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_filename TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_file BYTEA")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS staged_edits JSONB")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT false")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content_attachment (
                 id          SERIAL PRIMARY KEY,
@@ -549,7 +550,7 @@ def set_user_avatar(username: str, filename: str, file_bytes: bytes) -> None:
 _ALPHA_CONTENT_FIELDS = [
     "author", "kind", "status", "topic", "title", "subtitle", "snippet", "body", "stance", "url",
     "source_kind", "source_filename", "source_text",
-    "image_url", "image_filename",
+    "image_url", "image_filename", "pinned",
     # Pending edits to a *published* item, held back from the live page until the
     # author unpublishes (which folds them in) and re-publishes. Studio-only —
     # the public endpoints whitelist their output via _ALPHA_PUBLIC_FIELDS, so
@@ -600,7 +601,7 @@ def alpha_content_list(author: str | None = None, status: str | None = None) -> 
     if status:
         items = [i for i in items if i.get("status") == status]
     items = sorted(items, key=lambda i: i.get("created_at") or "", reverse=True)
-    return [{k: v for k, v in i.items() if k not in ("source_file", "image_file")} for i in items]
+    return [{**{k: v for k, v in i.items() if k not in ("source_file", "image_file")}, "pinned": bool(i.get("pinned"))} for i in items]
 
 
 def alpha_content_get(item_id: int) -> dict | None:
@@ -615,7 +616,7 @@ def alpha_content_get(item_id: int) -> dict | None:
     data = _load_alpha_content_json()
     for item in data["items"]:
         if item.get("id") == item_id:
-            return {k: v for k, v in item.items() if k not in ("source_file", "image_file")}
+            return {**{k: v for k, v in item.items() if k not in ("source_file", "image_file")}, "pinned": bool(item.get("pinned"))}
     return None
 
 
@@ -741,7 +742,7 @@ def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
     now = _dt.datetime.utcnow()
     if DATABASE_URL:
         cols = [*_ALPHA_CONTENT_FIELDS, "source_file", "created_at", "updated_at"]
-        vals = [fields.get(k) for k in _ALPHA_CONTENT_FIELDS] + [
+        vals = [(bool(fields.get(k)) if k == "pinned" else fields.get(k)) for k in _ALPHA_CONTENT_FIELDS] + [
             psycopg2.Binary(file_bytes) if file_bytes else None, now, now
         ]
         placeholders = ", ".join(["%s"] * len(vals))
@@ -756,6 +757,7 @@ def alpha_content_create(fields: dict, file_bytes: bytes | None = None) -> dict:
     data = _load_alpha_content_json()
     new_id = data.get("next_id", 1)
     item = {k: fields.get(k) for k in _ALPHA_CONTENT_FIELDS}
+    item["pinned"] = bool(item.get("pinned"))
     item["id"] = new_id
     item["created_at"] = now.isoformat()
     item["updated_at"] = now.isoformat()
@@ -2435,6 +2437,19 @@ def api_alpha_content_item(item_id):
     if updates.get("topic") and updates["topic"] not in ALPHA_TOPICS.get(current_user.alpha_role, []):
         return jsonify({"error": "Topic must be one of your nominated topics"}), 400
 
+    if "pinned" in data:
+        if existing.get("kind") != "post":
+            return jsonify({"error": "Only posts can be pinned"}), 400
+        pinned = bool(data["pinned"])
+        if pinned:
+            other_pinned = [
+                i for i in alpha_content_list(author=existing["author"])
+                if i.get("kind") == "post" and i.get("pinned") and i["id"] != item_id
+            ]
+            if len(other_pinned) >= 4:
+                return jsonify({"error": "You can only pin up to 4 posts at a time. Unpin one first."}), 400
+        updates["pinned"] = pinned
+
     # ── Staged edits ────────────────────────────────────────────────────────
     # Editing a PUBLISHED item (a content change with no status change) saves to
     # a pending `staged_edits` copy and leaves the live page untouched. The edits
@@ -2591,7 +2606,7 @@ def _alpha_public_image_url(item: dict) -> str | None:
     return item.get("image_url")
 
 
-_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "subtitle", "snippet", "body", "stance", "url", "published_at"]
+_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "subtitle", "snippet", "body", "stance", "url", "published_at", "pinned"]
 
 
 @app.route("/api/alpha/<slug>/content", methods=["GET"])
@@ -2600,16 +2615,29 @@ def api_alpha_public_content(slug):
         return jsonify({"error": "Unknown author"}), 404
     topic = (request.args.get("topic") or "").strip() or None
     items = alpha_content_list(author=slug, status="published")
+
+    def to_public(item):
+        public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
+        public_item["image_url"] = _alpha_public_image_url(item)
+        return public_item
+
+    # Pinned posts fill a fixed 4-slot strip above the main grid, independent of
+    # the topic filter below — an author's pins stay visible no matter which
+    # topic pill the reader has selected.
+    pinned_posts = [to_public(i) for i in items if i.get("kind") == "post" and i.get("pinned")][:4]
+    pinned_ids = {p["id"] for p in pinned_posts}
+
     if topic:
         items = [i for i in items if i.get("topic") == topic]
     grouped = {"watchlist": [], "video": [], "post": [], "link": []}
     for item in items:
-        public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
-        public_item["image_url"] = _alpha_public_image_url(item)
-        grouped.setdefault(item["kind"], []).append(public_item)
+        if item["kind"] == "post" and item["id"] in pinned_ids:
+            continue
+        grouped.setdefault(item["kind"], []).append(to_public(item))
     caps = {"watchlist": 3, "video": 4, "post": 4}
     for kind, cap in caps.items():
         grouped[kind] = grouped[kind][:cap]
+    grouped["pinned_posts"] = pinned_posts
     return jsonify(grouped)
 
 

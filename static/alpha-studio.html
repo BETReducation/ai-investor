@@ -1957,6 +1957,17 @@ function buildCard(item, skipHead) {
   }
   actions.appendChild(toggleBtn);
 
+  if (item.kind === 'post') {
+    const pinBtn = document.createElement('button');
+    pinBtn.className = item.pinned ? 'btn-primary-sm' : 'btn-ghost-sm';
+    pinBtn.textContent = item.pinned ? 'Unpin' : 'Pin to top 4';
+    pinBtn.title = 'Pinned posts appear in a featured strip above Latest Thoughts (max 4 at a time).';
+    pinBtn.onclick = () => updateItem(
+      item.id, { pinned: !item.pinned }, item.pinned ? 'unpin this post' : 'pin this post'
+    );
+    actions.appendChild(pinBtn);
+  }
+
   const delBtn = document.createElement('button');
   delBtn.className = 'btn-danger-sm';
   delBtn.textContent = 'Delete';

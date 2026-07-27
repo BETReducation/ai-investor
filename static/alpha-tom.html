@@ -95,6 +95,9 @@
 .media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 @media (max-width: 1000px) { .media-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .media-grid { grid-template-columns: 1fr; } }
+.pinned-grid { margin-bottom: 32px; }
+.pinned-grid .post-card { position: relative; border-color: var(--accent, #d4a017); }
+.pinned-grid .post-card::before { content: "📌 Pinned"; position: absolute; top: 10px; right: 10px; font-size: 12px; font-weight: 600; background: rgba(0,0,0,0.6); color: #fff; padding: 2px 8px; border-radius: 12px; z-index: 1; }
 .video-card, .post-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: border-color 0.25s, transform 0.25s; text-decoration: none; color: inherit; }
 .video-card:hover, .post-card:hover { border-color: var(--border2); transform: translateY(-3px); }
 .video-thumb { aspect-ratio: 16/9; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
@@ -292,6 +295,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div class="content-inner">
     <h2 class="section-title">Latest Thoughts</h2>
     <p class="section-desc">Tom's research notes and write-ups, normalized into a consistent format.</p>
+    <div class="media-grid pinned-grid reveal" id="pinnedGrid" style="display:none;"></div>
     <div class="media-grid reveal" id="postGrid">
       <div class="post-card">
         <div class="media-body">
@@ -573,6 +577,49 @@ function renderVideos(items, emptyMessage) {
   });
 }
 
+function renderPinnedPosts(items) {
+  const container = document.getElementById('pinnedGrid');
+  if (!container) return;
+  if (!items.length) { container.style.display = 'none'; container.innerHTML = ''; return; }
+  container.style.display = '';
+  container.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('a');
+    card.className = 'post-card';
+    card.href = '/alpha/' + ALPHA_SLUG + '/post/' + item.id;
+    if (item.image_url) {
+      const thumb = document.createElement('div');
+      thumb.className = 'post-thumb';
+      const img = document.createElement('img');
+      img.src = item.image_url;
+      img.alt = item.title || '';
+      img.loading = 'lazy';
+      thumb.appendChild(img);
+      card.appendChild(thumb);
+    }
+    const body = document.createElement('div');
+    body.className = 'media-body';
+    if (item.topic) {
+      const tag = document.createElement('span');
+      tag.className = 'media-tag ' + topicAccentClass(item.topic);
+      tag.textContent = item.topic;
+      body.appendChild(tag);
+    }
+    const title = document.createElement('div');
+    title.className = 'media-title';
+    title.textContent = item.title || '';
+    body.appendChild(title);
+    if (item.snippet) {
+      const snippet = document.createElement('p');
+      snippet.className = 'media-snippet';
+      snippet.textContent = item.snippet;
+      body.appendChild(snippet);
+    }
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
 function renderPosts(items, emptyMessage) {
   const container = document.getElementById('postGrid');
   if (!container) return;
@@ -659,6 +706,7 @@ async function loadAlphaContent(topic) {
     const data = await res.json();
     renderWatchlist(data.watchlist || [], topic ? 'No watchlist items yet under this topic.' : null);
     renderVideos(data.video || [], topic ? 'No videos yet under this topic.' : null);
+    renderPinnedPosts(data.pinned_posts || []);
     renderPosts(data.post || [], topic ? 'No posts yet under this topic.' : null);
     renderLinks(data.link || [], topic ? 'No links yet under this topic.' : null);
   } catch {}
