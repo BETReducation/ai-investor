@@ -11,6 +11,7 @@ import secrets
 import hashlib
 import hmac
 import time
+import threading
 import re
 import smtplib
 import requests
@@ -1572,6 +1573,21 @@ def _resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
 _YF_RETRY_ATTEMPTS = 3
 _YF_RETRY_BACKOFF_SECONDS = 0.75
 
+# Short-TTL cache for yfinance's raw history call, keyed by (symbol, period, interval).
+# The signal engine and price chart both poll _fetch_ohlcv repeatedly (on cadences down
+# to a few seconds for intraday/scalp use — see pollTimer in signal_config.html), and
+# every poll used to re-download the full history from Yahoo with zero caching, which
+# is what capped how often either loop could safely run without risking rate-limiting.
+# gthread workers (see Procfile) share this dict across all threads in a process, so a
+# burst of near-simultaneous requests for the same symbol/interval collapses to one
+# Yahoo call. Caching only the pre-stitch fetch is safe for "live" freshness: intraday
+# staleness of a few seconds on the older, unchanging bars is invisible, and
+# _stitch_live_tail still overwrites the trailing bar with a fresh OANDA/Alpaca tick on
+# every call regardless of cache hit/miss.
+_OHLCV_CACHE_TTL_SECONDS = 4
+_ohlcv_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_ohlcv_cache_lock = threading.Lock()
+
 
 def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
     last_err: Exception | None = None
@@ -1583,6 +1599,24 @@ def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
             if attempt < _YF_RETRY_ATTEMPTS - 1:
                 time.sleep(_YF_RETRY_BACKOFF_SECONDS * (attempt + 1))
     raise ValueError(f"Yahoo Finance data temporarily unavailable — try again in a moment ({last_err})")
+
+
+def _fetch_yf_history_cached(ticker: "yf.Ticker", symbol: str, period: str, fetch_interval: str) -> pd.DataFrame:
+    """Cached wrapper around the period-based branch of _yf_history_with_retry. Not
+    used for the explicit start_date/end_date branch (backtester) — those are one-off
+    historical range queries, not something repeatedly polled, so caching them would
+    only add staleness risk for no benefit. Returns a copy so callers are free to treat
+    the result as theirs alone, even though it's backed by a shared cache entry."""
+    key = (symbol.upper(), period, fetch_interval)
+    now = time.monotonic()
+    with _ohlcv_cache_lock:
+        cached = _ohlcv_cache.get(key)
+    if cached is not None and now - cached[0] < _OHLCV_CACHE_TTL_SECONDS:
+        return cached[1].copy()
+    df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
+    with _ohlcv_cache_lock:
+        _ohlcv_cache[key] = (now, df)
+    return df.copy()
 
 
 # Yahoo delisted the real XAUUSD=X/XAUGBP=X/XAGEUR=X-style spot-metal "currency"
@@ -1672,7 +1706,7 @@ def _fetch_ohlcv(
         else:
             if period not in VALID_PERIODS:
                 raise ValueError(f"Invalid period: {period}")
-            df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
+            df = _fetch_yf_history_cached(ticker, symbol, period, fetch_interval)
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
         if interval in _RESAMPLE_INTERVALS:

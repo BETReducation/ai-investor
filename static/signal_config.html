@@ -798,6 +798,19 @@ const intervalMap = {
   '1y':  { period: 'max', interval: '1y'  },
 };
 
+// How often the running strategy re-scans watchlist assets for a condition match
+// (pollTimer, see startEngine()). Was a hardcoded 30s regardless of the selected
+// candle timeframe — far too slow to be useful for a 1m/5m scalp or intraday
+// strategy, since a signal could sit unnoticed for up to half a minute. Shortened
+// now that /api/signals' underlying yfinance history fetch is server-side cached
+// (app.py's _fetch_yf_history_cached, ~4s TTL), so re-scanning this often no longer
+// means re-hammering Yahoo on every tick — only the in-memory OANDA/Alpaca live
+// tail (already sub-second) gets re-stitched fresh on every call regardless of the
+// cache. Still not truly sub-second (that would need the engine itself to react to
+// the chart's SSE stream rather than re-polling /api/signals — a bigger change, see
+// syncChartStream()), but a straightforward win over the old 30s for now.
+const SCAN_POLL_MS = 10000;
+
 // --- STATE ---
 let currentUser = null;
 let dashboardInitialized = false;
@@ -2136,18 +2149,18 @@ async function startEngine() {
   const cfg = getConfig();
   addLog('signal', 'ENGINE', `Strategy scan started — ${Object.keys(assets).length} assets | Live API`);
   addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
-  addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: 30s`);
+  addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()} | Poll: ${SCAN_POLL_MS / 1000}s`);
 
   await fetchAllAssets(); // fresh prices right away, don't wait for the next livePriceTimer tick
   await scanSignals();
 
   // Prices are already kept live by the always-on livePriceTimer (started from
   // init(), runs regardless of engine state) — this only needs to re-run the signal
-  // scan itself every 30s, not re-fetch prices too.
+  // scan itself every SCAN_POLL_MS, not re-fetch prices too.
   pollTimer = setInterval(async () => {
     if (!engineRunning) return;
     await scanSignals();
-  }, 30000);
+  }, SCAN_POLL_MS);
 }
 
 function stopEngine() {
@@ -2192,13 +2205,21 @@ async function fetchPrices(sym) {
 }
 
 // --- FETCH SIGNALS ---
-// Uses daily candles for the indicator bar regardless of the price chart's own timeframe —
-// a stable, consistent reference view. Engine scan calls fetchSignalsEngine() which uses
-// the trading timeframe.
+// Indicators are computed on whatever candle interval is selected in the TIMEFRAME
+// control (getApiInterval() — same one the price chart uses), not hardcoded daily
+// bars. This function backs the live condition-status widget, ad-hoc re-checks, AND
+// the engine's own scanSignals() loop — all three evaluate the same strategyConditions,
+// so they need to agree on what timeframe those conditions are being judged against.
+// Previously this was pinned to period:'6mo'/interval:'1d' regardless of the selected
+// timeframe, which silently scored e.g. a 5-minute strategy against daily candles —
+// scalp/intraday conditions could never fire correctly. calculate_all()/score_signals()
+// on the backend are already bar-count based with no daily-specific assumptions, so no
+// backend change was needed — this was purely a frontend wiring gap.
 async function fetchSignals(sym) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return null;
   const cfg = getConfig();
+  const { period, interval } = getApiInterval();
 
   // Indicator params come ONLY from the conditions in the strategy — each
   // condition carries its own params, so only the indicators the user actually
@@ -2216,7 +2237,7 @@ async function fetchSignals(sym) {
   });
 
   const params = new URLSearchParams({
-    symbol: yfSym, period: '6mo', interval: '1d',
+    symbol: yfSym, period, interval,
     // Base signal-scoring settings (drive the read-only indicator bar display).
     rsi_oversold: cfg.rsiOversold, rsi_overbought: cfg.rsiOverbought,
     rsi_on: 1, macd_on: 1, bb_on: 1, ma_on: 1, vol_on: 1,
