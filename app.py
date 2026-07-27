@@ -1474,6 +1474,28 @@ def _serialize_structured_sections(sections, upload_image) -> str:
 
 
 def _send_email(to_addr: str, subject: str, body: str) -> None:
+    # Resend's HTTP API is a plain HTTPS POST (port 443), so it works from hosts
+    # like Railway that block outbound SMTP (ports 25/465/587) at the network
+    # level — raw SMTP there fails immediately with "Network is unreachable"
+    # regardless of provider or port. Preferred whenever configured; SMTP below
+    # is kept as a fallback for anyone not on a host that blocks it.
+    resend_api_key = os.environ.get("RESEND_API_KEY", "")
+    if resend_api_key:
+        from_addr = os.environ.get("RESEND_FROM", "onboarding@resend.dev")
+        try:
+            resp = requests.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {resend_api_key}"},
+                json={"from": from_addr, "to": [to_addr], "subject": subject, "text": body},
+                timeout=10,
+            )
+            if resp.status_code >= 300:
+                print(f"\n  ✉️  [resend send failed] To: {to_addr}  Subject: {subject}  "
+                      f"Status: {resp.status_code}  Body: {resp.text}\n")
+        except Exception as e:
+            print(f"\n  ✉️  [resend send failed] To: {to_addr}  Subject: {subject}  Error: {e}\n")
+        return
+
     smtp_host = os.environ.get("SMTP_HOST", "")
     if not smtp_host:
         # No SMTP configured — log so it's still usable during setup/testing.
