@@ -395,17 +395,23 @@ async function doForgotPassword() {
 
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const res = await fetch('/api/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     const data = await res.json();
     okEl.textContent = data.message || "If an account matches, we've sent a reset link.";
     okEl.style.display = 'block';
     document.getElementById('forgotIdentifier').value = '';
-  } catch {
-    showError(errEl, 'Cannot reach server — please try again.');
+  } catch (e) {
+    showError(errEl, e.name === 'AbortError'
+      ? 'This is taking too long — please try again in a moment.'
+      : 'Cannot reach server — please try again.');
   } finally {
     btn.disabled = false; btn.textContent = 'Send Reset Link';
   }

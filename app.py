@@ -1487,11 +1487,17 @@ def _send_email(to_addr: str, subject: str, body: str) -> None:
     msg["Subject"] = subject
     msg["From"] = from_addr
     msg["To"] = to_addr
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        if smtp_user:
-            server.login(smtp_user, smtp_pass)
-        server.sendmail(from_addr, [to_addr], msg.as_string())
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.starttls()
+            if smtp_user:
+                server.login(smtp_user, smtp_pass)
+            server.sendmail(from_addr, [to_addr], msg.as_string())
+    except Exception as e:
+        # Never let a broken SMTP config (bad creds, blocked port, timeout) hang or
+        # fail the request — forgot-password always returns its generic message
+        # regardless of whether the email actually went out, so this just logs it.
+        print(f"\n  ✉️  [email send failed] To: {to_addr}  Subject: {subject}  Error: {e}\n")
 
 
 def _save_preferences(username: str, preferences: dict) -> None:
