@@ -32,6 +32,7 @@ from api.indicators import calculate_all
 from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
+from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
 
@@ -3282,6 +3283,19 @@ def backtest():
             pip_size=pip_size,
         )
         metrics = calculate_metrics(trades, equity_curve)
+
+        # Best-effort: sector/peer context per trade (which sector the symbol
+        # belongs to, how that sector and its well-known peers moved on each
+        # trade's entry/exit day). Never fails the backtest itself.
+        if len(df.index) > 0:
+            try:
+                enrich_trades_with_sector_context(
+                    trades, symbol,
+                    str(df.index[0].date()), str(df.index[-1].date()),
+                )
+            except Exception:
+                pass
+
         period_label = f"{start_date} → {end_date or 'today'}" if start_date else period
         return jsonify({
             "symbol":       symbol.upper(),

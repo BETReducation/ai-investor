@@ -2074,6 +2074,7 @@ window.addEventListener('resize', () => {
           <span id="ctxBars" style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
         </span>
         <span id="ctxTrades"  style="font-size:9px;color:var(--text-muted);letter-spacing:1px;"></span>
+        <span id="ctxSector"  style="font-size:9px;color:var(--accent-blue);letter-spacing:1px;"></span>
         <span class="ctx-spacer" style="flex:1;"></span>
         <span id="ctxWarning" style="font-size:8px;color:var(--accent-amber);letter-spacing:0.5px;"></span>
       </div>
@@ -3304,6 +3305,8 @@ function renderResults(data) {
   document.getElementById('ctxPeriod').textContent = `Period: ${period}`;
   document.getElementById('ctxBars').textContent = barsLabel;
   document.getElementById('ctxTrades').textContent = `${metrics.num_trades} trade${metrics.num_trades !== 1 ? 's' : ''}`;
+  const tradeSector = trades.find(t => t.sector)?.sector;
+  document.getElementById('ctxSector').textContent = tradeSector ? `Sector: ${tradeSector}` : '';
 
   const noTradeWarn = metrics.num_trades === 0
     ? 'No signals fired — try lowering Min Confidence or enabling more indicators'
