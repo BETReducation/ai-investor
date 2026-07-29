@@ -35,6 +35,8 @@ from api.metrics import calculate_metrics
 from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
+from marketdata import bus as marketdata_bus
+from marketdata import config as marketdata_config
 
 app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
@@ -42,6 +44,12 @@ app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production"
 # over plain HTTP, so without this Flask sees every request as insecure — which
 # breaks Secure-cookie handling (session + remember-me) behind the proxy.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# Base URL of the realtime/ async streaming service (docs/scaling-plan.md),
+# e.g. "https://ai-investor-realtime.up.railway.app" — no trailing slash.
+# Blank until that service is actually deployed; every consumer of this
+# treats blank as "feature not available yet, fall back to polling".
+_REALTIME_BASE_URL = os.environ.get("REALTIME_BASE_URL", "").rstrip("/")
 
 _is_production = os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("PRODUCTION")
 _allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
@@ -2123,12 +2131,19 @@ def api_logout():
 @app.route("/api/me", methods=["GET"])
 def api_me():
     if not current_user.is_authenticated:
-        return jsonify({"authenticated": False, "username": None, "tier": "basic", "alpha_role": None})
+        return jsonify({
+            "authenticated": False, "username": None, "tier": "basic", "alpha_role": None,
+            "realtime_base_url": _REALTIME_BASE_URL,
+        })
     return jsonify({
         "authenticated": True,
         "username": current_user.id,
         "tier": getattr(current_user, "tier", "basic"),
         "alpha_role": getattr(current_user, "alpha_role", None),
+        # Empty until the realtime/ service (docs/scaling-plan.md, Workstream 1/5)
+        # is actually deployed — see signal_config.html's engine SSE wiring, which
+        # falls back to the existing poll loop whenever this is blank.
+        "realtime_base_url": _REALTIME_BASE_URL,
     })
 
 
@@ -3115,6 +3130,25 @@ def indicators():
         return jsonify({"error": f"Failed to calculate indicators: {str(e)}"}), 500
 
 
+# Shared with the engine worker below (docs/scaling-plan.md, Workstream 5) so
+# the two never drift apart on which query params count as scoring thresholds.
+_SIGNALS_THRESHOLD_FLOAT_KEYS = [
+    "rsi_oversold", "rsi_overbought", "volume_surge",
+    "macd_threshold", "bb_oversold", "bb_overbought",
+    "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
+    "ema_short", "ema_long", "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
+]
+
+
+def _extract_signal_thresholds(args) -> dict:
+    thresholds = {}
+    for key in _SIGNALS_THRESHOLD_FLOAT_KEYS:
+        val = args.get(key)
+        if val is not None:
+            thresholds[key] = float(val)  # ValueError propagates — callers decide how to report it
+    return thresholds
+
+
 @app.route("/api/signals", methods=["GET"])
 @login_required
 def signals():
@@ -3125,20 +3159,10 @@ def signals():
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
 
-    thresholds = {}
-    float_keys = [
-        "rsi_oversold", "rsi_overbought", "volume_surge",
-        "macd_threshold", "bb_oversold", "bb_overbought",
-        "rsi_on", "macd_on", "bb_on", "ma_on", "vol_on",
-        "ema_short", "ema_long", "macd_cross_lookback", "ema_cross_lookback", "ma_cross_lookback",
-    ]
-    for key in float_keys:
-        val = request.args.get(key)
-        if val is not None:
-            try:
-                thresholds[key] = float(val)
-            except ValueError:
-                return jsonify({"error": f"Invalid value for threshold '{key}'"}), 400
+    try:
+        thresholds = _extract_signal_thresholds(request.args)
+    except ValueError as e:
+        return jsonify({"error": f"Invalid threshold value: {e}"}), 400
 
     calc_params = _extract_calc_params(request.args)
 
@@ -3157,6 +3181,111 @@ def signals():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": f"Failed to generate signals: {str(e)}"}), 500
+
+
+# ── Live signal engine worker (docs/scaling-plan.md, Workstream 5) ──────────
+# Background thread that keeps calculate_all()/score_signals() results warm
+# for every (symbol, period, interval, params) job the realtime/ service's
+# /stream/signals endpoint is currently serving at least one viewer for, and
+# publishes the result back over Redis instead of making each viewer poll
+# /api/signals themselves. Nothing here runs unless REDIS_URL is set (see
+# _should_start_background_streams' invocation below); every failure is
+# caught and logged, same "pure optimization layer, never load-bearing"
+# posture as marketdata/'s own streamers — /api/signals keeps working exactly
+# as it does today regardless of whether this worker is running.
+#
+# Indicator computation (calculate_all, the expensive part — a full OHLCV
+# fetch plus every enabled indicator over the whole history) is deduped and
+# throttled per (symbol, period, interval, calc_params), since that's all
+# calculate_all's output actually depends on. Scoring (score_signals, cheap
+# threshold comparisons against already-computed indicator values) still
+# runs per job even when several jobs share one indicator computation, so
+# per-user threshold customization is never lost to the sharing.
+_ENGINE_THROTTLE_SECONDS = 3
+_engine_lock = threading.Lock()
+_engine_last_computed: dict[str, float] = {}   # indicator cache key -> monotonic time
+_engine_indicator_cache: dict[str, dict] = {}  # indicator cache key -> calculate_all() output
+
+
+class _DictArgs:
+    """Adapts a plain dict to the .get(key)-only interface _extract_calc_params
+    and _extract_signal_thresholds expect from a werkzeug MultiDict, so the
+    engine worker can reuse those functions unchanged against a job's stored
+    params instead of a live request.args."""
+
+    def __init__(self, d: dict):
+        self._d = d
+
+    def get(self, key, default=None):
+        return self._d.get(key, default)
+
+
+def _engine_indicator_cache_key(symbol: str, period: str, interval: str, calc_params: dict) -> str:
+    blob = json.dumps(
+        {"symbol": symbol, "period": period, "interval": interval, "calc_params": calc_params},
+        sort_keys=True, separators=(",", ":"),
+    )
+    return hashlib.sha1(blob.encode()).hexdigest()
+
+
+def _engine_job_channel(job_json: str) -> str:
+    # Must match realtime/main.py's channel derivation exactly — see that
+    # file's stream_signals() for the other half of this contract.
+    return "signals:" + hashlib.sha1(job_json.encode()).hexdigest()
+
+
+def _engine_worker_tick() -> None:
+    job_keys = marketdata_bus.get_set_members("engine:desired")
+    if not job_keys:
+        return
+    now = time.monotonic()
+    for job_json in job_keys:
+        try:
+            job = json.loads(job_json)
+            symbol = job["symbol"]
+            period = job.get("period", "6mo")
+            interval = job.get("interval", "1d")
+            args = _DictArgs(job.get("params") or {})
+            calc_params = _extract_calc_params(args)
+            try:
+                thresholds = _extract_signal_thresholds(args)
+            except ValueError:
+                continue  # a bad threshold value here means a malformed job — skip, don't crash the loop
+
+            cache_key = _engine_indicator_cache_key(symbol, period, interval, calc_params)
+            with _engine_lock:
+                stale = (now - _engine_last_computed.get(cache_key, 0)) >= _ENGINE_THROTTLE_SECONDS
+            if stale:
+                df = _fetch_ohlcv(symbol, period, interval)
+                indicator_data = calculate_all(df, **calc_params)
+                with _engine_lock:
+                    _engine_indicator_cache[cache_key] = indicator_data
+                    _engine_last_computed[cache_key] = now
+            with _engine_lock:
+                indicator_data = _engine_indicator_cache.get(cache_key)
+            if indicator_data is None:
+                continue
+
+            signal_result = score_signals(indicator_data, thresholds or None)
+            payload = {
+                "symbol": symbol.upper(),
+                "period": period,
+                "interval": interval,
+                "indicators": {k: v for k, v in indicator_data.items() if k != "history"},
+                **signal_result,
+            }
+            marketdata_bus.publish(_engine_job_channel(job_json), payload)
+        except Exception:
+            app.logger.exception("engine worker failed for job %s", job_json)
+
+
+def _engine_worker_loop() -> None:
+    while True:
+        try:
+            _engine_worker_tick()
+        except Exception:
+            app.logger.exception("engine worker tick failed")
+        time.sleep(1)
 
 
 # ── Backtest endpoint (public) ───────────────────────────────────────────────
@@ -3462,6 +3591,9 @@ if _should_start_background_streams():
         marketdata_router.start_background_streams(seed_symbols=_seed_symbols)
     except Exception:
         pass  # marketdata is a pure optimization layer — never block startup on it
+
+    if marketdata_config.REDIS_URL:
+        threading.Thread(target=_engine_worker_loop, name="engine-worker", daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

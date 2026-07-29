@@ -1,27 +1,32 @@
-# realtime/ — async streaming service (Workstream 1/2 spike)
+# realtime/ — async streaming service (Workstreams 1/2/3/5/6)
 
-Part of the scaling plan in `../docs/scaling-plan.md`. This is a **spike**,
-not production infrastructure yet:
+Part of the scaling plan in `../docs/scaling-plan.md`. All code below is
+written and unit-tested against mocks/fakes — **none of it is deployed
+anywhere yet.** Deploying it means provisioning a paid Railway service and
+Redis addon; see `../docs/scaling-plan.md`'s Status section for why that's
+being held back pending an explicit cost decision, separate from the code
+itself being done.
 
-- Only proves the pattern (async transport + Redis fan-out) for the price
-  chart's live feed.
-- Not wired into the frontend (`static/signal_config.html` still talks to
-  the main app's `/api/prices/stream`).
-- Not deployed anywhere.
-- Doesn't touch the strategy engine, symbol-subscription budgeting, load
-  balancing, or load testing — those are separate, later workstreams.
+## Endpoints
 
-## How it fits together
+- `GET /stream/prices?symbol=...` — live price chart feed. Relays
+  `prices:{SYMBOL}` from Redis, published by the main app's OANDA/Alpaca
+  streamers (`marketdata/bus.py`) whenever `REDIS_URL` is set there.
+- `GET /stream/signals?symbol=...&period=...&interval=...&<scoring/calc params>`
+  — live strategy-engine feed, mirrors `/api/signals`' query params exactly.
+  Relays a Redis channel published by the main app's `_engine_worker_loop`
+  (app.py), which recomputes indicators once per distinct (symbol, period,
+  interval, calc_params) — shared across every viewer using those params —
+  and scores each viewer's own thresholds individually, so per-user strategy
+  customization is preserved even though the expensive part is shared.
+- `GET /healthz`
 
-1. The main app's OANDA/Alpaca streamers (`marketdata/oanda_client.py`,
-   `marketdata/alpaca_client.py`) publish every tick to Redis via
-   `marketdata/bus.py`, on channel `prices:{SYMBOL}` — but only if `REDIS_URL`
-   is set on the main app. If it isn't, this is a total no-op and the main
-   app behaves exactly as it does today.
-2. This service subscribes to that same Redis channel per active
-   `/stream/prices?symbol=...` connection and relays messages to the client
-   as SSE — no polling loop, no dependency on the main app's gunicorn thread
-   pool.
+Both streaming endpoints require the same Flask-Login session cookie the
+main app issues (`SECRET_KEY` must match across both services) and both use
+a Redis-backed refcount (`redis_bus.mark_wanted`/`mark_unwanted`) so the main
+app only keeps a symbol/job "hot" while at least one viewer is actually
+watching it — see `marketdata/router.py`'s `sync_watched_symbols()` and
+app.py's `_engine_worker_tick()` for the two consumers of that signal.
 
 ## Running locally
 
@@ -34,19 +39,31 @@ uvicorn main:app --reload --port 8001
 ```
 
 You'll also need the main app running with the same `REDIS_URL` and
-`SECRET_KEY`, and at least one OANDA/Alpaca-covered symbol actively
-streaming, for `/stream/prices` to receive anything.
+`SECRET_KEY` (`python app.py`), and at least one OANDA/Alpaca-covered symbol
+actively streaming, for `/stream/prices` to receive anything — or a running
+strategy engine for `/stream/signals`.
 
 Auth: this service validates the *same* Flask session cookie the main app
 issues (via `flask.sessions.SecureCookieSessionInterface`, same
-`SECRET_KEY`) — no separate login exists here. `SECRET_KEY` must match
-across both services in every environment, including Railway.
+`SECRET_KEY`) — no separate login exists here.
 
-## Deploying (not yet done)
+## Load testing
+
+`loadtest.py` opens N concurrent SSE connections and reports connect
+latency, time-to-first-message, and error counts (client-side only — watch
+the server's own CPU/memory separately). Needs a real session cookie and
+`pip install aiohttp` (deliberately not in requirements.txt — dev-only
+tool). See the script's own docstring for usage. Smoke-tested against a
+local fake server; not yet run against this service for real.
+
+## Deploying (not yet done — costs money, needs explicit go-ahead)
 
 Intended as its own Railway service pointed at this repo with **root
-directory set to `realtime/`**, sharing the same `SECRET_KEY` and `REDIS_URL`
-env vars as the main app, plus a Railway Redis addon provisioned and shared
-between both services. Not provisioned yet — needs a decision on Redis addon
-cost/limits before doing this for real (see open questions in
-`../docs/scaling-plan.md`).
+directory set to `realtime/`**, sharing `SECRET_KEY` and `REDIS_URL` with the
+main app, plus a Railway Redis addon provisioned and shared between both
+services. The main app also needs `REALTIME_BASE_URL` set to this service's
+public URL once it exists (see app.py's `/api/me` and
+`static/signal_config.html`'s `checkTier()` — that's what flips the frontend
+from polling to SSE). Not provisioned yet — needs a decision on Redis addon
+cost/limits and the second Railway service's cost before doing this for real
+(see open questions in `../docs/scaling-plan.md`).

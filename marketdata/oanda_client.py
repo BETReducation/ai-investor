@@ -57,6 +57,22 @@ class OandaStreamer:
             self._instrument_to_symbol[instrument] = symbol
         self._reconnect_event.set()
 
+    def unwatch(self, symbol: str) -> None:
+        """Removes a display symbol from the watched set (see
+        marketdata/router.py's sync_watched_symbols — this is only ever called
+        for symbols that mechanism itself watched). Same reconnect-to-pick-it-up
+        reasoning as watch(): OANDA's stream takes its instrument list at
+        connection-open time, so dropping an instrument only takes effect on
+        the next reconnect."""
+        with self._lock:
+            if symbol not in self._watched:
+                return
+            self._watched.discard(symbol)
+            self._instrument_to_symbol = {
+                i: s for i, s in self._instrument_to_symbol.items() if s != symbol
+            }
+        self._reconnect_event.set()
+
     def start(self) -> None:
         self._thread = threading.Thread(target=self._run, name="oanda-streamer", daemon=True)
         self._thread.start()

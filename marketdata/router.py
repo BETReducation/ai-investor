@@ -10,10 +10,11 @@ correctness; it's a pure optimization layer on top of what already works.
 
 import logging
 import threading
+import time
 
 import pandas as pd
 
-from . import config
+from . import bus, config
 from .bar_buffer import LiveBarBuffer
 from .symbols import classify_symbol
 
@@ -123,6 +124,54 @@ def ensure_symbol_watched(symbol: str) -> None:
         log.exception("ensure_symbol_watched failed for %s", symbol)
 
 
+# Symbols currently watched because marketdata.bus's Redis-backed refcount
+# (see get_desired_symbols) asked for them — tracked separately from
+# ensure_symbol_watched's older call sites so sync_watched_symbols() only
+# ever unwatches a symbol *it* watched, never one requested through the
+# permanent-once-watched legacy path. Purely additive: with REDIS_URL unset,
+# get_desired_symbols() returns None, sync_watched_symbols() no-ops, and
+# nothing here is ever touched.
+_refcount_watched: set[str] = set()
+_SYNC_INTERVAL_SECONDS = 5
+
+
+def sync_watched_symbols() -> None:
+    """Reconciles the streamers' watch sets against Redis's 'watch:desired'
+    set — the realtime/ service's live count of which symbols have >=1
+    connected SSE viewer. Runs on a timer rather than reacting to Redis
+    events: a few seconds of staleness costs nothing (both providers already
+    tolerate a "not yet watching" gap right after watch() — see
+    start_background_streams' own seed-symbol handling), and a poll loop is
+    far simpler to reason about than mutating two long-lived streaming
+    connections from an event callback."""
+    global _refcount_watched
+    desired = bus.get_desired_symbols()
+    if desired is None:
+        return
+    for symbol in desired - _refcount_watched:
+        category = classify_symbol(symbol)
+        if category in ("forex", "metal-fx") and _oanda_streamer is not None:
+            _oanda_streamer.watch(symbol)
+        elif category == "stock" and _alpaca_streamer is not None:
+            _alpaca_streamer.watch(symbol)
+    for symbol in _refcount_watched - desired:
+        category = classify_symbol(symbol)
+        if category in ("forex", "metal-fx") and _oanda_streamer is not None:
+            _oanda_streamer.unwatch(symbol)
+        elif category == "stock" and _alpaca_streamer is not None:
+            _alpaca_streamer.unwatch(symbol)
+    _refcount_watched = desired
+
+
+def _sync_watched_symbols_loop() -> None:
+    while True:
+        try:
+            sync_watched_symbols()
+        except Exception:
+            log.exception("sync_watched_symbols failed")
+        time.sleep(_SYNC_INTERVAL_SECONDS)
+
+
 def start_background_streams(seed_symbols: list[str] | None = None) -> None:
     """Starts each configured provider's background streaming thread. Safe to call
     multiple times (idempotent) and safe to call with neither provider configured
@@ -160,3 +209,7 @@ def start_background_streams(seed_symbols: list[str] | None = None) -> None:
             log.info("Alpaca streamer started")
         except Exception:
             log.exception("Failed to start Alpaca streamer — equities will use yfinance only")
+
+    if config.REDIS_URL and (_oanda_streamer is not None or _alpaca_streamer is not None):
+        threading.Thread(target=_sync_watched_symbols_loop, name="watch-sync", daemon=True).start()
+        log.info("Redis-backed watch-symbol sync started")

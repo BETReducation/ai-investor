@@ -47,3 +47,38 @@ def publish_tick(symbol: str, ts, price: float) -> None:
         client.publish(f"prices:{symbol.upper()}", payload)
     except Exception:
         log.warning("Redis publish failed for %s", symbol, exc_info=True)
+
+
+def get_set_members(key: str) -> "set[str] | None":
+    """None means 'Redis unavailable, don't touch anything' — distinct from an
+    empty set, which legitimately means 'nothing is currently desired'. Used
+    for both "watch:desired" (router.py's sync_watched_symbols, Workstream 3)
+    and "engine:desired" (app.py's engine worker, Workstream 5) — both are
+    realtime/'s refcounted view of what's currently being actively viewed,
+    just for two different downstream consumers."""
+    client = _get_client()
+    if client is None:
+        return None
+    try:
+        members = client.smembers(key)
+        return {m.decode() if isinstance(m, bytes) else m for m in members}
+    except Exception:
+        log.warning("Redis read of %s failed", key, exc_info=True)
+        return None
+
+
+def get_desired_symbols() -> "set[str] | None":
+    """"watch:desired" specifically — see get_set_members. router.py's
+    sync_watched_symbols() polls this to decide what the OANDA/Alpaca
+    streamers should be watching."""
+    return get_set_members("watch:desired")
+
+
+def publish(channel: str, payload: dict) -> None:
+    client = _get_client()
+    if client is None:
+        return
+    try:
+        client.publish(channel, json.dumps(payload))
+    except Exception:
+        log.warning("Redis publish to %s failed", channel, exc_info=True)
