@@ -17,7 +17,7 @@ import time
 import pandas as pd
 import requests
 
-from . import config
+from . import bus, config
 from .symbols import yfinance_to_oanda_instrument
 
 log = logging.getLogger(__name__)
@@ -157,4 +157,6 @@ class OandaStreamer:
             ts = pd.Timestamp(msg["time"])  # OANDA sends RFC3339 UTC timestamps
         except (KeyError, ValueError, IndexError, TypeError):
             return
-        self._get_buffer(symbol).on_tick(ts, (bid + ask) / 2.0)
+        mid = (bid + ask) / 2.0
+        self._get_buffer(symbol).on_tick(ts, mid)
+        bus.publish_tick(symbol, ts, mid)

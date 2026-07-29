@@ -16,7 +16,7 @@ import time
 
 import requests
 
-from . import config
+from . import bus, config
 from .symbols import yfinance_to_alpaca_symbol
 
 log = logging.getLogger(__name__)
@@ -86,7 +86,9 @@ class AlpacaStreamer:
             symbol = self._alpaca_to_symbol.get(trade.symbol)
             if not symbol:
                 return
-            self._get_buffer(symbol).on_tick(trade.timestamp, float(trade.price), float(trade.size or 0))
+            price = float(trade.price)
+            self._get_buffer(symbol).on_tick(trade.timestamp, price, float(trade.size or 0))
+            bus.publish_tick(symbol, trade.timestamp, price)
         except Exception:
             log.exception("Alpaca trade handler failed for %s", getattr(trade, "symbol", "?"))
 
