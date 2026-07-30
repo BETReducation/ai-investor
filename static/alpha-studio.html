@@ -1944,18 +1944,35 @@ function buildCard(item, skipHead) {
   toggleBtn.onclick = () => isDraft
     ? updateItem(item.id, { ...gatherFieldUpdates(), status: 'published' }, 'publish this')
     : updateItem(item.id, { status: 'draft' }, 'unpublish this');
+  let publishWarning = null;
   if (isDraft && item.kind === 'post') {
+    publishWarning = document.createElement('div');
+    publishWarning.style.color = '#c00';
+    publishWarning.style.fontWeight = 'bold';
+    publishWarning.style.marginTop = '4px';
+    publishWarning.style.display = 'none';
+    // Reads the live inputs, not the (possibly stale) item object — a prior
+    // bug checked item.title/item.subtitle/item.image_url directly, so text
+    // typed into a field but never Saved still showed as "missing" even
+    // though it was visibly filled in on screen.
     updatePublishGate = () => {
       const missing = [];
-      if (!(item.title || '').trim()) missing.push('title');
-      if (!(item.subtitle || '').trim()) missing.push('subtitle');
-      if (!((item.image_url || '').trim() || item.image_filename)) missing.push('image');
+      if (!(titleInput.value || '').trim()) missing.push('title');
+      if (subtitleInput && !(subtitleInput.value || '').trim()) missing.push('subtitle');
+      if (!((imageUrlInput && imageUrlInput.value.trim()) || item.image_filename)) missing.push('image');
       toggleBtn.disabled = missing.length > 0;
-      toggleBtn.title = missing.length ? 'Missing before publishing: ' + missing.join(', ') + '.' : '';
+      const msg = missing.length ? 'Missing before publishing: ' + missing.join(', ') + '.' : '';
+      toggleBtn.title = msg;
+      publishWarning.textContent = msg;
+      publishWarning.style.display = msg ? 'block' : 'none';
     };
+    titleInput.addEventListener('input', updatePublishGate);
+    if (subtitleInput) subtitleInput.addEventListener('input', updatePublishGate);
+    if (imageUrlInput) imageUrlInput.addEventListener('input', updatePublishGate);
     updatePublishGate();
   }
   actions.appendChild(toggleBtn);
+  if (publishWarning) actions.appendChild(publishWarning);
 
   if (item.kind === 'post') {
     const pinBtn = document.createElement('button');
