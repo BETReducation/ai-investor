@@ -27,6 +27,50 @@ _MAX_BACKOFF = 60.0
 _HEARTBEAT_TIMEOUT = 30.0  # OANDA sends a heartbeat roughly every 5s on an open stream
 
 
+def _rest_host() -> str:
+    return config.OANDA_REST_HOSTS.get(config.OANDA_ENVIRONMENT, config.OANDA_REST_HOSTS["practice"])
+
+
+def fetch_candles(instrument: str, granularity: str, count: int) -> "pd.DataFrame | None":
+    """One-off REST fetch of historical candles for `instrument` (OANDA's own
+    '<BASE>_<QUOTE>' naming) — independent of OandaStreamer, which only ever covers
+    the live tick stream. Returns a DataFrame indexed by a UTC DatetimeIndex with
+    Open/High/Low/Close/Volume columns (the same shape _fetch_ohlcv's yfinance leg
+    already produces), or None on any failure (not configured, pair not listed,
+    network error) — mirrors every other function in this module never raising
+    past its own boundary, so router.get_historical_candles' caller falls straight
+    back to its existing data source."""
+    if not (config.OANDA_API_TOKEN and config.OANDA_ACCOUNT_ID):
+        return None
+    url = f"https://{_rest_host()}/v3/instruments/{instrument}/candles"
+    params = {"granularity": granularity, "count": count, "price": "M"}
+    headers = {"Authorization": f"Bearer {config.OANDA_API_TOKEN}"}
+    try:
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        resp.raise_for_status()
+        candles = resp.json().get("candles", [])
+    except Exception:
+        log.exception("OANDA candles fetch failed for %s/%s", instrument, granularity)
+        return None
+    rows, idx = [], []
+    for c in candles:
+        mid = c.get("mid")
+        if not mid:
+            continue
+        try:
+            idx.append(pd.Timestamp(c["time"]))
+            rows.append({
+                "Open": float(mid["o"]), "High": float(mid["h"]),
+                "Low": float(mid["l"]), "Close": float(mid["c"]),
+                "Volume": float(c.get("volume") or 0),
+            })
+        except (KeyError, ValueError, TypeError):
+            continue
+    if not rows:
+        return None
+    return pd.DataFrame(rows, index=pd.DatetimeIndex(idx))
+
+
 class OandaStreamer:
     def __init__(self, get_buffer):
         """`get_buffer(symbol)` returns (creating if needed) the LiveBarBuffer for a
@@ -80,7 +124,7 @@ class OandaStreamer:
     # -- internals ------------------------------------------------------------
 
     def _rest_host(self) -> str:
-        return config.OANDA_REST_HOSTS.get(config.OANDA_ENVIRONMENT, config.OANDA_REST_HOSTS["practice"])
+        return _rest_host()
 
     def _stream_host(self) -> str:
         return config.OANDA_STREAM_HOSTS.get(config.OANDA_ENVIRONMENT, config.OANDA_STREAM_HOSTS["practice"])

@@ -16,7 +16,7 @@ import pandas as pd
 
 from . import bus, config
 from .bar_buffer import LiveBarBuffer
-from .symbols import classify_symbol
+from .symbols import classify_symbol, yfinance_to_oanda_instrument
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +41,70 @@ _RESAMPLE_RULES = {
     "1d": "1D",
 }
 _RESAMPLE_AGG = {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+
+# yfinance-style native interval -> OANDA candle granularity. Only intervals OANDA's
+# /candles endpoint natively serves; anything else (90m, 5d, 3mo, ...) has no entry
+# and get_historical_candles declines it, same "not covered" fallback as everywhere
+# else in this module. app.py's own _RESAMPLE_INTERVALS resolves synthetic intervals
+# (2h, 4h, 10m, 45m, ...) down to one of these native ones before calling in here, and
+# resamples the result the same way it already does for the yfinance-sourced leg.
+_OANDA_GRANULARITY = {
+    "1m": "M1", "2m": "M2", "5m": "M5", "15m": "M15", "30m": "M30",
+    "60m": "H1", "1h": "H1", "1d": "D", "1wk": "W", "1mo": "M",
+}
+_OANDA_GRANULARITY_MINUTES = {
+    "M1": 1, "M2": 2, "M5": 5, "M15": 15, "M30": 30,
+    "H1": 60, "D": 1440, "W": 10080, "M": 43800,
+}
+# Rough days-of-history each yfinance period implies — only used to size the OANDA
+# "count" request, so approximate is fine; OANDA just returns whatever it actually
+# has, capped at its own 5000-candle-per-request ceiling.
+_PERIOD_DAYS = {
+    "1d": 1, "5d": 5, "60d": 60, "1mo": 31, "3mo": 93, "6mo": 186,
+    "1y": 366, "2y": 732, "5y": 1830, "10y": 3660, "ytd": 366, "max": 3660,
+}
+_OANDA_MAX_CANDLES = 5000
+
+
+def _estimate_candle_count(period: str, granularity: str) -> int:
+    days = _PERIOD_DAYS.get(period, 90)
+    minutes_per_candle = _OANDA_GRANULARITY_MINUTES.get(granularity, 1440)
+    return max(2, min(_OANDA_MAX_CANDLES, days * 1440 // minutes_per_candle + 2))
+
+
+def get_historical_candles(symbol: str, interval: str, period: str) -> "pd.DataFrame | None":
+    """Real historical OHLC candles for a forex/metal-fx pair straight from OANDA's
+    REST API, when OANDA is configured and lists this exact pair — or None on any
+    non-coverage/failure (not configured, pair not listed, interval OANDA can't
+    serve, request error), so callers fall straight back to their existing
+    yfinance-based path exactly like get_live_tail already does. Unlike
+    get_live_tail (always the single current still-forming bar, sourced from our
+    own streamed tick buffer), this covers the full requested history and returns
+    a DataFrame shaped like a yfinance-sourced one: OHLCV columns, UTC
+    DatetimeIndex — a drop-in replacement for that leg of _fetch_ohlcv.
+
+    This is what fixes metal-fx symbols (XAU*/XAG*) specifically: Yahoo Finance has
+    delisted the real spot quotes for those, so app.py falls back to a COMEX
+    futures proxy (GC=F/SI=F) which trades at a basis/contango premium to true spot
+    — confirmed live, GC=F ran ~$50-60 above real XAU/USD spot on 2026-07-29. OANDA
+    quotes the real cross directly (XAU_USD, XAU_GBP, ...), so using it here
+    whenever it's available sidesteps that premium entirely instead of only
+    patching the most-recent bar the way get_live_tail's stitch does."""
+    try:
+        if classify_symbol(symbol) not in ("forex", "metal-fx"):
+            return None
+        granularity = _OANDA_GRANULARITY.get(interval)
+        if granularity is None:
+            return None
+        instrument = yfinance_to_oanda_instrument(symbol)
+        if instrument is None:
+            return None
+        from .oanda_client import fetch_candles
+        count = _estimate_candle_count(period, granularity)
+        return fetch_candles(instrument, granularity, count)
+    except Exception:
+        log.exception("get_historical_candles failed for %s", symbol)
+        return None
 
 
 def _get_buffer(symbol: str) -> LiveBarBuffer:

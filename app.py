@@ -1646,6 +1646,43 @@ def _parse_metal_currency_symbol(symbol: str) -> tuple[str, str] | None:
     return None
 
 
+def _fetch_oanda_metal_history(symbol: str, period: str, interval: str) -> pd.DataFrame | None:
+    """Real spot XAU/XAG history straight from OANDA (whenever it's configured and
+    lists this exact pair) — used in preference to _fetch_synthetic_metal_ohlcv's
+    GC=F/SI=F futures proxy below. Futures trade at a basis/contango premium to true
+    spot (confirmed live: GC=F ran ~$50-60 above real XAU/USD spot on 2026-07-29),
+    which showed up on the chart as a misleadingly high daily candle. Returns None
+    on any non-coverage/failure so the caller falls straight back to the existing
+    futures-synthesis path — same contract as marketdata_router's other lookups.
+    Not used for the start_date/end_date branch (backtester) — OANDA's candles
+    endpoint takes a "most recent N" count, not an explicit date range, so it isn't
+    a fit for a one-off historical query the way it is for the "current" live-chart
+    path.
+
+    Cached the same way (and for the same reason) as _fetch_yf_history_cached: the
+    signal engine and price chart both poll this on cadences down to a few seconds,
+    and every poll would otherwise re-hit OANDA's REST API. Shares _ohlcv_cache with
+    the yfinance leg — namespaced with an "oanda" tag so the two never collide on
+    the same key even when they'd otherwise fetch the same display symbol."""
+    key = ("oanda", symbol.upper(), period, interval)
+    now = time.monotonic()
+    with _ohlcv_cache_lock:
+        cached = _ohlcv_cache.get(key)
+    if cached is not None and now - cached[0] < _OHLCV_CACHE_TTL_SECONDS:
+        return cached[1].copy()
+    fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
+    df = marketdata_router.get_historical_candles(symbol, fetch_interval, period)
+    if df is None or df.empty:
+        return None
+    if interval in _RESAMPLE_INTERVALS:
+        df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
+        if df.empty:
+            return None
+    with _ohlcv_cache_lock:
+        _ohlcv_cache[key] = (now, df)
+    return df.copy()
+
+
 def _fetch_synthetic_metal_ohlcv(
     metal: str, currency: str, period: str, interval: str,
     start_date: str | None, end_date: str | None,
@@ -1687,6 +1724,12 @@ def _fetch_ohlcv(
 ) -> pd.DataFrame:
     if interval not in ALL_VALID_INTERVALS:
         raise ValueError(f"Invalid interval: {interval}")
+    # Validated here (rather than only in the plain yfinance branch below) so the new
+    # OANDA-first metal path can't silently accept a bogus period — _estimate_candle_count
+    # would otherwise just default it to ~90 days instead of surfacing the same 400 a
+    # bad period already gets everywhere else.
+    if not start_date and period not in VALID_PERIODS:
+        raise ValueError(f"Invalid period: {period}")
     metal_ccy = _parse_metal_currency_symbol(symbol)
     if metal_ccy:
         # Used to return directly here, which meant the metal-currency pair itself
@@ -1694,7 +1737,9 @@ def _fetch_ohlcv(
         # internal legs (GC=F, USDGBP=X) did, via their own nested _fetch_ohlcv calls,
         # and neither of those is the symbol OANDA is actually asked to watch. Falling
         # through to the same tail logic as the plain path fixes that.
-        df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
+        df = _fetch_oanda_metal_history(symbol, period, interval) if not start_date else None
+        if df is None:
+            df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
     else:
         fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
         ticker = yf.Ticker(symbol.upper())
@@ -1713,8 +1758,6 @@ def _fetch_ohlcv(
             # here always line up with what's on screen.
             df = _yf_history_with_retry(ticker, start=start_date, end=end_date or None, interval=fetch_interval)
         else:
-            if period not in VALID_PERIODS:
-                raise ValueError(f"Invalid period: {period}")
             df = _fetch_yf_history_cached(ticker, symbol, period, fetch_interval)
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
