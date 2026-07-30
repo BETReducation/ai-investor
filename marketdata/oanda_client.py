@@ -17,7 +17,7 @@ import time
 import pandas as pd
 import requests
 
-from . import config
+from . import bus, config
 from .symbols import yfinance_to_oanda_instrument
 
 log = logging.getLogger(__name__)
@@ -55,6 +55,22 @@ class OandaStreamer:
                 return
             self._watched.add(symbol)
             self._instrument_to_symbol[instrument] = symbol
+        self._reconnect_event.set()
+
+    def unwatch(self, symbol: str) -> None:
+        """Removes a display symbol from the watched set (see
+        marketdata/router.py's sync_watched_symbols — this is only ever called
+        for symbols that mechanism itself watched). Same reconnect-to-pick-it-up
+        reasoning as watch(): OANDA's stream takes its instrument list at
+        connection-open time, so dropping an instrument only takes effect on
+        the next reconnect."""
+        with self._lock:
+            if symbol not in self._watched:
+                return
+            self._watched.discard(symbol)
+            self._instrument_to_symbol = {
+                i: s for i, s in self._instrument_to_symbol.items() if s != symbol
+            }
         self._reconnect_event.set()
 
     def start(self) -> None:
@@ -157,4 +173,6 @@ class OandaStreamer:
             ts = pd.Timestamp(msg["time"])  # OANDA sends RFC3339 UTC timestamps
         except (KeyError, ValueError, IndexError, TypeError):
             return
-        self._get_buffer(symbol).on_tick(ts, (bid + ask) / 2.0)
+        mid = (bid + ask) / 2.0
+        self._get_buffer(symbol).on_tick(ts, mid)
+        bus.publish_tick(symbol, ts, mid)

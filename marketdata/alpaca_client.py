@@ -16,7 +16,7 @@ import time
 
 import requests
 
-from . import config
+from . import bus, config
 from .symbols import yfinance_to_alpaca_symbol
 
 log = logging.getLogger(__name__)
@@ -73,6 +73,25 @@ class AlpacaStreamer:
         if self._stream is not None:
             self._stream.subscribe_trades(self._on_trade, alpaca_symbol)
 
+    def unwatch(self, symbol: str) -> None:
+        """Removes a display symbol from the watched set (see
+        marketdata/router.py's sync_watched_symbols — this is only ever called
+        for symbols that mechanism itself watched). unsubscribe_trades() uses
+        the same asyncio.run_coroutine_threadsafe pattern subscribe_trades()
+        does internally (confirmed via the installed SDK's websocket.py
+        _unsubscribe), so this is just as safe to call from a plain thread."""
+        alpaca_symbol = next(
+            (a for a, s in self._alpaca_to_symbol.items() if s == symbol), None
+        )
+        if alpaca_symbol is None:
+            return
+        del self._alpaca_to_symbol[alpaca_symbol]
+        if self._stream is not None:
+            try:
+                self._stream.unsubscribe_trades(alpaca_symbol)
+            except Exception:
+                log.exception("Alpaca unsubscribe_trades failed for %s", alpaca_symbol)
+
     def start(self) -> None:
         self._thread = threading.Thread(target=self._run, name="alpaca-streamer", daemon=True)
         self._thread.start()
@@ -86,7 +105,9 @@ class AlpacaStreamer:
             symbol = self._alpaca_to_symbol.get(trade.symbol)
             if not symbol:
                 return
-            self._get_buffer(symbol).on_tick(trade.timestamp, float(trade.price), float(trade.size or 0))
+            price = float(trade.price)
+            self._get_buffer(symbol).on_tick(trade.timestamp, price, float(trade.size or 0))
+            bus.publish_tick(symbol, trade.timestamp, price)
         except Exception:
             log.exception("Alpaca trade handler failed for %s", getattr(trade, "symbol", "?"))
 

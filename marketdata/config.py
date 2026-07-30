@@ -23,3 +23,8 @@ ALPACA_API_KEY = os.environ.get("ALPACA_API_KEY", "")
 ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
 ALPACA_FEED = os.environ.get("ALPACA_FEED", "iex")  # free/paper tier; "sip" needs a paid plan
 ALPACA_ENABLED = bool(ALPACA_API_KEY and ALPACA_API_SECRET)
+
+# Optional fan-out bridge for the realtime/ scaling spike (see
+# docs/scaling-plan.md) — absent, this is a pure no-op and every existing
+# code path behaves exactly as it does today.
+REDIS_URL = os.environ.get("REDIS_URL", "")
