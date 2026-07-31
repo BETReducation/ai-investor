@@ -1979,8 +1979,13 @@ function buildCard(item, skipHead) {
     pinBtn.className = item.pinned ? 'btn-primary-sm' : 'btn-ghost-sm';
     pinBtn.textContent = item.pinned ? 'Unpin' : 'Pin to top 4';
     pinBtn.title = 'Pinned posts appear in a featured strip above Latest Thoughts (max 4 at a time).';
+    // Includes gatherFieldUpdates() so pinning (like Save/Publish) never
+    // silently discards fields typed but not yet explicitly Saved — this is
+    // what caused a real content-loss incident (edited draft + hero image
+    // reverted to old content after clicking Pin).
     pinBtn.onclick = () => updateItem(
-      item.id, { pinned: !item.pinned }, item.pinned ? 'unpin this post' : 'pin this post'
+      item.id, { ...gatherFieldUpdates(), pinned: !item.pinned },
+      item.pinned ? 'unpin this post' : 'pin this post'
     );
     actions.appendChild(pinBtn);
   }
