@@ -747,7 +747,11 @@ function buildCollapsibleCard(item) {
 
   const titleSpan = document.createElement('span');
   titleSpan.className = 'collapsible-title';
-  titleSpan.textContent = item.title || '(untitled)';
+  // Falls back to staged_edits.title so the header agrees with the title
+  // input below it (which is staged-aware, see buildCard's val()) — the
+  // header used to always show item.title (the still-published version),
+  // which looked like a just-Saved title change hadn't taken effect.
+  titleSpan.textContent = (item.staged_edits && item.staged_edits.title) || item.title || '(untitled)';
   header.appendChild(titleSpan);
 
   // Published date if it has one; otherwise when the draft was created —
