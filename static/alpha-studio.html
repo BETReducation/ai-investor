@@ -1200,7 +1200,7 @@ function buildCard(item, skipHead) {
       else if (lines[0] && lines[0].trim() === '<!--type:quote-->') { type = 'quote'; lines.shift(); }
       else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
       else {
-        const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
+        const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right|full|center)-->$/);
         if (im) { type = 'image'; side = im[1]; lines.shift(); }
       }
       while (lines.length && !lines[0].trim()) lines.shift();
@@ -1480,16 +1480,23 @@ function buildCard(item, skipHead) {
 
       const sideTabs = document.createElement('div');
       sideTabs.className = 'section-side-tabs edit-chrome';
-      const leftBtn = document.createElement('button'); leftBtn.type = 'button'; leftBtn.className = 'card-image-tab'; leftBtn.textContent = 'Image on Left';
-      const rightBtn = document.createElement('button'); rightBtn.type = 'button'; rightBtn.className = 'card-image-tab'; rightBtn.textContent = 'Image on Right';
+      const LAYOUTS = [
+        ['left', 'Image Left'],
+        ['right', 'Image Right'],
+        ['full', 'Full Width'],
+        ['center', 'Centred'],
+      ];
+      const layoutBtns = LAYOUTS.map(([val, label]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'card-image-tab'; btn.textContent = label;
+        btn.onclick = () => { block.dataset.side = val; renderSide(); };
+        return btn;
+      });
       function renderSide() {
-        leftBtn.classList.toggle('active', block.dataset.side === 'left');
-        rightBtn.classList.toggle('active', block.dataset.side === 'right');
+        layoutBtns.forEach((btn, i) => btn.classList.toggle('active', block.dataset.side === LAYOUTS[i][0]));
       }
-      leftBtn.onclick = () => { block.dataset.side = 'left'; renderSide(); };
-      rightBtn.onclick = () => { block.dataset.side = 'right'; renderSide(); };
       renderSide();
-      sideTabs.appendChild(leftBtn); sideTabs.appendChild(rightBtn);
+      layoutBtns.forEach(btn => sideTabs.appendChild(btn));
       block.appendChild(sideTabs);
 
       const hd = document.createElement('input');
@@ -1644,7 +1651,8 @@ function buildCard(item, skipHead) {
           const desc = b.querySelector('.section-body').value.trim();
           const url = (b.dataset.imageUrl || '').trim();
           if (!heading && !desc && !url) return;
-          let chunk = '<!--type:image:' + (b.dataset.side === 'right' ? 'right' : 'left') + '-->';
+          const validSides = ['left', 'right', 'full', 'center'];
+          let chunk = '<!--type:image:' + (validSides.includes(b.dataset.side) ? b.dataset.side : 'left') + '-->';
           if (heading) chunk += '\n## ' + heading;
           if (url) chunk += '\n![' + heading.replace(/[[\]]/g, '') + '](' + url + ')';
           if (desc) chunk += (heading || url ? '\n\n' : '\n') + desc;

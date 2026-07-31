@@ -70,7 +70,9 @@
 [data-theme="light"] .post-table td { color: #2a2f45; }
 .post-table th { background: var(--bg3); font-weight: 700; color: var(--text); }
 
-/* Image section — 2-column, image on the left or right of a title+description. */
+/* Image section — layout picked in Studio: left/right (2-column), full width
+   (image spans the column, text below), or centered (image constrained and
+   centered, text below, also centered). */
 .post-image-section { display: flex; gap: 32px; align-items: center; margin: 32px 0; }
 .post-image-section.side-right { flex-direction: row-reverse; }
 .post-image-section img { flex: 0 0 42%; max-width: 42%; border-radius: 14px; object-fit: cover; display: block; }
@@ -78,6 +80,11 @@
 .post-image-section .text-col h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
 .post-image-section .text-col p { font-size: 15px; line-height: 1.75; color: var(--text); margin-bottom: 12px; }
 [data-theme="light"] .post-image-section .text-col p { color: #2a2f45; }
+.post-image-section.side-full { flex-direction: column; gap: 16px; }
+.post-image-section.side-full img { flex: none; max-width: 100%; width: 100%; }
+.post-image-section.side-center { flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.post-image-section.side-center img { flex: none; max-width: 640px; width: 100%; margin: 0 auto; }
+.post-image-section.side-center .text-col { max-width: 640px; }
 @media (max-width: 640px) {
   .post-image-section, .post-image-section.side-right { flex-direction: column; }
   .post-image-section img { max-width: 100%; flex-basis: auto; }
@@ -358,7 +365,7 @@ function stripTypeMarker(chunk) {
   else if (lines[0] && lines[0].trim() === '<!--type:quote-->') { type = 'quote'; lines.shift(); }
   else if (lines[0] && lines[0].trim() === '<!--type:table-->') { type = 'table'; lines.shift(); }
   else {
-    const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right)-->$/);
+    const im = lines[0] && lines[0].trim().match(/^<!--type:image:(left|right|full|center)-->$/);
     if (im) { type = 'image'; side = im[1]; lines.shift(); }
   }
   while (lines.length && !lines[0].trim()) lines.shift();
@@ -430,7 +437,8 @@ function renderImageSection(rest, side, container) {
   if (!heading && !imageUrl && !description) return;
 
   const wrap = document.createElement('div');
-  wrap.className = 'post-image-section' + (side === 'right' ? ' side-right' : ' side-left');
+  const validSides = ['left', 'right', 'full', 'center'];
+  wrap.className = 'post-image-section side-' + (validSides.includes(side) ? side : 'left');
   if (imageUrl && /^(https?:\/\/|\/api\/)/.test(imageUrl)) {
     const img = document.createElement('img');
     img.src = imageUrl;
