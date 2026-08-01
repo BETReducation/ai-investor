@@ -1878,6 +1878,9 @@ def learn_beginner_cash(): return send_from_directory("static", "lesson-cash.htm
 @app.route("/learn/beginner/alternatives")
 def learn_beginner_alternatives(): return send_from_directory("static", "lesson-alternatives.html")
 
+@app.route("/learn/beginner/candlesticks")
+def learn_beginner_candlesticks(): return send_from_directory("static", "lesson-candlesticks.html")
+
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
 
