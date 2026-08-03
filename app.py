@@ -2757,10 +2757,13 @@ def api_alpha_public_content(slug):
         public_item["image_url"] = _alpha_public_image_url(item)
         return public_item
 
-    # Pinned posts fill a fixed 4-slot strip above the main grid, independent of
-    # the topic filter below — an author's pins stay visible no matter which
-    # topic pill the reader has selected.
-    pinned_posts = [to_public(i) for i in items if i.get("kind") == "post" and i.get("pinned")][:4]
+    # Pinned posts fill a fixed 4-slot strip above the main grid, scoped to
+    # whichever topic pill the reader has selected — a post pinned while
+    # categorized as e.g. "ETFs" should only appear pinned on that topic, not
+    # on "All" or other topic pills. On "All" (no topic filter), every pinned
+    # post across topics is eligible.
+    pinned_source = [i for i in items if i.get("topic") == topic] if topic else items
+    pinned_posts = [to_public(i) for i in pinned_source if i.get("kind") == "post" and i.get("pinned")][:4]
     pinned_ids = {p["id"] for p in pinned_posts}
 
     if topic:
