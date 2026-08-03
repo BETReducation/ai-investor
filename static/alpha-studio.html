@@ -124,9 +124,15 @@
    author scrolls down through a post's sections, instead of scrolling out of
    view after the first section. Stops floating once the whole card scrolls
    past, so it never overlaps a different post's editor. */
-.format-toolbar { position: sticky; top: 76px; z-index: 10; margin: 6px 0 10px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+/* The toolbar and its Insert Link/Image panels share one sticky wrapper so
+   they move together — previously only the toolbar was sticky and the panels
+   were plain siblings after it, so opening one while scrolled down to a later
+   section put it back at the card's original scroll position: off-screen
+   above the pinned toolbar, looking exactly like the button did nothing. */
+.toolbar-wrap { position: sticky; top: 76px; z-index: 10; display: flex; flex-direction: column; gap: 8px; margin: 6px 0 10px; }
+.format-toolbar { margin: 0; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 .fmt-btn { min-width: 34px; padding: 7px 12px; }
-.insert-panel { display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.insert-panel { display: flex; flex-direction: column; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 .sections-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
 .content-section-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
@@ -987,8 +993,10 @@ function buildCard(item, skipHead) {
 
     // Formatting toolbar acts on whichever section box was last focused.
     let activeTextarea = null;
+    const toolbarWrap = document.createElement('div');
+    toolbarWrap.className = 'toolbar-wrap edit-chrome';
     const toolbar = document.createElement('div');
-    toolbar.className = 'card-toolbar format-toolbar edit-chrome';
+    toolbar.className = 'card-toolbar format-toolbar';
 
     function mkToolBtn(label, title, handler) {
       const b = document.createElement('button');
@@ -1123,7 +1131,7 @@ function buildCard(item, skipHead) {
       linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
     });
     [boldBtn, italicBtn, underlineBtn, bulletBtn, numberBtn, clearFormatBtn, dividerBtn, imageBtn, linkBtn].forEach(b => toolbar.appendChild(b));
-    card.appendChild(toolbar);
+    toolbarWrap.appendChild(toolbar);
 
     // Insert Image panel — inserts a standalone ![alt](url) paragraph into the
     // active section, not the post's hero image below. Upload-only — a
@@ -1152,7 +1160,7 @@ function buildCard(item, skipHead) {
     const insertImageMsg = document.createElement('span');
     insertImageMsg.className = 'form-msg';
     imagePanel.appendChild(insertImageMsg);
-    card.appendChild(imagePanel);
+    toolbarWrap.appendChild(imagePanel);
 
     // Insert Link panel — inline [text](url), not a standalone paragraph.
     const linkPanel = document.createElement('div');
@@ -1174,7 +1182,8 @@ function buildCard(item, skipHead) {
     const insertLinkMsg = document.createElement('span');
     insertLinkMsg.className = 'form-msg';
     linkPanel.appendChild(insertLinkMsg);
-    card.appendChild(linkPanel);
+    toolbarWrap.appendChild(linkPanel);
+    card.appendChild(toolbarWrap);
 
     // ── Sections list ────────────────────────────────────────────────────
     const sectionsWrap = document.createElement('div');
