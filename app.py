@@ -2572,7 +2572,19 @@ def api_alpha_content_item(item_id):
             ]
             if len(other_pinned) >= 4:
                 return jsonify({"error": "You can only pin up to 4 posts at a time. Unpin one first."}), 400
-        updates["pinned"] = pinned
+        # Applied immediately, independent of the staged-edits path below —
+        # `pinned` isn't in `_stageable_fields`, so if it stayed in `updates`
+        # here, a pin/unpin sent alongside content fields on a published post
+        # (the studio's Pin button always sends gatherFieldUpdates() too — see
+        # its onclick — to avoid clobbering unsaved text) would silently vanish:
+        # the staged-edits branch returns early after writing only
+        # `staged_edits`, never reaching the `alpha_content_update(updates)`
+        # call that would have persisted it. That forced an unpublish → pin →
+        # republish workaround. Pinning is a curation flag, not content, so it
+        # should take effect right away regardless of draft/published/staged
+        # state.
+        alpha_content_update(item_id, {"pinned": pinned})
+        existing["pinned"] = pinned
 
     # ── Staged edits ────────────────────────────────────────────────────────
     # Editing a PUBLISHED item (a content change with no status change) saves to
