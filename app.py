@@ -1,3 +1,10 @@
+# Loads a local .env file (if present) before anything below reads os.environ —
+# marketdata/config.py in particular reads its provider credentials at import
+# time, so this must run first. Absent .env (e.g. in production, where real env
+# vars are set directly), this is a silent no-op.
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, request, send_from_directory, Response, session
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
