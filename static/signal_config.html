@@ -3148,6 +3148,10 @@ function ensurePriceChart() {
   // not here, so there's a single place that ever creates it (creating it both here
   // and there produced two overlapping volume panes).
   applyChartTheme();
+  // RSI(14) matches the default 'period' in INDICATOR_PARAMS' RSI group above — a
+  // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
+  // needs to swap at runtime, so it doesn't need its own refresh function).
+  priceChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { height: 80, id: 'rsi_pane' });
   return priceChart;
 }
 

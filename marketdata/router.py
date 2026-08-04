@@ -154,7 +154,13 @@ def get_live_tail(symbol: str, interval: str, tz=None) -> "pd.DataFrame | None":
         if interval != "1m":
             if interval == "1d" and tz is not None:
                 df = df.tz_convert(tz)
-            df = df.resample(_RESAMPLE_RULES[interval]).agg(_RESAMPLE_AGG).dropna(how="all")
+            # subset=["Close"]: resampling to daily-or-coarser buckets can span a gap
+            # (e.g. a weekend, or any period with no ticks) and produce an empty
+            # calendar-day row — Volume sums to 0 (not NaN) for those, so dropna's
+            # default how="all" doesn't remove them, and a resulting empty row landing
+            # last (picked by iloc[[-1]] below) sent a literal NaN Close into the chart
+            # JSON, which isn't valid strict JSON and broke chart loading client-side.
+            df = df.resample(_RESAMPLE_RULES[interval]).agg(_RESAMPLE_AGG).dropna(subset=["Close"])
             if df.empty:
                 return None
         return df.iloc[[-1]]

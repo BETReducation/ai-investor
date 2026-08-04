@@ -3014,6 +3014,15 @@ def prices():
     try:
         df = _fetch_ohlcv(symbol, period, interval)
         df.index = df.index.astype(str)
+        # yfinance leaves Open/High/Low/Close as NaN on the still-forming "today" bar
+        # until it closes — normally overwritten by _stitch_live_tail's OANDA/Alpaca
+        # data, but if no live tick has arrived yet the NaN survives through to here.
+        # jsonify() (Python's json module) happily emits a literal NaN token, which
+        # isn't valid per strict JSON and breaks the chart's client-side JSON.parse.
+        # ffill carries the last real close forward (a flat "no trades yet" bar);
+        # Volume has no meaningful prior value, so it's zeroed instead.
+        df[["Open", "High", "Low", "Close"]] = df[["Open", "High", "Low", "Close"]].ffill()
+        df["Volume"] = df["Volume"].fillna(0)
         records = df[["Open", "High", "Low", "Close", "Volume"]].reset_index()
         records.rename(columns={"Date": "date", "Datetime": "date"}, inplace=True)
         if "date" not in records.columns:
