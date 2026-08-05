@@ -107,6 +107,28 @@ ALPHA_TOPICS = {
     "connor": ["Macro & Micro", "Quant Statistics", "Finance & Formulae"],
 }
 
+# Single source of truth for every /learn/<level>/<slug> lesson: adding a
+# lesson is "add one entry here + create the HTML file" — no separate route
+# to write, and it shows up in site search automatically (see
+# _lesson_search_pages() near api_search below). Registered as Flask routes
+# in a loop right after this file's other @app.route definitions.
+# Still needs a manual entry in static/sitemap.html per CLAUDE.md's
+# "New pages" rule — that's a nav-tree/placement decision, not something
+# this list can drive on its own.
+LESSON_PAGES = [
+    {"slug": "start-early", "level": "beginner", "file": "lesson-start-early.html", "title": "Start Early & Compounding"},
+    {"slug": "diversify", "level": "beginner", "file": "lesson-diversify.html", "title": "Diversify"},
+    {"slug": "invest-consistently", "level": "beginner", "file": "lesson-invest-consistently.html", "title": "Invest Consistently"},
+    {"slug": "keep-costs-low", "level": "beginner", "file": "lesson-keep-costs-low.html", "title": "Keep Costs Low"},
+    {"slug": "think-in-decades", "level": "beginner", "file": "lesson-think-in-decades.html", "title": "Think in Decades, Not Days"},
+    {"slug": "stocks", "level": "beginner", "file": "lesson-stocks.html", "title": "Stocks"},
+    {"slug": "etfs", "level": "beginner", "file": "lesson-etfs.html", "title": "ETFs & Index Funds"},
+    {"slug": "bonds", "level": "beginner", "file": "lesson-bonds.html", "title": "Bonds"},
+    {"slug": "cash", "level": "beginner", "file": "lesson-cash.html", "title": "Cash & Cash Equivalents"},
+    {"slug": "alternatives", "level": "beginner", "file": "lesson-alternatives.html", "title": "Alternative Assets"},
+    {"slug": "candlesticks", "level": "beginner", "file": "lesson-candlesticks.html", "title": "Candlesticks"},
+]
+
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
 
 
@@ -1859,38 +1881,19 @@ def learn(): return send_from_directory("static", "learn.html")
 @app.route("/learn/beginner")
 def learn_beginner(): return send_from_directory("static", "learn-beginner.html")
 
-@app.route("/learn/beginner/start-early")
-def learn_beginner_start_early(): return send_from_directory("static", "lesson-start-early.html")
+def _make_lesson_view(filename):
+    # A closure per lesson so each route serves its own file — add_url_rule
+    # needs a distinct function object per endpoint, not just a distinct name.
+    def view():
+        return send_from_directory("static", filename)
+    return view
 
-@app.route("/learn/beginner/diversify")
-def learn_beginner_diversify(): return send_from_directory("static", "lesson-diversify.html")
-
-@app.route("/learn/beginner/invest-consistently")
-def learn_beginner_invest_consistently(): return send_from_directory("static", "lesson-invest-consistently.html")
-
-@app.route("/learn/beginner/keep-costs-low")
-def learn_beginner_keep_costs_low(): return send_from_directory("static", "lesson-keep-costs-low.html")
-
-@app.route("/learn/beginner/think-in-decades")
-def learn_beginner_think_in_decades(): return send_from_directory("static", "lesson-think-in-decades.html")
-
-@app.route("/learn/beginner/stocks")
-def learn_beginner_stocks(): return send_from_directory("static", "lesson-stocks.html")
-
-@app.route("/learn/beginner/etfs")
-def learn_beginner_etfs(): return send_from_directory("static", "lesson-etfs.html")
-
-@app.route("/learn/beginner/bonds")
-def learn_beginner_bonds(): return send_from_directory("static", "lesson-bonds.html")
-
-@app.route("/learn/beginner/cash")
-def learn_beginner_cash(): return send_from_directory("static", "lesson-cash.html")
-
-@app.route("/learn/beginner/alternatives")
-def learn_beginner_alternatives(): return send_from_directory("static", "lesson-alternatives.html")
-
-@app.route("/learn/beginner/candlesticks")
-def learn_beginner_candlesticks(): return send_from_directory("static", "lesson-candlesticks.html")
+for _lesson in LESSON_PAGES:
+    app.add_url_rule(
+        f"/learn/{_lesson['level']}/{_lesson['slug']}",
+        endpoint=f"lesson_{_lesson['level']}_{_lesson['slug']}".replace("-", "_"),
+        view_func=_make_lesson_view(_lesson["file"]),
+    )
 
 @app.route("/learn/intermediate")
 def learn_intermediate(): return send_from_directory("static", "learn-intermediate.html")
@@ -2823,27 +2826,20 @@ def alpha_post_page(slug, post_id):
 
 
 # ── Site search ───────────────────────────────────────────────────────────
-# A hand-maintained index of the fixed marketing/tool/lesson pages (there's
-# no CMS behind these, so a static list is the whole "database"), merged at
-# query time with live published Alpha posts. Update this list alongside the
-# "New pages" step in CLAUDE.md whenever a route is added.
+# A hand-maintained index of the fixed marketing/tool pages (there's no CMS
+# behind these, so a static list is the whole "database"). Lesson pages are
+# NOT listed here — they're generated from LESSON_PAGES below, so adding a
+# lesson there is enough to make it searchable too. Alpha posts aren't listed
+# here either: api_search() queries alpha_content_list() live, so newly
+# published posts show up automatically, no index update needed at all.
+# Update this list alongside the "New pages" step in CLAUDE.md whenever a
+# non-lesson route is added.
 SEARCH_PAGE_INDEX = [
     {"title": "Home", "url": "/", "sub": "Growth Capital Academy"},
     {"title": "Learn", "url": "/learn", "sub": "Lessons for every level"},
     {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
     {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},
     {"title": "Learn — Pro", "url": "/learn/pro", "sub": "Lesson hub"},
-    {"title": "Start Early", "url": "/learn/beginner/start-early", "sub": "Beginner lesson"},
-    {"title": "Diversify", "url": "/learn/beginner/diversify", "sub": "Beginner lesson"},
-    {"title": "Invest Consistently", "url": "/learn/beginner/invest-consistently", "sub": "Beginner lesson"},
-    {"title": "Keep Costs Low", "url": "/learn/beginner/keep-costs-low", "sub": "Beginner lesson"},
-    {"title": "Think in Decades", "url": "/learn/beginner/think-in-decades", "sub": "Beginner lesson"},
-    {"title": "Stocks", "url": "/learn/beginner/stocks", "sub": "Beginner lesson"},
-    {"title": "ETFs", "url": "/learn/beginner/etfs", "sub": "Beginner lesson"},
-    {"title": "Bonds", "url": "/learn/beginner/bonds", "sub": "Beginner lesson"},
-    {"title": "Cash", "url": "/learn/beginner/cash", "sub": "Beginner lesson"},
-    {"title": "Alternatives", "url": "/learn/beginner/alternatives", "sub": "Beginner lesson"},
-    {"title": "Candlesticks", "url": "/learn/beginner/candlesticks", "sub": "Beginner lesson"},
     {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
     {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},
     {"title": "Backtester", "url": "/backtester", "sub": "Tool"},
@@ -2882,6 +2878,17 @@ def _search_score(query: str, title: str, sub: str) -> int:
     return 0
 
 
+def _lesson_search_pages():
+    return [
+        {
+            "title": lesson["title"],
+            "url": f"/learn/{lesson['level']}/{lesson['slug']}",
+            "sub": f"{lesson['level'].capitalize()} lesson",
+        }
+        for lesson in LESSON_PAGES
+    ]
+
+
 @app.route("/api/search")
 def api_search():
     query = (request.args.get("q") or "").strip()
@@ -2889,7 +2896,7 @@ def api_search():
         return jsonify({"groups": []})
 
     page_matches = []
-    for page in SEARCH_PAGE_INDEX:
+    for page in SEARCH_PAGE_INDEX + _lesson_search_pages():
         score = _search_score(query, page["title"], page.get("sub", ""))
         if score:
             page_matches.append((score, {"title": page["title"], "url": page["url"], "sub": page.get("sub")}))
