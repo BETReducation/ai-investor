@@ -86,6 +86,46 @@ nav {
 }
 .btn-primary:hover { background: var(--green2); transform: translateY(-1px); }
 
+/* ── Site search ── */
+.nav-search { position: relative; }
+.nav-search-toggle {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid var(--border2); background: var(--card);
+  color: var(--muted); font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+}
+.nav-search-toggle:hover { background: var(--border); color: var(--text); }
+.nav-search-box {
+  display: none; position: absolute; top: calc(100% + 10px); right: 0;
+  width: 340px; max-width: calc(100vw - 40px);
+  background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px;
+  box-shadow: 0 16px 44px rgba(0,0,0,0.35); z-index: 400; overflow: hidden;
+}
+.nav-search.open .nav-search-box { display: block; }
+.nav-search-input-wrap { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.nav-search-input-wrap svg { flex-shrink: 0; opacity: 0.5; }
+.nav-search-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-size: 14px; font-family: inherit;
+}
+.nav-search-input::placeholder { color: var(--muted); }
+.nav-search-results { max-height: 360px; overflow-y: auto; }
+.nav-search-empty { padding: 18px 16px; font-size: 13px; color: var(--muted); text-align: center; }
+.nav-search-group-label {
+  padding: 10px 14px 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+}
+.nav-search-result {
+  display: block; padding: 9px 14px; text-decoration: none; transition: background 0.15s;
+}
+.nav-search-result:hover, .nav-search-result.active { background: rgba(0,212,170,0.08); }
+.nav-search-result-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.nav-search-result-sub { font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) {
+  .nav-search-box { position: fixed; top: 68px; left: 12px; right: 12px; width: auto; max-width: none; }
+}
+
 .theme-toggle {
   width: 36px; height: 36px; border-radius: 8px;
   border: 1px solid var(--border2); background: var(--card);

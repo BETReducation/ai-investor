@@ -2822,6 +2822,104 @@ def alpha_post_page(slug, post_id):
     return send_from_directory("static", "alpha-post.html")
 
 
+# ── Site search ───────────────────────────────────────────────────────────
+# A hand-maintained index of the fixed marketing/tool/lesson pages (there's
+# no CMS behind these, so a static list is the whole "database"), merged at
+# query time with live published Alpha posts. Update this list alongside the
+# "New pages" step in CLAUDE.md whenever a route is added.
+SEARCH_PAGE_INDEX = [
+    {"title": "Home", "url": "/", "sub": "Growth Capital Academy"},
+    {"title": "Learn", "url": "/learn", "sub": "Lessons for every level"},
+    {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
+    {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},
+    {"title": "Learn — Pro", "url": "/learn/pro", "sub": "Lesson hub"},
+    {"title": "Start Early", "url": "/learn/beginner/start-early", "sub": "Beginner lesson"},
+    {"title": "Diversify", "url": "/learn/beginner/diversify", "sub": "Beginner lesson"},
+    {"title": "Invest Consistently", "url": "/learn/beginner/invest-consistently", "sub": "Beginner lesson"},
+    {"title": "Keep Costs Low", "url": "/learn/beginner/keep-costs-low", "sub": "Beginner lesson"},
+    {"title": "Think in Decades", "url": "/learn/beginner/think-in-decades", "sub": "Beginner lesson"},
+    {"title": "Stocks", "url": "/learn/beginner/stocks", "sub": "Beginner lesson"},
+    {"title": "ETFs", "url": "/learn/beginner/etfs", "sub": "Beginner lesson"},
+    {"title": "Bonds", "url": "/learn/beginner/bonds", "sub": "Beginner lesson"},
+    {"title": "Cash", "url": "/learn/beginner/cash", "sub": "Beginner lesson"},
+    {"title": "Alternatives", "url": "/learn/beginner/alternatives", "sub": "Beginner lesson"},
+    {"title": "Candlesticks", "url": "/learn/beginner/candlesticks", "sub": "Beginner lesson"},
+    {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
+    {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},
+    {"title": "Backtester", "url": "/backtester", "sub": "Tool"},
+    {"title": "Portfolio Manager", "url": "/tools/portfolio", "sub": "Tool"},
+    {"title": "Calculator", "url": "/tools/calculator", "sub": "Tool"},
+    {"title": "Data Visualisation", "url": "/tools/data-visualisation", "sub": "Tool"},
+    {"title": "The Arena", "url": "/arena", "sub": "Arena hub"},
+    {"title": "Market XI", "url": "/arena/market-xi", "sub": "The Arena"},
+    {"title": "Trading Competitions", "url": "/arena/competitions", "sub": "The Arena"},
+    {"title": "Predictions Markets", "url": "/arena/predictions", "sub": "The Arena"},
+    {"title": "Alpha", "url": "/alpha", "sub": "Alpha hub"},
+    {"title": "Connor", "url": "/alpha/connor", "sub": "Alpha partner"},
+    {"title": "Dave", "url": "/alpha/dave", "sub": "Alpha partner"},
+    {"title": "Gary", "url": "/alpha/gary", "sub": "Alpha partner"},
+    {"title": "Tom", "url": "/alpha/tom", "sub": "Alpha partner"},
+    {"title": "Alpha Podcast", "url": "/alpha/podcast", "sub": "Alpha"},
+    {"title": "Partners", "url": "/partners", "sub": "Growth Capital Academy"},
+    {"title": "Site Map", "url": "/sitemap", "sub": "Growth Capital Academy"},
+]
+
+
+def _search_score(query: str, title: str, sub: str) -> int:
+    """Higher is better; 0 means no match. Cheap substring ranking — see the
+    ALPHA_LEVELS-style comment in the search options discussion: this is
+    deliberately simple, not full-text search, since the site's whole
+    content set is a few dozen pages plus a handful of Alpha posts."""
+    t, s, q = (title or "").lower(), (sub or "").lower(), query.lower()
+    if t == q:
+        return 100
+    if t.startswith(q):
+        return 80
+    if q in t:
+        return 60
+    if q in s:
+        return 30
+    return 0
+
+
+@app.route("/api/search")
+def api_search():
+    query = (request.args.get("q") or "").strip()
+    if len(query) < 2:
+        return jsonify({"groups": []})
+
+    page_matches = []
+    for page in SEARCH_PAGE_INDEX:
+        score = _search_score(query, page["title"], page.get("sub", ""))
+        if score:
+            page_matches.append((score, {"title": page["title"], "url": page["url"], "sub": page.get("sub")}))
+    page_matches.sort(key=lambda x: -x[0])
+
+    alpha_matches = []
+    for slug in ALPHA_ROLES:
+        for item in alpha_content_list(author=slug, status="published"):
+            if item.get("kind") != "post":
+                continue
+            title = item.get("title") or ""
+            sub = item.get("subtitle") or item.get("snippet") or ""
+            score = _search_score(query, title, sub)
+            if not score and query.lower() in (item.get("body") or "").lower():
+                score = 15
+            if score:
+                author_label = slug.capitalize()
+                alpha_matches.append((score, {
+                    "title": title,
+                    "url": f"/alpha/{slug}/post/{item['id']}",
+                    "sub": f"{author_label} — {sub}" if sub else author_label,
+                }))
+    alpha_matches.sort(key=lambda x: -x[0])
+
+    return jsonify({"groups": [
+        {"label": "Pages", "items": [m[1] for m in page_matches[:6]]},
+        {"label": "Alpha", "items": [m[1] for m in alpha_matches[:6]]},
+    ]})
+
+
 @app.route("/dataviz-studio")
 def dataviz_studio(): return send_from_directory("static", "dataviz-studio.html")
 
