@@ -909,6 +909,12 @@ function buildCard(item, skipHead) {
       topicBadge.textContent = item.topic;
       head.appendChild(topicBadge);
     }
+    if (item.level) {
+      const levelBadge = document.createElement('span');
+      levelBadge.className = 'kind-badge topic-badge';
+      levelBadge.textContent = item.level.charAt(0).toUpperCase() + item.level.slice(1);
+      head.appendChild(levelBadge);
+    }
     card.appendChild(head);
   }
 
@@ -958,6 +964,20 @@ function buildCard(item, skipHead) {
       addField('Topic — which of your themes this belongs to', topicSelect);
     }
   }
+
+  // Level — who this post is written for. Shown as a second pill next to the
+  // topic pill on the public Alpha pages and post page.
+  const ALPHA_LEVELS = ['beginner', 'intermediate', 'pro'];
+  const LEVEL_LABELS = { beginner: 'Beginner', intermediate: 'Intermediate', pro: 'Pro' };
+  let levelSelect = document.createElement('select');
+  levelSelect.className = 'form-select';
+  ALPHA_LEVELS.forEach(lv => {
+    const opt = document.createElement('option');
+    opt.value = lv; opt.textContent = LEVEL_LABELS[lv];
+    if ((val('level') || 'beginner') === lv) opt.selected = true;
+    levelSelect.appendChild(opt);
+  });
+  addField('Level — the experience level this post is written for', levelSelect);
 
   let snippetInput = null, bodyInput = null, stanceSelect = null, urlInput = null;
   let updatePublishGate = () => {};
@@ -1930,6 +1950,7 @@ function buildCard(item, skipHead) {
   function gatherFieldUpdates() {
     const updates = { title: titleInput.value.trim() };
     if (topicSelect) updates.topic = topicSelect.value;
+    if (levelSelect) updates.level = levelSelect.value;
     if (subtitleInput) updates.subtitle = subtitleInput.value.trim();
     if (snippetInput) updates.snippet = snippetInput.value.trim();
     if (bodyInput) updates.body = bodyInput.value.trim();

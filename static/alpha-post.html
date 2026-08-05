@@ -24,6 +24,9 @@
 .topic-a { color: var(--teal); border-color: rgba(45,212,191,0.32); background: rgba(45,212,191,0.08); }
 .topic-b { color: var(--gold); border-color: rgba(251,191,36,0.32); background: rgba(251,191,36,0.08); }
 .topic-c { color: var(--purple2); border-color: rgba(124,58,237,0.32); background: rgba(124,58,237,0.08); }
+.level-beginner { color: #34d399; border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
+.level-intermediate { color: #fb923c; border-color: rgba(251,146,60,0.32); background: rgba(251,146,60,0.08); }
+.level-pro { color: #f87171; border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.08); }
 .post-date { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
 .post-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(28px, 4.2vw, 44px); letter-spacing: -0.02em; line-height: 1.15; color: var(--text); margin-bottom: 10px; }
 .post-subtitle { font-size: 18px; color: var(--muted); line-height: 1.5; margin-bottom: 28px; font-weight: 500; }
@@ -173,6 +176,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <a href="/alpha" class="back-link" id="backLink">← Back to Alpha</a>
     <div class="post-meta-row">
       <span class="topic-pill topic-a" id="postTopic"></span>
+      <span class="topic-pill level-beginner" id="postLevel"></span>
       <span class="post-date" id="postDate"></span>
     </div>
     <h1 class="post-title" id="postTitle"></h1>
@@ -582,6 +586,15 @@ function renderBody(body, bodyEl, postTopicAccentClass) {
       topicEl.className = 'topic-pill ' + topicAccentClass(slug, item.topic);
     } else {
       topicEl.style.display = 'none';
+    }
+
+    const levelEl = document.getElementById('postLevel');
+    const LEVEL_LABELS = { beginner: 'Beginner', intermediate: 'Intermediate', pro: 'Pro' };
+    if (item.level && LEVEL_LABELS[item.level]) {
+      levelEl.textContent = LEVEL_LABELS[item.level];
+      levelEl.className = 'topic-pill level-' + item.level;
+    } else {
+      levelEl.style.display = 'none';
     }
 
     if (item.published_at) {

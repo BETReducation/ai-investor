@@ -89,6 +89,9 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
 ALPHA_CONTENT_KINDS = {"post", "video", "link", "watchlist"}
 ALPHA_STANCES = {"bullish", "neutral", "bearish"}
+# The audience level a post is written for — shown as a second pill next to
+# the topic pill on the public Alpha pages and post page.
+ALPHA_LEVELS = {"beginner", "intermediate", "pro"}
 ALPHA_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "alpha_content.json")
 DATAVIZ_CONTENT_FILE = os.path.join(os.path.dirname(__file__), "dataviz_content.json")
 ALPHA_ATTACHMENTS_FILE = os.path.join(os.path.dirname(__file__), "alpha_attachments.json")
@@ -158,6 +161,7 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_filename TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS image_file BYTEA")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS staged_edits JSONB")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS level TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT false")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content_attachment (
@@ -565,7 +569,7 @@ def set_user_avatar(username: str, filename: str, file_bytes: bytes) -> None:
 # binary blob around.
 
 _ALPHA_CONTENT_FIELDS = [
-    "author", "kind", "status", "topic", "title", "subtitle", "snippet", "body", "stance", "url",
+    "author", "kind", "status", "topic", "level", "title", "subtitle", "snippet", "body", "stance", "url",
     "source_kind", "source_filename", "source_text",
     "image_url", "image_filename", "pinned",
     # Pending edits to a *published* item, held back from the live page until the
@@ -2395,6 +2399,9 @@ def api_alpha_upload():
     if kind not in ALPHA_CONTENT_KINDS:
         return jsonify({"error": f"Invalid kind. Valid options: {sorted(ALPHA_CONTENT_KINDS)}"}), 400
     requested_topic = (request.form.get("topic") or "").strip() or None
+    requested_level = (request.form.get("level") or "").strip().lower() or None
+    if requested_level and requested_level not in ALPHA_LEVELS:
+        return jsonify({"error": f"Level must be one of {sorted(ALPHA_LEVELS)}"}), 400
 
     file_bytes = None
     source_filename = None
@@ -2445,6 +2452,7 @@ def api_alpha_upload():
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
+        "level": requested_level or "beginner",
         "title": normalized["title"], "subtitle": normalized["subtitle"],
         "snippet": normalized["snippet"], "body": body,
         "stance": None, "url": None,
@@ -2485,12 +2493,17 @@ def api_alpha_content():
     if topic and topic not in ALPHA_TOPICS.get(author, []):
         return jsonify({"error": "Topic must be one of your nominated topics"}), 400
 
+    level = (data.get("level") or "").strip().lower() or None
+    if level and level not in ALPHA_LEVELS:
+        return jsonify({"error": f"Level must be one of {sorted(ALPHA_LEVELS)}"}), 400
+
     title = (data.get("title") or "").strip()
     if not title:
         return jsonify({"error": "Title is required"}), 400
 
     fields = {
         "author": author, "kind": kind, "status": "draft", "topic": topic,
+        "level": level or "beginner",
         "title": title,
         "snippet": (data.get("snippet") or "").strip() or None,
         "body": (data.get("body") or "").strip() or None,
@@ -2528,7 +2541,7 @@ def api_alpha_content_item(item_id):
 
     # Fields a staged edit can hold and fold back into the live item — shared by
     # the "save while published" path below, republish, and the unpublish fold.
-    _stageable_fields = ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename")
+    _stageable_fields = ("topic", "level", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "image_filename")
 
     if data.get("republish"):
         # Push any pending staged edits live in one step, without a detour
@@ -2548,6 +2561,11 @@ def api_alpha_content_item(item_id):
         if field in data:
             value = data[field]
             updates[field] = (str(value).strip() or None) if value is not None else None
+    if "level" in data:
+        level = (data["level"] or "").strip().lower()
+        if level and level not in ALPHA_LEVELS:
+            return jsonify({"error": f"Level must be one of {sorted(ALPHA_LEVELS)}"}), 400
+        updates["level"] = level or None
     if data.get("clear_image"):
         # Remove the hero image entirely — both a pasted URL and any uploaded file.
         updates["image_url"] = None
@@ -2598,7 +2616,7 @@ def api_alpha_content_item(item_id):
     # a pending `staged_edits` copy and leaves the live page untouched. The edits
     # are folded into the item when it's next unpublished (see below), so the
     # path to make them live is: edit → Save (staged) → Unpublish → Publish.
-    _content_edit_keys = ("topic", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "clear_image")
+    _content_edit_keys = ("topic", "level", "title", "subtitle", "snippet", "body", "url", "stance", "image_url", "clear_image")
     if existing.get("status") == "published" and "status" not in data and any(k in data for k in _content_edit_keys):
         staged = dict(existing.get("staged_edits") or {})
         # image_filename is included so `clear_image` can stage removing an
@@ -2749,7 +2767,7 @@ def _alpha_public_image_url(item: dict) -> str | None:
     return item.get("image_url")
 
 
-_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "title", "subtitle", "snippet", "body", "stance", "url", "published_at", "pinned"]
+_ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "level", "title", "subtitle", "snippet", "body", "stance", "url", "published_at", "pinned"]
 
 
 @app.route("/api/alpha/<slug>/content", methods=["GET"])

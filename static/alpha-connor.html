@@ -70,6 +70,11 @@
 .topic-pill.active-filter.topic-c { background: var(--purple2); color: #fff; }
 .topic-pill.active-filter.topic-all { background: var(--text); border-color: var(--text); color: var(--bg); }
 .topic-empty-msg { font-size: 13px; color: var(--muted); text-align: center; padding: 24px; grid-column: 1 / -1; }
+.level-pill { color: var(--muted); border-color: var(--border2); background: rgba(148,163,184,0.08); }
+.level-beginner { color: #34d399; border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
+.level-intermediate { color: #fb923c; border-color: rgba(251,146,60,0.32); background: rgba(251,146,60,0.08); }
+.level-pro { color: #f87171; border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.08); }
+.media-tag.level-pill { margin-left: -2px; }
 .alpha-meta-row { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
 .alpha-socials { display: flex; gap: 8px; }
 .social-icon { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 700; transition: color 0.2s, border-color 0.2s; }
@@ -107,6 +112,7 @@
 .media-body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .post-card .media-body { padding: 20px; }
 .media-tag { align-self: flex-start; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 100px; }
+.media-tag-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; align-self: flex-start; }
 .media-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); line-height: 1.4; }
 .media-sub { font-size: 12px; color: var(--muted); }
 .media-snippet { font-size: 12.5px; color: var(--muted); line-height: 1.6; flex: 1; }
@@ -299,7 +305,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <div class="media-grid reveal" id="postGrid">
       <div class="post-card">
         <div class="media-body">
-          <span class="media-tag topic-b">Quant Statistics</span>
+          <div class="media-tag-row">
+            <span class="media-tag topic-b">Quant Statistics</span>
+            <span class="media-tag level-pill level-beginner">Beginner</span>
+          </div>
           <div class="media-title">Post title placeholder</div>
           <p class="media-snippet">A short placeholder snippet of the post will appear here once Connor uploads his first note.</p>
           <div class="media-sub">Coming soon</div>
@@ -307,7 +316,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </div>
       <div class="post-card">
         <div class="media-body">
-          <span class="media-tag topic-c">Finance & Formulae</span>
+          <div class="media-tag-row">
+            <span class="media-tag topic-c">Finance & Formulae</span>
+            <span class="media-tag level-pill level-intermediate">Intermediate</span>
+          </div>
           <div class="media-title">Post title placeholder</div>
           <p class="media-snippet">A short placeholder snippet of the post will appear here once Connor uploads his first note.</p>
           <div class="media-sub">Coming soon</div>
@@ -315,7 +327,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </div>
       <div class="post-card">
         <div class="media-body">
-          <span class="media-tag topic-a">Macro & Micro</span>
+          <div class="media-tag-row">
+            <span class="media-tag topic-a">Macro & Micro</span>
+            <span class="media-tag level-pill level-pro">Pro</span>
+          </div>
           <div class="media-title">Post title placeholder</div>
           <p class="media-snippet">A short placeholder snippet of the post will appear here once Connor uploads his first note.</p>
           <div class="media-sub">Coming soon</div>
@@ -323,7 +338,10 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </div>
       <div class="post-card">
         <div class="media-body">
-          <span class="media-tag topic-b">Quant Statistics</span>
+          <div class="media-tag-row">
+            <span class="media-tag topic-b">Quant Statistics</span>
+            <span class="media-tag level-pill level-beginner">Beginner</span>
+          </div>
           <div class="media-title">Post title placeholder</div>
           <p class="media-snippet">A short placeholder snippet of the post will appear here once Connor uploads his first note.</p>
           <div class="media-sub">Coming soon</div>
@@ -488,6 +506,32 @@ function topicAccentClass(topic) {
   return 'topic-' + (idx === 1 ? 'b' : idx === 2 ? 'c' : 'a');
 }
 
+function levelAccentClass(level) {
+  return level === 'intermediate' ? 'level-intermediate' : level === 'pro' ? 'level-pro' : 'level-beginner';
+}
+
+function levelLabel(level) {
+  return level === 'intermediate' ? 'Intermediate' : level === 'pro' ? 'Pro' : 'Beginner';
+}
+
+function appendMediaTags(body, item) {
+  const tagRow = document.createElement('div');
+  tagRow.className = 'media-tag-row';
+  if (item.topic) {
+    const tag = document.createElement('span');
+    tag.className = 'media-tag ' + topicAccentClass(item.topic);
+    tag.textContent = item.topic;
+    tagRow.appendChild(tag);
+  }
+  if (item.level) {
+    const levelTag = document.createElement('span');
+    levelTag.className = 'media-tag level-pill ' + levelAccentClass(item.level);
+    levelTag.textContent = levelLabel(item.level);
+    tagRow.appendChild(levelTag);
+  }
+  if (tagRow.children.length) body.appendChild(tagRow);
+}
+
 function extractYouTubeId(url) {
   if (!url) return null;
   if (/^[\w-]{11}$/.test(url)) return url;
@@ -562,12 +606,7 @@ function renderVideos(items, emptyMessage) {
     card.appendChild(thumb);
     const body = document.createElement('div');
     body.className = 'media-body';
-    if (item.topic) {
-      const tag = document.createElement('span');
-      tag.className = 'media-tag ' + topicAccentClass(item.topic);
-      tag.textContent = item.topic;
-      body.appendChild(tag);
-    }
+    appendMediaTags(body, item);
     const title = document.createElement('div');
     title.className = 'media-title';
     title.textContent = item.title || '';
@@ -599,12 +638,7 @@ function renderPinnedPosts(items) {
     }
     const body = document.createElement('div');
     body.className = 'media-body';
-    if (item.topic) {
-      const tag = document.createElement('span');
-      tag.className = 'media-tag ' + topicAccentClass(item.topic);
-      tag.textContent = item.topic;
-      body.appendChild(tag);
-    }
+    appendMediaTags(body, item);
     const title = document.createElement('div');
     title.className = 'media-title';
     title.textContent = item.title || '';
@@ -641,12 +675,7 @@ function renderPosts(items, emptyMessage) {
     }
     const body = document.createElement('div');
     body.className = 'media-body';
-    if (item.topic) {
-      const tag = document.createElement('span');
-      tag.className = 'media-tag ' + topicAccentClass(item.topic);
-      tag.textContent = item.topic;
-      body.appendChild(tag);
-    }
+    appendMediaTags(body, item);
     const title = document.createElement('div');
     title.className = 'media-title';
     title.textContent = item.title || '';
