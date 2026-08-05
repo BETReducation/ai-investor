@@ -35,11 +35,16 @@
 .byline-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); text-decoration: none; }
 .byline-name:hover { color: var(--teal); }
 .byline-sub { font-size: 12px; color: var(--muted); }
-.post-hero-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; margin-bottom: 32px; display: block; }
+.post-hero-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; margin-bottom: 32px; display: block; cursor: zoom-in; }
 .post-body p { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 20px; }
 [data-theme="light"] .post-body p { color: #2a2f45; }
 .post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; }
-.post-inline-image { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 8px 0 28px; display: block; }
+.post-inline-image { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 8px 0 28px; display: block; cursor: zoom-in; }
+.img-lightbox { display: none; position: fixed; inset: 0; background: rgba(4,6,14,0.92); z-index: 9999; align-items: center; justify-content: center; padding: 40px; cursor: zoom-out; }
+.img-lightbox.open { display: flex; }
+.img-lightbox img { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); cursor: default; display: block; }
+.lightbox-close { position: absolute; top: 18px; right: 24px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.lightbox-close:hover { background: rgba(255,255,255,0.18); }
 .post-inline-link { color: var(--teal); text-decoration: underline; text-underline-offset: 2px; }
 .post-body ul.post-list, .post-body ol.post-list { margin: 0 0 20px 1.4em; padding: 0; }
 .post-body ul.post-list li, .post-body ol.post-list li { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 8px; }
@@ -78,7 +83,7 @@
    centered, text below, also centered). */
 .post-image-section { display: flex; gap: 32px; align-items: center; margin: 32px 0; }
 .post-image-section.side-right { flex-direction: row-reverse; }
-.post-image-section img { flex: 0 0 42%; max-width: 42%; border-radius: 14px; object-fit: cover; display: block; }
+.post-image-section img { flex: 0 0 42%; max-width: 42%; border-radius: 14px; object-fit: cover; display: block; cursor: zoom-in; }
 .post-image-section .text-col { flex: 1; min-width: 0; }
 .post-image-section .text-col h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
 .post-image-section .text-col p { font-size: 15px; line-height: 1.75; color: var(--text); margin-bottom: 12px; }
@@ -216,6 +221,42 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
   </div>
 </footer>
+
+<div class="img-lightbox" id="imgLightbox">
+  <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close image">&times;</button>
+  <img id="lightboxImg" alt="">
+</div>
+
+<script>
+// Click-to-enlarge for post images (hero + inline body images are all
+// object-fit: cover, so this is the only way to see the whole image).
+// Delegated on the document since post images are added dynamically.
+(function () {
+  const overlay = document.getElementById('imgLightbox');
+  const overlayImg = document.getElementById('lightboxImg');
+
+  function openLightbox(src, alt) {
+    overlayImg.src = src;
+    overlayImg.alt = alt || '';
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    overlay.classList.remove('open');
+    overlayImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest('.post-hero-image, .post-image-section img, .post-inline-image');
+    if (img && img.src) { openLightbox(img.src, img.alt); return; }
+    if (e.target === overlay || e.target.closest('#lightboxClose')) closeLightbox();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeLightbox();
+  });
+})();
+</script>
 
 <script>
 (async function checkAuth() {
