@@ -482,15 +482,12 @@ function toggleMobileNav() {
   btn.classList.toggle('active', isOpen);
   btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
-document.querySelectorAll('.nav-chevron').forEach(chevron => {
-  chevron.addEventListener('click', (e) => {
-    if (window.innerWidth <= 900) {
-      e.preventDefault();
-      e.stopPropagation();
-      chevron.closest('.has-dropdown').classList.toggle('open');
-    }
-  });
-});
+// Mobile dropdown-chevron toggling now lives in /static/js/nav.js
+// (loaded above) — this used to duplicate it, which meant a tap fired
+// BOTH listeners on the same chevron and the two toggles cancelled
+// each other out: the chevron still visually flips (browsers apply a
+// sticky :hover state after a tap on touch devices, which a separate
+// CSS rule keys off), but the dropdown itself never opens.
 window.addEventListener('resize', () => {
   if (window.innerWidth > 900) {
     document.querySelector('.nav-links').classList.remove('open');
