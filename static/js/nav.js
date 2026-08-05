@@ -151,6 +151,20 @@
         }
       });
     });
+    // Studio's top-level link has nowhere of its own to go (href="#") — it's
+    // only ever a dropdown trigger, opened via :hover on desktop. Mobile has
+    // no hover, so without this, tapping "Studio" (anywhere but the tiny
+    // chevron glyph) silently did nothing — the link existed but was
+    // effectively unreachable on mobile. Wire the whole link, not just its
+    // chevron, to toggle the dropdown the same way.
+    document.querySelectorAll('.has-dropdown > a[href="#"]').forEach(function (deadLink) {
+      deadLink.addEventListener('click', function (e) {
+        if (window.innerWidth <= 900) {
+          e.preventDefault();
+          deadLink.closest('.has-dropdown').classList.toggle('open');
+        }
+      });
+    });
   });
   window.addEventListener('resize', function () {
     if (window.innerWidth > 900) {
