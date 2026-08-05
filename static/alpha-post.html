@@ -35,10 +35,19 @@
 .byline-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); text-decoration: none; }
 .byline-name:hover { color: var(--teal); }
 .byline-sub { font-size: 12px; color: var(--muted); }
+.post-toc { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 32px; background: var(--bg2, transparent); }
+.post-toc-summary { list-style: none; cursor: pointer; padding: 12px 18px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); user-select: none; }
+.post-toc-summary::-webkit-details-marker { display: none; }
+.post-toc-icon { font-size: 13px; color: var(--teal); }
+.post-toc-summary::after { content: '▾'; margin-left: auto; color: var(--muted); font-size: 11px; transition: transform 0.2s; }
+.post-toc[open] .post-toc-summary::after { transform: rotate(180deg); }
+.post-toc-list { margin: 0; padding: 0 18px 16px 40px; display: flex; flex-direction: column; gap: 8px; }
+.post-toc-list a { font-size: 14px; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.post-toc-list a:hover { color: var(--teal); }
 .post-hero-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; margin-bottom: 32px; display: block; cursor: zoom-in; }
 .post-body p { font-size: 16px; line-height: 1.85; color: var(--text); margin-bottom: 20px; }
 [data-theme="light"] .post-body p { color: #2a2f45; }
-.post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; }
+.post-body h2.post-subheading { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--text); margin: 36px 0 14px; line-height: 1.3; scroll-margin-top: 100px; }
 .post-inline-image { width: 100%; max-height: 480px; object-fit: cover; border-radius: 14px; margin: 8px 0 28px; display: block; cursor: zoom-in; }
 .img-lightbox { display: none; position: fixed; inset: 0; background: rgba(4,6,14,0.92); z-index: 9999; align-items: center; justify-content: center; padding: 40px; cursor: zoom-out; }
 .img-lightbox.open { display: flex; }
@@ -193,6 +202,12 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="byline-sub">Alpha Partner</div>
       </div>
     </div>
+    <details class="post-toc" id="postToc" style="display:none;">
+      <summary class="post-toc-summary">
+        <span class="post-toc-icon">☰</span> Contents
+      </summary>
+      <ol class="post-toc-list" id="postTocList"></ol>
+    </details>
     <img class="post-hero-image" id="postHeroImage" style="display:none;">
     <div class="post-body" id="postBody"></div>
   </div>
@@ -602,6 +617,48 @@ function renderBody(body, bodyEl, postTopicAccentClass) {
   });
 }
 
+// Builds a "Contents" jump list from the post's own ## headings (rendered as
+// h2.post-subheading by renderBlockLines above) — the only heading marker
+// authors have in the Studio editor, so it doubles as the section marker.
+// Hidden entirely when a post has fewer than 2 headings: with just one/zero,
+// a contents box would only add clutter, not navigation.
+function buildTableOfContents(bodyEl) {
+  const headings = Array.from(bodyEl.querySelectorAll('h2.post-subheading'));
+  if (headings.length < 2) return;
+
+  const usedIds = new Set();
+  const toc = document.getElementById('postToc');
+  const list = document.getElementById('postTocList');
+  list.innerHTML = '';
+
+  headings.forEach((h, i) => {
+    let slug = (h.textContent || '')
+      .toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-') || 'section';
+    let id = slug;
+    let n = 2;
+    while (usedIds.has(id)) { id = `${slug}-${n++}`; }
+    usedIds.add(id);
+    h.id = id;
+
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + id;
+    a.textContent = h.textContent;
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '#' + id);
+      toc.open = false;
+    });
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  toc.style.display = 'block';
+}
+
 (async function loadPost() {
   const m = window.location.pathname.match(/^\/alpha\/([a-z]+)\/post\/(\d+)/);
   if (!m || !AUTHOR_NAMES[m[1]]) { showNotFound(); return; }
@@ -661,6 +718,7 @@ function renderBody(body, bodyEl, postTopicAccentClass) {
     const bodyEl = document.getElementById('postBody');
     const text = item.body || item.snippet || '';
     renderBody(text, bodyEl, topicAccentClass(slug, item.topic).replace('topic-', ''));
+    buildTableOfContents(bodyEl);
 
     document.getElementById('postLoaded').style.display = 'block';
   } catch (e) {
