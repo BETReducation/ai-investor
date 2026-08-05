@@ -356,72 +356,13 @@ function drawParticles() {
 resize(); initParticles(); drawParticles();
 window.addEventListener('resize', () => { resize(); initParticles(); });
 
-// Auth
-(async function checkAuth() {
-  try {
-    const res = await fetch('/api/me', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.authenticated && data.username) {
-        const signIn = document.getElementById('navSignIn');
-        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
-        if (data.alpha_role) {
-          const studioLink = document.getElementById('navStudioLi');
-          if (studioLink) studioLink.style.display = '';
-          if (['tom', 'gary'].includes(data.alpha_role)) {
-            const datavizStudioLi = document.getElementById('navDatavizStudioLi');
-            if (datavizStudioLi) datavizStudioLi.style.display = '';
-          }
-        }
-      }
-    }
-  } catch {}
-})();
-
-function toggleMobileNav() {
-  const links = document.querySelector('.nav-links');
-  const btn = document.getElementById('navHamburger');
-  const isOpen = links.classList.toggle('open');
-  btn.classList.toggle('active', isOpen);
-  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-document.querySelectorAll('.nav-chevron').forEach(chevron => {
-  chevron.addEventListener('click', (e) => {
-    if (window.innerWidth <= 900) {
-      e.preventDefault();
-      e.stopPropagation();
-      chevron.closest('.has-dropdown').classList.toggle('open');
-    }
-  });
-});
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 900) {
-    document.querySelector('.nav-links').classList.remove('open');
-    document.getElementById('navHamburger').classList.remove('active');
-    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
-  }
-});
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('gca-theme', next);
-  updateToggleIcon(next);
-}
-function updateToggleIcon(theme) {
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
-}
-const _t = document.documentElement.getAttribute('data-theme') || 'light';
-updateToggleIcon(_t);
-
-const nav = document.querySelector('nav');
-window.addEventListener('scroll', () => {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  nav.style.background = window.scrollY > 40
-    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
-    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
-});
+// Auth state, mobile nav, theme toggle and the nav scroll-background effect
+// all now live in /static/js/nav.js (loaded above) — this used to duplicate
+// all of that inline, including a `const _t` that collided with the `var _t`
+// declared in the theme-init <script> in <head>. JS parses a whole <script>
+// block before running any of it, so that SyntaxError was killing this
+// entire block — including the particle-background setup above, which
+// despite appearing earlier in the file never actually ran either.
 </script>
 </body>
 </html>
