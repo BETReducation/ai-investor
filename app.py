@@ -102,7 +102,7 @@ MAX_UPLOAD_TEXT_CHARS = 40000  # cap extracted text sent to the normalize step
 # hardcoded on their public page (static/alpha-<name>.html).
 ALPHA_TOPICS = {
     "tom":    ["Stocks", "Metals", "ETFs"],
-    "dave":   ["Chart Breakdowns", "Setups Watchlist", "Pre-Market"],
+    "dave":   ["Simple Investing", "Crypto", "Stocks"],
     "gary":   ["Long-Term Investing", "Technical Analysis", "Impact of AI"],
     "connor": ["Macro & Micro", "Quant Statistics", "Finance & Formulae"],
 }
