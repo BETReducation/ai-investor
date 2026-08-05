@@ -2795,7 +2795,11 @@ def api_alpha_public_content(slug):
         if item["kind"] == "post" and item["id"] in pinned_ids:
             continue
         grouped.setdefault(item["kind"], []).append(to_public(item))
-    caps = {"watchlist": 3, "video": 4, "post": 4}
+    # Posts are the partner's full research history, not a preview strip —
+    # capping them (as watchlist/video intentionally are, below) meant a
+    # reader clicking "All" or a topic pill couldn't see everything actually
+    # published; see the report that led to removing this cap.
+    caps = {"watchlist": 3, "video": 4}
     for kind, cap in caps.items():
         grouped[kind] = grouped[kind][:cap]
     grouped["pinned_posts"] = pinned_posts
