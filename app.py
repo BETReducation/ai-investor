@@ -112,9 +112,6 @@ ALPHA_TOPICS = {
 # to write, and it shows up in site search automatically (see
 # _lesson_search_pages() near api_search below). Registered as Flask routes
 # in a loop right after this file's other @app.route definitions.
-# Still needs a manual entry in static/sitemap.html per CLAUDE.md's
-# "New pages" rule — that's a nav-tree/placement decision, not something
-# this list can drive on its own.
 LESSON_PAGES = [
     {"slug": "start-early", "level": "beginner", "file": "lesson-start-early.html", "title": "Start Early & Compounding"},
     {"slug": "diversify", "level": "beginner", "file": "lesson-diversify.html", "title": "Diversify"},
@@ -1955,9 +1952,6 @@ def alpha_podcast(): return send_from_directory("static", "alpha-podcast.html")
 @app.route("/partners")
 def partners(): return send_from_directory("static", "partners.html")
 
-@app.route("/sitemap")
-def sitemap(): return send_from_directory("static", "sitemap.html")
-
 @app.route("/social-post-studio")
 def social_post_studio(): return send_from_directory("static", "social-post-studio.html")
 
@@ -2857,7 +2851,6 @@ SEARCH_PAGE_INDEX = [
     {"title": "Tom", "url": "/alpha/tom", "sub": "Alpha partner"},
     {"title": "Alpha Podcast", "url": "/alpha/podcast", "sub": "Alpha"},
     {"title": "Partners", "url": "/partners", "sub": "Growth Capital Academy"},
-    {"title": "Site Map", "url": "/sitemap", "sub": "Growth Capital Academy"},
 ]
 
 

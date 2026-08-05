@@ -67,7 +67,6 @@
 '      </ul>' +
 '    </li>' +
 '    <li><a href="/partners">Partners</a></li>' +
-'    <li><a href="/sitemap">Site Map</a></li>' +
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +

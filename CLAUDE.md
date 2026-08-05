@@ -28,16 +28,18 @@ Push normally. If it's rejected because the remote has moved on:
 
 ## New pages
 
-Whenever a new page/route is added to the site (a new `@app.route` in `app.py` serving
-a new file under `static/`), also update `static/sitemap.html`:
+A new `/learn/<level>/<slug>` lesson doesn't need a hand-written route: add one entry
+to `LESSON_PAGES` in `app.py` (slug, level, file, title) and create the HTML file — the
+route and the site-search entry are both generated from that list.
 
-- Add the page as a node in the `siteTree` data at the bottom of the file, nested under
-  the right parent (matching where it sits in the nav).
-- Give it a real `href` so it's a clickable link, not a `todo` placeholder.
-- If a `todo: true` placeholder already exists for that page (e.g. a planned detail
-  page), turn it into a real link instead of adding a duplicate node.
-- If the new page also needs a nav entry, add it in the same place across every page's
-  nav (see how "Site Map" itself was added — same pattern, all `<li>` nav lists).
+For any other new page/route, if it needs a nav entry: most pages share one nav via
+`static/js/nav.js` (a single `document.write()`d block), so add it there once. A few
+older standalone pages (currently `strategy-lab.html`, `strategy-lab-forex.html`,
+`signal_config.html`, `portfolio-balancer.html`) still carry their own inline `<nav>`
+instead of loading `nav.js` — add it to those too if the change should reach them.
+Also add an entry to `SEARCH_PAGE_INDEX` in `app.py` (site search) unless the page is a
+lesson (see above, automatic) or an Alpha post (also automatic — search queries live
+content, no index entry needed).
 
 ## General
 
