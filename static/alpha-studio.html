@@ -34,7 +34,16 @@
 
 /* PANELS */
 .studio-panel { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 28px; }
-.studio-panel h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+/* Bleeds to the panel's own edges so the heading reads as a bar sitting
+   behind the text, not just bigger type — the section names (Add a Post,
+   Quick Add, Drafts, Published) are the thing a returning author scans
+   for first, so they should stand apart from the panel body immediately. */
+.studio-panel h2 {
+  font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; color: var(--text);
+  margin: -32px -32px 20px; padding: 16px 32px;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+}
 .studio-panel p.panel-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
 .author-line { text-align: center; font-size: 14px; color: var(--muted); margin-bottom: 28px; }
 .author-line b { color: var(--text); }
@@ -76,7 +85,15 @@
 .pub-filter-sep { color: var(--muted); font-size: 13px; }
 @media (max-width: 800px) { .quick-add-grid { grid-template-columns: 1fr; } }
 .quick-add-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-.quick-add-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 12px; }
+/* Same treatment as the topic/level pills elsewhere on the site (mono,
+   uppercase, letter-spaced) so it reads as a distinct label rather than
+   competing with the card's own inputs — muted on purpose, it's a
+   sub-heading under the panel's own "Quick Add" bar, not a heading itself. */
+.quick-add-card h3 {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 14px;
+}
 
 /* BUTTONS */
 .btn-primary-sm, .btn-ghost-sm, .btn-danger-sm {
@@ -248,6 +265,24 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <h2>Quick Add</h2>
         <p class="panel-desc">Videos, links and watchlist items are already short and structured, so these skip the upload step and go straight to a draft.</p>
         <div class="quick-add-grid">
+          <!-- Ordered to match the section order on the public Alpha page:
+               Current Watchlist, then Videos, then (further down, past the
+               posts grid) Alpha Links. -->
+          <div class="quick-add-card">
+            <h3>📊 Watchlist Item</h3>
+            <div class="form-field"><input class="form-input" id="watchlistTitle" placeholder="Asset / ticker"></div>
+            <div class="form-field">
+              <select class="form-select" id="watchlistStance">
+                <option value="bullish">Bullish</option>
+                <option value="neutral">Neutral</option>
+                <option value="bearish">Bearish</option>
+              </select>
+            </div>
+            <div class="form-field"><textarea class="form-textarea" id="watchlistNote" rows="2" placeholder="One-line take"></textarea></div>
+            <div class="form-field"><select class="form-select topic-select" id="watchlistTopic"></select></div>
+            <button class="btn-ghost-sm" onclick="quickAdd('watchlist')">Add to Watchlist</button>
+            <div class="form-msg" id="watchlistMsg"></div>
+          </div>
           <div class="quick-add-card">
             <h3>🎬 Video</h3>
             <div class="form-field"><input class="form-input" id="videoTitle" placeholder="Video title"></div>
@@ -264,21 +299,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <div class="form-field"><select class="form-select topic-select" id="linkTopic"></select></div>
             <button class="btn-ghost-sm" onclick="quickAdd('link')">Add Link</button>
             <div class="form-msg" id="linkMsg"></div>
-          </div>
-          <div class="quick-add-card">
-            <h3>📊 Watchlist Item</h3>
-            <div class="form-field"><input class="form-input" id="watchlistTitle" placeholder="Asset / ticker"></div>
-            <div class="form-field">
-              <select class="form-select" id="watchlistStance">
-                <option value="bullish">Bullish</option>
-                <option value="neutral">Neutral</option>
-                <option value="bearish">Bearish</option>
-              </select>
-            </div>
-            <div class="form-field"><textarea class="form-textarea" id="watchlistNote" rows="2" placeholder="One-line take"></textarea></div>
-            <div class="form-field"><select class="form-select topic-select" id="watchlistTopic"></select></div>
-            <button class="btn-ghost-sm" onclick="quickAdd('watchlist')">Add to Watchlist</button>
-            <div class="form-msg" id="watchlistMsg"></div>
           </div>
         </div>
       </div>
