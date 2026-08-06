@@ -2387,6 +2387,94 @@ def _alpha_can_touch(item) -> bool:
     return item is not None and item.get("author") == current_user.alpha_role
 
 
+# ── Market XI asset auto-linking ────────────────────────────────────────────
+# Placeholder integration: Market XI (the fantasy-team game at
+# https://market-xi-live.vercel.app/) doesn't have per-asset profile pages
+# yet, so every match points at the site's root for now. Once profile pages
+# exist, MARKET_XI_URL below becomes a per-asset URL (e.g. by ticker/slug)
+# instead of one constant — that's a conversation with Gary once that site
+# is further along, not something to guess at today.
+MARKET_XI_URL = "https://market-xi-live.vercel.app/"
+
+
+def _market_xi_asset_aliases() -> dict:
+    """Every distinct asset name/ticker mentioned across all 4 partners'
+    published watchlist items — the only place "assets" are named anywhere
+    on the site today, so it's the whole source of truth for what counts as
+    a linkable asset. Returns {lowercased alias: display title}. A title
+    like "Cardano (ADA)" contributes three aliases (the full title, "Cardano",
+    and "ADA") so a post mentioning any of those forms gets linked.
+    """
+    aliases = {}
+    for slug in ALPHA_ROLES:
+        for item in alpha_content_list(author=slug, status="published"):
+            if item.get("kind") != "watchlist":
+                continue
+            title = (item.get("title") or "").strip()
+            if not title:
+                continue
+            aliases.setdefault(title.lower(), title)
+            m = re.match(r"^(.+?)\s*\(([A-Za-z0-9.]+)\)$", title)
+            if m:
+                name, ticker = m.group(1).strip(), m.group(2).strip()
+                if name:
+                    aliases.setdefault(name.lower(), title)
+                if ticker:
+                    aliases.setdefault(ticker.lower(), title)
+    return aliases
+
+
+def _auto_link_market_xi_assets(body: str) -> str:
+    """Wraps the first mention of each known asset (see
+    _market_xi_asset_aliases) in a post body with a [text](url) markdown
+    link to Market XI — the same [text](url) syntax the Studio's own
+    formatting toolbar and renderInlineText() already support, so this
+    needs no rendering changes on the public post page.
+
+    Deliberately conservative: whole-word matches only, longest alias first
+    (so "Cardano (ADA)" isn't fragmented by its own shorter "ADA" alias
+    matching a piece of it first), skips anything already inside a markdown
+    link or image so re-running this on an already-linked body is a no-op,
+    and links only the first occurrence of each asset per post rather than
+    every mention.
+    """
+    if not body:
+        return body
+    aliases = _market_xi_asset_aliases()
+    if not aliases:
+        return body
+
+    # Longest-first so multi-word titles win over a shorter alias they contain.
+    ordered = sorted(aliases.items(), key=lambda kv: -len(kv[0]))
+    pattern = re.compile(
+        r"(?<![\w\-])(" + "|".join(re.escape(a) for a, _ in ordered) + r")(?![\w\-])",
+        re.IGNORECASE,
+    )
+    # Spans already covered by an existing [text](url) or ![alt](url) — never
+    # match inside one, whether from a previous auto-link pass or an author's
+    # own manual link.
+    protected = [m.span() for m in re.finditer(r"!?\[[^\]]*\]\([^)]*\)", body)]
+
+    def is_protected(start, end):
+        return any(start < p_end and end > p_start for p_start, p_end in protected)
+
+    linked_lower = set()
+    out = []
+    last_end = 0
+    for m in pattern.finditer(body):
+        start, end = m.span()
+        matched_lower = m.group(1).lower()
+        canonical = aliases.get(matched_lower)
+        if not canonical or canonical.lower() in linked_lower or is_protected(start, end):
+            continue
+        out.append(body[last_end:start])
+        out.append(f"[{m.group(1)}]({MARKET_XI_URL})")
+        last_end = end
+        linked_lower.add(canonical.lower())
+    out.append(body[last_end:])
+    return "".join(out)
+
+
 @app.route("/api/alpha/upload", methods=["POST"])
 @login_required
 @alpha_author_required
@@ -2436,6 +2524,8 @@ def api_alpha_upload():
     normalized = normalize_content(raw_text, author, author_topics)
     topic = requested_topic if requested_topic in author_topics else normalized["topic"]
     body = auto_section_tables(normalized["body"]) if kind == "post" else normalized["body"]
+    if kind == "post":
+        body = _auto_link_market_xi_assets(body)
     # normalize_content's title/subtitle/snippet are a naive split of the
     # whole flattened document — a structured upload has much better
     # candidates: the first Normal section's own heading for the title, and
@@ -2466,7 +2556,7 @@ def api_alpha_upload():
             return f"/api/alpha/content/{item['id']}/images/{attachment_id}"
         structured_body = _serialize_structured_sections(structured_sections, _upload_extracted_image)
         if structured_body.strip():
-            item = alpha_content_update(item["id"], {"body": structured_body})
+            item = alpha_content_update(item["id"], {"body": _auto_link_market_xi_assets(structured_body)})
 
     return jsonify({"success": True, "item": item})
 
@@ -2558,6 +2648,8 @@ def api_alpha_content_item(item_id):
         if field in data:
             value = data[field]
             updates[field] = (str(value).strip() or None) if value is not None else None
+    if "body" in updates and updates["body"] and existing.get("kind") == "post":
+        updates["body"] = _auto_link_market_xi_assets(updates["body"])
     if "level" in data:
         level = (data["level"] or "").strip().lower()
         if level and level not in ALPHA_LEVELS:
