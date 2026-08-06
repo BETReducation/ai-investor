@@ -2390,10 +2390,27 @@ def _alpha_can_touch(item) -> bool:
 # ── Market XI asset auto-linking ────────────────────────────────────────────
 # Placeholder integration: Market XI (the fantasy-team game at
 # https://market-xi-live.vercel.app/) doesn't have per-asset profile pages
-# yet, so every match points at the site's root for now. Once profile pages
-# exist, MARKET_XI_URL below becomes a per-asset URL (e.g. by ticker/slug)
-# instead of one constant — that's a conversation with Gary once that site
-# is further along, not something to guess at today.
+# yet, so every match points at the site's root for now, and the asset list
+# itself is drawn from GCA's own watchlist data (see
+# _market_xi_asset_aliases below) rather than from Market XI directly.
+#
+# TODO(market-xi-integration): Market XI is a Next.js + Supabase app. It has
+# at least one public, unauthenticated JSON route — GET /api/gameweek-timeline
+# — confirmed reachable during investigation, so a live asset feed is
+# plausible once they add one; no equivalent asset/roster endpoint was found
+# (checked common paths like /api/assets, /api/asset-catalogue,
+# /api/market-assets — all 404). Their frontend references internal store
+# names "assetMarketAssets"/"assetMarketCatalogue", confirming the *feature*
+# exists, just not a discoverable public route for it yet.
+#
+# Once one exists (ideally something like GET /api/asset-catalogue returning
+# {"assets": [{"slug", "name", "ticker", "url"}, ...]}), swap this out for a
+# fetch from Market XI with a short cache (their roster changes at most a few
+# times a week) and a fallback to today's watchlist-derived list if the
+# request fails — Market XI being briefly unreachable shouldn't take Studio's
+# asset linking down with it. At that point MARKET_XI_URL below becomes a
+# per-asset URL (from that "url" field) instead of one constant for
+# everything.
 MARKET_XI_URL = "https://market-xi-live.vercel.app/"
 
 
@@ -2401,9 +2418,11 @@ def _market_xi_asset_aliases() -> dict:
     """Every distinct asset name/ticker mentioned across all 4 partners'
     published watchlist items — the only place "assets" are named anywhere
     on the site today, so it's the whole source of truth for what counts as
-    a linkable asset. Returns {lowercased alias: display title}. A title
-    like "Cardano (ADA)" contributes three aliases (the full title, "Cardano",
-    and "ADA") so a post mentioning any of those forms gets linked.
+    a linkable asset (see the TODO above for the plan to source this from
+    Market XI directly instead, once it can be). Returns {lowercased alias:
+    display title}. A title like "Cardano (ADA)" contributes three aliases
+    (the full title, "Cardano", and "ADA") so a post mentioning any of those
+    forms gets linked.
     """
     aliases = {}
     for slug in ALPHA_ROLES:
