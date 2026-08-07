@@ -188,9 +188,15 @@ body.pulse-map-lock { overflow: hidden; }
 .pulse-list-group { margin-bottom: 18px; }
 .pulse-list-group:last-child { margin-bottom: 0; }
 .pulse-list-group-title {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; user-select: none;
   font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; color: #d4af6a; margin-bottom: 8px; padding: 0 2px;
+  text-transform: uppercase; color: #d4af6a; margin-bottom: 8px; padding: 8px 2px;
 }
+.pulse-list-group-chevron { display: inline-block; transition: transform 0.15s ease; font-size: 10px; }
+.pulse-list-group.collapsed .pulse-list-group-chevron { transform: rotate(-90deg); }
+.pulse-list-group-rows { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.18s ease; }
+.pulse-list-group-rows > div { overflow: hidden; }
+.pulse-list-group.collapsed .pulse-list-group-rows { grid-template-rows: 0fr; }
 .pulse-list-row {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 12px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); margin-bottom: 8px;
@@ -603,6 +609,17 @@ function continentFromLonLat(lon, lat) {
 }
 const PULSE_CONTINENT_ORDER = ['Asia & Middle East', 'Europe', 'North America', 'South America', 'Africa', 'Oceania'];
 
+// Collapsed state lives outside renderPulseList so it survives the 5-min
+// auto-refresh re-render (which rebuilds the whole list from scratch) — keyed
+// by continent name rather than DOM node since that's what stays stable.
+const _pulseListCollapsed = new Set();
+function togglePulseListGroup(continent) {
+  if (_pulseListCollapsed.has(continent)) _pulseListCollapsed.delete(continent);
+  else _pulseListCollapsed.add(continent);
+  document.getElementById(`pulseListGroup-${continent.replace(/[^a-z0-9]/gi, '')}`)
+    ?.classList.toggle('collapsed', _pulseListCollapsed.has(continent));
+}
+
 function renderPulseList(data) {
   const { markets = [] } = data;
   const body = document.getElementById('pulseListBody');
@@ -624,12 +641,19 @@ function renderPulseList(data) {
         <div class="pulse-list-right"><div class="pulse-list-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div><div class="pulse-list-price">${esc(String(m.price))}</div></div>
       </div>`;
   };
-  body.innerHTML = PULSE_CONTINENT_ORDER.filter(c => groups[c]?.length).map(continent => `
-    <div class="pulse-list-group">
-      <div class="pulse-list-group-title">${esc(continent)} · ${groups[continent].length}</div>
-      ${groups[continent].map(row).join('')}
+  body.innerHTML = PULSE_CONTINENT_ORDER.filter(c => groups[c]?.length).map(continent => {
+    const domId = continent.replace(/[^a-z0-9]/gi, '');
+    const collapsed = _pulseListCollapsed.has(continent);
+    return `
+    <div class="pulse-list-group${collapsed ? ' collapsed' : ''}" id="pulseListGroup-${domId}">
+      <div class="pulse-list-group-title" onclick="togglePulseListGroup('${continent.replace(/'/g, "\\'")}')">
+        <span>${esc(continent)} · ${groups[continent].length}</span>
+        <span class="pulse-list-group-chevron">▾</span>
+      </div>
+      <div class="pulse-list-group-rows"><div>${groups[continent].map(row).join('')}</div></div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ── Detailed tab — choropleth map, sentiment gauge, major-indices ticker ───
