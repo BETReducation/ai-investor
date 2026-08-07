@@ -402,9 +402,9 @@ function renderCard(item) {
   return `
     <div class="studio-card">
       <div class="studio-card-head">
-        <strong>${esc(item.title) || '(untitled)'}</strong>
         <span class="status-badge ${item.status}">${item.status}</span>
       </div>
+      <div class="form-field"><label class="form-label">Title</label><input class="form-input" value="${esc(item.title)}" onblur="updateField(${item.id}, 'title', this.value)"></div>
       <div class="card-image-input-row">
         ${imageTag}
         <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadImage(${item.id}, this)">
