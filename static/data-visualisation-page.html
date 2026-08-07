@@ -67,9 +67,11 @@ body.pulse-page .section-badge, body.pulse-page .section-badge::before { color: 
 .pulse-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 .pulse-map-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
 .pulse-map-svg { width: 100%; height: auto; display: block; }
-.pulse-continent { fill: rgba(148,163,196,0.16); }
-.pulse-market-dot { cursor: pointer; stroke: rgba(255,255,255,0.5); stroke-width: 0.8; transition: r 0.15s ease; }
-.pulse-market-dot:hover { stroke-width: 1.6; }
+.pulse-continent { fill: rgba(148,163,196,0.4); stroke: rgba(148,163,196,0.55); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.pulse-map-credit { text-align: right; font-size: 10.5px; color: var(--muted); opacity: 0.6; margin-top: 6px; }
+.pulse-map-credit a { color: inherit; }
+.pulse-market-dot { cursor: pointer; stroke: rgba(255,255,255,0.7); stroke-width: 4; vector-effect: non-scaling-stroke; transition: r 0.15s ease; }
+.pulse-market-dot:hover { stroke-width: 8; }
 .pulse-legend { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .pulse-legend-bar { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #f87171, #8892b0, #4ade80); }
 .pulse-tooltip {
@@ -199,8 +201,11 @@ function pulseColor(pct) {
   return `rgb(${rgb.join(',')})`;
 }
 
+// Map viewBox is 5760x2880 (see lonToX/latToY) — 5.76x the old 1000x500 box —
+// so radii need the same scale-up to read at the same visual size on screen.
+const PULSE_MAP_SCALE = 5.76;
 function pulseRadius(pct) {
-  return Math.min(11, 4 + Math.abs(pct) * 2.6);
+  return Math.min(11, 4 + Math.abs(pct) * 2.6) * PULSE_MAP_SCALE;
 }
 
 function initMarketPulse() {
@@ -210,10 +215,11 @@ function initMarketPulse() {
       <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
       <div class="pulse-stats" id="pulseStats"></div>
       <div class="pulse-map-card" style="position:relative;">
-        <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 0 5760 2880" xmlns="http://www.w3.org/2000/svg"></svg>
         <div class="pulse-tooltip" id="pulseTooltip"></div>
       </div>
       <div class="pulse-legend"><span>Down</span><div class="pulse-legend-bar"></div><span>Up</span></div>
+      <div class="pulse-map-credit">Map: <a href="https://commons.wikimedia.org/wiki/File:Equirectangular_projection_world_map_without_borders.svg" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY-SA 4.0</div>
     </div>
     <div class="pulse-leaders" id="pulseLeaders"></div>
     <hr class="pulse-divider">
@@ -224,28 +230,33 @@ function initMarketPulse() {
   pulseTimer = setInterval(fetchPulse, PULSE_REFRESH_MS);
 }
 
-// Rough continent bounding boxes (lon/lat), rendered as soft rounded blobs —
-// a stylized backdrop for the dots, not a precise atlas.
-const PULSE_CONTINENTS = [
-  { x1: -168, y1: 15,  x2: -55,  y2: 72 },  // North America
-  { x1: -82,  y1: -56, x2: -34,  y2: 13 },  // South America
-  { x1: -11,  y1: 36,  x2: 40,   y2: 71 },  // Europe
-  { x1: -18,  y1: -35, x2: 52,   y2: 37 },  // Africa
-  { x1: 40,   y1: 5,   x2: 150,  y2: 77 },  // Asia
-  { x1: 112,  y1: -44, x2: 154,  y2: -10 }, // Australia
-];
-function lonToX(lon) { return (lon + 180) / 360 * 1000; }
-function latToY(lat) { return (90 - lat) / 180 * 500; }
+// Real land outline (Wikimedia Commons, CC BY-SA 4.0 — credited under the map)
+// rather than stylized blobs. Its viewBox (0 0 5760 2880) is exactly an 8x scale
+// of a 720x360 equirectangular projection, so lon/lat map onto it directly with
+// no separate rescale, and dots drawn in the same coordinate space line up with
+// real coastlines. Fetched once and cached — every redraw (each 5-min refresh)
+// reuses the same path string instead of re-fetching it.
+let _pulseLandPath = null;
+function lonToX(lon) { return (lon + 180) / 360 * 5760; }
+function latToY(lat) { return (90 - lat) / 180 * 2880; }
 
-function drawPulseContinents() {
+async function getPulseLandPath() {
+  if (_pulseLandPath !== null) return _pulseLandPath;
+  try {
+    const res = await fetch('/static/img/world-map-outline.svg');
+    const text = await res.text();
+    const match = text.match(/<path[^>]*\sd="([^"]+)"/);
+    _pulseLandPath = match ? match[1] : '';
+  } catch {
+    _pulseLandPath = '';
+  }
+  return _pulseLandPath;
+}
+
+async function drawPulseContinents() {
   const svg = document.getElementById('pulseMapSvg');
-  const rects = PULSE_CONTINENTS.map(c => {
-    const x = lonToX(c.x1), y = latToY(c.y2);
-    const w = lonToX(c.x2) - x, h = latToY(c.y1) - y;
-    const r = Math.min(w, h) * 0.28;
-    return `<rect class="pulse-continent" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" ry="${r}"></rect>`;
-  }).join('');
-  svg.innerHTML = rects;
+  const d = await getPulseLandPath();
+  svg.innerHTML = d ? `<path class="pulse-continent" d="${d}"></path>` : '';
 }
 
 async function fetchPulse() {
@@ -260,7 +271,7 @@ async function fetchPulse() {
   }
 }
 
-function renderPulse(data) {
+async function renderPulse(data) {
   const { markets = [], summary = {}, updated_at } = data;
 
   const updatedEl = document.getElementById('pulseUpdated');
@@ -278,7 +289,7 @@ function renderPulse(data) {
 
   const svg = document.getElementById('pulseMapSvg');
   const tooltip = document.getElementById('pulseTooltip');
-  drawPulseContinents();
+  await drawPulseContinents();
   const dotsHtml = markets.map(m => {
     const x = lonToX(m.lon), y = latToY(m.lat);
     return `<circle class="pulse-market-dot" cx="${x}" cy="${y}" r="${pulseRadius(m.pct_change)}" fill="${pulseColor(m.pct_change)}" data-country="${esc(m.country)}" data-index="${esc(m.index)}" data-pct="${m.pct_change}" data-price="${m.price}"></circle>`;
