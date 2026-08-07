@@ -1004,6 +1004,24 @@ MARKET_PULSE_INDICES = [
     {"country": "Thailand",      "index": "SET",               "symbol": "^SET.BK",  "lat": 15.9,  "lon": 100.9,  "iso2": "th"},
     {"country": "Australia",     "index": "ASX 200",           "symbol": "^AXJO",    "lat": -25.3, "lon": 133.8,  "iso2": "au"},
     {"country": "New Zealand",   "index": "NZX 50",            "symbol": "^NZ50",    "lat": -41.0, "lon": 174.9,  "iso2": "nz"},
+    # Added to broaden coverage toward "top ~50 markets by cap" — each symbol below
+    # was individually confirmed against yfinance before being added. A lot of
+    # smaller markets (Vietnam, Pakistan, Chile, Colombia, Czechia, Hungary, Qatar,
+    # Kuwait, Nigeria, Kenya, most of the Balkans) simply have no reliable free
+    # Yahoo Finance symbol — every symbol/suffix variant tried came back empty —
+    # so they're left out rather than added as an entry that would silently never
+    # show data.
+    {"country": "Denmark",       "index": "OMX Copenhagen 25", "symbol": "^OMXC25",  "lat": 56.0,  "lon": 10.0,   "iso2": "dk"},
+    {"country": "Norway",        "index": "Oslo Børs",         "symbol": "OSEBX.OL", "lat": 60.5,  "lon": 8.5,    "iso2": "no"},
+    {"country": "Finland",       "index": "OMX Helsinki 25",   "symbol": "^OMXH25",  "lat": 61.9,  "lon": 25.7,   "iso2": "fi"},
+    {"country": "Belgium",       "index": "BEL 20",            "symbol": "^BFX",     "lat": 50.5,  "lon": 4.5,    "iso2": "be"},
+    {"country": "Austria",       "index": "ATX",               "symbol": "^ATX",     "lat": 47.5,  "lon": 14.5,   "iso2": "at"},
+    {"country": "Ireland",       "index": "ISEQ",              "symbol": "^ISEQ",    "lat": 53.4,  "lon": -8.0,   "iso2": "ie"},
+    {"country": "Portugal",      "index": "PSI 20",            "symbol": "PSI20.LS", "lat": 39.4,  "lon": -8.0,   "iso2": "pt"},
+    {"country": "Greece",        "index": "Athens General",    "symbol": "GD.AT",    "lat": 39.0,  "lon": 22.0,   "iso2": "gr"},
+    {"country": "Israel",        "index": "TA-35",             "symbol": "TA35.TA",  "lat": 31.0,  "lon": 35.0,   "iso2": "il"},
+    {"country": "United Arab Emirates", "index": "DFM General", "symbol": "DFMGI.AE","lat": 25.2,  "lon": 55.3,   "iso2": "ae"},
+    {"country": "Philippines",   "index": "PSEi Composite",    "symbol": "PSEI.PS",  "lat": 13.0,  "lon": 122.0,  "iso2": "ph"},
 ]
 
 _MARKET_PULSE_CACHE_TTL_SECONDS = 300  # 5 min — plenty fresh for a daily % move, keeps Yahoo calls modest
@@ -1025,7 +1043,11 @@ def _fetch_market_pulse_live() -> dict:
 
     symbols = [m["symbol"] for m in MARKET_PULSE_INDICES]
     try:
-        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+        # 1mo rather than 5d — several thinner-volume markets (Saudi Arabia's TASI,
+        # the Philippines' PSEi) don't trade every single day, so a 5-day window
+        # sometimes contained fewer than the 2 closes needed to compute a % move
+        # and that market would silently vanish from the map for no real reason.
+        raw = yf.download(tickers=symbols, period="1mo", interval="1d", group_by="ticker",
                            threads=True, auto_adjust=False, progress=False)
     except Exception:
         raw = None
@@ -1036,6 +1058,16 @@ def _fetch_market_pulse_live() -> dict:
             df = raw[m["symbol"]] if len(symbols) > 1 else raw
             closes = df["Close"].dropna()
             if len(closes) < 2:
+                continue
+            # A handful of the thinner markets (confirmed live: Greece's Athens
+            # General on Yahoo) have multi-week gaps in their daily bars — the
+            # "previous close" ends up weeks stale, so the %% move computed from
+            # it isn't a daily move at all, just a misleadingly large one. Skip
+            # any pair of closes more than a long holiday weekend apart (a real
+            # market closure never runs past ~4-5 calendar days) rather than
+            # publish a number that looks like today's move but isn't.
+            gap_days = (closes.index[-1] - closes.index[-2]).days
+            if gap_days > 5:
                 continue
             last, prev = float(closes.iloc[-1]), float(closes.iloc[-2])
             if not prev:
