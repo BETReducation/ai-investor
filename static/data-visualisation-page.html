@@ -616,7 +616,9 @@ const PULSE_CONTINENT_ORDER = ['Asia & Middle East', 'Europe', 'North America', 
 // Collapsed state lives outside renderPulseList so it survives the 5-min
 // auto-refresh re-render (which rebuilds the whole list from scratch) — keyed
 // by continent name rather than DOM node since that's what stays stable.
-const _pulseListCollapsed = new Set();
+// Seeded with every continent so the list first renders fully collapsed —
+// just region headers to scan, tap one to expand it.
+const _pulseListCollapsed = new Set(PULSE_CONTINENT_ORDER);
 function togglePulseListGroup(continent) {
   if (_pulseListCollapsed.has(continent)) _pulseListCollapsed.delete(continent);
   else _pulseListCollapsed.add(continent);
