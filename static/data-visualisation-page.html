@@ -101,6 +101,7 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 .pulse-tooltip .t-move { font-family: 'JetBrains Mono', monospace; }
 .pulse-tooltip .t-move.up { color: #4ade80; }
 .pulse-tooltip .t-move.down { color: #f87171; }
+.pulse-tooltip-divider { border-top: 1px solid rgba(128,128,128,0.25); margin: 6px 0; }
 .pulse-leaders { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
 @media (max-width: 640px) { .pulse-leaders { grid-template-columns: 1fr; } }
 .pulse-leader-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
@@ -460,8 +461,19 @@ async function renderPulseDetail(data) {
   const svg = wrap.querySelector('svg');
   if (!svg) return;
 
+  // byIso2: last-one-wins single market per country, used only to decide the
+  // choropleth's one fill color (see MARKET_PULSE_INDICES ordering in app.py —
+  // the more widely-recognized index is listed last so it wins here).
+  // byIso2All: every market for that country, used by the hover tooltip so a
+  // country with 2 tracked indices (US, UK, China, India, Japan, South Korea)
+  // shows both instead of just whichever one happened to win the fill color.
   const byIso2 = {};
-  markets.forEach(m => { if (m.iso2) byIso2[m.iso2] = m; });
+  const byIso2All = {};
+  markets.forEach(m => {
+    if (!m.iso2) return;
+    byIso2[m.iso2] = m;
+    (byIso2All[m.iso2] ||= []).push(m);
+  });
 
   // Colored via inline style (highest-precedence, deterministic) rather than an
   // injected <style> class rule — the map's own default styling and our light/dark
@@ -480,11 +492,14 @@ async function renderPulseDetail(data) {
   // root since the map has thousands of shapes and only ~30 are ours to color.
   svg.onmousemove = e => {
     const el = e.target.closest('.landxx');
-    const m = el && [...el.classList].map(c => byIso2[c]).find(Boolean);
-    if (!m) { tooltip.classList.remove('show'); return; }
-    const pct = m.pct_change;
-    const sign = pct >= 0 ? '+' : '';
-    tooltip.innerHTML = `<div class="t-country">${esc(m.country)}</div><div>${esc(m.index)} · ${m.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
+    const iso2 = el && [...el.classList].find(c => byIso2All[c]);
+    const rows = iso2 && byIso2All[iso2];
+    if (!rows) { tooltip.classList.remove('show'); return; }
+    const rowsHtml = rows.map(m => {
+      const pct = m.pct_change, sign = pct >= 0 ? '+' : '';
+      return `<div>${esc(m.index)} · ${m.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
+    }).join('<div class="pulse-tooltip-divider"></div>');
+    tooltip.innerHTML = `<div class="t-country">${esc(rows[0].country)}</div>${rowsHtml}`;
     const cardRect = wrap.closest('.pulse-map-card').getBoundingClientRect();
     tooltip.style.left = `${e.clientX - cardRect.left + 14}px`;
     tooltip.style.top = `${e.clientY - cardRect.top + 14}px`;
