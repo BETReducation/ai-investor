@@ -34,7 +34,6 @@
   background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px;
   position: relative; display: flex; flex-direction: column; gap: 16px;
 }
-.post-image { width: 100%; max-height: 360px; border-radius: 12px; object-fit: cover; display: block; }
 .post-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(20px, 2.2vw, 26px); color: var(--text); letter-spacing: -0.02em; }
 .post-section-label { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
 .post-body { font-size: 14.5px; color: var(--muted); line-height: 1.7; }
@@ -794,12 +793,12 @@ async function renderPulseDetail(data) {
 }
 
 function renderPost(item) {
-  const imageTag = item.image_url ? `<img class="post-image" src="${esc(item.image_url)}" alt="">` : '';
+  // Post images are only ever shown as the thumbnail on the /tools/data-visualisation
+  // listing page — individual post cards here don't repeat them.
   const linkTag = item.link ? `<div class="post-link"><a href="${esc(item.link)}" target="_blank" rel="noopener">Further information →</a></div>` : '';
   const warningTag = item.warning ? `<div class="post-warning"><strong>Accuracy / usefulness note:</strong> ${esc(item.warning)}</div>` : '';
   return `
     <article class="post-card">
-      ${imageTag}
       <div>
         <div class="post-title">${esc(item.title) || 'Untitled'}</div>
         ${item.description ? `<div class="post-body">${esc(item.description)}</div>` : ''}
