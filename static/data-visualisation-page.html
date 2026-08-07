@@ -46,10 +46,9 @@
   opacity: 0.75; margin-top: -4px;
 }
 
-/* MARKET PULSE — live heat map. Forced into dark mode (see initMarketPulse) to
-   match the approved gold-on-navy mockup — the toggle is hidden on this page so
-   that choice can't be undone by a stray click and end up looking half-finished. */
-body.pulse-page .theme-toggle { display: none; }
+/* MARKET PULSE — live heat map. Defaults to dark (matches the approved
+   gold-on-navy mockup) but respects the site's normal light/dark toggle —
+   see the :root[data-theme="light"] overrides below for the light variant. */
 body.pulse-page .section-badge, body.pulse-page .section-badge::before { color: #d4af6a; background: #d4af6a; }
 .pulse-wrap { margin-bottom: 40px; }
 .pulse-note {
@@ -72,6 +71,10 @@ body.pulse-page .section-badge, body.pulse-page .section-badge::before { color: 
 .pulse-map-credit a { color: inherit; }
 .pulse-market-dot { cursor: pointer; stroke: rgba(255,255,255,0.7); stroke-width: 4; vector-effect: non-scaling-stroke; transition: r 0.15s ease; }
 .pulse-market-dot:hover { stroke-width: 8; }
+/* Light mode: the dark-navy palette above (pale slate land, white dot outlines)
+   loses all contrast on a white card, so both get inverted here. */
+:root[data-theme="light"] .pulse-continent { fill: rgba(90,100,140,0.28); stroke: rgba(90,100,140,0.5); }
+:root[data-theme="light"] .pulse-market-dot { stroke: rgba(20,24,40,0.55); }
 .pulse-legend { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .pulse-legend-bar { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #f87171, #8892b0, #4ade80); }
 .pulse-tooltip {
@@ -173,13 +176,11 @@ async function loadPage() {
     }
     if (slug === 'market-pulse') {
       document.querySelector('.hero-sub').textContent = "Every major index worldwide, colored by today's move — refreshes automatically. Commentary on the day's biggest movers below.";
-      // This page's design (approved by Tom) is a fixed dark/gold dashboard look,
-      // not the site's normal light/dark toggle — force dark and hide the toggle
-      // (see the body.pulse-page rules above) so it can't be switched away by
-      // mistake. Not persisted to localStorage, so it doesn't affect any other page.
-      document.documentElement.setAttribute('data-theme', 'dark');
+      // Gold accent (body.pulse-page rules above) applies in both themes; the
+      // toggle itself is left alone so visitors can pick light or dark like any
+      // other page — see the :root[data-theme="light"] overrides for the map/dot
+      // styling that has to flip for legibility on a white card.
       document.body.classList.add('pulse-page');
-      updateToggleIcon('dark'); updateLogos('dark');
       initMarketPulse();
     }
   } catch {
