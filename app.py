@@ -974,11 +974,23 @@ def dataviz_page_delete(slug: str) -> bool:
 # single round trip. lat/lon are the rough geographic center of each market, used
 # by the frontend to place a dot on an equirectangular (x=lon, y=lat) map.
 MARKET_PULSE_INDICES = [
+    # A handful of countries have a second index big enough to matter on its own —
+    # judgment call, not exhaustive. Each second entry is listed BEFORE its
+    # country's primary/broader index: the choropleth and hover tooltip only show
+    # one color per country (keyed by iso2), and later entries win ties, so this
+    # ordering makes the more широко-recognized index (S&P 500, not Nasdaq; SSE
+    # Composite, not Shenzhen; FTSE 100, not FTSE 250) the one that "wins" the
+    # country's fill color the more widely-recognized index (S&P 500, not Nasdaq;
+    # SSE Composite, not Shenzhen; FTSE 100, not FTSE 250). Both indices still
+    # appear individually on the simple dot map, the ticker strip, and the
+    # gainers/losers leaderboard.
+    {"country": "United States", "index": "Nasdaq Composite", "symbol": "^IXIC",    "lat": 37.4,  "lon": -122.1, "iso2": "us"},
     {"country": "United States", "index": "S&P 500",        "symbol": "^GSPC",    "lat": 39.8,  "lon": -98.6,  "iso2": "us"},
     {"country": "Canada",        "index": "S&P/TSX",         "symbol": "^GSPTSE",  "lat": 56.1,  "lon": -106.3, "iso2": "ca"},
     {"country": "Mexico",        "index": "IPC",              "symbol": "^MXX",     "lat": 23.6,  "lon": -102.5, "iso2": "mx"},
     {"country": "Brazil",        "index": "Bovespa",          "symbol": "^BVSP",    "lat": -14.2, "lon": -51.9,  "iso2": "br"},
     {"country": "Argentina",     "index": "Merval",           "symbol": "^MERV",    "lat": -38.4, "lon": -63.6,  "iso2": "ar"},
+    {"country": "United Kingdom","index": "FTSE 250",         "symbol": "^FTMC",    "lat": 52.5,  "lon": -1.9,   "iso2": "gb"},
     {"country": "United Kingdom","index": "FTSE 100",         "symbol": "^FTSE",    "lat": 55.4,  "lon": -3.4,   "iso2": "gb"},
     {"country": "Germany",       "index": "DAX",               "symbol": "^GDAXI",   "lat": 51.2,  "lon": 10.5,   "iso2": "de"},
     {"country": "France",        "index": "CAC 40",            "symbol": "^FCHI",    "lat": 46.6,  "lon": 2.2,    "iso2": "fr"},
@@ -993,10 +1005,12 @@ MARKET_PULSE_INDICES = [
     {"country": "South Africa",  "index": "JSE Top 40",        "symbol": "^J203.JO", "lat": -29.0, "lon": 24.0,   "iso2": "za"},
     {"country": "Saudi Arabia",  "index": "TASI",              "symbol": "^TASI.SR", "lat": 24.0,  "lon": 45.0,   "iso2": "sa"},
     {"country": "Japan",         "index": "Nikkei 225",        "symbol": "^N225",    "lat": 36.2,  "lon": 138.3,  "iso2": "jp"},
-    {"country": "China",         "index": "SSE Composite",     "symbol": "000001.SS","lat": 35.9,  "lon": 104.2,  "iso2": "cn"},
+    {"country": "China",         "index": "Shenzhen Component","symbol": "399001.SZ","lat": 22.5,  "lon": 114.1,  "iso2": "cn"},
+    {"country": "China",         "index": "SSE Composite",     "symbol": "000001.SS","lat": 31.2,  "lon": 121.5,  "iso2": "cn"},
     {"country": "Hong Kong",     "index": "Hang Seng",         "symbol": "^HSI",     "lat": 22.3,  "lon": 114.2,  "iso2": "hk"},
     {"country": "South Korea",   "index": "KOSPI",             "symbol": "^KS11",    "lat": 36.5,  "lon": 127.9,  "iso2": "kr"},
     {"country": "Taiwan",        "index": "TAIEX",             "symbol": "^TWII",    "lat": 23.7,  "lon": 121.0,  "iso2": "tw"},
+    {"country": "India",         "index": "Nifty 50",          "symbol": "^NSEI",    "lat": 19.1,  "lon": 72.9,   "iso2": "in"},
     {"country": "India",         "index": "BSE Sensex",        "symbol": "^BSESN",   "lat": 20.6,  "lon": 78.9,   "iso2": "in"},
     {"country": "Singapore",     "index": "STI",               "symbol": "^STI",     "lat": 1.35,  "lon": 103.8,  "iso2": "sg"},
     {"country": "Indonesia",     "index": "IDX Composite",     "symbol": "^JKSE",    "lat": -0.8,  "lon": 113.9,  "iso2": "id"},
@@ -1006,11 +1020,14 @@ MARKET_PULSE_INDICES = [
     {"country": "New Zealand",   "index": "NZX 50",            "symbol": "^NZ50",    "lat": -41.0, "lon": 174.9,  "iso2": "nz"},
     # Added to broaden coverage toward "top ~50 markets by cap" — each symbol below
     # was individually confirmed against yfinance before being added. A lot of
-    # smaller markets (Vietnam, Pakistan, Chile, Colombia, Czechia, Hungary, Qatar,
-    # Kuwait, Nigeria, Kenya, most of the Balkans) simply have no reliable free
-    # Yahoo Finance symbol — every symbol/suffix variant tried came back empty —
-    # so they're left out rather than added as an entry that would silently never
-    # show data.
+    # smaller markets (Pakistan, Chile, Colombia, Czechia, Hungary, Qatar, Kuwait,
+    # Nigeria, Kenya, Ghana, Mauritius, Morocco, most of the Balkans) simply have
+    # no reliable free Yahoo Finance symbol — every symbol/suffix variant tried
+    # came back empty — so they're left out rather than added as an entry that
+    # would silently never show data. Russia (IMOEX.ME, below) is in the same
+    # position in practice — the symbol exists but Yahoo has carried no usable
+    # data for it since Western sanctions-era delistings — kept in the list on
+    # the chance that changes, rather than removed.
     {"country": "Denmark",       "index": "OMX Copenhagen 25", "symbol": "^OMXC25",  "lat": 56.0,  "lon": 10.0,   "iso2": "dk"},
     {"country": "Norway",        "index": "Oslo Børs",         "symbol": "OSEBX.OL", "lat": 60.5,  "lon": 8.5,    "iso2": "no"},
     {"country": "Finland",       "index": "OMX Helsinki 25",   "symbol": "^OMXH25",  "lat": 61.9,  "lon": 25.7,   "iso2": "fi"},
@@ -1022,6 +1039,20 @@ MARKET_PULSE_INDICES = [
     {"country": "Israel",        "index": "TA-35",             "symbol": "TA35.TA",  "lat": 31.0,  "lon": 35.0,   "iso2": "il"},
     {"country": "United Arab Emirates", "index": "DFM General", "symbol": "DFMGI.AE","lat": 25.2,  "lon": 55.3,   "iso2": "ae"},
     {"country": "Philippines",   "index": "PSEi Composite",    "symbol": "PSEI.PS",  "lat": 13.0,  "lon": 122.0,  "iso2": "ph"},
+    # Vietnam has no native index available on free yfinance (every ^VNINDEX /
+    # VNINDEX.VN / VNI variant came back empty) — VNM (the VanEck Vietnam ETF, a
+    # US-listed fund of Vietnamese equities) is used instead as the closest
+    # available proxy for "how is the Vietnamese market doing today".
+    {"country": "Vietnam",       "index": "Vietnam ETF (VNM)", "symbol": "VNM",      "lat": 14.0,  "lon": 108.0,  "iso2": "vn"},
+    # Africa: South Africa (JSE, above) is the only individual African market with
+    # a working free index symbol — Nigeria, Egypt, Kenya, Morocco and Ghana were
+    # all tried under several symbol variants each and none returned data. AFK (the
+    # VanEck Africa Index ETF) is added as a broad-continent proxy instead of a
+    # 2nd/3rd/4th single-country pick; it spans multiple countries at once, so
+    # iso2 is deliberately blank — it shows on the simple dot map and in the
+    # leaderboard/ticker like any other market, but isn't eligible to color any
+    # one country on the Detailed choropleth (which is keyed strictly by iso2).
+    {"country": "Africa (broad)","index": "Africa ETF (AFK)",  "symbol": "AFK",      "lat": 2.0,   "lon": 20.0,   "iso2": ""},
 ]
 
 _MARKET_PULSE_CACHE_TTL_SECONDS = 300  # 5 min — plenty fresh for a daily % move, keeps Yahoo calls modest
