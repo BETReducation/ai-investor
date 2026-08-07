@@ -441,15 +441,18 @@ async function renderPulseDetail(data) {
   const byIso2 = {};
   markets.forEach(m => { if (m.iso2) byIso2[m.iso2] = m; });
 
-  let styleEl = svg.querySelector('#pulseCountryFills');
-  if (!styleEl) {
-    styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-    styleEl.id = 'pulseCountryFills';
-    svg.appendChild(styleEl);
-  }
-  styleEl.textContent = Object.entries(byIso2)
-    .map(([iso2, m]) => `.landxx.${iso2} { fill: ${pulseBucketColor(m.pct_change)} !important; }`)
-    .join('\n');
+  // Colored via inline style (highest-precedence, deterministic) rather than an
+  // injected <style> class rule — the map's own default styling and our light/dark
+  // "no data" overrides are both !important stylesheet rules at equal specificity,
+  // which left country coloring at the mercy of stylesheet cascade order and
+  // apparently didn't resolve the same way in every browser. Inline + !important
+  // always wins regardless of stylesheet order, so this can't lose that fight.
+  Object.entries(byIso2).forEach(([iso2, m]) => {
+    const color = pulseBucketColor(m.pct_change);
+    Array.from(svg.getElementsByClassName(iso2)).forEach(el => {
+      if (el.classList.contains('landxx')) el.style.setProperty('fill', color, 'important');
+    });
+  });
 
   // Hover any tracked country for its name/index/move — delegated on the SVG
   // root since the map has thousands of shapes and only ~30 are ours to color.
