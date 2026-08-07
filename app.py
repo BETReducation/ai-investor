@@ -218,6 +218,13 @@ def _ensure_table() -> None:
                 created_at  TIMESTAMP NOT NULL DEFAULT now()
             )
         """)
+        # has_live_widget marks pages like "market-pulse" that carry a bespoke,
+        # code-built visualization (a live map, a chart, a calculator — anything
+        # beyond a picture) at the top of the page. Those pages don't need Tom/Gary
+        # to attach a hero image to every commentary post underneath — the widget
+        # already serves that role — so the publish-time "upload an image first"
+        # rule (see api_dataviz_content_item) is skipped for them.
+        cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS has_live_widget BOOLEAN NOT NULL DEFAULT FALSE")
         # Seed the 3 pages that existed before pages became self-service, so
         # any content already tagged with these slugs keeps working. "market-pulse"
         # is the live global heat map (see MARKET_PULSE_INDICES below) — seeded here
@@ -226,6 +233,11 @@ def _ensure_table() -> None:
         for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03"),
                              ("market-pulse", "Market Pulse — Global Heat Map")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
+        # Flip the flag on for market-pulse even if the row already existed from
+        # before has_live_widget was added (ON CONFLICT DO NOTHING above wouldn't
+        # touch it) — this UPDATE is what actually makes existing deployments pick
+        # up the new behavior.
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-pulse'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -872,10 +884,10 @@ def alpha_content_delete(item_id: int) -> bool:
 # original 3 pages available.
 
 _SEED_DATAVIZ_PAGES = [
-    {"slug": "viz-1", "label": "Visualisation 01", "author": None},
-    {"slug": "viz-2", "label": "Visualisation 02", "author": None},
-    {"slug": "viz-3", "label": "Visualisation 03", "author": None},
-    {"slug": "market-pulse", "label": "Market Pulse — Global Heat Map", "author": None},
+    {"slug": "viz-1", "label": "Visualisation 01", "author": None, "has_live_widget": False},
+    {"slug": "viz-2", "label": "Visualisation 02", "author": None, "has_live_widget": False},
+    {"slug": "viz-3", "label": "Visualisation 03", "author": None, "has_live_widget": False},
+    {"slug": "market-pulse", "label": "Market Pulse — Global Heat Map", "author": None, "has_live_widget": True},
 ]
 
 
@@ -899,14 +911,15 @@ def _slugify(label: str) -> str:
 def dataviz_pages_list() -> list:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT slug, label, author, created_at FROM dataviz_pages ORDER BY created_at ASC")
+            cur.execute("SELECT slug, label, author, has_live_widget, created_at FROM dataviz_pages ORDER BY created_at ASC")
             return [
-                {"slug": r["slug"], "label": r["label"], "author": r["author"],
+                {"slug": r["slug"], "label": r["label"], "author": r["author"], "has_live_widget": bool(r["has_live_widget"]),
                  "created_at": r["created_at"].isoformat() if r["created_at"] else None}
                 for r in cur.fetchall()
             ]
     data = _load_dataviz_pages_json()
-    return sorted(data["pages"], key=lambda p: p.get("created_at") or "")
+    pages = sorted(data["pages"], key=lambda p: p.get("created_at") or "")
+    return [{**p, "has_live_widget": bool(p.get("has_live_widget"))} for p in pages]
 
 
 def dataviz_page_get(slug: str) -> dict | None:
@@ -916,7 +929,7 @@ def dataviz_page_get(slug: str) -> dict | None:
     return None
 
 
-def dataviz_page_create(label: str, author: str) -> dict:
+def dataviz_page_create(label: str, author: str, has_live_widget: bool = False) -> dict:
     now = _dt.datetime.utcnow()
     base_slug = _slugify(label)
     existing_slugs = {p["slug"] for p in dataviz_pages_list()}
@@ -928,14 +941,15 @@ def dataviz_page_create(label: str, author: str) -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "INSERT INTO dataviz_pages (slug, label, author, created_at) VALUES (%s, %s, %s, %s) "
-                "RETURNING slug, label, author, created_at",
-                (slug, label, author, now),
+                "INSERT INTO dataviz_pages (slug, label, author, has_live_widget, created_at) VALUES (%s, %s, %s, %s, %s) "
+                "RETURNING slug, label, author, has_live_widget, created_at",
+                (slug, label, author, has_live_widget, now),
             )
             row = cur.fetchone()
-            return {"slug": row["slug"], "label": row["label"], "author": row["author"], "created_at": row["created_at"].isoformat()}
+            return {"slug": row["slug"], "label": row["label"], "author": row["author"],
+                     "has_live_widget": bool(row["has_live_widget"]), "created_at": row["created_at"].isoformat()}
     data = _load_dataviz_pages_json()
-    page = {"slug": slug, "label": label, "author": author, "created_at": now.isoformat()}
+    page = {"slug": slug, "label": label, "author": author, "has_live_widget": has_live_widget, "created_at": now.isoformat()}
     data["pages"].append(page)
     _save_dataviz_pages_json(data)
     return page
@@ -3193,7 +3207,9 @@ def api_dataviz_content_item(item_id):
             return jsonify({"error": "Unknown page — create it first"}), 400
         updates["page"] = data["page"]
     if "status" in data and data["status"] in ("draft", "published"):
-        if data["status"] == "published" and not existing.get("image_filename"):
+        target_page = dataviz_page_get(updates.get("page", existing.get("page")))
+        page_has_widget = bool(target_page and target_page.get("has_live_widget"))
+        if data["status"] == "published" and not existing.get("image_filename") and not page_has_widget:
             return jsonify({"error": "Upload an image before publishing"}), 400
         updates["status"] = data["status"]
         updates["published_at"] = _dt.datetime.utcnow() if data["status"] == "published" else None

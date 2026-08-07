@@ -228,7 +228,11 @@ function renderPageManageList() {
   }
   el.innerHTML = DATAVIZ_PAGE_LIST.map(p => `
     <div class="page-manage-row">
-      <div><span class="page-name">${esc(p.label)}</span><span class="page-count">${p.post_count} post${p.post_count === 1 ? '' : 's'}</span></div>
+      <div>
+        <span class="page-name">${esc(p.label)}</span>
+        ${p.has_live_widget ? '<span class="page-count" title="Has a live visualization built into the page — posts here don\'t need an image">⚡ live widget · no image required</span>' : ''}
+        <span class="page-count">${p.post_count} post${p.post_count === 1 ? '' : 's'}</span>
+      </div>
       <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')" ${p.post_count ? 'disabled title="Delete or move its posts first"' : ''}>Delete</button>
     </div>
   `).join('');
@@ -389,6 +393,12 @@ function renderCard(item) {
   const imageTag = item.image_filename
     ? `<img class="card-image-preview" src="/api/dataviz/content/${item.id}/image?ts=${Date.now()}" alt="">`
     : '';
+  // Pages with a live widget (e.g. Market Pulse) already have a visual at the
+  // top of the page — posts under them don't need their own hero image, so the
+  // publish gate below is skipped for those. See has_live_widget on the page.
+  const page = DATAVIZ_PAGE_LIST.find(p => p.slug === item.page);
+  const imageRequired = !(page && page.has_live_widget);
+  const canPublish = !!item.image_filename || !imageRequired;
   return `
     <div class="studio-card">
       <div class="studio-card-head">
@@ -406,11 +416,11 @@ function renderCard(item) {
       <div class="form-field"><label class="form-label">Further information link</label><input class="form-input" type="url" value="${esc(item.link)}" onblur="updateField(${item.id}, 'link', this.value)"></div>
       <div class="studio-card-actions">
         ${item.status === 'draft'
-          ? `<button class="btn-primary-sm" onclick="setStatus(${item.id}, 'published')" ${item.image_filename ? '' : 'disabled title="Upload an image before publishing"'}>Publish</button>`
+          ? `<button class="btn-primary-sm" onclick="setStatus(${item.id}, 'published')" ${canPublish ? '' : 'disabled title="Upload an image before publishing"'}>Publish</button>`
           : `<button class="btn-ghost-sm" onclick="setStatus(${item.id}, 'draft')">Unpublish</button>`}
         <button class="btn-danger-sm" onclick="deleteItem(${item.id})">Delete</button>
       </div>
-      ${item.status === 'draft' && !item.image_filename ? '<div class="form-hint">Upload an image above to enable Publish.</div>' : ''}
+      ${item.status === 'draft' && !canPublish ? '<div class="form-hint">Upload an image above to enable Publish.</div>' : ''}
       <div class="form-msg" id="cardMsg${item.id}"></div>
     </div>
   `;
