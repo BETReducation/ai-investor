@@ -1057,8 +1057,17 @@ def _fetch_market_pulse_live() -> dict:
         "summary": {"tracked": len(markets), "up": up, "down": down, "unchanged": unchanged, "avg_move": avg_move},
     }
     with _market_pulse_lock:
+        # A transient Yahoo hiccup (rate limit, timeout, empty batch) would otherwise
+        # get cached as an empty "markets": [] result and served — grey map, "0
+        # markets tracked" — for the full 5-minute TTL. If this attempt came back
+        # empty and we have a previous good result, keep serving that stale-but-good
+        # data instead. "at" still advances either way, so a sustained outage still
+        # only retries once per TTL window rather than hammering Yahoo every request.
         _market_pulse_cache["at"] = now
-        _market_pulse_cache["data"] = result
+        if markets or _market_pulse_cache["data"] is None:
+            _market_pulse_cache["data"] = result
+        else:
+            result = _market_pulse_cache["data"]
     return result
 
 
