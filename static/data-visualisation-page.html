@@ -50,6 +50,13 @@
    gold-on-navy mockup) but respects the site's normal light/dark toggle —
    see the :root[data-theme="light"] overrides below for the light variant. */
 body.pulse-page .section-badge, body.pulse-page .section-badge::before { color: #d4af6a; background: #d4af6a; }
+/* Dave asked for a bigger map — the normal 820px reading-width column (sized
+   for text posts) was capping it well below what the page has room for.
+   Widened just for this page; post-card text underneath stays narrower (see
+   body.pulse-page .post-card) so commentary doesn't stretch into hard-to-read
+   long lines just because the container grew. */
+body.pulse-page .content-inner { max-width: 1180px; }
+body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: auto; }
 .pulse-wrap { margin-bottom: 40px; }
 .pulse-note {
   display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted);
@@ -264,7 +271,7 @@ function initMarketPulse() {
 
       <div class="pulse-tab-panel active" id="pulseTabSimple">
         <div class="pulse-map-card" style="position:relative;">
-          <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 0 5760 2880" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 180 5760 2200" xmlns="http://www.w3.org/2000/svg"></svg>
           <div class="pulse-tooltip" id="pulseTooltip"></div>
         </div>
         <div class="pulse-legend"><span>Down</span><div class="pulse-legend-bar"></div><span>Up</span></div>
