@@ -85,10 +85,17 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 .pulse-legend { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .pulse-legend-bar { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #f87171, #8892b0, #4ade80); }
 .pulse-tooltip {
-  position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-  padding: 8px 12px; font-size: 12.5px; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 20;
+  /* var(--card) is a near-invisible tint (alpha ~0.03) meant for subtle card
+     backgrounds sitting on the page's own background — fine there, but this
+     tooltip floats on top of vivid, fast-changing map colors, so that alpha let
+     whatever was underneath bleed straight through the text. Its own solid-ish
+     background instead (still a little translucent, per the ask, just not
+     see-through) — dark by default to match this page, with a light-theme swap. */
+  position: absolute; pointer-events: none; background: rgba(15,18,32,0.94); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+  padding: 8px 12px; font-size: 12.5px; color: #f4f6ff; box-shadow: 0 8px 24px rgba(0,0,0,0.35); z-index: 20;
   opacity: 0; transition: opacity 0.12s ease; white-space: nowrap;
 }
+:root[data-theme="light"] .pulse-tooltip { background: rgba(255,255,255,0.94); border-color: rgba(0,0,0,0.1); color: #1a1e2e; }
 .pulse-tooltip.show { opacity: 1; }
 .pulse-tooltip .t-country { font-weight: 700; }
 .pulse-tooltip .t-move { font-family: 'JetBrains Mono', monospace; }
@@ -138,6 +145,7 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 }
 .pulse-ticker-country { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .pulse-ticker-index { font-size: 13px; font-weight: 700; color: var(--text); margin: 2px 0; }
+.pulse-ticker-divider { border-top: 1px solid var(--border); margin: 6px 0; }
 .pulse-ticker-move { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
 .pulse-ticker-move.up { color: #4ade80; }
 .pulse-ticker-move.down { color: #f87171; }
@@ -440,7 +448,14 @@ async function renderPulseDetail(data) {
   if (!wrap.dataset.loaded) {
     const markup = await getPulseCountrySvgMarkup();
     wrap.innerHTML = markup || '<div class="list-empty">Map unavailable right now.</div>';
-    if (markup) wrap.dataset.loaded = '1';
+    if (markup) {
+      wrap.dataset.loaded = '1';
+      // The source map ships a <title> per country (e.g. "United States of
+      // America") that the browser renders as its own native tooltip — it was
+      // stacking on top of (and fighting for space with) our custom one. Strip
+      // them so only the styled tooltip shows; the country name is already in it.
+      wrap.querySelectorAll('title').forEach(t => t.remove());
+    }
   }
   const svg = wrap.querySelector('svg');
   if (!svg) return;
@@ -505,16 +520,26 @@ async function renderPulseDetail(data) {
   // A curated set of majors for the ticker strip, in a fixed reading order
   // rather than sorted by move — this is meant to be scanned like a real
   // exchange ticker, not another gainers/losers ranking (that's what the
-  // leaderboard below the tabs is for).
-  const TICKER_COUNTRIES = ['United States', 'United Kingdom', 'Germany', 'France', 'Japan', 'China', 'India', 'Australia'];
-  const ticker = TICKER_COUNTRIES.map(c => markets.find(m => m.country === c)).filter(Boolean);
-  document.getElementById('pulseTicker').innerHTML = ticker.map(m => `
-    <div class="pulse-ticker-chip">
-      <div class="pulse-ticker-country">${esc(m.country)}</div>
+  // leaderboard below the tabs is for). Several of these countries now track
+  // 2 indices (US, UK, South Korea, Japan, China, India) — grouped into one
+  // chip per country rather than picking just one, both so the card actually
+  // reflects "this market has 2 major indices" and because picking only one
+  // arbitrarily favored whichever happened to be listed first.
+  const TICKER_COUNTRIES = ['United States', 'United Kingdom', 'South Korea', 'Japan', 'China', 'India', 'Germany', 'Australia'];
+  document.getElementById('pulseTicker').innerHTML = TICKER_COUNTRIES.map(country => {
+    const rows = markets.filter(m => m.country === country);
+    if (!rows.length) return '';
+    const indexLines = rows.map(m => `
       <div class="pulse-ticker-index">${esc(m.index)}</div>
       <div class="pulse-ticker-move ${m.pct_change >= 0 ? 'up' : 'down'}">${m.pct_change >= 0 ? '+' : ''}${m.pct_change.toFixed(2)}%</div>
-    </div>
-  `).join('');
+    `).join('<div class="pulse-ticker-divider"></div>');
+    return `
+      <div class="pulse-ticker-chip">
+        <div class="pulse-ticker-country">${esc(country)}</div>
+        ${indexLines}
+      </div>
+    `;
+  }).join('');
 }
 
 function renderPost(item) {

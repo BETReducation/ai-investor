@@ -909,16 +909,22 @@ def _slugify(label: str) -> str:
 
 
 def dataviz_pages_list() -> list:
+    # Pages with a live widget (an actual built visualization, not a placeholder
+    # waiting for posts) sort first on the hub page — Market Pulse is the first
+    # of these, and it should read as the flagship item, not get buried below
+    # the still-empty viz-1/2/3 placeholders just because those were seeded
+    # earlier.
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT slug, label, author, has_live_widget, created_at FROM dataviz_pages ORDER BY created_at ASC")
+            cur.execute("SELECT slug, label, author, has_live_widget, created_at FROM dataviz_pages "
+                        "ORDER BY has_live_widget DESC, created_at ASC")
             return [
                 {"slug": r["slug"], "label": r["label"], "author": r["author"], "has_live_widget": bool(r["has_live_widget"]),
                  "created_at": r["created_at"].isoformat() if r["created_at"] else None}
                 for r in cur.fetchall()
             ]
     data = _load_dataviz_pages_json()
-    pages = sorted(data["pages"], key=lambda p: p.get("created_at") or "")
+    pages = sorted(data["pages"], key=lambda p: (0 if p.get("has_live_widget") else 1, p.get("created_at") or ""))
     return [{**p, "has_live_widget": bool(p.get("has_live_widget"))} for p in pages]
 
 
@@ -1004,10 +1010,14 @@ MARKET_PULSE_INDICES = [
     {"country": "Russia",        "index": "MOEX",              "symbol": "IMOEX.ME", "lat": 61.5,  "lon": 105.3,  "iso2": "ru"},
     {"country": "South Africa",  "index": "JSE Top 40",        "symbol": "^J203.JO", "lat": -29.0, "lon": 24.0,   "iso2": "za"},
     {"country": "Saudi Arabia",  "index": "TASI",              "symbol": "^TASI.SR", "lat": 24.0,  "lon": 45.0,   "iso2": "sa"},
+    # 1306.T (Nomura's TOPIX-tracking ETF) stands in for TOPIX itself — no native
+    # ^TOPX-style symbol returns data on free yfinance, tried several variants.
+    {"country": "Japan",         "index": "TOPIX (ETF proxy)", "symbol": "1306.T",   "lat": 34.7,  "lon": 135.5,  "iso2": "jp"},
     {"country": "Japan",         "index": "Nikkei 225",        "symbol": "^N225",    "lat": 36.2,  "lon": 138.3,  "iso2": "jp"},
     {"country": "China",         "index": "Shenzhen Component","symbol": "399001.SZ","lat": 22.5,  "lon": 114.1,  "iso2": "cn"},
     {"country": "China",         "index": "SSE Composite",     "symbol": "000001.SS","lat": 31.2,  "lon": 121.5,  "iso2": "cn"},
     {"country": "Hong Kong",     "index": "Hang Seng",         "symbol": "^HSI",     "lat": 22.3,  "lon": 114.2,  "iso2": "hk"},
+    {"country": "South Korea",   "index": "KOSDAQ",            "symbol": "^KQ11",    "lat": 37.5,  "lon": 126.7,  "iso2": "kr"},
     {"country": "South Korea",   "index": "KOSPI",             "symbol": "^KS11",    "lat": 36.5,  "lon": 127.9,  "iso2": "kr"},
     {"country": "Taiwan",        "index": "TAIEX",             "symbol": "^TWII",    "lat": 23.7,  "lon": 121.0,  "iso2": "tw"},
     {"country": "India",         "index": "Nifty 50",          "symbol": "^NSEI",    "lat": 19.1,  "lon": 72.9,   "iso2": "in"},
