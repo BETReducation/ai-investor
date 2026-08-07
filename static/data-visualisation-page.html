@@ -71,8 +71,39 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 .pulse-stat-value.up { color: #4ade80; }
 .pulse-stat-value.down { color: #f87171; }
 .pulse-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
-.pulse-map-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
-.pulse-map-svg { width: 100%; height: auto; display: block; }
+.pulse-map-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; position: relative; }
+.pulse-map-svg { width: 100%; height: auto; display: block; touch-action: none; }
+/* Mobile fix: maps are hard to read/tap at phone width, and pinch-to-zoom on a
+   tiny inline card is awkward. An expand button blows the same map up to a
+   fullscreen overlay (still portrait — no forced rotation) where pinch/drag
+   zoom is enabled via attachPinchZoom(). touch-action:none above stops the
+   browser's own page-scroll gesture from fighting our pointer-based pan. */
+.pulse-map-expand-btn {
+  position: absolute; top: 26px; right: 26px; z-index: 5; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(15,18,32,0.7); border: 1px solid rgba(255,255,255,0.18); color: #f4f6ff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 15px; line-height: 1; padding: 0;
+}
+:root[data-theme="light"] .pulse-map-expand-btn { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.12); color: #1a1e2e; }
+.pulse-map-card.expanded {
+  position: fixed; inset: 0; z-index: 2000; margin: 0; border-radius: 0; border: none;
+  display: flex; flex-direction: column; justify-content: center; background: var(--bg);
+  padding: 44px 12px 12px;
+}
+.pulse-map-card.expanded .pulse-map-svg,
+.pulse-map-card.expanded .pulse-detail-map-wrap { touch-action: none; }
+.pulse-map-card.expanded .pulse-map-expand-btn { display: none; }
+.pulse-map-close-btn {
+  display: none; position: absolute; top: 10px; right: 10px; z-index: 6; width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(15,18,32,0.85); border: 1px solid rgba(255,255,255,0.18); color: #f4f6ff; cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 0;
+}
+:root[data-theme="light"] .pulse-map-close-btn { background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.12); color: #1a1e2e; }
+.pulse-map-card.expanded .pulse-map-close-btn { display: block; }
+.pulse-map-zoom-hint {
+  display: none; text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 8px;
+}
+.pulse-map-card.expanded .pulse-map-zoom-hint { display: block; }
+body.pulse-map-lock { overflow: hidden; }
 .pulse-continent { fill: rgba(148,163,196,0.4); stroke: rgba(148,163,196,0.55); stroke-width: 3; vector-effect: non-scaling-stroke; }
 .pulse-map-credit { text-align: right; font-size: 10.5px; color: var(--muted); opacity: 0.6; margin-top: 6px; }
 .pulse-map-credit a { color: inherit; }
@@ -125,7 +156,7 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 
 /* Detailed tab — real per-country choropleth (see world-map-countries.svg) plus
    a sentiment gauge and a major-indices ticker strip. */
-.pulse-detail-map-wrap svg { width: 100%; height: auto; display: block; }
+.pulse-detail-map-wrap svg { width: 100%; height: auto; display: block; touch-action: none; }
 .pulse-detail-map-wrap .landxx { cursor: pointer; transition: opacity 0.1s ease; }
 .pulse-detail-map-wrap .landxx:hover { opacity: 0.75; }
 /* The source file's own default styling hardcodes a white ocean/#e0e0e0 land —
@@ -150,6 +181,28 @@ body.pulse-page .post-card { max-width: 760px; margin-left: auto; margin-right: 
 .pulse-ticker-move { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; }
 .pulse-ticker-move.up { color: #4ade80; }
 .pulse-ticker-move.down { color: #f87171; }
+
+/* List tab — a continent-grouped, scrollable, tap-friendly alternative to the
+   maps. On phones, finding/tapping a specific country dot on a squeezed-down
+   world map is unreliable regardless of zoom, so this is offered as a first-class
+   view (not just a fallback) and is the default tab under 640px. */
+.pulse-list-group { margin-bottom: 18px; }
+.pulse-list-group:last-child { margin-bottom: 0; }
+.pulse-list-group-title {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: #d4af6a; margin-bottom: 8px; padding: 0 2px;
+}
+.pulse-list-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); margin-bottom: 8px;
+}
+.pulse-list-country { font-size: 14px; font-weight: 600; color: var(--text); }
+.pulse-list-index { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.pulse-list-right { text-align: right; flex-shrink: 0; }
+.pulse-list-price { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+.pulse-list-move { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
+.pulse-list-move.up { color: #4ade80; }
+.pulse-list-move.down { color: #f87171; }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
@@ -264,7 +317,11 @@ function pulseRadius(pct) {
   return Math.min(14, 7 + Math.abs(pct) * 2.6) * PULSE_MAP_SCALE;
 }
 
-let pulseActiveTab = 'simple';
+// Phones default to the List tab — tapping a specific country dot on a
+// squeezed-down world map is unreliable at that width no matter how much zoom
+// is added, so a scrollable tap-friendly list is the more usable starting
+// point there. Desktop/tablet still default to the map as before.
+let pulseActiveTab = (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) ? 'list' : 'simple';
 let _pulseLatestData = null; // last successful fetch, so switching tabs (or a lazy detail-tab init) doesn't need to wait on a new request
 
 function initMarketPulse() {
@@ -274,14 +331,18 @@ function initMarketPulse() {
       <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
       <div class="pulse-stats" id="pulseStats"></div>
       <div class="pulse-tabs">
-        <button class="pulse-tab-btn active" id="pulseTabBtnSimple" onclick="switchPulseTab('simple')">Simple</button>
+        <button class="pulse-tab-btn" id="pulseTabBtnSimple" onclick="switchPulseTab('simple')">Simple</button>
         <button class="pulse-tab-btn" id="pulseTabBtnDetailed" onclick="switchPulseTab('detailed')">Detailed</button>
+        <button class="pulse-tab-btn" id="pulseTabBtnList" onclick="switchPulseTab('list')">List</button>
       </div>
 
-      <div class="pulse-tab-panel active" id="pulseTabSimple">
-        <div class="pulse-map-card" style="position:relative;">
+      <div class="pulse-tab-panel" id="pulseTabSimple">
+        <div class="pulse-map-card" id="pulseSimpleMapCard">
+          <button class="pulse-map-expand-btn" type="button" aria-label="Expand map" onclick="toggleMapExpand('pulseSimpleMapCard')">⤢</button>
+          <button class="pulse-map-close-btn" type="button" aria-label="Close expanded map" onclick="toggleMapExpand('pulseSimpleMapCard')">✕</button>
           <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 180 5760 2200" xmlns="http://www.w3.org/2000/svg"></svg>
           <div class="pulse-tooltip" id="pulseTooltip"></div>
+          <div class="pulse-map-zoom-hint">Pinch or drag to zoom · tap ✕ to close</div>
         </div>
         <div class="pulse-legend"><span>Down</span><div class="pulse-legend-bar"></div><span>Up</span></div>
         <div class="pulse-map-credit">Map: <a href="https://commons.wikimedia.org/wiki/File:Equirectangular_projection_world_map_without_borders.svg" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY-SA 4.0</div>
@@ -289,35 +350,135 @@ function initMarketPulse() {
 
       <div class="pulse-tab-panel" id="pulseTabDetailed">
         <div class="pulse-gauge-row" id="pulseGaugeRow"></div>
-        <div class="pulse-map-card" style="position:relative;">
+        <div class="pulse-map-card" id="pulseDetailMapCard">
+          <button class="pulse-map-expand-btn" type="button" aria-label="Expand map" onclick="toggleMapExpand('pulseDetailMapCard')">⤢</button>
+          <button class="pulse-map-close-btn" type="button" aria-label="Close expanded map" onclick="toggleMapExpand('pulseDetailMapCard')">✕</button>
           <div class="pulse-detail-map-wrap" id="pulseDetailMapWrap">Loading map…</div>
           <div class="pulse-tooltip" id="pulseDetailTooltip"></div>
+          <div class="pulse-map-zoom-hint">Pinch or drag to zoom · tap ✕ to close</div>
         </div>
         <div class="pulse-detail-legend" id="pulseDetailLegend"></div>
         <div class="pulse-ticker" id="pulseTicker"></div>
         <div class="pulse-map-credit">Map: <a href="https://commons.wikimedia.org/wiki/File:BlankMap-World-Compact.svg" target="_blank" rel="noopener">Wikimedia Commons</a> (public domain)</div>
       </div>
+
+      <div class="pulse-tab-panel" id="pulseTabList">
+        <div id="pulseListBody"><div class="list-empty">Loading…</div></div>
+      </div>
     </div>
     <div class="pulse-leaders" id="pulseLeaders"></div>
     <hr class="pulse-divider">
   `;
+  switchPulseTab(pulseActiveTab);
   drawPulseContinents();
   fetchPulse();
   if (pulseTimer) clearInterval(pulseTimer);
   pulseTimer = setInterval(fetchPulse, PULSE_REFRESH_MS);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const expanded = document.querySelector('.pulse-map-card.expanded');
+      if (expanded) toggleMapExpand(expanded.id);
+    }
+  });
+  // Single delegated listener (not re-added per render) that closes a pinned
+  // tooltip when the user taps anywhere outside a dot/country — the dot/land
+  // click handlers themselves stopPropagation so this only fires for "elsewhere".
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.pulse-tooltip.show').forEach(t => t.classList.remove('show'));
+  });
 }
 
 async function switchPulseTab(tab) {
   pulseActiveTab = tab;
   document.getElementById('pulseTabBtnSimple').classList.toggle('active', tab === 'simple');
   document.getElementById('pulseTabBtnDetailed').classList.toggle('active', tab === 'detailed');
+  document.getElementById('pulseTabBtnList').classList.toggle('active', tab === 'list');
   document.getElementById('pulseTabSimple').classList.toggle('active', tab === 'simple');
   document.getElementById('pulseTabDetailed').classList.toggle('active', tab === 'detailed');
+  document.getElementById('pulseTabList').classList.toggle('active', tab === 'list');
   // The detailed map (a ~1MB SVG with every country as its own shape) is only
   // fetched the first time someone actually opens the tab, not on page load.
   if (tab === 'detailed' && _pulseLatestData) {
     await renderPulseDetail(_pulseLatestData);
   }
+  if (tab === 'list' && _pulseLatestData) {
+    renderPulseList(_pulseLatestData);
+  }
+}
+
+// ── Fullscreen expand + pinch/drag zoom ─────────────────────────────────────
+// Forcing landscape orientation on tap was considered and dropped — it's
+// unsupported in iOS Safari and jarring even where it works. This is the
+// standard "tap to expand" pattern instead: the map card goes fixed/fullscreen
+// (still portrait) with pinch-to-zoom and drag-to-pan wired directly to it.
+const _pulseZoomState = {}; // cardId -> { scale, x, y, pointers: Map }
+
+function toggleMapExpand(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const expanding = !card.classList.contains('expanded');
+  card.classList.toggle('expanded', expanding);
+  document.body.classList.toggle('pulse-map-lock', expanding);
+  const target = card.querySelector('.pulse-map-svg') || card.querySelector('.pulse-detail-map-wrap svg');
+  if (!target) return;
+  if (expanding) {
+    if (!_pulseZoomState[cardId]) attachPinchZoom(cardId, target);
+    resetPulseZoom(cardId, target);
+  } else {
+    resetPulseZoom(cardId, target);
+  }
+}
+
+function resetPulseZoom(cardId, target) {
+  _pulseZoomState[cardId] = Object.assign(_pulseZoomState[cardId] || { pointers: new Map() }, { scale: 1, x: 0, y: 0 });
+  target.style.transform = '';
+}
+
+function attachPinchZoom(cardId, target) {
+  const state = _pulseZoomState[cardId] = { scale: 1, x: 0, y: 0, pointers: new Map(), pinchStartDist: 0, pinchStartScale: 1 };
+  const apply = () => { target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`; };
+  const dist = pts => { const [a, b] = pts; return Math.hypot(a.x - b.x, a.y - b.y); };
+
+  target.addEventListener('pointerdown', e => {
+    if (!target.closest('.pulse-map-card.expanded')) return;
+    target.setPointerCapture(e.pointerId);
+    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (state.pointers.size === 2) {
+      state.pinchStartDist = dist([...state.pointers.values()]);
+      state.pinchStartScale = state.scale;
+    }
+  });
+  target.addEventListener('pointermove', e => {
+    if (!state.pointers.has(e.pointerId)) return;
+    const prev = state.pointers.get(e.pointerId);
+    state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (state.pointers.size === 2) {
+      const pts = [...state.pointers.values()];
+      const d = dist(pts);
+      if (state.pinchStartDist > 0) {
+        state.scale = Math.min(6, Math.max(1, state.pinchStartScale * (d / state.pinchStartDist)));
+        apply();
+      }
+    } else if (state.pointers.size === 1 && state.scale > 1) {
+      state.x += e.clientX - prev.x;
+      state.y += e.clientY - prev.y;
+      apply();
+    }
+  });
+  const release = e => {
+    state.pointers.delete(e.pointerId);
+    if (state.pointers.size < 2) state.pinchStartDist = 0;
+  };
+  target.addEventListener('pointerup', release);
+  target.addEventListener('pointercancel', release);
+  target.addEventListener('dblclick', () => { state.scale = 1; state.x = 0; state.y = 0; apply(); });
+  // Desktop convenience — wheel to zoom while expanded, same as pinch.
+  target.addEventListener('wheel', e => {
+    if (!target.closest('.pulse-map-card.expanded')) return;
+    e.preventDefault();
+    state.scale = Math.min(6, Math.max(1, state.scale - e.deltaY * 0.0015));
+    apply();
+  }, { passive: false });
 }
 
 // Real land outline (Wikimedia Commons, CC BY-SA 4.0 — credited under the map)
@@ -387,17 +548,29 @@ async function renderPulse(data) {
   }).join('');
   svg.insertAdjacentHTML('beforeend', dotsHtml);
 
+  const showDotTooltip = (dot, clientX, clientY) => {
+    const pct = parseFloat(dot.dataset.pct);
+    const sign = pct >= 0 ? '+' : '';
+    tooltip.innerHTML = `<div class="t-country">${esc(dot.dataset.country)}</div><div>${esc(dot.dataset.index)} · ${dot.dataset.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
+    const cardRect = svg.closest('.pulse-map-card').getBoundingClientRect();
+    tooltip.style.left = `${clientX - cardRect.left + 14}px`;
+    tooltip.style.top = `${clientY - cardRect.top + 14}px`;
+    tooltip.classList.add('show');
+  };
   svg.querySelectorAll('.pulse-market-dot').forEach(dot => {
-    dot.addEventListener('mousemove', e => {
-      const pct = parseFloat(dot.dataset.pct);
-      const sign = pct >= 0 ? '+' : '';
-      tooltip.innerHTML = `<div class="t-country">${esc(dot.dataset.country)}</div><div>${esc(dot.dataset.index)} · ${dot.dataset.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
-      const cardRect = svg.closest('.pulse-map-card').getBoundingClientRect();
-      tooltip.style.left = `${e.clientX - cardRect.left + 14}px`;
-      tooltip.style.top = `${e.clientY - cardRect.top + 14}px`;
-      tooltip.classList.add('show');
-    });
+    dot.addEventListener('mousemove', e => showDotTooltip(dot, e.clientX, e.clientY));
     dot.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+    // Touch devices don't fire mousemove on tap, so the map had no working
+    // interaction on mobile at all before this — tap toggles the tooltip
+    // pinned on that dot; a document-level listener below closes it on tap
+    // elsewhere. click also covers the fallback mouse case.
+    dot.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasShown = tooltip.classList.contains('show') && tooltip.dataset.pinnedFor === dot.dataset.country + dot.dataset.index;
+      if (wasShown) { tooltip.classList.remove('show'); return; }
+      showDotTooltip(dot, e.clientX, e.clientY);
+      tooltip.dataset.pinnedFor = dot.dataset.country + dot.dataset.index;
+    });
   });
 
   const sorted = [...markets].sort((a, b) => b.pct_change - a.pct_change);
@@ -412,6 +585,52 @@ async function renderPulse(data) {
   // Keep the detailed tab's coloring current too if it's the one on screen —
   // otherwise it just picks up _pulseLatestData next time someone opens it.
   if (pulseActiveTab === 'detailed') await renderPulseDetail(data);
+  if (pulseActiveTab === 'list') renderPulseList(data);
+}
+
+// ── List tab — continent-grouped, tap-friendly rows (see .pulse-list-* CSS) ─
+// Rough lon/lat bounding boxes rather than a hand-maintained country→continent
+// table — this tracks whatever markets the API returns (currently ~40 and
+// growing) without needing updates here every time a new market is added.
+// Order matters: Oceania is checked before the wider Asia box since Indonesia/
+// the Pacific rim would otherwise fall inside both.
+function continentFromLonLat(lon, lat) {
+  if (lon >= 110 && lon <= 180 && lat <= -10) return 'Oceania';
+  if (lon >= -170 && lon <= -30 && lat >= 7) return 'North America';
+  if (lon >= -90 && lon <= -30 && lat < 7) return 'South America';
+  if (lon >= -25 && lon <= 40 && lat >= 35) return 'Europe';
+  if (lon >= -20 && lon <= 55 && lat < 35 && lat >= -35) return 'Africa';
+  return 'Asia & Middle East';
+}
+const PULSE_CONTINENT_ORDER = ['Asia & Middle East', 'Europe', 'North America', 'South America', 'Africa', 'Oceania'];
+
+function renderPulseList(data) {
+  const { markets = [] } = data;
+  const body = document.getElementById('pulseListBody');
+  if (!body) return;
+  if (!markets.length) { body.innerHTML = '<div class="list-empty">No market data right now.</div>'; return; }
+
+  const groups = {};
+  markets.forEach(m => {
+    const continent = continentFromLonLat(m.lon, m.lat);
+    (groups[continent] ||= []).push(m);
+  });
+  Object.values(groups).forEach(rows => rows.sort((a, b) => a.country.localeCompare(b.country)));
+
+  const row = m => {
+    const pct = m.pct_change, sign = pct >= 0 ? '+' : '';
+    return `
+      <div class="pulse-list-row">
+        <div><div class="pulse-list-country">${esc(m.country)}</div><div class="pulse-list-index">${esc(m.index)}</div></div>
+        <div class="pulse-list-right"><div class="pulse-list-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div><div class="pulse-list-price">${esc(String(m.price))}</div></div>
+      </div>`;
+  };
+  body.innerHTML = PULSE_CONTINENT_ORDER.filter(c => groups[c]?.length).map(continent => `
+    <div class="pulse-list-group">
+      <div class="pulse-list-group-title">${esc(continent)} · ${groups[continent].length}</div>
+      ${groups[continent].map(row).join('')}
+    </div>
+  `).join('');
 }
 
 // ── Detailed tab — choropleth map, sentiment gauge, major-indices ticker ───
@@ -488,24 +707,41 @@ async function renderPulseDetail(data) {
     });
   });
 
-  // Hover any tracked country for its name/index/move — delegated on the SVG
-  // root since the map has thousands of shapes and only ~30 are ours to color.
-  svg.onmousemove = e => {
-    const el = e.target.closest('.landxx');
-    const iso2 = el && [...el.classList].find(c => byIso2All[c]);
-    const rows = iso2 && byIso2All[iso2];
-    if (!rows) { tooltip.classList.remove('show'); return; }
+  // Hover (or tap, for touch devices — see onclick below) any tracked country
+  // for its name/index/move — delegated on the SVG root since the map has
+  // thousands of shapes and only ~30 are ours to color.
+  const showLandTooltip = (rows, clientX, clientY) => {
     const rowsHtml = rows.map(m => {
       const pct = m.pct_change, sign = pct >= 0 ? '+' : '';
       return `<div>${esc(m.index)} · ${m.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
     }).join('<div class="pulse-tooltip-divider"></div>');
     tooltip.innerHTML = `<div class="t-country">${esc(rows[0].country)}</div>${rowsHtml}`;
     const cardRect = wrap.closest('.pulse-map-card').getBoundingClientRect();
-    tooltip.style.left = `${e.clientX - cardRect.left + 14}px`;
-    tooltip.style.top = `${e.clientY - cardRect.top + 14}px`;
+    tooltip.style.left = `${clientX - cardRect.left + 14}px`;
+    tooltip.style.top = `${clientY - cardRect.top + 14}px`;
     tooltip.classList.add('show');
   };
+  svg.onmousemove = e => {
+    const el = e.target.closest('.landxx');
+    const iso2 = el && [...el.classList].find(c => byIso2All[c]);
+    const rows = iso2 && byIso2All[iso2];
+    if (!rows) { tooltip.classList.remove('show'); return; }
+    showLandTooltip(rows, e.clientX, e.clientY);
+  };
   svg.onmouseleave = () => tooltip.classList.remove('show');
+  // Tap support — mousemove never fires from a touch tap, so the choropleth
+  // had no working interaction on mobile before this.
+  svg.onclick = e => {
+    e.stopPropagation();
+    const el = e.target.closest('.landxx');
+    const iso2 = el && [...el.classList].find(c => byIso2All[c]);
+    const rows = iso2 && byIso2All[iso2];
+    if (!rows) { tooltip.classList.remove('show'); return; }
+    const wasShown = tooltip.classList.contains('show') && tooltip.dataset.pinnedFor === iso2;
+    if (wasShown) { tooltip.classList.remove('show'); return; }
+    showLandTooltip(rows, e.clientX, e.clientY);
+    tooltip.dataset.pinnedFor = iso2;
+  };
 
   // Sentiment gauge — a semicircle from bearish (0) to bullish (100), positioned
   // by the share of tracked markets that are up today.
