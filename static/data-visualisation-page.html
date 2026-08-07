@@ -205,7 +205,9 @@ function pulseColor(pct) {
 // so radii need the same scale-up to read at the same visual size on screen.
 const PULSE_MAP_SCALE = 5.76;
 function pulseRadius(pct) {
-  return Math.min(11, 4 + Math.abs(pct) * 2.6) * PULSE_MAP_SCALE;
+  // Raised the floor from 4 to 7 — near-zero movers (pale, low-contrast color)
+  // were getting lost on the map at the old minimum size.
+  return Math.min(14, 7 + Math.abs(pct) * 2.6) * PULSE_MAP_SCALE;
 }
 
 function initMarketPulse() {
