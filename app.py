@@ -219,8 +219,12 @@ def _ensure_table() -> None:
             )
         """)
         # Seed the 3 pages that existed before pages became self-service, so
-        # any content already tagged with these slugs keeps working.
-        for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03")):
+        # any content already tagged with these slugs keeps working. "market-pulse"
+        # is the live global heat map (see MARKET_PULSE_INDICES below) — seeded here
+        # too so Tom/Gary can post editorial commentary under it via the studio the
+        # same way as any other data-viz page, with the live map rendered above it.
+        for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03"),
+                             ("market-pulse", "Market Pulse — Global Heat Map")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
@@ -871,6 +875,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "viz-1", "label": "Visualisation 01", "author": None},
     {"slug": "viz-2", "label": "Visualisation 02", "author": None},
     {"slug": "viz-3", "label": "Visualisation 03", "author": None},
+    {"slug": "market-pulse", "label": "Market Pulse — Global Heat Map", "author": None},
 ]
 
 
@@ -946,6 +951,101 @@ def dataviz_page_delete(slug: str) -> bool:
     data["pages"] = [p for p in data["pages"] if p["slug"] != slug]
     _save_dataviz_pages_json(data)
     return len(data["pages"]) < before
+
+
+# ── Market Pulse — live global heat map ──────────────────────────────────────
+# Powers the "market-pulse" data-viz page: a world map of major indices, colored
+# by today's % move. Uses yfinance (already a dependency, no new API key needed)
+# rather than Finnhub/etc — one batched download covers every symbol below in a
+# single round trip. lat/lon are the rough geographic center of each market, used
+# by the frontend to place a dot on an equirectangular (x=lon, y=lat) map.
+MARKET_PULSE_INDICES = [
+    {"country": "United States", "index": "S&P 500",        "symbol": "^GSPC",    "lat": 39.8,  "lon": -98.6},
+    {"country": "Canada",        "index": "S&P/TSX",         "symbol": "^GSPTSE",  "lat": 56.1,  "lon": -106.3},
+    {"country": "Mexico",        "index": "IPC",              "symbol": "^MXX",     "lat": 23.6,  "lon": -102.5},
+    {"country": "Brazil",        "index": "Bovespa",          "symbol": "^BVSP",    "lat": -14.2, "lon": -51.9},
+    {"country": "Argentina",     "index": "Merval",           "symbol": "^MERV",    "lat": -38.4, "lon": -63.6},
+    {"country": "United Kingdom","index": "FTSE 100",         "symbol": "^FTSE",    "lat": 55.4,  "lon": -3.4},
+    {"country": "Germany",       "index": "DAX",               "symbol": "^GDAXI",   "lat": 51.2,  "lon": 10.5},
+    {"country": "France",        "index": "CAC 40",            "symbol": "^FCHI",    "lat": 46.6,  "lon": 2.2},
+    {"country": "Italy",         "index": "FTSE MIB",          "symbol": "FTSEMIB.MI","lat": 41.9, "lon": 12.6},
+    {"country": "Spain",         "index": "IBEX 35",           "symbol": "^IBEX",    "lat": 40.5,  "lon": -3.7},
+    {"country": "Netherlands",   "index": "AEX",               "symbol": "^AEX",     "lat": 52.1,  "lon": 5.3},
+    {"country": "Switzerland",   "index": "SMI",               "symbol": "^SSMI",    "lat": 46.8,  "lon": 8.2},
+    {"country": "Sweden",        "index": "OMXS30",            "symbol": "^OMX",     "lat": 60.1,  "lon": 18.6},
+    {"country": "Poland",        "index": "WIG20",             "symbol": "WIG20.WA", "lat": 52.0,  "lon": 19.1},
+    {"country": "Turkey",        "index": "BIST 100",          "symbol": "XU100.IS", "lat": 38.9,  "lon": 35.2},
+    {"country": "Russia",        "index": "MOEX",              "symbol": "IMOEX.ME", "lat": 61.5,  "lon": 105.3},
+    {"country": "South Africa",  "index": "JSE Top 40",        "symbol": "^J203.JO", "lat": -29.0, "lon": 24.0},
+    {"country": "Saudi Arabia",  "index": "TASI",              "symbol": "^TASI.SR", "lat": 24.0,  "lon": 45.0},
+    {"country": "Japan",         "index": "Nikkei 225",        "symbol": "^N225",    "lat": 36.2,  "lon": 138.3},
+    {"country": "China",         "index": "SSE Composite",     "symbol": "000001.SS","lat": 35.9,  "lon": 104.2},
+    {"country": "Hong Kong",     "index": "Hang Seng",         "symbol": "^HSI",     "lat": 22.3,  "lon": 114.2},
+    {"country": "South Korea",   "index": "KOSPI",             "symbol": "^KS11",    "lat": 36.5,  "lon": 127.9},
+    {"country": "Taiwan",        "index": "TAIEX",             "symbol": "^TWII",    "lat": 23.7,  "lon": 121.0},
+    {"country": "India",         "index": "BSE Sensex",        "symbol": "^BSESN",   "lat": 20.6,  "lon": 78.9},
+    {"country": "Singapore",     "index": "STI",               "symbol": "^STI",     "lat": 1.35,  "lon": 103.8},
+    {"country": "Indonesia",     "index": "IDX Composite",     "symbol": "^JKSE",    "lat": -0.8,  "lon": 113.9},
+    {"country": "Malaysia",      "index": "FTSE Bursa KLCI",   "symbol": "^KLSE",    "lat": 4.2,   "lon": 101.9},
+    {"country": "Thailand",      "index": "SET",               "symbol": "^SET.BK",  "lat": 15.9,  "lon": 100.9},
+    {"country": "Australia",     "index": "ASX 200",           "symbol": "^AXJO",    "lat": -25.3, "lon": 133.8},
+    {"country": "New Zealand",   "index": "NZX 50",            "symbol": "^NZ50",    "lat": -41.0, "lon": 174.9},
+]
+
+_MARKET_PULSE_CACHE_TTL_SECONDS = 300  # 5 min — plenty fresh for a daily % move, keeps Yahoo calls modest
+_market_pulse_cache: dict = {"at": 0.0, "data": None}
+_market_pulse_lock = threading.Lock()
+
+
+def _fetch_market_pulse_live() -> dict:
+    """Batch-downloads 2 daily bars for every tracked index and computes each one's
+    %% move from the prior close. Cached for _MARKET_PULSE_CACHE_TTL_SECONDS so a page
+    full of visitors collapses to one Yahoo round trip every 5 minutes rather than one
+    per visitor. Any symbol Yahoo doesn't return data for is silently dropped — better
+    to show 29 markets than fail the whole map over one bad ticker."""
+    now = time.monotonic()
+    with _market_pulse_lock:
+        cached = _market_pulse_cache["data"]
+        if cached is not None and now - _market_pulse_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+            return cached
+
+    symbols = [m["symbol"] for m in MARKET_PULSE_INDICES]
+    try:
+        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+                           threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+
+    markets = []
+    for m in MARKET_PULSE_INDICES:
+        try:
+            df = raw[m["symbol"]] if len(symbols) > 1 else raw
+            closes = df["Close"].dropna()
+            if len(closes) < 2:
+                continue
+            last, prev = float(closes.iloc[-1]), float(closes.iloc[-2])
+            if not prev:
+                continue
+            pct = (last - prev) / prev * 100
+            markets.append({**{k: m[k] for k in ("country", "index", "symbol", "lat", "lon")},
+                             "price": round(last, 2), "pct_change": round(pct, 2)})
+        except Exception:
+            continue  # symbol missing from the batch, no rows, or a bad frame — skip it
+
+    up = sum(1 for x in markets if x["pct_change"] > 0)
+    down = sum(1 for x in markets if x["pct_change"] < 0)
+    unchanged = len(markets) - up - down
+    avg_move = round(sum(x["pct_change"] for x in markets) / len(markets), 2) if markets else 0.0
+
+    result = {
+        "updated_at": _dt.datetime.utcnow().isoformat() + "Z",
+        "markets": markets,
+        "summary": {"tracked": len(markets), "up": up, "down": down, "unchanged": unchanged, "avg_move": avg_move},
+    }
+    with _market_pulse_lock:
+        _market_pulse_cache["at"] = now
+        _market_pulse_cache["data"] = result
+    return result
 
 
 # ── Data Visualisation content store ─────────────────────────────────────────
@@ -3152,6 +3252,11 @@ def api_dataviz_public_content(slug):
     items = dataviz_content_list(status="published", page=slug)
     public = [{**{k: i.get(k) for k in _DATAVIZ_PUBLIC_FIELDS}, "image_url": _dataviz_public_image_url(i)} for i in items]
     return jsonify({"page": slug, "label": page["label"], "items": public})
+
+
+@app.route("/api/dataviz/market-pulse/live", methods=["GET"])
+def api_market_pulse_live():
+    return jsonify(_fetch_market_pulse_live())
 
 
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])

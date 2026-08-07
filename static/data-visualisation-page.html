@@ -46,6 +46,50 @@
   opacity: 0.75; margin-top: -4px;
 }
 
+/* MARKET PULSE — live heat map */
+.pulse-wrap { margin-bottom: 40px; }
+.pulse-note {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted);
+  background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; margin-bottom: 22px;
+}
+.pulse-dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; animation: pulseDot 1.8s ease-in-out infinite; }
+@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.pulse-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+@media (max-width: 640px) { .pulse-stats { grid-template-columns: repeat(2, 1fr); } }
+.pulse-stat { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 10px; text-align: center; }
+.pulse-stat-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 26px; color: var(--text); }
+.pulse-stat-value.up { color: #4ade80; }
+.pulse-stat-value.down { color: #f87171; }
+.pulse-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.pulse-map-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+.pulse-map-svg { width: 100%; height: auto; display: block; }
+.pulse-continent { fill: rgba(136,146,176,0.16); }
+:root[data-theme="light"] .pulse-continent, .pulse-map-card[data-theme="light"] .pulse-continent { fill: rgba(90,100,140,0.12); }
+.pulse-market-dot { cursor: pointer; stroke: rgba(255,255,255,0.5); stroke-width: 0.8; transition: r 0.15s ease; }
+.pulse-market-dot:hover { stroke-width: 1.6; }
+.pulse-legend { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.pulse-legend-bar { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #f87171, #8892b0, #4ade80); }
+.pulse-tooltip {
+  position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 12px; font-size: 12.5px; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 20;
+  opacity: 0; transition: opacity 0.12s ease; white-space: nowrap;
+}
+.pulse-tooltip.show { opacity: 1; }
+.pulse-tooltip .t-country { font-weight: 700; }
+.pulse-tooltip .t-move { font-family: 'JetBrains Mono', monospace; }
+.pulse-tooltip .t-move.up { color: #4ade80; }
+.pulse-tooltip .t-move.down { color: #f87171; }
+.pulse-leaders { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 40px; }
+@media (max-width: 640px) { .pulse-leaders { grid-template-columns: 1fr; } }
+.pulse-leader-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+.pulse-leader-title { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.pulse-leader-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 13.5px; color: var(--text); border-top: 1px solid var(--border); }
+.pulse-leader-row:first-of-type { border-top: none; }
+.pulse-leader-move { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.pulse-leader-move.up { color: #4ade80; }
+.pulse-leader-move.down { color: #f87171; }
+.pulse-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 40px; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -71,6 +115,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
 <section class="content-section">
   <div class="content-inner">
     <a href="/tools/data-visualisation" class="back-link">← Back to all visualisations</a>
+    <div id="pulseContainer"></div>
     <div class="posts-list" id="postsList">
       <div class="list-empty">Loading…</div>
     </div>
@@ -117,13 +162,140 @@ async function loadPage() {
     document.title = `${data.label || 'Data Visualisation'} — Growth Capital Academy`;
     const items = data.items || [];
     if (!items.length) {
-      list.innerHTML = '<div class="list-empty">Nothing published here yet — check back soon.</div>';
-      return;
+      list.innerHTML = '<div class="list-empty">Nothing published here yet — check back soon. In the meantime, the live map above updates itself.</div>';
+    } else {
+      list.innerHTML = items.map(renderPost).join('');
     }
-    list.innerHTML = items.map(renderPost).join('');
+    if (slug === 'market-pulse') {
+      document.querySelector('.hero-sub').textContent = "Every major index worldwide, colored by today's move — refreshes automatically. Commentary on the day's biggest movers below.";
+      initMarketPulse();
+    }
   } catch {
     list.innerHTML = '<div class="list-empty">This page couldn\'t be found.</div>';
   }
+}
+
+// ── Market Pulse — live global heat map ────────────────────────────────────
+const PULSE_REFRESH_MS = 5 * 60 * 1000; // matches the server's own 5-min cache TTL
+let pulseTimer = null;
+
+function pulseColor(pct) {
+  // Clamp to a +/-2% range so a couple of outliers don't wash out the rest of the map.
+  const t = Math.max(-1, Math.min(1, pct / 2));
+  const down = [248, 113, 113], mid = [136, 146, 176], up = [74, 222, 128];
+  const [a, b] = t < 0 ? [mid, down] : [mid, up];
+  const f = Math.abs(t);
+  const rgb = a.map((c, i) => Math.round(c + (b[i] - c) * f));
+  return `rgb(${rgb.join(',')})`;
+}
+
+function pulseRadius(pct) {
+  return Math.min(11, 4 + Math.abs(pct) * 2.6);
+}
+
+function initMarketPulse() {
+  const wrap = document.getElementById('pulseContainer');
+  wrap.innerHTML = `
+    <div class="pulse-wrap">
+      <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
+      <div class="pulse-stats" id="pulseStats"></div>
+      <div class="pulse-map-card" style="position:relative;">
+        <svg class="pulse-map-svg" id="pulseMapSvg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="pulse-tooltip" id="pulseTooltip"></div>
+      </div>
+      <div class="pulse-legend"><span>Down</span><div class="pulse-legend-bar"></div><span>Up</span></div>
+    </div>
+    <div class="pulse-leaders" id="pulseLeaders"></div>
+    <hr class="pulse-divider">
+  `;
+  drawPulseContinents();
+  fetchPulse();
+  if (pulseTimer) clearInterval(pulseTimer);
+  pulseTimer = setInterval(fetchPulse, PULSE_REFRESH_MS);
+}
+
+// Rough continent bounding boxes (lon/lat), rendered as soft rounded blobs —
+// a stylized backdrop for the dots, not a precise atlas.
+const PULSE_CONTINENTS = [
+  { x1: -168, y1: 15,  x2: -55,  y2: 72 },  // North America
+  { x1: -82,  y1: -56, x2: -34,  y2: 13 },  // South America
+  { x1: -11,  y1: 36,  x2: 40,   y2: 71 },  // Europe
+  { x1: -18,  y1: -35, x2: 52,   y2: 37 },  // Africa
+  { x1: 40,   y1: 5,   x2: 150,  y2: 77 },  // Asia
+  { x1: 112,  y1: -44, x2: 154,  y2: -10 }, // Australia
+];
+function lonToX(lon) { return (lon + 180) / 360 * 1000; }
+function latToY(lat) { return (90 - lat) / 180 * 500; }
+
+function drawPulseContinents() {
+  const svg = document.getElementById('pulseMapSvg');
+  const rects = PULSE_CONTINENTS.map(c => {
+    const x = lonToX(c.x1), y = latToY(c.y2);
+    const w = lonToX(c.x2) - x, h = latToY(c.y1) - y;
+    const r = Math.min(w, h) * 0.28;
+    return `<rect class="pulse-continent" x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" ry="${r}"></rect>`;
+  }).join('');
+  svg.innerHTML = rects;
+}
+
+async function fetchPulse() {
+  try {
+    const res = await fetch('/api/dataviz/market-pulse/live');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderPulse(data);
+  } catch {
+    const el = document.getElementById('pulseUpdated');
+    if (el) el.textContent = 'Live prices are temporarily unavailable — showing the last known snapshot.';
+  }
+}
+
+function renderPulse(data) {
+  const { markets = [], summary = {}, updated_at } = data;
+
+  const updatedEl = document.getElementById('pulseUpdated');
+  if (updatedEl && updated_at) {
+    const d = new Date(updated_at);
+    updatedEl.textContent = `Live · updated ${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+  }
+
+  document.getElementById('pulseStats').innerHTML = `
+    <div class="pulse-stat"><div class="pulse-stat-value">${summary.tracked ?? 0}</div><div class="pulse-stat-label">Markets tracked</div></div>
+    <div class="pulse-stat"><div class="pulse-stat-value up">${summary.up ?? 0}</div><div class="pulse-stat-label">Up today</div></div>
+    <div class="pulse-stat"><div class="pulse-stat-value down">${summary.down ?? 0}</div><div class="pulse-stat-label">Down today</div></div>
+    <div class="pulse-stat"><div class="pulse-stat-value ${(summary.avg_move||0) >= 0 ? 'up' : 'down'}">${(summary.avg_move||0) >= 0 ? '+' : ''}${(summary.avg_move ?? 0).toFixed(2)}%</div><div class="pulse-stat-label">Avg move</div></div>
+  `;
+
+  const svg = document.getElementById('pulseMapSvg');
+  const tooltip = document.getElementById('pulseTooltip');
+  drawPulseContinents();
+  const dotsHtml = markets.map(m => {
+    const x = lonToX(m.lon), y = latToY(m.lat);
+    return `<circle class="pulse-market-dot" cx="${x}" cy="${y}" r="${pulseRadius(m.pct_change)}" fill="${pulseColor(m.pct_change)}" data-country="${esc(m.country)}" data-index="${esc(m.index)}" data-pct="${m.pct_change}" data-price="${m.price}"></circle>`;
+  }).join('');
+  svg.insertAdjacentHTML('beforeend', dotsHtml);
+
+  svg.querySelectorAll('.pulse-market-dot').forEach(dot => {
+    dot.addEventListener('mousemove', e => {
+      const pct = parseFloat(dot.dataset.pct);
+      const sign = pct >= 0 ? '+' : '';
+      tooltip.innerHTML = `<div class="t-country">${esc(dot.dataset.country)}</div><div>${esc(dot.dataset.index)} · ${dot.dataset.price}</div><div class="t-move ${pct >= 0 ? 'up' : 'down'}">${sign}${pct.toFixed(2)}%</div>`;
+      const cardRect = svg.closest('.pulse-map-card').getBoundingClientRect();
+      tooltip.style.left = `${e.clientX - cardRect.left + 14}px`;
+      tooltip.style.top = `${e.clientY - cardRect.top + 14}px`;
+      tooltip.classList.add('show');
+    });
+    dot.addEventListener('mouseleave', () => tooltip.classList.remove('show'));
+  });
+
+  const sorted = [...markets].sort((a, b) => b.pct_change - a.pct_change);
+  const gainers = sorted.slice(0, 3);
+  const losers = sorted.slice(-3).reverse();
+  const leaderRow = m => `<div class="pulse-leader-row"><span>${esc(m.country)} <span style="color:var(--muted);">· ${esc(m.index)}</span></span><span class="pulse-leader-move ${m.pct_change >= 0 ? 'up' : 'down'}">${m.pct_change >= 0 ? '+' : ''}${m.pct_change.toFixed(2)}%</span></div>`;
+  document.getElementById('pulseLeaders').innerHTML = `
+    <div class="pulse-leader-card"><div class="pulse-leader-title">Top gainers</div>${gainers.map(leaderRow).join('') || '<div class="pulse-leader-row">—</div>'}</div>
+    <div class="pulse-leader-card"><div class="pulse-leader-title">Top losers</div>${losers.map(leaderRow).join('') || '<div class="pulse-leader-row">—</div>'}</div>
+  `;
 }
 
 function renderPost(item) {
