@@ -185,16 +185,21 @@ body.pulse-map-lock { overflow: hidden; }
    maps. On phones, finding/tapping a specific country dot on a squeezed-down
    world map is unreliable regardless of zoom, so this is offered as a first-class
    view (not just a fallback) and is the default tab under 640px. */
-.pulse-list-group { margin-bottom: 18px; }
+.pulse-list-group { margin-bottom: 10px; }
 .pulse-list-group:last-child { margin-bottom: 0; }
 .pulse-list-group-title {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; user-select: none;
-  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.07em;
-  text-transform: uppercase; color: #d4af6a; margin-bottom: 8px; padding: 8px 2px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: #d4af6a; margin-bottom: 8px; padding: 14px 16px;
+  background: var(--card); border: 1px solid rgba(212,175,106,0.3); border-radius: 12px;
 }
+/* #d4af6a (tuned for the dark card) drops to ~2:1 contrast against a white
+   card — a deeper amber-brown reads properly here without changing the palette
+   on dark, where the paler gold is what was actually asked for. */
+:root[data-theme="light"] .pulse-list-group-title { color: #96650f; border-color: rgba(150,101,15,0.28); }
 .pulse-list-group-chevron {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 28px; height: 28px; border-radius: 50%; background: rgba(212,175,106,0.12);
+  width: 28px; height: 28px; border-radius: 50%; background: rgba(212,175,106,0.16); color: inherit;
   transition: transform 0.15s ease; font-size: 15px;
 }
 .pulse-list-group.collapsed .pulse-list-group-chevron { transform: rotate(-90deg); }
