@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Candlesticks — Beginner — Growth Capital Academy</title>
+<title>Volume — Beginner — Growth Capital Academy</title>
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <script>
   var _t = localStorage.getItem('gca-theme') || 'light';
@@ -39,16 +39,6 @@ p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bo
 p.body-text b { color: var(--text); }
 .example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
 .example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-.example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-@media (max-width: 700px) { .example-grid { grid-template-columns: 1fr; } }
-.example-person { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; }
-.example-person .ep-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
-.example-person .ep-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); text-align: left; }
-.example-person .ep-row:last-child { border-bottom: none; }
-.example-person .ep-row b { color: var(--text); }
-.example-person .ep-total { margin-top: 12px; text-align: center; padding: 14px; border-radius: 10px; background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.22); }
-.example-person .ep-total .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
-.example-person .ep-total .lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
 .fine-print b { color: var(--text); }
 .reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
@@ -87,20 +77,18 @@ p.body-text b { color: var(--text); }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
 
-/* CANDLE DIAGRAM */
-.candle-diagram { display: flex; align-items: flex-end; justify-content: center; gap: 60px; padding: 30px 20px 10px; }
-.candle-col { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.candle-wick { width: 2px; background: var(--muted); }
-.candle-body { width: 34px; border-radius: 3px; }
-.candle-body.bull { background: var(--green); }
-.candle-body.bear { background: #ff3355; }
-.candle-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; }
-.candle-stack { display: flex; flex-direction: column; align-items: center; }
+/* VOLUME BAR DIAGRAM */
+.vol-diagram-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .vol-diagram-grid { grid-template-columns: 1fr; } }
+.vol-diagram { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+.vol-diagram svg { width: 100%; height: auto; display: block; }
+.vol-diagram-label { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-top: 10px; }
+.vol-diagram-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
 
 /* ACTIVITY / BUILDER */
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
-.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
-@media (max-width: 700px) { .calc-grid { grid-template-columns: 1fr; } }
+.calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 760px) { .calc-grid { grid-template-columns: 1fr; } }
 .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
 .calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
 .calc-field input:focus { border-color: var(--purple2); }
@@ -109,8 +97,13 @@ p.body-text b { color: var(--text); }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
 .builder-stage { display: flex; align-items: center; justify-content: center; min-height: 220px; background: var(--bg3); border-radius: 12px; padding: 20px; }
-.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; }
+.builder-stage svg { width: 100%; max-width: 380px; height: auto; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
+.calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; display: block; margin-bottom: 6px; }
 .calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+.preset-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.preset-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); padding: 8px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.preset-btn:hover { border-color: var(--purple2); color: var(--text); }
 
 /* QUIZ */
 .quiz-list { display: flex; flex-direction: column; gap: 24px; }
@@ -167,9 +160,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/beginner#tab-charts">Learn / Beginner / Reading a Chart</a> / 1 of 5</div>
-    <h1 class="hero-title">Candlesticks — Price Action at a <span class="accent">Glance</span></h1>
-    <p class="hero-sub">Every candlestick on a price chart packs four numbers into one shape: the open, high, low, and close. Once you can read a single candle, you can read any chart on this site — or anywhere else.</p>
+    <div class="section-badge"><a href="/learn/beginner#tab-charts">Learn / Beginner / Reading a Chart</a> / 3 of 5</div>
+    <h1 class="hero-title">Volume — How Much <span class="accent">Conviction</span> Is Behind the Move?</h1>
+    <p class="hero-sub">Volume — the bars beneath a chart — shows how many shares changed hands. A price move on high volume carries far more weight than the same move on a quiet, low-volume day.</p>
   </div>
 </div>
 
@@ -177,105 +170,109 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">What Is a Candlestick, Really?</h2>
-    <p class="body-text">A candlestick summarizes price action over one time period — a day, an hour, a minute, whatever the chart is set to — using four numbers: the <b>open</b> (price at the start), the <b>high</b> (the peak), the <b>low</b> (the trough), and the <b>close</b> (price at the end). Together these are often called "OHLC."</p>
-    <p class="body-text">The thick middle part is the <b>body</b>, spanning the open and close. The thin lines above and below are the <b>wicks</b> (or "shadows"), marking the high and low. If the close is above the open, the body is usually shown green or hollow — the price rose over the period. If the close is below the open, it's shown red or filled — the price fell.</p>
+    <h2 class="section-title">What Is Volume, Really?</h2>
+    <p class="body-text">Volume is simply the number of shares (or contracts, for other assets) that changed hands during a time period — a day, an hour, a minute, whatever the chart is set to. Most charting tools plot it as a bar underneath the price candles, one bar per period, so you can see both the price move and the activity behind it at a glance.</p>
+    <p class="body-text">Volume matters because it tells you how much <b>conviction</b> is behind a price move. A stock jumping 5% on triple its normal volume means a lot of buyers and sellers actually showed up and agreed on that new price — that's a real, well-supported move. The same 5% jump on unusually thin volume means far fewer people participated, so the move is easier to reverse and less trustworthy as a signal.</p>
+    <ul style="list-style:none;padding:0;margin:0 0 18px;display:flex;flex-direction:column;gap:10px;">
+      <li class="body-text" style="margin:0;"><b>High volume + big price move:</b> strong conviction — a real, well-supported move worth paying attention to.</li>
+      <li class="body-text" style="margin:0;"><b>Low volume + big price move:</b> weak conviction — few participants agreed on the new price, so it's more likely to fade or reverse.</li>
+      <li class="body-text" style="margin:0;"><b>Rising price on falling volume:</b> a classic warning sign — the trend is running out of willing buyers even as price keeps drifting up.</li>
+    </ul>
 
     <div class="example-card">
-      <h3>🕯️ Anatomy of a Candle</h3>
-      <div class="candle-diagram">
-        <div class="candle-col">
-          <div class="candle-stack">
-            <div class="candle-wick" style="height:24px;"></div>
-            <div class="candle-body bull" style="height:70px;"></div>
-            <div class="candle-wick" style="height:16px;"></div>
-          </div>
-          <div class="candle-label">Bullish (up)<br>Close &gt; Open</div>
+      <h3>📊 Same Price Move, Different Conviction</h3>
+      <div class="vol-diagram-grid">
+        <div class="vol-diagram">
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="10,90 60,80 110,50 160,45 205,20" fill="none" stroke="#4ade80" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <rect x="5" y="118" width="24" height="14" fill="#8892b0"/>
+            <rect x="55" y="114" width="24" height="18" fill="#8892b0"/>
+            <rect x="105" y="70" width="24" height="62" fill="#4ade80"/>
+            <rect x="155" y="60" width="24" height="72" fill="#4ade80"/>
+            <rect x="196" y="100" width="24" height="32" fill="#8892b0"/>
+          </svg>
+          <div class="vol-diagram-label">High-Conviction Rally</div>
+          <div class="vol-diagram-sub">Price rises alongside rising volume bars — real buying interest, not just drift.</div>
         </div>
-        <div class="candle-col">
-          <div class="candle-stack">
-            <div class="candle-wick" style="height:18px;"></div>
-            <div class="candle-body bear" style="height:70px;"></div>
-            <div class="candle-wick" style="height:22px;"></div>
-          </div>
-          <div class="candle-label">Bearish (down)<br>Close &lt; Open</div>
-        </div>
-        <div class="candle-col">
-          <div class="candle-stack">
-            <div class="candle-wick" style="height:46px;"></div>
-            <div class="candle-body bull" style="height:8px;"></div>
-            <div class="candle-wick" style="height:44px;"></div>
-          </div>
-          <div class="candle-label">Doji<br>Open ≈ Close</div>
+        <div class="vol-diagram">
+          <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="10,90 60,80 110,50 160,45 205,20" fill="none" stroke="#eab308" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <rect x="5" y="118" width="24" height="14" fill="#8892b0"/>
+            <rect x="55" y="120" width="24" height="12" fill="#8892b0"/>
+            <rect x="105" y="122" width="24" height="10" fill="#8892b0"/>
+            <rect x="155" y="124" width="24" height="8" fill="#8892b0"/>
+            <rect x="196" y="126" width="24" height="6" fill="#eab308"/>
+          </svg>
+          <div class="vol-diagram-label">Low-Conviction Drift</div>
+          <div class="vol-diagram-sub">Same price rise, but volume keeps shrinking — fewer buyers backing the move each day.</div>
         </div>
       </div>
-      <p class="body-text" style="margin-top:12px;margin-bottom:0;">A long body means a strong, decisive move in one direction. A tiny body with long wicks — a <b>doji</b> — means the price swung around a lot but ended up roughly where it started, often a sign of indecision between buyers and sellers.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Same price chart shape, two very different stories. The first is a move you can have some confidence in; the second is the kind of quiet drift that often stalls or reverses the moment real volume shows up in the other direction.</p>
     </div>
 
     <div class="reinvest-card">
-      <h3>📊 Real Example: Two Famous AAPL Trading Days</h3>
-      <p>March 2020 gave the market two of its most dramatic single-day candles in recent history — one sharply bullish, one sharply bearish. Here's the actual OHLC data for both.</p>
+      <h3>📊 Real Example: AAPL, a High-Volume Crash Day vs. an Ordinary Day</h3>
+      <p>Real AAPL trading data — one day near the start of the March 2020 COVID crash, one perfectly ordinary day a couple of months earlier, both compared to AAPL's average daily volume for late 2019.</p>
       <div class="reinvest-table-wrap">
         <table class="reinvest-table">
           <thead>
-            <tr><th>Date</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Day change</th></tr>
+            <tr><th>Date</th><th>Close</th><th>Day change</th><th>Volume</th><th>vs. average</th></tr>
           </thead>
           <tbody>
-          <tr class="highlight-row"><td>AAPL — Mar 13, 2020</td><td>$264.89</td><td>$279.92</td><td>$252.95</td><td>$277.97</td><td>+11.98%</td></tr>
-          <tr><td>AAPL — Mar 16, 2020</td><td>$255.94</td><td>$259.08</td><td>$240.00</td><td>$242.21</td><td>-12.86%</td></tr>
+          <tr><td>Avg, Oct–Dec 2019</td><td>—</td><td>—</td><td>~103.4M shares</td><td>1.0x (baseline)</td></tr>
+          <tr class="highlight-row"><td>Jan 7, 2020</td><td>$74.60</td><td>-0.48%</td><td>108.9M shares</td><td>1.05x</td></tr>
+          <tr class="highlight-row"><td>Mar 12, 2020</td><td>$62.06</td><td>-3.02%</td><td>418.5M shares</td><td>4.05x</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="reinvest-note">On Mar 13, AAPL opened at $264.89 and closed at $277.97 — a large green body — with a high of $279.92 and a low of $252.95 forming the wicks. Three trading days later, on Mar 16, it opened at $255.94 and closed at $242.21 — a large red body — as the market swung the other way during the early COVID-19 sell-off. Same stock, same size of move, opposite direction: exactly what a candle's color is built to show you at a glance.</p>
+      <p class="reinvest-note">On Jan 7, 2020, AAPL barely moved (-0.48%) on almost exactly average volume (1.05x) — an unremarkable, low-conviction day, the kind that happens constantly and means little on its own. On Mar 12, 2020, AAPL fell -3.02% on 418.5 million shares — 4.05x its recent average — as the COVID-19 sell-off intensified. That's a real, high-conviction move: an enormous number of investors were actively agreeing that AAPL's price needed to reset, not just a handful of traders nudging it around.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Candlesticks</h3>
+    <h3 class="subhead">5 Things to Know About Volume</h3>
     <ol class="num-checklist">
-      <li><b>Every candle encodes four numbers — open, high, low, close</b> — regardless of whether the period is a minute, an hour, a day, or a month.</li>
-      <li><b>The body shows open-to-close movement; the wicks show the full high-to-low range</b> — a candle can have a small body but huge wicks if price swung wildly before settling.</li>
-      <li><b>Green/hollow means the close was above the open; red/filled means the close was below the open</b> — color conventions vary by platform, so always check the legend.</li>
-      <li><b>A long body signals conviction; a tiny body (a doji) signals indecision</b> between buyers and sellers during that period.</li>
-      <li><b>One candle alone rarely tells the full story</b> — it's most useful in the context of the candles around it, which is what trend lines and moving averages help reveal.</li>
+      <li><b>Volume confirms a move; it rarely predicts one on its own</b> — treat a volume spike as supporting evidence for a price move you're already looking at, not a standalone trading signal.</li>
+      <li><b>Compare volume to its own recent average, not to a fixed number</b> — 50 million shares is huge for a small-cap stock and nothing for a mega-cap like Apple. What matters is the multiple versus that stock's own normal volume.</li>
+      <li><b>Breakouts on low volume are more likely to fail</b> — a price punching through a trend line or resistance level needs volume behind it to be believable; a quiet breakout often snaps back.</li>
+      <li><b>Volume tends to spike around news</b> — earnings, product launches, economic data — because that's when the most people are reassessing what a stock is worth at once.</li>
+      <li><b>A rising price on shrinking volume is a classic warning sign</b> — it suggests fewer and fewer buyers are willing to keep pushing the price up, even as it keeps drifting higher.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading a Candle</h3>
+    <h3 class="subhead">4 Things to Check When Reading Volume</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📏 Compare Body to Wicks</h4>
+        <h4>📏 Compare to the Recent Average</h4>
         <ul>
-          <li>A big body relative to its wicks suggests a strong, one-directional move.</li>
-          <li>Long wicks with a small body suggest the price was pushed back the other way before the period closed.</li>
-          <li>Neither shape predicts what happens next on its own.</li>
+          <li>Most charting tools can show a 20- or 50-day average volume line — use it as your baseline.</li>
+          <li>A day at 2-4x average volume is genuinely unusual and worth a closer look.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🎨 Check the Color Convention</h4>
+        <h4>🔍 Check Volume at Breakouts</h4>
         <ul>
-          <li>Most platforms use green/red, but some use hollow/filled or blue/black instead.</li>
-          <li>Always confirm the legend before reading a new chart tool.</li>
-          <li>Color always maps to close vs. open — never anything more exotic than that.</li>
+          <li>A trend line break on high volume is far more credible than one on a quiet day.</li>
+          <li>Low-volume breakouts fail more often than they hold.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🕰️ Note the Timeframe</h4>
+        <h4>📉 Watch for Divergence</h4>
         <ul>
-          <li>A single daily candle and a single 1-minute candle look identical but represent wildly different amounts of information.</li>
-          <li>Match the timeframe to your own time horizon as an investor.</li>
+          <li>Price making new highs while volume trends lower is a classic early warning sign.</li>
+          <li>It doesn't guarantee a reversal, but it's worth paying attention to.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔍 Zoom Out Before Concluding Anything</h4>
+        <h4>📰 Expect Spikes Around News</h4>
         <ul>
-          <li>One dramatic candle, like AAPL's March 2020 swings, is a data point, not a forecast.</li>
-          <li>Look at the surrounding candles — that's what trend lines and moving averages are for.</li>
+          <li>Earnings reports, major announcements, and economic data releases routinely cause 3-5x normal volume.</li>
+          <li>Don't mistake a predictable news-driven spike for something unusual on its own.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> the AAPL prices above are unadjusted for Apple's later 4-for-1 stock split (August 2020), which is why they look higher than AAPL's price today. Candlestick shapes describe what already happened — they don't guarantee what happens next.
+      <b>Worth knowing:</b> volume tells you how many people participated in a move, not which direction it will go next. High volume can accompany a genuine reversal just as easily as a continuation — pair it with the trend and price action around it rather than reading it alone.
     </div>
   </div>
 </section>
@@ -284,45 +281,39 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Build a Candle</h2>
-    <p class="section-desc">Enter your own open, high, low, and close and watch the candlestick draw itself — a fast way to build an intuition for how the shape relates to the numbers.</p>
+    <h2 class="section-title">Try It Yourself: Rate the Conviction</h2>
+    <p class="section-desc">Enter a day's price change, its volume, and the stock's normal average volume — see how much conviction the move carries.</p>
 
     <div class="calc-box">
+      <div class="preset-row">
+        <button class="preset-btn" onclick="loadVolPreset('crash')">Load Mar 12, 2020 (Crash Day)</button>
+        <button class="preset-btn" onclick="loadVolPreset('quiet')">Load Jan 7, 2020 (Quiet Day)</button>
+        <button class="preset-btn" onclick="loadVolPreset('breakout')">Load Weak Breakout Example</button>
+      </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="candleOpen">Open ($)</label>
-          <input type="number" id="candleOpen" value="264.89" step="0.01">
+          <label for="volPct">Price change (%)</label>
+          <input type="number" id="volPct" value="-3.02" step="0.01">
         </div>
         <div class="calc-field">
-          <label for="candleHigh">High ($)</label>
-          <input type="number" id="candleHigh" value="279.92" step="0.01">
+          <label for="volShares">Day's volume (millions)</label>
+          <input type="number" id="volShares" value="418.5" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="candleLow">Low ($)</label>
-          <input type="number" id="candleLow" value="252.95" step="0.01">
-        </div>
-        <div class="calc-field">
-          <label for="candleClose">Close ($)</label>
-          <input type="number" id="candleClose" value="277.97" step="0.01">
+          <label for="volAvg">Normal average volume (millions)</label>
+          <input type="number" id="volAvg" value="103.4" step="0.1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="drawCandle()">Draw My Candle →</button>
+        <button class="calc-btn" onclick="rateConviction()">Rate This Move →</button>
       </div>
 
-      <div class="calc-results visible" id="candleResults">
+      <div class="calc-results visible" id="volResults">
         <div class="builder-stage">
-          <div class="candle-col">
-            <div class="candle-stack">
-              <div class="candle-wick" id="candleWickTop" style="height:20px;"></div>
-              <div class="candle-body bull" id="candleBody" style="height:70px;"></div>
-              <div class="candle-wick" id="candleWickBottom" style="height:20px;"></div>
-            </div>
-            <div class="candle-label" id="candleLabel" style="margin-top:14px;">Bullish · Close &gt; Open</div>
-          </div>
+          <svg viewBox="0 0 300 160" id="volSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <div class="calc-callout" id="candleCallout"></div>
-        <p class="calc-note">Model: the body's height is scaled to the open/close gap, and the wicks are scaled to the high/low relative to the body — both proportional to the full high-low range, so shapes stay comparable across different price levels.</p>
+        <div class="calc-callout" id="volCallout"></div>
+        <p class="calc-note">Model: volume multiple = day's volume ÷ normal average volume. Below 1.5x is treated as ordinary, 1.5x-3x as elevated, above 3x as a genuine spike — combined with the size of the price move to rate overall conviction. A real trading decision should weigh more than just these two numbers.</p>
       </div>
     </div>
   </div>
@@ -341,59 +332,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What four numbers does a single candlestick represent?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. What does trading volume measure?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Volume, price, time, and ticker</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Only the open and close</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Open, high, low, and close ("OHLC")</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> High, low, average, and median</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The percentage a stock's price moved that day</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The number of shares (or contracts) that changed hands in a period</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The number of unique investors who own the stock</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The average price paid across the trading day</label>
         </div>
-        <div class="quiz-explain">Every candlestick packs the open, high, low, and close for its time period into one shape — commonly abbreviated "OHLC."</div>
+        <div class="quiz-explain">Volume is simply the count of shares (or contracts) traded during a period — it says nothing about price on its own, which is why it's shown as a separate bar beneath the price chart.</div>
       </div>
 
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What does the thick "body" of a candlestick represent?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. A stock rises 5% on unusually low volume. What does that suggest?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The full high-to-low range for the period</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> The range between the open and the close</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The trading volume for the period</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The average price over the period</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The move is extremely reliable and certain to continue</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Nothing — volume has no bearing on how trustworthy a move is</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The move has weak conviction — few participants agreed on the new price, so it's more likely to fade</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The stock is about to be delisted</label>
         </div>
-        <div class="quiz-explain">The body spans open to close. The wicks (thin lines above and below) show the high and low instead.</div>
+        <div class="quiz-explain">A price move on thin volume means relatively few buyers and sellers actually took part, which makes the new price easier to reverse than one backed by heavy participation.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. On March 13, 2020, AAPL opened at $264.89 and closed at $277.97. What color would this candle typically be?</div>
+        <div class="quiz-q-title">3. On Mar 12, 2020, AAPL fell -3.02% on 418.5 million shares, versus its ~103.4 million average. What does that combination represent?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Red or filled, because the price is high</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It depends on the trading volume that day</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Neutral — color doesn't apply to single days</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Green or hollow, because the close was above the open</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> A quiet, unremarkable day</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Below-average volume for AAPL</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> A guarantee that the price would keep falling the next day</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> A high-conviction move — volume ran about 4x normal alongside a real price decline</label>
         </div>
-        <div class="quiz-explain">Close ($277.97) above open ($264.89) means the price rose over the period — that's a bullish, typically green or hollow, candle.</div>
+        <div class="quiz-explain">418.5 million shares was roughly 4.05x AAPL's recent average — a genuine spike accompanying a real price move, which is exactly the high-conviction pattern this lesson describes.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. What does a "doji" — a candle with a tiny body and long wicks on both sides — typically suggest?</div>
+        <div class="quiz-q-title">4. Why is a trend-line breakout on high volume considered more credible than one on low volume?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Indecision — the price swung around but the open and close ended up close together</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> A guaranteed reversal is about to happen</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Trading was halted for that period</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> The stock had zero trading volume</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> More participants actively pushed price through that level, rather than it drifting through on thin trading</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> High volume always means the company reported good news</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Volume has no effect on how a breakout is interpreted</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Low-volume breakouts are actually more reliable than high-volume ones</label>
         </div>
-        <div class="quiz-explain">A doji's long wicks show a lot of movement happened, but the small body means price ended up almost exactly where it started — a classic sign of indecision, not a guaranteed signal.</div>
+        <div class="quiz-explain">A breakout backed by heavy volume shows genuine broad participation in the move, while a low-volume breakout can happen almost by accident and is more prone to snapping back.</div>
       </div>
 
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. Why is it important to check a chart's timeframe before reading its candles?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. What does it mean if a stock's price keeps making new highs while volume trends steadily lower?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> It changes the color convention used</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> It doesn't matter — every candle means the same thing</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> A daily candle and a 1-minute candle can look identical but represent very different amounts of information</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Only daily candles are ever used in practice</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Nothing worth noting — price and volume are unrelated</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> It's a classic warning sign that fewer buyers are backing the rally as it continues</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> It guarantees the stock will crash immediately</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> It means the company is about to be acquired</label>
         </div>
-        <div class="quiz-explain">The shape of a candle only makes sense once you know its timeframe — matching that timeframe to your own investing horizon is part of reading a chart correctly.</div>
+        <div class="quiz-explain">This "volume divergence" — price rising while volume shrinks — suggests the rally is running out of willing buyers, even though it isn't a guarantee of what happens next.</div>
       </div>
     </div>
 
@@ -410,22 +401,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/candlesticks-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/volume-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson — candle anatomy, the AAPL March 2020 example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the conviction concept, the AAPL crash-day vs. quiet-day example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/candlesticks-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/volume-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided, fill-in-the-blank exercises to practice reading OHLC data and identifying candle shapes.</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to compare volume against its average and rate real moves for conviction.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/candlesticks-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/volume-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore candlestick charting in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore volume analysis in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -434,8 +425,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Trend Lines</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can read a single candle, the next step is connecting many of them to see the bigger picture.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Support &amp; Resistance</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can gauge conviction, the next step is spotting the price levels where that conviction tends to turn a trend around.</p>
     <div class="cta-grid">
       <a href="/learn/beginner#tab-charts" class="hub-card">
         <div class="card-icon">📈</div>
@@ -445,8 +436,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </a>
       <a href="/learn/beginner/trend-lines" class="hub-card">
         <div class="card-icon">📐</div>
-        <div class="card-title">Continue to Trend Lines</div>
-        <div class="card-desc">Now that you can read a single candle, connect many of them to see the bigger picture.</div>
+        <div class="card-title">Review Trend Lines</div>
+        <div class="card-desc">Not seen it yet? Go back one lesson in this track.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -478,37 +469,48 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-function drawCandle() {
-  const o = parseFloat(document.getElementById('candleOpen').value);
-  const h = parseFloat(document.getElementById('candleHigh').value);
-  const l = parseFloat(document.getElementById('candleLow').value);
-  const c = parseFloat(document.getElementById('candleClose').value);
-
-  if ([o, h, l, c].some(isNaN) || h < Math.max(o, c) || l > Math.min(o, c) || h < l) {
-    alert('Please check your numbers: the high must be the largest value and the low must be the smallest.');
-    return;
-  }
-
-  const range = h - l || 1;
-  const maxPx = 140;
-  const bodyTop = Math.max(o, c);
-  const bodyBottom = Math.min(o, c);
-  const bodyHeight = Math.max(((bodyTop - bodyBottom) / range) * maxPx, 4);
-  const wickTopHeight = ((h - bodyTop) / range) * maxPx;
-  const wickBottomHeight = ((bodyBottom - l) / range) * maxPx;
-  const bullish = c >= o;
-
-  const body = document.getElementById('candleBody');
-  body.style.height = bodyHeight + 'px';
-  body.className = 'candle-body ' + (bullish ? 'bull' : 'bear');
-  document.getElementById('candleWickTop').style.height = Math.max(wickTopHeight, 2) + 'px';
-  document.getElementById('candleWickBottom').style.height = Math.max(wickBottomHeight, 2) + 'px';
-  document.getElementById('candleLabel').innerHTML = (bullish ? 'Bullish' : 'Bearish') + ' · Close ' + (bullish ? '&gt;' : '&lt;') + ' Open';
-
-  const pctChange = ((c - o) / o) * 100;
-  const callout = document.getElementById('candleCallout');
-  callout.innerHTML = 'Open $' + o.toFixed(2) + ' → Close $' + c.toFixed(2) + ' is a ' + (pctChange >= 0 ? '+' : '') + pctChange.toFixed(2) + '% move, drawn as a ' + (bullish ? 'green/hollow' : 'red/filled') + ' candle. The wicks reach up to the high of $' + h.toFixed(2) + ' and down to the low of $' + l.toFixed(2) + '.';
+const VOL_PRESETS = {
+  crash: { pct: -3.02, vol: 418.5, avg: 103.4 },
+  quiet: { pct: -0.48, vol: 108.9, avg: 103.4 },
+  breakout: { pct: 4.10, vol: 62, avg: 95 },
+};
+function loadVolPreset(kind) {
+  const p = VOL_PRESETS[kind];
+  document.getElementById('volPct').value = p.pct;
+  document.getElementById('volShares').value = p.vol;
+  document.getElementById('volAvg').value = p.avg;
+  rateConviction();
 }
+
+function rateConviction() {
+  const pct = parseFloat(document.getElementById('volPct').value);
+  const vol = parseFloat(document.getElementById('volShares').value);
+  const avg = parseFloat(document.getElementById('volAvg').value);
+  if ([pct, vol, avg].some(isNaN) || avg <= 0) { alert('Please fill in all 3 fields (average volume must be greater than 0).'); return; }
+
+  const mult = vol / avg;
+  const bigMove = Math.abs(pct) >= 2;
+  let verdict, color, desc;
+  if (mult >= 3 && bigMove) { verdict = 'High Conviction'; color = '#4ade80'; desc = `Volume ran ${mult.toFixed(1)}x normal alongside a ${Math.abs(pct).toFixed(2)}% move — a real, well-supported price change with broad participation.`; }
+  else if (mult < 1.5 && bigMove) { verdict = 'Low Conviction — Be Skeptical'; color = '#f87171'; desc = `A ${Math.abs(pct).toFixed(2)}% move on only ${mult.toFixed(1)}x normal volume — relatively few participants backed this, so it's more likely to fade or reverse.`; }
+  else if (mult >= 3 && !bigMove) { verdict = 'Elevated Volume, Small Move'; color = '#eab308'; desc = `Volume spiked to ${mult.toFixed(1)}x normal, but price barely moved (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%) — worth watching for what happens next.`; }
+  else { verdict = 'Ordinary Day'; color = '#8892b0'; desc = `${mult.toFixed(1)}x normal volume and a ${Math.abs(pct).toFixed(2)}% move — nothing unusual here, the kind of day that happens constantly.`; }
+
+  const svg = document.getElementById('volSvg');
+  const barH = Math.min(120, Math.max(6, (mult / 5) * 120));
+  const avgLineY = 130 - (1 / 5) * 120;
+  const barColor = mult >= 3 ? '#4ade80' : mult >= 1.5 ? '#eab308' : '#8892b0';
+  svg.innerHTML = `
+    <line x1="20" y1="${avgLineY}" x2="280" y2="${avgLineY}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 5"/>
+    <text x="284" y="${avgLineY + 4}" font-size="10" fill="var(--muted)" font-family="JetBrains Mono, monospace">avg</text>
+    <rect x="110" y="${130 - barH}" width="60" height="${barH}" rx="4" fill="${barColor}"/>
+    <text x="140" y="148" text-anchor="middle" font-size="12" fill="var(--text)" font-family="JetBrains Mono, monospace">${mult.toFixed(1)}x avg</text>
+  `;
+
+  const callout = document.getElementById('volCallout');
+  callout.innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}`;
+}
+rateConviction();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
@@ -570,12 +572,6 @@ function toggleMobileNav() {
   btn.classList.toggle('active', isOpen);
   btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
-// Mobile dropdown-chevron toggling now lives in /static/js/nav.js
-// (loaded above) — this used to duplicate it, which meant a tap fired
-// BOTH listeners on the same chevron and the two toggles cancelled
-// each other out: the chevron still visually flips (browsers apply a
-// sticky :hover state after a tap on touch devices, which a separate
-// CSS rule keys off), but the dropdown itself never opens.
 window.addEventListener('resize', () => {
   if (window.innerWidth > 900) {
     document.querySelector('.nav-links').classList.remove('open');
