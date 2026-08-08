@@ -1827,6 +1827,121 @@ def extract_structured_docx(file_storage):
     return sections, meta
 
 
+def extract_structured_text(raw_text: str):
+    """The plain-text equivalent of extract_structured_docx(), for the
+    Paste Text and Link upload paths — there's no Word document to read
+    Heading styles from there, so this recognises the same lightweight
+    convention directly as literal characters instead: a line starting
+    with "## " starts a new section, with an optional bracket tag —
+    "[TIP]", "[QUOTE]", "[TABLE]", "[IMAGE]"/"[IMAGE RIGHT]", "[SUBTITLE]",
+    "[SNIPPET]" — right after the "## " picking that section's type. This
+    is exactly the convention an author's AI is instructed to write in
+    (see the "Alpha post" custom-instruction prompt), so pasting its
+    output gets real Tip/Quote colour and a genuine Table section instead
+    of one flat, undifferentiated block of text.
+
+    A bare markdown table with no "[TABLE]" heading above it still becomes
+    its own table section automatically, same rule as auto_section_tables()
+    uses for a non-templated upload.
+
+    Returns (sections, meta) in the exact same shape extract_structured_docx()
+    returns, so both feed the same _serialize_structured_sections(). Images
+    are always None here — plain text can't carry a real picture — but an
+    "[IMAGE]" section is still created with its heading and layout side, so
+    the author only has to upload the actual picture into it afterward
+    rather than build the section from scratch. Returns None if the text
+    has no "## " heading anywhere and no bare table (nothing to structure —
+    caller falls back to normalize_content() as before).
+    """
+    lines = raw_text.replace("\r\n", "\n").split("\n")
+    if not any(re.match(r"^##\s+\S", ln.strip()) for ln in lines):
+        # No deliberate use of the convention at all — leave this text to the
+        # existing normalize_content() + auto_section_tables() path exactly
+        # as before, rather than routing every ordinary paste through here.
+        return None
+
+    def blank_section():
+        return {"type": "normal", "heading": "", "body_lines": [], "rows": None, "image": None, "side": "left"}
+
+    sections = []
+    meta = {"subtitle": None, "snippet": None}
+    cur = blank_section()
+
+    def flush():
+        nonlocal cur
+        if cur["type"].startswith("meta:"):
+            field = cur["type"].split(":", 1)[1]
+            value = (cur["heading"] or "").strip() or "\n".join(cur["body_lines"]).strip()
+            if value:
+                meta[field] = value
+        elif cur["heading"] or cur["body_lines"] or cur["rows"]:
+            sections.append(cur)
+        cur = blank_section()
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        heading_m = re.match(r"^##\s+(.*)$", line.strip())
+        if heading_m:
+            flush()
+            text = heading_m.group(1).strip()
+            m = _HEADING_TAG_RE.match(text)
+            if m:
+                tag = re.sub(r"\s+", " ", m.group(1).upper())
+                remainder = text[m.end():].strip()
+                if tag == "TIP":
+                    cur["type"] = "tip"
+                elif tag == "QUOTE":
+                    cur["type"] = "quote"
+                elif tag == "TABLE":
+                    cur["type"] = "table"
+                elif tag == "SUBTITLE":
+                    cur["type"] = "meta:subtitle"
+                elif tag == "SNIPPET":
+                    cur["type"] = "meta:snippet"
+                elif tag.startswith("IMAGE"):
+                    cur["type"] = "image"
+                    cur["side"] = "right" if "RIGHT" in tag else "left"
+                cur["heading"] = remainder
+            else:
+                # Same heading-carries-onto-the-picture-or-table idea as the
+                # docx path — but here it's simpler: a plain heading with
+                # nothing under it yet just stays as-is; the table branch
+                # below carries it across the same way if a bare table
+                # follows immediately.
+                cur["heading"] = text
+            i += 1
+            continue
+        if _looks_like_table_row(line) and i + 1 < len(lines) and _is_table_separator_row(lines[i + 1]):
+            table_lines = [line, lines[i + 1]]
+            j = i + 2
+            while j < len(lines) and _looks_like_table_row(lines[j]):
+                table_lines.append(lines[j])
+                j += 1
+            rows = [[c.strip() for c in ln.strip().strip("|").split("|")] for ln in [table_lines[0]] + table_lines[2:]]
+            carried_heading = ""
+            if cur["type"] == "table" and cur["rows"] is None:
+                cur["rows"] = rows
+            else:
+                if cur["type"] == "normal" and cur["heading"] and not cur["body_lines"] and not cur["rows"]:
+                    carried_heading = cur["heading"]
+                    cur = blank_section()
+                else:
+                    flush()
+                cur["type"] = "table"
+                cur["heading"] = carried_heading
+                cur["rows"] = rows
+            i = j
+            continue
+        if line.strip():
+            cur["body_lines"].append(line.rstrip())
+        i += 1
+    flush()
+    if not sections and not any(meta.values()):
+        return None
+    return sections, meta
+
+
 def _serialize_structured_sections(sections, upload_image) -> str:
     """Builds the SECTION_JOIN-delimited body string from
     extract_structured_docx() output. `upload_image(bytes, ext) -> url` is
@@ -2898,6 +3013,13 @@ def api_alpha_upload():
             source_kind = "paste"
         else:
             return jsonify({"error": "Provide a file, a link, or pasted text"}), 400
+        if kind == "post" and source_kind in ("paste", "link"):
+            try:
+                result = extract_structured_text(raw_text)
+                if result is not None:
+                    structured_sections, structured_meta = result
+            except Exception:
+                structured_sections = None  # didn't use the "## " convention, or something unexpected in it — fall back below
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
