@@ -114,6 +114,12 @@ body.pulse-map-lock { overflow: hidden; }
 :root[data-theme="light"] .pulse-market-dot { stroke: rgba(20,24,40,0.55); }
 .pulse-legend { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
 .pulse-legend-bar { width: 160px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #f87171, #8892b0, #4ade80); }
+.pulse-legend-size {
+  display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--muted);
+  margin-top: 8px;
+}
+.pulse-legend-size-dots { display: flex; align-items: flex-end; gap: 5px; }
+.pulse-legend-size-dots span { display: block; border-radius: 50%; background: rgba(148,163,196,0.55); }
 .pulse-tooltip {
   /* var(--card) is a near-invisible tint (alpha ~0.03) meant for subtle card
      backgrounds sitting on the page's own background — fine there, but this
@@ -315,9 +321,14 @@ let pulseTimer = null;
 function pulseColor(pct) {
   // Clamp to a +/-2% range so a couple of outliers don't wash out the rest of the map.
   const t = Math.max(-1, Math.min(1, pct / 2));
-  const down = [248, 113, 113], mid = [136, 146, 176], up = [74, 222, 128];
+  const down = [248, 113, 113], mid = [148, 158, 196], up = [74, 222, 128];
   const [a, b] = t < 0 ? [mid, down] : [mid, up];
-  const f = Math.abs(t);
+  // A straight linear blend left small, everyday moves (the Europe cluster is
+  // usually +/-0.3%) sitting almost entirely in the flat gray "mid" tone —
+  // technically correct but reads as dull. Easing the blend with a sub-1
+  // power gets color into those small moves faster while leaving the actual
+  // +/-2% extremes (where f=1 either way) exactly as saturated as before.
+  const f = Math.pow(Math.abs(t), 0.6);
   const rgb = a.map((c, i) => Math.round(c + (b[i] - c) * f));
   return `rgb(${rgb.join(',')})`;
 }
@@ -359,6 +370,10 @@ function initMarketPulse() {
           <div class="pulse-map-zoom-hint">Pinch or drag to zoom · tap ✕ to close</div>
         </div>
         <div class="pulse-legend"><span>Down</span><div class="pulse-legend-bar"></div><span>Up</span></div>
+        <div class="pulse-legend-size">
+          <div class="pulse-legend-size-dots"><span style="width:6px;height:6px;"></span><span style="width:11px;height:11px;"></span><span style="width:16px;height:16px;"></span></div>
+          <span>Circle size = size of today's move</span>
+        </div>
         <div class="pulse-map-credit">Map: <a href="https://commons.wikimedia.org/wiki/File:Equirectangular_projection_world_map_without_borders.svg" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY-SA 4.0</div>
       </div>
 
