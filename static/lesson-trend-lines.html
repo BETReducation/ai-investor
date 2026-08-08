@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trend Lines — Beginner — Growth Capital Academy</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(124,58,237,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--purple2); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple2); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--purple2); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.reinvest-card { margin: 28px 0; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+.reinvest-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.reinvest-card p { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+.reinvest-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.reinvest-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.reinvest-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.reinvest-table th:first-child { text-align: left; }
+.reinvest-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.reinvest-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.reinvest-table tbody tr:nth-child(even) { background: var(--bg3); }
+.reinvest-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.reinvest-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+
+.num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple2); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+
+/* PRACTICAL TIPS GRID */
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin: 0; }
+.tip-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
+.tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+
+/* TREND DIAGRAMS */
+.trend-diagram-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+@media (max-width: 760px) { .trend-diagram-grid { grid-template-columns: 1fr; } }
+.trend-diagram { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 16px; text-align: center; }
+.trend-diagram svg { width: 100%; height: auto; display: block; }
+.trend-diagram-label { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-top: 10px; }
+.trend-diagram-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+
+/* ACTIVITY / BUILDER */
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+@media (max-width: 760px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--purple2); }
+.calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.builder-stage { display: flex; align-items: center; justify-content: center; min-height: 220px; background: var(--bg3); border-radius: 12px; padding: 20px; }
+.builder-stage svg { width: 100%; max-width: 480px; height: auto; }
+.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
+.calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; display: block; margin-bottom: 6px; }
+.calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+.preset-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.preset-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); padding: 8px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.preset-btn:hover { border-color: var(--purple2); color: var(--text); }
+
+/* QUIZ */
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--purple2); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--purple2); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+/* DOWNLOADS */
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(124,58,237,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--purple2); display: flex; align-items: center; gap: 6px; }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--purple2); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js" data-logo="GCA Simple Logo.svg"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/beginner#tab-charts">Learn / Beginner / Reading a Chart</a> / 2 of 5</div>
+    <h1 class="hero-title">Trend Lines — Is It Going Up, Down, or <span class="accent">Sideways</span>?</h1>
+    <p class="hero-sub">Draw a line connecting the highs or lows of a chart and you'll reveal the underlying trend. Markets spend most of their time trending in one direction — spotting it early is half the battle.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">What Is a Trend Line, Really?</h2>
+    <p class="body-text">A trend line is a straight line drawn across a chart connecting a series of <b>swing points</b> — the peaks and troughs price keeps bouncing off. In an <b>uptrend</b>, you connect the swing lows (each low sits above the last). In a <b>downtrend</b>, you connect the swing highs (each high sits below the last). If price isn't reliably making either, it's trading <b>sideways</b> — also called a range.</p>
+    <p class="body-text">The three trend types boil down to a simple pattern-spotting exercise:</p>
+    <ul style="list-style:none;padding:0;margin:0 0 18px;display:flex;flex-direction:column;gap:10px;">
+      <li class="body-text" style="margin:0;"><b>Uptrend:</b> higher highs and higher lows — each rally goes further than the last, and each pullback stops higher than the last one.</li>
+      <li class="body-text" style="margin:0;"><b>Downtrend:</b> lower highs and lower lows — the mirror image. Each bounce fails lower than the last, and each new low goes further down.</li>
+      <li class="body-text" style="margin:0;"><b>Sideways / range:</b> highs and lows that stay roughly level — price oscillates between a ceiling and a floor without a clear direction.</li>
+    </ul>
+
+    <div class="example-card">
+      <h3>📐 The Three Trend Shapes</h3>
+      <div class="trend-diagram-grid">
+        <div class="trend-diagram">
+          <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="10,120 45,90 55,100 90,55 100,68 140,28 150,40 205,10" fill="none" stroke="#4ade80" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <line x1="45" y1="90" x2="150" y2="40" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <circle cx="45" cy="90" r="4" fill="#4ade80"/><circle cx="100" cy="68" r="4" fill="#4ade80"/><circle cx="150" cy="40" r="4" fill="#4ade80"/>
+          </svg>
+          <div class="trend-diagram-label">Uptrend</div>
+          <div class="trend-diagram-sub">Line connects rising swing lows</div>
+        </div>
+        <div class="trend-diagram">
+          <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="10,20 45,45 55,35 90,78 100,65 140,105 150,95 205,128" fill="none" stroke="#ff3355" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <line x1="45" y1="45" x2="150" y2="95" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <circle cx="45" cy="45" r="4" fill="#ff3355"/><circle cx="100" cy="65" r="4" fill="#ff3355"/><circle cx="150" cy="95" r="4" fill="#ff3355"/>
+          </svg>
+          <div class="trend-diagram-label">Downtrend</div>
+          <div class="trend-diagram-sub">Line connects falling swing highs</div>
+        </div>
+        <div class="trend-diagram">
+          <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="10,70 45,40 55,50 90,80 100,65 140,42 150,55 205,68" fill="none" stroke="#8892b0" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <line x1="10" y1="42" x2="205" y2="42" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <line x1="10" y1="80" x2="205" y2="80" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          </svg>
+          <div class="trend-diagram-label">Sideways / Range</div>
+          <div class="trend-diagram-sub">Highs and lows stay roughly level</div>
+        </div>
+      </div>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">A trend line drawn under an uptrend often acts as a floor — a level buyers keep stepping in at — while one drawn over a downtrend often acts as a ceiling. When price finally punches through that line, it's called a <b>breakout</b> (or <b>breakdown</b>) and can signal the trend is changing.</p>
+    </div>
+
+    <div class="reinvest-card">
+      <h3>📊 Real Example: The S&amp;P 500's 2022 Downtrend, Then Its 2022–23 Uptrend</h3>
+      <p>The same index, two clean examples back to back — a textbook downtrend followed by a textbook uptrend, using actual S&amp;P 500 (^GSPC) closing prices.</p>
+      <div class="reinvest-table-wrap">
+        <table class="reinvest-table">
+          <thead>
+            <tr><th>Date</th><th>Close</th><th>Swing type</th><th>Trend</th></tr>
+          </thead>
+          <tbody>
+          <tr class="highlight-row"><td>Jan 3, 2022</td><td>$4,796.56</td><td>Swing high</td><td>—</td></tr>
+          <tr><td>Mar 29, 2022</td><td>$4,631.60</td><td>Lower swing high</td><td>Downtrend</td></tr>
+          <tr><td>Jun 16, 2022</td><td>$3,666.77</td><td>Lower swing low</td><td>Downtrend</td></tr>
+          <tr class="highlight-row"><td>Oct 12, 2022</td><td>$3,577.03</td><td>Swing low (bear-market bottom)</td><td>—</td></tr>
+          <tr><td>Feb 2, 2023</td><td>$4,179.76</td><td>Higher swing high</td><td>Uptrend</td></tr>
+          <tr><td>Jul 31, 2023</td><td>$4,588.96</td><td>Higher swing high</td><td>Uptrend</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="reinvest-note">From its Jan 3, 2022 all-time high of $4,796.56, the S&amp;P 500 formed a lower high on Mar 29 ($4,631.60) before falling to a swing low on Jun 16 ($3,666.77) — a clean downtrend of lower highs and lower lows. After bottoming on Oct 12, 2022 at $3,577.03, it reversed into an uptrend: a higher high by Feb 2, 2023 ($4,179.76), and a higher high still by Jul 31, 2023 ($4,588.96). Same index, same underlying company mix — the only thing that changed was the direction of the swing points.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
+    <h3 class="subhead">5 Things to Know About Trend Lines</h3>
+    <ol class="num-checklist">
+      <li><b>You need at least two swing points to draw a line, but three confirms it</b> — a line touching only two points might just be a coincidence; a third touch is much stronger evidence of a real trend.</li>
+      <li><b>Uptrend lines connect lows; downtrend lines connect highs</b> — draw it on the side price keeps bouncing off, not the side it's moving toward.</li>
+      <li><b>A trend line acting as support or resistance can flip roles once broken</b> — an uptrend line that price falls through often turns into resistance on the way back up, and vice versa.</li>
+      <li><b>Steeper trend lines are less reliable</b> — a very sharp angle is usually unsustainable and more likely to break than a gentle, steady one.</li>
+      <li><b>A "breakout" through a trend line is a signal, not a certainty</b> — prices punch through trend lines and snap back ("false breakouts") often enough that one break alone shouldn't be treated as proof the trend has reversed.</li>
+    </ol>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Things to Check When Reading a Trend</h3>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>🔎 Find the Swing Points First</h4>
+        <ul>
+          <li>Zoom out and look for the obvious peaks and troughs before drawing anything.</li>
+          <li>You need at least two, ideally three, to draw a meaningful line.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>📏 Match the Line to the Direction</h4>
+        <ul>
+          <li>Uptrend → connect the lows underneath price.</li>
+          <li>Downtrend → connect the highs above price.</li>
+          <li>Getting this backwards is the single most common beginner mistake.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🕰️ Check Multiple Timeframes</h4>
+        <ul>
+          <li>A stock can be in a short-term downtrend inside a longer-term uptrend, or vice versa.</li>
+          <li>Always note which timeframe your trend line was drawn on.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>⚠️ Don't Trust a Single Breakout</h4>
+        <ul>
+          <li>Wait for price to close beyond the line, not just poke through it intraday.</li>
+          <li>False breakouts are common — one candle isn't confirmation on its own.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> trend lines are a visual summary of what already happened, not a prediction of what happens next. Two people can draw slightly different lines on the exact same chart — treat them as one input alongside research and a sound long-term plan, not a crystal ball.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Spot the Trend</h2>
+    <p class="section-desc">Enter four prices in time order (or pick a preset) and see the trend classified automatically — a fast way to build an intuition for higher-highs/higher-lows vs. lower-highs/lower-lows.</p>
+
+    <div class="calc-box">
+      <div class="preset-row">
+        <button class="preset-btn" onclick="loadTrendPreset('up')">Load Uptrend Example</button>
+        <button class="preset-btn" onclick="loadTrendPreset('down')">Load Downtrend Example</button>
+        <button class="preset-btn" onclick="loadTrendPreset('sideways')">Load Sideways Example</button>
+      </div>
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="trendP1">Price 1 ($)</label>
+          <input type="number" id="trendP1" value="35.77" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="trendP2">Price 2 ($)</label>
+          <input type="number" id="trendP2" value="38.90" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="trendP3">Price 3 ($)</label>
+          <input type="number" id="trendP3" value="41.80" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="trendP4">Price 4 ($)</label>
+          <input type="number" id="trendP4" value="45.89" step="0.01">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="drawTrend()">Plot My Trend →</button>
+      </div>
+
+      <div class="calc-results visible" id="trendResults">
+        <div class="builder-stage">
+          <svg viewBox="0 0 460 220" id="trendSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="calc-callout" id="trendCallout"></div>
+        <p class="calc-note">Model: with only 4 points, "higher highs and higher lows" is simplified to "every point is higher (or lower) than the one before it." Real charts need several genuine swing points, not just any 4 prices, before a trend line means much.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">1. What defines an uptrend?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Rising trading volume every day</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A single green candlestick</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A pattern of higher highs and higher lows</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Price staying between a fixed ceiling and floor</label>
+        </div>
+        <div class="quiz-explain">An uptrend is defined by the swing points, not any single candle — each rally reaches higher than the last, and each pullback holds above the last one.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">2. When drawing a trend line for a downtrend, which swing points should you connect?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The swing highs</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> The swing lows</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The open prices only</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The closing prices of every single candle</label>
+        </div>
+        <div class="quiz-explain">In a downtrend, price keeps failing at lower and lower highs — connecting those swing highs is what draws the (descending) trend line.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. The S&amp;P 500 closed at $4,796.56 on Jan 3, 2022, then at a lower $4,631.60 on Mar 29, then lower still at $3,666.77 on Jun 16. What does this describe?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> A sideways range</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> An uptrend</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> A single candlestick pattern</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> A downtrend — a series of lower swing highs and lower lows</label>
+        </div>
+        <div class="quiz-explain">Each swing point in that sequence is lower than the last — the textbook definition of a downtrend, which is exactly what the S&amp;P 500 did through the first half of 2022.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">4. What is a "breakout"?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> When a stock is added to an index</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> When price moves decisively through a trend line it had been respecting</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> When trading volume drops to zero</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> A guaranteed signal the trend will now reverse</label>
+        </div>
+        <div class="quiz-explain">A breakout is price punching through a trend line it had been bouncing off — it's a meaningful signal, but "false breakouts" happen often enough that it isn't a guarantee on its own.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. Why should you be cautious about a single intraday break of a trend line?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Trend lines can never be broken, ever</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Intraday prices aren't real prices</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> False breakouts — where price pokes through and then snaps back — are common, so one poke isn't confirmation</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> It always means the trend is accelerating, not reversing</label>
+        </div>
+        <div class="quiz-explain">Price often pokes through a trend line intraday and closes back on the original side — waiting for a confirmed close beyond the line filters out a lot of these false signals.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/trend-lines-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson — the three trend shapes, the S&amp;P 500 downtrend/uptrend example, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/trend-lines-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to classify swing points and practice drawing your own trend lines.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/trend-lines-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore trend analysis and technical charting in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Next Up: Volume</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can spot a trend, the next step is checking how much conviction is really behind it.</p>
+    <div class="cta-grid">
+      <a href="/learn/beginner#tab-charts" class="hub-card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Back to Reading a Chart</div>
+        <div class="card-desc">Review the other four chart-reading building blocks.</div>
+        <div class="card-link">Back to Beginner →</div>
+      </a>
+      <a href="/learn/beginner/candlesticks" class="hub-card">
+        <div class="card-icon">🕯️</div>
+        <div class="card-title">Review Candlesticks</div>
+        <div class="card-desc">Not seen it yet? Start from the beginning of this track.</div>
+        <div class="card-link">Open the lesson →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/tools/data-visualisation">Data Visualisation</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+const TREND_PRESETS = {
+  up: [35.77, 38.90, 41.80, 45.89],       // real S&P 500 2022-23 recovery closes, scaled down
+  down: [47.97, 46.32, 41.09, 36.67],     // real S&P 500 2022 downtrend closes, scaled down
+  sideways: [40.10, 42.30, 39.80, 41.50],
+};
+function loadTrendPreset(kind) {
+  const p = TREND_PRESETS[kind];
+  document.getElementById('trendP1').value = p[0];
+  document.getElementById('trendP2').value = p[1];
+  document.getElementById('trendP3').value = p[2];
+  document.getElementById('trendP4').value = p[3];
+  drawTrend();
+}
+
+function drawTrend() {
+  const vals = [1, 2, 3, 4].map(n => parseFloat(document.getElementById('trendP' + n).value));
+  if (vals.some(isNaN)) { alert('Please fill in all 4 prices.'); return; }
+
+  const rising = vals.every((v, i) => i === 0 || v > vals[i - 1]);
+  const falling = vals.every((v, i) => i === 0 || v < vals[i - 1]);
+  let verdict, color, desc;
+  if (rising) { verdict = 'Uptrend'; color = '#4ade80'; desc = 'Every price is higher than the one before it — higher highs, higher lows.'; }
+  else if (falling) { verdict = 'Downtrend'; color = '#ff3355'; desc = 'Every price is lower than the one before it — lower highs, lower lows.'; }
+  else { verdict = 'Sideways / Range'; color = '#8892b0'; desc = "Price doesn't consistently rise or fall — it's bouncing without a clear direction."; }
+
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const pad = (max - min) * 0.25 || 1;
+  const yFor = v => 190 - ((v - (min - pad)) / ((max + pad) - (min - pad))) * 170;
+  const xs = [40, 173, 306, 440];
+  const pts = vals.map((v, i) => [xs[i], yFor(v)]);
+
+  const svg = document.getElementById('trendSvg');
+  const line = pts.map(p => p.join(',')).join(' ');
+  const dots = pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="${color}"/>`).join('');
+  const trendLine = `<line x1="${pts[0][0]}" y1="${pts[0][1]}" x2="${pts[3][0]}" y2="${pts[3][1]}" stroke="${color}" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.6"/>`;
+  const labels = vals.map((v, i) => `<text x="${xs[i]}" y="210" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="JetBrains Mono, monospace">$${v.toFixed(2)}</text>`).join('');
+  svg.innerHTML = trendLine + `<polyline points="${line}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>` + dots + labels;
+
+  const callout = document.getElementById('trendCallout');
+  callout.innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}`;
+}
+drawTrend();
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLi');
+          if (studioLink) studioLink.style.display = '';
+          if (['tom', 'gary'].includes(data.alpha_role)) {
+            const datavizStudioLi = document.getElementById('navDatavizStudioLi');
+            if (datavizStudioLi) datavizStudioLi.style.display = '';
+          }
+        }
+      }
+    }
+  } catch {}
+})();
+function updateLogos(theme) {}
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gca-theme', next);
+  updateToggleIcon(next); updateLogos(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>
