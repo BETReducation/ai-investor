@@ -127,6 +127,7 @@ LESSON_PAGES = [
     {"slug": "trend-lines", "level": "beginner", "file": "lesson-trend-lines.html", "title": "Trend Lines"},
     {"slug": "volume", "level": "beginner", "file": "lesson-volume.html", "title": "Volume"},
     {"slug": "support-resistance", "level": "beginner", "file": "lesson-support-resistance.html", "title": "Support & Resistance"},
+    {"slug": "moving-averages", "level": "beginner", "file": "lesson-moving-averages.html", "title": "Moving Averages"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
