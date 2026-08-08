@@ -628,10 +628,14 @@ function continentFromLonLat(lon, lat) {
   if (lon >= -170 && lon <= -30 && lat >= 7) return 'North America';
   if (lon >= -90 && lon <= -30 && lat < 7) return 'South America';
   if (lon >= -25 && lon <= 40 && lat >= 35) return 'Europe';
+  // Carved out ahead of the Africa box below — Saudi Arabia (~45,24) and
+  // Israel (~35,31) both fell inside Africa's lon<=55 range and were landing
+  // in the wrong group. This box covers the Middle East explicitly first.
+  if (lon >= 34 && lon <= 60 && lat >= 12 && lat <= 42) return 'Asia & Middle East';
   if (lon >= -20 && lon <= 55 && lat < 35 && lat >= -35) return 'Africa';
   return 'Asia & Middle East';
 }
-const PULSE_CONTINENT_ORDER = ['Asia & Middle East', 'Europe', 'North America', 'South America', 'Africa', 'Oceania'];
+const PULSE_CONTINENT_ORDER = ['North America', 'Europe', 'Asia & Middle East', 'South America', 'Africa', 'Oceania'];
 
 // Collapsed state lives outside renderPulseList so it survives the 5-min
 // auto-refresh re-render (which rebuilds the whole list from scratch) — keyed
