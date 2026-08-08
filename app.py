@@ -1568,6 +1568,23 @@ _HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IM
 _HEADING_STYLE_RE = re.compile(r"^Heading\s*\d", re.IGNORECASE)
 _BLIP_TAG = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
 _R_EMBED_ATTR = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+_CODE_FENCE_LINE_RE = re.compile(r"^\s*`{3,}\s*[A-Za-z]*\s*$")
+
+
+def _strip_code_fence(text: str) -> str:
+    """Strips a leading and/or trailing bare ``` fence line, if the whole
+    paste was wrapped in one — an easy mistake when copying an AI's reply
+    by hand (selecting the text yourself) rather than tapping its dedicated
+    "copy code" button, which is the one that omits the fence. Left in
+    place, a stray ``` line becomes part of the naive title-guesser's first
+    "sentence" (there's no punctuation to stop it) and shows up as its own
+    bogus empty section at the top of the post."""
+    lines = text.split("\n")
+    if lines and _CODE_FENCE_LINE_RE.match(lines[0]):
+        lines = lines[1:]
+    if lines and _CODE_FENCE_LINE_RE.match(lines[-1]):
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
 
 
 def _paragraph_image(paragraph, document):
@@ -3006,10 +3023,10 @@ def api_alpha_upload():
                 except Exception:
                     structured_sections = None  # not a template doc, or unreadable structure — fall back below
         elif (request.form.get("link") or "").strip():
-            raw_text = extract_text_from_url(request.form.get("link").strip())
+            raw_text = _strip_code_fence(extract_text_from_url(request.form.get("link").strip()))
             source_kind = "link"
         elif (request.form.get("paste") or "").strip():
-            raw_text = request.form.get("paste").strip()[:MAX_UPLOAD_TEXT_CHARS]
+            raw_text = _strip_code_fence(request.form.get("paste").strip()[:MAX_UPLOAD_TEXT_CHARS])
             source_kind = "paste"
         else:
             return jsonify({"error": "Provide a file, a link, or pasted text"}), 400
