@@ -1525,24 +1525,29 @@ def auto_section_tables(body: str) -> str:
     return "\n".join(out_lines) if found_any else body
 
 
-# ── Structured Word template ──────────────────────────────────────────────
-# Convention (see the "Alpha Post Template" doc): every section starts with a
-# "Heading 2" paragraph. Plain heading text = a Normal section. A bracket tag
-# at the start of that heading picks a different type — "[TIP] Careful with
-# leverage", "[QUOTE] Warren Buffett", "[TABLE] Key Metrics" (tables are also
-# auto-detected from a real Word table regardless of any heading — see
-# auto_section_tables above, which this mirrors), "[IMAGE LEFT] Our Office" /
-# "[IMAGE RIGHT] Our Office" (the first inline picture in that section becomes
-# the image). Content between one Heading 2 and the next belongs to that
-# section. Keep these tags in sync with stripTypeMarker()'s marker strings in
-# static/alpha-studio.html and static/alpha-post.html.
+# ── Automatic Word-doc formatting ─────────────────────────────────────────
+# Any uploaded .docx is parsed structurally — no special template or
+# convention is required from the author. Any built-in Heading style
+# ("Heading 1".."Heading 9") starts a new Normal section named after that
+# heading; a bracket tag at the start of a heading line — "[TIP] Careful
+# with leverage", "[QUOTE] Warren Buffett", "[TABLE] Key Metrics" — still
+# switches that section's type for authors who know the shorthand, but it's
+# optional, not required. Bold/italic/underline formatting on the words
+# themselves is picked up automatically too (see _run_markup below), and any
+# inline picture found in the body text is auto-promoted into its own Image
+# section (alternating left/right) with the paragraph right after it as the
+# caption — no "[IMAGE]" tag needed. Tables are auto-detected from a real
+# Word table regardless of any heading — see auto_section_tables above,
+# which this mirrors. Keep the type markers in sync with stripTypeMarker()
+# in static/alpha-studio.html and static/alpha-post.html.
 #
-# Two more tags don't create a section at all — they fill the draft's own
+# Two tags don't create a section at all — they fill the draft's own
 # Subtitle/Snippet fields instead: "[SUBTITLE] ..." and "[SNIPPET] ...". Put
 # the text right on the heading line, or leave the heading bare and write it
 # as the paragraph(s) underneath — either works (see flush()'s "meta:" case).
 _TYPE_MARKERS = {"tip": "<!--type:tip-->", "quote": "<!--type:quote-->", "table": "<!--type:table-->"}
 _HEADING_TAG_RE = re.compile(r"^\[(TIP|QUOTE|TABLE|IMAGE\s+LEFT|IMAGE\s+RIGHT|IMAGE|SUBTITLE|SNIPPET)\]\s*", re.IGNORECASE)
+_HEADING_STYLE_RE = re.compile(r"^Heading\s*\d", re.IGNORECASE)
 _BLIP_TAG = "{http://schemas.openxmlformats.org/drawingml/2006/main}blip"
 _R_EMBED_ATTR = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
 
@@ -1564,11 +1569,34 @@ def _paragraph_image(paragraph, document):
     return None, None
 
 
+def _run_markup(paragraph) -> str:
+    """Renders a paragraph's runs to the Studio's plain-text markup
+    (**bold**, _italic_, ++underline++), so formatting an author applied in
+    Word survives the trip into the Studio instead of being flattened to
+    plain text. Each run is wrapped independently rather than merging
+    adjacent same-style runs — slightly more markers in the raw text than a
+    human would type by hand, but it renders identically and is far simpler
+    than reconstructing run boundaries."""
+    parts = []
+    for run in paragraph.runs:
+        t = run.text
+        if not t:
+            continue
+        if run.underline:
+            t = "++" + t + "++"
+        if run.italic:
+            t = "_" + t + "_"
+        if run.bold:
+            t = "**" + t + "**"
+        parts.append(t)
+    return "".join(parts).strip()
+
+
 def extract_structured_docx(file_storage):
-    """Parses a docx built from the section template into (sections, meta),
-    or returns None if the doc has no "Heading 2" paragraph at all (i.e. it
-    wasn't built from the template) — callers should fall back to the plain
-    extract_text_from_upload() + normalize_content() path then.
+    """Parses any uploaded .docx into (sections, meta) — see the module
+    comment above. Returns None only if the document is entirely empty (no
+    text, no headings, no meta tags), in which case the caller falls back to
+    the plain extract_text_from_upload() + normalize_content() path.
 
     sections: list of {type, heading, body_lines: [str, ...],
     rows: [[str,...],...] or None, image: (bytes, ext) or None,
@@ -1588,12 +1616,11 @@ def extract_structured_docx(file_storage):
         return {"type": "normal", "heading": "", "body_lines": [], "rows": None, "image": None, "side": "left"}
 
     children = list(document.element.body.iterchildren())
-    has_heading = any(
-        c.tag.endswith("}p") and DocxParagraph(c, document).style and DocxParagraph(c, document).style.name == "Heading 2"
-        for c in children
-    )
-    if not has_heading:
-        return None
+    auto_image_side = ["left"]  # single-item list so the closure below can flip it
+
+    def next_auto_side():
+        auto_image_side[0] = "right" if auto_image_side[0] == "left" else "left"
+        return auto_image_side[0]
 
     sections = []
     meta = {"subtitle": None, "snippet": None}
@@ -1615,7 +1642,7 @@ def extract_structured_docx(file_storage):
             p = DocxParagraph(child, document)
             style_name = p.style.name if p.style else ""
             text = p.text.strip()
-            if style_name == "Heading 2":
+            if _HEADING_STYLE_RE.match(style_name):
                 flush()
                 m = _HEADING_TAG_RE.match(text)
                 if m:
@@ -1636,15 +1663,45 @@ def extract_structured_docx(file_storage):
                         cur["side"] = "right" if "RIGHT" in tag else "left"
                     cur["heading"] = remainder
                 else:
+                    # A plain heading (no bracket tag) with a picture in the
+                    # body — Word "Insert Picture" then a caption is normal
+                    # authoring, it doesn't mean the author intended a manual
+                    # "[IMAGE]" section — leave this as a Normal section and
+                    # let the auto-promotion below carve the picture out.
                     cur["heading"] = text
                 continue
-            if cur["type"] == "image" and not cur["image"]:
-                img_bytes, img_ext = _paragraph_image(p, document)
-                if img_bytes:
+            img_bytes, img_ext = _paragraph_image(p, document)
+            if img_bytes:
+                if cur["type"] == "image" and not cur["image"]:
+                    # A manual "[IMAGE]"/"[IMAGE RIGHT]" heading is waiting
+                    # for its picture — fill the slot it already opened.
                     cur["image"] = (img_bytes, img_ext)
                     continue
-            if text:
-                cur["body_lines"].append(text)
+                # No guide, no tag — any picture found in ordinary body text
+                # is auto-promoted into its own Image section. Whatever text
+                # came before it keeps its own section; the picture starts a
+                # fresh one, and the paragraph(s) after it become its caption
+                # until the next heading or picture.
+                #
+                # Common case: "Heading, then picture, then caption" with no
+                # body text of its own under that heading — that heading was
+                # clearly introducing the picture, not starting a separate
+                # empty section, so carry it onto the image section instead
+                # of leaving it behind as a stray heading-only Normal one.
+                carried_heading = ""
+                if cur["type"] == "normal" and cur["heading"] and not cur["body_lines"] and not cur["rows"] and not cur["image"]:
+                    carried_heading = cur["heading"]
+                    cur = blank_section()
+                else:
+                    flush()
+                cur["type"] = "image"
+                cur["heading"] = carried_heading
+                cur["side"] = next_auto_side()
+                cur["image"] = (img_bytes, img_ext)
+                continue
+            markup = _run_markup(p)
+            if markup:
+                cur["body_lines"].append(markup)
         elif child.tag.endswith("}tbl"):
             table = DocxTable(child, document)
             rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
@@ -1656,12 +1713,23 @@ def extract_structured_docx(file_storage):
             else:
                 # A table with no preceding "[TABLE]" heading still gets its
                 # own section automatically, same rule as auto_section_tables()
-                # for a non-template upload.
-                flush()
+                # for a non-template upload. As with the image case above, a
+                # heading directly over the table with no body text of its
+                # own was introducing the table, not starting an empty
+                # section — carry it across instead of leaving it stranded.
+                carried_heading = ""
+                if cur["type"] == "normal" and cur["heading"] and not cur["body_lines"] and not cur["rows"] and not cur["image"]:
+                    carried_heading = cur["heading"]
+                    cur = blank_section()
+                else:
+                    flush()
                 cur["type"] = "table"
+                cur["heading"] = carried_heading
                 cur["rows"] = rows
                 flush()
     flush()
+    if not sections and not any(meta.values()):
+        return None
     return sections, meta
 
 
