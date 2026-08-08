@@ -1477,6 +1477,24 @@ def _is_table_separator_row(line: str) -> bool:
     return len(cells) >= 1 and all(re.match(r"^:?-{2,}:?$", c) for c in cells)
 
 
+_LIST_LINE_RE = re.compile(r"^(-\s+|\d+\.\s+)")
+
+
+def _join_body_lines(lines) -> str:
+    """Joins section body lines with a blank line between paragraphs, same
+    as before — except consecutive "- "/"1. " list lines are joined tight
+    (single newline). The Studio's own line-based renderer closes a list on
+    any blank line (see renderPreviewBlocks() in alpha-studio.html), so a
+    blank line between what should be one 1-2-3 list would render it as
+    three separate one-item lists instead."""
+    out = []
+    for i, line in enumerate(lines):
+        if i > 0:
+            out.append("\n" if (_LIST_LINE_RE.match(lines[i - 1]) and _LIST_LINE_RE.match(line)) else "\n\n")
+        out.append(line)
+    return "".join(out)
+
+
 # Matches the SECTION_JOIN / type-marker microsyntax the studio's section
 # editor uses (static/alpha-studio.html — keep in sync with SECTION_JOIN and
 # the type marker patterns there).
@@ -1592,6 +1610,65 @@ def _run_markup(paragraph) -> str:
     return "".join(parts).strip()
 
 
+def _build_list_classifier(document):
+    """Returns classify(paragraph) -> 'bullet' | 'number' | None, so a
+    Word-native list survives as the Studio's own "- "/"1. " line prefixes
+    instead of silently losing its bullets/numbers (a bare paragraph.text
+    never includes them — Word renders list markers from the numbering
+    definition, they're not characters in the paragraph).
+
+    Two authoring patterns need covering:
+      1. A named "List Bullet"/"List Number" paragraph style (applied from
+         the Styles gallery, or by anything scripting a .docx) — cheap
+         string check, no XML needed.
+      2. Direct formatting from clicking Word's own bullet/numbering toolbar
+         buttons, which is the more common real-world case and does *not*
+         set a named style — it attaches a bare numId to the paragraph, and
+         the bullet-vs-number choice only lives in the numbering part's
+         abstractNum definition. Resolved below; wrapped defensively since
+         numbering.xml shape varies and this must never break the upload.
+    """
+    abstract_fmt = {}
+    num_to_abstract = {}
+    try:
+        from docx.oxml.ns import qn
+        root = document.part.numbering_part.element
+        for absnum in root.findall(qn("w:abstractNum")):
+            aid = absnum.get(qn("w:abstractNumId"))
+            lvl0 = absnum.find(qn("w:lvl"))
+            fmt_el = lvl0.find(qn("w:numFmt")) if lvl0 is not None else None
+            abstract_fmt[aid] = fmt_el.get(qn("w:val")) if fmt_el is not None else None
+        for numref in root.findall(qn("w:num")):
+            nid = numref.get(qn("w:numId"))
+            absref = numref.find(qn("w:abstractNumId"))
+            if absref is not None:
+                num_to_abstract[nid] = absref.get(qn("w:val"))
+    except Exception:
+        pass  # No numbering part, or an unexpected shape — direct-numPr paragraphs just won't classify below.
+
+    def classify(paragraph):
+        style_name = paragraph.style.name if paragraph.style else ""
+        if style_name.startswith("List Number"):
+            return "number"
+        if style_name.startswith("List Bullet"):
+            return "bullet"
+        try:
+            pPr = paragraph._p.pPr
+            num_pr = pPr.numPr if pPr is not None else None
+            if num_pr is None or num_pr.numId is None:
+                return None
+            fmt = abstract_fmt.get(num_to_abstract.get(str(num_pr.numId.val)))
+            if fmt == "bullet":
+                return "bullet"
+            if fmt and fmt != "none":
+                return "number"  # decimal, decimalZero, lowerLetter, upperRoman, ...
+            return "bullet"  # Direct numPr with an unrecognised/missing format — still a list, default to the safer marker.
+        except Exception:
+            return None
+
+    return classify
+
+
 def extract_structured_docx(file_storage):
     """Parses any uploaded .docx into (sections, meta) — see the module
     comment above. Returns None only if the document is entirely empty (no
@@ -1622,12 +1699,21 @@ def extract_structured_docx(file_storage):
         auto_image_side[0] = "right" if auto_image_side[0] == "left" else "left"
         return auto_image_side[0]
 
+    classify_list = _build_list_classifier(document)
+    # Tracks a run of consecutive numbered-list paragraphs so they're
+    # renumbered 1, 2, 3... — any paragraph that isn't itself a numbered item
+    # (a heading, a bullet, plain prose) breaks the run and the next numbered
+    # paragraph restarts at 1, same as a reader would expect two separate
+    # lists to look.
+    numbered_run = [0]
+
     sections = []
     meta = {"subtitle": None, "snippet": None}
     cur = blank_section()
 
     def flush():
         nonlocal cur
+        numbered_run[0] = 0  # a section boundary always breaks a numbered-list run
         if cur["type"].startswith("meta:"):
             field = cur["type"].split(":", 1)[1]
             value = (cur["heading"] or "").strip() or "\n".join(cur["body_lines"]).strip()
@@ -1701,6 +1787,14 @@ def extract_structured_docx(file_storage):
                 continue
             markup = _run_markup(p)
             if markup:
+                kind = classify_list(p)
+                if kind == "number":
+                    numbered_run[0] += 1
+                    markup = f"{numbered_run[0]}. {markup}"
+                else:
+                    numbered_run[0] = 0
+                    if kind == "bullet":
+                        markup = f"- {markup}"
                 cur["body_lines"].append(markup)
         elif child.tag.endswith("}tbl"):
             table = DocxTable(child, document)
@@ -1770,7 +1864,7 @@ def _serialize_structured_sections(sections, upload_image) -> str:
             parts.append(chunk)
             continue
         # normal / tip / quote
-        body = "\n\n".join(sec.get("body_lines") or [])
+        body = _join_body_lines(sec.get("body_lines") or [])
         chunk = _TYPE_MARKERS.get(t, "")
         if heading:
             chunk += ("\n" if chunk else "") + "## " + heading
