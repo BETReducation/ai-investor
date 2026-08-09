@@ -1414,6 +1414,19 @@ def extract_text_from_url(url: str) -> str:
     return text[:MAX_UPLOAD_TEXT_CHARS]
 
 
+def _strip_markdown_links(text: str) -> str:
+    """`[label](url)` -> `label`. Title/subtitle are always rendered as plain
+    text (see alpha-post.html), so any markdown-link syntax that survives
+    into them — e.g. because the source sentence had already been through
+    _auto_link_market_xi_assets, or the author pasted already-linked text —
+    would otherwise show up literally as brackets instead of rendering or
+    being dropped. Images (`![alt](url)`) are left alone; that alt text
+    isn't meaningful as standalone title/subtitle text."""
+    if not text:
+        return text
+    return re.sub(r"(?<!!)\[([^\]]+)\]\([^)]*\)", r"\1", text)
+
+
 def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     """Turns raw extracted text into {title, subtitle, topic, snippet, body} for a draft post.
 
@@ -1434,8 +1447,9 @@ def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     """
     text = " ".join(raw_text.split())
     sentences = re.split(r"(?<=[.!?])\s+", text)
-    title = (sentences[0] if sentences else text)[:100].strip() or "Untitled note"
+    title = _strip_markdown_links((sentences[0] if sentences else text))[:100].strip() or "Untitled note"
     subtitle_source = sentences[1] if len(sentences) > 1 else (sentences[0] if sentences else text)
+    subtitle_source = _strip_markdown_links(subtitle_source)
     subtitle = subtitle_source.strip()[:140]
     if len(subtitle_source) > 140:
         subtitle += "…"
@@ -3051,9 +3065,9 @@ def api_alpha_upload():
     # candidates: the first Normal section's own heading for the title, and
     # any explicit "[SUBTITLE]"/"[SNIPPET]" tagged block for those fields.
     if structured_sections and structured_sections[0].get("type") == "normal" and structured_sections[0].get("heading"):
-        normalized["title"] = structured_sections[0]["heading"][:100]
+        normalized["title"] = _strip_markdown_links(structured_sections[0]["heading"])[:100]
     if structured_meta.get("subtitle"):
-        normalized["subtitle"] = structured_meta["subtitle"][:140]
+        normalized["subtitle"] = _strip_markdown_links(structured_meta["subtitle"])[:140]
     if structured_meta.get("snippet"):
         normalized["snippet"] = structured_meta["snippet"][:280]
 
