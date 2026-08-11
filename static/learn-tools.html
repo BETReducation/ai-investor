@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tools — Learn — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* PAGE */
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(251,191,36,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--gold); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(38px, 6vw, 68px); letter-spacing: -0.03em; line-height: 1.08; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--gold); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(28px, 3.5vw, 44px); letter-spacing: -0.03em; line-height: 1.12; color: var(--text); margin-bottom: 12px; text-align: center; }
+.section-desc { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0 auto 48px; text-align: center; }
+
+/* Jump nav */
+.jump-nav { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; flex-wrap: wrap; }
+.jump-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px; padding: 10px 18px; border-radius: 100px; cursor: pointer; text-decoration: none; transition: border-color 0.2s, color 0.2s; display: inline-flex; align-items: center; gap: 7px; }
+.jump-btn:hover { border-color: var(--gold); color: var(--text); }
+
+/* Tool sections */
+.tool-block { background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 40px; margin-bottom: 24px; scroll-margin-top: 90px; }
+.tool-head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 22px; flex-wrap: wrap; }
+.tool-icon { flex-shrink: 0; width: 58px; height: 58px; border-radius: 16px; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.tool-title-wrap { flex: 1; min-width: 200px; }
+.tool-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); margin-bottom: 4px; }
+.tool-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+.tool-open-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; background: var(--gold); color: #241a00; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 8px; text-decoration: none; white-space: nowrap; transition: opacity 0.2s; }
+.tool-open-link:hover { opacity: 0.85; }
+.tool-desc { font-size: 15px; color: var(--muted); line-height: 1.75; margin-bottom: 22px; }
+.tool-desc b { color: var(--text); }
+.howto-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); opacity: 0.6; margin-bottom: 12px; }
+.num-checklist { list-style: none; padding: 0; margin: 0 0 20px; display: flex; flex-direction: column; gap: 13px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 36px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(251,191,36,0.14); border: 1px solid rgba(251,191,36,0.35);
+  color: var(--gold); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+.tool-tip { padding: 14px 18px; border-radius: 12px; background: rgba(0,212,170,0.07); border: 1px solid rgba(0,212,170,0.2); font-size: 13.5px; color: var(--text); line-height: 1.6; }
+.tool-tip b { color: var(--green); }
+
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } .tool-block { padding: 26px; } .tool-head { gap: 14px; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--gold); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Learn / Tools</div>
+    <h1 class="hero-title">Get the Most Out of <span class="accent">Every Tool</span></h1>
+    <p class="hero-sub">Growth Capital Academy has five interactive tools — this page introduces each one and walks through exactly how to use it, so you can jump in with confidence.</p>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner wide">
+    <div class="jump-nav reveal">
+      <a class="jump-btn" href="#tool-signals">📡 Signal Tracker</a>
+      <a class="jump-btn" href="#tool-backtester">🧪 Backtester</a>
+      <a class="jump-btn" href="#tool-portfolio">⚖️ Portfolio Balancer</a>
+      <a class="jump-btn" href="#tool-calculator">🧮 Calculator</a>
+      <a class="jump-btn" href="#tool-dataviz">📊 Data Visualisation</a>
+    </div>
+
+    <!-- SIGNAL TRACKER -->
+    <div class="tool-block reveal" id="tool-signals">
+      <div class="tool-head">
+        <div class="tool-icon">📡</div>
+        <div class="tool-title-wrap">
+          <div class="tool-tag">Tool 1 of 5</div>
+          <div class="tool-title">Signal Tracker</div>
+        </div>
+        <a href="/tools/signals" class="tool-open-link">Open Signal Tracker →</a>
+      </div>
+      <p class="tool-desc">The Signal Tracker turns technical indicators into plain-English buy and sell alerts, then runs a <b>simulated, paper-trading engine</b> so you can watch a strategy play out — with your own capital and risk settings, but with no real money involved.</p>
+      <div class="howto-label">How to use it</div>
+      <ol class="num-checklist">
+        <li><b>Set your starting capital and risk per trade</b> in the left panel, so position sizes are calculated realistically.</li>
+        <li><b>Build a watchlist and choose a timeframe</b> — from 1-minute charts up to weekly candles.</li>
+        <li><b>Press "Run Strategy"</b> to start the simulation. Signals fire live on the chart as conditions are met.</li>
+        <li><b>Watch the Open Positions table</b> to see simulated trades enter and exit, with running P&L.</li>
+        <li><b>Tap the 🔔 bell</b> next to the stats row any time to set price alerts on specific levels you care about.</li>
+        <li><b>Click "Save My Defaults"</b> once you're happy with a setup, so it's ready next time you visit.</li>
+      </ol>
+      <div class="tool-tip"><b>Tip:</b> everything here is simulated, educational paper-trading — it's a safe place to see how a strategy would have behaved before ever risking real money.</div>
+    </div>
+
+    <!-- BACKTESTER -->
+    <div class="tool-block reveal" id="tool-backtester">
+      <div class="tool-head">
+        <div class="tool-icon">🧪</div>
+        <div class="tool-title-wrap">
+          <div class="tool-tag">Tool 2 of 5</div>
+          <div class="tool-title">Backtester</div>
+        </div>
+        <a href="/backtester" class="tool-open-link">Open Backtester →</a>
+      </div>
+      <p class="tool-desc">The Backtester lets you test a trading idea against <b>years of real market history</b> — completely free, with no real money involved — so you can see how it would have performed before you ever put a pound in.</p>
+      <div class="howto-label">How to use it</div>
+      <ol class="num-checklist">
+        <li><b>Type in a symbol</b> (e.g. AAPL or BTC-USD) and pick a date range and candle interval to test over.</li>
+        <li><b>Choose your indicators</b> in Basic mode for a quick RSI-only test, or Detailed mode to combine several indicators with custom parameters.</li>
+        <li><b>Name and save your strategy</b> so you can reload or compare it later.</li>
+        <li><b>Press "Run Backtest"</b> to simulate every trade the strategy would have made over that history.</li>
+        <li><b>Review the results</b> — total return, win rate, and how the strategy's equity curve moved over time.</li>
+        <li><b>Tweak one setting at a time</b> and re-run to see what actually improves the result, rather than guessing.</li>
+      </ol>
+      <div class="tool-tip"><b>Tip:</b> a strategy that worked brilliantly on the last 6 months isn't automatically a good strategy — test across different date ranges, including a downturn, before you trust it.</div>
+    </div>
+
+    <!-- PORTFOLIO BALANCER -->
+    <div class="tool-block reveal" id="tool-portfolio">
+      <div class="tool-head">
+        <div class="tool-icon">⚖️</div>
+        <div class="tool-title-wrap">
+          <div class="tool-tag">Tool 3 of 5</div>
+          <div class="tool-title">Portfolio Balancer</div>
+        </div>
+        <a href="/tools/portfolio" class="tool-open-link">Open Portfolio Balancer →</a>
+      </div>
+      <p class="tool-desc">The Portfolio Balancer is a simple place to track <b>everything you actually own</b> — savings, an ISA, crypto, property, anything — so you can see your total balance, your overall gain or loss, and how your money is spread out, all in one screen.</p>
+      <div class="howto-label">How to use it</div>
+      <ol class="num-checklist">
+        <li><b>Click "+ Add Investment"</b> and fill in a name, some optional details, its initial value, and what it's worth today.</li>
+        <li><b>Watch the donut chart and allocation table update</b> instantly to show how that investment fits into your overall mix.</li>
+        <li><b>Click any investment card</b> to expand it and see its full detail — initial value, total invested, current value, and gain/loss.</li>
+        <li><b>Use "+ Add Funds"</b> whenever you top up an investment with new money — it's tracked separately, so it's never mistaken for profit.</li>
+        <li><b>Use "↻ Update Value"</b> whenever an investment's worth changes, to keep your current value accurate — every change is logged with its date.</li>
+        <li><b>Check the "Balanced Portfolio Value" box</b> on the right — it's simply the sum of every investment's current value, kept up to date automatically.</li>
+      </ol>
+      <div class="tool-tip"><b>Tip:</b> your gain/loss percentage always compares your current value against what you've actually put in (initial value + top-ups) — never against money you just deposited.</div>
+    </div>
+
+    <!-- CALCULATOR -->
+    <div class="tool-block reveal" id="tool-calculator">
+      <div class="tool-head">
+        <div class="tool-icon">🧮</div>
+        <div class="tool-title-wrap">
+          <div class="tool-tag">Tool 4 of 5</div>
+          <div class="tool-title">Calculator</div>
+        </div>
+        <a href="/tools/calculator" class="tool-open-link">Open Calculator →</a>
+      </div>
+      <p class="tool-desc">The Calculator is a set of three focused position-sizing tools in one place — work out exactly <b>how much to risk</b> before you place a trade, instead of guessing.</p>
+      <div class="howto-label">How to use it</div>
+      <ol class="num-checklist">
+        <li><b>Kelly Criterion</b> — enter your account balance, win rate, and average win/loss per trade to get a suggested bet size that balances growth against risk of ruin.</li>
+        <li><b>Calculator (pip/price distance)</b> — pick a currency pair, enter the current price, your target price, and lot size to see the distance to target and its value.</li>
+        <li><b>Risk → Position Size</b> — enter how much you're willing to risk, your currency, and your stop-loss in pips to get a suggested position size and unit count.</li>
+        <li><b>Use the results before you trade</b>, not after — plug in numbers first, then size the position to match what the calculator suggests.</li>
+      </ol>
+      <div class="tool-tip"><b>Tip:</b> the Kelly Criterion can suggest aggressive position sizes — many traders use a fraction (e.g. half-Kelly) rather than the full suggested size to smooth out the ride.</div>
+    </div>
+
+    <!-- DATA VISUALISATION -->
+    <div class="tool-block reveal" id="tool-dataviz">
+      <div class="tool-head">
+        <div class="tool-icon">📊</div>
+        <div class="tool-title-wrap">
+          <div class="tool-tag">Tool 5 of 5</div>
+          <div class="tool-title">Data Visualisation</div>
+        </div>
+        <a href="/tools/data-visualisation" class="tool-open-link">Open Data Visualisation →</a>
+      </div>
+      <p class="tool-desc">Data Visualisation is a growing library of interactive charts and dashboards — like the live global Market Pulse heat map — that turn raw market data into clear, at-a-glance insight, each with editorial commentary from the Alpha team.</p>
+      <div class="howto-label">How to use it</div>
+      <ol class="num-checklist">
+        <li><b>Browse the gallery</b> of available visualisations to see what's currently published.</li>
+        <li><b>Click into any card</b> to open the full chart or dashboard, along with the commentary that accompanies it.</li>
+        <li><b>For live widgets like Market Pulse</b>, hover or interact directly with the chart to explore the underlying data.</li>
+        <li><b>Check back regularly</b> — new visualisations and commentary are published and updated on an ongoing basis.</li>
+      </ol>
+      <div class="tool-tip"><b>Tip:</b> treat the commentary alongside each chart as one perspective, not a signal to act on — use it to sharpen your own thinking about what the data shows.</div>
+    </div>
+
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Ready to Put It Into Practice?</h2>
+    <p class="section-desc">Head back to the Learn hub for structured lessons, or jump straight into a tool.</p>
+    <div class="cta-grid reveal">
+      <a href="/learn" class="hub-card">
+        <div class="card-icon">🎓</div>
+        <div class="card-title">Back to Learn</div>
+        <div class="card-desc">Return to the Learn hub and pick a level — Beginner, Intermediate or Pro.</div>
+        <div class="card-link">Back to Learn →</div>
+      </a>
+      <a href="/tools" class="hub-card">
+        <div class="card-icon">🛠️</div>
+        <div class="card-title">See All Tools</div>
+        <div class="card-desc">View every tool in one place from the main Tools hub.</div>
+        <div class="card-link">Open Tools hub →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/tools/data-visualisation">Data Visualisation</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>

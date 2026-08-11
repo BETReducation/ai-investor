@@ -28,6 +28,7 @@
 '        <li><a href="/learn/beginner">Beginner</a></li>' +
 '        <li><a href="/learn/intermediate">Intermediate</a></li>' +
 '        <li><a href="/learn/pro">Pro</a></li>' +
+'        <li><a href="/learn/tools">Tools</a></li>' +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +

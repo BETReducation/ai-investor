@@ -246,6 +246,7 @@
         <li><a href="/learn/beginner">Beginner</a></li>
         <li><a href="/learn/intermediate">Intermediate</a></li>
         <li><a href="/learn/pro">Pro</a></li>
+        <li><a href="/learn/tools">Tools</a></li>
       </ul>
     </li>
     <li class="has-drop">
@@ -610,11 +611,8 @@ window.addEventListener('resize', () => {
         <div class="stat-value" id="statTrades">0</div>
         <div class="stat-sub" id="statWinRate">—% win rate</div>
       </div>
-      <div class="stat-cell" style="position:relative;">
-        <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
-        <div class="stat-label">STRATEGY TARGET</div>
-        <div class="stat-value tag-amber" id="statTarget">£0.00</div>
-        <div class="stat-sub" id="statProgress">0% progress</div>
+      <div class="stat-cell" style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()" style="position:relative;width:28px;height:28px;font-size:15px;">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
       </div>
     </div>
 
@@ -3026,16 +3024,12 @@ function manualClose(posId) {
 // --- STATS ---
 function updateStats() {
   const capital = parseFloat(document.getElementById('capital').value);
-  const target = capital * parseFloat(document.getElementById('targetGain').value) / 100;
-  const progress = Math.min((dailyPnl / target) * 100, 100);
   document.getElementById('statPnl').textContent = (dailyPnl >= 0 ? '+' : '') + getCurrencySymbol() + dailyPnl.toFixed(2);
   document.getElementById('statPnl').className = 'stat-value ' + (dailyPnl >= 0 ? 'tag-green' : 'tag-red');
   document.getElementById('statPnlPct').textContent = (dailyPnl >= 0 ? '+' : '') + ((dailyPnl / capital) * 100).toFixed(2) + '%';
   document.getElementById('statSignals').textContent = signalsToday;
   document.getElementById('statTrades').textContent = tradesExecuted;
   document.getElementById('statWinRate').textContent = tradesExecuted > 0 ? Math.round(tradeWins / tradesExecuted * 100) + '% win rate' : '—% win rate';
-  document.getElementById('statTarget').textContent = '+' + getCurrencySymbol() + target.toFixed(2);
-  document.getElementById('statProgress').textContent = Math.round(progress) + '% progress';
 }
 
 // --- RISK BAR ---
