@@ -1159,6 +1159,13 @@ def _fetch_market_pulse_live() -> dict:
 # the same real-spot pipeline every other metals number on this site already
 # goes through, rather than standing up a separate feed.
 _GOLD_SILVER_LIVE_CACHE_TTL_SECONDS = 12 * 60 * 60  # 12h, per spec — doesn't need to be any fresher
+# A visitor can click the scale to force a fresh read (see api_gold_silver_ratio_live's
+# ?refresh=1) rather than wait out the full 12h window. That still goes through this
+# same cache/TTL check, just with a much shorter threshold — genuinely fresher data on
+# a click, while capping how often the upstream feed can actually be hit to once per
+# 30s no matter how many visitors click at once (protects Yahoo from a click-burst the
+# same way the 12h TTL protects it from a traffic burst).
+_GOLD_SILVER_FORCE_REFRESH_TTL_SECONDS = 30
 _gold_silver_live_cache: dict = {"at": 0.0, "data": None}
 _gold_silver_live_lock = threading.Lock()
 
@@ -1210,7 +1217,7 @@ def _fetch_gold_silver_historical_average() -> dict | None:
     return result
 
 
-def _fetch_gold_silver_ratio_live() -> dict:
+def _fetch_gold_silver_ratio_live(force: bool = False) -> dict:
     """Live gold:silver ratio from real spot XAU/USD and XAG/USD (see _fetch_ohlcv's
     metal-currency synthesis — OANDA real spot when configured, GC=F/SI=F futures
     proxy otherwise), plus the real historical average above. Cached for
@@ -1218,11 +1225,17 @@ def _fetch_gold_silver_ratio_live() -> dict:
     to one round trip per window rather than one per visitor — same pattern as
     _fetch_market_pulse_live. A transient fetch failure falls back to the last
     good cached result (if any) rather than serving nulls to every visitor for
-    the next 12h."""
+    the next 12h.
+
+    force=True (from a click-to-refresh) checks against the much shorter
+    _GOLD_SILVER_FORCE_REFRESH_TTL_SECONDS instead — still a real cache check, so a
+    burst of clicks from one or many visitors within that window all just get the
+    same still-fresh result rather than each triggering their own upstream fetch."""
+    ttl = _GOLD_SILVER_FORCE_REFRESH_TTL_SECONDS if force else _GOLD_SILVER_LIVE_CACHE_TTL_SECONDS
     now = time.monotonic()
     with _gold_silver_live_lock:
         cached = _gold_silver_live_cache["data"]
-        if cached is not None and now - _gold_silver_live_cache["at"] < _GOLD_SILVER_LIVE_CACHE_TTL_SECONDS:
+        if cached is not None and now - _gold_silver_live_cache["at"] < ttl:
             return cached
 
     result = None
@@ -3787,7 +3800,8 @@ def api_market_pulse_live():
 
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])
 def api_gold_silver_ratio_live():
-    return jsonify(_fetch_gold_silver_ratio_live())
+    force = request.args.get("refresh") in ("1", "true", "yes")
+    return jsonify(_fetch_gold_silver_ratio_live(force=force))
 
 
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])

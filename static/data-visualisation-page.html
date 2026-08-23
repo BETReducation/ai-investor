@@ -239,7 +239,11 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
   background: var(--card); border: 1px solid rgba(212,175,106,0.35); border-radius: 999px; padding: 8px 16px; margin-bottom: 22px;
 }
 .gsr-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 24px 34px; text-align: center; }
-.gsr-scale-area { position: relative; max-width: 400px; margin: 0 auto 6px; }
+.gsr-scale-area { position: relative; max-width: 400px; margin: 0 auto 6px; cursor: pointer; }
+.gsr-scale-area:hover .gsr-svg { filter: brightness(1.05); }
+.gsr-scale-area.gsr-refreshing { cursor: wait; }
+.gsr-scale-area.gsr-refreshing .gsr-svg { opacity: 0.55; transition: opacity 0.15s ease; }
+.gsr-tap-hint { font-size: 11px; color: var(--muted); opacity: 0.65; margin-top: 10px; }
 .gsr-scale-area::before {
   content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 320px; height: 240px;
   background: radial-gradient(ellipse, rgba(212,175,106,0.14) 0%, transparent 70%); pointer-events: none;
@@ -924,7 +928,7 @@ function initGoldSilverRatio() {
         <div class="pulse-stat"><div class="pulse-stat-value" id="gsrStatSilver">—</div><div class="pulse-stat-label">Silver · XAG/USD</div></div>
       </div>
       <div class="gsr-card">
-        <div class="gsr-scale-area">
+        <div class="gsr-scale-area" id="gsrScaleArea" onclick="gsrRefreshClick()" role="button" tabindex="0" aria-label="Refresh the gold:silver ratio now" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gsrRefreshClick();}">
           <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <filter id="gsrGoldGlow" x="-80%" y="-80%" width="260%" height="260%">
@@ -980,6 +984,7 @@ function initGoldSilverRatio() {
             <div class="gsr-label-metal">SILVER</div>
           </div>
         </div>
+        <div class="gsr-tap-hint">Tap the scale to refresh now</div>
         <div class="gsr-headline">
           <span class="gsr-headline-label">Gold : Silver Ratio</span>
           <span class="gsr-headline-value" id="gsrRatio">—</span>
@@ -1018,10 +1023,33 @@ function gsrTilt(ratio, avg) {
   return Math.max(-GSR_TILT_MAX, Math.min(GSR_TILT_MAX, raw));
 }
 
-async function fetchGoldSilverRatio() {
+let gsrRefreshing = false;
+
+// Click/tap-to-refresh: bypasses the passive 12h client interval and asks the
+// server for a genuinely fresh read (?refresh=1 — see api_gold_silver_ratio_live,
+// which still throttles the *actual* upstream fetch to once per 30s no matter how
+// many visitors click, so this can't be used to hammer Yahoo). gsrRefreshing is a
+// simple client-side debounce so a rapid double-click/tap doesn't fire two
+// overlapping requests.
+async function gsrRefreshClick() {
+  if (gsrRefreshing) return;
+  gsrRefreshing = true;
+  const area = document.getElementById('gsrScaleArea');
+  if (area) area.classList.add('gsr-refreshing');
+  const updated = document.getElementById('gsrUpdated');
+  if (updated) updated.textContent = 'Refreshing…';
+  try {
+    await fetchGoldSilverRatio(true);
+  } finally {
+    if (area) area.classList.remove('gsr-refreshing');
+    gsrRefreshing = false;
+  }
+}
+
+async function fetchGoldSilverRatio(force) {
   const updated = document.getElementById('gsrUpdated');
   try {
-    const res = await fetch('/api/dataviz/gold-silver-ratio/live');
+    const res = await fetch(`/api/dataviz/gold-silver-ratio/live${force ? '?refresh=1' : ''}`);
     const data = await res.json();
     if (data.ratio == null) throw new Error('no data');
     document.getElementById('gsrSilverOz').textContent = `${data.ratio.toFixed(1)} oz`;
