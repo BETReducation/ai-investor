@@ -1015,11 +1015,16 @@ function gsrTimeAgo(iso) {
 // "richer/cheaper than normal today", and moves meaningfully as that changes.
 // Capped at +/-16deg so an extreme reading still looks like a scale, not a
 // cartwheel.
+// Sign is negated: gold's pan is the left one (SVG x=78) and a positive
+// rotate() is clockwise, which would lift the left pan and drop the right
+// one. We want the opposite — when the ratio is above average (gold reading
+// richer/more valuable than its historical norm) gold's pan should sink, so
+// the raw value is flipped before the beam rotates.
 const GSR_TILT_SCALE = 320;
 const GSR_TILT_MAX = 16;
 function gsrTilt(ratio, avg) {
   if (!ratio || !avg) return 0;
-  const raw = ((ratio - avg) / avg) * GSR_TILT_SCALE;
+  const raw = -((ratio - avg) / avg) * GSR_TILT_SCALE;
   return Math.max(-GSR_TILT_MAX, Math.min(GSR_TILT_MAX, raw));
 }
 
