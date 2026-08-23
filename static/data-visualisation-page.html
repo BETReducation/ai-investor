@@ -224,6 +224,54 @@ body.pulse-map-lock { overflow: hidden; }
 .pulse-list-move.up { color: #4ade80; }
 .pulse-list-move.down { color: #f87171; }
 
+/* GOLD:SILVER RATIO — live animated balance-scale widget. Same dark-navy/gold
+   accent language as the Market Pulse widget above, but its own flat SVG scale
+   instead of a map. The beam+chains+pans rotate as one rigid unit (not a
+   physically-accurate pendulum where the pans stay level) — simpler to build,
+   still reads clearly, and matches the flat-icon style of the rest of the site
+   better than a photoreal render would. Tilt is driven by gsrTilt() below:
+   level = today's ratio sitting exactly at the real computed historical
+   average, not an arbitrary "always tilted" illustration. */
+body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4af6a; background: #d4af6a; }
+.gsr-wrap { margin-bottom: 40px; }
+.gsr-note {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted);
+  background: var(--card); border: 1px solid rgba(212,175,106,0.35); border-radius: 999px; padding: 8px 16px; margin-bottom: 22px;
+}
+.gsr-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 24px 34px; text-align: center; }
+.gsr-scale-area { position: relative; max-width: 400px; margin: 0 auto 6px; }
+.gsr-scale-area::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 220px;
+  background: radial-gradient(ellipse, rgba(212,175,106,0.14) 0%, transparent 70%); pointer-events: none;
+}
+.gsr-svg { position: relative; width: 100%; height: auto; display: block; }
+/* transform-origin matches the pivot's SVG coordinates (200,110) exactly — the
+   whole arm (beam, chains, pans, bar stacks) is one <g> so it swings as a rigid
+   unit around that single point. */
+.gsr-arm { transform-origin: 200px 110px; transform: rotate(0deg); transition: transform 1.4s cubic-bezier(0.34, 1.3, 0.4, 1); }
+.gsr-stand-fill { fill: rgba(148,163,196,0.35); }
+:root[data-theme="light"] .gsr-stand-fill { fill: rgba(90,100,140,0.28); }
+.gsr-beam-line { stroke: #d4af6a; stroke-width: 4; stroke-linecap: round; }
+.gsr-beam-cap { fill: #d4af6a; }
+.gsr-chain { stroke: rgba(148,163,196,0.6); stroke-width: 2; }
+:root[data-theme="light"] .gsr-chain { stroke: rgba(90,100,140,0.55); }
+.gsr-pan { fill: rgba(148,163,196,0.18); stroke: rgba(148,163,196,0.6); stroke-width: 2; }
+:root[data-theme="light"] .gsr-pan { fill: rgba(90,100,140,0.12); stroke: rgba(90,100,140,0.5); }
+.gsr-bar-gold { fill: #d4af6a; }
+.gsr-bar-gold-top { fill: #f0d999; }
+.gsr-bar-silver { fill: #aab4c8; }
+.gsr-bar-silver-top { fill: #dbe2ee; }
+.gsr-label { position: absolute; top: 64%; width: 120px; text-align: center; pointer-events: none; }
+.gsr-label-left { left: 22.5%; transform: translateX(-50%); }
+.gsr-label-right { left: 77.5%; transform: translateX(-50%); }
+.gsr-label-amount { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 17px; color: var(--text); }
+.gsr-label-metal { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--muted); margin-top: 1px; }
+.gsr-headline { margin-top: 20px; }
+.gsr-headline-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.gsr-headline-value { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(32px, 5vw, 44px); color: var(--text); letter-spacing: -0.02em; }
+.gsr-sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.gsr-sub strong { color: var(--text); font-weight: 700; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -308,6 +356,10 @@ async function loadPage() {
       // styling that has to flip for legibility on a white card.
       document.body.classList.add('pulse-page');
       initMarketPulse();
+    } else if (slug === 'gold-silver-ratio') {
+      document.querySelector('.hero-sub').textContent = "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours. Commentary below.";
+      document.body.classList.add('gsr-page');
+      initGoldSilverRatio();
     }
   } catch {
     list.innerHTML = '<div class="list-empty">This page couldn\'t be found.</div>';
@@ -844,6 +896,132 @@ async function renderPulseDetail(data) {
       </div>
     `;
   }).join('');
+}
+
+// ── Gold:Silver Ratio — live animated balance scale ─────────────────────────
+const GSR_REFRESH_MS = 12 * 60 * 60 * 1000; // matches the server's own 12h cache TTL
+let gsrTimer = null;
+
+function initGoldSilverRatio() {
+  const wrap = document.getElementById('pulseContainer');
+  wrap.innerHTML = `
+    <div class="gsr-wrap">
+      <div class="gsr-note"><span class="pulse-dot-live"></span><span id="gsrUpdated">Loading live prices…</span></div>
+      <div class="pulse-stats" id="gsrStats">
+        <div class="pulse-stat"><div class="pulse-stat-value" id="gsrStatRatio">—</div><div class="pulse-stat-label">Live Ratio</div></div>
+        <div class="pulse-stat"><div class="pulse-stat-value" id="gsrStatAvg">—</div><div class="pulse-stat-label">Historical Avg</div></div>
+        <div class="pulse-stat"><div class="pulse-stat-value" id="gsrStatGold">—</div><div class="pulse-stat-label">Gold · XAU/USD</div></div>
+        <div class="pulse-stat"><div class="pulse-stat-value" id="gsrStatSilver">—</div><div class="pulse-stat-label">Silver · XAG/USD</div></div>
+      </div>
+      <div class="gsr-card">
+        <div class="gsr-scale-area">
+          <svg class="gsr-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <rect class="gsr-stand-fill" x="196" y="110" width="8" height="120" rx="4"/>
+            <ellipse class="gsr-stand-fill" cx="200" cy="234" rx="50" ry="10"/>
+            <circle class="gsr-stand-fill" cx="200" cy="108" r="7"/>
+            <g class="gsr-arm" id="gsrArm">
+              <line class="gsr-beam-line" x1="90" y1="110" x2="310" y2="110"/>
+              <circle class="gsr-beam-cap" cx="90" cy="110" r="5"/>
+              <circle class="gsr-beam-cap" cx="310" cy="110" r="5"/>
+              <line class="gsr-chain" x1="90" y1="110" x2="70" y2="178"/>
+              <line class="gsr-chain" x1="90" y1="110" x2="110" y2="178"/>
+              <ellipse class="gsr-pan" cx="90" cy="180" rx="42" ry="11"/>
+              <rect class="gsr-bar-gold" x="72" y="160" width="36" height="14" rx="3"/>
+              <rect class="gsr-bar-gold-top" x="72" y="160" width="36" height="5" rx="2"/>
+              <line class="gsr-chain" x1="310" y1="110" x2="290" y2="178"/>
+              <line class="gsr-chain" x1="310" y1="110" x2="330" y2="178"/>
+              <ellipse class="gsr-pan" cx="310" cy="180" rx="42" ry="11"/>
+              <rect class="gsr-bar-silver" x="292" y="168" width="36" height="10" rx="2"/>
+              <rect class="gsr-bar-silver-top" x="292" y="168" width="36" height="4" rx="2"/>
+              <rect class="gsr-bar-silver" x="294" y="158" width="32" height="10" rx="2"/>
+              <rect class="gsr-bar-silver-top" x="294" y="158" width="32" height="4" rx="2"/>
+              <rect class="gsr-bar-silver" x="296" y="148" width="28" height="10" rx="2"/>
+              <rect class="gsr-bar-silver-top" x="296" y="148" width="28" height="4" rx="2"/>
+              <rect class="gsr-bar-silver" x="298" y="138" width="24" height="10" rx="2"/>
+              <rect class="gsr-bar-silver-top" x="298" y="138" width="24" height="4" rx="2"/>
+            </g>
+          </svg>
+          <div class="gsr-label gsr-label-left">
+            <div class="gsr-label-amount">1 oz</div>
+            <div class="gsr-label-metal">GOLD</div>
+          </div>
+          <div class="gsr-label gsr-label-right">
+            <div class="gsr-label-amount" id="gsrSilverOz">— oz</div>
+            <div class="gsr-label-metal">SILVER</div>
+          </div>
+        </div>
+        <div class="gsr-headline">
+          <span class="gsr-headline-label">Gold : Silver Ratio</span>
+          <span class="gsr-headline-value" id="gsrRatio">—</span>
+        </div>
+        <div class="gsr-sub" id="gsrHistorical">Comparing against the real historical average…</div>
+      </div>
+    </div>
+  `;
+  fetchGoldSilverRatio();
+  if (gsrTimer) clearInterval(gsrTimer);
+  gsrTimer = setInterval(fetchGoldSilverRatio, GSR_REFRESH_MS);
+}
+
+function gsrTimeAgo(iso) {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  const hrs = ms / 3600000;
+  if (hrs < 1) return 'moments ago';
+  if (hrs < 24) return `${Math.round(hrs)}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+// Tilt is driven by how far today's ratio sits from the real historical average
+// computed server-side, NOT the ratio's raw magnitude — a raw-magnitude tilt
+// would look nearly identical every single day, since the ratio is always "a
+// lot more silver than gold" (60-90ish). Anchoring "level" at the historical
+// average instead turns the beam into an actual signal: it visibly reads as
+// "richer/cheaper than normal today", and moves meaningfully as that changes.
+// Capped at +/-16deg so an extreme reading still looks like a scale, not a
+// cartwheel.
+const GSR_TILT_SCALE = 320;
+const GSR_TILT_MAX = 16;
+function gsrTilt(ratio, avg) {
+  if (!ratio || !avg) return 0;
+  const raw = ((ratio - avg) / avg) * GSR_TILT_SCALE;
+  return Math.max(-GSR_TILT_MAX, Math.min(GSR_TILT_MAX, raw));
+}
+
+async function fetchGoldSilverRatio() {
+  const updated = document.getElementById('gsrUpdated');
+  try {
+    const res = await fetch('/api/dataviz/gold-silver-ratio/live');
+    const data = await res.json();
+    if (data.ratio == null) throw new Error('no data');
+    document.getElementById('gsrSilverOz').textContent = `${data.ratio.toFixed(1)} oz`;
+    document.getElementById('gsrRatio').textContent = `${data.ratio.toFixed(1)} : 1`;
+    const arm = document.getElementById('gsrArm');
+    if (arm) arm.style.transform = `rotate(${gsrTilt(data.ratio, data.historical_average)}deg)`;
+    const hist = document.getElementById('gsrHistorical');
+    if (data.historical_average != null) {
+      const cmp = data.ratio > data.historical_average ? 'above' : data.ratio < data.historical_average ? 'below' : 'right at';
+      hist.innerHTML = `<strong>${cmp}</strong> its real historical average of <strong>${data.historical_average.toFixed(1)} : 1</strong>${data.historical_since ? ` (computed from daily data since ${esc(data.historical_since)})` : ''}`;
+    } else {
+      hist.textContent = 'Historical average unavailable right now.';
+    }
+    const ratioEl = document.getElementById('gsrStatRatio');
+    ratioEl.textContent = `${data.ratio.toFixed(1)} : 1`;
+    ratioEl.classList.remove('up', 'down');
+    // "up"/"down" here follows Market Pulse's own green/red convention, repurposed:
+    // green (up) = today's ratio reads cheaper than its historical norm, red (down)
+    // = richer than normal — not a literal price gain/loss, but the same "which way
+    // should I read this" visual shorthand the rest of the page already uses.
+    if (data.historical_average != null) {
+      ratioEl.classList.add(data.ratio < data.historical_average ? 'up' : data.ratio > data.historical_average ? 'down' : '');
+    }
+    document.getElementById('gsrStatAvg').textContent = data.historical_average != null ? `${data.historical_average.toFixed(1)} : 1` : '—';
+    document.getElementById('gsrStatGold').textContent = `$${data.xau_usd.toLocaleString()}`;
+    document.getElementById('gsrStatSilver').textContent = `$${data.xag_usd.toLocaleString()}`;
+    updated.textContent = `Live · updated ${gsrTimeAgo(data.updated_at)}`;
+  } catch {
+    updated.textContent = "Couldn't load live prices — showing the last known values.";
+  }
 }
 
 function renderPost(item) {

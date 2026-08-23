@@ -235,13 +235,15 @@ def _ensure_table() -> None:
         # too so Tom/Gary can post editorial commentary under it via the studio the
         # same way as any other data-viz page, with the live map rendered above it.
         for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03"),
-                             ("market-pulse", "Market Pulse — Global Heat Map")):
+                             ("market-pulse", "Market Pulse — Global Heat Map"),
+                             ("gold-silver-ratio", "Gold to Silver Ratio")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
-        # Flip the flag on for market-pulse even if the row already existed from
-        # before has_live_widget was added (ON CONFLICT DO NOTHING above wouldn't
-        # touch it) — this UPDATE is what actually makes existing deployments pick
-        # up the new behavior.
+        # Flip the flag on for market-pulse/gold-silver-ratio even if the row already
+        # existed from before has_live_widget was added (ON CONFLICT DO NOTHING above
+        # wouldn't touch it) — these UPDATEs are what actually make existing
+        # deployments pick up the new behavior.
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-pulse'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'gold-silver-ratio'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -892,6 +894,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "viz-2", "label": "Visualisation 02", "author": None, "has_live_widget": False},
     {"slug": "viz-3", "label": "Visualisation 03", "author": None, "has_live_widget": False},
     {"slug": "market-pulse", "label": "Market Pulse — Global Heat Map", "author": None, "has_live_widget": True},
+    {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
 ]
 
 
@@ -1146,6 +1149,108 @@ def _fetch_market_pulse_live() -> dict:
         else:
             result = _market_pulse_cache["data"]
     return result
+
+
+# Powers the "gold-silver-ratio" data-viz page: a live gold:silver price ratio
+# animated as a tilting balance scale, plus a real historical-average reference
+# line (not the ~50:1 folklore number often quoted, but an actual mean computed
+# from real daily history). Reuses _fetch_ohlcv's existing XAUUSD=X/XAGUSD=X
+# path — OANDA real spot when configured, GC=F/SI=F futures proxy otherwise —
+# the same real-spot pipeline every other metals number on this site already
+# goes through, rather than standing up a separate feed.
+_GOLD_SILVER_LIVE_CACHE_TTL_SECONDS = 12 * 60 * 60  # 12h, per spec — doesn't need to be any fresher
+_gold_silver_live_cache: dict = {"at": 0.0, "data": None}
+_gold_silver_live_lock = threading.Lock()
+
+# The historical-average leg pulls the *entire* available daily history (decades)
+# to compute its mean, so it's cached far longer than the live leg — recomputing
+# it every 12h alongside the live ratio would be needless load for a number that
+# only drifts by fractions of a point per year.
+_GOLD_SILVER_HIST_CACHE_TTL_SECONDS = 24 * 60 * 60  # 24h
+_gold_silver_hist_cache: dict = {"at": 0.0, "data": None}
+_gold_silver_hist_lock = threading.Lock()
+
+
+def _fetch_gold_silver_historical_average() -> dict | None:
+    """Mean gold:silver ratio across the full daily history both GC=F and SI=F carry
+    on Yahoo — a real computed average rather than the commonly-quoted-but-unsourced
+    "~50:1" figure. Calls yfinance directly with period="30y" rather than going
+    through _fetch_ohlcv/VALID_PERIODS: confirmed live, period="max" and any
+    explicit start_date both come back with zero rows for these continuous-futures
+    symbols (a Yahoo quirk specific to that pair of request shapes), but an
+    oversized relative period like "30y" is accepted and simply clamps to
+    whatever's actually available — both symbols' real history turns out to start
+    2000-08-30 (confirmed by "30y" and "40y" returning the identical row count),
+    so this is genuinely "as far back as the data goes", not an arbitrary window.
+    Futures-continuous closes (not the OANDA-spot leg the live number uses) since
+    that's the only leg with multi-decade daily history here; the basis/contango
+    premium they carry over true spot is a few percent at most and washes out
+    across a 26-year average, unlike the live number where it actually matters."""
+    now = time.monotonic()
+    with _gold_silver_hist_lock:
+        cached = _gold_silver_hist_cache["data"]
+        if cached is not None and now - _gold_silver_hist_cache["at"] < _GOLD_SILVER_HIST_CACHE_TTL_SECONDS:
+            return cached
+    try:
+        gold = _yf_history_with_retry(yf.Ticker("GC=F"), period="30y", interval="1d")["Close"].dropna()
+        silver = _yf_history_with_retry(yf.Ticker("SI=F"), period="30y", interval="1d")["Close"].dropna()
+        joined = pd.concat([gold, silver], axis=1, join="inner", keys=["gold", "silver"]).dropna()
+        if joined.empty:
+            return None
+        ratio_series = joined["gold"] / joined["silver"]
+        result = {
+            "average": round(float(ratio_series.mean()), 1),
+            "since": joined.index[0].date().isoformat(),
+        }
+    except Exception:
+        return None
+    with _gold_silver_hist_lock:
+        _gold_silver_hist_cache["at"] = now
+        _gold_silver_hist_cache["data"] = result
+    return result
+
+
+def _fetch_gold_silver_ratio_live() -> dict:
+    """Live gold:silver ratio from real spot XAU/USD and XAG/USD (see _fetch_ohlcv's
+    metal-currency synthesis — OANDA real spot when configured, GC=F/SI=F futures
+    proxy otherwise), plus the real historical average above. Cached for
+    _GOLD_SILVER_LIVE_CACHE_TTL_SECONDS (12h) so a page full of visitors collapses
+    to one round trip per window rather than one per visitor — same pattern as
+    _fetch_market_pulse_live. A transient fetch failure falls back to the last
+    good cached result (if any) rather than serving nulls to every visitor for
+    the next 12h."""
+    now = time.monotonic()
+    with _gold_silver_live_lock:
+        cached = _gold_silver_live_cache["data"]
+        if cached is not None and now - _gold_silver_live_cache["at"] < _GOLD_SILVER_LIVE_CACHE_TTL_SECONDS:
+            return cached
+
+    result = None
+    try:
+        xau = _fetch_ohlcv("XAUUSD=X", period="5d", interval="1d")["Close"].dropna()
+        xag = _fetch_ohlcv("XAGUSD=X", period="5d", interval="1d")["Close"].dropna()
+        if len(xau) and len(xag):
+            xau_price, xag_price = float(xau.iloc[-1]), float(xag.iloc[-1])
+            hist = _fetch_gold_silver_historical_average()
+            result = {
+                "updated_at": _dt.datetime.utcnow().isoformat() + "Z",
+                "xau_usd": round(xau_price, 2),
+                "xag_usd": round(xag_price, 2),
+                "ratio": round(xau_price / xag_price, 1),
+                "historical_average": hist["average"] if hist else None,
+                "historical_since": hist["since"] if hist else None,
+            }
+    except Exception:
+        result = None
+
+    with _gold_silver_live_lock:
+        _gold_silver_live_cache["at"] = now
+        if result is not None:
+            _gold_silver_live_cache["data"] = result
+        else:
+            result = _gold_silver_live_cache["data"]
+    return result or {"updated_at": None, "xau_usd": None, "xag_usd": None, "ratio": None,
+                       "historical_average": None, "historical_since": None}
 
 
 # ── Data Visualisation content store ─────────────────────────────────────────
@@ -3678,6 +3783,11 @@ def api_dataviz_public_content(slug):
 @app.route("/api/dataviz/market-pulse/live", methods=["GET"])
 def api_market_pulse_live():
     return jsonify(_fetch_market_pulse_live())
+
+
+@app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])
+def api_gold_silver_ratio_live():
+    return jsonify(_fetch_gold_silver_ratio_live())
 
 
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])
