@@ -241,14 +241,17 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
 .gsr-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 24px 34px; text-align: center; }
 .gsr-scale-area { position: relative; max-width: 400px; margin: 0 auto 6px; }
 .gsr-scale-area::before {
-  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 220px;
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 320px; height: 240px;
   background: radial-gradient(ellipse, rgba(212,175,106,0.14) 0%, transparent 70%); pointer-events: none;
 }
 .gsr-svg { position: relative; width: 100%; height: auto; display: block; }
-/* transform-origin matches the pivot's SVG coordinates (200,110) exactly — the
+/* transform-origin matches the pivot's SVG coordinates (200,90) exactly — the
    whole arm (beam, chains, pans, bar stacks) is one <g> so it swings as a rigid
-   unit around that single point. */
-.gsr-arm { transform-origin: 200px 110px; transform: rotate(0deg); transition: transform 1.4s cubic-bezier(0.34, 1.3, 0.4, 1); }
+   unit around that single point. Geometry below (viewBox 0 0 400 320) leaves a
+   real gap between the pans (bottom edge y=188) and the amount labels (start
+   ~y=210, positioned via .gsr-label's top%) — a previous version had them only
+   ~1px apart, which read as overlapping. */
+.gsr-arm { transform-origin: 200px 90px; transform: rotate(0deg); transition: transform 1.4s cubic-bezier(0.34, 1.3, 0.4, 1); }
 .gsr-stand-fill { fill: rgba(148,163,196,0.35); }
 :root[data-theme="light"] .gsr-stand-fill { fill: rgba(90,100,140,0.28); }
 .gsr-beam-line { stroke: #d4af6a; stroke-width: 4; stroke-linecap: round; }
@@ -261,9 +264,16 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
 .gsr-bar-gold-top { fill: #f0d999; }
 .gsr-bar-silver { fill: #aab4c8; }
 .gsr-bar-silver-top { fill: #dbe2ee; }
-.gsr-label { position: absolute; top: 64%; width: 120px; text-align: center; pointer-events: none; }
-.gsr-label-left { left: 22.5%; transform: translateX(-50%); }
-.gsr-label-right { left: 77.5%; transform: translateX(-50%); }
+/* Soft glow behind the metal stacks: a blurred duplicate of each bar shape,
+   painted first (so it sits behind the crisp bars on top of it) at reduced
+   opacity — the standard cheap SVG "glow" technique, since CSS filter:
+   drop-shadow on a rotating parent <g> would blur/offset with the rotation
+   in a way a plain feGaussianBlur copy doesn't. */
+.gsr-glow-gold { fill: #f6d68c; opacity: 0.6; }
+.gsr-glow-silver { fill: #e9f0fb; opacity: 0.5; }
+.gsr-label { position: absolute; top: 65.5%; width: 120px; text-align: center; pointer-events: none; }
+.gsr-label-left { left: 19.5%; transform: translateX(-50%); }
+.gsr-label-right { left: 80.5%; transform: translateX(-50%); }
 .gsr-label-amount { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 17px; color: var(--text); }
 .gsr-label-metal { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--muted); margin-top: 1px; }
 .gsr-headline { margin-top: 20px; }
@@ -915,30 +925,50 @@ function initGoldSilverRatio() {
       </div>
       <div class="gsr-card">
         <div class="gsr-scale-area">
-          <svg class="gsr-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <rect class="gsr-stand-fill" x="196" y="110" width="8" height="120" rx="4"/>
-            <ellipse class="gsr-stand-fill" cx="200" cy="234" rx="50" ry="10"/>
-            <circle class="gsr-stand-fill" cx="200" cy="108" r="7"/>
+          <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="gsrGoldGlow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="7"/>
+              </filter>
+              <filter id="gsrSilverGlow" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="7"/>
+              </filter>
+            </defs>
+            <rect class="gsr-stand-fill" x="196" y="90" width="8" height="175" rx="4"/>
+            <ellipse class="gsr-stand-fill" cx="200" cy="267" rx="54" ry="11"/>
+            <circle class="gsr-stand-fill" cx="200" cy="88" r="7"/>
             <g class="gsr-arm" id="gsrArm">
-              <line class="gsr-beam-line" x1="90" y1="110" x2="310" y2="110"/>
-              <circle class="gsr-beam-cap" cx="90" cy="110" r="5"/>
-              <circle class="gsr-beam-cap" cx="310" cy="110" r="5"/>
-              <line class="gsr-chain" x1="90" y1="110" x2="70" y2="178"/>
-              <line class="gsr-chain" x1="90" y1="110" x2="110" y2="178"/>
-              <ellipse class="gsr-pan" cx="90" cy="180" rx="42" ry="11"/>
-              <rect class="gsr-bar-gold" x="72" y="160" width="36" height="14" rx="3"/>
-              <rect class="gsr-bar-gold-top" x="72" y="160" width="36" height="5" rx="2"/>
-              <line class="gsr-chain" x1="310" y1="110" x2="290" y2="178"/>
-              <line class="gsr-chain" x1="310" y1="110" x2="330" y2="178"/>
-              <ellipse class="gsr-pan" cx="310" cy="180" rx="42" ry="11"/>
-              <rect class="gsr-bar-silver" x="292" y="168" width="36" height="10" rx="2"/>
-              <rect class="gsr-bar-silver-top" x="292" y="168" width="36" height="4" rx="2"/>
-              <rect class="gsr-bar-silver" x="294" y="158" width="32" height="10" rx="2"/>
-              <rect class="gsr-bar-silver-top" x="294" y="158" width="32" height="4" rx="2"/>
-              <rect class="gsr-bar-silver" x="296" y="148" width="28" height="10" rx="2"/>
-              <rect class="gsr-bar-silver-top" x="296" y="148" width="28" height="4" rx="2"/>
-              <rect class="gsr-bar-silver" x="298" y="138" width="24" height="10" rx="2"/>
-              <rect class="gsr-bar-silver-top" x="298" y="138" width="24" height="4" rx="2"/>
+              <line class="gsr-beam-line" x1="78" y1="90" x2="322" y2="90"/>
+              <circle class="gsr-beam-cap" cx="78" cy="90" r="5"/>
+              <circle class="gsr-beam-cap" cx="322" cy="90" r="5"/>
+              <line class="gsr-chain" x1="78" y1="90" x2="58" y2="175"/>
+              <line class="gsr-chain" x1="78" y1="90" x2="98" y2="175"/>
+              <ellipse class="gsr-pan" cx="78" cy="175" rx="50" ry="13"/>
+              <!-- Gold: one big bar, sized to match the reference photo's proportions
+                   (previously a much smaller 36x14 bar) — glow copy painted first so
+                   the crisp bar on top reads clearly. -->
+              <rect class="gsr-glow-gold" filter="url(#gsrGoldGlow)" x="50" y="138" width="56" height="24" rx="5"/>
+              <rect class="gsr-bar-gold" x="50" y="138" width="56" height="24" rx="5"/>
+              <rect class="gsr-bar-gold-top" x="50" y="138" width="56" height="9" rx="4"/>
+              <line class="gsr-chain" x1="322" y1="90" x2="302" y2="175"/>
+              <line class="gsr-chain" x1="322" y1="90" x2="342" y2="175"/>
+              <ellipse class="gsr-pan" cx="322" cy="175" rx="50" ry="13"/>
+              <!-- Silver: a taller 4-bar tapered stack, also enlarged vs. the original
+                   — glow group behind, then the crisp stack on top. -->
+              <g filter="url(#gsrSilverGlow)">
+                <rect class="gsr-glow-silver" x="294" y="144" width="56" height="18" rx="4"/>
+                <rect class="gsr-glow-silver" x="298" y="126" width="48" height="18" rx="4"/>
+                <rect class="gsr-glow-silver" x="302" y="108" width="40" height="18" rx="4"/>
+                <rect class="gsr-glow-silver" x="306" y="92" width="32" height="16" rx="4"/>
+              </g>
+              <rect class="gsr-bar-silver" x="294" y="144" width="56" height="18" rx="4"/>
+              <rect class="gsr-bar-silver-top" x="294" y="144" width="56" height="7" rx="3"/>
+              <rect class="gsr-bar-silver" x="298" y="126" width="48" height="18" rx="4"/>
+              <rect class="gsr-bar-silver-top" x="298" y="126" width="48" height="7" rx="3"/>
+              <rect class="gsr-bar-silver" x="302" y="108" width="40" height="18" rx="4"/>
+              <rect class="gsr-bar-silver-top" x="302" y="108" width="40" height="7" rx="3"/>
+              <rect class="gsr-bar-silver" x="306" y="92" width="32" height="16" rx="4"/>
+              <rect class="gsr-bar-silver-top" x="306" y="92" width="32" height="6" rx="3"/>
             </g>
           </svg>
           <div class="gsr-label gsr-label-left">
