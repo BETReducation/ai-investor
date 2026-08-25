@@ -293,7 +293,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
 .footer-links a:hover { color: var(--text); }
 .footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.page-header-image { max-width: 720px; width: 100%; height: auto; border-radius: 18px; margin: 0 auto 28px; display: block; border: 1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -303,7 +302,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <img class="page-header-image" id="pageHeaderImage" style="display:none;" alt="">
     <div class="section-badge">Data Visualisation</div>
     <h1 class="hero-title" id="pageTitle">—</h1>
     <p class="hero-sub" id="pageHeroSub" style="display:none;"></p>
@@ -364,12 +362,9 @@ async function loadPage() {
     const data = await res.json();
     document.getElementById('pageTitle').textContent = data.label || 'Data Visualisation';
     document.title = `${data.label || 'Data Visualisation'} — Growth Capital Academy`;
-    const headerImg = document.getElementById('pageHeaderImage');
-    if (data.header_image_url) {
-      headerImg.src = data.header_image_url;
-      headerImg.alt = data.label || '';
-      headerImg.style.display = 'block';
-    }
+    // The uploaded image is a directory-listing thumbnail only (usually a
+    // screenshot of the visualisation) — the individual page shows the real
+    // thing (a live widget, or its own content), so it doesn't repeat it.
     if (slug === 'global-heat-map') {
       // Gold accent (body.pulse-page rules above) applies in both themes; the
       // toggle itself is left alone so visitors can pick light or dark like any
