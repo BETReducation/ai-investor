@@ -306,7 +306,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
     <img class="page-header-image" id="pageHeaderImage" style="display:none;" alt="">
     <div class="section-badge">Data Visualisation</div>
     <h1 class="hero-title" id="pageTitle">—</h1>
-    <p class="hero-sub">The latest updates for this visualisation, newest first.</p>
+    <p class="hero-sub" id="pageHeroSub" style="display:none;"></p>
   </div>
 </div>
 
@@ -314,9 +314,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
   <div class="content-inner">
     <a href="/tools/data-visualisation" class="back-link">← Back to all visualisations</a>
     <div id="pulseContainer"></div>
-    <div class="posts-list" id="postsList">
-      <div class="list-empty">Loading…</div>
-    </div>
   </div>
 </section>
 
@@ -350,8 +347,17 @@ function formatDate(iso) {
 
 const slug = window.location.pathname.split('/').filter(Boolean).pop();
 
+function setHeroSub(text) {
+  const el = document.getElementById('pageHeroSub');
+  if (text) {
+    el.textContent = text;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 async function loadPage() {
-  const list = document.getElementById('postsList');
   try {
     const res = await fetch(`/api/dataviz/${encodeURIComponent(slug)}/content`);
     if (!res.ok) throw new Error();
@@ -364,27 +370,24 @@ async function loadPage() {
       headerImg.alt = data.label || '';
       headerImg.style.display = 'block';
     }
-    const items = data.items || [];
-    if (!items.length) {
-      list.innerHTML = '<div class="list-empty">Nothing published here yet — check back soon. In the meantime, the live map above updates itself.</div>';
-    } else {
-      list.innerHTML = items.map(renderPost).join('');
-    }
     if (slug === 'global-heat-map') {
-      document.querySelector('.hero-sub').textContent = "Every major index worldwide, colored by today's move — refreshes automatically. Commentary on the day's biggest movers below.";
       // Gold accent (body.pulse-page rules above) applies in both themes; the
       // toggle itself is left alone so visitors can pick light or dark like any
       // other page — see the :root[data-theme="light"] overrides for the map/dot
       // styling that has to flip for legibility on a white card.
+      setHeroSub(data.description || "Every major index worldwide, colored by today's move — refreshes automatically.");
       document.body.classList.add('pulse-page');
       initMarketPulse();
     } else if (slug === 'gold-silver-ratio') {
-      document.querySelector('.hero-sub').textContent = "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours. Commentary below.";
+      setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');
       initGoldSilverRatio();
+    } else {
+      setHeroSub(data.description);
     }
   } catch {
-    list.innerHTML = '<div class="list-empty">This page couldn\'t be found.</div>';
+    document.getElementById('pageTitle').textContent = 'Not Found';
+    setHeroSub("This page couldn't be found.");
   }
 }
 
@@ -1093,25 +1096,6 @@ async function fetchGoldSilverRatio(force) {
   } catch {
     updated.textContent = "Couldn't load live prices — showing the last known values.";
   }
-}
-
-function renderPost(item) {
-  // Post images are only ever shown as the thumbnail on the /tools/data-visualisation
-  // listing page — individual post cards here don't repeat them.
-  const linkTag = item.link ? `<div class="post-link"><a href="${esc(item.link)}" target="_blank" rel="noopener">Further information →</a></div>` : '';
-  const warningTag = item.warning ? `<div class="post-warning"><strong>Accuracy / usefulness note:</strong> ${esc(item.warning)}</div>` : '';
-  return `
-    <article class="post-card">
-      <div>
-        <div class="post-title">${esc(item.title) || 'Untitled'}</div>
-        ${item.description ? `<div class="post-body">${esc(item.description)}</div>` : ''}
-      </div>
-      ${item.positive_analysis ? `<div><div class="post-section-label">Why it's useful</div><div class="post-body">${esc(item.positive_analysis)}</div></div>` : ''}
-      ${warningTag}
-      ${linkTag}
-      <div class="post-date">${formatDate(item.published_at)}</div>
-    </article>
-  `;
 }
 
 loadPage();

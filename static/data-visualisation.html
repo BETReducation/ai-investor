@@ -134,24 +134,19 @@ async function loadPages() {
 }
 
 function renderPageRow(page, index) {
-  const latest = page.latest;
-  const imageInner = latest && latest.image_url
-    ? `<img src="${esc(latest.image_url)}" alt="">`
-    : `<div class="placeholder-icon">🖼️</div><div class="placeholder-label">${latest ? 'No image yet' : 'Nothing published yet'}</div>`;
-  const desc = latest
-    ? (latest.description ? esc(latest.description) : 'Check the full page for the latest update.')
-    : 'No visualisations have been published on this page yet — check back soon.';
-  const cta = latest ? 'See the latest update' : 'Be the first to see it when it lands';
+  const imageInner = page.image_url
+    ? `<img src="${esc(page.image_url)}" alt="">`
+    : `<div class="placeholder-icon">🖼️</div><div class="placeholder-label">No image yet</div>`;
+  const desc = page.description ? esc(page.description) : 'Open the full visualisation to explore it.';
   return `
     <div class="viz-row reveal${index % 2 === 1 ? ' reverse' : ''}">
       <div class="viz-image">
         <div class="placeholder-box">${imageInner}</div>
       </div>
       <div class="viz-text">
-        <div class="viz-kicker">${esc(page.label)}</div>
-        <div class="viz-title">${latest ? esc(latest.title) || 'Untitled update' : esc(page.label)}</div>
+        <div class="viz-kicker">Data Visualisation</div>
+        <div class="viz-title">${esc(page.label)}</div>
         <div class="viz-desc">${desc}</div>
-        <div class="viz-cta">${cta}</div>
         <a href="/tools/data-visualisation/${esc(page.slug)}" class="viz-btn">View Full Visualisation
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
