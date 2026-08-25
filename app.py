@@ -229,6 +229,13 @@ def _ensure_table() -> None:
         # already serves that role — so the publish-time "upload an image first"
         # rule (see api_dataviz_content_item) is skipped for them.
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS has_live_widget BOOLEAN NOT NULL DEFAULT FALSE")
+        # header_image: an optional page-level hero image, shown above the title
+        # (and above any live widget). Separate from dataviz_content.image_file,
+        # which is per-post — this is per-page, and the only image field a
+        # has_live_widget page has, since its per-post image requirement is
+        # waived (see comment above).
+        cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_filename TEXT")
+        cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_file BYTEA")
         # Seed the 3 pages that existed before pages became self-service, so
         # any content already tagged with these slugs keeps working. "market-pulse"
         # is the live global heat map (see MARKET_PULSE_INDICES below) — seeded here
@@ -923,16 +930,53 @@ def dataviz_pages_list() -> list:
     # earlier.
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT slug, label, author, has_live_widget, created_at FROM dataviz_pages "
+            cur.execute("SELECT slug, label, author, has_live_widget, header_image_filename, created_at FROM dataviz_pages "
                         "ORDER BY has_live_widget DESC, created_at ASC")
             return [
                 {"slug": r["slug"], "label": r["label"], "author": r["author"], "has_live_widget": bool(r["has_live_widget"]),
+                 "has_header_image": bool(r["header_image_filename"]),
                  "created_at": r["created_at"].isoformat() if r["created_at"] else None}
                 for r in cur.fetchall()
             ]
     data = _load_dataviz_pages_json()
     pages = sorted(data["pages"], key=lambda p: (0 if p.get("has_live_widget") else 1, p.get("created_at") or ""))
-    return [{**p, "has_live_widget": bool(p.get("has_live_widget"))} for p in pages]
+    return [{**p, "has_live_widget": bool(p.get("has_live_widget")), "has_header_image": bool(p.get("header_image_filename"))} for p in pages]
+
+
+def dataviz_page_get_header_image(slug: str):
+    """Returns (filename, bytes) or (None, None)."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT header_image_filename, header_image_file FROM dataviz_pages WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            if not row:
+                return None, None
+            return row["header_image_filename"], (bytes(row["header_image_file"]) if row["header_image_file"] else None)
+    data = _load_dataviz_pages_json()
+    for p in data["pages"]:
+        if p["slug"] == slug:
+            file_hex = p.get("header_image_file")
+            return p.get("header_image_filename"), (bytes.fromhex(file_hex) if file_hex else None)
+    return None, None
+
+
+def dataviz_page_set_header_image(slug: str, filename: str | None, file_bytes: bytes | None) -> bool:
+    """Pass filename=None to clear the header image."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE dataviz_pages SET header_image_filename = %s, header_image_file = %s WHERE slug = %s",
+                (filename, psycopg2.Binary(file_bytes) if file_bytes else None, slug),
+            )
+            return cur.rowcount > 0
+    data = _load_dataviz_pages_json()
+    for p in data["pages"]:
+        if p["slug"] == slug:
+            p["header_image_filename"] = filename
+            p["header_image_file"] = file_bytes.hex() if file_bytes else None
+            _save_dataviz_pages_json(data)
+            return True
+    return False
 
 
 def dataviz_page_get(slug: str) -> dict | None:
@@ -3790,7 +3834,8 @@ def api_dataviz_public_content(slug):
         return jsonify({"error": "Unknown page"}), 404
     items = dataviz_content_list(status="published", page=slug)
     public = [{**{k: i.get(k) for k in _DATAVIZ_PUBLIC_FIELDS}, "image_url": _dataviz_public_image_url(i)} for i in items]
-    return jsonify({"page": slug, "label": page["label"], "items": public})
+    header_image_url = f"/api/dataviz/pages/{slug}/header-image" if page.get("has_header_image") else None
+    return jsonify({"page": slug, "label": page["label"], "header_image_url": header_image_url, "items": public})
 
 
 @app.route("/api/dataviz/market-pulse/live", methods=["GET"])
@@ -3821,6 +3866,35 @@ def api_dataviz_pages():
         return jsonify({"error": "label must be 80 characters or fewer"}), 400
     page = dataviz_page_create(label, current_user.alpha_role)
     return jsonify({"success": True, "page": page})
+
+
+@app.route("/api/dataviz/pages/<slug>/header-image", methods=["GET"])
+def api_dataviz_page_header_image(slug):
+    filename, file_bytes = dataviz_page_get_header_image(slug)
+    if file_bytes is None:
+        return jsonify({"error": "No header image set"}), 404
+    import mimetypes
+    mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
+    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.route("/api/dataviz/pages/<slug>/header-image", methods=["POST", "DELETE"])
+@login_required
+@dataviz_author_required
+def api_dataviz_page_header_image_upload(slug):
+    if not dataviz_page_get(slug):
+        return jsonify({"error": "Not found"}), 404
+    if request.method == "DELETE":
+        dataviz_page_set_header_image(slug, None, None)
+        return jsonify({"success": True})
+    if "image" not in request.files or not request.files["image"].filename:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["image"]
+    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": "Allowed types: png, jpg, jpeg, gif, webp"}), 400
+    dataviz_page_set_header_image(slug, secure_filename(file.filename), file.read())
+    return jsonify({"success": True})
 
 
 @app.route("/api/dataviz/pages/<slug>", methods=["DELETE"])

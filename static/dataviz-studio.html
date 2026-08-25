@@ -232,10 +232,51 @@ function renderPageManageList() {
         <span class="page-name">${esc(p.label)}</span>
         ${p.has_live_widget ? '<span class="page-count" title="Has a live visualization built into the page — posts here don\'t need an image">⚡ live widget · no image required</span>' : ''}
         <span class="page-count">${p.post_count} post${p.post_count === 1 ? '' : 's'}</span>
+        ${p.has_header_image ? '<span class="page-count">🖼 header image set</span>' : ''}
       </div>
-      <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')" ${p.post_count ? 'disabled title="Delete or move its posts first"' : ''}>Delete</button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" id="headerImageInput-${esc(p.slug)}" onchange="uploadHeaderImage('${esc(p.slug)}', this)">
+        <button class="btn-primary-sm" onclick="document.getElementById('headerImageInput-${esc(p.slug)}').click()">${p.has_header_image ? 'Replace' : 'Add'} header image</button>
+        ${p.has_header_image ? `<button class="btn-danger-sm" onclick="removeHeaderImage('${esc(p.slug)}')">Remove image</button>` : ''}
+        <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')" ${p.post_count ? 'disabled title="Delete or move its posts first"' : ''}>Delete</button>
+      </div>
     </div>
   `).join('');
+}
+
+async function uploadHeaderImage(slug, input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('image', file);
+  const msg = document.getElementById('createPageMsg');
+  try {
+    const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}/header-image`, { method: 'POST', credentials: 'include', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't upload — try again.");
+    msg.textContent = 'Header image saved.';
+    msg.className = 'form-msg success';
+    await refreshPages();
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  } finally {
+    input.value = '';
+  }
+}
+
+async function removeHeaderImage(slug) {
+  if (!confirm('Remove this page\'s header image?')) return;
+  const msg = document.getElementById('createPageMsg');
+  try {
+    const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}/header-image`, { method: 'DELETE', credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't remove — try again.");
+    await refreshPages();
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.className = 'form-msg error';
+  }
 }
 
 async function deletePage(slug) {
