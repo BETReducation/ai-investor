@@ -4238,6 +4238,32 @@ _engine_lock = threading.Lock()
 _engine_last_computed: dict[str, float] = {}   # indicator cache key -> monotonic time
 _engine_indicator_cache: dict[str, dict] = {}  # indicator cache key -> calculate_all() output
 
+# Both this cache and _ohlcv_cache above are keyed by (symbol, period, interval, ...)
+# combos with no natural expiry of the key itself — every distinct combo ever
+# requested stays in the dict forever, growing RAM usage all day until a restart.
+# Swept periodically (see _sweep_stale_caches) rather than on every write, since
+# these caches are hit far more often than jobs actually go stale.
+_CACHE_SWEEP_INTERVAL_SECONDS = 300   # how often to run the sweep
+_CACHE_ENTRY_MAX_AGE_SECONDS = 600    # evict entries idle longer than this
+_last_cache_sweep = 0.0
+
+
+def _sweep_stale_caches(now: float) -> None:
+    """Evict cache entries that haven't been refreshed in a while. Cheap TTL caches
+    (_ohlcv_cache, 4s TTL) never need entries older than a few minutes — anything
+    that old is a symbol/timeframe nobody's actively polling anymore. Same idea for
+    the engine's indicator cache: once a job drops out of the desired set, its entry
+    just sits there unused."""
+    with _ohlcv_cache_lock:
+        stale_keys = [k for k, (ts, _df) in _ohlcv_cache.items() if now - ts > _CACHE_ENTRY_MAX_AGE_SECONDS]
+        for k in stale_keys:
+            del _ohlcv_cache[k]
+    with _engine_lock:
+        stale_keys = [k for k, ts in _engine_last_computed.items() if now - ts > _CACHE_ENTRY_MAX_AGE_SECONDS]
+        for k in stale_keys:
+            _engine_last_computed.pop(k, None)
+            _engine_indicator_cache.pop(k, None)
+
 
 class _DictArgs:
     """Adapts a plain dict to the .get(key)-only interface _extract_calc_params
@@ -4312,9 +4338,14 @@ def _engine_worker_tick() -> None:
 
 
 def _engine_worker_loop() -> None:
+    global _last_cache_sweep
     while True:
         try:
             _engine_worker_tick()
+            now = time.monotonic()
+            if now - _last_cache_sweep > _CACHE_SWEEP_INTERVAL_SECONDS:
+                _sweep_stale_caches(now)
+                _last_cache_sweep = now
         except Exception:
             app.logger.exception("engine worker tick failed")
         time.sleep(1)
