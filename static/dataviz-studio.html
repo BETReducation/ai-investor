@@ -65,6 +65,10 @@
 .studio-list { display: flex; flex-direction: column; gap: 16px; }
 .list-empty { font-size: 13px; color: var(--muted); text-align: center; padding: 20px; }
 .studio-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.studio-card > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14.5px; color: var(--text); }
+.studio-card > summary::-webkit-details-marker { display: none; }
+.studio-card > summary::before { content: '▸'; color: var(--muted); font-size: 12px; transition: transform 0.15s; }
+.studio-card[open] > summary::before { transform: rotate(90deg); }
 .studio-card-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
 .status-badge { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 10px; border-radius: 100px; }
 .status-badge.draft { background: rgba(251,191,36,0.12); color: var(--gold); }
@@ -188,9 +192,12 @@ function renderPageManageList() {
     return;
   }
   el.innerHTML = DATAVIZ_PAGE_LIST.map(p => `
-    <div class="studio-card">
-      <div class="studio-card-head">
+    <details class="studio-card">
+      <summary class="studio-card-summary">
+        <span class="page-name">${esc(p.label)}</span>
         ${p.has_live_widget ? '<span class="status-badge published" title="Has a live widget built into the page">⚡ live widget</span>' : ''}
+      </summary>
+      <div class="studio-card-head">
         <a href="/tools/data-visualisation/${esc(p.slug)}" target="_blank" class="page-count">View live →</a>
       </div>
       <div class="form-field"><label class="form-label">Title</label><input class="form-input" value="${esc(p.label)}" onblur="updatePageField('${esc(p.slug)}', 'label', this.value)"></div>
@@ -204,7 +211,7 @@ function renderPageManageList() {
         <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')">Delete</button>
       </div>
       <div class="form-msg" id="pageMsg-${esc(p.slug)}"></div>
-    </div>
+    </details>
   `).join('');
 }
 
