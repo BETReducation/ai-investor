@@ -94,7 +94,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div style="position:relative;z-index:2;">
     <div class="section-badge">Restricted Access</div>
     <h1 class="hero-title">Data Viz <span class="accent">Studio</span></h1>
-    <p class="hero-sub">Add and update the visualisations shown on the Data Visualisation page. Everything starts as a draft — nothing goes live until you publish it.</p>
+    <p class="hero-sub">Add and edit the visualisations shown on the Data Visualisation page. Each one goes live as soon as you add it.</p>
   </div>
 </div>
 
@@ -113,65 +113,31 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <div id="studioApp" style="display:none;">
       <div class="author-line">Managing the <a href="/tools/data-visualisation" target="_blank">Data Visualisation page →</a></div>
 
-      <!-- Create a new page -->
-      <div class="studio-panel">
-        <h2>Create a New Page</h2>
-        <p class="panel-desc">Each page is its own dated feed on the site, linked from the Data Visualisation hub. Give it a short, clear name — you'll pick it from the dropdown below when adding a visualisation.</p>
-        <div class="form-field">
-          <label class="form-label" for="newPageLabel">Page name</label>
-          <input class="form-input" id="newPageLabel" placeholder="e.g. Gold vs Real Yields">
-        </div>
-        <button class="btn-primary-sm" id="createPageBtn" onclick="createPage()">Create Page</button>
-        <div class="form-msg" id="createPageMsg"></div>
-        <div class="page-manage-list" id="pageManageList" style="margin-top:20px;"></div>
-      </div>
-
       <!-- Add a visualisation -->
       <div class="studio-panel">
         <h2>Add a Visualisation</h2>
-        <p class="panel-desc">Fill in the fields below. It'll be saved as a draft for you to review — nothing appears on the public page until you hit Publish.</p>
+        <p class="panel-desc">Each visualisation is its own page, linked from the Data Visualisation hub. It goes live immediately — edit it any time below.</p>
         <div class="form-field">
-          <label class="form-label" for="newPage">Page — which visualisation page does this belong to?</label>
-          <select class="form-select page-select" id="newPage"></select>
-          <span class="form-hint">This post will be added to the top of that page's feed, newest first.</span>
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="newTitle">1. Title</label>
+          <label class="form-label" for="newTitle">Title</label>
           <input class="form-input" id="newTitle" placeholder="e.g. S&amp;P 500 Sector Rotation">
         </div>
         <div class="form-field">
-          <label class="form-label" for="newDescription">2. Description — what does this tool show?</label>
-          <textarea class="form-textarea" id="newDescription" rows="3" placeholder="Plain-English description of what the visualisation shows."></textarea>
+          <label class="form-label" for="newDescription">Description (optional)</label>
+          <textarea class="form-textarea" id="newDescription" rows="3" placeholder="Plain-English description of what this shows."></textarea>
         </div>
         <div class="form-field">
-          <label class="form-label" for="newPositive">3. Positive analysis — what's useful about this data?</label>
-          <textarea class="form-textarea" id="newPositive" rows="3" placeholder="What insight or edge this gives the viewer."></textarea>
+          <label class="form-label" for="newImage">Image (optional)</label>
+          <input type="file" id="newImage" accept="image/png,image/jpeg,image/gif,image/webp">
         </div>
-        <div class="form-field">
-          <label class="form-label" for="newWarning">4. Warning — accuracy / usefulness caveats</label>
-          <textarea class="form-textarea" id="newWarning" rows="2" placeholder="Any limitations, delays, or caveats about the data."></textarea>
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="newLink">5. Further information link (optional)</label>
-          <input class="form-input" type="url" id="newLink" placeholder="https://…">
-        </div>
-        <button class="btn-primary-sm" id="createBtn" onclick="createItem()">Save as Draft</button>
-        <div class="form-msg" id="createMsg"></div>
+        <button class="btn-primary-sm" id="createPageBtn" onclick="createPage()">Add Visualisation</button>
+        <div class="form-msg" id="createPageMsg"></div>
       </div>
 
-      <!-- Existing items -->
+      <!-- Existing visualisations -->
       <div class="studio-panel">
         <h2>Your Visualisations</h2>
-        <p class="panel-desc">Drafts are only visible to you here. Published items appear live on the Data Visualisation page, newest at the top.</p>
-        <div class="form-field" style="max-width:280px;">
-          <label class="form-label" for="filterPage">Filter by page</label>
-          <select class="form-select page-select-all" id="filterPage" onchange="loadItems()">
-            <option value="">All pages</option>
-          </select>
-        </div>
-        <div class="studio-list" id="studioList">
-          <div class="list-empty">Loading…</div>
-        </div>
+        <p class="panel-desc">Edit the title, description, or image of any visualisation below — changes save automatically.</p>
+        <div class="page-manage-list" id="pageManageList" style="margin-top:8px;"></div>
       </div>
     </div>
 
@@ -197,10 +163,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 </footer>
 
 <script>
-// Populated from /api/dataviz/pages on load — pages are created by Tom/Gary
-// from the studio, not hardcoded here.
-let DATAVIZ_PAGES = {};
-
+// Each visualisation IS a page now — title, description, image — there's no
+// separate "posts under a page" layer any more. See dataviz_pages in app.py.
 function esc(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -212,10 +176,7 @@ async function refreshPages() {
     const res = await fetch('/api/dataviz/pages', { credentials: 'include' });
     const data = await res.json();
     DATAVIZ_PAGE_LIST = data.pages || [];
-    DATAVIZ_PAGES = {};
-    DATAVIZ_PAGE_LIST.forEach(p => { DATAVIZ_PAGES[p.slug] = p.label; });
-  } catch { DATAVIZ_PAGE_LIST = []; DATAVIZ_PAGES = {}; }
-  populatePageSelects();
+  } catch { DATAVIZ_PAGE_LIST = []; }
   renderPageManageList();
 }
 
@@ -223,25 +184,46 @@ function renderPageManageList() {
   const el = document.getElementById('pageManageList');
   if (!el) return;
   if (!DATAVIZ_PAGE_LIST.length) {
-    el.innerHTML = '';
+    el.innerHTML = '<div class="list-empty">No visualisations yet — add one above.</div>';
     return;
   }
   el.innerHTML = DATAVIZ_PAGE_LIST.map(p => `
-    <div class="page-manage-row">
-      <div>
-        <span class="page-name">${esc(p.label)}</span>
-        ${p.has_live_widget ? '<span class="page-count" title="Has a live visualization built into the page — posts here don\'t need an image">⚡ live widget · no image required</span>' : ''}
-        <span class="page-count">${p.post_count} post${p.post_count === 1 ? '' : 's'}</span>
-        ${p.has_header_image ? '<span class="page-count">🖼 header image set</span>' : ''}
+    <div class="studio-card">
+      <div class="studio-card-head">
+        ${p.has_live_widget ? '<span class="status-badge published" title="Has a live widget built into the page">⚡ live widget</span>' : ''}
+        <a href="/tools/data-visualisation/${esc(p.slug)}" target="_blank" class="page-count">View live →</a>
       </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" id="headerImageInput-${esc(p.slug)}" onchange="uploadHeaderImage('${esc(p.slug)}', this)">
-        <button class="btn-primary-sm" onclick="document.getElementById('headerImageInput-${esc(p.slug)}').click()">${p.has_header_image ? 'Replace' : 'Add'} header image</button>
+      <div class="form-field"><label class="form-label">Title</label><input class="form-input" value="${esc(p.label)}" onblur="updatePageField('${esc(p.slug)}', 'label', this.value)"></div>
+      <div class="card-image-input-row">
+        ${p.has_header_image ? `<img class="card-image-preview" src="/api/dataviz/pages/${esc(p.slug)}/header-image?ts=${Date.now()}" alt="">` : ''}
+        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadHeaderImage('${esc(p.slug)}', this)">
         ${p.has_header_image ? `<button class="btn-danger-sm" onclick="removeHeaderImage('${esc(p.slug)}')">Remove image</button>` : ''}
-        <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')" ${p.post_count ? 'disabled title="Delete or move its posts first"' : ''}>Delete</button>
       </div>
+      <div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" rows="2" onblur="updatePageField('${esc(p.slug)}', 'description', this.value)">${esc(p.description)}</textarea></div>
+      <div class="studio-card-actions">
+        <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')">Delete</button>
+      </div>
+      <div class="form-msg" id="pageMsg-${esc(p.slug)}"></div>
     </div>
   `).join('');
+}
+
+async function updatePageField(slug, field, value) {
+  const el = document.getElementById(`pageMsg-${slug}`);
+  try {
+    const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Couldn't save — try again.");
+    const page = DATAVIZ_PAGE_LIST.find(p => p.slug === slug);
+    if (page) page[field] = value;
+  } catch (e) {
+    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
+  }
 }
 
 async function uploadHeaderImage(slug, input) {
@@ -249,70 +231,51 @@ async function uploadHeaderImage(slug, input) {
   if (!file) return;
   const fd = new FormData();
   fd.append('image', file);
-  const msg = document.getElementById('createPageMsg');
+  const el = document.getElementById(`pageMsg-${slug}`);
   try {
     const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}/header-image`, { method: 'POST', credentials: 'include', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Couldn't upload — try again.");
-    msg.textContent = 'Header image saved.';
-    msg.className = 'form-msg success';
     await refreshPages();
   } catch (e) {
-    msg.textContent = e.message;
-    msg.className = 'form-msg error';
+    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   } finally {
     input.value = '';
   }
 }
 
 async function removeHeaderImage(slug) {
-  if (!confirm('Remove this page\'s header image?')) return;
-  const msg = document.getElementById('createPageMsg');
+  if (!confirm('Remove this visualisation\'s image?')) return;
   try {
     const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}/header-image`, { method: 'DELETE', credentials: 'include' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Couldn't remove — try again.");
     await refreshPages();
   } catch (e) {
-    msg.textContent = e.message;
-    msg.className = 'form-msg error';
+    const el = document.getElementById(`pageMsg-${slug}`);
+    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   }
 }
 
 async function deletePage(slug) {
-  if (!confirm('Delete this page? This can\'t be undone.')) return;
+  if (!confirm('Delete this visualisation? This can\'t be undone.')) return;
   try {
     const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}`, { method: 'DELETE', credentials: 'include' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Couldn't delete — try again.");
     await refreshPages();
   } catch (e) {
-    const msg = document.getElementById('createPageMsg');
-    msg.textContent = e.message;
-    msg.className = 'form-msg error';
+    const el = document.getElementById(`pageMsg-${slug}`);
+    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   }
-}
-
-function populatePageSelects() {
-  const opts = Object.entries(DATAVIZ_PAGES).map(([slug, label]) => `<option value="${esc(slug)}">${esc(label)}</option>`).join('');
-  document.querySelectorAll('.page-select').forEach(sel => {
-    const selected = sel.dataset.selected || sel.value;
-    sel.innerHTML = opts;
-    if (selected) sel.value = selected;
-  });
-  document.querySelectorAll('.page-select-all').forEach(sel => {
-    const selected = sel.value;
-    sel.innerHTML = '<option value="">All pages</option>' + opts;
-    sel.value = selected;
-  });
 }
 
 async function createPage() {
   const btn = document.getElementById('createPageBtn');
   const msg = document.getElementById('createPageMsg');
-  const label = document.getElementById('newPageLabel').value.trim();
+  const label = document.getElementById('newTitle').value.trim();
   if (!label) {
-    msg.textContent = 'Page name is required.';
+    msg.textContent = 'Title is required.';
     msg.className = 'form-msg error';
     return;
   }
@@ -320,19 +283,18 @@ async function createPage() {
   msg.textContent = '';
   msg.className = 'form-msg';
   try {
-    const res = await fetch('/api/dataviz/pages', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label }),
-    });
+    const fd = new FormData();
+    fd.append('label', label);
+    fd.append('description', document.getElementById('newDescription').value.trim());
+    const imageInput = document.getElementById('newImage');
+    if (imageInput.files && imageInput.files[0]) fd.append('image', imageInput.files[0]);
+    const res = await fetch('/api/dataviz/pages', { method: 'POST', credentials: 'include', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Something went wrong');
-    document.getElementById('newPageLabel').value = '';
-    msg.textContent = `Page created — select "${data.page.label}" from the dropdown below.`;
+    ['newTitle', 'newDescription', 'newImage'].forEach(id => document.getElementById(id).value = '');
+    msg.textContent = `"${data.page.label}" is live.`;
     msg.className = 'form-msg success';
     await refreshPages();
-    document.getElementById('newPage').value = data.page.slug;
   } catch (e) {
     msg.textContent = e.message;
     msg.className = 'form-msg error';
@@ -362,164 +324,6 @@ async function initStudio() {
   const datavizStudioLi = document.getElementById('navDatavizStudioLi');
   if (datavizStudioLi) datavizStudioLi.style.display = '';
   await refreshPages();
-  loadItems();
-}
-
-async function createItem() {
-  const btn = document.getElementById('createBtn');
-  const msg = document.getElementById('createMsg');
-  const page = document.getElementById('newPage').value;
-  const title = document.getElementById('newTitle').value.trim();
-  if (!page) {
-    msg.textContent = 'Choose which page this belongs to.';
-    msg.className = 'form-msg error';
-    return;
-  }
-  if (!title) {
-    msg.textContent = 'Title is required.';
-    msg.className = 'form-msg error';
-    return;
-  }
-  btn.disabled = true;
-  msg.textContent = '';
-  msg.className = 'form-msg';
-  try {
-    const res = await fetch('/api/dataviz/content', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page,
-        title,
-        description: document.getElementById('newDescription').value.trim(),
-        positive_analysis: document.getElementById('newPositive').value.trim(),
-        warning: document.getElementById('newWarning').value.trim(),
-        link: document.getElementById('newLink').value.trim(),
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong');
-    ['newTitle', 'newDescription', 'newPositive', 'newWarning', 'newLink'].forEach(id => document.getElementById(id).value = '');
-    msg.textContent = 'Draft saved.';
-    msg.className = 'form-msg success';
-    loadItems();
-  } catch (e) {
-    msg.textContent = e.message;
-    msg.className = 'form-msg error';
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-async function loadItems() {
-  const list = document.getElementById('studioList');
-  const pageFilter = document.getElementById('filterPage').value;
-  const url = pageFilter ? `/api/dataviz/content?page=${encodeURIComponent(pageFilter)}` : '/api/dataviz/content';
-  try {
-    const res = await fetch(url, { credentials: 'include' });
-    const data = await res.json();
-    const items = data.items || [];
-    if (!items.length) {
-      list.innerHTML = '<div class="list-empty">No visualisations yet — add one above.</div>';
-      return;
-    }
-    list.innerHTML = items.map(renderCard).join('');
-    populatePageSelects();
-  } catch {
-    list.innerHTML = '<div class="list-empty">Couldn\'t load your visualisations — check your connection and try again.</div>';
-  }
-}
-
-function renderCard(item) {
-  const imageTag = item.image_filename
-    ? `<img class="card-image-preview" src="/api/dataviz/content/${item.id}/image?ts=${Date.now()}" alt="">`
-    : '';
-  // Pages with a live widget (e.g. Market Pulse) already have a visual at the
-  // top of the page — posts under them don't need their own hero image, so the
-  // publish gate below is skipped for those. See has_live_widget on the page.
-  const page = DATAVIZ_PAGE_LIST.find(p => p.slug === item.page);
-  const imageRequired = !(page && page.has_live_widget);
-  const canPublish = !!item.image_filename || !imageRequired;
-  return `
-    <div class="studio-card">
-      <div class="studio-card-head">
-        <span class="status-badge ${item.status}">${item.status}</span>
-      </div>
-      <div class="form-field"><label class="form-label">Title</label><input class="form-input" value="${esc(item.title)}" onblur="updateField(${item.id}, 'title', this.value)"></div>
-      <div class="card-image-input-row">
-        ${imageTag}
-        <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadImage(${item.id}, this)">
-      </div>
-      <div class="form-field"><label class="form-label">Page</label><select class="form-select page-select" onchange="updateField(${item.id}, 'page', this.value)" data-selected="${esc(item.page)}"></select></div>
-      <div class="form-field"><label class="form-label">Description</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'description', this.value)">${esc(item.description)}</textarea></div>
-      <div class="form-field"><label class="form-label">Positive analysis</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'positive_analysis', this.value)">${esc(item.positive_analysis)}</textarea></div>
-      <div class="form-field"><label class="form-label">Warning</label><textarea class="form-textarea" rows="2" onblur="updateField(${item.id}, 'warning', this.value)">${esc(item.warning)}</textarea></div>
-      <div class="form-field"><label class="form-label">Further information link</label><input class="form-input" type="url" value="${esc(item.link)}" onblur="updateField(${item.id}, 'link', this.value)"></div>
-      <div class="studio-card-actions">
-        ${item.status === 'draft'
-          ? `<button class="btn-primary-sm" onclick="setStatus(${item.id}, 'published')" ${canPublish ? '' : 'disabled title="Upload an image before publishing"'}>Publish</button>`
-          : `<button class="btn-ghost-sm" onclick="setStatus(${item.id}, 'draft')">Unpublish</button>`}
-        <button class="btn-danger-sm" onclick="deleteItem(${item.id})">Delete</button>
-      </div>
-      ${item.status === 'draft' && !canPublish ? '<div class="form-hint">Upload an image above to enable Publish.</div>' : ''}
-      <div class="form-msg" id="cardMsg${item.id}"></div>
-    </div>
-  `;
-}
-
-async function updateField(id, field, value) {
-  try {
-    await fetch(`/api/dataviz/content/${id}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [field]: value }),
-    });
-  } catch {}
-}
-
-async function setStatus(id, status) {
-  try {
-    const res = await fetch(`/api/dataviz/content/${id}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Couldn't update — try again.");
-    loadItems();
-  } catch (e) {
-    const el = document.getElementById(`cardMsg${id}`);
-    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
-  }
-}
-
-async function deleteItem(id) {
-  if (!confirm('Delete this visualisation? This can\'t be undone.')) return;
-  try {
-    const res = await fetch(`/api/dataviz/content/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (!res.ok) throw new Error();
-    loadItems();
-  } catch {
-    const el = document.getElementById(`cardMsg${id}`);
-    if (el) { el.textContent = "Couldn't delete — try again."; el.className = 'form-msg error'; }
-  }
-}
-
-async function uploadImage(id, input) {
-  if (!input.files || !input.files[0]) return;
-  const formData = new FormData();
-  formData.append('image', input.files[0]);
-  try {
-    const res = await fetch(`/api/dataviz/content/${id}/image`, { method: 'POST', credentials: 'include', body: formData });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Upload failed');
-    loadItems();
-  } catch (e) {
-    const el = document.getElementById(`cardMsg${id}`);
-    if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
-  }
 }
 
 initStudio();

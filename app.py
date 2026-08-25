@@ -236,6 +236,12 @@ def _ensure_table() -> None:
         # waived (see comment above).
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_filename TEXT")
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_file BYTEA")
+        # description: the page's own summary text (title/description/image is the
+        # whole visualisation now — see the Studio rework below). Replaces the old
+        # per-page "posts" model: dataviz_content still exists in the DB but the
+        # Studio no longer offers it, so this is the only editable body text a
+        # visualisation carries.
+        cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS description TEXT")
         # One-time rename: "market-pulse" -> "global-heat-map". Gary decided the
         # page should carry no "Market Pulse" branding anywhere (including the
         # DB) and shouldn't have editorial posts under it — just the live widget
@@ -939,11 +945,11 @@ def dataviz_pages_list() -> list:
     # earlier.
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT slug, label, author, has_live_widget, header_image_filename, created_at FROM dataviz_pages "
+            cur.execute("SELECT slug, label, description, author, has_live_widget, header_image_filename, created_at FROM dataviz_pages "
                         "ORDER BY has_live_widget DESC, created_at ASC")
             return [
-                {"slug": r["slug"], "label": r["label"], "author": r["author"], "has_live_widget": bool(r["has_live_widget"]),
-                 "has_header_image": bool(r["header_image_filename"]),
+                {"slug": r["slug"], "label": r["label"], "description": r["description"], "author": r["author"],
+                 "has_live_widget": bool(r["has_live_widget"]), "has_header_image": bool(r["header_image_filename"]),
                  "created_at": r["created_at"].isoformat() if r["created_at"] else None}
                 for r in cur.fetchall()
             ]
@@ -995,7 +1001,7 @@ def dataviz_page_get(slug: str) -> dict | None:
     return None
 
 
-def dataviz_page_create(label: str, author: str, has_live_widget: bool = False) -> dict:
+def dataviz_page_create(label: str, author: str, description: str | None = None, has_live_widget: bool = False) -> dict:
     now = _dt.datetime.utcnow()
     base_slug = _slugify(label)
     existing_slugs = {p["slug"] for p in dataviz_pages_list()}
@@ -1007,18 +1013,38 @@ def dataviz_page_create(label: str, author: str, has_live_widget: bool = False) 
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "INSERT INTO dataviz_pages (slug, label, author, has_live_widget, created_at) VALUES (%s, %s, %s, %s, %s) "
-                "RETURNING slug, label, author, has_live_widget, created_at",
-                (slug, label, author, has_live_widget, now),
+                "INSERT INTO dataviz_pages (slug, label, description, author, has_live_widget, created_at) VALUES (%s, %s, %s, %s, %s, %s) "
+                "RETURNING slug, label, description, author, has_live_widget, created_at",
+                (slug, label, description, author, has_live_widget, now),
             )
             row = cur.fetchone()
-            return {"slug": row["slug"], "label": row["label"], "author": row["author"],
+            return {"slug": row["slug"], "label": row["label"], "description": row["description"], "author": row["author"],
                      "has_live_widget": bool(row["has_live_widget"]), "created_at": row["created_at"].isoformat()}
     data = _load_dataviz_pages_json()
-    page = {"slug": slug, "label": label, "author": author, "has_live_widget": has_live_widget, "created_at": now.isoformat()}
+    page = {"slug": slug, "label": label, "description": description, "author": author, "has_live_widget": has_live_widget, "created_at": now.isoformat()}
     data["pages"].append(page)
     _save_dataviz_pages_json(data)
     return page
+
+
+def dataviz_page_update(slug: str, updates: dict) -> dict | None:
+    """updates may contain 'label' and/or 'description'."""
+    if not updates:
+        return dataviz_page_get(slug)
+    if DATABASE_URL:
+        set_clauses = ", ".join(f"{k} = %s" for k in updates)
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(f"UPDATE dataviz_pages SET {set_clauses} WHERE slug = %s", (*updates.values(), slug))
+            if cur.rowcount == 0:
+                return None
+        return dataviz_page_get(slug)
+    data = _load_dataviz_pages_json()
+    for p in data["pages"]:
+        if p["slug"] == slug:
+            p.update(updates)
+            _save_dataviz_pages_json(data)
+            return p
+    return None
 
 
 def dataviz_page_delete(slug: str) -> bool:
@@ -3841,10 +3867,8 @@ def api_dataviz_public_content(slug):
     page = dataviz_page_get(slug)
     if not page:
         return jsonify({"error": "Unknown page"}), 404
-    items = dataviz_content_list(status="published", page=slug)
-    public = [{**{k: i.get(k) for k in _DATAVIZ_PUBLIC_FIELDS}, "image_url": _dataviz_public_image_url(i)} for i in items]
     header_image_url = f"/api/dataviz/pages/{slug}/header-image" if page.get("has_header_image") else None
-    return jsonify({"page": slug, "label": page["label"], "header_image_url": header_image_url, "items": public})
+    return jsonify({"page": slug, "label": page["label"], "description": page.get("description"), "header_image_url": header_image_url})
 
 
 @app.route("/api/dataviz/global-heat-map/live", methods=["GET"])
@@ -3861,19 +3885,47 @@ def api_gold_silver_ratio_live():
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])
 def api_dataviz_pages():
     if request.method == "GET":
-        pages = dataviz_pages_list()
-        for page in pages:
-            page["post_count"] = len(dataviz_content_list(page=page["slug"]))
-        return jsonify({"pages": pages})
+        return jsonify({"pages": dataviz_pages_list()})
     if not current_user.is_authenticated or getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
         return jsonify({"error": "This account has no Data Visualisation author access"}), 403
-    data = request.get_json() or {}
-    label = (data.get("label") or "").strip()
+    # multipart/form-data: a visualisation is now created in one step — label,
+    # optional description, optional image — rather than a page plus separate
+    # "posts" underneath it (see the Studio rework this replaced).
+    label = (request.form.get("label") or "").strip()
+    description = (request.form.get("description") or "").strip() or None
     if not label:
-        return jsonify({"error": "label is required"}), 400
+        return jsonify({"error": "Title is required"}), 400
     if len(label) > 80:
-        return jsonify({"error": "label must be 80 characters or fewer"}), 400
-    page = dataviz_page_create(label, current_user.alpha_role)
+        return jsonify({"error": "Title must be 80 characters or fewer"}), 400
+    page = dataviz_page_create(label, current_user.alpha_role, description=description)
+    image_file = request.files.get("image")
+    if image_file and image_file.filename:
+        ext = image_file.filename.rsplit(".", 1)[-1].lower() if "." in image_file.filename else ""
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            return jsonify({"error": "Allowed image types: png, jpg, jpeg, gif, webp"}), 400
+        dataviz_page_set_header_image(page["slug"], secure_filename(image_file.filename), image_file.read())
+        page["has_header_image"] = True
+    return jsonify({"success": True, "page": page})
+
+
+@app.route("/api/dataviz/pages/<slug>", methods=["PATCH"])
+@login_required
+@dataviz_author_required
+def api_dataviz_page_update(slug):
+    if not dataviz_page_get(slug):
+        return jsonify({"error": "Not found"}), 404
+    data = request.get_json() or {}
+    updates = {}
+    if "label" in data:
+        label = (data["label"] or "").strip()
+        if not label:
+            return jsonify({"error": "Title can't be empty"}), 400
+        if len(label) > 80:
+            return jsonify({"error": "Title must be 80 characters or fewer"}), 400
+        updates["label"] = label
+    if "description" in data:
+        updates["description"] = (data["description"] or "").strip() or None
+    page = dataviz_page_update(slug, updates)
     return jsonify({"success": True, "page": page})
 
 
@@ -3921,20 +3973,15 @@ def api_dataviz_page_delete(slug):
 
 @app.route("/api/dataviz/pages/overview", methods=["GET"])
 def api_dataviz_pages_overview():
-    """Hub-page feed: each page plus its most recently published post, if any."""
+    """Hub-page feed: each visualisation is now the page itself — title,
+    description, image — not a page plus a separate feed of posts underneath."""
     overview = []
     for page in dataviz_pages_list():
-        items = dataviz_content_list(status="published", page=page["slug"])
-        latest = items[0] if items else None
         overview.append({
             "slug": page["slug"],
             "label": page["label"],
-            "latest": None if not latest else {
-                "title": latest.get("title"),
-                "description": latest.get("description"),
-                "published_at": latest.get("published_at"),
-                "image_url": _dataviz_public_image_url(latest),
-            },
+            "description": page.get("description"),
+            "image_url": f"/api/dataviz/pages/{page['slug']}/header-image" if page.get("has_header_image") else None,
         })
     return jsonify({"pages": overview})
 
