@@ -236,20 +236,29 @@ def _ensure_table() -> None:
         # waived (see comment above).
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_filename TEXT")
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS header_image_file BYTEA")
+        # One-time rename: "market-pulse" -> "global-heat-map". Gary decided the
+        # page should carry no "Market Pulse" branding anywhere (including the
+        # DB) and shouldn't have editorial posts under it — just the live widget
+        # — so any old post under the old slug is dropped, then the page row
+        # itself is renamed if it's still sitting under the old slug. Must run
+        # before the seed-insert below, so that insert's ON CONFLICT DO NOTHING
+        # naturally no-ops once this has already put "global-heat-map" in place.
+        cur.execute("DELETE FROM dataviz_content WHERE page = 'market-pulse'")
+        cur.execute("UPDATE dataviz_pages SET slug = 'global-heat-map', label = 'Global Heat Map' WHERE slug = 'market-pulse'")
         # Seed the 3 pages that existed before pages became self-service, so
-        # any content already tagged with these slugs keeps working. "market-pulse"
-        # is the live global heat map (see MARKET_PULSE_INDICES below) — seeded here
-        # too so Tom/Gary can post editorial commentary under it via the studio the
-        # same way as any other data-viz page, with the live map rendered above it.
+        # any content already tagged with these slugs keeps working.
+        # "global-heat-map" is the live global heat map (see MARKET_PULSE_INDICES
+        # below) — seeded here too so it appears on the hub like any other
+        # data-viz page, with the live map rendered above it.
         for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03"),
-                             ("market-pulse", "Market Pulse — Global Heat Map"),
+                             ("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
-        # Flip the flag on for market-pulse/gold-silver-ratio even if the row already
-        # existed from before has_live_widget was added (ON CONFLICT DO NOTHING above
-        # wouldn't touch it) — these UPDATEs are what actually make existing
-        # deployments pick up the new behavior.
-        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-pulse'")
+        # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
+        # already existed from before has_live_widget was added (ON CONFLICT DO
+        # NOTHING above wouldn't touch it) — these UPDATEs are what actually make
+        # existing deployments pick up the new behavior.
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'global-heat-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'gold-silver-ratio'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
@@ -900,7 +909,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "viz-1", "label": "Visualisation 01", "author": None, "has_live_widget": False},
     {"slug": "viz-2", "label": "Visualisation 02", "author": None, "has_live_widget": False},
     {"slug": "viz-3", "label": "Visualisation 03", "author": None, "has_live_widget": False},
-    {"slug": "market-pulse", "label": "Market Pulse — Global Heat Map", "author": None, "has_live_widget": True},
+    {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
 ]
 
@@ -3838,7 +3847,7 @@ def api_dataviz_public_content(slug):
     return jsonify({"page": slug, "label": page["label"], "header_image_url": header_image_url, "items": public})
 
 
-@app.route("/api/dataviz/market-pulse/live", methods=["GET"])
+@app.route("/api/dataviz/global-heat-map/live", methods=["GET"])
 def api_market_pulse_live():
     return jsonify(_fetch_market_pulse_live())
 
