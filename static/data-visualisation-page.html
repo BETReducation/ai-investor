@@ -370,7 +370,7 @@ async function loadPage() {
     } else {
       list.innerHTML = items.map(renderPost).join('');
     }
-    if (slug === 'market-pulse') {
+    if (slug === 'global-heat-map') {
       document.querySelector('.hero-sub').textContent = "Every major index worldwide, colored by today's move — refreshes automatically. Commentary on the day's biggest movers below.";
       // Gold accent (body.pulse-page rules above) applies in both themes; the
       // toggle itself is left alone so visitors can pick light or dark like any
@@ -615,7 +615,7 @@ async function drawPulseContinents() {
 
 async function fetchPulse() {
   try {
-    const res = await fetch('/api/dataviz/market-pulse/live');
+    const res = await fetch('/api/dataviz/global-heat-map/live');
     if (!res.ok) throw new Error();
     const data = await res.json();
     renderPulse(data);
