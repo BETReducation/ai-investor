@@ -138,8 +138,8 @@ function renderPageRow(page, index) {
   const imageInner = latest && latest.image_url
     ? `<img src="${esc(latest.image_url)}" alt="">`
     : `<div class="placeholder-icon">🖼️</div><div class="placeholder-label">${latest ? 'No image yet' : 'Nothing published yet'}</div>`;
-  const desc = latest && latest.description
-    ? esc(latest.description)
+  const desc = latest
+    ? (latest.description ? esc(latest.description) : 'Check the full page for the latest update.')
     : 'No visualisations have been published on this page yet — check back soon.';
   const cta = latest ? 'See the latest update' : 'Be the first to see it when it lands';
   return `
