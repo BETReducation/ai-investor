@@ -8,11 +8,28 @@
 // bottom-of-body <script> runs, same as if it had been static HTML.
 //
 // A page can override the logo via a data-logo attribute on this <script>
-// tag itself, e.g. <script src="/static/js/nav.js" data-logo="GCG Simple Logo.svg"></script>
-// (lesson pages use the simple mark instead of the full logo).
+// tag itself, e.g. <script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+// — used to show each arm's own coloured logo (GCE blue / GCT purple /
+// Arena gold) instead of the default GCG green. The nav bar's background
+// tint and bottom border follow whichever logo is showing, so the header
+// always matches the logo's colour, not just the icon itself.
 (function () {
   var thisScript = document.currentScript;
   var logoFile = (thisScript && thisScript.getAttribute('data-logo')) || 'Green Square.png';
+
+  var ARM_RGB =
+    logoFile.indexOf('GCE') !== -1   ? '59,130,246'  :  // education — blue
+    logoFile.indexOf('GCT') !== -1   ? '168,85,247'  :  // tools — purple
+    logoFile.indexOf('Arena') !== -1 ? '245,158,11'  :  // arena — gold
+    '0,212,170';                                        // GCG default — green
+
+  function navBackground(isDark, scrolled) {
+    var base = isDark
+      ? (scrolled ? '6,8,18,0.96' : '6,8,18,0.82')
+      : (scrolled ? '245,247,255,0.96' : '245,247,255,0.88');
+    var tint = 'rgba(' + ARM_RGB + ',' + (isDark ? 0.10 : 0.07) + ')';
+    return 'linear-gradient(' + tint + ',' + tint + '), rgba(' + base + ')';
+  }
 
   var NAV_HTML = '' +
 '<nav>' +
@@ -93,6 +110,17 @@
 
   document.write(NAV_HTML);
 
+  // Apply the arm-coloured background tint + bottom border immediately, so
+  // there's no flash of the neutral default before the scroll listener
+  // below first fires.
+  (function () {
+    var navEl = document.querySelector('nav');
+    if (!navEl) return;
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    navEl.style.background = navBackground(isDark, window.scrollY > 40);
+    navEl.style.borderBottom = '2px solid rgba(' + ARM_RGB + ',0.5)';
+  })();
+
   // ── Auth check on load — mirrors what every page used to inline ────────
   (async function checkAuth() {
     try {
@@ -131,6 +159,8 @@
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('gcg-theme', next);
     updateToggleIcon(next);
+    const navEl = document.querySelector('nav');
+    if (navEl) navEl.style.background = navBackground(next === 'dark', window.scrollY > 40);
     document.dispatchEvent(new CustomEvent('gcg-theme-change', { detail: { theme: next } }));
   };
   const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
@@ -184,11 +214,7 @@
     const navEl = document.querySelector('nav');
     if (!navEl) return;
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (window.scrollY > 40) {
-      navEl.style.background = isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)';
-    } else {
-      navEl.style.background = isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)';
-    }
+    navEl.style.background = navBackground(isDark, window.scrollY > 40);
   });
 
   // ── Site search ─────────────────────────────────────────────────────────
