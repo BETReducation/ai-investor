@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backtester Guide — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-hero { padding: 100px 5% 44px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(0,212,170,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--green); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+.hero-title .accent { color: var(--green); }
+.hero-sub { font-size: clamp(15px, 1.6vw, 18px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+.hero-open-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; background: var(--green); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 10px; text-decoration: none; transition: opacity 0.2s; }
+.hero-open-link:hover { opacity: 0.87; }
+
+.content-section { padding: 56px 5% 56px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 980px; margin: 0 auto; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.03em; color: var(--text); margin-bottom: 10px; text-align: center; }
+.section-desc { font-size: 14.5px; color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0 auto 40px; text-align: center; }
+
+/* diagram */
+.diagram-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; overflow-x: auto; }
+.diagram-svg text { font-family: 'Space Grotesk', sans-serif; }
+.dg-box { fill: var(--bg3); stroke: var(--border2); stroke-width: 1; }
+.dg-panel { fill: var(--bg2); stroke: var(--border); stroke-width: 1; }
+.dg-accent { fill: var(--green); }
+.dg-label { fill: var(--muted); font-size: 10px; letter-spacing: 0.4px; }
+.dg-value { fill: var(--text); font-size: 11px; font-weight: 600; }
+.dg-pin { fill: var(--bg); stroke: var(--green); stroke-width: 2; }
+.dg-pin-text { fill: var(--green); font-size: 12px; font-weight: 800; font-family: 'Outfit', sans-serif; }
+.dg-arrow { stroke: var(--green); stroke-width: 1.6; fill: none; }
+.dg-bar-pos { fill: var(--green); opacity: 0.85; }
+.dg-bar-neg { fill: #8892b0; opacity: 0.5; }
+
+/* numbered steps */
+.step-list { display: flex; flex-direction: column; gap: 18px; margin-top: 40px; }
+.step { display: flex; gap: 18px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; }
+.step-num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,212,170,0.14); border: 1px solid rgba(0,212,170,0.35); color: var(--green); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.step-body { flex: 1; }
+.step-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16.5px; color: var(--text); margin-bottom: 6px; }
+.step-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+.step-desc b { color: var(--text); }
+
+/* metric glossary */
+.gloss-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 700px) { .gloss-grid { grid-template-columns: 1fr; } }
+.gloss-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.gloss-term { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
+.gloss-def { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.gloss-def b { color: var(--text); }
+
+/* mistakes */
+.mistake-list { display: flex; flex-direction: column; gap: 12px; }
+.mistake { display: flex; gap: 14px; align-items: flex-start; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 16px 18px; }
+.mistake-icon { font-size: 18px; flex-shrink: 0; }
+.mistake-text { font-size: 13.5px; color: var(--text); line-height: 1.6; }
+.mistake-text b { color: #ef4444; }
+
+.notify-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; max-width: 620px; margin: 0 auto; }
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
+@media (max-width: 600px) { .cta-grid { grid-template-columns: 1fr; } }
+.cta-link { display: flex; flex-direction: column; gap: 6px; text-decoration: none; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 16px 18px; }
+.cta-link:hover { border-color: var(--green); }
+.cta-link .t { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
+.cta-link .d { font-size: 12.5px; color: var(--muted); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Full Guide · Backtester</div>
+    <h1 class="hero-title">Test a strategy against <span class="accent">real history</span></h1>
+    <p class="hero-sub">The Backtester replays years of real price data to show you exactly how a trading idea would have performed — before you ever risk a pound on it. Here's how every part of the screen works.</p>
+    <a href="/backtester" class="hero-open-link">Open the Backtester →</a>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The screen, labelled</h2>
+    <p class="section-desc">A schematic of the Backtester layout — each numbered pin below is explained in the steps that follow.</p>
+
+    <div class="diagram-wrap reveal">
+      <svg class="diagram-svg" viewBox="0 0 900 480" width="100%" style="min-width:640px;">
+        <!-- left config panel -->
+        <rect x="10" y="10" width="230" height="460" rx="12" class="dg-panel"/>
+        <text x="26" y="34" class="dg-label">SYMBOL &amp; PERIOD</text>
+        <rect x="24" y="44" width="200" height="26" rx="6" class="dg-box"/>
+        <text x="34" y="61" class="dg-value">AAPL</text>
+        <rect x="24" y="78" width="96" height="26" rx="6" class="dg-box"/>
+        <text x="34" y="95" class="dg-value" style="font-size:9px;">1 YEAR</text>
+        <rect x="128" y="78" width="96" height="26" rx="6" class="dg-box"/>
+        <text x="138" y="95" class="dg-value" style="font-size:9px;">DAILY</text>
+
+        <text x="26" y="132" class="dg-label">INDICATORS</text>
+        <rect x="24" y="142" width="96" height="24" rx="12" class="dg-box"/>
+        <text x="40" y="158" class="dg-value" style="font-size:9px;">BASIC</text>
+        <rect x="128" y="142" width="96" height="24" rx="12" class="dg-accent"/>
+        <text x="145" y="158" style="fill:#03130f;font-size:9px;font-weight:700;">DETAILED</text>
+        <rect x="24" y="176" width="200" height="70" rx="8" class="dg-box"/>
+        <text x="34" y="194" class="dg-label">RSI · MACD · BB · MA</text>
+        <text x="34" y="210" class="dg-label">+ 20 more, each toggle-able</text>
+        <text x="34" y="230" class="dg-label" style="font-size:9px;">with its own trigger mode</text>
+
+        <text x="26" y="272" class="dg-label">RISK SETTINGS</text>
+        <rect x="24" y="282" width="200" height="46" rx="8" class="dg-box"/>
+        <text x="34" y="300" class="dg-label" style="font-size:9px;">CAPITAL · TRADE SIZE</text>
+        <text x="34" y="316" class="dg-label" style="font-size:9px;">STOP-LOSS · TAKE-PROFIT</text>
+
+        <text x="26" y="352" class="dg-label">SAVE STRATEGY</text>
+        <rect x="24" y="362" width="200" height="26" rx="6" class="dg-box"/>
+        <text x="34" y="379" class="dg-value" style="font-size:9px;">— New Strategy —</text>
+
+        <rect x="24" y="404" width="200" height="38" rx="8" class="dg-accent"/>
+        <text x="86" y="427" style="fill:#03130f;font-size:12px;font-weight:800;font-family:'Outfit',sans-serif;">RUN BACKTEST</text>
+
+        <!-- right results area -->
+        <rect x="256" y="10" width="634" height="130" rx="12" class="dg-panel"/>
+        <text x="272" y="32" class="dg-label">RESULTS</text>
+        <g>
+          <rect x="272" y="42" width="140" height="80" rx="8" class="dg-box"/>
+          <text x="282" y="60" class="dg-label" style="font-size:8px;">TOTAL RETURN</text>
+          <text x="282" y="86" class="dg-value" style="font-size:18px;color:var(--green);fill:var(--green);">+18.4%</text>
+          <rect x="422" y="42" width="140" height="80" rx="8" class="dg-box"/>
+          <text x="432" y="60" class="dg-label" style="font-size:8px;">WIN RATE</text>
+          <text x="432" y="86" class="dg-value" style="font-size:18px;">58%</text>
+          <rect x="572" y="42" width="140" height="80" rx="8" class="dg-box"/>
+          <text x="582" y="60" class="dg-label" style="font-size:8px;">SHARPE RATIO</text>
+          <text x="582" y="86" class="dg-value" style="font-size:18px;">1.32</text>
+          <rect x="722" y="42" width="150" height="80" rx="8" class="dg-box"/>
+          <text x="732" y="60" class="dg-label" style="font-size:8px;">MAX DRAWDOWN</text>
+          <text x="732" y="86" class="dg-value" style="font-size:18px;">-9.1%</text>
+        </g>
+
+        <rect x="256" y="150" width="634" height="150" rx="12" class="dg-panel"/>
+        <text x="272" y="172" class="dg-label">EQUITY CURVE — STRATEGY VS BUY &amp; HOLD</text>
+        <polyline points="272,270 320,255 368,262 416,230 464,238 512,205 560,215 608,180 656,190 704,160 752,170 800,140 848,150"
+          fill="none" stroke="var(--green)" stroke-width="2.4"/>
+        <polyline points="272,270 320,265 368,268 416,258 464,260 512,250 560,254 608,244 656,248 704,238 752,242 800,232 848,236"
+          fill="none" stroke="#8892b0" stroke-width="1.8" stroke-dasharray="3,3"/>
+
+        <rect x="256" y="310" width="634" height="160" rx="12" class="dg-panel"/>
+        <text x="272" y="332" class="dg-label">TRADE LOG</text>
+        <rect x="272" y="342" width="600" height="22" rx="4" class="dg-box"/>
+        <rect x="272" y="342" width="4" height="22" class="dg-bar-pos"/>
+        <text x="284" y="357" class="dg-value" style="font-size:9px;">1  ·  12 Jan → 28 Jan  ·  +4.2%</text>
+        <rect x="272" y="368" width="600" height="22" rx="4" class="dg-box"/>
+        <rect x="272" y="368" width="4" height="22" class="dg-bar-neg"/>
+        <text x="284" y="383" class="dg-value" style="font-size:9px;">2  ·  02 Feb → 09 Feb  ·  -1.6%</text>
+        <rect x="272" y="394" width="600" height="22" rx="4" class="dg-box"/>
+        <rect x="272" y="394" width="4" height="22" class="dg-bar-pos"/>
+        <text x="284" y="409" class="dg-value" style="font-size:9px;">3  ·  14 Feb → 03 Mar  ·  +7.8%</text>
+        <text x="272" y="440" class="dg-label" style="font-size:9px;">⬇ EXPORT CSV — every trade, downloadable</text>
+
+        <!-- pins -->
+        <circle cx="24" cy="44" r="11" class="dg-pin" transform="translate(-6,-6)"/>
+        <circle cx="18" cy="38" r="11" class="dg-pin"/><text x="14" y="42" class="dg-pin-text">1</text>
+        <circle cx="18" cy="150" r="11" class="dg-pin"/><text x="14" y="154" class="dg-pin-text">2</text>
+        <circle cx="18" cy="290" r="11" class="dg-pin"/><text x="14" y="294" class="dg-pin-text">3</text>
+        <circle cx="18" cy="410" r="11" class="dg-pin"/><text x="14" y="414" class="dg-pin-text">4</text>
+        <circle cx="264" cy="18" r="11" class="dg-pin"/><text x="260" y="22" class="dg-pin-text">5</text>
+        <circle cx="264" cy="158" r="11" class="dg-pin"/><text x="260" y="162" class="dg-pin-text">6</text>
+        <circle cx="264" cy="318" r="11" class="dg-pin"/><text x="260" y="322" class="dg-pin-text">7</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Step by step</h2>
+    <p class="section-desc">Follow the pins in order — this is the exact flow of running your first backtest.</p>
+    <div class="step-list">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Pick a symbol and a period</div>
+          <div class="step-desc">Type a ticker (<b>AAPL</b>, <b>BTC-USD</b>, any listed symbol) and choose a date range — a preset like "1 Year" or a custom start/end date — plus a candle interval (Daily, Hourly, etc). This defines the exact stretch of real market history the test will run against.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Choose your indicators</div>
+          <div class="step-desc"><b>Basic mode</b> gives a quick single-indicator test (RSI alone, for example) — good for a first look. <b>Detailed mode</b> lets you combine several indicators (MACD, Bollinger Bands, moving averages, and 20+ more) with their own trigger conditions, so a trade only fires when several signals line up together.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Set your risk</div>
+          <div class="step-desc">Starting capital, how much of it goes into each trade, and where the stop-loss / take-profit sit. This is what turns a raw "would this signal have worked" test into a realistic account-level result — two identical strategies can post very different results depending only on position sizing.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Save it, then run it</div>
+          <div class="step-desc">Name and save a configuration before running so you can reload or compare it later — every saved strategy lives on your account, not just this browser. Then press <b>Run Backtest</b> to simulate every trade the strategy would have made across your chosen history.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Read the headline metrics</div>
+          <div class="step-desc">Total Return, Win Rate, Sharpe Ratio and Max Drawdown are the four numbers to look at first — see the glossary below for what each one actually tells you.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-title">Look at the equity curve, not just the end number</div>
+          <div class="step-desc">The green line is your strategy's account value over time; the grey dashed line is what simply buying and holding would have done. A strategy that ends up ahead but spent months well below buy-and-hold is a very different bet than one that led the whole way.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <div class="step-title">Check the trade log, then export it</div>
+          <div class="step-desc">Every individual trade is listed with entry/exit dates, price, and return — click <b>WHY</b> on any trade to see, in plain English, what conditions triggered it. Use <b>⬇ Export CSV</b> to download the full result if you want to keep it, share it, or dig into it in a spreadsheet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">What the metrics actually mean</h2>
+    <p class="section-desc">No jargon left unexplained — here's every headline number in plain English.</p>
+    <div class="gloss-grid reveal">
+      <div class="gloss-card">
+        <div class="gloss-term">Total Return</div>
+        <div class="gloss-def">How much your starting capital would have grown (or shrunk) by, in percent, over the whole test period — shown next to what simple buy-and-hold would have done, so you can see if the strategy actually added anything.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Win Rate</div>
+        <div class="gloss-def">The percentage of trades that closed in profit. <b>A high win rate doesn't automatically mean a good strategy</b> — a few large losses can still outweigh many small wins.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Profit Factor</div>
+        <div class="gloss-def">Total money won divided by total money lost. Above <b>1.5</b> is generally considered solid; below <b>1.0</b> means the strategy lost more than it made overall.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Sharpe Ratio</div>
+        <div class="gloss-def">Return per unit of risk taken — a way of asking "was this return worth the bumpy ride?" Above <b>1.0</b> is generally considered good; higher means smoother, more consistent gains rather than a few lucky spikes.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Max Drawdown</div>
+        <div class="gloss-def">The single worst peak-to-trough drop the account went through during the test. This is arguably the most important "could I have actually stomached this" number — a strategy with great returns but a 40% drawdown is one most people would have abandoned halfway through.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Avg / Best / Worst Trade</div>
+        <div class="gloss-def">The typical, best, and worst single trades in the run, in both percent and actual £ terms based on your trade sizing — useful for sanity-checking whether one lucky trade is carrying the whole result.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Common mistakes to avoid</h2>
+    <div class="mistake-list reveal">
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Testing on too short a window.</b> A strategy that looks brilliant over the last 3 months might just have gotten lucky with the market's direction. Test across at least a year, and ideally across a period that includes a downturn.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Changing several settings at once.</b> If you tweak the RSI threshold and the stop-loss and the trade size all in one go, you won't know which change actually mattered. Adjust one thing, re-run, compare.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Chasing a high win rate.</b> A strategy that wins 80% of the time but loses big on the other 20% can still be a net loser. Look at Profit Factor and Max Drawdown alongside Win Rate, never on their own.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Forgetting real-world friction.</b> This simulator doesn't fully model fees, taxes, and slippage — real results would typically be a little worse than what's shown here, not better.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <div class="notify-box reveal">
+      <div style="font-size:30px;margin-bottom:14px;">🧪</div>
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:var(--text);margin-bottom:10px;">Ready to test your first idea?</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Free to use, no real money involved — just history, replayed honestly.</p>
+      <div class="cta-grid">
+        <a href="/backtester" class="cta-link"><span class="t">🧪 Open Backtester</span><span class="d">Stocks &amp; ETFs</span></a>
+        <a href="/backtester/forex" class="cta-link"><span class="t">💱 Open Forex Backtester</span><span class="d">Currency pairs</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn/tools">All Guides</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.1 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>

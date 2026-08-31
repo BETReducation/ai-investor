@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Balancer Guide — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-hero { padding: 100px 5% 44px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(168,85,247,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #a855f7; margin-bottom: 18px; opacity: 0.9; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: #a855f7; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+.hero-title .accent { color: #a855f7; }
+.hero-sub { font-size: clamp(15px, 1.6vw, 18px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+.hero-open-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; background: #a855f7; color: #180a24; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 10px; text-decoration: none; transition: opacity 0.2s; }
+.hero-open-link:hover { opacity: 0.87; }
+
+.content-section { padding: 56px 5% 56px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 980px; margin: 0 auto; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.03em; color: var(--text); margin-bottom: 10px; text-align: center; }
+.section-desc { font-size: 14.5px; color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0 auto 40px; text-align: center; }
+
+.diagram-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; overflow-x: auto; }
+.diagram-svg text { font-family: 'Space Grotesk', sans-serif; }
+.dg-box { fill: var(--bg3); stroke: var(--border2); stroke-width: 1; }
+.dg-panel { fill: var(--bg2); stroke: var(--border); stroke-width: 1; }
+.dg-accent { fill: #a855f7; }
+.dg-label { fill: var(--muted); font-size: 10px; letter-spacing: 0.4px; }
+.dg-value { fill: var(--text); font-size: 11px; font-weight: 600; }
+.dg-pin { fill: var(--bg); stroke: #a855f7; stroke-width: 2; }
+.dg-pin-text { fill: #a855f7; font-size: 12px; font-weight: 800; font-family: 'Outfit', sans-serif; }
+
+.step-list { display: flex; flex-direction: column; gap: 18px; margin-top: 40px; }
+.step { display: flex; gap: 18px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; }
+.step-num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: rgba(168,85,247,0.14); border: 1px solid rgba(168,85,247,0.35); color: #a855f7; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.step-body { flex: 1; }
+.step-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16.5px; color: var(--text); margin-bottom: 6px; }
+.step-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+.step-desc b { color: var(--text); }
+
+.gloss-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 700px) { .gloss-grid { grid-template-columns: 1fr; } }
+.gloss-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.gloss-term { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #a855f7; margin-bottom: 6px; }
+.gloss-def { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.gloss-def b { color: var(--text); }
+
+.mistake-list { display: flex; flex-direction: column; gap: 12px; }
+.mistake { display: flex; gap: 14px; align-items: flex-start; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 16px 18px; }
+.mistake-icon { font-size: 18px; flex-shrink: 0; }
+.mistake-text { font-size: 13.5px; color: var(--text); line-height: 1.6; }
+.mistake-text b { color: #ef4444; }
+
+.notify-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; max-width: 620px; margin: 0 auto; }
+.cta-link { display: inline-flex; flex-direction: column; gap: 6px; text-decoration: none; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 16px 26px; margin-top: 20px; }
+.cta-link:hover { border-color: #a855f7; }
+.cta-link .t { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
+.cta-link .d { font-size: 12.5px; color: var(--muted); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Full Guide · Portfolio Balancer</div>
+    <h1 class="hero-title">See everything you own, <span class="accent">in one place</span></h1>
+    <p class="hero-sub">The Portfolio Balancer tracks every investment you actually hold — savings, ISA, crypto, anything — and shows your true gain or loss, separate from money you simply topped up. Here's how it works.</p>
+    <a href="/tools/portfolio" class="hero-open-link">Open the Portfolio Balancer →</a>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The screen, labelled</h2>
+    <p class="section-desc">A schematic of the Portfolio Balancer layout — each pin is explained in the steps below.</p>
+
+    <div class="diagram-wrap reveal">
+      <svg class="diagram-svg" viewBox="0 0 900 460" width="100%" style="min-width:640px;">
+        <!-- top summary -->
+        <rect x="10" y="10" width="880" height="70" rx="12" class="dg-panel"/>
+        <text x="26" y="32" class="dg-label">BALANCED PORTFOLIO VALUE</text>
+        <text x="26" y="58" class="dg-value" style="font-size:20px;">£43,870</text>
+        <text x="260" y="32" class="dg-label">TOTAL INVESTED</text>
+        <text x="260" y="58" class="dg-value" style="font-size:16px;">£40,000</text>
+        <text x="470" y="32" class="dg-label">TOTAL GAIN</text>
+        <text x="470" y="58" class="dg-value" style="font-size:16px;color:var(--green);fill:var(--green);">+£3,870 (+9.7%)</text>
+
+        <!-- left: investment cards -->
+        <rect x="10" y="92" width="420" height="358" rx="12" class="dg-panel"/>
+        <text x="26" y="114" class="dg-label">YOUR INVESTMENTS</text>
+        <rect x="24" y="124" width="392" height="26" rx="8" class="dg-accent"/>
+        <text x="34" y="141" style="fill:#180a24;font-size:10px;font-weight:700;">+ ADD INVESTMENT</text>
+
+        <rect x="24" y="160" width="392" height="70" rx="8" class="dg-box"/>
+        <circle cx="42" cy="180" r="6" fill="#00c87a"/>
+        <text x="56" y="184" class="dg-value" style="font-size:10px;">Stocks &amp; Shares ISA</text>
+        <text x="56" y="200" class="dg-label" style="font-size:8px;">Invested £20,000 → Now £22,150</text>
+        <text x="56" y="214" class="dg-label" style="font-size:8px;color:var(--green);fill:var(--green);">+£2,150 (+10.75%)</text>
+
+        <rect x="24" y="238" width="392" height="70" rx="8" class="dg-box"/>
+        <circle cx="42" cy="258" r="6" fill="#3b82f6"/>
+        <text x="56" y="262" class="dg-value" style="font-size:10px;">Crypto Wallet</text>
+        <text x="56" y="278" class="dg-label" style="font-size:8px;">Invested £6,000 → Now £6,420</text>
+        <text x="56" y="292" class="dg-label" style="font-size:8px;color:var(--green);fill:var(--green);">+£420 (+7.0%)</text>
+
+        <rect x="24" y="316" width="392" height="120" rx="8" class="dg-box"/>
+        <text x="34" y="334" class="dg-label" style="font-size:9px;">Click to expand →</text>
+        <rect x="34" y="344" width="170" height="24" rx="6" class="dg-box" style="stroke:var(--green);"/>
+        <text x="44" y="360" class="dg-value" style="font-size:8px;color:var(--green);fill:var(--green);">+ ADD FUNDS</text>
+        <rect x="212" y="344" width="170" height="24" rx="6" class="dg-box" style="stroke:#3b82f6;"/>
+        <text x="222" y="360" class="dg-value" style="font-size:8px;color:#3b82f6;fill:#3b82f6;">↻ UPDATE VALUE</text>
+        <text x="34" y="386" class="dg-label" style="font-size:8px;">History log: every contribution</text>
+        <text x="34" y="400" class="dg-label" style="font-size:8px;">and re-price, dated and kept.</text>
+
+        <!-- right: pie chart + event log -->
+        <rect x="440" y="92" width="450" height="180" rx="12" class="dg-panel"/>
+        <text x="456" y="114" class="dg-label">ALLOCATION</text>
+        <circle cx="530" cy="185" r="55" fill="none" stroke="var(--border2)" stroke-width="18"/>
+        <circle cx="530" cy="185" r="55" fill="none" stroke="#00c87a" stroke-width="18" stroke-dasharray="180 345" transform="rotate(-90 530 185)"/>
+        <circle cx="530" cy="185" r="55" fill="none" stroke="#3b82f6" stroke-width="18" stroke-dasharray="90 345" stroke-dashoffset="-180" transform="rotate(-90 530 185)"/>
+        <circle cx="530" cy="185" r="55" fill="none" stroke="#f59e0b" stroke-width="18" stroke-dasharray="75 345" stroke-dashoffset="-270" transform="rotate(-90 530 185)"/>
+        <rect x="612" y="140" width="10" height="10" fill="#00c87a"/><text x="628" y="149" class="dg-label" style="font-size:9px;">ISA — 50%</text>
+        <rect x="612" y="160" width="10" height="10" fill="#3b82f6"/><text x="628" y="169" class="dg-label" style="font-size:9px;">Crypto — 25%</text>
+        <rect x="612" y="180" width="10" height="10" fill="#f59e0b"/><text x="628" y="189" class="dg-label" style="font-size:9px;">Cash — 25%</text>
+
+        <rect x="440" y="284" width="450" height="166" rx="12" class="dg-panel"/>
+        <text x="456" y="306" class="dg-label">EVENT LOG</text>
+        <text x="456" y="326" class="dg-label" style="font-size:9px;">✓ Crypto Wallet — contribution +£1,000</text>
+        <text x="456" y="346" class="dg-label" style="font-size:9px;">✓ Stocks ISA — value updated to £22,150</text>
+        <text x="456" y="366" class="dg-label" style="font-size:9px;">✓ Cash Savings — value updated to £15,300</text>
+        <text x="456" y="392" class="dg-label" style="font-size:9px;">READY — Portfolio Balancer loaded.</text>
+        <text x="456" y="420" class="dg-label" style="font-size:9px;color:var(--green);fill:var(--green);">✓ Saved to your account</text>
+
+        <!-- pins -->
+        <circle cx="18" cy="18" r="11" class="dg-pin"/><text x="14" y="22" class="dg-pin-text">1</text>
+        <circle cx="18" cy="134" r="11" class="dg-pin"/><text x="14" y="138" class="dg-pin-text">2</text>
+        <circle cx="18" cy="326" r="11" class="dg-pin"/><text x="14" y="330" class="dg-pin-text">3</text>
+        <circle cx="448" cy="100" r="11" class="dg-pin"/><text x="444" y="104" class="dg-pin-text">4</text>
+        <circle cx="448" cy="420" r="11" class="dg-pin"/><text x="444" y="424" class="dg-pin-text">5</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Step by step</h2>
+    <p class="section-desc">Follow the pins in order — from a blank portfolio to a full picture of what you own.</p>
+    <div class="step-list">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Check your headline numbers</div>
+          <div class="step-desc">The top bar always shows three things: your <b>Balanced Portfolio Value</b> (the sum of everything, right now), <b>Total Invested</b> (what you've actually put in), and <b>Total Gain</b> (the true difference between the two). These update automatically the moment you add or change anything below.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Add an investment</div>
+          <div class="step-desc">Click <b>+ Add Investment</b> and give it a name, optional details, an initial value, and what it's worth today. It doesn't need to be a "real" brokerage account — savings, property, crypto, anything you want tracked in one place works.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Keep it accurate with two buttons</div>
+          <div class="step-desc">Use <b>+ Add Funds</b> whenever you top an investment up with new money — this is tracked separately so a deposit is never mistaken for profit. Use <b>↻ Update Value</b> whenever what it's actually worth changes. Every change is timestamped in that investment's history.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Read the allocation chart</div>
+          <div class="step-desc">The donut chart and the legend beside it show how your money is actually spread across everything you've added — useful for spotting if you're more concentrated in one place than you realised.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Sign in to keep it saved</div>
+          <div class="step-desc">Signed in, your data is saved to your account and will be there next time you log in from any device. Signed out, everything is kept only in this browser — the status line at the bottom of the screen always tells you which one applies right now.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The one thing to understand</h2>
+    <p class="section-desc">This is the whole trick behind the numbers on this page.</p>
+    <div class="gloss-grid reveal">
+      <div class="gloss-card">
+        <div class="gloss-term">Contribution</div>
+        <div class="gloss-def">Money you've added to an investment. It increases its current value <b>and</b> counts towards how much you've invested — so adding £1,000 never shows up as a fake £1,000 "gain".</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Update / re-price</div>
+        <div class="gloss-def">A change to what an investment is actually worth today, with no new money involved. This is what moves your gain/loss — because it's compared only against what you've invested, not against a deposit.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Gain / Loss %</div>
+        <div class="gloss-def">Current value minus total invested (initial + every contribution), shown as a percentage of what you've invested. This is your <b>true</b> return — not a number that gets diluted or inflated just because you moved money around.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Balanced Portfolio Value</div>
+        <div class="gloss-def">Simply the sum of every investment's current value. "Balanced" here just means "everything, added together" — it isn't suggesting your allocation is optimal, that's your call.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Common mistakes to avoid</h2>
+    <div class="mistake-list reveal">
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Logging a top-up as an "Update" instead of "Add Funds".</b> Do this and the tool will show a gain that isn't real — it'll think the extra money was investment growth rather than your own deposit.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Assuming this pulls live prices.</b> It doesn't — nothing here is fetched from real accounts or brokers. Every value is only as accurate as the last time you updated it yourself.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Not signing in.</b> If you're not signed in, your data lives only in this browser — clear your cache or switch device and it's gone. Sign in to keep it safe on your account.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <div class="notify-box reveal">
+      <div style="font-size:30px;margin-bottom:14px;">⚖️</div>
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:var(--text);margin-bottom:10px;">Ready to see your whole picture?</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Free to use — your data, your entries, always.</p>
+      <a href="/tools/portfolio" class="cta-link"><span class="t">⚖️ Open Portfolio Balancer</span><span class="d">Sign in to save across devices</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn/tools">All Guides</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.1 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>

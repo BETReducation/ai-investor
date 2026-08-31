@@ -2579,6 +2579,18 @@ def btc_swing_trade():
 def roadmap():
     return send_from_directory("static", "roadmap.html")
 
+@app.route("/guides/signals")
+def guide_signals():
+    return send_from_directory("static", "guide-signals.html")
+
+@app.route("/guides/backtester")
+def guide_backtester():
+    return send_from_directory("static", "guide-backtester.html")
+
+@app.route("/guides/portfolio")
+def guide_portfolio():
+    return send_from_directory("static", "guide-portfolio.html")
+
 # ── New nav routes ────────────────────────────────────────────────────────────
 
 @app.route("/learn")
@@ -3665,6 +3677,9 @@ def alpha_post_page(slug, post_id):
 SEARCH_PAGE_INDEX = [
     {"title": "Home", "url": "/", "sub": "Growth Capital Academy"},
     {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
+    {"title": "Signal Tracker — Full Guide", "url": "/guides/signals", "sub": "Illustrated user guide"},
+    {"title": "Backtester — Full Guide", "url": "/guides/backtester", "sub": "Illustrated user guide"},
+    {"title": "Portfolio Balancer — Full Guide", "url": "/guides/portfolio", "sub": "Illustrated user guide"},
     {"title": "Learn", "url": "/learn", "sub": "Lessons for every level"},
     {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
     {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},
