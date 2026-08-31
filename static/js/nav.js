@@ -67,6 +67,7 @@
 '        <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>' +
 '      </ul>' +
 '    </li>' +
+'    <li><a href="/roadmap">Roadmap</a></li>' +
 '    <li><a href="/partners">Partners</a></li>' +
 '  </ul>' +
 '  </div>' +

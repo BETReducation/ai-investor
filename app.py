@@ -2575,6 +2575,10 @@ def competitions_partnerships():
 def btc_swing_trade():
     return send_from_directory("static", "btc-swing-trade.html")
 
+@app.route("/roadmap")
+def roadmap():
+    return send_from_directory("static", "roadmap.html")
+
 # ── New nav routes ────────────────────────────────────────────────────────────
 
 @app.route("/learn")
@@ -3660,6 +3664,7 @@ def alpha_post_page(slug, post_id):
 # non-lesson route is added.
 SEARCH_PAGE_INDEX = [
     {"title": "Home", "url": "/", "sub": "Growth Capital Academy"},
+    {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
     {"title": "Learn", "url": "/learn", "sub": "Lessons for every level"},
     {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
     {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},

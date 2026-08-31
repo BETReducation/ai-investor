@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roadmap — Growth Capital Academy</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gca-theme') || 'light';
+  localStorage.setItem('gca-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-hero { padding: 100px 5% 48px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(0,212,170,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--green); }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(38px, 6vw, 64px); letter-spacing: -0.03em; line-height: 1.08; color: var(--text); margin-bottom: 18px; }
+.hero-title .accent { color: var(--green); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+
+/* overall progress bar */
+.overall-wrap { max-width: 720px; margin: 40px auto 0; position: relative; z-index: 2; }
+.overall-labels { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.overall-labels .end-date { color: var(--green); }
+.overall-track { height: 10px; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); overflow: hidden; }
+.overall-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--green), #00e0b8); transition: width 1.2s ease; }
+
+.content-section { padding: 64px 5% 60px; }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em; color: var(--text); margin-bottom: 12px; text-align: center; }
+.section-desc { font-size: 15px; color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0 auto 48px; text-align: center; }
+
+/* timeline */
+.timeline { position: relative; padding-left: 36px; }
+.timeline::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+.tl-item { position: relative; padding-bottom: 40px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot { position: absolute; left: -36px; top: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--card); border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.tl-item.done .tl-dot { background: var(--green); border-color: var(--green); color: #03130f; }
+.tl-item.progress .tl-dot { background: var(--bg); border-color: var(--green); box-shadow: 0 0 0 4px rgba(0,212,170,0.15); }
+.tl-item.progress .tl-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.tl-item.upcoming .tl-dot { color: var(--muted); }
+.tl-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 26px; }
+.tl-item.progress .tl-card { border-color: rgba(0,212,170,0.4); }
+.tl-meta { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.tl-dates { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.03em; color: var(--muted); text-transform: uppercase; }
+.tl-status { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+.tl-status.done { background: rgba(0,212,170,0.14); color: var(--green); }
+.tl-status.progress { background: rgba(0,212,170,0.14); color: var(--green); animation: pulse 2s ease-in-out infinite; }
+.tl-status.upcoming { background: var(--bg3); color: var(--muted); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+.tl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 19px; color: var(--text); margin-bottom: 10px; }
+.tl-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.tl-list li { font-size: 14px; color: var(--muted); line-height: 1.6; padding-left: 20px; position: relative; }
+.tl-list li::before { content: '—'; position: absolute; left: 0; color: var(--border2); }
+.tl-item.done .tl-list li::before, .tl-item.progress .tl-list li::before { color: var(--green); }
+
+.alt-bg { background: var(--bg2); }
+.principle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 800px) { .principle-grid { grid-template-columns: 1fr; } }
+.principle-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; }
+.principle-icon { font-size: 26px; margin-bottom: 12px; }
+.principle-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 8px; }
+.principle-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Building In Public</div>
+    <h1 class="hero-title">The road to <span class="accent">MVP</span></h1>
+    <p class="hero-sub">Here's exactly what we're building, in what order, and where things stand today. Updated as we go — no fluff, no fixed dates that quietly slip.</p>
+  </div>
+  <div class="overall-wrap">
+    <div class="overall-labels">
+      <span id="overallLabel">Week 1 of 4</span>
+      <span class="end-date">Target: 30 Sep 2026</span>
+    </div>
+    <div class="overall-track"><div class="overall-fill" id="overallFill" style="width:8%;"></div></div>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The plan</h2>
+    <p class="section-desc">Four phases between now and the end of September. Each one ships something a user can actually see or use.</p>
+
+    <div class="timeline">
+
+      <div class="tl-item progress reveal">
+        <div class="tl-dot"></div>
+        <div class="tl-card">
+          <div class="tl-meta">
+            <span class="tl-dates">Phase 1 · 31 Aug – 6 Sep</span>
+            <span class="tl-status progress">In progress</span>
+          </div>
+          <div class="tl-title">Audit & plan the tools</div>
+          <ul class="tl-list">
+            <li>Full review of the Backtester and Signals pages — what works end-to-end today, what's half-built</li>
+            <li>Every remaining piece reframed around what it actually solves for a user, not just "finish the code"</li>
+            <li>Produces a prioritised build list for the next two phases</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tl-item upcoming reveal">
+        <div class="tl-dot"></div>
+        <div class="tl-card">
+          <div class="tl-meta">
+            <span class="tl-dates">Phase 2 · 7 – 21 Sep</span>
+            <span class="tl-status upcoming">Upcoming</span>
+          </div>
+          <div class="tl-title">Build the core content and tools</div>
+          <ul class="tl-list">
+            <li>Learning pages written and published, level by level</li>
+            <li>Backtester and Signals gaps closed against the Phase 1 build list</li>
+            <li>Small, frequent updates shipped rather than one big reveal</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tl-item upcoming reveal">
+        <div class="tl-dot"></div>
+        <div class="tl-card">
+          <div class="tl-meta">
+            <span class="tl-dates">Phase 3 · 22 – 29 Sep</span>
+            <span class="tl-status upcoming">Upcoming</span>
+          </div>
+          <div class="tl-title">Harden for launch</div>
+          <ul class="tl-list">
+            <li>Scope cut to what's genuinely ready — anything else clearly marked "Coming soon" rather than left half-working</li>
+            <li>Full site pass: navigation, search and links checked end to end</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tl-item upcoming reveal">
+        <div class="tl-dot">🏁</div>
+        <div class="tl-card">
+          <div class="tl-meta">
+            <span class="tl-dates">30 Sep 2026</span>
+            <span class="tl-status upcoming">Target</span>
+          </div>
+          <div class="tl-title">MVP launch</div>
+          <ul class="tl-list">
+            <li>Website live at MVP standard — usable and coherent, not just built</li>
+            <li>Monetisation roadmap announced: paid tools first, then Market Xi competition entry, then subscriptions</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">How we're working</h2>
+    <p class="section-desc">The principles behind the plan, in case anyone's wondering why it looks like this.</p>
+    <div class="principle-grid reveal">
+      <div class="principle-card">
+        <div class="principle-icon">📣</div>
+        <div class="principle-title">Progress over meetings</div>
+        <div class="principle-desc">We'd rather ship something small and post it than schedule a call about shipping something.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-icon">✂️</div>
+        <div class="principle-title">Real deadline, real cuts</div>
+        <div class="principle-desc">30 September means something because we're willing to trim scope to hit it, not push the date.</div>
+      </div>
+      <div class="principle-card">
+        <div class="principle-icon">💬</div>
+        <div class="principle-title">Money follows product</div>
+        <div class="principle-desc">Monetisation gets announced at MVP, and switched on tool by tool as each one earns it — not before.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Academy" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/arena">The Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Academy. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
