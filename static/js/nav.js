@@ -18,7 +18,7 @@
 '<nav>' +
 '  <div class="nav-left">' +
 '  <a href="/" class="nav-logo">' +
-'    <img id="navLogo" src="/static/logos/' + logoFile + '" alt="Growth Capital Academy">' +
+'    <img id="navLogo" src="/static/logos/' + logoFile + '" alt="Growth Capital Group">' +
 '  </a>' +
 '  <ul class="nav-links">' +
 '    <li><a href="/">Home</a></li>' +
@@ -69,6 +69,7 @@
 '    </li>' +
 '    <li><a href="/roadmap">Roadmap</a></li>' +
 '    <li><a href="/partners">Partners</a></li>' +
+'    <li><a href="/company">Company</a></li>' +
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +

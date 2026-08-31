@@ -1,2 +1,2 @@
-# AI Investor — Growth Capital Academy
+# AI Investor — Growth Capital Group
 # ai-investor

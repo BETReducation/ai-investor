@@ -2579,6 +2579,10 @@ def btc_swing_trade():
 def roadmap():
     return send_from_directory("static", "roadmap.html")
 
+@app.route("/company")
+def company():
+    return send_from_directory("static", "company.html")
+
 @app.route("/guides/signals")
 def guide_signals():
     return send_from_directory("static", "guide-signals.html")
@@ -2850,7 +2854,7 @@ def api_forgot_password():
         to_addr = profile.get("email") or match_username
         _send_email(
             to_addr,
-            "Reset your Growth Capital Academy password",
+            "Reset your Growth Capital Group password",
             f"Someone requested a password reset for the account \"{match_username}\".\n\n"
             f"Reset your password here (valid for 1 hour):\n{reset_link}\n\n"
             f"If you didn't request this, you can safely ignore this email.",
@@ -3675,8 +3679,9 @@ def alpha_post_page(slug, post_id):
 # Update this list alongside the "New pages" step in CLAUDE.md whenever a
 # non-lesson route is added.
 SEARCH_PAGE_INDEX = [
-    {"title": "Home", "url": "/", "sub": "Growth Capital Academy"},
+    {"title": "Home", "url": "/", "sub": "Growth Capital Group"},
     {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
+    {"title": "Company", "url": "/company", "sub": "Growth Capital Group structure"},
     {"title": "Signal Tracker — Full Guide", "url": "/guides/signals", "sub": "Illustrated user guide"},
     {"title": "Backtester — Full Guide", "url": "/guides/backtester", "sub": "Illustrated user guide"},
     {"title": "Portfolio Balancer — Full Guide", "url": "/guides/portfolio", "sub": "Illustrated user guide"},
@@ -3701,7 +3706,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Gary", "url": "/alpha/gary", "sub": "Alpha partner"},
     {"title": "Tom", "url": "/alpha/tom", "sub": "Alpha partner"},
     {"title": "Alpha Podcast", "url": "/alpha/podcast", "sub": "Alpha"},
-    {"title": "Partners", "url": "/partners", "sub": "Growth Capital Academy"},
+    {"title": "Partners", "url": "/partners", "sub": "Growth Capital Group"},
 ]
 
 
