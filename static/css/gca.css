@@ -1811,6 +1811,28 @@
   }
   .disclaimer-guide-link:hover { opacity: 0.8; }
 
+  /* Small "more info" marker next to a control label. A bare title attribute
+     on plain text gives no visual hint a tooltip exists, and doesn't work on
+     tap at all on most mobile browsers — this gives it a visible affordance
+     (hover shows the native title on desktop; static/js/info-tooltip.js
+     handles tap-to-show on touch devices). */
+  .info-dot {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--bg-hover); border: 1px solid var(--border);
+    color: var(--text-muted); font-size: 9px; font-weight: 700;
+    font-family: 'IBM Plex Mono', monospace; cursor: help; margin-left: 4px;
+    flex-shrink: 0; position: relative;
+  }
+  .info-dot:hover, .info-dot:focus { border-color: var(--accent-cyan); color: var(--accent-cyan); outline: none; }
+  .info-dot-popover {
+    position: absolute; z-index: 50; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    width: 240px; max-width: 70vw; background: var(--bg-panel); border: 1px solid var(--border-bright);
+    border-radius: 8px; padding: 10px 12px; font-size: 11px; font-weight: 400; line-height: 1.5;
+    color: var(--text-primary); text-align: left; cursor: default; white-space: normal;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
   /* SIGN-IN BUTTON (topbar) */
   .signin-btn {
     background: transparent;
