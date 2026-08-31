@@ -6,7 +6,7 @@
 <title>Growth Capital Group — Sign In</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
-  var _t = localStorage.getItem('gca-theme') || 'light';
+  var _t = localStorage.getItem('gcg-theme') || 'light';
   document.documentElement.setAttribute('data-theme', _t);
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -276,7 +276,7 @@ body::after {
   <div class="card">
 
     <div class="logo">
-      <a href="/"><img src="/static/logos/GCA Simple Logo.svg" alt="Growth Capital Group" style="height:44px;width:auto;border-radius:10px;display:block;margin:0 auto;"></a>
+      <a href="/"><img src="/static/logos/GCG Simple Logo.svg" alt="Growth Capital Group" style="height:44px;width:auto;border-radius:10px;display:block;margin:0 auto;"></a>
       <div class="logo-sub">Your Investing Education Hub</div>
     </div>
 
@@ -355,7 +355,7 @@ function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('gca-theme', next);
+  localStorage.setItem('gcg-theme', next);
   document.getElementById('themeToggle').textContent = next === 'light' ? '🌙' : '☀️';
 }
 document.getElementById('themeToggle').textContent =
@@ -444,7 +444,7 @@ async function doLogin() {
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Login failed. Check your credentials.'); return; }
-    if (remember) localStorage.setItem('gcaSession', '1');
+    if (remember) localStorage.setItem('gcgSession', '1');
     window.location.href = getRedirect(data.landing_page);
   } catch {
     showError(errEl, 'Cannot reach server — please try again.');
@@ -479,7 +479,7 @@ async function doRegister() {
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Registration failed.'); return; }
-    localStorage.setItem('gcaSession', '1');
+    localStorage.setItem('gcgSession', '1');
     okEl.textContent = 'Account created! Redirecting…';
     okEl.style.display = 'block';
     setTimeout(() => { window.location.href = getRedirect(data.landing_page); }, 1000);

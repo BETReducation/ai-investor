@@ -6,7 +6,7 @@
 <title>Growth Capital Group — Signals</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/gca.css">
+<link rel="stylesheet" href="/static/css/gcg.css">
 <style>
   .site-nav {
     position: sticky; top: 0; z-index: 200;
@@ -137,7 +137,7 @@
 .chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-tool-btn[data-cat] { color: var(--text-secondary); }
 .chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
-/* Price-alert bell — scoped here (not gca.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
+/* Price-alert bell — scoped here (not gcg.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
 .stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
 .stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
 .stat-cell-action span { position: absolute; top: -3px; right: -3px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: var(--accent-amber); color: #000; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -291,7 +291,7 @@
   </ul>
   </div>
   <div class="site-nav-cta">
-    <button class="theme-toggle" id="themeToggle" onclick="toggleGCATheme()" title="Toggle light/dark mode">🌙</button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleGCGTheme()" title="Toggle light/dark mode">🌙</button>
     <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;display:none;"></span>
     <button class="site-btn-ghost" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">Sign In</button>
     <button class="site-btn-ghost" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
@@ -3160,7 +3160,7 @@ function applyChartTheme() {
   const down = cssVar('--accent-red', '#ff3355');
   const tipBg = dark ? '#0d1117' : '#eef0f5';
   // Match the rest of the page — every panel/label/button on this tool is
-  // 'IBM Plex Mono' (see the body{} rule in gca.css); klinecharts defaults to
+  // 'IBM Plex Mono' (see the body{} rule in gcg.css); klinecharts defaults to
   // 'Helvetica Neue' for every text style below unless overridden here.
   const family = "'IBM Plex Mono', monospace";
   priceChart.setStyles({
@@ -3732,7 +3732,7 @@ async function loadPriceChart(sym) {
   }
 }
 
-document.addEventListener('gca-theme-change', function() {
+document.addEventListener('gcg-theme-change', function() {
   applyChartTheme();
 });
 
@@ -4324,7 +4324,7 @@ async function checkSession() {
       currentUser = data.username;
       userTier = data.tier || 'basic';
       userAuthenticated = true;
-      localStorage.setItem('gcaSession', '1');
+      localStorage.setItem('gcgSession', '1');
       try {
         const prefRes = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
         if (prefRes.ok) {
@@ -4344,13 +4344,13 @@ async function checkSession() {
       currentUser = null;
       userAuthenticated = false;
       userTier = 'basic';
-      localStorage.removeItem('gcaSession');
+      localStorage.removeItem('gcgSession');
     }
   } catch (e) {
     currentUser = null;
     userAuthenticated = false;
     userTier = 'basic';
-    localStorage.removeItem('gcaSession');
+    localStorage.removeItem('gcgSession');
   }
   showDashboard();
 }
@@ -4416,7 +4416,7 @@ async function doLogin() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    if (remember) localStorage.setItem('gcaSession', '1');
+    if (remember) localStorage.setItem('gcgSession', '1');
     applyPreferences(data.preferences || {});
     showDashboard();
   } catch (e) {
@@ -4454,7 +4454,7 @@ async function doRegister() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    localStorage.setItem('gcaSession', '1');
+    localStorage.setItem('gcgSession', '1');
     applyPreferences({});
     showDashboard();
   } catch (e) {
@@ -4472,7 +4472,7 @@ function showAuthError(el, msg) {
 async function logout() {
   try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
   currentUser = null;
-  localStorage.removeItem('gcaSession');
+  localStorage.removeItem('gcgSession');
   if (engineRunning) stopEngine();
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
@@ -4483,7 +4483,7 @@ async function logout() {
 
 function handleSessionExpiry() {
   currentUser = null;
-  localStorage.removeItem('gcaSession');
+  localStorage.removeItem('gcgSession');
   if (engineRunning) stopEngine();
   updateUserDisplay();
   addLog('warn', 'AUTH', 'Session expired — sign in to save preferences');

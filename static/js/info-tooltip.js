@@ -1,4 +1,4 @@
-// Makes every .info-dot (see .info-dot / .info-dot-popover in gca.css) show
+// Makes every .info-dot (see .info-dot / .info-dot-popover in gcg.css) show
 // its explanation reliably — on hover AND on tap, and never clipped by a
 // scrolling sidebar or cut off by the page edge.
 //

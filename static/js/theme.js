@@ -1,5 +1,5 @@
 (function () {
-  var KEY = 'gca-theme';
+  var KEY = 'gcg-theme';
 
   function preferred() {
     return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -9,7 +9,7 @@
     document.documentElement.setAttribute('data-theme', theme);
     var btn = document.getElementById('themeToggle');
     if (btn) btn.textContent = theme === 'dark' ? '☀' : '☾';
-    document.dispatchEvent(new CustomEvent('gca-theme-change', { detail: { theme: theme } }));
+    document.dispatchEvent(new CustomEvent('gcg-theme-change', { detail: { theme: theme } }));
   }
 
   function toggle() {
@@ -21,7 +21,7 @@
 
   apply(localStorage.getItem(KEY) || preferred());
 
-  window.toggleGCATheme = toggle;
+  window.toggleGCGTheme = toggle;
 
   document.addEventListener('DOMContentLoaded', function () {
     apply(localStorage.getItem(KEY) || preferred());

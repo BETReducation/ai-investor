@@ -6,7 +6,7 @@
 <title>Growth Capital Group — Strategy Lab</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/gca.css">
+<link rel="stylesheet" href="/static/css/gcg.css">
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script src="/static/js/theme.js"></script>
 </head>
@@ -104,7 +104,7 @@
     <a href="/static/strategy-lab.html" style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--accent-cyan);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:2px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--accent-cyan)'" onmouseout="this.style.borderColor='var(--border)'">STRATEGY LAB ›</a>
     <button class="signin-btn" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">SIGN IN</button>
     <button class="logout-btn" id="logoutBtn" onclick="logout()" style="display:none;">LOGOUT</button>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleGCATheme()" title="Toggle light/dark mode">☀</button>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleGCGTheme()" title="Toggle light/dark mode">☀</button>
     <div class="clock" id="clock">--:--:--</div>
   </div>
 </div>
@@ -1334,7 +1334,7 @@ function loadTvChart(tvSym) {
   });
 }
 
-document.addEventListener('gca-theme-change', function() {
+document.addEventListener('gcg-theme-change', function() {
   loadTvChart(tvSymbolMap[currentAsset] || 'BINANCE:BTCUSDT');
 });
 
@@ -1475,7 +1475,7 @@ function getChgClass(chg) { return chg >= 0 ? 'up' : 'down'; }
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
 async function checkSession() {
-  if (localStorage.getItem('gcaSession')) {
+  if (localStorage.getItem('gcgSession')) {
     try {
       const res = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
       if (res.ok) {
@@ -1483,10 +1483,10 @@ async function checkSession() {
         currentUser = data.username;
         applyPreferences(data.preferences || {});
       } else {
-        localStorage.removeItem('gcaSession');
+        localStorage.removeItem('gcgSession');
       }
     } catch (e) {
-      localStorage.removeItem('gcaSession');
+      localStorage.removeItem('gcgSession');
     }
   }
   showDashboard();
@@ -1549,7 +1549,7 @@ async function doLogin() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    if (remember) localStorage.setItem('gcaSession', '1');
+    if (remember) localStorage.setItem('gcgSession', '1');
     applyPreferences(data.preferences || {});
     showDashboard();
   } catch (e) {
@@ -1587,7 +1587,7 @@ async function doRegister() {
     userTier = data.tier || 'basic';
     userAuthenticated = true;
     applyTierUI();
-    localStorage.setItem('gcaSession', '1');
+    localStorage.setItem('gcgSession', '1');
     applyPreferences({});
     showDashboard();
   } catch (e) {
@@ -1605,7 +1605,7 @@ function showAuthError(el, msg) {
 async function logout() {
   try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
   currentUser = null;
-  localStorage.removeItem('gcaSession');
+  localStorage.removeItem('gcgSession');
   if (engineRunning) stopEngine();
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
@@ -1616,7 +1616,7 @@ async function logout() {
 
 function handleSessionExpiry() {
   currentUser = null;
-  localStorage.removeItem('gcaSession');
+  localStorage.removeItem('gcgSession');
   if (engineRunning) stopEngine();
   updateUserDisplay();
   addLog('warn', 'AUTH', 'Session expired — sign in to save preferences');

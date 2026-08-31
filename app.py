@@ -46,7 +46,7 @@ from marketdata import bus as marketdata_bus
 from marketdata import config as marketdata_config
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = os.environ.get("SECRET_KEY", "gca-dev-key-change-in-production")
+app.secret_key = os.environ.get("SECRET_KEY", "gcg-dev-key-change-in-production")
 # Railway (and most PaaS hosts) terminate TLS at an edge proxy and forward requests
 # over plain HTTP, so without this Flask sees every request as insecure — which
 # breaks Secure-cookie handling (session + remember-me) behind the proxy.
@@ -1593,7 +1593,7 @@ def extract_text_from_url(url: str) -> str:
     if not url.startswith(("http://", "https://")):
         raise ValueError("Please enter a valid http(s) link")
     try:
-        resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0 (GCA-AlphaBot)"})
+        resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0 (GCG-AlphaBot)"})
         resp.raise_for_status()
     except Exception:
         raise ValueError("Couldn't fetch that link — try pasting the text directly instead")
@@ -3119,7 +3119,7 @@ def _alpha_can_touch(item) -> bool:
 # Placeholder integration: Market XI (the fantasy-team game at
 # https://market-xi-live.vercel.app/) doesn't have per-asset profile pages
 # yet, so every match points at the site's root for now, and the asset list
-# itself is drawn from GCA's own watchlist data (see
+# itself is drawn from GCG's own watchlist data (see
 # _market_xi_asset_aliases below) rather than from Market XI directly.
 #
 # TODO(market-xi-integration): Market XI is a Next.js + Supabase app. It has

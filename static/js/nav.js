@@ -8,7 +8,7 @@
 // bottom-of-body <script> runs, same as if it had been static HTML.
 //
 // A page can override the logo via a data-logo attribute on this <script>
-// tag itself, e.g. <script src="/static/js/nav.js" data-logo="GCA Simple Logo.svg"></script>
+// tag itself, e.g. <script src="/static/js/nav.js" data-logo="GCG Simple Logo.svg"></script>
 // (lesson pages use the simple mark instead of the full logo).
 (function () {
   var thisScript = document.currentScript;
@@ -129,9 +129,9 @@
     const current = document.documentElement.getAttribute('data-theme') || 'light';
     const next = current === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('gca-theme', next);
+    localStorage.setItem('gcg-theme', next);
     updateToggleIcon(next);
-    document.dispatchEvent(new CustomEvent('gca-theme-change', { detail: { theme: next } }));
+    document.dispatchEvent(new CustomEvent('gcg-theme-change', { detail: { theme: next } }));
   };
   const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
   updateToggleIcon(_initialTheme);
