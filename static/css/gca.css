@@ -1825,8 +1825,11 @@
     flex-shrink: 0; position: relative;
   }
   .info-dot:hover, .info-dot:focus { border-color: var(--accent-cyan); color: var(--accent-cyan); outline: none; }
+  /* Positioned in JS (info-tooltip.js) with fixed top/left in viewport
+     coordinates and appended to <body> — never a child of .info-dot — so a
+     sidebar's own overflow:auto/hidden can never clip it. */
   .info-dot-popover {
-    position: absolute; z-index: 50; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    position: fixed; z-index: 9999;
     width: 240px; max-width: 70vw; background: var(--bg-panel); border: 1px solid var(--border-bright);
     border-radius: 8px; padding: 10px 12px; font-size: 11px; font-weight: 400; line-height: 1.5;
     color: var(--text-primary); text-align: left; cursor: default; white-space: normal;
