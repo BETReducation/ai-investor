@@ -932,10 +932,10 @@ window.addEventListener('resize', () => {
 
       <div class="slider-row">
         <div class="slider-header">
-          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">Stop Loss</span>
-          <span class="ctrl-val pct-input-group"><input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="100.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</span>
+          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 10% stops you out once the position has lost a tenth of its value.">Stop Loss</span>
+          <span class="ctrl-val pct-input-group tag-red">-<input type="number" class="pct-input" id="slVal" min="0.5" max="50" step="0.1" value="10.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</span>
         </div>
-        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="100"
+        <input type="range" id="stopLoss" min="0.5" max="50" step="0.5" value="10"
                oninput="onPctSliderInput('stopLoss','slVal')">
       </div>
 
@@ -954,16 +954,16 @@ window.addEventListener('resize', () => {
 
       <div class="slider-row">
         <div class="slider-header">
-          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">Take Profit</span>
-          <span class="ctrl-val pct-input-group"><input type="number" class="pct-input" id="tpVal" min="1" max="4000" step="0.1" value="200.0" oninput="onPctTextInput('takeProfit','tpVal')" onchange="onPctTextChange('takeProfit','tpVal')">%</span>
+          <span class="ctrl-name" title="% of the TRADE AMOUNT (position size) for this trade, e.g. 20% targets a fifth on top of the position's value.">Take Profit</span>
+          <span class="ctrl-val pct-input-group tag-green">+<input type="number" class="pct-input" id="tpVal" min="0.5" max="500" step="0.1" value="20.0" oninput="onPctTextInput('takeProfit','tpVal')" onchange="onPctTextChange('takeProfit','tpVal')">%</span>
         </div>
-        <input type="range" id="takeProfit" min="1" max="4000" step="1" value="200"
+        <input type="range" id="takeProfit" min="0.5" max="500" step="0.5" value="20"
                oninput="onPctSliderInput('takeProfit','tpVal')">
       </div>
 
       <div class="slider-row" style="margin-bottom:0;">
         <div class="slider-header">
-          <span class="ctrl-name">Min Confidence</span>
+          <span class="ctrl-name" title="A trade only counts as a signal once this many of your active, weighted indicators agree on the same direction. Confidence is the % of active indicators currently pointing the same way — raise this to demand stronger agreement before a trade fires; lower it to let weaker, single-indicator setups through too.">Min Confidence</span>
           <span class="ctrl-val" id="confVal">60%</span>
         </div>
         <input type="range" id="minConf" min="50" max="100" step="5" value="60"
@@ -2308,16 +2308,27 @@ function clampPct(v, lo, hi) {
   v = parseFloat(v);
   return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null;
 }
+// Each %-slider has its own sensible ceiling — stop-loss can't meaningfully
+// exceed losing the whole position, so it's capped tighter than take-profit.
+// Falls back to the slider's own min/max attributes for anything not listed.
+function pctBounds(sliderId) {
+  const bounds = { stopLoss: [0.5, 50], takeProfit: [0.5, 500] };
+  if (bounds[sliderId]) return bounds[sliderId];
+  const el = document.getElementById(sliderId);
+  return [parseFloat(el.min), parseFloat(el.max)];
+}
 function onPctSliderInput(sliderId, textId) {
   document.getElementById(textId).value = parseFloat(document.getElementById(sliderId).value).toFixed(1);
 }
 function onPctTextInput(sliderId, textId) {
-  const v = clampPct(document.getElementById(textId).value, 1, 4000);
+  const [lo, hi] = pctBounds(sliderId);
+  const v = clampPct(document.getElementById(textId).value, lo, hi);
   if (v !== null) document.getElementById(sliderId).value = v;
 }
 function onPctTextChange(sliderId, textId) {
   const slider = document.getElementById(sliderId);
-  const v = clampPct(document.getElementById(textId).value, 1, 4000) ?? parseFloat(slider.value);
+  const [lo, hi] = pctBounds(sliderId);
+  const v = clampPct(document.getElementById(textId).value, lo, hi) ?? parseFloat(slider.value);
   slider.value = v;
   document.getElementById(textId).value = v.toFixed(1);
 }
