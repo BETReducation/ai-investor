@@ -40,7 +40,7 @@
 '  <ul class="nav-links">' +
 '    <li><a href="/">Home</a></li>' +
 '    <li class="has-dropdown">' +
-'      <a href="/learn">Learn <span class="nav-chevron">▾</span></a>' +
+'      <a href="/learn">Education <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 '        <li><a href="/learn/beginner">Beginner</a></li>' +
 '        <li><a href="/learn/intermediate">Intermediate</a></li>' +
@@ -59,7 +59,7 @@
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
-'      <a href="/arena">The Arena <span class="nav-chevron">▾</span></a>' +
+'      <a href="/arena">Arena <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 '        <li><a href="/arena/market-xi">Market XI</a></li>' +
 '        <li><a href="/arena/competitions">Trading Competitions</a></li>' +
@@ -84,9 +84,14 @@
 '        <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>' +
 '      </ul>' +
 '    </li>' +
-'    <li><a href="/roadmap">Roadmap</a></li>' +
-'    <li><a href="/partners">Partners</a></li>' +
-'    <li><a href="/company">Company</a></li>' +
+'    <li class="has-dropdown">' +
+'      <a href="/company">Group <span class="nav-chevron">▾</span></a>' +
+'      <ul class="nav-dropdown">' +
+'        <li><a href="/company">Company</a></li>' +
+'        <li><a href="/roadmap">Roadmap</a></li>' +
+'        <li><a href="/partners">Partners</a></li>' +
+'      </ul>' +
+'    </li>' +
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +
