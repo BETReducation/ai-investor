@@ -448,6 +448,7 @@ window.addEventListener('resize', () => {
 <div class="disclaimer-bar">
   <strong>EDUCATIONAL USE ONLY</strong> &nbsp;|&nbsp;
   Growth Capital Academy is an educational tool. It is not investment advice. All figures are entered and tracked by you — nothing here is fetched from real accounts or brokers. All investment decisions are your own.
+  <br><span id="pbSyncStatus" class="pb-sync-status"></span>
 </div>
 
 <script>
@@ -466,12 +467,33 @@ let expandedInv  = {};
 let nextInvId    = 1;
 let evtLog       = [];
 let pieChart     = null;
+let pbCurrentUser = null;
+let pbSaveTimer   = null;
 
 function colorFor(i) { return INV_COLORS[i % INV_COLORS.length]; }
 
-/* ══ PERSISTENCE ═════════════════════════════════════════════════════════════ */
+/* ══ PERSISTENCE ═════════════════════════════════════════════════════════════
+   Signed-in users: source of truth is the account (via /api/save-preferences,
+   same endpoint every other tool uses), so data survives a device switch.
+   Signed-out users: falls back to localStorage only, same as before — there's
+   no account to attach it to. save() always writes local as a safety copy
+   even when signed in, so a slow/failed network save can't lose anything. */
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ investments, nextInvId })); } catch(e) {}
+  if (pbCurrentUser) {
+    clearTimeout(pbSaveTimer);
+    pbSaveTimer = setTimeout(savePortfolioToAccount, 500); // debounce rapid edits
+  }
+}
+async function savePortfolioToAccount() {
+  try {
+    await fetch('/api/save-preferences', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolio_balancer: { investments, nextInvId } }),
+    });
+    setSyncStatus('saved');
+  } catch (e) { setSyncStatus('error'); }
 }
 function load() {
   try {
@@ -483,6 +505,41 @@ function load() {
     nextInvId = data.nextInvId || (investments.length ? Math.max(...investments.map(i => i.id)) + 1 : 1);
     return true;
   } catch(e) { return false; }
+}
+async function initPortfolioPersistence() {
+  try {
+    const meRes = await fetch('/api/me', { credentials: 'include' });
+    const me = await meRes.json();
+    if (me.authenticated) {
+      pbCurrentUser = me.username;
+      const prefRes = await fetch('/api/load-preferences', { credentials: 'include' });
+      if (prefRes.ok) {
+        const prefData = await prefRes.json();
+        const remote = prefData.preferences?.portfolio_balancer;
+        if (remote && Array.isArray(remote.investments)) {
+          // Account data wins once it exists. First time signing in on a
+          // device that already has local-only entries, push those up
+          // instead so nothing the user typed gets silently discarded.
+          investments = remote.investments;
+          nextInvId = remote.nextInvId || (investments.length ? Math.max(...investments.map(i => i.id)) + 1 : 1);
+          save();
+        } else if (investments.length) {
+          savePortfolioToAccount();
+        }
+      }
+      setSyncStatus(investments.length ? 'saved' : null);
+    } else {
+      setSyncStatus('local');
+    }
+  } catch (e) { setSyncStatus('local'); }
+}
+function setSyncStatus(state) {
+  const el = document.getElementById('pbSyncStatus');
+  if (!el) return;
+  if (state === 'saved') { el.textContent = '✓ Saved to your account'; el.className = 'pb-sync-status saved'; }
+  else if (state === 'error') { el.textContent = '⚠ Could not save to your account — kept locally'; el.className = 'pb-sync-status error'; }
+  else if (state === 'local') { el.textContent = 'Not signed in — saved to this device only. Sign in to keep this across devices.'; el.className = 'pb-sync-status local'; }
+  else { el.textContent = ''; el.className = 'pb-sync-status'; }
 }
 function seedDemo() {
   investments = [
@@ -766,6 +823,7 @@ if (!load()) seedDemo();
 initChart();
 renderAll();
 addEvt('READY', 'Portfolio Balancer loaded — add, update or remove investments any time.');
+initPortfolioPersistence();
 </script>
 </body>
 </html>

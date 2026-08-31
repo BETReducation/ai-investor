@@ -549,6 +549,20 @@
     color: var(--text-muted);
   }
 
+  .trade-export-btn {
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--accent-green);
+    background: transparent;
+    border: 1px solid var(--accent-green);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .trade-export-btn:hover { background: var(--accent-green); color: var(--bg-primary); }
+
   .trade-table {
     width: 100%;
     border-collapse: collapse;
@@ -2169,7 +2183,10 @@ window.addEventListener('resize', () => {
       <div class="tradelog-section">
         <div class="tradelog-header">
           <span class="tradelog-title">TRADE LOG</span>
-          <span id="tradeCount" style="font-size:9px;color:var(--accent-amber);letter-spacing:1px;"></span>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <span id="tradeCount" style="font-size:9px;color:var(--accent-amber);letter-spacing:1px;"></span>
+            <button type="button" class="trade-export-btn" onclick="exportResultsCSV()" title="Download this result as a CSV file">⬇ EXPORT CSV</button>
+          </div>
         </div>
         <div class="tradelog-scroll">
           <table class="trade-table">
@@ -3430,6 +3447,43 @@ function renderResults(data) {
   }
 
   setState('resultsPanel');
+}
+
+function exportResultsCSV() {
+  if (!lastResultsData) return;
+  const { symbol, period, metrics, trades } = lastResultsData;
+
+  const summaryLines = [
+    ['Symbol', symbol],
+    ['Period', period],
+    ['Total Trades', metrics.num_trades],
+    ['Total Return %', metrics.total_return_pct],
+    ['Win Rate %', metrics.win_rate],
+    ['Profit Factor', metrics.profit_factor],
+    ['Sharpe Ratio', metrics.sharpe_ratio],
+    ['Max Drawdown %', metrics.max_drawdown_pct],
+    ['Avg Trade %', metrics.avg_trade_pct],
+    ['Best Trade %', metrics.best_trade_pct],
+    ['Worst Trade %', metrics.worst_trade_pct],
+  ].map(row => row.join(',')).join('\n');
+
+  const tradeHeader = ['#', 'Entry Date', 'Exit Date', 'Entry Price', 'Exit Price', 'Return %', 'P&L', 'Exit Reason'].join(',');
+  const tradeRows = trades.map((t, i) => [
+    i + 1, t.entry_date, t.exit_date, t.entry_price, t.exit_price,
+    t.return_pct.toFixed(2), t.pnl_gbp.toFixed(2), t.exit_reason,
+  ].join(','));
+
+  const csv = 'SUMMARY\n' + summaryLines + '\n\nTRADES\n' + tradeHeader + '\n' + tradeRows.join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backtest-${symbol}-${(period || '').replace(/\s+/g, '_')}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function fmtPrice(p) {

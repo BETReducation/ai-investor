@@ -4443,10 +4443,6 @@ def backtest():
     if sl_tp_unit not in ("percent", "pips"):
         return jsonify({"error": "sl_tp_unit must be 'percent' or 'pips'"}), 400
 
-    # Forex pip size: 0.01 for JPY pairs (quoted to 2-3 decimal places),
-    # 0.0001 for everything else (quoted to 4-5 decimal places).
-    pip_size = 0.01 if "JPY" in symbol.upper() else 0.0001
-
     thresholds = {}
     for key in [
         "rsi_oversold", "rsi_overbought", "volume_surge",
@@ -4520,6 +4516,18 @@ def backtest():
 
     try:
         df = _fetch_ohlcv(symbol, period, interval, start_date=start_date, end_date=end_date)
+
+        # Forex pip size: derived from the actual traded price rather than
+        # assuming only JPY-named pairs quote to 2 decimals. Any pair whose
+        # price sits in JPY-like ranges (some exotics quote similarly) gets
+        # priced the same way, instead of silently defaulting to 0.0001 and
+        # mis-sizing pip-based stop-loss/take-profit for it.
+        if len(df.index) > 0:
+            last_price = float(df["Close"].iloc[-1])
+            pip_size = 0.01 if last_price >= 20 else 0.0001
+        else:
+            pip_size = 0.01 if "JPY" in symbol.upper() else 0.0001
+
         trades, equity_curve, bah_curve = run_backtest(
             df,
             thresholds=thresholds or None,
