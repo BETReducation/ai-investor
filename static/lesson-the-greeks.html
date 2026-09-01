@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>What Is an Option? — Pro — Growth Capital Group</title>
+<title>The Greeks — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 1 of 5</div>
-    <h1 class="hero-title">What Is an Option? Rights, Not <span class="accent">Obligations</span></h1>
-    <p class="hero-sub">An option gives its buyer a right, never an obligation, to buy or sell an asset at a set price by a set date. That single asymmetry — capped cost against a very different payoff shape — makes options a genuinely different tool from owning the stock outright.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 2 of 5</div>
+    <h1 class="hero-title">The Greeks — Delta, Gamma, Theta & <span class="accent">Vega</span> Explained</h1>
+    <p class="hero-sub">An option's price moves for more reasons than just the stock price. The Greeks each measure the option's sensitivity to a different force — together, they describe exactly what a position is exposed to.</p>
   </div>
 </div>
 
@@ -158,75 +158,75 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">A Contract, Not a Piece of the Company</h2>
-    <p class="body-text">A <b>call option</b> gives its buyer the right — not the obligation — to buy 100 shares of an underlying stock at a fixed price (the <b>strike price</b>) on or before a set date (<b>expiration</b>). A <b>put option</b> gives the right to sell instead. In both cases, the buyer pays an upfront fee, the <b>premium</b>, to the seller for that right, and can simply let the option expire worthless if it never becomes worth exercising.</p>
-    <p class="body-text">That right/obligation split creates a defining asymmetry: the option <b>buyer's</b> maximum loss is capped at the premium paid, no matter how far the stock moves against them, while their potential gain (for a call) is theoretically uncapped. The option <b>seller</b> takes the opposite side of that trade — collecting the premium upfront, but carrying open-ended risk (for an uncovered call) or substantial risk (for a put) if the market moves sharply against the position.</p>
-    <p class="body-text">An option's value at expiration comes down to whether it's <b>in the money</b> (would be exercised profitably), <b>at the money</b> (strike equals the current price), or <b>out of the money</b> (would expire worthless). A call is in the money when the stock price is above the strike; a put is in the money when the stock price is below the strike.</p>
+    <h2 class="section-title">Four Numbers That Describe an Option's Exposure</h2>
+    <p class="body-text">The previous lesson covered an option's payoff <i>at expiration</i>. Before expiration, its price — the premium — moves constantly, and not just because of the stock price. The <b>Greeks</b> are a set of measures, each named after a Greek letter, that isolate how sensitive an option's price is to one specific factor at a time.</p>
+    <p class="body-text"><b>Delta</b> measures how much the option's price changes for a $1 move in the underlying stock — a delta of 0.60 means the option gains roughly $0.60 for every $1 the stock rises. <b>Gamma</b> measures how much delta itself changes as the stock moves — the "delta of delta," describing how quickly an option's directional exposure accelerates. <b>Theta</b> measures time decay: how much value the option loses purely from one day passing, holding everything else constant — an ever-present drag on a long option position. <b>Vega</b> measures sensitivity to implied volatility: how much the option's price changes if the market's expectation of future volatility shifts, even with the stock price unchanged.</p>
+    <p class="body-text">Together, these four answer a single practical question: if the stock moves, if time passes, or if volatility expectations shift, what happens to this position? A trader who only watches the stock price is ignoring at least three of the four forces actually moving their option's value day to day.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: A Call Option's Payoff at Expiration</h3>
-      <p class="body-text">A hypothetical call option with a $100 strike price, bought for a $4 premium. Here's the buyer's profit or loss at different stock prices at expiration.</p>
+      <h3>⚖️ Illustrative Example: Reading a Position's Greeks</h3>
+      <p class="body-text">A hypothetical call option position with the Greeks below. What each one is saying about the position — illustrative numbers only.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Stock Price at Expiration</th><th>Option Value</th><th>Premium Paid</th><th>Buyer's P&L</th></tr>
+            <tr><th>Greek</th><th>Value</th><th>What It's Saying</th></tr>
           </thead>
           <tbody>
-            <tr><td>$90 (Out of the Money)</td><td>$0</td><td>$4</td><td>-$4 (Max Loss)</td></tr>
-            <tr><td>$100 (At the Money)</td><td>$0</td><td>$4</td><td>-$4 (Max Loss)</td></tr>
-            <tr><td>$104 (Breakeven)</td><td>$4</td><td>$4</td><td>$0</td></tr>
-            <tr class="highlight-row"><td>$115 (In the Money)</td><td>$15</td><td>$4</td><td>+$11</td></tr>
+            <tr><td>Delta</td><td>+0.55</td><td>Gains ~$0.55 per $1 the stock rises</td></tr>
+            <tr><td>Gamma</td><td>0.04</td><td>Delta itself rises ~0.04 per $1 stock move</td></tr>
+            <tr class="highlight-row"><td>Theta</td><td>-0.08</td><td>Loses ~$0.08 of value per day, all else equal</td></tr>
+            <tr><td>Vega</td><td>+0.12</td><td>Gains ~$0.12 if implied volatility rises 1 point</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Below $100, the option is worthless and the buyer's loss is capped at the $4 premium, regardless of how far the stock falls. Above the $104 breakeven (strike + premium), the buyer's gain grows directly with the stock price — capped downside, open-ended upside is the defining shape of a long call.</p>
+      <p class="stmt-note">Every day this option is held, theta quietly erodes ~$0.08 of value even if the stock doesn't move at all — a cost that only a directional stock move (via delta), an accelerating move (via gamma), or a rise in volatility expectations (via vega) can offset.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Options</h3>
+    <h3 class="subhead">5 Things to Know About the Greeks</h3>
     <ol class="num-checklist">
-      <li><b>Buying an option is a right, selling one is an obligation</b> — a seller who is exercised against must deliver (or buy) the shares, whether they want to or not.</li>
-      <li><b>Options can expire worthless</b> — unlike owning a stock outright, an out-of-the-money option at expiration is worth exactly zero, and the premium paid is gone.</li>
-      <li><b>The premium isn't just about direction</b> — it reflects time remaining, volatility, and distance from the strike, not just where the stock is trading now (covered further in the Greeks and Implied Volatility lessons next in this track).</li>
-      <li><b>Options are typically for 100 shares per contract</b> — a single option contract usually represents exposure to 100 shares of the underlying stock.</li>
-      <li><b>Selling uncovered (naked) options carries very different risk than buying</b> — an uncovered call seller has theoretically unlimited risk if the stock keeps rising, the mirror image of the capped-risk buyer.</li>
+      <li><b>Delta also approximates probability</b> — a rough rule of thumb treats an option's delta as its approximate probability of expiring in the money.</li>
+      <li><b>Gamma is highest near the strike, close to expiration</b> — this is when an option's delta (and therefore its directional risk) can shift fastest.</li>
+      <li><b>Theta accelerates as expiration nears</b> — time decay isn't linear; it tends to speed up sharply in an option's final weeks.</li>
+      <li><b>Vega matters most for longer-dated options</b> — an option with more time until expiration is generally more sensitive to shifts in volatility expectations.</li>
+      <li><b>The Greeks interact, not operate in isolation</b> — a real position's actual day-to-day P&L reflects delta, gamma, theta, and vega all moving together, not any one in isolation.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Trading an Option</h3>
+    <h3 class="subhead">4 Things to Check Before Holding an Options Position</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🎯 Know Your Maximum Loss</h4>
+        <h4>📈 Check Your Delta Exposure</h4>
         <ul>
-          <li>As a buyer, confirm your maximum loss is genuinely capped at the premium paid before entering.</li>
+          <li>Know roughly how much your position moves for a given move in the underlying — your directional bet, in dollar terms.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📅 Check the Expiration Date</h4>
+        <h4>⏳ Respect Theta as a Buyer</h4>
         <ul>
-          <li>Time works against a long option buyer — confirm there's enough time left for the underlying thesis to play out.</li>
+          <li>A long option position bleeds value every day it's held, even if the stock stays flat — factor that cost into the plan.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>💵 Understand the Breakeven</h4>
+        <h4>🌪️ Watch Vega Around Known Events</h4>
         <ul>
-          <li>For a call buyer, breakeven is strike + premium paid — know exactly how far the stock needs to move just to break even.</li>
+          <li>Implied volatility often drops sharply right after an anticipated event (like earnings) — a real risk for a long option holding into it.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⚠️ Know Your Obligation as a Seller</h4>
+        <h4>⚡ Mind Gamma Near Expiration</h4>
         <ul>
-          <li>Before selling any option, understand exactly what you'd be required to do if it's exercised against you.</li>
+          <li>A position's directional exposure can change quickly in an option's final days — size and monitor accordingly.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro#tab-options">The Greeks</a> (next in this track) breaks down what actually drives an option's premium day to day, and <a href="/learn/intermediate/stocks">Stocks</a> (Beginner) covers the underlying asset options are written on.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/what-is-an-option">What Is an Option?</a> (previous) covers the payoff these Greeks describe the path toward, and <a href="/learn/pro#tab-options">Implied Volatility & Skew</a> (next in this track) digs deeper into the volatility input behind vega.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains options mechanics using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy or trade described here is a recommendation. Options trading carries substantial risk, including the potential loss of the entire premium paid, or, for uncovered sellers, losses well beyond the initial premium received. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains the Greeks using illustrative numbers and historical framing — it isn't personalized financial advice, and no position or value described here is a recommendation. The Greeks are theoretical sensitivities calculated from a pricing model, not guarantees of how an option will actually behave. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -235,57 +235,47 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Option Payoff Calculator</h2>
-    <p class="section-desc">Enter a strike price, premium, and a hypothetical stock price at expiration — see the buyer's profit or loss for a call or a put.</p>
+    <h2 class="section-title">Try It Yourself: Greeks Impact Estimator</h2>
+    <p class="section-desc">Enter a position's Greeks and a hypothetical change in the stock price, days passed, and implied volatility — see the estimated impact on the option's value.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadOptPreset('itm')">Load In-the-Money Call</button>
-        <button class="preset-btn" onclick="loadOptPreset('otm')">Load Out-of-the-Money Call</button>
-        <button class="preset-btn" onclick="loadOptPreset('put')">Load In-the-Money Put</button>
+        <button class="preset-btn" onclick="loadGreeksPreset('sample')">Load Sample Position</button>
+        <button class="preset-btn" onclick="loadGreeksPreset('shortDated')">Load Short-Dated (High Theta/Gamma)</button>
+        <button class="preset-btn" onclick="loadGreeksPreset('longDated')">Load Long-Dated (High Vega)</button>
       </div>
       <div class="calc-grid">
-        <div class="calc-field">
-          <label for="optType">Option Type</label>
-          <select id="optType">
-            <option value="call">Call</option>
-            <option value="put">Put</option>
-          </select>
-        </div>
-        <div class="calc-field">
-          <label for="optStrike">Strike Price ($)</label>
-          <input type="number" id="optStrike" value="100" step="1">
-        </div>
-        <div class="calc-field">
-          <label for="optPremium">Premium Paid ($)</label>
-          <input type="number" id="optPremium" value="4" step="0.25" min="0">
-        </div>
-        <div class="calc-field">
-          <label for="optExpiryPrice">Stock Price at Expiration ($)</label>
-          <input type="number" id="optExpiryPrice" value="115" step="1" min="0">
-        </div>
+        <div class="calc-field"><label>Delta</label><input type="number" id="grDelta" value="0.55" step="0.01"></div>
+        <div class="calc-field"><label>Gamma</label><input type="number" id="grGamma" value="0.04" step="0.001"></div>
+        <div class="calc-field"><label>Theta (per day)</label><input type="number" id="grTheta" value="-0.08" step="0.01"></div>
+        <div class="calc-field"><label>Vega (per 1 IV point)</label><input type="number" id="grVega" value="0.12" step="0.01"></div>
+      </div>
+      <div class="calc-grid">
+        <div class="calc-field"><label>Hypothetical Stock Move ($)</label><input type="number" id="grStockMove" value="3" step="0.5"></div>
+        <div class="calc-field"><label>Days Passed</label><input type="number" id="grDaysPassed" value="5" step="1" min="0"></div>
+        <div class="calc-field"><label>Implied Vol. Change (points)</label><input type="number" id="grVolChange" value="-2" step="0.5"></div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcOptionPayoff()">Calculate Payoff →</button>
+        <button class="calc-btn" onclick="calcGreeksImpact()">Estimate Impact →</button>
       </div>
 
-      <div class="calc-results visible" id="optResults">
+      <div class="calc-results visible" id="grResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Option Value at Expiry</div>
-            <div class="mc-value" id="optIntrinsicVal">—</div>
+            <div class="mc-label">From Delta + Gamma</div>
+            <div class="mc-value" id="grDeltaGammaImpact">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Buyer's P&L</div>
-            <div class="mc-value" id="optPnl">—</div>
+            <div class="mc-label">From Theta</div>
+            <div class="mc-value" id="grThetaImpact">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Breakeven Price</div>
-            <div class="mc-value" id="optBreakeven">—</div>
+            <div class="mc-label">From Vega</div>
+            <div class="mc-value" id="grVegaImpact">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="optCallout"></div>
-        <p class="calc-note">Model: call value at expiry = max(0, stock price − strike). Put value at expiry = max(0, strike − stock price). Buyer's P&L = option value − premium paid. Illustrative only — ignores commissions and any early exercise.</p>
+        <div class="calc-callout" id="grCallout"></div>
+        <p class="calc-note">Model: price impact ≈ (delta × stock move) + (0.5 × gamma × stock move²) + (theta × days passed) + (vega × IV change). A simplified second-order approximation, not an exact options pricing model — illustrative only.</p>
       </div>
     </div>
   </div>
@@ -305,58 +295,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What does a call option give its buyer?</div>
+        <div class="quiz-q-title">1. What does Delta measure?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The obligation to buy the stock at expiration</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The right, but not the obligation, to buy the stock at a set price by a set date</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Automatic ownership of the underlying company</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The right to sell the stock at a set price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> How much value an option loses per day</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> How much the option's price changes for a $1 move in the underlying stock</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The option's strike price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> How many days remain until expiration</label>
         </div>
-        <div class="quiz-explain">A call option gives the buyer the right, not the obligation, to buy the underlying stock at the strike price on or before expiration.</div>
+        <div class="quiz-explain">Delta measures how much the option's price is expected to change for a $1 move in the underlying stock.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. In the illustrative example, what was the buyer's maximum possible loss?</div>
+        <div class="quiz-q-title">2. What does Theta represent?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Unlimited</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> $100, the strike price</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> $4, the premium paid</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> $115, the highest stock price shown</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Sensitivity to the stock price</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Sensitivity to implied volatility</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Time decay — value lost purely from one day passing, all else equal</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The maximum possible loss on the position</label>
         </div>
-        <div class="quiz-explain">An option buyer's maximum loss is capped at the premium paid, no matter how far the stock moves against the position.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What does it mean for a call option to be "in the money"?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The option has already expired</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> The stock price equals the strike price exactly</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The premium was very expensive</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> The stock price is above the strike price, so it would be exercised profitably</label>
-        </div>
-        <div class="quiz-explain">A call is in the money when the underlying stock price is above the strike price.</div>
+        <div class="quiz-explain">Theta measures how much value an option loses purely from the passage of time, holding everything else constant.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why does an option seller carry different risk than a buyer?</div>
+        <div class="quiz-q-title">3. In the illustrative example, what happened to the option's value every day it was held, even with no stock move?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> The seller has an obligation if exercised against, and can face open-ended risk on an uncovered call</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Sellers never actually lose money on options</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Sellers automatically receive the underlying stock for free</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Sellers and buyers always have identical risk</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It lost about $0.08 of value from theta decay</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It gained value automatically</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Its strike price changed</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Delta dropped to zero</label>
         </div>
-        <div class="quiz-explain">The option seller takes the opposite side — collecting the premium upfront but carrying an obligation, with open-ended risk on an uncovered call.</div>
+        <div class="quiz-explain">Theta of -0.08 means the option loses about $0.08 of value each day purely from time passing, all else equal.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. According to this lesson, when is Gamma typically highest?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Only on options with no expiration date</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> When the stock price is far from the strike</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Immediately after the option is purchased, regardless of other factors</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Near the strike price, close to expiration</label>
+        </div>
+        <div class="quiz-explain">Gamma tends to be highest near the strike price as expiration approaches, meaning delta can shift fastest at that point.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What typically happens to an out-of-the-money option at expiration?</div>
+        <div class="quiz-q-title">5. What does Vega measure?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> It automatically converts into shares of stock</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> It doubles in value</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> It expires worthless, and the premium paid is gone</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> The seller must pay the buyer the full premium back</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> The option's delta squared</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> The number of shares per contract</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Sensitivity to changes in implied volatility</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> The commission cost of the trade</label>
         </div>
-        <div class="quiz-explain">Unlike owning a stock outright, an out-of-the-money option at expiration is worth exactly zero, and the premium paid for it is gone.</div>
+        <div class="quiz-explain">Vega measures how much an option's price changes if the market's expectation of future volatility shifts, even with the stock price unchanged.</div>
       </div>
     </div>
 
@@ -373,22 +363,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/what-is-an-option-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/the-greeks-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the call payoff example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the reading-a-position's-Greeks example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/what-is-an-option-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/the-greeks-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to calculate option payoffs and breakevens for calls and puts by hand.</div>
+        <div class="dl-desc">Guided exercises to estimate an option's value change from delta, theta, and vega by hand.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/what-is-an-option-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/the-greeks-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore options basics in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore the Greeks in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -397,19 +387,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: The Greeks</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You now know how an option pays off at expiration. Before expiration, its price moves for reasons beyond just the stock price — the next lesson breaks down exactly what drives that.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Implied Volatility & Skew</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Vega measures sensitivity to volatility expectations — the next lesson digs into what implied volatility actually is, and why it's rarely the same across every strike price.</p>
     <div class="cta-grid">
-      <a href="/learn/pro#tab-quant" class="hub-card">
-        <div class="card-icon">🎛️</div>
-        <div class="card-title">Back to Quantitative Strategy Hub</div>
-        <div class="card-desc">Revisit the previous track's five lessons.</div>
-        <div class="card-link">Back to hub →</div>
+      <a href="/learn/pro/what-is-an-option" class="hub-card">
+        <div class="card-icon">🎟️</div>
+        <div class="card-title">Back to What Is an Option?</div>
+        <div class="card-desc">Review rights, not obligations.</div>
+        <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/the-greeks" class="hub-card">
-        <div class="card-icon">🧮</div>
-        <div class="card-title">Continue to The Greeks</div>
-        <div class="card-desc">Delta, Gamma, Theta & Vega explained.</div>
+      <a href="/learn/pro#tab-options" class="hub-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Continue to Implied Volatility & Skew</div>
+        <div class="card-desc">Reading what the market is actually afraid of.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -442,57 +432,51 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const OPT_PRESETS = {
-  itm: { type: 'call', strike: 100, premium: 4, expiry: 115 },
-  otm: { type: 'call', strike: 100, premium: 4, expiry: 90 },
-  put: { type: 'put', strike: 100, premium: 3.5, expiry: 82 },
+const GREEKS_PRESETS = {
+  sample: { delta: 0.55, gamma: 0.04, theta: -0.08, vega: 0.12, stockMove: 3, days: 5, volChange: -2 },
+  shortDated: { delta: 0.50, gamma: 0.09, theta: -0.22, vega: 0.05, stockMove: 2, days: 3, volChange: -1 },
+  longDated: { delta: 0.55, gamma: 0.015, theta: -0.03, vega: 0.28, stockMove: 3, days: 10, volChange: 3 },
 };
-function loadOptPreset(kind) {
-  const p = OPT_PRESETS[kind];
-  document.getElementById('optType').value = p.type;
-  document.getElementById('optStrike').value = p.strike;
-  document.getElementById('optPremium').value = p.premium;
-  document.getElementById('optExpiryPrice').value = p.expiry;
-  calcOptionPayoff();
+function loadGreeksPreset(kind) {
+  const p = GREEKS_PRESETS[kind];
+  document.getElementById('grDelta').value = p.delta;
+  document.getElementById('grGamma').value = p.gamma;
+  document.getElementById('grTheta').value = p.theta;
+  document.getElementById('grVega').value = p.vega;
+  document.getElementById('grStockMove').value = p.stockMove;
+  document.getElementById('grDaysPassed').value = p.days;
+  document.getElementById('grVolChange').value = p.volChange;
+  calcGreeksImpact();
 }
 
-function calcOptionPayoff() {
-  const type = document.getElementById('optType').value;
-  const strike = parseFloat(document.getElementById('optStrike').value);
-  const premium = parseFloat(document.getElementById('optPremium').value);
-  const expiryPrice = parseFloat(document.getElementById('optExpiryPrice').value);
-  if ([strike, premium, expiryPrice].some(isNaN) || strike < 0 || premium < 0 || expiryPrice < 0) {
-    alert('Please enter valid, non-negative values.');
+function calcGreeksImpact() {
+  const delta = parseFloat(document.getElementById('grDelta').value);
+  const gamma = parseFloat(document.getElementById('grGamma').value);
+  const theta = parseFloat(document.getElementById('grTheta').value);
+  const vega = parseFloat(document.getElementById('grVega').value);
+  const stockMove = parseFloat(document.getElementById('grStockMove').value);
+  const days = parseFloat(document.getElementById('grDaysPassed').value);
+  const volChange = parseFloat(document.getElementById('grVolChange').value);
+  if ([delta, gamma, theta, vega, stockMove, days, volChange].some(isNaN) || days < 0) {
+    alert('Please enter valid values (days passed must be non-negative).');
     return;
   }
 
-  let intrinsic, breakeven;
-  if (type === 'call') {
-    intrinsic = Math.max(0, expiryPrice - strike);
-    breakeven = strike + premium;
-  } else {
-    intrinsic = Math.max(0, strike - expiryPrice);
-    breakeven = strike - premium;
-  }
-  const pnl = intrinsic - premium;
+  const deltaGammaImpact = (delta * stockMove) + (0.5 * gamma * stockMove * stockMove);
+  const thetaImpact = theta * days;
+  const vegaImpact = vega * volChange;
+  const totalImpact = deltaGammaImpact + thetaImpact + vegaImpact;
 
-  document.getElementById('optIntrinsicVal').textContent = '$' + intrinsic.toFixed(2);
-  document.getElementById('optPnl').textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toFixed(2);
-  document.getElementById('optBreakeven').textContent = '$' + breakeven.toFixed(2);
+  document.getElementById('grDeltaGammaImpact').textContent = (deltaGammaImpact >= 0 ? '+$' : '-$') + Math.abs(deltaGammaImpact).toFixed(2);
+  document.getElementById('grThetaImpact').textContent = (thetaImpact >= 0 ? '+$' : '-$') + Math.abs(thetaImpact).toFixed(2);
+  document.getElementById('grVegaImpact').textContent = (vegaImpact >= 0 ? '+$' : '-$') + Math.abs(vegaImpact).toFixed(2);
 
-  const callout = document.getElementById('optCallout');
-  if (pnl > 0) {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Profitable at Expiration</span>At $${expiryPrice.toFixed(2)}, this ${type} is worth $${intrinsic.toFixed(2)} — a profit of $${pnl.toFixed(2)} after the $${premium.toFixed(2)} premium paid.`;
-  } else if (intrinsic === 0) {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Out of the Money — Max Loss</span>At $${expiryPrice.toFixed(2)}, this ${type} expires worthless — the loss is capped at the $${premium.toFixed(2)} premium paid, no matter how far past the strike the stock moved.`;
-  } else {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ In the Money, Below Breakeven</span>At $${expiryPrice.toFixed(2)}, this ${type} is worth $${intrinsic.toFixed(2)} — still a loss of $${Math.abs(pnl).toFixed(2)}, since it hasn't cleared the $${breakeven.toFixed(2)} breakeven yet.`;
-  }
+  const callout = document.getElementById('grCallout');
+  callout.className = 'calc-callout' + (totalImpact < 0 ? ' warn' : '');
+  const verdict = totalImpact >= 0 ? '✓ Net Positive Estimated Impact' : '⚠️ Net Negative Estimated Impact';
+  callout.innerHTML = `<span class="verdict">${verdict}</span>Combining a $${stockMove.toFixed(2)} stock move, ${days} day(s) passing, and a ${volChange >= 0 ? '+' : ''}${volChange.toFixed(1)}-point implied volatility change, this position's estimated value change is ${totalImpact >= 0 ? '+$' : '-$'}${Math.abs(totalImpact).toFixed(2)} per contract share.`;
 }
-calcOptionPayoff();
+calcGreeksImpact();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
