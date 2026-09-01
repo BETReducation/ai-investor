@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Asset Allocation — Intermediate — Growth Capital Group</title>
+<title>Correlation — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,6 +63,8 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+.corr-scale { display: flex; align-items: center; margin-top: 20px; border-radius: 10px; overflow: hidden; height: 34px; }
+.corr-scale-seg { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #03130f; }
 .stmt-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 16px; }
 .stmt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .stmt-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
@@ -94,8 +96,6 @@ p.body-text b { color: var(--text); }
 .preset-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
 .preset-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); padding: 8px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
 .preset-btn:hover { border-color: var(--purple2); color: var(--text); }
-.alloc-bar { display: flex; height: 28px; border-radius: 8px; overflow: hidden; margin-top: 8px; }
-.alloc-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #03130f; }
 .quiz-list { display: flex; flex-direction: column; gap: 24px; }
 .quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
 .quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
@@ -146,9 +146,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 1 of 5</div>
-    <h1 class="hero-title">Asset Allocation — Your Most Important <span class="accent">Decision</span></h1>
-    <p class="hero-sub">How you split your money across stocks, bonds, cash and other assets drives the vast majority of your portfolio's long-term risk and return — far more than which individual stock you pick.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 2 of 5</div>
+    <h1 class="hero-title">Correlation — Why Owning 20 Stocks Isn't Always <span class="accent">Diversified</span></h1>
+    <p class="hero-sub">If your 20 holdings are all tech companies, they'll likely rise and fall together — that's not real diversification. True diversification comes from combining assets that don't move in lockstep.</p>
   </div>
 </div>
 
@@ -156,70 +156,79 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">The Decision That Matters More Than Stock Picking</h2>
-    <p class="body-text">Asset allocation is simply how you split your money across broad categories — stocks, bonds, cash, and sometimes alternatives like property or gold. It sounds less exciting than picking the "right" individual stock, but research consistently finds that this split — not which specific stocks or funds you choose within it — explains the vast majority of a portfolio's long-term risk and return.</p>
-    <p class="body-text">The intuition is straightforward: stocks and bonds behave very differently. Stocks offer higher expected long-term returns but with much bigger swings; bonds offer lower expected returns but with far more stability, cushioning a portfolio when stocks fall. Cash offers the least growth but the most stability and immediate access. Blending them in different proportions produces a completely different risk and return profile, regardless of which specific stocks you happen to hold.</p>
-    <p class="body-text">There's no single "correct" allocation — the right mix depends on your <b>time horizon</b> and <b>risk tolerance</b> (the next lessons in this section build directly on this one). What matters here is understanding that this one decision — the split, not the stock-picking — is where most of your portfolio's character actually gets set.</p>
+    <h2 class="section-title">Diversification Isn't About Counting Holdings</h2>
+    <p class="body-text">It's tempting to think "I own 20 different stocks, so I'm diversified." But diversification isn't about how many holdings you have — it's about how independently they move relative to each other. <b>Correlation</b> measures exactly that, on a scale from -1 to +1. A correlation of +1 means two assets move perfectly in lockstep; -1 means they move perfectly opposite each other; 0 means their movements are unrelated.</p>
+    <p class="body-text">Twenty tech stocks are typically <b>highly correlated</b> — when the sector rallies or sells off, most of them move together, because they share the same economic drivers (interest rates, sector sentiment, tech spending cycles). Owning 20 of them concentrates your risk in "whatever moves tech stocks" almost as much as owning just two or three would. Real diversification comes from combining assets with <b>low or negative correlation</b> — different sectors, different asset classes (stocks and bonds, for instance), or different geographies.</p>
+    <p class="body-text">The payoff of low correlation is genuine: when you blend two assets that don't move in lockstep, the combined portfolio's volatility can be <b>lower than a simple average</b> of the two individual volatilities — smoothing out the ride without necessarily sacrificing much expected return. That "free" risk reduction from combining imperfectly-correlated assets is one of the few things in investing sometimes called a "free lunch."</p>
 
     <div class="example-card">
-      <h3>🥧 Illustrative Example: Three Model Allocations</h3>
-      <p class="body-text">Real historical figures vary by exact period and asset mix, so here's a clean illustrative comparison using simplified long-run assumptions to see the mechanics clearly.</p>
+      <h3>🔀 The Correlation Scale</h3>
+      <div class="corr-scale">
+        <div class="corr-scale-seg" style="background:#f87171;">-1.0 (opposite)</div>
+        <div class="corr-scale-seg" style="background:#fbbf24;">0.0 (unrelated)</div>
+        <div class="corr-scale-seg" style="background:#4ade80;">+1.0 (lockstep)</div>
+      </div>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Twenty tech stocks typically cluster around +0.7 to +0.9 — close to the "lockstep" end. Stocks and long-term government bonds have often sat closer to 0 or even slightly negative over long periods, though this relationship isn't fixed and can shift, especially during periods of high inflation.</p>
+    </div>
+
+    <div class="example-card">
+      <h3>📊 Illustrative Example: 20 Tech Stocks vs a Mixed Portfolio</h3>
+      <p class="body-text">Real correlations vary by period and by the specific holdings, so here's a clean illustrative comparison to see the mechanics clearly.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Allocation</th><th>Stocks</th><th>Bonds</th><th>Illustrative Avg. Return</th><th>Illustrative Volatility</th></tr>
+            <tr><th>Portfolio</th><th># Holdings</th><th>Avg. Correlation</th><th>Individual Volatility</th><th>Portfolio Volatility</th></tr>
           </thead>
           <tbody>
-            <tr><td>Conservative</td><td>30%</td><td>70%</td><td>~5.2%/yr</td><td>Lower swings</td></tr>
-            <tr class="highlight-row"><td>Balanced</td><td>60%</td><td>40%</td><td>~6.8%/yr</td><td>Moderate swings</td></tr>
-            <tr><td>Aggressive</td><td>90%</td><td>10%</td><td>~8.2%/yr</td><td>Larger swings</td></tr>
+            <tr><td>20 Tech Stocks</td><td>20</td><td>~0.80</td><td>~35%</td><td>~32%</td></tr>
+            <tr class="highlight-row"><td>Mixed (Stocks + Bonds + Gold)</td><td>20</td><td>~0.25</td><td>~35%</td><td>~19%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Same universe of assets, three completely different outcomes — purely from changing the split. Notice the trade-off: higher expected return comes paired with larger swings along the way, not for free. Nobody picked a single "winning" stock in any of these — the allocation itself did almost all the work.</p>
+      <p class="stmt-note">Both portfolios hold 20 positions with similar individual volatility — but the highly-correlated tech portfolio barely reduces overall volatility versus a single stock, while the mixed portfolio's lower average correlation cuts volatility by nearly half. Same number of holdings, dramatically different diversification benefit — purely because of correlation.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Asset Allocation</h3>
+    <h3 class="subhead">5 Things to Know About Correlation</h3>
     <ol class="num-checklist">
-      <li><b>Allocation drives more of your outcome than security selection</b> — the stocks/bonds/cash split matters more than which specific stocks you pick within it.</li>
-      <li><b>Higher expected return comes with higher volatility</b> — there's no allocation that offers stock-like returns with bond-like stability.</li>
-      <li><b>There's no universally "correct" allocation</b> — the right mix depends on your own time horizon and risk tolerance.</li>
-      <li><b>Allocation isn't a one-time decision</b> — it should be revisited as your goals, time horizon, and risk tolerance change over time.</li>
-      <li><b>Drift happens automatically</b> — if you never rebalance (the next-but-one lesson), your allocation quietly shifts as winners grow faster than laggards.</li>
+      <li><b>Number of holdings isn't the same as diversification</b> — 20 highly-correlated stocks provide far less risk reduction than a handful of genuinely different assets.</li>
+      <li><b>Correlation ranges from -1 to +1</b> — closer to 0 or negative is where real diversification benefit lives.</li>
+      <li><b>Combining low-correlation assets can reduce portfolio volatility below a simple average</b> — a genuine, not-quite-free benefit of diversification.</li>
+      <li><b>Correlations aren't fixed</b> — they can shift over time, and famously tend to rise during market crises, right when diversification is needed most.</li>
+      <li><b>Different sectors or asset classes usually beat different stocks in the same sector</b> — for genuine diversification benefit.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Setting an Allocation</h3>
+    <h3 class="subhead">4 Things to Check for Real Diversification</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>⏱️ Start With Time Horizon</h4>
+        <h4>🏭 Check Sector Spread</h4>
         <ul>
-          <li>A longer runway generally allows more room for stocks, since there's more time to recover from downturns.</li>
+          <li>Are your holdings spread across genuinely different sectors, or clustered in one or two?</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>😰 Be Honest About Risk Tolerance</h4>
+        <h4>🌍 Check Asset Class Spread</h4>
         <ul>
-          <li>An allocation you can't stick with through a downturn isn't the right one, however good it looks on paper.</li>
+          <li>Stocks, bonds, cash, and alternatives each respond differently to the same economic conditions.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🌍 Think Beyond Just Stocks and Bonds</h4>
+        <h4>📉 Remember Correlations Can Rise in Crises</h4>
         <ul>
-          <li>Cash and alternative assets can play a role too, depending on your goals.</li>
+          <li>Don't assume historical correlation will hold exactly during the next major sell-off.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔄 Plan to Revisit It</h4>
+        <h4>🔢 Count Real Diversification, Not Just Ticker Count</h4>
         <ul>
-          <li>Treat allocation as a decision you'll periodically reconsider, not a one-time setup.</li>
+          <li>Ask what's actually driving each holding's returns, not just how many tickers you own.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> asset allocation is a framework for thinking about risk and return, not a formula with one right answer. Illustrative figures here use simplified long-run assumptions for teaching purposes — actual results vary by time period and by the specific assets held.
+      <b>Worth knowing:</b> correlation is estimated from historical data and can shift, especially in market stress. Treat correlation figures as a useful guide to structuring a portfolio, not a guaranteed, fixed relationship.
     </div>
   </div>
 </section>
@@ -228,47 +237,46 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Blended Allocation Estimator</h2>
-    <p class="section-desc">Enter a stocks/bonds/cash split — see an illustrative blended return and volatility estimate, using simplified long-run assumptions.</p>
+    <h2 class="section-title">Try It Yourself: Diversification Benefit Calculator</h2>
+    <p class="section-desc">Enter two assets' individual volatility and their correlation — see the blended volatility of an equal-weight combination, and how much diversification actually helped.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadAllocPreset('conservative')">Load Conservative (30/70)</button>
-        <button class="preset-btn" onclick="loadAllocPreset('balanced')">Load Balanced (60/40)</button>
-        <button class="preset-btn" onclick="loadAllocPreset('aggressive')">Load Aggressive (90/10)</button>
+        <button class="preset-btn" onclick="loadCorrPreset('highCorr')">Load High Correlation (Two Tech Stocks)</button>
+        <button class="preset-btn" onclick="loadCorrPreset('lowCorr')">Load Low Correlation (Stocks + Bonds)</button>
+        <button class="preset-btn" onclick="loadCorrPreset('negCorr')">Load Negative Correlation Example</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="allocStocks">Stocks (%)</label>
-          <input type="number" id="allocStocks" value="60" step="1" min="0" max="100">
+          <label for="corrVolA">Asset A Volatility (%)</label>
+          <input type="number" id="corrVolA" value="35" step="0.5">
         </div>
         <div class="calc-field">
-          <label for="allocBonds">Bonds (%)</label>
-          <input type="number" id="allocBonds" value="35" step="1" min="0" max="100">
+          <label for="corrVolB">Asset B Volatility (%)</label>
+          <input type="number" id="corrVolB" value="35" step="0.5">
         </div>
         <div class="calc-field">
-          <label for="allocCash">Cash (%)</label>
-          <input type="number" id="allocCash" value="5" step="1" min="0" max="100">
+          <label for="corrCoef">Correlation (-1 to +1)</label>
+          <input type="number" id="corrCoef" value="0.8" step="0.05" min="-1" max="1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcAllocation()">Estimate Blend →</button>
+        <button class="calc-btn" onclick="calcCorrelation()">Calculate Blended Volatility →</button>
       </div>
 
-      <div class="calc-results visible" id="allocResults">
-        <div class="alloc-bar" id="allocBar"></div>
-        <div class="margin-grid" style="margin-top:20px;">
+      <div class="calc-results visible" id="corrResults">
+        <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Illustrative Blended Return</div>
-            <div class="mc-value" id="allocReturn">—</div>
+            <div class="mc-label">Simple Average Volatility</div>
+            <div class="mc-value" id="corrSimpleAvg">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Illustrative Blended Volatility</div>
-            <div class="mc-value" id="allocVol">—</div>
+            <div class="mc-label">Actual Blended Volatility</div>
+            <div class="mc-value" id="corrBlended">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="allocCallout"></div>
-        <p class="calc-note">Model: uses simplified illustrative long-run assumptions (stocks ~9%/yr return, ~16% volatility; bonds ~4%/yr return, ~6% volatility; cash ~2%/yr return, ~1% volatility) blended by weight. Educational only — not a forecast, and real returns vary significantly by period.</p>
+        <div class="calc-callout" id="corrCallout"></div>
+        <p class="calc-note">Model: equal-weight (50/50) blend. Portfolio volatility = √(0.25×σA² + 0.25×σB² + 0.5×ρ×σA×σB) — the standard two-asset portfolio variance formula. Lower correlation (ρ) means more of the individual volatility "cancels out" in the blend.</p>
       </div>
     </div>
   </div>
@@ -288,58 +296,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is asset allocation?</div>
+        <div class="quiz-q-title">1. What does correlation measure?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Picking which individual stock to buy</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Timing when to buy and sell</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> How you split your money across broad categories like stocks, bonds, and cash</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The fee a broker charges</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The total number of holdings in a portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A company's dividend yield</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> How closely two assets' prices move in relation to each other</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A stock's price-to-earnings ratio</label>
         </div>
-        <div class="quiz-explain">Asset allocation is the split across broad asset categories — the decision that drives most of a portfolio's long-term risk and return.</div>
+        <div class="quiz-explain">Correlation ranges from -1 to +1 and measures how closely two assets move together (or apart).</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">2. According to this lesson, what explains the vast majority of a portfolio's long-term risk and return?</div>
+        <div class="quiz-q-title">2. Why might 20 tech stocks not provide much real diversification?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Which specific stocks you pick within your allocation</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> How often you check your portfolio</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Your broker's trading platform</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The asset allocation split itself</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because tech stocks are always a bad investment</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because 20 is not enough holdings</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because tech stocks never make money</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because they tend to be highly correlated, moving together on shared economic drivers</label>
         </div>
-        <div class="quiz-explain">The stocks/bonds/cash split explains the vast majority of long-term portfolio outcomes — more than individual security selection.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">3. Why does a higher expected return typically come with higher volatility?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> There's no allocation offering stock-like returns with bond-like stability — the trade-off is real</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It doesn't — return and volatility are unrelated</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Bonds always outperform stocks over any period</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Volatility only affects cash holdings</label>
-        </div>
-        <div class="quiz-explain">Higher expected returns (more stock-heavy allocations) come paired with larger swings — that trade-off is fundamental, not avoidable.</div>
+        <div class="quiz-explain">High correlation among tech stocks means they concentrate risk in shared drivers, even with many holdings.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">4. Why isn't there one universally "correct" asset allocation?</div>
+        <div class="quiz-q-title">3. What is the range of possible correlation values?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Because allocation doesn't actually matter</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Because the right mix depends on your own time horizon and risk tolerance</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Because regulators ban any specific allocation</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Because stocks and bonds always move together</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> 0 to 100</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> -1 to +1</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> -100 to +100</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> 0 to 1 only, it can never be negative</label>
         </div>
-        <div class="quiz-explain">The "right" allocation depends on the individual investor's time horizon and how much volatility they can tolerate — it's personal, not universal.</div>
+        <div class="quiz-explain">Correlation ranges from -1 (perfectly opposite) through 0 (unrelated) to +1 (perfectly in lockstep).</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. Why is combining low-correlation assets sometimes called a "free lunch" in investing?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It can reduce portfolio volatility below a simple average of the individual assets' volatility</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It guarantees higher returns with zero risk</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It eliminates all fees</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It only works for bonds</label>
+        </div>
+        <div class="quiz-explain">Blending imperfectly-correlated assets can lower overall volatility below what a simple average would suggest — a genuine diversification benefit.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What happens to an allocation if you never rebalance it?</div>
+        <div class="quiz-q-title">5. Why should you be cautious about relying on historical correlation figures?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> It stays perfectly fixed forever automatically</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> It's illegal not to rebalance</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> It quietly drifts as winners grow faster than laggards, shifting your risk over time</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Nothing changes regardless of market moves</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Correlation figures are always completely wrong</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Correlation never changes once measured</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Correlations can shift over time, and often rise during market crises</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Correlation only matters for cryptocurrency</label>
         </div>
-        <div class="quiz-explain">Without rebalancing, strong performers naturally grow to take up a larger share of the portfolio, quietly shifting its risk profile — covered in more depth in a later lesson.</div>
+        <div class="quiz-explain">Correlations aren't fixed — they can rise sharply during crises, right when diversification is needed most.</div>
       </div>
     </div>
 
@@ -356,22 +364,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/asset-allocation-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/correlation-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the three model allocations table, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the 20-tech-stocks vs mixed-portfolio comparison, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/asset-allocation-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/correlation-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to think through your own time horizon, risk tolerance, and a starting allocation.</div>
+        <div class="dl-desc">Guided exercises to assess how genuinely diversified your own holdings actually are.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/asset-allocation-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/correlation-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore asset allocation in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore correlation and diversification in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -380,19 +388,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Correlation</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you know the split matters most, the next step is understanding why owning many stocks isn't automatically diversified.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Rebalancing</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge real diversification, the next step is keeping your carefully-built mix from quietly drifting away from target.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate#tab-balance" class="hub-card">
+      <a href="/learn/intermediate/asset-allocation" class="hub-card">
         <div class="card-icon">🥧</div>
-        <div class="card-title">Back to Balancing a Portfolio</div>
-        <div class="card-desc">Review the other four intermediate portfolio lessons.</div>
-        <div class="card-link">Back to Intermediate →</div>
+        <div class="card-title">Back to Asset Allocation</div>
+        <div class="card-desc">Review your most important decision.</div>
+        <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/correlation" class="hub-card">
-        <div class="card-icon">🔀</div>
-        <div class="card-title">Continue to Correlation</div>
-        <div class="card-desc">Why owning 20 stocks isn't always diversified.</div>
+      <a href="/learn/intermediate#tab-balance" class="hub-card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Continue to Rebalancing</div>
+        <div class="card-desc">Keeping your portfolio on target.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -425,54 +433,46 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const ALLOC_PRESETS = {
-  conservative: { stocks: 30, bonds: 60, cash: 10 },
-  balanced: { stocks: 60, bonds: 35, cash: 5 },
-  aggressive: { stocks: 90, bonds: 10, cash: 0 },
+const CORR_PRESETS = {
+  highCorr: { volA: 35, volB: 35, corr: 0.8 },
+  lowCorr: { volA: 18, volB: 6, corr: 0.15 },
+  negCorr: { volA: 18, volB: 12, corr: -0.3 },
 };
-function loadAllocPreset(kind) {
-  const p = ALLOC_PRESETS[kind];
-  document.getElementById('allocStocks').value = p.stocks;
-  document.getElementById('allocBonds').value = p.bonds;
-  document.getElementById('allocCash').value = p.cash;
-  calcAllocation();
+function loadCorrPreset(kind) {
+  const p = CORR_PRESETS[kind];
+  document.getElementById('corrVolA').value = p.volA;
+  document.getElementById('corrVolB').value = p.volB;
+  document.getElementById('corrCoef').value = p.corr;
+  calcCorrelation();
 }
 
-const ASSET_ASSUMPTIONS = {
-  stocks: { ret: 9.0, vol: 16.0, color: '#a855f7' },
-  bonds: { ret: 4.0, vol: 6.0, color: '#3b82f6' },
-  cash: { ret: 2.0, vol: 1.0, color: '#4ade80' },
-};
+function calcCorrelation() {
+  const volA = parseFloat(document.getElementById('corrVolA').value);
+  const volB = parseFloat(document.getElementById('corrVolB').value);
+  const corr = parseFloat(document.getElementById('corrCoef').value);
+  if ([volA, volB, corr].some(isNaN) || volA < 0 || volB < 0 || corr < -1 || corr > 1) { alert('Please enter valid values — volatilities non-negative, correlation between -1 and 1.'); return; }
 
-function calcAllocation() {
-  const stocks = parseFloat(document.getElementById('allocStocks').value);
-  const bonds = parseFloat(document.getElementById('allocBonds').value);
-  const cash = parseFloat(document.getElementById('allocCash').value);
-  if ([stocks, bonds, cash].some(isNaN) || stocks < 0 || bonds < 0 || cash < 0) { alert('Please enter valid, non-negative percentages.'); return; }
-  const total = stocks + bonds + cash;
-  if (Math.abs(total - 100) > 0.5) { alert('Stocks + Bonds + Cash should add up to 100%. Currently: ' + total.toFixed(0) + '%'); return; }
+  const simpleAvg = (volA + volB) / 2;
+  const variance = 0.25 * volA * volA + 0.25 * volB * volB + 0.5 * corr * volA * volB;
+  const blended = Math.sqrt(Math.max(0, variance));
+  const reduction = simpleAvg > 0 ? ((simpleAvg - blended) / simpleAvg) * 100 : 0;
 
-  const blendedReturn = (stocks * ASSET_ASSUMPTIONS.stocks.ret + bonds * ASSET_ASSUMPTIONS.bonds.ret + cash * ASSET_ASSUMPTIONS.cash.ret) / 100;
-  // Simplified: weighted average of volatility (not accounting for correlation benefits, which the next lesson covers)
-  const blendedVol = (stocks * ASSET_ASSUMPTIONS.stocks.vol + bonds * ASSET_ASSUMPTIONS.bonds.vol + cash * ASSET_ASSUMPTIONS.cash.vol) / 100;
+  document.getElementById('corrSimpleAvg').textContent = simpleAvg.toFixed(1) + '%';
+  document.getElementById('corrBlended').textContent = blended.toFixed(1) + '%';
 
-  document.getElementById('allocReturn').textContent = blendedReturn.toFixed(1) + '%/yr';
-  document.getElementById('allocVol').textContent = '~' + blendedVol.toFixed(1) + '%';
-
-  const bar = document.getElementById('allocBar');
-  bar.innerHTML =
-    (stocks > 0 ? `<div class="alloc-seg" style="width:${stocks}%;background:${ASSET_ASSUMPTIONS.stocks.color};">${stocks}%</div>` : '') +
-    (bonds > 0 ? `<div class="alloc-seg" style="width:${bonds}%;background:${ASSET_ASSUMPTIONS.bonds.color};">${bonds}%</div>` : '') +
-    (cash > 0 ? `<div class="alloc-seg" style="width:${cash}%;background:${ASSET_ASSUMPTIONS.cash.color};">${cash}%</div>` : '');
-
-  const callout = document.getElementById('allocCallout');
-  let style;
-  if (stocks >= 75) style = 'aggressive, growth-tilted';
-  else if (stocks >= 45) style = 'balanced, moderate-risk';
-  else style = 'conservative, stability-tilted';
-  callout.innerHTML = `<span class="verdict">${stocks}/${bonds}/${cash} — a ${style} mix</span>Illustrative blended return of ${blendedReturn.toFixed(1)}%/yr with roughly ${blendedVol.toFixed(1)}% volatility, using simplified long-run assumptions. Real diversification benefits (next lesson) can reduce actual volatility below this simple weighted average.`;
+  const callout = document.getElementById('corrCallout');
+  if (reduction >= 15) {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Strong Diversification Benefit</span>Blended volatility (${blended.toFixed(1)}%) is about ${reduction.toFixed(0)}% lower than the simple average (${simpleAvg.toFixed(1)}%) — the low correlation (${corr.toFixed(2)}) is doing real work smoothing out the ride.`;
+  } else if (reduction >= 3) {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">Modest Diversification Benefit</span>Blended volatility (${blended.toFixed(1)}%) is only about ${reduction.toFixed(0)}% below the simple average — some benefit, but the correlation (${corr.toFixed(2)}) isn't low enough for a dramatic effect.`;
+  } else {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Little Real Diversification</span>Blended volatility (${blended.toFixed(1)}%) is barely below the simple average — with correlation this high (${corr.toFixed(2)}), combining these two assets does little to reduce risk, however many tickers you hold.`;
+  }
 }
-calcAllocation();
+calcCorrelation();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
