@@ -55,6 +55,20 @@
 .notify-input:focus { border-color: var(--teal); }
 .notify-btn { background: var(--teal); color: #03130f; border: none; padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
 .notify-btn:hover { opacity: 0.88; }
+.term-accordion { display: flex; flex-direction: column; gap: 14px; max-width: 820px; margin: 0 auto; }
+.term-item { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.25s; }
+.term-item[open] { border-color: var(--border2); }
+.term-summary { list-style: none; cursor: pointer; padding: 22px 24px; display: flex; align-items: center; gap: 18px; }
+.term-summary::-webkit-details-marker { display: none; }
+.term-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: rgba(45,212,191,0.12); border: 1px solid rgba(45,212,191,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: var(--teal); }
+.term-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; color: var(--text); flex: 1; }
+.term-chevron { flex-shrink: 0; color: var(--muted); font-size: 12px; transition: transform 0.25s; }
+.term-item[open] .term-chevron { transform: rotate(180deg); }
+.term-body { padding: 0 24px 24px 82px; }
+.term-def { font-size: 14.5px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.term-example { background: rgba(45,212,191,0.06); border-left: 3px solid var(--teal); padding: 12px 16px; border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--text); line-height: 1.65; }
+.term-example b { color: var(--teal); }
+@media (max-width: 600px) { .term-body { padding-left: 24px; } }
 .lesson-list { display: flex; flex-direction: column; gap: 18px; max-width: 820px; margin: 0 auto; }
 .lesson-item { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; display: flex; gap: 24px; align-items: flex-start; transition: border-color 0.25s, transform 0.25s; }
 .lesson-item:hover { border-color: var(--border2); transform: translateY(-2px); }
@@ -293,52 +307,206 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="tab-panel" id="tab-terms">
       <h2 class="section-title">Key Terminology</h2>
-      <p class="section-desc">The precise, numerate vocabulary that professional trading desks and fund managers use every day.</p>
-      <div class="lesson-list">
-        <div class="lesson-item">
-          <div class="lesson-num">1</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">🔢</span><span class="lesson-title">Basis Points (bps) — The Language of Precision</span></div>
-            <p class="lesson-desc">A basis point is one-hundredth of a percentage point (0.01%). Professionals use bps instead of percentages because it removes ambiguity — "up 25bps" always means a quarter of one percent, no matter the starting number.</p>
-            <span class="benefit-tag">Speak the exact language professionals use</span>
+      <p class="section-desc">18 terms that professional trading desks and fund managers use every day — click any one to expand it, with a plain-English definition and a real example.</p>
+      <div class="term-accordion reveal">
+        <details class="term-item" open>
+          <summary class="term-summary">
+            <div class="term-num">1</div>
+            <span class="term-title">Basis Points (bps) — The Language of Precision</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A basis point is one-hundredth of a percentage point (0.01%). Professionals use bps instead of percentages because it removes ambiguity — "up 25bps" always means a quarter of one percent, no matter the starting number.</p>
+            <div class="term-example"><b>Example:</b> A bond yield moving from 4.00% to 4.25% is described as "up 25 basis points" — precise and unambiguous, versus a vaguer "up a quarter percent."</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">2</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">⏱️</span><span class="lesson-title">Duration — A Bond's Sensitivity to Interest Rates</span></div>
-            <p class="lesson-desc">Duration measures how much a bond's price will move for a given change in interest rates. A bond with a duration of 7 will fall roughly 7% in value if rates rise by 1% — essential for managing interest rate risk.</p>
-            <span class="benefit-tag">Quantify exactly how exposed a bond is to rate moves</span>
-            <span class="builds-on-tag">Builds on: Bonds (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">2</div>
+            <span class="term-title">Duration — A Bond's Sensitivity to Interest Rates</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Duration measures how much a bond's price will move for a given change in interest rates. A bond with a duration of 7 will fall roughly 7% in value if rates rise by 1% — essential for managing interest rate risk. Builds on: Central Bank Policy (Pro).</p>
+            <div class="term-example"><b>Example:</b> A 30-year Treasury bond has much higher duration than a 2-year note, so the same 1-point rate move causes a far bigger price swing in the 30-year bond.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">3</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">⚡</span><span class="lesson-title">Leverage — Amplifying Gains and Losses Alike</span></div>
-            <p class="lesson-desc">Leverage means controlling a larger position than your capital alone would allow, using borrowed money or derivatives. It multiplies your returns in both directions — a powerful tool that has also ended more accounts than almost any other single mistake.</p>
-            <span class="benefit-tag">Understand the tool before it understands you</span>
-            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">3</div>
+            <span class="term-title">Leverage — Amplifying Gains and Losses Alike</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Leverage means controlling a larger position than your capital alone would allow, using borrowed money or derivatives. It multiplies your returns in both directions — a powerful tool that has also ended more accounts than almost any other single mistake.</p>
+            <div class="term-example"><b>Example:</b> 5x leverage on a $10,000 account controls $50,000 of exposure — a 10% favorable move returns 50% on capital, but a 10% adverse move wipes out half the account just as fast.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">4</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">📐</span><span class="lesson-title">Value at Risk (VaR) — Quantifying Your Worst-Case Day</span></div>
-            <p class="lesson-desc">Value at Risk estimates the maximum expected loss over a given period at a given confidence level — for example, "95% confident we won't lose more than 3% tomorrow." It's the standard risk metric used across professional trading desks.</p>
-            <span class="benefit-tag">Put a number on how bad a bad day could be</span>
-            <span class="builds-on-tag">Builds on: Drawdown (Intermediate)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">4</div>
+            <span class="term-title">Value at Risk (VaR) — Quantifying Your Worst-Case Day</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Value at Risk estimates the maximum expected loss over a given period at a given confidence level — for example, "95% confident we won't lose more than 3% tomorrow." It's the standard risk metric used across professional trading desks.</p>
+            <div class="term-example"><b>Example:</b> A $10M portfolio with a 1-day 95% VaR of $300,000 is expected to lose no more than $300,000 on 95 out of 100 trading days — the other 5 days can be worse.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">5</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">💧</span><span class="lesson-title">Liquidity Risk vs Market Risk — Two Different Ways to Lose</span></div>
-            <p class="lesson-desc">Market risk is the chance an asset's price falls; liquidity risk is the chance you can't exit at a fair price even if you're right about the direction. Professionals plan for both — a great thesis is worthless if you can't act on it when it matters.</p>
-            <span class="benefit-tag">Plan your exit, not just your entry</span>
-            <span class="builds-on-tag">Builds on: Liquidity (Intermediate)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">5</div>
+            <span class="term-title">Liquidity Risk vs Market Risk — Two Different Ways to Lose</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Market risk is the chance an asset's price falls; liquidity risk is the chance you can't exit at a fair price even if you're right about the direction. Professionals plan for both — a great thesis is worthless if you can't act on it when it matters. Builds on: Liquidity (Intermediate).</p>
+            <div class="term-example"><b>Example:</b> A thinly-traded small-cap stock can be a great pick (low market risk in the thesis) but still cost you dearly on the way out if there aren't enough buyers when you need to sell (high liquidity risk).</div>
           </div>
-        </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">6</div>
+            <span class="term-title">Z-Score — Measuring How Stretched a Price Is</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A z-score measures how many standard deviations a price sits from its historical average: (current price − mean) ÷ standard deviation. It's the core statistical tool behind mean-reversion strategies. Builds on: Mean Reversion (Pro).</p>
+            <div class="term-example"><b>Example:</b> A stock with a 60-day mean of $100 and standard deviation of $5, now trading at $110, has a z-score of +2.0 — two standard deviations above its recent average, a level some mean-reversion rules flag as statistically stretched.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">7</div>
+            <span class="term-title">Factor — A Measurable Driver of Returns</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A factor is a specific, measurable characteristic historically associated with different returns across a group of securities — momentum, value, quality, and size are the most widely studied. Factor models rank a universe and hold the top slice systematically. Builds on: Momentum & Factor Models (Pro).</p>
+            <div class="term-example"><b>Example:</b> A momentum factor ranks stocks by trailing 6-month return and holds the top decile — the same rule applied across hundreds of names, rather than a single stock-specific thesis.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">8</div>
+            <span class="term-title">Overfitting — When a Backtest Memorizes the Past</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Overfitting happens when a strategy's rules are tuned so precisely to historical data that they've essentially memorized the past rather than found a real, repeatable pattern. The more parameters adjusted to fit the data, the more likely the result is fitting noise. Builds on: Backtesting (Pro).</p>
+            <div class="term-example"><b>Example:</b> A strategy tuned with 15 adjustable parameters to maximize its historical return looks spectacular in the backtest, but often collapses on new, unseen data — a classic overfitting red flag.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">9</div>
+            <span class="term-title">Market Regime — Conditions That Change the Rules</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A market regime is a broad market condition — low-volatility trending, range-bound/choppy, or high-volatility crisis — that shapes which strategies tend to work. A strategy that thrives in one regime can struggle badly in another. Builds on: Regime Detection (Pro).</p>
+            <div class="term-example"><b>Example:</b> A momentum strategy can shine in a steady trending regime and get whipsawed in a choppy, range-bound one — the same rules, very different outcomes, purely because the regime changed.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">10</div>
+            <span class="term-title">Risk Parity — Sizing by Risk, Not Dollars</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Risk parity sizes each position so it contributes a roughly equal amount of risk to a portfolio, rather than an equal dollar amount — a more volatile asset gets a smaller dollar allocation for the same risk budget. Builds on: Position Sizing & Risk Budgeting (Pro).</p>
+            <div class="term-example"><b>Example:</b> $100,000 in 6%-volatility bonds and $100,000 in 32%-volatility small-cap stock are equal in dollars but wildly unequal in risk — risk parity would size the small-cap position much smaller to balance the two.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">11</div>
+            <span class="term-title">Strike Price & Premium — The Core Language of Options</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">The strike price is the fixed price at which an option can be exercised; the premium is the upfront cost paid to buy that right. Every options strategy is built from combinations of these two numbers across different contracts. Builds on: What Is an Option? (Pro).</p>
+            <div class="term-example"><b>Example:</b> A $100-strike call bought for a $4 premium gives the buyer the right to buy the stock at $100, at a cost of $4 per share paid upfront regardless of outcome.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">12</div>
+            <span class="term-title">Delta — An Option's Directional Exposure</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Delta measures how much an option's price changes for a $1 move in the underlying stock — a delta of 0.60 means the option gains roughly $0.60 for every $1 the stock rises. It also roughly approximates the option's probability of expiring in the money. Builds on: The Greeks (Pro).</p>
+            <div class="term-example"><b>Example:</b> A call option with a delta of 0.30 moving alongside a $5 stock rally would be expected to gain roughly $1.50 in value, all else equal.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">13</div>
+            <span class="term-title">Implied Volatility (IV) — The Market's Own Forecast</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Implied volatility is the volatility level that, plugged into an options pricing model, produces the option's actual current market price — a forward-looking estimate embedded in the option itself, distinct from historical (realized) volatility. Builds on: Implied Volatility & Skew (Pro).</p>
+            <div class="term-example"><b>Example:</b> IV often spikes ahead of a company's earnings report as uncertainty rises, then drops sharply right after the results are known — a pattern called "volatility crush."</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">14</div>
+            <span class="term-title">Assignment — When an Option Seller Must Deliver</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Assignment is what happens when an option is exercised against its seller — a call seller must deliver (sell) the shares at the strike; a put seller must buy them. Sellers who collect a premium take on this obligation in exchange for it. Builds on: Income Strategies (Pro).</p>
+            <div class="term-example"><b>Example:</b> A covered call seller whose $110 strike is breached at expiration gets their shares "called away" at $110 — a form of assignment, capping their gain at that price regardless of how much higher the stock trades.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">15</div>
+            <span class="term-title">Vertical Spread — Defining Risk on Both Sides</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A vertical spread combines buying one option and selling another of the same type and expiration at a different strike, creating a position with a precisely defined maximum gain and maximum loss. Builds on: Spreads & Hedging (Pro).</p>
+            <div class="term-example"><b>Example:</b> Buying a $100 call for $6 and selling a $110 call for $2 costs a net $4, caps the maximum loss at $4, and caps the maximum gain at $6 — a bull call spread trading unlimited upside for a bounded, cheaper position.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">16</div>
+            <span class="term-title">Yield Curve Inversion — The Bond Market's Warning Sign</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">An inversion happens when short-term bond yields rise above long-term yields, flipping the normal upward-sloping curve. It typically reflects the market pricing in future rate cuts, often anticipating a coming economic slowdown. Builds on: The Yield Curve (Pro).</p>
+            <div class="term-example"><b>Example:</b> The 2-year Treasury yielding more than the 10-year — a "2s/10s inversion" — is the most widely watched version of this signal, historically preceding most U.S. recessions by many months to over a year.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">17</div>
+            <span class="term-title">Interest Rate Differential — The Engine of Currency Moves</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">The interest rate differential is the gap between two countries' interest rates. Capital tends to flow toward whichever currency offers the better rate, all else equal — the single biggest driver of currency direction. Builds on: Currency Markets & Capital Flows (Pro).</p>
+            <div class="term-example"><b>Example:</b> If Country A's rate rises from 2% to 5.5% while Country B's stays at 1%, the widening differential has historically tended to attract capital toward Country A's currency, strengthening it.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">18</div>
+            <span class="term-title">Safe Haven — An Asset That Holds Up When Others Fall</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A safe-haven asset (gold, and certain currencies like the Swiss franc or US dollar) is one investors flock to during "risk-off" periods, often maintaining or strengthening a negative correlation to stocks exactly when that correlation matters most. Builds on: Commodities & Safe Havens (Pro).</p>
+            <div class="term-example"><b>Example:</b> In a sudden equity sell-off, gold and a safe-haven currency often rise or strengthen even as stocks and other risk assets fall together — though this pattern is a strong historical tendency, not a guarantee in every crisis.</div>
+          </div>
+        </details>
       </div>
       <div class="fine-print">
         <b>Worth knowing:</b> this vocabulary is the floor, not the ceiling — professional desks layer dozens more specialized terms on top depending on asset class. Use this as your foundation for reading research and prospectuses with confidence.
