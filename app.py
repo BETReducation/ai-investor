@@ -135,6 +135,7 @@ LESSON_PAGES = [
     {"slug": "confluence", "level": "intermediate", "file": "lesson-confluence.html", "title": "Stacking Indicators for Confluence"},
     {"slug": "income-statement", "level": "intermediate", "file": "lesson-income-statement.html", "title": "Reading the Income Statement"},
     {"slug": "balance-sheet", "level": "intermediate", "file": "lesson-balance-sheet.html", "title": "The Balance Sheet"},
+    {"slug": "cash-flow", "level": "intermediate", "file": "lesson-cash-flow.html", "title": "Cash Flow"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Balance Sheet — Intermediate — Growth Capital Group</title>
+<title>Cash Flow — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,14 +63,12 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.bal-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-@media (max-width: 700px) { .bal-diagram { grid-template-columns: 1fr; } }
-.bal-side { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
-.bal-side h4 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 12px; }
-.bal-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border); color: var(--muted); }
-.bal-row:first-of-type { border-top: none; }
-.bal-row b { color: var(--text); }
-.bal-row.total { border-top: 2px solid var(--border2); font-weight: 700; color: var(--text); margin-top: 4px; }
+.cf-diagram { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+@media (max-width: 760px) { .cf-diagram { grid-template-columns: 1fr; } }
+.cf-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.cf-box h4 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--text); margin-bottom: 8px; }
+.cf-box p { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin: 0; }
+.cf-box .cf-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--purple2); margin: 8px 0; }
 .stmt-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 16px; }
 .stmt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .stmt-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
@@ -79,6 +77,7 @@ p.body-text b { color: var(--text); }
 .stmt-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
 .stmt-table tbody tr:nth-child(even) { background: var(--bg3); }
 .stmt-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
+.stmt-table tr.warn-row td { background: rgba(239,68,68,0.08); }
 .stmt-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -90,11 +89,11 @@ p.body-text b { color: var(--text); }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.margin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
 @media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--purple2); }
 .calc-callout { margin-top: 0; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
 .calc-callout.warn { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
 .calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; display: block; margin-bottom: 6px; }
@@ -152,9 +151,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-picking">Learn / Intermediate / Stock Picking</a> / 2 of 5</div>
-    <h1 class="hero-title">The Balance Sheet — How Much <span class="accent">Debt</span> Is Too Much?</h1>
-    <p class="hero-sub">The balance sheet shows what a company owns versus what it owes at a single point in time. A healthy one has manageable debt and enough cash to survive a downturn without panicking.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-picking">Learn / Intermediate / Stock Picking</a> / 3 of 5</div>
+    <h1 class="hero-title">Cash Flow — Following the Money, Not Just the <span class="accent">Profit</span></h1>
+    <p class="hero-sub">Profit can be shaped by accounting choices; cash is harder to fake. Free cash flow shows how much real money a business generates — the fuel for dividends, buybacks, and growth.</p>
   </div>
 </div>
 
@@ -162,73 +161,94 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Assets, Liabilities, and the Equation That Always Balances</h2>
-    <p class="body-text">The balance sheet is built on one identity that always holds: <b>Assets = Liabilities + Equity</b>. Assets are everything the company owns (cash, inventory, buildings, equipment). Liabilities are everything it owes (loans, bonds, unpaid bills). Equity is what's left over for shareholders — the difference between the two.</p>
-    <p class="body-text">Both assets and liabilities split into <b>current</b> (due or usable within a year — cash, inventory, short-term debt) and <b>non-current</b> (longer-term — buildings, long-term debt). That split is the basis of the two ratios that matter most here: the <b>current ratio</b> (current assets ÷ current liabilities) measures short-term liquidity — can the company cover what it owes soon? The <b>debt-to-equity ratio</b> (total debt ÷ shareholder equity) measures leverage — how much of the business is funded by borrowing versus by owners' capital.</p>
-    <p class="body-text">Neither ratio has one "correct" number — a capital-intensive business like a utility naturally carries more debt than a software company with few physical assets. The goal is spotting <b>outliers</b>: a current ratio well below 1 (can't cover near-term bills) or a debt-to-equity ratio far above the company's own history or its peers.</p>
+    <h2 class="section-title">Why Cash Tells a Different Story Than Profit</h2>
+    <p class="body-text">Net income (from the income statement) includes non-cash items and can recognize revenue before cash actually arrives. The cash flow statement strips all that away and shows real money moving in and out, split into three sections: <b>operating activities</b> (cash generated by the core business), <b>investing activities</b> (cash spent on or raised from long-term assets, like buying equipment), and <b>financing activities</b> (cash from or paid to lenders and shareholders — debt, dividends, buybacks).</p>
+    <p class="body-text">The single most important number this lesson builds toward is <b>free cash flow (FCF)</b>: operating cash flow minus capital expenditures (money spent maintaining or growing the business's physical assets). FCF is what's actually left over to pay dividends, buy back stock, pay down debt, or reinvest — money that's already real, not just reported.</p>
+    <p class="body-text">A useful cross-check: compare <b>net income</b> to <b>operating cash flow</b>. In a healthy business they track each other reasonably closely over time. When operating cash flow lags well behind net income for multiple periods, it's often because profit is being recognized before the cash is actually collected — growing receivables, or inventory piling up unsold — a "quality of earnings" red flag worth investigating.</p>
 
     <div class="example-card">
-      <h3>⚖️ The Balance Sheet Equation, Illustrated</h3>
-      <div class="bal-diagram">
-        <div class="bal-side">
-          <h4>Assets</h4>
-          <div class="bal-row"><span>Cash &amp; equivalents</span><b>$40M</b></div>
-          <div class="bal-row"><span>Inventory &amp; receivables</span><b>$60M</b></div>
-          <div class="bal-row"><span>Property &amp; equipment</span><b>$150M</b></div>
-          <div class="bal-row total"><span>Total Assets</span><b>$250M</b></div>
+      <h3>💧 The Three Sections of a Cash Flow Statement</h3>
+      <div class="cf-diagram">
+        <div class="cf-box">
+          <h4>Operating Activities</h4>
+          <div class="cf-val">+$68M</div>
+          <p>Cash generated by the actual day-to-day business — the number to compare against net income.</p>
         </div>
-        <div class="bal-side">
-          <h4>Liabilities + Equity</h4>
-          <div class="bal-row"><span>Short-term debt &amp; payables</span><b>$45M</b></div>
-          <div class="bal-row"><span>Long-term debt</span><b>$80M</b></div>
-          <div class="bal-row"><span>Shareholder equity</span><b>$125M</b></div>
-          <div class="bal-row total"><span>Total Liabilities + Equity</span><b>$250M</b></div>
+        <div class="cf-box">
+          <h4>Investing Activities</h4>
+          <div class="cf-val">−$25M</div>
+          <p>Cash spent on equipment, property, or acquisitions — negative usually just means the company is investing in itself.</p>
+        </div>
+        <div class="cf-box">
+          <h4>Financing Activities</h4>
+          <div class="cf-val">−$15M</div>
+          <p>Cash paid to lenders and shareholders — debt repayment, dividends, buybacks (or raised, if positive).</p>
         </div>
       </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice the two sides always match: $250M of assets is funded by $125M of debt (short-term + long-term) and $125M of shareholder equity. This company's debt-to-equity ratio is $125M ÷ $125M = <b>1.0</b> — debt and equity fund the business equally, a reasonably balanced position, though the "right" number depends heavily on the industry.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Free cash flow here: $68M operating cash flow minus the capital-expenditure portion of investing activities (say $22M of that $25M) = <b>$46M</b> of free cash flow — real money the business generated after keeping its physical assets maintained.</p>
+    </div>
+
+    <div class="example-card">
+      <h3>📊 Illustrative Example: When Profit and Cash Diverge</h3>
+      <p class="body-text">Real filings don't come with round numbers, so here's a clean illustrative example showing exactly the divergence this lesson warns about.</p>
+      <div class="stmt-table-wrap">
+        <table class="stmt-table">
+          <thead>
+            <tr><th>Line Item</th><th>Year 1</th><th>Year 2</th></tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row"><td>Net Income (from income statement)</td><td>$40.0M</td><td>$52.0M</td></tr>
+            <tr><td>+ Depreciation &amp; Amortization</td><td>$12.0M</td><td>$13.0M</td></tr>
+            <tr class="warn-row"><td>− Increase in Receivables</td><td>$4.0M</td><td>$38.0M</td></tr>
+            <tr><td>− Increase in Inventory</td><td>$3.0M</td><td>$5.0M</td></tr>
+            <tr class="highlight-row"><td>Operating Cash Flow</td><td>$45.0M</td><td>$22.0M</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="stmt-note">Year 2's net income grew nicely (+30%), but operating cash flow actually fell, because receivables — money customers owe but haven't paid yet — jumped from $4.0M to $38.0M. The company is booking more sales on the income statement, but collecting proportionally less of that cash. That's exactly the kind of gap that's easy to miss if you only read the income statement.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About the Balance Sheet</h3>
+    <h3 class="subhead">5 Things to Know About Cash Flow</h3>
     <ol class="num-checklist">
-      <li><b>Assets always equal liabilities plus equity</b> — if the two sides don't match, something's wrong with the accounting, not the company.</li>
-      <li><b>Current ratio below 1 is a liquidity warning</b> — it means current liabilities exceed current assets, a potential sign of near-term cash strain.</li>
-      <li><b>Debt-to-equity has no universal "good" number</b> — capital-intensive industries (utilities, airlines) naturally run higher than asset-light ones (software, services).</li>
-      <li><b>Rising debt isn't automatically bad</b> — debt taken on to fund genuine growth is different from debt taken on to cover ongoing losses.</li>
-      <li><b>The balance sheet is a snapshot, not a trend</b> — always compare several periods, not just one, to see whether debt and liquidity are improving or deteriorating.</li>
+      <li><b>Free cash flow is often more trustworthy than net income</b> — it's harder to manipulate with accounting choices than reported profit.</li>
+      <li><b>Operating cash flow persistently below net income is a warning sign</b> — it often means receivables or inventory are quietly tying up cash.</li>
+      <li><b>Negative investing cash flow is usually healthy, not alarming</b> — it typically means the company is spending on its own growth.</li>
+      <li><b>Negative financing cash flow can be a good sign</b> — it often reflects paying down debt or returning cash via dividends/buybacks.</li>
+      <li><b>FCF funds everything discretionary</b> — dividends, buybacks, and debt paydown all ultimately come from free cash flow, not reported profit.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading a Balance Sheet</h3>
+    <h3 class="subhead">4 Things to Check When Reading a Cash Flow Statement</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>💧 Check the Current Ratio</h4>
+        <h4>🔍 Compare Net Income to Operating Cash Flow</h4>
         <ul>
-          <li>Current assets ÷ current liabilities — below 1 is a flag worth investigating further.</li>
+          <li>A persistent, widening gap is worth digging into further before trusting the profit figure.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⚖️ Check Debt-to-Equity vs Peers</h4>
+        <h4>🏗️ Read Investing Activities in Context</h4>
         <ul>
-          <li>Compare against direct competitors in the same industry, not a generic benchmark.</li>
+          <li>Distinguish routine maintenance capex from major growth investment or acquisitions.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📈 Track the Trend Over Time</h4>
+        <h4>💰 Check What Financing Activities Fund</h4>
         <ul>
-          <li>Is debt rising faster than equity or assets? That trend matters more than any single snapshot.</li>
+          <li>Debt repayment and buybacks funded by real free cash flow are healthier than those funded by new borrowing.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔍 Ask Why Debt Exists</h4>
+        <h4>📈 Track FCF Trend Over Several Years</h4>
         <ul>
-          <li>Debt funding expansion is different from debt covering losses — check the cash flow statement (next lesson) for the answer.</li>
+          <li>One strong or weak year matters less than the multi-year trend in free cash flow.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> the balance sheet is a snapshot at one moment, not the full story. Pair it with the income statement (previous lesson) and cash flow statement (next lesson) — a company can look fine on the balance sheet today while its underlying trend is deteriorating.
+      <b>Worth knowing:</b> cash flow completes the picture started by the income statement and balance sheet. A company can report solid profit and a clean balance sheet while cash flow quietly tells a different story — always check all three before drawing conclusions.
     </div>
   </div>
 </section>
@@ -237,50 +257,53 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Balance Sheet Health Checker</h2>
-    <p class="section-desc">Enter simplified balance sheet figures — see the current ratio and debt-to-equity ratio, and whether either looks stretched.</p>
+    <h2 class="section-title">Try It Yourself: Free Cash Flow Calculator</h2>
+    <p class="section-desc">Enter simplified figures — see operating cash flow, free cash flow, and whether cash is lagging behind reported profit.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadBalPreset('healthy')">Load Healthy Balance Sheet</button>
-        <button class="preset-btn" onclick="loadBalPreset('stretched')">Load Stretched Example</button>
-        <button class="preset-btn" onclick="loadBalPreset('capitalIntensive')">Load Capital-Intensive Example</button>
+        <button class="preset-btn" onclick="loadCfPreset('healthy')">Load Healthy Example</button>
+        <button class="preset-btn" onclick="loadCfPreset('divergence')">Load Profit/Cash Divergence Example</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="balCurrentAssets">Current Assets ($M)</label>
-          <input type="number" id="balCurrentAssets" value="100" step="0.1">
+          <label for="cfNetIncome">Net Income ($M)</label>
+          <input type="number" id="cfNetIncome" value="52" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="balCurrentLiab">Current Liabilities ($M)</label>
-          <input type="number" id="balCurrentLiab" value="45" step="0.1">
+          <label for="cfDA">Depreciation &amp; Amortization ($M)</label>
+          <input type="number" id="cfDA" value="13" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="balTotalDebt">Total Debt ($M)</label>
-          <input type="number" id="balTotalDebt" value="125" step="0.1">
+          <label for="cfWC">Increase in Working Capital ($M)</label>
+          <input type="number" id="cfWC" value="43" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="balEquity">Shareholder Equity ($M)</label>
-          <input type="number" id="balEquity" value="125" step="0.1">
+          <label for="cfCapex">Capital Expenditures ($M)</label>
+          <input type="number" id="cfCapex" value="18" step="0.1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcBalance()">Check Balance Sheet Health →</button>
+        <button class="calc-btn" onclick="calcCashFlow()">Calculate Free Cash Flow →</button>
       </div>
 
-      <div class="calc-results visible" id="balanceResults">
+      <div class="calc-results visible" id="cfResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Current Ratio</div>
-            <div class="mc-value" id="balCurrentRatio">—</div>
+            <div class="mc-label">Operating Cash Flow</div>
+            <div class="mc-value" id="cfOCF">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Debt-to-Equity Ratio</div>
-            <div class="mc-value" id="balDebtEquity">—</div>
+            <div class="mc-label">Free Cash Flow</div>
+            <div class="mc-value" id="cfFCF">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">OCF vs Net Income</div>
+            <div class="mc-value" id="cfVsNI">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="balanceCallout"></div>
-        <p class="calc-note">Model: Current Ratio = Current Assets ÷ Current Liabilities (below 1.0 flagged). Debt-to-Equity = Total Debt ÷ Shareholder Equity (above 2.0 flagged as worth extra scrutiny, though the "right" level varies a lot by industry).</p>
+        <div class="calc-callout" id="cfCallout"></div>
+        <p class="calc-note">Model: Operating Cash Flow = Net Income + D&amp;A − Increase in Working Capital. Free Cash Flow = Operating Cash Flow − CapEx. If OCF is meaningfully below Net Income, that's flagged as a quality-of-earnings signal worth investigating.</p>
       </div>
     </div>
   </div>
@@ -300,58 +323,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is the fundamental balance sheet equation?</div>
+        <div class="quiz-q-title">1. What is free cash flow?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Revenue = Expenses + Profit</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Cash = Assets − Liabilities</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Assets = Liabilities + Equity</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Equity = Revenue − Debt</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Total revenue for the year</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Net income minus taxes</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Operating cash flow minus capital expenditures</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The cash a company has in the bank right now</label>
         </div>
-        <div class="quiz-explain">The balance sheet always balances: everything a company owns (assets) equals what it owes (liabilities) plus what belongs to shareholders (equity).</div>
-      </div>
-
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What does a current ratio below 1.0 suggest?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The company has no debt at all</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Current liabilities exceed current assets — a potential near-term liquidity warning</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The company is definitely about to go bankrupt</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The stock is undervalued</label>
-        </div>
-        <div class="quiz-explain">A current ratio below 1.0 means near-term obligations exceed near-term resources — worth investigating further, though not an automatic crisis.</div>
+        <div class="quiz-explain">Free cash flow is operating cash flow minus capital expenditures — real money left over after maintaining/growing the business's physical assets.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. Why doesn't debt-to-equity have one universal "good" number?</div>
+        <div class="quiz-q-title">2. What does it usually mean when operating cash flow falls well below net income for multiple periods?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Because debt is always bad regardless of context</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Because equity never matters</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Because the ratio is calculated differently every year</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Because capital-intensive industries naturally carry more debt than asset-light ones</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The company is definitely committing fraud</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> It's always a sign the stock will rise</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Nothing — it happens completely at random</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Rising receivables or inventory may be quietly tying up cash — a quality-of-earnings flag</label>
         </div>
-        <div class="quiz-explain">A utility or airline naturally runs a higher debt-to-equity ratio than a software company with few physical assets — always compare to industry peers.</div>
+        <div class="quiz-explain">A persistent, widening gap often means profit is being recognized before cash is actually collected — worth digging into further, not an automatic red flag on its own.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">3. Why is negative investing cash flow usually not alarming?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It always means the company is going bankrupt</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It typically means the company is spending on its own growth (equipment, property)</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Investing cash flow is never negative in practice</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It means the company has stopped operating</label>
+        </div>
+        <div class="quiz-explain">Investing activities being negative typically just reflects a company reinvesting in its own physical assets — normal and often healthy.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why isn't rising debt automatically a bad sign?</div>
+        <div class="quiz-q-title">4. Why can negative financing cash flow be a good sign?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Debt taken on to fund genuine growth is different from debt covering ongoing losses</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Debt is always good no matter the reason</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Rising debt always means the stock will go up</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Debt has no effect on a company's risk</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It can reflect paying down debt or returning cash via dividends/buybacks</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Negative numbers are always bad in every context</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It means the company borrowed a lot of new debt</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Financing cash flow is unrelated to debt or dividends</label>
         </div>
-        <div class="quiz-explain">The reason behind rising debt matters — expansion-driven borrowing is a very different signal than debt used to plug ongoing losses.</div>
+        <div class="quiz-explain">Financing cash flow going negative often means a company is paying down debt or returning cash to shareholders — both can be healthy signs.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. In the illustrated example ($125M debt, $125M equity), what is the debt-to-equity ratio?</div>
+        <div class="quiz-q-title">5. In the illustrative example, why did operating cash flow fall in Year 2 despite net income growing 30%?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> 0.5</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> 2.0</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> 1.0</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> 125</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because revenue fell that year</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because depreciation went to zero</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because receivables jumped sharply, tying up cash the company hadn't actually collected yet</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because the company paid off all its debt</label>
         </div>
-        <div class="quiz-explain">Debt-to-equity = total debt ÷ shareholder equity = $125M ÷ $125M = 1.0 — debt and equity fund the business equally.</div>
+        <div class="quiz-explain">Receivables jumped from $4.0M to $38.0M — the company was booking more sales on paper but collecting proportionally less of that cash.</div>
       </div>
     </div>
 
@@ -368,22 +391,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/balance-sheet-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/cash-flow-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the assets/liabilities/equity example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the three-section diagram, the profit/cash divergence example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/balance-sheet-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/cash-flow-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to calculate current ratio and debt-to-equity on a real company's filing.</div>
+        <div class="dl-desc">Guided exercises to calculate free cash flow and compare it against net income on a real company's filing.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/balance-sheet-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/cash-flow-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore balance sheets in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore cash flow statements in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -392,19 +415,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Cash Flow</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge what a company owns versus owes, the next step is following the actual cash moving through the business.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Growth vs Dividend Stocks</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge whether cash backs up profit, the next step is matching a company's cash priorities to your own goals.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/income-statement" class="hub-card">
-        <div class="card-icon">🧾</div>
-        <div class="card-title">Back to the Income Statement</div>
-        <div class="card-desc">Review whether profit is actually real.</div>
+      <a href="/learn/intermediate/balance-sheet" class="hub-card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Back to The Balance Sheet</div>
+        <div class="card-desc">Review how much debt is too much.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/cash-flow" class="hub-card">
-        <div class="card-icon">💧</div>
-        <div class="card-title">Continue to Cash Flow</div>
-        <div class="card-desc">Follow the money, not just the profit.</div>
+      <a href="/learn/intermediate#tab-picking" class="hub-card">
+        <div class="card-icon">🌳</div>
+        <div class="card-title">Continue to Growth vs Dividend Stocks</div>
+        <div class="card-desc">Match companies to what you actually want.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -437,52 +460,47 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const BAL_PRESETS = {
-  healthy: { ca: 100, cl: 45, debt: 125, equity: 125 },
-  stretched: { ca: 60, cl: 90, debt: 220, equity: 60 },
-  capitalIntensive: { ca: 40, cl: 35, debt: 300, equity: 150 },
+const CF_PRESETS = {
+  healthy: { ni: 40, da: 12, wc: 7, capex: 15 },
+  divergence: { ni: 52, da: 13, wc: 43, capex: 18 },
 };
-function loadBalPreset(kind) {
-  const p = BAL_PRESETS[kind];
-  document.getElementById('balCurrentAssets').value = p.ca;
-  document.getElementById('balCurrentLiab').value = p.cl;
-  document.getElementById('balTotalDebt').value = p.debt;
-  document.getElementById('balEquity').value = p.equity;
-  calcBalance();
+function loadCfPreset(kind) {
+  const p = CF_PRESETS[kind];
+  document.getElementById('cfNetIncome').value = p.ni;
+  document.getElementById('cfDA').value = p.da;
+  document.getElementById('cfWC').value = p.wc;
+  document.getElementById('cfCapex').value = p.capex;
+  calcCashFlow();
 }
 
-function calcBalance() {
-  const ca = parseFloat(document.getElementById('balCurrentAssets').value);
-  const cl = parseFloat(document.getElementById('balCurrentLiab').value);
-  const debt = parseFloat(document.getElementById('balTotalDebt').value);
-  const equity = parseFloat(document.getElementById('balEquity').value);
-  if ([ca, cl, debt, equity].some(isNaN) || cl <= 0 || equity <= 0) { alert('Please enter valid figures — current liabilities and equity must be greater than 0.'); return; }
+function calcCashFlow() {
+  const ni = parseFloat(document.getElementById('cfNetIncome').value);
+  const da = parseFloat(document.getElementById('cfDA').value);
+  const wc = parseFloat(document.getElementById('cfWC').value);
+  const capex = parseFloat(document.getElementById('cfCapex').value);
+  if ([ni, da, wc, capex].some(isNaN)) { alert('Please enter valid figures for all four fields.'); return; }
 
-  const currentRatio = ca / cl;
-  const debtEquity = debt / equity;
+  const ocf = ni + da - wc;
+  const fcf = ocf - capex;
+  const gapPct = ni !== 0 ? ((ocf - ni) / Math.abs(ni)) * 100 : 0;
 
-  document.getElementById('balCurrentRatio').textContent = currentRatio.toFixed(2);
-  document.getElementById('balDebtEquity').textContent = debtEquity.toFixed(2);
+  document.getElementById('cfOCF').textContent = '$' + ocf.toFixed(1) + 'M';
+  document.getElementById('cfFCF').textContent = '$' + fcf.toFixed(1) + 'M';
+  document.getElementById('cfVsNI').textContent = (gapPct >= 0 ? '+' : '') + gapPct.toFixed(0) + '%';
 
-  const callout = document.getElementById('balanceCallout');
-  const liquidityOk = currentRatio >= 1.0;
-  const leverageOk = debtEquity <= 2.0;
-
-  if (liquidityOk && leverageOk) {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Looks Reasonably Healthy</span>Current ratio of ${currentRatio.toFixed(2)} covers near-term liabilities, and debt-to-equity of ${debtEquity.toFixed(2)} isn't obviously stretched. Still worth comparing to industry peers before drawing conclusions.`;
-  } else if (!liquidityOk && !leverageOk) {
+  const callout = document.getElementById('cfCallout');
+  if (ocf < ni * 0.7) {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Both Flags Raised</span>Current ratio of ${currentRatio.toFixed(2)} is below 1.0 (near-term liquidity strain) and debt-to-equity of ${debtEquity.toFixed(2)} is elevated. Worth digging into why — check the cash flow statement for the fuller picture.`;
-  } else if (!liquidityOk) {
+    callout.innerHTML = `<span class="verdict">⚠️ Cash Lagging Behind Profit</span>Operating cash flow ($${ocf.toFixed(1)}M) is well below net income ($${ni.toFixed(1)}M) — a quality-of-earnings flag. Likely cause: working capital (receivables/inventory) is tying up cash faster than it's being collected.`;
+  } else if (fcf < 0) {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Liquidity Flag</span>Current ratio of ${currentRatio.toFixed(2)} is below 1.0 — current liabilities exceed current assets, a potential near-term cash strain worth investigating.`;
+    callout.innerHTML = `<span class="verdict">⚠️ Negative Free Cash Flow</span>Operating cash flow of $${ocf.toFixed(1)}M isn't covering capital expenditures of $${capex.toFixed(1)}M. Not automatically bad (heavy growth investment can cause this), but worth understanding why.`;
   } else {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Leverage Flag</span>Debt-to-equity of ${debtEquity.toFixed(2)} is elevated. This can be normal for capital-intensive industries — compare against direct peers before judging it as risky.`;
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Cash Backs Up the Profit</span>Operating cash flow of $${ocf.toFixed(1)}M tracks net income reasonably well, and free cash flow of $${fcf.toFixed(1)}M is positive — real money is left over after capital spending.`;
   }
 }
-calcBalance();
+calcCashFlow();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
