@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Greeks — Pro — Growth Capital Group</title>
+<title>Implied Volatility & Skew — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 2 of 5</div>
-    <h1 class="hero-title">The Greeks — Delta, Gamma, Theta & <span class="accent">Vega</span> Explained</h1>
-    <p class="hero-sub">An option's price moves for more reasons than just the stock price. The Greeks each measure the option's sensitivity to a different force — together, they describe exactly what a position is exposed to.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 3 of 5</div>
+    <h1 class="hero-title">Implied Volatility & Volatility <span class="accent">Skew</span></h1>
+    <p class="hero-sub">Implied volatility reflects what the market expects future price swings to look like — and it's rarely flat across strike prices. The resulting "skew" reveals where the market is pricing in the most fear or complacency.</p>
   </div>
 </div>
 
@@ -158,75 +158,76 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Four Numbers That Describe an Option's Exposure</h2>
-    <p class="body-text">The previous lesson covered an option's payoff <i>at expiration</i>. Before expiration, its price — the premium — moves constantly, and not just because of the stock price. The <b>Greeks</b> are a set of measures, each named after a Greek letter, that isolate how sensitive an option's price is to one specific factor at a time.</p>
-    <p class="body-text"><b>Delta</b> measures how much the option's price changes for a $1 move in the underlying stock — a delta of 0.60 means the option gains roughly $0.60 for every $1 the stock rises. <b>Gamma</b> measures how much delta itself changes as the stock moves — the "delta of delta," describing how quickly an option's directional exposure accelerates. <b>Theta</b> measures time decay: how much value the option loses purely from one day passing, holding everything else constant — an ever-present drag on a long option position. <b>Vega</b> measures sensitivity to implied volatility: how much the option's price changes if the market's expectation of future volatility shifts, even with the stock price unchanged.</p>
-    <p class="body-text">Together, these four answer a single practical question: if the stock moves, if time passes, or if volatility expectations shift, what happens to this position? A trader who only watches the stock price is ignoring at least three of the four forces actually moving their option's value day to day.</p>
+    <h2 class="section-title">The Market's Own Forecast of Future Movement</h2>
+    <p class="body-text"><b>Implied volatility (IV)</b> is the volatility level that, when plugged into an options pricing model, produces the option's actual current market price. Rather than measuring what a stock has already done (that's historical, or "realized," volatility), IV reflects what the options market currently expects future price swings to look like — it's a forward-looking, market-implied forecast, embedded directly in option prices.</p>
+    <p class="body-text">If IV were the same for every strike price on the same expiration, plotting it would produce a flat line. In practice it almost never is — plotting IV across strikes typically produces a curve, commonly called the <b>volatility skew</b> (or "smile," when it curves up on both sides). For equity index options, the skew is usually <b>downward-sloping</b>: out-of-the-money puts (protection against a crash) trade at meaningfully higher implied volatility than out-of-the-money calls, reflecting persistent demand for downside protection.</p>
+    <p class="body-text">The skew is genuinely informative: a steepening skew (puts getting relatively more expensive versus calls) signals rising demand for crash protection — often a sign of building fear, even before the underlying stock has moved much. A flattening skew can signal the opposite. Reading the skew is reading what the options market is actually worried about, not just what the headline "IV" number says.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Reading a Position's Greeks</h3>
-      <p class="body-text">A hypothetical call option position with the Greeks below. What each one is saying about the position — illustrative numbers only.</p>
+      <h3>⚖️ Illustrative Example: A Downward-Sloping Skew</h3>
+      <p class="body-text">Implied volatility across five strikes on a hypothetical index option, all same expiration, stock at $100 — a textbook downward skew shape.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Greek</th><th>Value</th><th>What It's Saying</th></tr>
+            <tr><th>Strike</th><th>Type</th><th>Moneyness</th><th>Implied Volatility</th></tr>
           </thead>
           <tbody>
-            <tr><td>Delta</td><td>+0.55</td><td>Gains ~$0.55 per $1 the stock rises</td></tr>
-            <tr><td>Gamma</td><td>0.04</td><td>Delta itself rises ~0.04 per $1 stock move</td></tr>
-            <tr class="highlight-row"><td>Theta</td><td>-0.08</td><td>Loses ~$0.08 of value per day, all else equal</td></tr>
-            <tr><td>Vega</td><td>+0.12</td><td>Gains ~$0.12 if implied volatility rises 1 point</td></tr>
+            <tr class="highlight-row"><td>$85</td><td>Put</td><td>15% OTM</td><td>28%</td></tr>
+            <tr><td>$95</td><td>Put</td><td>5% OTM</td><td>21%</td></tr>
+            <tr><td>$100</td><td>Both</td><td>At the Money</td><td>18%</td></tr>
+            <tr><td>$105</td><td>Call</td><td>5% OTM</td><td>16%</td></tr>
+            <tr><td>$115</td><td>Call</td><td>15% OTM</td><td>14%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Every day this option is held, theta quietly erodes ~$0.08 of value even if the stock doesn't move at all — a cost that only a directional stock move (via delta), an accelerating move (via gamma), or a rise in volatility expectations (via vega) can offset.</p>
+      <p class="stmt-note">The deep out-of-the-money put (15% below the current price) carries the highest implied volatility at 28% — nearly double the equivalent out-of-the-money call at 14%. That gap reflects the market pricing in persistent demand for downside crash protection, a pattern seen consistently in equity index options.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About the Greeks</h3>
+    <h3 class="subhead">5 Things to Know About Implied Volatility</h3>
     <ol class="num-checklist">
-      <li><b>Delta also approximates probability</b> — a rough rule of thumb treats an option's delta as its approximate probability of expiring in the money.</li>
-      <li><b>Gamma is highest near the strike, close to expiration</b> — this is when an option's delta (and therefore its directional risk) can shift fastest.</li>
-      <li><b>Theta accelerates as expiration nears</b> — time decay isn't linear; it tends to speed up sharply in an option's final weeks.</li>
-      <li><b>Vega matters most for longer-dated options</b> — an option with more time until expiration is generally more sensitive to shifts in volatility expectations.</li>
-      <li><b>The Greeks interact, not operate in isolation</b> — a real position's actual day-to-day P&L reflects delta, gamma, theta, and vega all moving together, not any one in isolation.</li>
+      <li><b>IV is forward-looking, realized volatility is backward-looking</b> — they measure different things and can diverge substantially.</li>
+      <li><b>IV tends to spike around known events</b> — earnings, Fed announcements — then drop sharply right after, a pattern called "volatility crush."</li>
+      <li><b>Equity index skew is usually downward-sloping</b> — persistent demand for crash protection makes downside puts relatively more expensive.</li>
+      <li><b>A steepening skew often signals rising fear</b> — even before the underlying stock has actually moved much.</li>
+      <li><b>High IV doesn't mean a stock will definitely move a lot</b> — it means the market is pricing in a wider range of outcomes as more likely, not guaranteeing any particular one.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Holding an Options Position</h3>
+    <h3 class="subhead">4 Things to Check Before Trading Around IV</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📈 Check Your Delta Exposure</h4>
+        <h4>📊 Compare IV to Its Own History</h4>
         <ul>
-          <li>Know roughly how much your position moves for a given move in the underlying — your directional bet, in dollar terms.</li>
+          <li>A given IV level only means something relative to where that same option's IV has traded recently.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⏳ Respect Theta as a Buyer</h4>
+        <h4>💥 Watch for Volatility Crush</h4>
         <ul>
-          <li>A long option position bleeds value every day it's held, even if the stock stays flat — factor that cost into the plan.</li>
+          <li>Buying options right before a known event risks IV collapsing afterward, even if the direction call was right.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🌪️ Watch Vega Around Known Events</h4>
+        <h4>📉 Read the Skew, Not Just One IV Number</h4>
         <ul>
-          <li>Implied volatility often drops sharply right after an anticipated event (like earnings) — a real risk for a long option holding into it.</li>
+          <li>The shape of IV across strikes carries information a single at-the-money IV figure doesn't.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⚡ Mind Gamma Near Expiration</h4>
+        <h4>🔗 Connect Back to Vega</h4>
         <ul>
-          <li>A position's directional exposure can change quickly in an option's final days — size and monitor accordingly.</li>
+          <li>A position's vega (previous lesson) tells you exactly how much a shift in IV will move its value.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/what-is-an-option">What Is an Option?</a> (previous) covers the payoff these Greeks describe the path toward, and <a href="/learn/pro#tab-options">Implied Volatility & Skew</a> (next in this track) digs deeper into the volatility input behind vega.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/the-greeks">The Greeks</a> (previous) covers vega, the sensitivity measure this lesson's IV feeds directly into, and <a href="/learn/pro#tab-options">Income Strategies</a> (next in this track) shows how sellers can be compensated for taking the other side of persistently elevated IV.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains the Greeks using illustrative numbers and historical framing — it isn't personalized financial advice, and no position or value described here is a recommendation. The Greeks are theoretical sensitivities calculated from a pricing model, not guarantees of how an option will actually behave. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains implied volatility and skew using illustrative numbers and historical framing — it isn't personalized financial advice, and no reading or level described here is a recommendation to trade. Implied volatility is a market-derived estimate, not a guarantee of future price movement. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -235,47 +236,46 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Greeks Impact Estimator</h2>
-    <p class="section-desc">Enter a position's Greeks and a hypothetical change in the stock price, days passed, and implied volatility — see the estimated impact on the option's value.</p>
+    <h2 class="section-title">Try It Yourself: Skew Reader</h2>
+    <p class="section-desc">Enter implied volatility for an out-of-the-money put and an equivalent out-of-the-money call — see the skew gap and what it suggests, under a simple rule.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadGreeksPreset('sample')">Load Sample Position</button>
-        <button class="preset-btn" onclick="loadGreeksPreset('shortDated')">Load Short-Dated (High Theta/Gamma)</button>
-        <button class="preset-btn" onclick="loadGreeksPreset('longDated')">Load Long-Dated (High Vega)</button>
+        <button class="preset-btn" onclick="loadSkewPreset('normal')">Load Typical Skew</button>
+        <button class="preset-btn" onclick="loadSkewPreset('steep')">Load Steep / Fearful Skew</button>
+        <button class="preset-btn" onclick="loadSkewPreset('flat')">Load Flat Skew</button>
       </div>
       <div class="calc-grid">
-        <div class="calc-field"><label>Delta</label><input type="number" id="grDelta" value="0.55" step="0.01"></div>
-        <div class="calc-field"><label>Gamma</label><input type="number" id="grGamma" value="0.04" step="0.001"></div>
-        <div class="calc-field"><label>Theta (per day)</label><input type="number" id="grTheta" value="-0.08" step="0.01"></div>
-        <div class="calc-field"><label>Vega (per 1 IV point)</label><input type="number" id="grVega" value="0.12" step="0.01"></div>
-      </div>
-      <div class="calc-grid">
-        <div class="calc-field"><label>Hypothetical Stock Move ($)</label><input type="number" id="grStockMove" value="3" step="0.5"></div>
-        <div class="calc-field"><label>Days Passed</label><input type="number" id="grDaysPassed" value="5" step="1" min="0"></div>
-        <div class="calc-field"><label>Implied Vol. Change (points)</label><input type="number" id="grVolChange" value="-2" step="0.5"></div>
+        <div class="calc-field">
+          <label for="skewPutIV">OTM Put Implied Volatility (%)</label>
+          <input type="number" id="skewPutIV" value="28" step="0.5" min="0">
+        </div>
+        <div class="calc-field">
+          <label for="skewCallIV">OTM Call Implied Volatility (%)</label>
+          <input type="number" id="skewCallIV" value="14" step="0.5" min="0">
+        </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcGreeksImpact()">Estimate Impact →</button>
+        <button class="calc-btn" onclick="calcSkew()">Read the Skew →</button>
       </div>
 
-      <div class="calc-results visible" id="grResults">
+      <div class="calc-results visible" id="skewResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">From Delta + Gamma</div>
-            <div class="mc-value" id="grDeltaGammaImpact">—</div>
+            <div class="mc-label">Put IV</div>
+            <div class="mc-value" id="skewPutOut">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">From Theta</div>
-            <div class="mc-value" id="grThetaImpact">—</div>
+            <div class="mc-label">Call IV</div>
+            <div class="mc-value" id="skewCallOut">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">From Vega</div>
-            <div class="mc-value" id="grVegaImpact">—</div>
+            <div class="mc-label">Skew Gap</div>
+            <div class="mc-value" id="skewGapOut">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="grCallout"></div>
-        <p class="calc-note">Model: price impact ≈ (delta × stock move) + (0.5 × gamma × stock move²) + (theta × days passed) + (vega × IV change). A simplified second-order approximation, not an exact options pricing model — illustrative only.</p>
+        <div class="calc-callout" id="skewCallout"></div>
+        <p class="calc-note">Model (illustrative only): skew gap = put IV − call IV. A gap under 3 points is read as roughly flat; 3-8 points as a typical downward skew; over 8 points as a steep, fear-driven skew. Real skew analysis uses many more strikes and statistical rigor than this simplified two-point rule.</p>
       </div>
     </div>
   </div>
@@ -294,59 +294,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What does Delta measure?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> How much value an option loses per day</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> How much the option's price changes for a $1 move in the underlying stock</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The option's strike price</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> How many days remain until expiration</label>
-        </div>
-        <div class="quiz-explain">Delta measures how much the option's price is expected to change for a $1 move in the underlying stock.</div>
-      </div>
-
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. What does Theta represent?</div>
+        <div class="quiz-q-title">1. What is implied volatility?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Sensitivity to the stock price</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Sensitivity to implied volatility</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Time decay — value lost purely from one day passing, all else equal</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The maximum possible loss on the position</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> How much a stock has already moved in the past year</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The option's strike price divided by the stock price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The volatility level that, when plugged into a pricing model, produces the option's current market price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A guaranteed forecast of the stock's future price</label>
         </div>
-        <div class="quiz-explain">Theta measures how much value an option loses purely from the passage of time, holding everything else constant.</div>
+        <div class="quiz-explain">Implied volatility is a forward-looking, market-implied estimate embedded in the option's current price, not a backward-looking measure.</div>
       </div>
 
-      <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">3. In the illustrative example, what happened to the option's value every day it was held, even with no stock move?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. What shape does equity index volatility skew usually take?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It lost about $0.08 of value from theta decay</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It gained value automatically</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Its strike price changed</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Delta dropped to zero</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Perfectly flat across every strike</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Downward-sloping, with out-of-the-money puts trading at higher IV than calls</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Upward-sloping, with calls always more expensive than puts</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Random, with no consistent pattern ever observed</label>
         </div>
-        <div class="quiz-explain">Theta of -0.08 means the option loses about $0.08 of value each day purely from time passing, all else equal.</div>
+        <div class="quiz-explain">Equity index skew is usually downward-sloping, reflecting persistent demand for downside crash protection via puts.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">4. According to this lesson, when is Gamma typically highest?</div>
+        <div class="quiz-q-title">3. In the illustrative example, what did the wide gap between put and call IV suggest?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Only on options with no expiration date</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> When the stock price is far from the strike</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Immediately after the option is purchased, regardless of other factors</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Near the strike price, close to expiration</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The options were mispriced by mistake</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Calls always cost more than puts</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The stock was guaranteed to fall</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Persistent demand for downside crash protection, a pattern seen consistently in index options</label>
         </div>
-        <div class="quiz-explain">Gamma tends to be highest near the strike price as expiration approaches, meaning delta can shift fastest at that point.</div>
+        <div class="quiz-explain">The 28% put IV versus 14% call IV reflects the market's ongoing willingness to pay up for downside protection.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. What is "volatility crush"?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> A sharp drop in implied volatility right after a known event like earnings</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> A stock crashing more than 50% in one day</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> An option expiring worthless</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> A broker closing a position without permission</label>
+        </div>
+        <div class="quiz-explain">Volatility crush refers to implied volatility spiking ahead of an event, then dropping sharply once the uncertainty resolves.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What does Vega measure?</div>
+        <div class="quiz-q-title">5. Does high implied volatility guarantee a stock will move a lot?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> The option's delta squared</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> The number of shares per contract</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Sensitivity to changes in implied volatility</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> The commission cost of the trade</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Yes, IV is a guaranteed forecast</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> No, IV has no relationship to expected movement at all</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> No, it means a wider range of outcomes is being priced as more likely, not a guarantee of any specific one</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Yes, but only for put options</label>
         </div>
-        <div class="quiz-explain">Vega measures how much an option's price changes if the market's expectation of future volatility shifts, even with the stock price unchanged.</div>
+        <div class="quiz-explain">High IV reflects a wider expected range of outcomes being priced in, not a certainty that the stock will actually move that much.</div>
       </div>
     </div>
 
@@ -363,22 +363,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/the-greeks-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/implied-volatility-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the reading-a-position's-Greeks example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the downward-skew example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/the-greeks-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/implied-volatility-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to estimate an option's value change from delta, theta, and vega by hand.</div>
+        <div class="dl-desc">Guided exercises to read a hypothetical skew and think through volatility crush around known events.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/the-greeks-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/implied-volatility-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore the Greeks in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore implied volatility and skew in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -387,19 +387,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Implied Volatility & Skew</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Vega measures sensitivity to volatility expectations — the next lesson digs into what implied volatility actually is, and why it's rarely the same across every strike price.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Income Strategies</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You now understand what drives an option's price beyond the stock itself. The next lesson shows how option sellers can be compensated in premium for taking the other side of that expectation.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/what-is-an-option" class="hub-card">
-        <div class="card-icon">🎟️</div>
-        <div class="card-title">Back to What Is an Option?</div>
-        <div class="card-desc">Review rights, not obligations.</div>
+      <a href="/learn/pro/the-greeks" class="hub-card">
+        <div class="card-icon">🧮</div>
+        <div class="card-title">Back to The Greeks</div>
+        <div class="card-desc">Review Delta, Gamma, Theta & Vega.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/implied-volatility" class="hub-card">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Continue to Implied Volatility & Skew</div>
-        <div class="card-desc">Reading what the market is actually afraid of.</div>
+      <a href="/learn/pro#tab-options" class="hub-card">
+        <div class="card-icon">💵</div>
+        <div class="card-title">Continue to Income Strategies</div>
+        <div class="card-desc">Covered calls & cash-secured puts.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -432,51 +432,44 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const GREEKS_PRESETS = {
-  sample: { delta: 0.55, gamma: 0.04, theta: -0.08, vega: 0.12, stockMove: 3, days: 5, volChange: -2 },
-  shortDated: { delta: 0.50, gamma: 0.09, theta: -0.22, vega: 0.05, stockMove: 2, days: 3, volChange: -1 },
-  longDated: { delta: 0.55, gamma: 0.015, theta: -0.03, vega: 0.28, stockMove: 3, days: 10, volChange: 3 },
+const SKEW_PRESETS = {
+  normal: { put: 22, call: 17 },
+  steep: { put: 28, call: 14 },
+  flat: { put: 19, call: 18 },
 };
-function loadGreeksPreset(kind) {
-  const p = GREEKS_PRESETS[kind];
-  document.getElementById('grDelta').value = p.delta;
-  document.getElementById('grGamma').value = p.gamma;
-  document.getElementById('grTheta').value = p.theta;
-  document.getElementById('grVega').value = p.vega;
-  document.getElementById('grStockMove').value = p.stockMove;
-  document.getElementById('grDaysPassed').value = p.days;
-  document.getElementById('grVolChange').value = p.volChange;
-  calcGreeksImpact();
+function loadSkewPreset(kind) {
+  const p = SKEW_PRESETS[kind];
+  document.getElementById('skewPutIV').value = p.put;
+  document.getElementById('skewCallIV').value = p.call;
+  calcSkew();
 }
 
-function calcGreeksImpact() {
-  const delta = parseFloat(document.getElementById('grDelta').value);
-  const gamma = parseFloat(document.getElementById('grGamma').value);
-  const theta = parseFloat(document.getElementById('grTheta').value);
-  const vega = parseFloat(document.getElementById('grVega').value);
-  const stockMove = parseFloat(document.getElementById('grStockMove').value);
-  const days = parseFloat(document.getElementById('grDaysPassed').value);
-  const volChange = parseFloat(document.getElementById('grVolChange').value);
-  if ([delta, gamma, theta, vega, stockMove, days, volChange].some(isNaN) || days < 0) {
-    alert('Please enter valid values (days passed must be non-negative).');
+function calcSkew() {
+  const putIV = parseFloat(document.getElementById('skewPutIV').value);
+  const callIV = parseFloat(document.getElementById('skewCallIV').value);
+  if (isNaN(putIV) || isNaN(callIV) || putIV < 0 || callIV < 0) {
+    alert('Please enter valid, non-negative implied volatility values.');
     return;
   }
 
-  const deltaGammaImpact = (delta * stockMove) + (0.5 * gamma * stockMove * stockMove);
-  const thetaImpact = theta * days;
-  const vegaImpact = vega * volChange;
-  const totalImpact = deltaGammaImpact + thetaImpact + vegaImpact;
+  const gap = putIV - callIV;
+  document.getElementById('skewPutOut').textContent = putIV.toFixed(1) + '%';
+  document.getElementById('skewCallOut').textContent = callIV.toFixed(1) + '%';
+  document.getElementById('skewGapOut').textContent = (gap >= 0 ? '+' : '') + gap.toFixed(1) + ' pts';
 
-  document.getElementById('grDeltaGammaImpact').textContent = (deltaGammaImpact >= 0 ? '+$' : '-$') + Math.abs(deltaGammaImpact).toFixed(2);
-  document.getElementById('grThetaImpact').textContent = (thetaImpact >= 0 ? '+$' : '-$') + Math.abs(thetaImpact).toFixed(2);
-  document.getElementById('grVegaImpact').textContent = (vegaImpact >= 0 ? '+$' : '-$') + Math.abs(vegaImpact).toFixed(2);
-
-  const callout = document.getElementById('grCallout');
-  callout.className = 'calc-callout' + (totalImpact < 0 ? ' warn' : '');
-  const verdict = totalImpact >= 0 ? '✓ Net Positive Estimated Impact' : '⚠️ Net Negative Estimated Impact';
-  callout.innerHTML = `<span class="verdict">${verdict}</span>Combining a $${stockMove.toFixed(2)} stock move, ${days} day(s) passing, and a ${volChange >= 0 ? '+' : ''}${volChange.toFixed(1)}-point implied volatility change, this position's estimated value change is ${totalImpact >= 0 ? '+$' : '-$'}${Math.abs(totalImpact).toFixed(2)} per contract share.`;
+  const callout = document.getElementById('skewCallout');
+  if (gap > 8) {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Steep, Fear-Driven Skew</span>A ${gap.toFixed(1)}-point gap between put and call IV suggests elevated demand for downside protection — historically associated with more cautious or fearful market positioning, illustrative only.`;
+  } else if (gap > 3) {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Typical Downward Skew</span>A ${gap.toFixed(1)}-point gap is in line with the usual pattern seen in equity index options — modest, persistent demand for downside protection.`;
+  } else {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">〰️ Relatively Flat Skew</span>A ${gap.toFixed(1)}-point gap is unusually small — put and call IV are pricing similarly, less of the typical crash-protection premium than usual.`;
+  }
 }
-calcGreeksImpact();
+calcSkew();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');

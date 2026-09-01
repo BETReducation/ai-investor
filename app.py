@@ -150,6 +150,7 @@ LESSON_PAGES = [
     {"slug": "risk-budgeting", "level": "pro", "file": "lesson-risk-budgeting.html", "title": "Position Sizing & Risk Budgeting"},
     {"slug": "what-is-an-option", "level": "pro", "file": "lesson-what-is-an-option.html", "title": "What Is an Option?"},
     {"slug": "the-greeks", "level": "pro", "file": "lesson-the-greeks.html", "title": "The Greeks"},
+    {"slug": "implied-volatility", "level": "pro", "file": "lesson-implied-volatility.html", "title": "Implied Volatility & Skew"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
