@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mean Reversion — Pro — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+.page-hero { padding: 100px 5% 56px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(45,212,191,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--teal); }
+@media (max-width: 600px) {
+  .section-badge { display: block; white-space: normal; text-align: center; }
+  .section-badge::before { display: none; }
+}
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 20px; }
+.hero-title .accent { color: var(--teal); }
+.hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--muted); max-width: 640px; margin: 0 auto; line-height: 1.65; }
+.content-section { padding: 72px 5% 60px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1100px; }
+.section-eyebrow { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; opacity: 0.85; }
+.section-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--teal); }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.15; color: var(--text); margin-bottom: 14px; }
+.section-desc { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 20px; }
+.section-desc:last-child { margin-bottom: 0; }
+p.body-text { font-size: 16px; color: var(--muted); line-height: 1.75; margin-bottom: 18px; }
+p.body-text b { color: var(--text); }
+.example-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin: 28px 0; }
+.example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.fine-print b { color: var(--text); }
+.tool-pointer { max-width: 900px; margin: 24px 0 0; padding: 18px 22px; border-left: 3px solid var(--teal); background: rgba(45,212,191,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.tool-pointer b { color: var(--text); }
+.tool-pointer a { color: var(--teal); font-weight: 600; text-decoration: none; }
+.tool-pointer a:hover { text-decoration: underline; }
+.num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
+.num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
+.num-checklist li::before {
+  content: counter(numitem);
+  position: absolute; left: 0; top: -1px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(45,212,191,0.12); border: 1px solid rgba(45,212,191,0.3);
+  color: var(--teal); font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.num-checklist li b { color: var(--text); }
+.tip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 24px 0 28px; }
+@media (max-width: 700px) { .tip-grid { grid-template-columns: 1fr; } }
+.tip-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.tip-card h4 { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 10px; }
+.tip-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
+.tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
+.tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
+.subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+.stmt-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 16px; }
+.stmt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.stmt-table th { position: sticky; top: 0; background: var(--teal); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
+.stmt-table th:first-child { text-align: left; }
+.stmt-table td { text-align: right; padding: 9px 10px; color: var(--text); border-top: 1px solid var(--border); white-space: nowrap; }
+.stmt-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+.stmt-table tbody tr:nth-child(even) { background: var(--bg3); }
+.stmt-table tr.highlight-row td { background: rgba(45,212,191,0.10); }
+.stmt-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
+.calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
+.calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+@media (max-width: 900px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
+.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus { border-color: var(--teal); }
+.calc-btn { background: var(--teal); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
+.calc-btn:hover { opacity: 0.88; }
+.calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
+.calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
+.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
+.margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+.margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--teal); }
+.calc-callout { margin-top: 0; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
+.calc-callout.warn { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
+.calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; display: block; margin-bottom: 6px; }
+.calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+.preset-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.preset-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--muted); padding: 8px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.preset-btn:hover { border-color: var(--teal); color: var(--text); }
+.quiz-list { display: flex; flex-direction: column; gap: 24px; }
+.quiz-q { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 26px 28px; }
+.quiz-q-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: border-color 0.2s, background 0.2s; font-size: 14px; color: var(--muted); }
+.quiz-opt:hover { border-color: var(--border2); }
+.quiz-opt input { margin-top: 2px; accent-color: var(--teal); }
+.quiz-opt.correct { border-color: rgba(0,212,170,0.5); background: rgba(0,212,170,0.08); color: var(--text); }
+.quiz-opt.incorrect { border-color: rgba(255,51,85,0.5); background: rgba(255,51,85,0.08); color: var(--text); }
+.quiz-explain { display: none; margin-top: 14px; font-size: 13px; color: var(--muted); line-height: 1.6; padding: 12px 14px; background: var(--bg3); border-radius: 10px; }
+.quiz-explain.visible { display: block; }
+.quiz-submit-row { text-align: center; margin-top: 8px; }
+.quiz-score { display: none; text-align: center; margin: 0 auto 28px; padding: 24px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); max-width: 420px; }
+.quiz-score.visible { display: block; animation: fadeUp 0.4s ease both; }
+.quiz-score .qs-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; color: var(--teal); }
+.quiz-score .qs-lbl { font-size: 14px; color: var(--muted); margin-top: 6px; }
+.dl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 900px) { .dl-grid { grid-template-columns: 1fr; } }
+.dl-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.dl-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.dl-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(45,212,191,0.10); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.dl-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); }
+.dl-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
+.dl-link { font-size: 13px; font-weight: 600; color: var(--teal); display: flex; align-items: center; gap: 6px; }
+.cta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 720px; margin: 0 auto; }
+@media (max-width: 700px) { .cta-grid { grid-template-columns: 1fr; } }
+.hub-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px 28px; text-decoration: none; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.25s, transform 0.25s; }
+.hub-card:hover { border-color: var(--border2); transform: translateY(-4px); }
+.card-icon { font-size: 32px; line-height: 1; }
+.card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+.card-link { font-size: 13px; font-weight: 600; color: var(--teal); }
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 1 of 5</div>
+    <h1 class="hero-title">Mean Reversion — Betting Prices Return to <span class="accent">"Normal"</span></h1>
+    <p class="hero-sub">When a price strays far from its historical average, a mean reversion strategy bets it eventually snaps back — replacing "it's gone too far" with a strict, testable statistical rule.</p>
+  </div>
+</div>
+
+<!-- 1. EXPLAINER -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">The Concept</div>
+    <h2 class="section-title">From "That Looks Stretched" to a Testable Rule</h2>
+    <p class="body-text">Many prices and spreads oscillate around some underlying average rather than trending forever. <b>Mean reversion</b> strategies formalize the intuition that "this has gone too far" into a precise, repeatable rule: measure how far the current price has strayed from its historical average, in statistical terms, and act when that distance crosses a threshold.</p>
+    <p class="body-text">The standard tool for measuring "how far" is the <b>z-score</b>: (current price − historical mean) ÷ historical standard deviation. A z-score of +2 means the price is two standard deviations above its average — statistically unusual, and historically likely (though never certain) to pull back toward the mean. A z-score of -2 signals the opposite: unusually cheap relative to its own history.</p>
+    <p class="body-text">Pairs trading and statistical arbitrage extend this same idea to the <i>spread</i> between two related assets rather than a single price — betting that when two historically-linked securities drift apart, the gap itself will revert, regardless of which direction the market as a whole moves.</p>
+
+    <div class="example-card">
+      <h3>⚖️ Illustrative Example: Z-Score Signal Zones</h3>
+      <p class="body-text">A stock's price has a 60-day historical mean of $100 and a standard deviation of $5. Here's how different current prices translate into z-scores and, under a simple rule, mean-reversion signals.</p>
+      <div class="stmt-table-wrap">
+        <table class="stmt-table">
+          <thead>
+            <tr><th>Current Price</th><th>Distance From Mean</th><th>Z-Score</th><th>Illustrative Signal</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>$115</td><td>+$15</td><td>+3.0</td><td>Strong Sell / Fade</td></tr>
+            <tr class="highlight-row"><td>$110</td><td>+$10</td><td>+2.0</td><td>Sell / Fade Threshold</td></tr>
+            <tr><td>$101</td><td>+$1</td><td>+0.2</td><td>No Signal — Near Mean</td></tr>
+            <tr class="highlight-row"><td>$90</td><td>-$10</td><td>-2.0</td><td>Buy / Fade Threshold</td></tr>
+            <tr><td>$82</td><td>-$18</td><td>-3.6</td><td>Strong Buy / Fade</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="stmt-note">A common rule of thumb enters a mean-reversion trade once the z-score crosses ±2 (roughly the top/bottom 5% of a normal distribution) and exits as the price reverts back toward zero — illustrative only, and real markets don't move in a neat bell curve.</p>
+    </div>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
+    <h3 class="subhead">5 Things to Know About Mean Reversion</h3>
+    <ol class="num-checklist">
+      <li><b>Not every asset mean-reverts</b> — the strategy assumes a stable underlying average exists; a genuinely trending asset can keep making the z-score more extreme instead of reverting.</li>
+      <li><b>"Historical mean" is a moving target</b> — using too short a lookback window makes the mean noisy; too long a window makes it slow to reflect real structural change.</li>
+      <li><b>This is the same math as Bollinger Bands</b> — a Bollinger Band touch is essentially a z-score extreme, expressed visually rather than numerically.</li>
+      <li><b>"Catching a falling knife" is the classic failure mode</b> — a stock cheap for a genuine, lasting reason (bad news, a broken business) can keep getting cheaper well past a -2 z-score.</li>
+      <li><b>Pairs trading isolates the spread, not market direction</b> — a well-constructed pair can profit in both up and down markets, since it bets on the relationship between two assets, not the market's overall direction.</li>
+    </ol>
+
+    <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
+    <h3 class="subhead">4 Things to Check Before Trusting a Mean-Reversion Signal</h3>
+    <div class="tip-grid">
+      <div class="tip-card">
+        <h4>📏 Choose Your Lookback Window Deliberately</h4>
+        <ul>
+          <li>Test multiple windows (e.g. 20, 60, 120 days) — a signal that only appears with one specific window is a red flag.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🧭 Ask Why It's Stretched</h4>
+        <ul>
+          <li>A statistically extreme z-score driven by a fundamental change, not noise, may never revert — check for news, not just numbers.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🧪 Backtest With Realistic Costs</h4>
+        <ul>
+          <li>Mean reversion trades are often frequent and short-lived — trading costs and slippage can erase an edge that looks great on paper.</li>
+        </ul>
+      </div>
+      <div class="tip-card">
+        <h4>🛑 Define an Exit If It Doesn't Revert</h4>
+        <ul>
+          <li>Set a stop for when the z-score keeps extending rather than reverting, so a broken assumption has a bounded cost.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="tool-pointer">
+      🧮 <b>Related lessons:</b> <a href="/learn/intermediate/bollinger-bands">Bollinger Bands</a> (Intermediate) covers the same z-score logic visually, and <a href="/learn/pro/backtesting">Backtesting</a> (next in this track) shows how to properly test a rule like this before risking real money.
+    </div>
+
+    <div class="fine-print">
+      <b>Worth knowing:</b> this lesson explains the statistical reasoning behind mean-reversion strategies using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Past patterns, including reversion to a mean, are never guaranteed to repeat. Speak to a licensed advisor about what's appropriate for your situation.
+    </div>
+  </div>
+</section>
+
+<!-- 2. ACTIVITY -->
+<section class="content-section alt-bg">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">Activity</div>
+    <h2 class="section-title">Try It Yourself: Z-Score Calculator</h2>
+    <p class="section-desc">Enter a current price and its historical mean and standard deviation — see the z-score and where it falls relative to common ±2 signal thresholds.</p>
+
+    <div class="calc-box">
+      <div class="preset-row">
+        <button class="preset-btn" onclick="loadZPreset('overbought')">Load Statistically Overbought</button>
+        <button class="preset-btn" onclick="loadZPreset('neutral')">Load Near the Mean</button>
+        <button class="preset-btn" onclick="loadZPreset('oversold')">Load Statistically Oversold</button>
+      </div>
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="zPrice">Current Price ($)</label>
+          <input type="number" id="zPrice" value="110" step="0.5">
+        </div>
+        <div class="calc-field">
+          <label for="zMean">Historical Mean ($)</label>
+          <input type="number" id="zMean" value="100" step="0.5">
+        </div>
+        <div class="calc-field">
+          <label for="zStdDev">Historical Std. Deviation ($)</label>
+          <input type="number" id="zStdDev" value="5" step="0.5" min="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="zThreshold">Signal Threshold (±z)</label>
+          <input type="number" id="zThreshold" value="2" step="0.1" min="0.1">
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button class="calc-btn" onclick="calcZScore()">Calculate Z-Score →</button>
+      </div>
+
+      <div class="calc-results visible" id="zResults">
+        <div class="margin-grid">
+          <div class="margin-card">
+            <div class="mc-label">Distance From Mean</div>
+            <div class="mc-value" id="zDistance">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">Z-Score</div>
+            <div class="mc-value" id="zScoreVal">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">vs. Threshold</div>
+            <div class="mc-value" id="zVsThreshold">—</div>
+          </div>
+        </div>
+        <div class="calc-callout" id="zCallout"></div>
+        <p class="calc-note">Model: z-score = (current price − historical mean) ÷ historical standard deviation. This is a statistical measure of stretch, not a prediction — historical patterns are never guaranteed to repeat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. QUIZ -->
+<section class="content-section">
+  <div class="content-inner reveal">
+    <div class="section-eyebrow">End of Lesson</div>
+    <h2 class="section-title">Quick Check: 5 Questions</h2>
+    <p class="section-desc">Answer all five, then hit "Check My Answers" to see how you did. Get one wrong? No problem — the explanation will show you exactly why.</p>
+
+    <div class="quiz-score" id="quizScore">
+      <div class="qs-num" id="quizScoreNum">0/5</div>
+      <div class="qs-lbl">Nice work — review any explanations below to lock it in.</div>
+    </div>
+
+    <div class="quiz-list" id="quizList">
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">1. What does a mean-reversion strategy assume?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Prices always trend in one direction forever</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Trading volume predicts future prices</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A price that strays far from its historical average tends to pull back toward it</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Company earnings are irrelevant to price</label>
+        </div>
+        <div class="quiz-explain">Mean reversion assumes a stable underlying average exists and that extreme deviations from it tend to correct back over time.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. How is a z-score calculated in this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Current price divided by trading volume</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> (Current price − historical mean) ÷ historical standard deviation</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Current price multiplied by the P/E ratio</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Yesterday's closing price minus today's opening price</label>
+        </div>
+        <div class="quiz-explain">The z-score measures how many standard deviations the current price is from its historical mean.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. What is the classic failure mode of mean reversion described in this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The strategy requires too much starting capital</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It only works on cryptocurrency markets</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It cannot be backtested at all</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> "Catching a falling knife" — buying something cheap for a genuine, lasting reason that keeps getting cheaper</label>
+        </div>
+        <div class="quiz-explain">A statistically extreme z-score driven by real fundamental deterioration, not noise, can keep extending well past typical thresholds.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. What does pairs trading bet on, according to this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> That the spread between two historically-linked assets will revert, regardless of overall market direction</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> That the entire stock market will rise</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> That interest rates will fall</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> That one specific company will go bankrupt</label>
+        </div>
+        <div class="quiz-explain">Pairs trading isolates the relationship (spread) between two related assets, aiming to profit regardless of which way the broader market moves.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. Why should mean-reversion signals be backtested with realistic trading costs?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Trading costs don't affect mean-reversion strategies</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Regulators require it by law</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Mean-reversion trades are often frequent and short-lived, so costs and slippage can erase a paper edge</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> It guarantees the strategy will be profitable</label>
+        </div>
+        <div class="quiz-explain">Because these trades tend to be frequent and short-lived, unrealistic cost assumptions in a backtest can make a losing strategy look profitable on paper.</div>
+      </div>
+    </div>
+
+    <div class="quiz-submit-row">
+      <button class="calc-btn" onclick="checkQuiz()">Check My Answers →</button>
+    </div>
+  </div>
+</section>
+
+<!-- 4. DOWNLOADS -->
+<section class="content-section alt-bg">
+  <div class="content-inner wide reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Downloads</div>
+    <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
+    <div class="dl-grid">
+      <a href="/static/downloads/mean-reversion-explainer.pdf" class="dl-card" download>
+        <div class="dl-icon">📄</div>
+        <div class="dl-title">A4 Lesson Explainer</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the z-score signal zones example, and the quiz with an answer key.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/mean-reversion-worksheet.pdf" class="dl-card" download>
+        <div class="dl-icon">✏️</div>
+        <div class="dl-title">Practice Worksheet</div>
+        <div class="dl-desc">Guided exercises to calculate z-scores by hand and define your own signal thresholds.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+      <a href="/static/downloads/mean-reversion-further-reading.pdf" class="dl-card" download>
+        <div class="dl-icon">🔗</div>
+        <div class="dl-title">Further Reading</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore mean reversion in more depth.</div>
+        <div class="dl-link">Download PDF ↓</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner reveal">
+    <h2 class="section-title" style="text-align:center;">Next Up: Momentum & Factor Models</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Mean reversion bets on prices snapping back. The next lesson covers the opposite family of strategies — ones that bet a persistent trend continues.</p>
+    <div class="cta-grid">
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">🏁</div>
+        <div class="card-title">Back to Quantitative Strategy Hub</div>
+        <div class="card-desc">Revisit all five lessons in this track.</div>
+        <div class="card-link">Back to hub →</div>
+      </a>
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Continue to Momentum & Factor Models</div>
+        <div class="card-desc">Isolating persistent drivers of returns.</div>
+        <div class="card-link">Open the lesson →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/GCE Square.png" alt="Growth Capital Group" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn">Learn</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/tools/calculator">Calculator</a>
+      <a href="/tools/data-visualisation">Data Visualisation</a>
+      <a href="/arena">Arena</a>
+      <a href="/alpha">Alpha</a>
+      <a href="/partners">Partners</a>
+      <a href="/company">Company</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Group. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+
+const Z_PRESETS = {
+  overbought: { price: 115, mean: 100, stddev: 5, threshold: 2 },
+  neutral: { price: 101, mean: 100, stddev: 5, threshold: 2 },
+  oversold: { price: 82, mean: 100, stddev: 5, threshold: 2 },
+};
+function loadZPreset(kind) {
+  const p = Z_PRESETS[kind];
+  document.getElementById('zPrice').value = p.price;
+  document.getElementById('zMean').value = p.mean;
+  document.getElementById('zStdDev').value = p.stddev;
+  document.getElementById('zThreshold').value = p.threshold;
+  calcZScore();
+}
+
+function calcZScore() {
+  const price = parseFloat(document.getElementById('zPrice').value);
+  const mean = parseFloat(document.getElementById('zMean').value);
+  const stddev = parseFloat(document.getElementById('zStdDev').value);
+  const threshold = parseFloat(document.getElementById('zThreshold').value);
+  if ([price, mean, stddev, threshold].some(isNaN) || stddev <= 0 || threshold <= 0) {
+    alert('Please enter valid values (standard deviation and threshold must be positive).');
+    return;
+  }
+
+  const distance = price - mean;
+  const zScore = distance / stddev;
+
+  document.getElementById('zDistance').textContent = (distance >= 0 ? '+' : '') + '$' + distance.toFixed(2);
+  document.getElementById('zScoreVal').textContent = (zScore >= 0 ? '+' : '') + zScore.toFixed(2);
+  document.getElementById('zVsThreshold').textContent = Math.abs(zScore).toFixed(2) + ' / ' + threshold.toFixed(2);
+
+  const callout = document.getElementById('zCallout');
+  if (Math.abs(zScore) >= threshold) {
+    callout.className = 'calc-callout warn';
+    const direction = zScore > 0 ? 'above' : 'below';
+    const signal = zScore > 0 ? 'Fade / Sell Zone' : 'Fade / Buy Zone';
+    callout.innerHTML = `<span class="verdict">⚠️ ${signal}</span>At ${zScore.toFixed(2)}, the price is ${direction} its ±${threshold.toFixed(1)} signal threshold — a statistically stretched level some mean-reversion rules would flag, illustrative only.`;
+  } else {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Within Normal Range</span>At ${zScore.toFixed(2)}, the price sits inside the ±${threshold.toFixed(1)} threshold — no mean-reversion signal under this rule.`;
+  }
+}
+calcZScore();
+
+function checkQuiz() {
+  const questions = document.querySelectorAll('.quiz-q');
+  let score = 0;
+  let allAnswered = true;
+  questions.forEach(q => {
+    const name = q.querySelector('input[type="radio"]').name;
+    const selected = q.querySelector('input[name="' + name + '"]:checked');
+    const correct = q.dataset.correct;
+    const opts = q.querySelectorAll('.quiz-opt');
+    opts.forEach(o => o.classList.remove('correct', 'incorrect'));
+    if (!selected) { allAnswered = false; return; }
+    const selectedOpt = selected.closest('.quiz-opt');
+    if (selected.value === correct) {
+      score++;
+      selectedOpt.classList.add('correct');
+    } else {
+      selectedOpt.classList.add('incorrect');
+      const correctOpt = q.querySelector('input[value="' + correct + '"]').closest('.quiz-opt');
+      correctOpt.classList.add('correct');
+    }
+    q.querySelector('.quiz-explain').classList.add('visible');
+  });
+  if (!allAnswered) {
+    alert('Please answer all 5 questions before checking.');
+    return;
+  }
+  const scoreBox = document.getElementById('quizScore');
+  document.getElementById('quizScoreNum').textContent = score + '/5';
+  scoreBox.classList.add('visible');
+  scoreBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+(async function checkAuth() {
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated && data.username) {
+        const signIn = document.getElementById('navSignIn');
+        if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+        if (data.alpha_role) {
+          const studioLink = document.getElementById('navStudioLi');
+          if (studioLink) studioLink.style.display = '';
+          if (['tom', 'gary'].includes(data.alpha_role)) {
+            const datavizStudioLi = document.getElementById('navDatavizStudioLi');
+            if (datavizStudioLi) datavizStudioLi.style.display = '';
+          }
+        }
+      }
+    }
+  } catch {}
+})();
+function toggleMobileNav() {
+  const links = document.querySelector('.nav-links');
+  const btn = document.getElementById('navHamburger');
+  const isOpen = links.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) {
+    document.querySelector('.nav-links').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('active');
+    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
+  }
+});
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('gcg-theme', next);
+  updateToggleIcon(next);
+}
+function updateToggleIcon(theme) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+updateToggleIcon(_initialTheme);
+</script>
+</body>
+</html>

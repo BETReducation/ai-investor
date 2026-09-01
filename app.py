@@ -143,6 +143,7 @@ LESSON_PAGES = [
     {"slug": "rebalancing", "level": "intermediate", "file": "lesson-rebalancing.html", "title": "Rebalancing"},
     {"slug": "position-sizing", "level": "intermediate", "file": "lesson-position-sizing.html", "title": "Position Sizing"},
     {"slug": "time-horizon", "level": "intermediate", "file": "lesson-time-horizon.html", "title": "Time Horizon & Risk Tolerance"},
+    {"slug": "mean-reversion", "level": "pro", "file": "lesson-mean-reversion.html", "title": "Mean Reversion"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
@@ -2646,6 +2647,9 @@ def learn_intermediate(): return send_from_directory("static", "learn-intermedia
 @app.route("/learn/pro")
 def learn_pro(): return send_from_directory("static", "learn-pro.html")
 
+@app.route("/learn/guest-lessons")
+def learn_guest_lessons(): return send_from_directory("static", "guest-lessons.html")
+
 @app.route("/learn/tools")
 def learn_tools(): return send_from_directory("static", "learn-tools.html")
 
@@ -3039,7 +3043,7 @@ def load_preferences():
 
 LANDING_PAGE_CHOICES = {
     "/",
-    "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/tools",
+    "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/guest-lessons", "/learn/tools",
     "/tools", "/tools/signals", "/backtester", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
@@ -3772,6 +3776,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
     {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},
     {"title": "Learn — Pro", "url": "/learn/pro", "sub": "Lesson hub"},
+    {"title": "Learn — Guest Lessons", "url": "/learn/guest-lessons", "sub": "Lessons from outside contributors"},
     {"title": "Learn — Tools", "url": "/learn/tools", "sub": "How to use each tool"},
     {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
     {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},

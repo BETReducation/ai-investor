@@ -45,6 +45,7 @@
 '        <li><a href="/learn/beginner">Beginner</a></li>' +
 '        <li><a href="/learn/intermediate">Intermediate</a></li>' +
 '        <li><a href="/learn/pro">Pro</a></li>' +
+'        <li><a href="/learn/guest-lessons">Guest Lessons</a></li>' +
 '        <li><a href="/learn/tools">Tools</a></li>' +
 '      </ul>' +
 '    </li>' +
