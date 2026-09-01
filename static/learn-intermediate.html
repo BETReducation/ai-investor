@@ -79,6 +79,20 @@
 [data-theme="light"] .tab-btn.active { background: #a78bfa; border-color: #a78bfa; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: fadeUp 0.4s ease both; }
+.term-accordion { display: flex; flex-direction: column; gap: 14px; max-width: 820px; margin: 0 auto; }
+.term-item { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.25s; }
+.term-item[open] { border-color: var(--border2); }
+.term-summary { list-style: none; cursor: pointer; padding: 22px 24px; display: flex; align-items: center; gap: 18px; }
+.term-summary::-webkit-details-marker { display: none; }
+.term-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: var(--purple2); }
+.term-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; color: var(--text); flex: 1; }
+.term-chevron { flex-shrink: 0; color: var(--muted); font-size: 12px; transition: transform 0.25s; }
+.term-item[open] .term-chevron { transform: rotate(180deg); }
+.term-body { padding: 0 24px 24px 82px; }
+.term-def { font-size: 14.5px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.term-example { background: rgba(124,58,237,0.06); border-left: 3px solid var(--purple2); padding: 12px 16px; border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--text); line-height: 1.65; }
+.term-example b { color: var(--purple2); }
+@media (max-width: 600px) { .term-body { padding-left: 24px; } }
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -274,52 +288,118 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="tab-panel" id="tab-terms">
       <h2 class="section-title">Key Terminology</h2>
-      <p class="section-desc">The vocabulary that separates casual investors from people who actually understand what they own.</p>
-      <div class="lesson-list">
-        <div class="lesson-item">
-          <div class="lesson-num">1</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">🎯</span><span class="lesson-title">Alpha & Beta — Skill vs Market Exposure</span></div>
-            <p class="lesson-desc">Beta measures how much an investment moves with the overall market; alpha measures the extra return earned above what beta alone would predict. Alpha is what separates genuine skill (or luck) from just riding the market.</p>
-            <span class="benefit-tag">Know whether you're beating the market, or just in it</span>
+      <p class="section-desc">10 terms that separate casual investors from people who actually understand what they own — click any one to expand it, with a plain-English definition and a real example.</p>
+      <div class="term-accordion reveal">
+        <details class="term-item" open>
+          <summary class="term-summary">
+            <div class="term-num">1</div>
+            <span class="term-title">Alpha & Beta — Skill vs Market Exposure</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Beta measures how much an investment moves with the overall market; alpha measures the extra return earned above what beta alone would predict. Alpha is what separates genuine skill (or luck) from just riding the market.</p>
+            <div class="term-example"><b>Example:</b> A fund that returns 12% in a year the market returns 10%, with a beta of 1.0, has generated 2% of alpha — it beat the market by more than its market exposure alone would explain.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">2</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">📐</span><span class="lesson-title">Sharpe Ratio — Return Per Unit of Risk</span></div>
-            <p class="lesson-desc">Two portfolios can have the same return but very different levels of risk taken to get there. The Sharpe ratio divides return by volatility, giving you a single number to compare how efficiently different strategies generate their gains.</p>
-            <span class="benefit-tag">Compare strategies on a level playing field</span>
-            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">2</div>
+            <span class="term-title">Sharpe Ratio — Return Per Unit of Risk</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Two portfolios can have the same return but very different levels of risk taken to get there. The Sharpe ratio divides excess return by volatility, giving you a single number to compare how efficiently different strategies generate their gains. Builds on: Volatility (Beginner).</p>
+            <div class="term-example"><b>Example:</b> Strategy A returns 15%/year with big swings (Sharpe 0.6); Strategy B returns 11%/year much more smoothly (Sharpe 1.1). B is the more efficient strategy per unit of risk taken, even with the lower headline return.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">3</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">📉</span><span class="lesson-title">Drawdown — Measuring the Pain, Not Just the Gain</span></div>
-            <p class="lesson-desc">Maximum drawdown is the largest drop from a peak to a trough your portfolio experienced. A strategy with great average returns but brutal drawdowns can be harder to stick with than a steadier one with slightly lower returns.</p>
-            <span class="benefit-tag">Understand the ride, not just the destination</span>
-            <span class="builds-on-tag">Builds on: Volatility (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">3</div>
+            <span class="term-title">Drawdown — Measuring the Pain, Not Just the Gain</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Maximum drawdown is the largest drop from a peak to a trough your portfolio experienced. A strategy with great average returns but brutal drawdowns can be harder to stick with than a steadier one with slightly lower returns. Builds on: Volatility (Beginner).</p>
+            <div class="term-example"><b>Example:</b> The S&amp;P 500's maximum drawdown during the 2007-09 financial crisis was roughly -57% from peak to trough — even long-term index investors had to sit through that before recovering.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">4</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">💧</span><span class="lesson-title">Liquidity — How Fast Can You Get Your Money Out?</span></div>
-            <p class="lesson-desc">Liquidity describes how quickly and cheaply an asset can be bought or sold without moving its price. Highly liquid assets like large-cap stocks are easy to exit; less liquid assets like small caps or property can trap your capital when you need it most.</p>
-            <span class="benefit-tag">Know how quickly your money can move if plans change</span>
-            <span class="builds-on-tag">Builds on: Cash & Cash Equivalents (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">4</div>
+            <span class="term-title">Liquidity — How Fast Can You Get Your Money Out?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Liquidity describes how quickly and cheaply an asset can be bought or sold without moving its price. Highly liquid assets like large-cap stocks are easy to exit; less liquid assets like small caps or property can trap your capital when you need it most. Builds on: Cash & Cash Equivalents (Beginner).</p>
+            <div class="term-example"><b>Example:</b> Selling $10,000 of a large-cap stock barely moves its price. Selling $10,000 of a thinly-traded micro-cap stock, or a property, can take days or weeks and may require accepting a worse price to exit quickly.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">5</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-icon">🛡️</span><span class="lesson-title">Hedging — Insuring Your Portfolio Against the Unexpected</span></div>
-            <p class="lesson-desc">Hedging means taking a position specifically designed to offset losses elsewhere in your portfolio — like holding some bonds or gold alongside stocks. It typically costs some return in exchange for smoother, more predictable outcomes.</p>
-            <span class="benefit-tag">Trade a little upside for a lot less downside surprise</span>
-            <span class="builds-on-tag">Builds on: Bonds (Beginner)</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">5</div>
+            <span class="term-title">Hedging — Insuring Your Portfolio Against the Unexpected</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Hedging means taking a position specifically designed to offset losses elsewhere in your portfolio — like holding some bonds or gold alongside stocks. It typically costs some return in exchange for smoother, more predictable outcomes. Builds on: Bonds (Beginner).</p>
+            <div class="term-example"><b>Example:</b> An investor holding mostly stocks adds a gold allocation. In a sharp stock sell-off, gold often holds its value or rises, cushioning the overall portfolio's drawdown.</div>
           </div>
-        </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">6</div>
+            <span class="term-title">Correlation — Do Your Holdings Actually Move Together?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Correlation measures how closely two assets' prices move in relation to each other, from -1 (perfectly opposite) to +1 (perfectly in lockstep). Diversification only genuinely reduces risk when the assets you're combining have low or negative correlation to each other.</p>
+            <div class="term-example"><b>Example:</b> Holding 10 different tech stocks feels diversified, but they're often highly correlated (0.7+) — they tend to fall together in a tech sell-off. Adding bonds or gold, with low correlation to stocks, does more to smooth the ride.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">7</div>
+            <span class="term-title">Rebalancing — Keeping Your Allocation on Target</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Rebalancing means periodically buying or selling holdings to bring your portfolio back to its target allocation, after market moves have drifted it away. It forces a disciplined "sell high, buy low" habit rather than letting winners silently grow into an oversized risk.</p>
+            <div class="term-example"><b>Example:</b> A 60/40 stocks/bonds portfolio can drift to 70/30 after a strong stock rally. Rebalancing means selling some stocks and buying bonds to get back to 60/40 — trimming the winner, topping up the laggard.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">8</div>
+            <span class="term-title">Yield Curve — What the Bond Market Thinks Is Coming</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">The yield curve plots interest rates across bonds of different maturities, from short-term to long-term. Normally longer-term bonds pay more. When it "inverts" — short-term rates pay more than long-term — it has historically been a widely watched early-warning signal for recessions.</p>
+            <div class="term-example"><b>Example:</b> The 2-year/10-year Treasury yield curve inverted in mid-2022, ahead of widespread recession discussion in 2023 — a textbook case of the market pricing in a coming slowdown.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">9</div>
+            <span class="term-title">P/E Ratio — Is a Stock Expensive or Cheap?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">The price-to-earnings ratio divides a company's share price by its earnings per share, giving a rough sense of how much investors are paying for each dollar of profit. A high P/E can mean high growth expectations — or an overpriced stock; a low P/E can mean a bargain — or a company in trouble.</p>
+            <div class="term-example"><b>Example:</b> A stock trading at $100/share with $5 of annual earnings per share has a P/E of 20 — investors are paying $20 for every $1 of current profit, a bet that earnings will keep growing.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">10</div>
+            <span class="term-title">Asset Allocation vs Security Selection</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Asset allocation is the split between broad categories (stocks, bonds, cash, etc.); security selection is picking specific investments within each category. Research consistently shows allocation drives the large majority of long-term portfolio returns and risk — far more than which individual stocks you pick.</p>
+            <div class="term-example"><b>Example:</b> Two investors both pick "good" individual stocks, but one holds 90% stocks and one holds 40% stocks/60% bonds. Their allocation difference will dominate their outcomes far more than their individual stock picks did.</div>
+          </div>
+        </details>
       </div>
       <div class="fine-print">
         <b>Worth knowing:</b> the Pro track builds directly on these concepts with options, macro analysis, and advanced portfolio construction. Bookmark this page as a quick refresher.
