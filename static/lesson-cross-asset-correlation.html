@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Currency Markets & Capital Flows — Pro — Growth Capital Group</title>
+<title>Cross-Asset Correlation — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -80,8 +80,8 @@ p.body-text b { color: var(--text); }
 .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
-.calc-field input:focus { border-color: var(--teal); }
+.calc-field input, .calc-field select { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus, .calc-field select:focus { border-color: var(--teal); }
 .calc-btn { background: var(--teal); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-macro">Learn / Pro / Macro & Cross-Asset Analysis</a> / 3 of 5</div>
-    <h1 class="hero-title">Currency Markets & Capital <span class="accent">Flows</span></h1>
-    <p class="hero-sub">Currencies move on interest rate differentials, trade balances, and where global capital is chasing the best risk-adjusted returns. A strengthening or weakening currency quietly reshapes the earnings of every multinational company you might own.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-macro">Learn / Pro / Macro & Cross-Asset Analysis</a> / 4 of 5</div>
+    <h1 class="hero-title">Cross-Asset Correlation — When Everything Moves <span class="accent">Together</span></h1>
+    <p class="hero-sub">In calm markets, stocks, bonds, and commodities often move independently — offering real diversification. In a crisis, correlations frequently spike toward 1, and previously "diversified" portfolios fall together. Knowing when and why this happens is critical to real risk management.</p>
   </div>
 </div>
 
@@ -158,74 +158,75 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Where the World's Capital Chases Return</h2>
-    <p class="body-text">A currency's exchange rate is, at its core, a relative price — how much of one currency it takes to buy another. That relative price moves as global capital flows toward whichever country offers the best risk-adjusted return at the time. The single biggest driver, tying directly back to the previous two lessons in this track, is the <b>interest rate differential</b>: when one country's central bank offers meaningfully higher rates than another's, capital tends to flow toward the higher-yielding currency to capture that difference, pushing its value up (all else equal).</p>
-    <p class="body-text">A country's <b>trade balance</b> — exports minus imports — also matters. A country running a large trade surplus (exporting more than it imports) generates steady foreign demand for its currency, as foreign buyers need it to pay for those exports. A persistent trade deficit works in the opposite direction, creating a steady source of selling pressure on the currency over time.</p>
-    <p class="body-text">Currency moves aren't just a forex-trading concern — they quietly reshape corporate earnings. A company that sells heavily overseas but reports in its home currency sees its foreign revenue translate into fewer home-currency dollars when its home currency strengthens (a stronger currency makes exports more expensive for foreign buyers, and shrinks reported overseas earnings on translation) — and the reverse when it weakens. This is why large multinational companies routinely flag currency effects explicitly in their earnings reports.</p>
+    <h2 class="section-title">Diversification Isn't a Constant</h2>
+    <p class="body-text">The Intermediate <a href="/learn/intermediate/correlation">Correlation</a> lesson covered how correlation measures whether two assets move together — from -1 (perfectly opposite) to +1 (perfectly in lockstep). This lesson extends that same idea across the whole macro picture: stocks, bonds, currencies, and commodities each have their own typical correlation relationships, and — critically — those relationships aren't fixed. They shift depending on the market <b>regime</b> (a concept from the Regime Detection lesson in the Quantitative Strategy Design track).</p>
+    <p class="body-text">In calm, "normal" markets, stocks and government bonds often show low or even negative correlation — when stocks fall, bonds frequently rally as investors seek safety, providing genuine diversification benefit. In a genuine <b>crisis</b> or liquidity event, this relationship can break down: a broad "risk-off" panic can cause investors to sell everything simultaneously — stocks, corporate bonds, even normally-safe assets — to raise cash, pushing correlations across many asset classes sharply toward +1 all at once.</p>
+    <p class="body-text">This is why cross-asset correlation is a genuine risk-management concern, not just an academic curiosity: a portfolio that looks well-diversified on paper, based on calm-market correlation history, can behave far more like a single concentrated bet exactly when a crisis hits — precisely the moment diversification is needed most. Understanding this dynamic is central to realistic portfolio risk assessment at the macro level.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Interest Rate Differentials and Currency Direction</h3>
-      <p class="body-text">Three hypothetical scenarios showing how a widening or narrowing interest rate gap between two countries has historically tended to relate to currency direction, all else equal.</p>
+      <h3>⚖️ Illustrative Example: Correlation Across Two Regimes</h3>
+      <p class="body-text">Hypothetical pairwise correlations between major asset classes, in a calm regime versus a crisis regime.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Scenario</th><th>Country A Rate</th><th>Country B Rate</th><th>Rate Differential</th><th>Typical Currency A Direction</th></tr>
+            <tr><th>Asset Pair</th><th>Calm-Regime Correlation</th><th>Crisis-Regime Correlation</th></tr>
           </thead>
           <tbody>
-            <tr><td>Wide Gap Favoring A</td><td>5.5%</td><td>1.0%</td><td>+4.5 pts</td><td>Tends to Strengthen</td></tr>
-            <tr class="highlight-row"><td>Narrow Gap</td><td>3.0%</td><td>2.5%</td><td>+0.5 pts</td><td>Modest or Mixed</td></tr>
-            <tr><td>Gap Reverses</td><td>2.0%</td><td>4.5%</td><td>-2.5 pts</td><td>Tends to Weaken</td></tr>
+            <tr><td>Stocks vs. Government Bonds</td><td>-0.30</td><td>+0.55</td></tr>
+            <tr class="highlight-row"><td>Stocks vs. Corporate Bonds</td><td>+0.40</td><td>+0.85</td></tr>
+            <tr><td>Stocks vs. Commodities</td><td>+0.15</td><td>+0.60</td></tr>
+            <tr class="highlight-row"><td>Stocks vs. Safe-Haven Currency</td><td>-0.20</td><td>-0.65</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">All else equal, a widening rate advantage for Country A has historically tended to attract capital toward Country A's currency; a reversal tends to reverse the flow — though real currency moves reflect many factors simultaneously, not interest rates in isolation.</p>
+      <p class="stmt-note">Notice that most pairs move toward +1 in the crisis regime (correlations rising, diversification weakening) — except the safe-haven currency, whose negative correlation to stocks actually strengthens in a crisis, which is exactly what makes it valuable as a hedge (previewed in the Spreads & Hedging lesson) when it's needed most.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Currency Markets</h3>
+    <h3 class="subhead">5 Things to Know About Cross-Asset Correlation</h3>
     <ol class="num-checklist">
-      <li><b>Interest rate differentials are a major driver, not the only one</b> — trade balances, risk sentiment, and capital flows all interact simultaneously.</li>
-      <li><b>Currencies affect multinational earnings both ways</b> — a stronger home currency can hurt reported overseas earnings on translation, and vice versa.</li>
-      <li><b>"Risk-on" and "risk-off" sentiment moves currencies too</b> — some currencies (like the US dollar, Japanese yen, and Swiss franc) are often sought as havens during market stress, regardless of interest rate differentials at that moment.</li>
-      <li><b>Central bank divergence (from the earlier lessons) is a direct currency driver</b> — one country cutting while another holds or hikes widens the differential and often the currency move.</li>
-      <li><b>Currency markets are enormous and trade nearly 24 hours a day</b> — among the most liquid markets in the world, which shapes how quickly new information gets priced in.</li>
+      <li><b>Correlations are regime-dependent, not fixed</b> — a relationship measured in calm markets can reverse or intensify during stress.</li>
+      <li><b>Most assets correlate upward in a crisis</b> — a broad "sell everything" dynamic tends to push correlations toward +1 across many pairs at once.</li>
+      <li><b>Not every asset behaves the same way in a crisis</b> — a small number of assets (like certain safe-haven currencies or gold, previewed in the next lesson) can maintain or even strengthen negative correlation.</li>
+      <li><b>Historical correlation is a guide, not a guarantee</b> — the exact correlation values shift over time and across different crisis types.</li>
+      <li><b>This is why stress-testing matters (from Regime Detection)</b> — a portfolio should be evaluated under both calm and crisis correlation assumptions, not just one.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading Currency Moves</h3>
+    <h3 class="subhead">4 Things to Check When Assessing Cross-Asset Risk</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🏦 Compare the Two Central Banks</h4>
+        <h4>🌡️ Check Correlations Across Regimes</h4>
         <ul>
-          <li>Check both countries' current rates and, importantly, expected future rate paths, not just today's level.</li>
+          <li>Look at both calm-period and stress-period correlation history, not just one snapshot.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📦 Check the Trade Balance Trend</h4>
+        <h4>🔎 Identify Genuine Crisis Diversifiers</h4>
         <ul>
-          <li>A persistent, widening deficit or surplus can be a slower-moving but real structural driver.</li>
+          <li>Look specifically for assets that have historically held up or strengthened their diversification benefit under stress.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>😰 Consider Risk Sentiment</h4>
+        <h4>🧪 Stress-Test the Full Portfolio</h4>
         <ul>
-          <li>In a broad market sell-off, safe-haven currency flows can temporarily override interest rate logic.</li>
+          <li>Model the portfolio under a crisis-correlation scenario, not just calm-market assumptions.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🌍 Check a Multinational's Currency Exposure</h4>
+        <h4>🔗 Track Cross-Asset Signals for Regime Shifts</h4>
         <ul>
-          <li>Before assuming a currency move is irrelevant to a stock, check how much of that company's revenue comes from overseas.</li>
+          <li>Rising correlation across asset classes can itself be an early sign the regime is shifting toward stress.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/central-bank-policy">Central Bank Policy</a> and <a href="/learn/pro/yield-curve">The Yield Curve</a> (previous in this track) cover the rate dynamics that drive much of currency direction. <a href="/learn/pro#tab-macro">Cross-Asset Correlation</a> (next) shows how currencies fit into the broader picture of assets moving together or apart.
+      🧮 <b>Related lessons:</b> <a href="/learn/intermediate/correlation">Correlation</a> (Intermediate) and <a href="/learn/pro/regime-detection">Regime Detection</a> (Pro) cover the underlying concepts this lesson combines. <a href="/learn/pro#tab-macro">Commodities & Safe Havens</a> (next, and final, in this track) explores the specific assets that have historically diversified best during exactly this kind of stress.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains currency market mechanics using illustrative numbers and historical framing — it isn't personalized financial advice, and no direction or level described here is a recommendation to trade. Currency markets are influenced by many simultaneous factors and are never fully predictable. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains cross-asset correlation dynamics using illustrative numbers and historical framing — it isn't personalized financial advice, and no correlation value or diversification claim described here is a recommendation for your own portfolio. Correlations shift over time and across different crises, and no asset is guaranteed to behave the same way in every future stress event. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -234,50 +235,45 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Currency Translation Impact Estimator</h2>
-    <p class="section-desc">Enter a company's overseas revenue share and a hypothetical currency move — see the estimated effect on total reported revenue from translation alone.</p>
+    <h2 class="section-title">Try It Yourself: Regime-Shift Diversification Calculator</h2>
+    <p class="section-desc">Enter a two-asset portfolio split and its correlation under calm and crisis regimes — see how the estimated portfolio volatility changes.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadFxPreset('strengthen')">Load Currency Strengthens</button>
-        <button class="preset-btn" onclick="loadFxPreset('weaken')">Load Currency Weakens</button>
-        <button class="preset-btn" onclick="loadFxPreset('domestic')">Load Mostly Domestic Company</button>
+        <button class="preset-btn" onclick="loadCorrPreset('typical')">Load Typical Stock/Bond Mix</button>
+        <button class="preset-btn" onclick="loadCorrPreset('havenHeavy')">Load Safe-Haven-Heavy Mix</button>
+        <button class="preset-btn" onclick="loadCorrPreset('correlated')">Load Already-Correlated Mix</button>
       </div>
       <div class="calc-grid">
-        <div class="calc-field">
-          <label for="fxTotalRevenue">Total Reported Revenue ($M)</label>
-          <input type="number" id="fxTotalRevenue" value="1000" step="10" min="1">
-        </div>
-        <div class="calc-field">
-          <label for="fxOverseasShare">Overseas Revenue Share (%)</label>
-          <input type="number" id="fxOverseasShare" value="60" step="1" min="0" max="100">
-        </div>
-        <div class="calc-field">
-          <label for="fxCurrencyMove">Home Currency Move (%)</label>
-          <input type="number" id="fxCurrencyMove" value="8" step="0.5">
-        </div>
+        <div class="calc-field"><label>Asset A Weight (%)</label><input type="number" id="rsWeightA" value="60" step="1" min="0" max="100"></div>
+        <div class="calc-field"><label>Asset A Volatility (%)</label><input type="number" id="rsVolA" value="16" step="0.5" min="0.1"></div>
+        <div class="calc-field"><label>Asset B Volatility (%)</label><input type="number" id="rsVolB" value="6" step="0.5" min="0.1"></div>
+        <div class="calc-field"><label>Calm-Regime Correlation</label><input type="number" id="rsCorrCalm" value="-0.3" step="0.05" min="-1" max="1"></div>
+      </div>
+      <div class="calc-grid" style="grid-template-columns:repeat(1,1fr);max-width:280px;">
+        <div class="calc-field"><label>Crisis-Regime Correlation</label><input type="number" id="rsCorrCrisis" value="0.55" step="0.05" min="-1" max="1"></div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcFxImpact()">Estimate Translation Impact →</button>
+        <button class="calc-btn" onclick="calcRegimeShift()">Compare Regimes →</button>
       </div>
 
-      <div class="calc-results visible" id="fxResults">
+      <div class="calc-results visible" id="rsResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Overseas Revenue ($M)</div>
-            <div class="mc-value" id="fxOverseasOut">—</div>
+            <div class="mc-label">Portfolio Vol. (Calm Regime)</div>
+            <div class="mc-value" id="rsVolCalm">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Est. Translation Impact ($M)</div>
-            <div class="mc-value" id="fxImpactOut">—</div>
+            <div class="mc-label">Portfolio Vol. (Crisis Regime)</div>
+            <div class="mc-value" id="rsVolCrisis">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Est. Total Revenue Impact</div>
-            <div class="mc-value" id="fxPctOut">—</div>
+            <div class="mc-label">% Increase in Vol.</div>
+            <div class="mc-value" id="rsVolIncrease">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="fxCallout"></div>
-        <p class="calc-note">Model: overseas revenue = total × overseas share. Translation impact ≈ overseas revenue × (−currency move %), since a stronger home currency reduces the home-currency value of foreign revenue when translated back. Illustrative only — ignores hedging, pricing power, and other offsetting effects.</p>
+        <div class="calc-callout" id="rsCallout"></div>
+        <p class="calc-note">Model: portfolio volatility = √(wA²σA² + wB²σB² + 2·wA·wB·ρ·σA·σB), the same two-asset formula from the Intermediate Correlation lesson, calculated once at each regime's correlation. Illustrative only.</p>
       </div>
     </div>
   </div>
@@ -297,58 +293,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is the biggest single driver of currency direction described in this lesson?</div>
+        <div class="quiz-q-title">1. What does this lesson mean by correlations being "regime-dependent"?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The number of tourists visiting a country</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The country's stock market index level</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The interest rate differential between two countries</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The price of gold</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Correlations are set by government regulation</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Correlations are the same in every market condition</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Correlation relationships between assets can shift depending on whether markets are calm or stressed</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Correlations only apply to cryptocurrency markets</label>
         </div>
-        <div class="quiz-explain">The interest rate differential — capital flowing toward whichever country offers a better rate — is described as the single biggest driver.</div>
+        <div class="quiz-explain">Correlation relationships aren't fixed — they shift depending on the market regime, calm versus crisis.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What does a large, persistent trade surplus tend to do to a country's currency?</div>
+        <div class="quiz-q-title">2. What typically happens to most cross-asset correlations during a genuine crisis?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Nothing — trade balances have no effect on currencies</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Generate steady foreign demand for the currency, supporting its value</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Automatically cause hyperinflation</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Force the central bank to cut interest rates to zero</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> They all drop to exactly zero</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> They tend to rise toward +1, as a broad sell-everything dynamic takes hold</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> They become impossible to measure</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> They reverse to become perfectly negative for every pair</label>
         </div>
-        <div class="quiz-explain">A trade surplus generates steady foreign demand for the currency, since foreign buyers need it to pay for those exports.</div>
+        <div class="quiz-explain">A broad "risk-off" panic tends to push correlations across many asset classes sharply toward +1 as investors sell everything to raise cash.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. In the illustrative example, what happened as the interest rate differential favoring Country A widened?</div>
+        <div class="quiz-q-title">3. In the illustrative example, what was notable about the safe-haven currency's correlation to stocks?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Country A's currency was guaranteed to collapse</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> The two countries' currencies became identical</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Nothing changed at all</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Country A's currency tended to strengthen, all else equal</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It became positive during the crisis, like most other pairs</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It stayed at exactly zero in both regimes</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It was impossible to calculate</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Its negative correlation to stocks actually strengthened during the crisis</label>
         </div>
-        <div class="quiz-explain">A wider rate advantage for Country A has historically tended to attract capital toward its currency, all else equal.</div>
+        <div class="quiz-explain">Unlike most other pairs, the safe-haven currency's negative correlation to stocks strengthened in the crisis regime, making it valuable as a hedge.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why does a stronger home currency tend to hurt a multinational's reported overseas earnings?</div>
+        <div class="quiz-q-title">4. Why is cross-asset correlation described as a real risk-management concern, not just an academic curiosity?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Foreign revenue translates into fewer home-currency units when the home currency strengthens</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> A stronger currency always increases foreign sales volume</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Currency moves have no effect on reported earnings</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Overseas earnings are never reported in the home currency</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> A portfolio that looks diversified based on calm-market history can behave like a concentrated bet exactly when a crisis hits</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Correlation has no real-world consequences for portfolios</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It only matters for academic research papers</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Correlation is purely a theoretical concept with no practical use</label>
         </div>
-        <div class="quiz-explain">When the home currency strengthens, each unit of foreign revenue converts back into fewer home-currency units on translation.</div>
+        <div class="quiz-explain">A portfolio diversified based on calm-market correlations can behave far more like a concentrated bet exactly when diversification is needed most.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What is "risk-off" safe-haven currency demand, according to this lesson?</div>
+        <div class="quiz-q-title">5. What does this lesson recommend when assessing a portfolio's risk?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> A rule that currencies never move during a crisis</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> A tax on foreign currency trading</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Demand for certain currencies (like the dollar, yen, or franc) during market stress, which can override interest rate logic</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> A type of central bank interest rate</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Only ever use calm-market correlation assumptions</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Ignore correlation entirely and focus only on individual asset returns</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Stress-test the portfolio under both calm and crisis correlation assumptions</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Assume all assets are always perfectly correlated</label>
         </div>
-        <div class="quiz-explain">Certain currencies are often sought as havens during market stress, which can temporarily override normal interest-rate-driven flows.</div>
+        <div class="quiz-explain">A portfolio should be evaluated under both calm and crisis correlation assumptions, not just one snapshot.</div>
       </div>
     </div>
 
@@ -365,22 +361,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/currency-markets-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/cross-asset-correlation-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the interest-rate-differential example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the calm-vs-crisis correlation example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/currency-markets-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/cross-asset-correlation-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to trace interest rate and trade balance effects on a hypothetical currency.</div>
+        <div class="dl-desc">Guided exercises to compare portfolio volatility under calm and crisis correlation assumptions.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/currency-markets-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/cross-asset-correlation-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore currency markets in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore cross-asset correlation in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -389,19 +385,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Cross-Asset Correlation</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now seen how rates, the yield curve, and currencies move on related forces. The next lesson zooms out further, to how stocks, bonds, currencies, and commodities move together or apart across market regimes.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Commodities & Safe Havens</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You now understand how correlations can shift and spike in a crisis. The final lesson in this track — and the whole Pro curriculum — looks at the specific assets that have historically diversified best when it matters most.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/yield-curve" class="hub-card">
-        <div class="card-icon">📉</div>
-        <div class="card-title">Back to The Yield Curve</div>
-        <div class="card-desc">Review the bond market's early warning system.</div>
+      <a href="/learn/pro/currency-markets" class="hub-card">
+        <div class="card-icon">💱</div>
+        <div class="card-title">Back to Currency Markets & Capital Flows</div>
+        <div class="card-desc">Review the hidden force behind global earnings.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/cross-asset-correlation" class="hub-card">
-        <div class="card-icon">🔗</div>
-        <div class="card-title">Continue to Cross-Asset Correlation</div>
-        <div class="card-desc">When everything moves together.</div>
+      <a href="/learn/pro#tab-macro" class="hub-card">
+        <div class="card-icon">🥇</div>
+        <div class="card-title">Continue to Commodities & Safe Havens</div>
+        <div class="card-desc">Gold, oil, and risk sentiment.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -434,42 +430,58 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const FX_PRESETS = {
-  strengthen: { total: 1000, share: 60, move: 8 },
-  weaken: { total: 1000, share: 60, move: -8 },
-  domestic: { total: 1000, share: 15, move: 8 },
+const CORR_PRESETS = {
+  typical: { weightA: 60, volA: 16, volB: 6, corrCalm: -0.3, corrCrisis: 0.55 },
+  havenHeavy: { weightA: 60, volA: 16, volB: 8, corrCalm: -0.2, corrCrisis: -0.65 },
+  correlated: { weightA: 60, volA: 16, volB: 12, corrCalm: 0.4, corrCrisis: 0.85 },
 };
-function loadFxPreset(kind) {
-  const p = FX_PRESETS[kind];
-  document.getElementById('fxTotalRevenue').value = p.total;
-  document.getElementById('fxOverseasShare').value = p.share;
-  document.getElementById('fxCurrencyMove').value = p.move;
-  calcFxImpact();
+function loadCorrPreset(kind) {
+  const p = CORR_PRESETS[kind];
+  document.getElementById('rsWeightA').value = p.weightA;
+  document.getElementById('rsVolA').value = p.volA;
+  document.getElementById('rsVolB').value = p.volB;
+  document.getElementById('rsCorrCalm').value = p.corrCalm;
+  document.getElementById('rsCorrCrisis').value = p.corrCrisis;
+  calcRegimeShift();
 }
 
-function calcFxImpact() {
-  const total = parseFloat(document.getElementById('fxTotalRevenue').value);
-  const share = parseFloat(document.getElementById('fxOverseasShare').value);
-  const move = parseFloat(document.getElementById('fxCurrencyMove').value);
-  if ([total, share, move].some(isNaN) || total <= 0 || share < 0 || share > 100) {
-    alert('Please enter valid values (revenue positive, overseas share 0-100).');
+function portfolioVol(wA, wB, volA, volB, corr) {
+  const varA = wA * wA * volA * volA;
+  const varB = wB * wB * volB * volB;
+  const covar = 2 * wA * wB * corr * volA * volB;
+  return Math.sqrt(Math.max(0, varA + varB + covar));
+}
+
+function calcRegimeShift() {
+  const weightAPct = parseFloat(document.getElementById('rsWeightA').value);
+  const volA = parseFloat(document.getElementById('rsVolA').value) / 100;
+  const volB = parseFloat(document.getElementById('rsVolB').value) / 100;
+  const corrCalm = parseFloat(document.getElementById('rsCorrCalm').value);
+  const corrCrisis = parseFloat(document.getElementById('rsCorrCrisis').value);
+  if ([weightAPct, volA, volB, corrCalm, corrCrisis].some(isNaN) || weightAPct < 0 || weightAPct > 100 || corrCalm < -1 || corrCalm > 1 || corrCrisis < -1 || corrCrisis > 1) {
+    alert('Please enter valid values (weight 0-100, correlations between -1 and 1).');
     return;
   }
 
-  const overseasRevenue = total * (share / 100);
-  const impact = overseasRevenue * (-move / 100);
-  const pctOfTotal = (impact / total) * 100;
+  const wA = weightAPct / 100;
+  const wB = 1 - wA;
+  const volCalm = portfolioVol(wA, wB, volA, volB, corrCalm) * 100;
+  const volCrisis = portfolioVol(wA, wB, volA, volB, corrCrisis) * 100;
+  const pctIncrease = volCalm > 0 ? ((volCrisis - volCalm) / volCalm) * 100 : 0;
 
-  document.getElementById('fxOverseasOut').textContent = '$' + overseasRevenue.toFixed(0) + 'M';
-  document.getElementById('fxImpactOut').textContent = (impact >= 0 ? '+$' : '-$') + Math.abs(impact).toFixed(0) + 'M';
-  document.getElementById('fxPctOut').textContent = (pctOfTotal >= 0 ? '+' : '') + pctOfTotal.toFixed(1) + '%';
+  document.getElementById('rsVolCalm').textContent = volCalm.toFixed(1) + '%';
+  document.getElementById('rsVolCrisis').textContent = volCrisis.toFixed(1) + '%';
+  document.getElementById('rsVolIncrease').textContent = (pctIncrease >= 0 ? '+' : '') + pctIncrease.toFixed(0) + '%';
 
-  const callout = document.getElementById('fxCallout');
-  callout.className = 'calc-callout' + (impact < 0 ? ' warn' : '');
-  const direction = move > 0 ? 'strengthened' : 'weakened';
-  callout.innerHTML = `<span class="verdict">${impact >= 0 ? '✓' : '⚠️'} Estimated Translation ${impact >= 0 ? 'Tailwind' : 'Headwind'}</span>With ${share.toFixed(0)}% of revenue overseas and the home currency having ${direction} ${Math.abs(move).toFixed(1)}%, reported revenue is estimated to shift by ${pctOfTotal >= 0 ? '+' : ''}${pctOfTotal.toFixed(1)}% from translation alone — illustrative only, real results depend on hedging and other factors.`;
+  const callout = document.getElementById('rsCallout');
+  callout.className = 'calc-callout' + (pctIncrease > 15 ? ' warn' : '');
+  if (pctIncrease > 15) {
+    callout.innerHTML = `<span class="verdict">⚠️ Diversification Weakens Sharply in Crisis</span>Estimated portfolio volatility rises from ${volCalm.toFixed(1)}% to ${volCrisis.toFixed(1)}% (${pctIncrease.toFixed(0)}%) as correlation shifts from ${corrCalm.toFixed(2)} to ${corrCrisis.toFixed(2)} — the diversification benefit largely disappears exactly when it's needed most.`;
+  } else {
+    callout.innerHTML = `<span class="verdict">✓ Diversification Holds Up Reasonably Well</span>Estimated portfolio volatility moves from ${volCalm.toFixed(1)}% to ${volCrisis.toFixed(1)}% (${pctIncrease.toFixed(0)}%) — a more modest shift, suggesting this mix retains more of its diversification benefit under stress.`;
+  }
 }
-calcFxImpact();
+calcRegimeShift();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');

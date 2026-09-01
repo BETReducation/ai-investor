@@ -156,6 +156,7 @@ LESSON_PAGES = [
     {"slug": "central-bank-policy", "level": "pro", "file": "lesson-central-bank-policy.html", "title": "Central Bank Policy"},
     {"slug": "yield-curve", "level": "pro", "file": "lesson-yield-curve.html", "title": "The Yield Curve"},
     {"slug": "currency-markets", "level": "pro", "file": "lesson-currency-markets.html", "title": "Currency Markets & Capital Flows"},
+    {"slug": "cross-asset-correlation", "level": "pro", "file": "lesson-cross-asset-correlation.html", "title": "Cross-Asset Correlation"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
