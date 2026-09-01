@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Correlation — Intermediate — Growth Capital Group</title>
+<title>Rebalancing — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,8 +63,6 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.corr-scale { display: flex; align-items: center; margin-top: 20px; border-radius: 10px; overflow: hidden; height: 34px; }
-.corr-scale-seg { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #03130f; }
 .stmt-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 16px; }
 .stmt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .stmt-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
@@ -75,7 +73,7 @@ p.body-text b { color: var(--text); }
 .stmt-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
 .stmt-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
-.calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
 .calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
@@ -88,7 +86,7 @@ p.body-text b { color: var(--text); }
 @media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; color: var(--purple2); }
+.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--purple2); }
 .calc-callout { margin-top: 0; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
 .calc-callout.warn { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
 .calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; display: block; margin-bottom: 6px; }
@@ -146,9 +144,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 2 of 5</div>
-    <h1 class="hero-title">Correlation — Why Owning 20 Stocks Isn't Always <span class="accent">Diversified</span></h1>
-    <p class="hero-sub">If your 20 holdings are all tech companies, they'll likely rise and fall together — that's not real diversification. True diversification comes from combining assets that don't move in lockstep.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 3 of 5</div>
+    <h1 class="hero-title">Rebalancing — Keeping Your Portfolio on <span class="accent">Target</span></h1>
+    <p class="hero-sub">Winners grow to take up more of your portfolio over time, quietly shifting your risk higher than intended. Rebalancing brings you back to your target mix and systematically locks in gains.</p>
   </div>
 </div>
 
@@ -156,79 +154,70 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Diversification Isn't About Counting Holdings</h2>
-    <p class="body-text">It's tempting to think "I own 20 different stocks, so I'm diversified." But diversification isn't about how many holdings you have — it's about how independently they move relative to each other. <b>Correlation</b> measures exactly that, on a scale from -1 to +1. A correlation of +1 means two assets move perfectly in lockstep; -1 means they move perfectly opposite each other; 0 means their movements are unrelated.</p>
-    <p class="body-text">Twenty tech stocks are typically <b>highly correlated</b> — when the sector rallies or sells off, most of them move together, because they share the same economic drivers (interest rates, sector sentiment, tech spending cycles). Owning 20 of them concentrates your risk in "whatever moves tech stocks" almost as much as owning just two or three would. Real diversification comes from combining assets with <b>low or negative correlation</b> — different sectors, different asset classes (stocks and bonds, for instance), or different geographies.</p>
-    <p class="body-text">The payoff of low correlation is genuine: when you blend two assets that don't move in lockstep, the combined portfolio's volatility can be <b>lower than a simple average</b> of the two individual volatilities — smoothing out the ride without necessarily sacrificing much expected return. That "free" risk reduction from combining imperfectly-correlated assets is one of the few things in investing sometimes called a "free lunch."</p>
+    <h2 class="section-title">Why Your Allocation Drifts Even If You Never Touch It</h2>
+    <p class="body-text">Say you build a 60/40 stocks/bonds portfolio. If stocks then rally hard while bonds stay flat, stocks will naturally grow to take up more than 60% of the total — not because you did anything, but simply because they grew faster. Left alone, your portfolio quietly drifts toward higher risk than you originally chose, exactly when a pullback would hurt the most.</p>
+    <p class="body-text"><b>Rebalancing</b> means periodically trimming the positions that have grown oversized and topping up the ones that have shrunk, to bring the mix back to target. Mechanically, that means selling some of what's gone up and buying some of what's lagged — a disciplined, systematic version of "sell high, buy low" that doesn't depend on predicting anything.</p>
+    <p class="body-text">There are two common approaches: <b>calendar-based</b> rebalancing (check and adjust on a fixed schedule, like annually) and <b>threshold-based</b> rebalancing (rebalance whenever an allocation drifts more than a set amount, like 5 percentage points, from target). Either works — what matters most is having a rule and actually following it, rather than rebalancing on gut feeling (which tends to mean never doing it, since it always feels wrong to sell what's been winning).</p>
 
     <div class="example-card">
-      <h3>🔀 The Correlation Scale</h3>
-      <div class="corr-scale">
-        <div class="corr-scale-seg" style="background:#f87171;">-1.0 (opposite)</div>
-        <div class="corr-scale-seg" style="background:#fbbf24;">0.0 (unrelated)</div>
-        <div class="corr-scale-seg" style="background:#4ade80;">+1.0 (lockstep)</div>
-      </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Twenty tech stocks typically cluster around +0.7 to +0.9 — close to the "lockstep" end. Stocks and long-term government bonds have often sat closer to 0 or even slightly negative over long periods, though this relationship isn't fixed and can shift, especially during periods of high inflation.</p>
-    </div>
-
-    <div class="example-card">
-      <h3>📊 Illustrative Example: 20 Tech Stocks vs a Mixed Portfolio</h3>
-      <p class="body-text">Real correlations vary by period and by the specific holdings, so here's a clean illustrative comparison to see the mechanics clearly.</p>
+      <h3>⚖️ Illustrative Example: A 60/40 Portfolio After a Stock Rally</h3>
+      <p class="body-text">Real portfolios don't come with round numbers, so here's a clean illustrative example to see the mechanics clearly.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Portfolio</th><th># Holdings</th><th>Avg. Correlation</th><th>Individual Volatility</th><th>Portfolio Volatility</th></tr>
+            <tr><th>Stage</th><th>Stocks Value</th><th>Bonds Value</th><th>Stocks %</th><th>Bonds %</th></tr>
           </thead>
           <tbody>
-            <tr><td>20 Tech Stocks</td><td>20</td><td>~0.80</td><td>~35%</td><td>~32%</td></tr>
-            <tr class="highlight-row"><td>Mixed (Stocks + Bonds + Gold)</td><td>20</td><td>~0.25</td><td>~35%</td><td>~19%</td></tr>
+            <tr><td>Starting Portfolio ($100,000)</td><td>$60,000</td><td>$40,000</td><td>60%</td><td>40%</td></tr>
+            <tr><td>After a Strong Stock Rally</td><td>$84,000</td><td>$42,000</td><td>67%</td><td>33%</td></tr>
+            <tr class="highlight-row"><td>After Rebalancing Back to 60/40</td><td>$75,600</td><td>$50,400</td><td>60%</td><td>40%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Both portfolios hold 20 positions with similar individual volatility — but the highly-correlated tech portfolio barely reduces overall volatility versus a single stock, while the mixed portfolio's lower average correlation cuts volatility by nearly half. Same number of holdings, dramatically different diversification benefit — purely because of correlation.</p>
+      <p class="stmt-note">After the rally, stocks quietly drifted from 60% to 67% of the portfolio — nobody chose that, it just happened. Rebalancing means selling $8,400 of stocks (locking in some of the gain) and buying $8,400 of bonds, bringing the mix back to the originally intended 60/40 split — a real, mechanical action, not a guess about where markets go next.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Correlation</h3>
+    <h3 class="subhead">5 Things to Know About Rebalancing</h3>
     <ol class="num-checklist">
-      <li><b>Number of holdings isn't the same as diversification</b> — 20 highly-correlated stocks provide far less risk reduction than a handful of genuinely different assets.</li>
-      <li><b>Correlation ranges from -1 to +1</b> — closer to 0 or negative is where real diversification benefit lives.</li>
-      <li><b>Combining low-correlation assets can reduce portfolio volatility below a simple average</b> — a genuine, not-quite-free benefit of diversification.</li>
-      <li><b>Correlations aren't fixed</b> — they can shift over time, and famously tend to rise during market crises, right when diversification is needed most.</li>
-      <li><b>Different sectors or asset classes usually beat different stocks in the same sector</b> — for genuine diversification benefit.</li>
+      <li><b>Drift happens automatically</b> — you don't need to do anything wrong for your allocation to shift; strong performers simply grow faster.</li>
+      <li><b>Rebalancing systematizes "sell high, buy low"</b> — you're trimming what's grown and topping up what's lagged, without needing to predict anything.</li>
+      <li><b>Calendar-based and threshold-based are both valid approaches</b> — the key is having a rule and sticking to it.</li>
+      <li><b>Rebalancing can have costs</b> — trading fees and potential tax consequences (in taxable accounts) mean it shouldn't be done excessively often.</li>
+      <li><b>It's emotionally uncomfortable by design</b> — selling your best performer to buy your worst one feels wrong in the moment, which is exactly why having a rule matters.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check for Real Diversification</h3>
+    <h3 class="subhead">4 Things to Check When Rebalancing</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🏭 Check Sector Spread</h4>
+        <h4>📅 Pick a Rule and Stick to It</h4>
         <ul>
-          <li>Are your holdings spread across genuinely different sectors, or clustered in one or two?</li>
+          <li>Calendar-based (e.g. annually) or threshold-based (e.g. 5pp drift) — either works if followed consistently.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🌍 Check Asset Class Spread</h4>
+        <h4>💰 Watch Trading Costs</h4>
         <ul>
-          <li>Stocks, bonds, cash, and alternatives each respond differently to the same economic conditions.</li>
+          <li>Frequent rebalancing can rack up fees and, in taxable accounts, trigger capital gains tax.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📉 Remember Correlations Can Rise in Crises</h4>
+        <h4>🎯 Use New Contributions First</h4>
         <ul>
-          <li>Don't assume historical correlation will hold exactly during the next major sell-off.</li>
+          <li>Directing new deposits toward underweight positions can rebalance without selling anything at all.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔢 Count Real Diversification, Not Just Ticker Count</h4>
+        <h4>🧠 Expect the Discomfort</h4>
         <ul>
-          <li>Ask what's actually driving each holding's returns, not just how many tickers you own.</li>
+          <li>If rebalancing doesn't feel a little uncomfortable, you're probably not actually doing it.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> correlation is estimated from historical data and can shift, especially in market stress. Treat correlation figures as a useful guide to structuring a portfolio, not a guaranteed, fixed relationship.
+      <b>Worth knowing:</b> rebalancing is a risk-management discipline, not a way to boost returns on its own — its main job is keeping your portfolio's risk level where you actually intended it, not chasing extra performance.
     </div>
   </div>
 </section>
@@ -237,46 +226,50 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Diversification Benefit Calculator</h2>
-    <p class="section-desc">Enter two assets' individual volatility and their correlation — see the blended volatility of an equal-weight combination, and how much diversification actually helped.</p>
+    <h2 class="section-title">Try It Yourself: Rebalancing Calculator</h2>
+    <p class="section-desc">Enter your current stocks/bonds values and target allocation — see exactly how much to buy and sell to get back on target.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadCorrPreset('highCorr')">Load High Correlation (Two Tech Stocks)</button>
-        <button class="preset-btn" onclick="loadCorrPreset('lowCorr')">Load Low Correlation (Stocks + Bonds)</button>
-        <button class="preset-btn" onclick="loadCorrPreset('negCorr')">Load Negative Correlation Example</button>
+        <button class="preset-btn" onclick="loadRebalPreset('afterRally')">Load After a Stock Rally</button>
+        <button class="preset-btn" onclick="loadRebalPreset('afterCrash')">Load After a Stock Crash</button>
+        <button class="preset-btn" onclick="loadRebalPreset('onTarget')">Load Already On Target</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="corrVolA">Asset A Volatility (%)</label>
-          <input type="number" id="corrVolA" value="35" step="0.5">
+          <label for="rebalStocksVal">Current Stocks Value ($)</label>
+          <input type="number" id="rebalStocksVal" value="84000" step="100">
         </div>
         <div class="calc-field">
-          <label for="corrVolB">Asset B Volatility (%)</label>
-          <input type="number" id="corrVolB" value="35" step="0.5">
+          <label for="rebalBondsVal">Current Bonds Value ($)</label>
+          <input type="number" id="rebalBondsVal" value="42000" step="100">
         </div>
         <div class="calc-field">
-          <label for="corrCoef">Correlation (-1 to +1)</label>
-          <input type="number" id="corrCoef" value="0.8" step="0.05" min="-1" max="1">
+          <label for="rebalTargetStocks">Target Stocks (%)</label>
+          <input type="number" id="rebalTargetStocks" value="60" step="1" min="0" max="100">
+        </div>
+        <div class="calc-field">
+          <label for="rebalTargetBonds">Target Bonds (%)</label>
+          <input type="number" id="rebalTargetBonds" value="40" step="1" min="0" max="100">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcCorrelation()">Calculate Blended Volatility →</button>
+        <button class="calc-btn" onclick="calcRebalance()">Calculate Rebalance →</button>
       </div>
 
-      <div class="calc-results visible" id="corrResults">
+      <div class="calc-results visible" id="rebalResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Simple Average Volatility</div>
-            <div class="mc-value" id="corrSimpleAvg">—</div>
+            <div class="mc-label">Current Stocks Weight</div>
+            <div class="mc-value" id="rebalCurrentPct">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Actual Blended Volatility</div>
-            <div class="mc-value" id="corrBlended">—</div>
+            <div class="mc-label">Drift From Target</div>
+            <div class="mc-value" id="rebalDrift">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="corrCallout"></div>
-        <p class="calc-note">Model: equal-weight (50/50) blend. Portfolio volatility = √(0.25×σA² + 0.25×σB² + 0.5×ρ×σA×σB) — the standard two-asset portfolio variance formula. Lower correlation (ρ) means more of the individual volatility "cancels out" in the blend.</p>
+        <div class="calc-callout" id="rebalCallout"></div>
+        <p class="calc-note">Model: current weight = stocks value ÷ total portfolio value. To rebalance, move (current weight − target weight) × total portfolio value from the overweight asset to the underweight one.</p>
       </div>
     </div>
   </div>
@@ -296,58 +289,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What does correlation measure?</div>
+        <div class="quiz-q-title">1. Why does a portfolio's allocation drift even if you never trade?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The total number of holdings in a portfolio</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A company's dividend yield</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> How closely two assets' prices move in relation to each other</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A stock's price-to-earnings ratio</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> It doesn't — allocations stay fixed unless you actively change them</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Because brokers automatically change your holdings</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Because different assets grow at different rates, shifting their share of the total</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Because of currency exchange rates only</label>
         </div>
-        <div class="quiz-explain">Correlation ranges from -1 to +1 and measures how closely two assets move together (or apart).</div>
-      </div>
-
-      <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">2. Why might 20 tech stocks not provide much real diversification?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because tech stocks are always a bad investment</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because 20 is not enough holdings</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because tech stocks never make money</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because they tend to be highly correlated, moving together on shared economic drivers</label>
-        </div>
-        <div class="quiz-explain">High correlation among tech stocks means they concentrate risk in shared drivers, even with many holdings.</div>
+        <div class="quiz-explain">Stronger-performing assets naturally grow to take up a larger share of the portfolio over time, even with no trading at all.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">3. What is the range of possible correlation values?</div>
+        <div class="quiz-q-title">2. What does rebalancing mechanically involve?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> 0 to 100</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> -1 to +1</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> -100 to +100</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> 0 to 1 only, it can never be negative</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Buying more of whatever has performed best recently</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Trimming positions that have grown oversized and topping up ones that have shrunk</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Selling your entire portfolio and starting over</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Never touching your portfolio under any circumstances</label>
         </div>
-        <div class="quiz-explain">Correlation ranges from -1 (perfectly opposite) through 0 (unrelated) to +1 (perfectly in lockstep).</div>
+        <div class="quiz-explain">Rebalancing means selling some of what's grown oversized and buying more of what's lagged, to return to target weights.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">3. What are the two common rebalancing approaches mentioned in this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Random and emotional</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Daily and hourly</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Only when a financial advisor tells you to</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Calendar-based (fixed schedule) and threshold-based (drift trigger)</label>
+        </div>
+        <div class="quiz-explain">Calendar-based rebalancing happens on a fixed schedule; threshold-based rebalancing triggers when drift exceeds a set amount.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why is combining low-correlation assets sometimes called a "free lunch" in investing?</div>
+        <div class="quiz-q-title">4. Why should rebalancing not be done excessively often?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It can reduce portfolio volatility below a simple average of the individual assets' volatility</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It guarantees higher returns with zero risk</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It eliminates all fees</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It only works for bonds</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Trading fees and potential capital gains tax add real costs</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It's illegal to rebalance more than once a year</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Rebalancing has no costs, so frequency doesn't matter at all</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Rebalancing always increases your allocation to stocks</label>
         </div>
-        <div class="quiz-explain">Blending imperfectly-correlated assets can lower overall volatility below what a simple average would suggest — a genuine diversification benefit.</div>
+        <div class="quiz-explain">Rebalancing has real costs — trading fees and, in taxable accounts, potential capital gains tax — so excessive frequency erodes its benefit.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. Why should you be cautious about relying on historical correlation figures?</div>
+        <div class="quiz-q-title">5. In the illustrative example, why did rebalancing feel emotionally uncomfortable?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Correlation figures are always completely wrong</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Correlation never changes once measured</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Correlations can shift over time, and often rise during market crises</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Correlation only matters for cryptocurrency</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because it required predicting the market's next move</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because it involved no actual trading</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because it meant selling the recently-strong performer (stocks) to buy the laggard (bonds)</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because bonds are always a bad investment</label>
         </div>
-        <div class="quiz-explain">Correlations aren't fixed — they can rise sharply during crises, right when diversification is needed most.</div>
+        <div class="quiz-explain">Selling what's been winning to buy what's been lagging feels counterintuitive in the moment — which is exactly why having a systematic rule matters.</div>
       </div>
     </div>
 
@@ -364,22 +357,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/correlation-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/rebalancing-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the 20-tech-stocks vs mixed-portfolio comparison, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the 60/40-after-a-rally example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/correlation-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/rebalancing-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to assess how genuinely diversified your own holdings actually are.</div>
+        <div class="dl-desc">Guided exercises to check your own portfolio's drift and set a rebalancing rule.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/correlation-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/rebalancing-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore correlation and diversification in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore rebalancing in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -388,19 +381,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Rebalancing</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge real diversification, the next step is keeping your carefully-built mix from quietly drifting away from target.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Position Sizing</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can keep your target mix on track, the next step is capping how much any single holding can dominate it in the first place.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/asset-allocation" class="hub-card">
-        <div class="card-icon">🥧</div>
-        <div class="card-title">Back to Asset Allocation</div>
-        <div class="card-desc">Review your most important decision.</div>
+      <a href="/learn/intermediate/correlation" class="hub-card">
+        <div class="card-icon">🔀</div>
+        <div class="card-title">Back to Correlation</div>
+        <div class="card-desc">Review why owning 20 stocks isn't always diversified.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/rebalancing" class="hub-card">
-        <div class="card-icon">⚖️</div>
-        <div class="card-title">Continue to Rebalancing</div>
-        <div class="card-desc">Keeping your portfolio on target.</div>
+      <a href="/learn/intermediate#tab-balance" class="hub-card">
+        <div class="card-icon">📏</div>
+        <div class="card-title">Continue to Position Sizing</div>
+        <div class="card-desc">How much is too much in one holding?</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -433,46 +426,50 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const CORR_PRESETS = {
-  highCorr: { volA: 35, volB: 35, corr: 0.8 },
-  lowCorr: { volA: 18, volB: 6, corr: 0.15 },
-  negCorr: { volA: 18, volB: 12, corr: -0.3 },
+const REBAL_PRESETS = {
+  afterRally: { stocks: 84000, bonds: 42000, targetStocks: 60, targetBonds: 40 },
+  afterCrash: { stocks: 42000, bonds: 46000, targetStocks: 60, targetBonds: 40 },
+  onTarget: { stocks: 60000, bonds: 40000, targetStocks: 60, targetBonds: 40 },
 };
-function loadCorrPreset(kind) {
-  const p = CORR_PRESETS[kind];
-  document.getElementById('corrVolA').value = p.volA;
-  document.getElementById('corrVolB').value = p.volB;
-  document.getElementById('corrCoef').value = p.corr;
-  calcCorrelation();
+function loadRebalPreset(kind) {
+  const p = REBAL_PRESETS[kind];
+  document.getElementById('rebalStocksVal').value = p.stocks;
+  document.getElementById('rebalBondsVal').value = p.bonds;
+  document.getElementById('rebalTargetStocks').value = p.targetStocks;
+  document.getElementById('rebalTargetBonds').value = p.targetBonds;
+  calcRebalance();
 }
 
-function calcCorrelation() {
-  const volA = parseFloat(document.getElementById('corrVolA').value);
-  const volB = parseFloat(document.getElementById('corrVolB').value);
-  const corr = parseFloat(document.getElementById('corrCoef').value);
-  if ([volA, volB, corr].some(isNaN) || volA < 0 || volB < 0 || corr < -1 || corr > 1) { alert('Please enter valid values — volatilities non-negative, correlation between -1 and 1.'); return; }
+function calcRebalance() {
+  const stocksVal = parseFloat(document.getElementById('rebalStocksVal').value);
+  const bondsVal = parseFloat(document.getElementById('rebalBondsVal').value);
+  const targetStocks = parseFloat(document.getElementById('rebalTargetStocks').value);
+  const targetBonds = parseFloat(document.getElementById('rebalTargetBonds').value);
+  if ([stocksVal, bondsVal, targetStocks, targetBonds].some(isNaN) || stocksVal < 0 || bondsVal < 0) { alert('Please enter valid, non-negative values.'); return; }
+  if (Math.abs((targetStocks + targetBonds) - 100) > 0.5) { alert('Target Stocks % + Target Bonds % should add up to 100%.'); return; }
 
-  const simpleAvg = (volA + volB) / 2;
-  const variance = 0.25 * volA * volA + 0.25 * volB * volB + 0.5 * corr * volA * volB;
-  const blended = Math.sqrt(Math.max(0, variance));
-  const reduction = simpleAvg > 0 ? ((simpleAvg - blended) / simpleAvg) * 100 : 0;
+  const total = stocksVal + bondsVal;
+  const currentStocksPct = total > 0 ? (stocksVal / total) * 100 : 0;
+  const drift = currentStocksPct - targetStocks;
+  const targetStocksVal = total * (targetStocks / 100);
+  const moveAmount = stocksVal - targetStocksVal;
 
-  document.getElementById('corrSimpleAvg').textContent = simpleAvg.toFixed(1) + '%';
-  document.getElementById('corrBlended').textContent = blended.toFixed(1) + '%';
+  document.getElementById('rebalCurrentPct').textContent = currentStocksPct.toFixed(1) + '%';
+  document.getElementById('rebalDrift').textContent = (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts';
 
-  const callout = document.getElementById('corrCallout');
-  if (reduction >= 15) {
+  const callout = document.getElementById('rebalCallout');
+  if (Math.abs(drift) < 1) {
     callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Strong Diversification Benefit</span>Blended volatility (${blended.toFixed(1)}%) is about ${reduction.toFixed(0)}% lower than the simple average (${simpleAvg.toFixed(1)}%) — the low correlation (${corr.toFixed(2)}) is doing real work smoothing out the ride.`;
-  } else if (reduction >= 3) {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">Modest Diversification Benefit</span>Blended volatility (${blended.toFixed(1)}%) is only about ${reduction.toFixed(0)}% below the simple average — some benefit, but the correlation (${corr.toFixed(2)}) isn't low enough for a dramatic effect.`;
+    callout.innerHTML = `<span class="verdict">✓ Already On Target</span>Current stocks weight of ${currentStocksPct.toFixed(1)}% is within 1 point of your ${targetStocks}% target — no rebalancing needed right now.`;
+  } else if (moveAmount > 0) {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Stocks Overweight by ${drift.toFixed(1)} pts</span>Sell $${moveAmount.toFixed(0)} of stocks and buy $${moveAmount.toFixed(0)} of bonds to bring the portfolio back to your ${targetStocks}/${targetBonds} target.`;
   } else {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Little Real Diversification</span>Blended volatility (${blended.toFixed(1)}%) is barely below the simple average — with correlation this high (${corr.toFixed(2)}), combining these two assets does little to reduce risk, however many tickers you hold.`;
+    callout.innerHTML = `<span class="verdict">⚠️ Stocks Underweight by ${Math.abs(drift).toFixed(1)} pts</span>Sell $${Math.abs(moveAmount).toFixed(0)} of bonds and buy $${Math.abs(moveAmount).toFixed(0)} of stocks to bring the portfolio back to your ${targetStocks}/${targetBonds} target.`;
   }
 }
-calcCorrelation();
+calcRebalance();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');

@@ -140,6 +140,7 @@ LESSON_PAGES = [
     {"slug": "valuation", "level": "intermediate", "file": "lesson-valuation.html", "title": "Valuation"},
     {"slug": "asset-allocation", "level": "intermediate", "file": "lesson-asset-allocation.html", "title": "Asset Allocation"},
     {"slug": "correlation", "level": "intermediate", "file": "lesson-correlation.html", "title": "Correlation"},
+    {"slug": "rebalancing", "level": "intermediate", "file": "lesson-rebalancing.html", "title": "Rebalancing"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
