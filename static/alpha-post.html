@@ -621,6 +621,19 @@ function buildTableOfContents(bodyEl) {
     renderBody(text, bodyEl, topicAccentClass(slug, item.topic).replace('topic-', ''));
     buildTableOfContents(bodyEl);
 
+    if (item.related_lesson) {
+      const learnBox = document.createElement('a');
+      learnBox.href = item.related_lesson.url;
+      learnBox.style.cssText = 'display:block;margin-top:32px;padding:18px 22px;border:1px solid var(--border);border-radius:14px;background:var(--card);text-decoration:none;transition:border-color .2s;';
+      learnBox.onmouseenter = () => learnBox.style.borderColor = 'var(--purple2, #7c3aed)';
+      learnBox.onmouseleave = () => learnBox.style.borderColor = 'var(--border)';
+      learnBox.innerHTML =
+        '<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">📚 Learn more</div>' +
+        '<div style="font-weight:700;color:var(--text);">' + item.related_lesson.title + '</div>' +
+        (item.related_lesson.note ? '<div style="font-size:13.5px;color:var(--muted);margin-top:4px;">' + item.related_lesson.note + '</div>' : '');
+      bodyEl.appendChild(learnBox);
+    }
+
     document.getElementById('postLoaded').style.display = 'block';
   } catch (e) {
     // A genuinely missing/unpublished post never reaches here (handled by

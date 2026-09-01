@@ -195,6 +195,13 @@ def _ensure_table() -> None:
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS staged_edits JSONB")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS level TEXT")
         cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT false")
+        # Cross-link to a /learn lesson this piece of Alpha content relates to —
+        # set from the Studio once an author/Gary confirms the two are actually
+        # related. related_lesson_slug is one of LESSON_PAGES' slugs (not
+        # FK-enforced, since lessons live in code not the DB); related_lesson_note
+        # is the one-line "why this is relevant" shown in the lesson's callout box.
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS related_lesson_slug TEXT")
+        cur.execute("ALTER TABLE alpha_content ADD COLUMN IF NOT EXISTS related_lesson_note TEXT")
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content_attachment (
                 id          SERIAL PRIMARY KEY,
@@ -644,6 +651,7 @@ _ALPHA_CONTENT_FIELDS = [
     "author", "kind", "status", "topic", "level", "title", "subtitle", "snippet", "body", "stance", "url",
     "source_kind", "source_filename", "source_text",
     "image_url", "image_filename", "pinned",
+    "related_lesson_slug", "related_lesson_note",
     # Pending edits to a *published* item, held back from the live page until the
     # author unpublishes (which folds them in) and re-publishes. Studio-only —
     # the public endpoints whitelist their output via _ALPHA_PUBLIC_FIELDS, so
@@ -3463,6 +3471,18 @@ def api_alpha_content_item(item_id):
         alpha_content_update(item_id, {"pinned": pinned})
         existing["pinned"] = pinned
 
+    if "related_lesson_slug" in data:
+        # A curation link, not content — applied immediately like `pinned`
+        # above, independent of the draft/published/staged-edits dance, so
+        # confirming a match doesn't require an unpublish/republish cycle.
+        slug = (data.get("related_lesson_slug") or "").strip() or None
+        if slug and slug not in _LESSON_BY_SLUG:
+            return jsonify({"error": "Unknown lesson slug"}), 400
+        note = (data.get("related_lesson_note") or "").strip() or None
+        alpha_content_update(item_id, {"related_lesson_slug": slug, "related_lesson_note": note if slug else None})
+        existing["related_lesson_slug"] = slug
+        existing["related_lesson_note"] = note if slug else None
+
     # ── Staged edits ────────────────────────────────────────────────────────
     # Editing a PUBLISHED item (a content change with no status change) saves to
     # a pending `staged_edits` copy and leaves the live page untouched. The edits
@@ -3621,6 +3641,23 @@ def _alpha_public_image_url(item: dict) -> str | None:
 
 _ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "level", "title", "subtitle", "snippet", "body", "stance", "url", "published_at", "pinned"]
 
+_LESSON_BY_SLUG = {l["slug"]: l for l in LESSON_PAGES}
+
+
+def _alpha_public_related_lesson(item: dict) -> dict | None:
+    """The confirmed Learn lesson this post relates to, if any — rendered as a
+    "Learn more" link on the public Alpha post page. None once the lesson is
+    removed from LESSON_PAGES, so a stale relation just silently stops showing
+    rather than 404ing."""
+    lesson = _LESSON_BY_SLUG.get(item.get("related_lesson_slug"))
+    if not lesson:
+        return None
+    return {
+        "slug": lesson["slug"], "level": lesson["level"], "title": lesson["title"],
+        "url": f"/learn/{lesson['level']}/{lesson['slug']}",
+        "note": item.get("related_lesson_note"),
+    }
+
 
 @app.route("/api/alpha/<slug>/content", methods=["GET"])
 def api_alpha_public_content(slug):
@@ -3632,6 +3669,7 @@ def api_alpha_public_content(slug):
     def to_public(item):
         public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
         public_item["image_url"] = _alpha_public_image_url(item)
+        public_item["related_lesson"] = _alpha_public_related_lesson(item)
         return public_item
 
     # Pinned posts fill a fixed 4-slot strip above the main grid, scoped to
@@ -3670,7 +3708,37 @@ def api_alpha_public_post(slug, post_id):
         return jsonify({"error": "Post not found"}), 404
     public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
     public_item["image_url"] = _alpha_public_image_url(item)
+    public_item["related_lesson"] = _alpha_public_related_lesson(item)
     return jsonify(public_item)
+
+
+@app.route("/api/lessons", methods=["GET"])
+def api_lessons():
+    """Slug/level/title for every /learn lesson — feeds the Studio's "Related
+    lesson" picker so it doesn't need its own hardcoded copy of LESSON_PAGES."""
+    return jsonify({"items": [{"slug": l["slug"], "level": l["level"], "title": l["title"]} for l in LESSON_PAGES]})
+
+
+@app.route("/api/lessons/<slug>/related-alpha", methods=["GET"])
+def api_lesson_related_alpha(slug):
+    """Published Alpha content that's been confirmed as related to this lesson —
+    powers the "From the Alpha desk" callout on the public lesson page. Public,
+    read-only, no auth: same trust level as the lesson page itself."""
+    if slug not in _LESSON_BY_SLUG:
+        return jsonify({"error": "Unknown lesson"}), 404
+    items = [
+        i for i in alpha_content_list(status="published")
+        if i.get("related_lesson_slug") == slug and i.get("kind") == "post"
+    ]
+    return jsonify({"items": [
+        {
+            "id": i["id"], "author": i["author"], "title": i.get("title"),
+            "subtitle": i.get("subtitle"), "topic": i.get("topic"),
+            "note": i.get("related_lesson_note"),
+            "url": f"/alpha/{i['author']}/post/{i['id']}",
+        }
+        for i in items
+    ]})
 
 
 @app.route("/alpha/<slug>/post/<int:post_id>")

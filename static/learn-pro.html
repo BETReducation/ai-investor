@@ -377,14 +377,25 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+function activateTab(name) {
+  const btn = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+  const panel = document.getElementById('tab-' + name);
+  if (!btn || !panel) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  panel.classList.add('active');
+}
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    activateTab(btn.dataset.tab);
+    history.replaceState(null, '', '#tab-' + btn.dataset.tab);
   });
 });
+(function initTabFromHash() {
+  const hash = location.hash.replace('#tab-', '');
+  if (hash) activateTab(hash);
+})();
 (async function checkAuth() {
   try {
     const res = await fetch('/api/me', { credentials: 'include' });

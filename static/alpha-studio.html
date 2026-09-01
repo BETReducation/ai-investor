@@ -999,6 +999,32 @@ function buildCard(item, skipHead) {
     addField('Snippet — the preview blurb on your Alpha page', snippetInput);
     setTimeout(() => autoGrowTextarea(snippetInput, 240), 0);
 
+    // ── Related lesson — cross-link to a /learn page once confirmed related ──
+    var relatedLessonSelect = document.createElement('select');
+    relatedLessonSelect.className = 'form-select';
+    var relatedLessonNoteInput = document.createElement('input');
+    relatedLessonNoteInput.className = 'form-input';
+    relatedLessonNoteInput.placeholder = 'Why it\'s relevant, e.g. "See this play out in a real dividend stock"';
+    relatedLessonNoteInput.value = item.related_lesson_note || '';
+    (function populateRelatedLesson() {
+      var noneOpt = document.createElement('option');
+      noneOpt.value = ''; noneOpt.textContent = 'None';
+      relatedLessonSelect.appendChild(noneOpt);
+      fetch('/api/lessons').then(function (r) { return r.json(); }).then(function (data) {
+        (data.items || []).forEach(function (lesson) {
+          var opt = document.createElement('option');
+          opt.value = lesson.slug;
+          opt.textContent = '[' + lesson.level + '] ' + lesson.title;
+          if (item.related_lesson_slug === lesson.slug) opt.selected = true;
+          relatedLessonSelect.appendChild(opt);
+        });
+      });
+    })();
+    registerLock(relatedLessonSelect);
+    registerLock(relatedLessonNoteInput);
+    addField('Related Learn lesson — shows a "Learn more" link on this post, and a callout back to it on the lesson page', relatedLessonSelect);
+    addField('Related lesson note (optional)', relatedLessonNoteInput);
+
     // ── Content sections ─────────────────────────────────────────────────
     // The post body is edited as one or more sections so ideas can be
     // organised. Each section = an optional heading + a block of text. On save
@@ -1955,6 +1981,8 @@ function buildCard(item, skipHead) {
     if (stanceSelect) updates.stance = stanceSelect.value;
     if (urlInput) updates.url = urlInput.value.trim();
     if (imageUrlInput) updates.image_url = imageUrlInput.value.trim();
+    if (relatedLessonSelect) updates.related_lesson_slug = relatedLessonSelect.value;
+    if (relatedLessonSelect) updates.related_lesson_note = relatedLessonNoteInput.value.trim();
     return updates;
   }
 
