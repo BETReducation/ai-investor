@@ -133,6 +133,7 @@ LESSON_PAGES = [
     {"slug": "macd", "level": "intermediate", "file": "lesson-macd.html", "title": "MACD"},
     {"slug": "bollinger-bands", "level": "intermediate", "file": "lesson-bollinger-bands.html", "title": "Bollinger Bands"},
     {"slug": "confluence", "level": "intermediate", "file": "lesson-confluence.html", "title": "Stacking Indicators for Confluence"},
+    {"slug": "income-statement", "level": "intermediate", "file": "lesson-income-statement.html", "title": "Reading the Income Statement"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
