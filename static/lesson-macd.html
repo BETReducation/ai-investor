@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RSI — Intermediate — Growth Capital Group</title>
+<title>MACD — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,8 +63,8 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.rsi-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.rsi-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.macd-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
+.macd-diagram-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
@@ -133,9 +133,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 2 of 5</div>
-    <h1 class="hero-title">RSI — Spotting Overbought &amp; <span class="accent">Oversold</span> Conditions</h1>
-    <p class="hero-sub">The Relative Strength Index measures how fast and how far a price has moved. It won't tell you the future, but it's one of the fastest ways to see when a move looks stretched.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 3 of 5</div>
+    <h1 class="hero-title">MACD — Reading Momentum and <span class="accent">Trend Shifts</span></h1>
+    <p class="hero-sub">The Moving Average Convergence Divergence indicator compares two moving averages to reveal shifts in momentum — often one of the earliest clues that a trend is changing gear.</p>
   </div>
 </div>
 
@@ -143,76 +143,98 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">What RSI Actually Measures</h2>
-    <p class="body-text">The <b>Relative Strength Index (RSI)</b> is a momentum oscillator that compares the size of recent gains to recent losses, plotted on a scale of 0 to 100. It's typically calculated over a 14-period lookback (14 days on a daily chart). A high RSI means recent gains have dominated; a low RSI means recent losses have dominated.</p>
-    <p class="body-text">The classic reading: RSI above <b>70</b> suggests an asset may be <b>overbought</b> — it's risen fast enough that a pullback or pause becomes more likely. RSI below <b>30</b> suggests <b>oversold</b> — it's fallen fast enough that a bounce becomes more likely. These aren't hard rules; a strong trend can keep RSI pinned above 70 for a long stretch.</p>
-    <p class="body-text">The formula: RSI = 100 − (100 / (1 + RS)), where RS is the average gain over the lookback period divided by the average loss. You don't need to calculate this by hand day to day — every charting platform plots it automatically — but understanding the formula helps you see <i>why</i> it behaves the way it does.</p>
+    <h2 class="section-title">What MACD Actually Measures</h2>
+    <p class="body-text">MACD is built from two exponential moving averages (EMAs) of price: a fast 12-period EMA and a slower 26-period EMA. The <b>MACD line</b> is simply the fast EMA minus the slow EMA. When the fast average pulls away from the slow one, the MACD line rises; when they converge or the fast one falls below, it drops.</p>
+    <p class="body-text">A 9-period EMA of the MACD line itself is plotted alongside it, called the <b>signal line</b>. When the MACD line crosses above the signal line, that's read as a bullish signal — momentum is picking up. When it crosses below, that's read as bearish — momentum is fading.</p>
+    <p class="body-text">The gap between the two is often drawn as a <b>histogram</b> of bars above and below zero. A growing histogram means the MACD and signal lines are pulling apart (momentum accelerating); a shrinking histogram means they're converging (momentum fading) — often visible before the actual crossover happens.</p>
 
     <div class="example-card">
-      <h3>📉 RSI Alongside Price</h3>
-      <div class="rsi-diagram-wrap">
-        <svg viewBox="0 0 490 220" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="10,50 60,65 110,40 160,55 210,25 260,20 310,45 360,60 410,50 450,70" fill="none" stroke="#8892b0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+      <h3>📊 MACD Alongside Price</h3>
+      <div class="macd-diagram-wrap">
+        <svg viewBox="0 0 460 230" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="10,50 60,65 110,40 160,55 210,25 260,35 310,20 360,45 410,60 450,40" fill="none" stroke="#8892b0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
           <text x="10" y="16" font-size="10" fill="#8892b0" font-family="Helvetica">Price</text>
 
-          <line x1="10" y1="100" x2="450" y2="100" stroke="#4b5563" stroke-width="1"/>
-          <line x1="10" y1="130" x2="450" y2="130" stroke="#f87171" stroke-width="1" stroke-dasharray="4 3"/>
-          <text x="452" y="133" font-size="9" fill="#f87171" font-family="Helvetica">70</text>
-          <line x1="10" y1="190" x2="450" y2="190" stroke="#4ade80" stroke-width="1" stroke-dasharray="4 3"/>
-          <text x="452" y="193" font-size="9" fill="#4ade80" font-family="Helvetica">30</text>
+          <line x1="10" y1="140" x2="450" y2="140" stroke="#4b5563" stroke-width="1"/>
+          <text x="452" y="143" font-size="9" fill="#4b5563" font-family="Helvetica">0</text>
 
-          <polyline points="10,170 60,150 110,120 160,135 210,110 260,105 310,145 360,175 410,195 450,165" fill="none" stroke="#a855f7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="260" cy="105" r="4" fill="#f87171"/>
-          <text x="260" y="95" font-size="8.5" fill="#f87171" text-anchor="middle" font-family="Helvetica">overbought zone</text>
-          <circle cx="410" cy="195" r="4" fill="#4ade80"/>
-          <text x="410" y="210" font-size="8.5" fill="#4ade80" text-anchor="middle" font-family="Helvetica">oversold zone</text>
-          <text x="10" y="215" font-size="10" fill="#8892b0" font-family="Helvetica">RSI (14)</text>
+          <g>
+            <rect x="20" y="135" width="10" height="10" fill="#f87171" opacity="0.55"/>
+            <rect x="45" y="128" width="10" height="17" fill="#f87171" opacity="0.55"/>
+            <rect x="70" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
+            <rect x="95" y="118" width="10" height="6" fill="#4ade80" opacity="0.55"/>
+            <rect x="120" y="100" width="10" height="24" fill="#4ade80" opacity="0.55"/>
+            <rect x="145" y="88" width="10" height="36" fill="#4ade80" opacity="0.55"/>
+            <rect x="170" y="95" width="10" height="29" fill="#4ade80" opacity="0.55"/>
+            <rect x="195" y="115" width="10" height="9" fill="#4ade80" opacity="0.55"/>
+            <rect x="220" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
+            <rect x="245" y="145" width="10" height="11" fill="#f87171" opacity="0.55"/>
+            <rect x="270" y="120" width="10" height="14" fill="#4ade80" opacity="0.55"/>
+            <rect x="295" y="95" width="10" height="39" fill="#4ade80" opacity="0.55"/>
+            <rect x="320" y="105" width="10" height="29" fill="#4ade80" opacity="0.55"/>
+            <rect x="345" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
+            <rect x="370" y="150" width="10" height="16" fill="#f87171" opacity="0.55"/>
+            <rect x="395" y="145" width="10" height="11" fill="#f87171" opacity="0.55"/>
+            <rect x="420" y="130" width="10" height="4" fill="#f87171" opacity="0.55"/>
+          </g>
+
+          <polyline points="10,145 60,155 110,148 160,130 210,105 260,100 310,110 360,145 410,165 450,148" fill="none" stroke="#a855f7" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+          <polyline points="10,148 60,150 110,152 160,140 210,120 260,105 310,108 360,130 410,150 450,155" fill="none" stroke="#eab308" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 3"/>
+
+          <circle cx="160" cy="130" r="4" fill="#4ade80"/>
+          <text x="160" y="118" font-size="8" fill="#4ade80" text-anchor="middle" font-family="Helvetica">bullish cross</text>
+          <circle cx="345" cy="140" r="4" fill="#f87171"/>
+          <text x="345" y="200" font-size="8" fill="#f87171" text-anchor="middle" font-family="Helvetica">bearish cross</text>
+
+          <text x="10" y="225" font-size="10" fill="#a855f7" font-family="Helvetica">— MACD line</text>
+          <text x="105" y="225" font-size="10" fill="#eab308" font-family="Helvetica">- - Signal line</text>
+          <text x="220" y="225" font-size="10" fill="#8892b0" font-family="Helvetica">▪ Histogram (MACD − signal)</text>
         </svg>
       </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice RSI (purple) tends to lead or track the price swings above it: it climbs into the overbought zone as price rallies hard, and dips into the oversold zone as price falls hard. The value of RSI is spotting when that momentum looks stretched, not predicting the exact turn.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Watch the histogram bars change color exactly where the MACD (purple) and signal (gold, dashed) lines cross — that transition from red to green (or back) is the crossover moment. Notice the histogram bars had already started shrinking before each crossover, a subtle early clue that momentum was fading before the lines actually met.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About RSI</h3>
+    <h3 class="subhead">5 Things to Know About MACD</h3>
     <ol class="num-checklist">
-      <li><b>70/30 are guidelines, not laws</b> — in a powerful trend, RSI can stay above 70 (or below 30) for a long stretch while price keeps moving the same direction.</li>
-      <li><b>Divergence is often more useful than the level itself</b> — if price makes a new high but RSI makes a lower high, that's bearish divergence, a classic warning that momentum is fading even as price grinds higher.</li>
-      <li><b>Shorter lookback periods react faster but whipsaw more</b> — the standard 14-period setting balances responsiveness against noise.</li>
-      <li><b>RSI works best paired with trend context</b> — an oversold reading in an uptrend's healthy pullback is a very different signal from an oversold reading at the start of a real breakdown.</li>
-      <li><b>RSI is a momentum tool, not a valuation tool</b> — it says nothing about whether a stock is cheap or expensive, only how fast it has recently moved.</li>
+      <li><b>MACD is a lagging indicator built from moving averages</b> — like any moving-average-based tool, it confirms a shift after it's already begun, never before.</li>
+      <li><b>The crossover is the headline signal, but the histogram often moves first</b> — a shrinking histogram can hint a crossover is coming before it actually happens.</li>
+      <li><b>MACD can diverge from price, just like RSI</b> — price making a new high while MACD makes a lower high is a classic warning sign.</li>
+      <li><b>The zero line matters too</b> — MACD crossing above zero means the fast EMA has overtaken the slow EMA outright, a stronger signal than a crossover that stays below zero.</li>
+      <li><b>MACD works best in trending markets</b> — in a choppy, sideways market it can whipsaw with frequent false crossovers.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading RSI</h3>
+    <h3 class="subhead">4 Things to Check When Reading MACD</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🔍 Check for Divergence First</h4>
+        <h4>📉 Watch the Histogram Shrink</h4>
         <ul>
-          <li>Compare RSI's recent peaks/troughs to price's — a mismatch is often more informative than the raw level.</li>
+          <li>A shrinking histogram before a crossover is often more useful than reacting to the cross itself.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📈 Read It With the Trend</h4>
+        <h4>0️⃣ Note the Zero-Line Cross</h4>
         <ul>
-          <li>In a strong uptrend, treat RSI dips toward 40-50 as the "oversold" zone that matters, not 30.</li>
+          <li>A signal-line crossover that also crosses zero carries more weight than one that stays on one side.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⏱️ Don't Trade the First Touch</h4>
+        <h4>🔍 Check for Divergence</h4>
         <ul>
-          <li>RSI crossing above 70 doesn't mean "sell now" — wait for it to actually turn back down before treating it as confirmation.</li>
+          <li>Compare MACD's recent peaks/troughs to price's, the same way you would with RSI.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔗 Pair It With Support/Resistance</h4>
+        <h4>🧭 Confirm the Market Isn't Choppy</h4>
         <ul>
-          <li>An oversold reading arriving right at a known support level is a much stronger combination than either signal alone.</li>
+          <li>MACD crossovers are far more reliable in a trending market than in a sideways, range-bound one.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> RSI describes recent momentum, not the future. A stock can stay "overbought" for weeks in a strong trend, and an "oversold" reading can keep falling further. Use it to gauge how stretched a move looks, alongside trend and volume — never in isolation.
+      <b>Worth knowing:</b> MACD is a lagging indicator built from moving averages — it confirms a momentum shift after it's begun, not before. In choppy, range-bound markets it can generate frequent false crossovers. Pair it with trend context and volume rather than trading it in isolation.
     </div>
   </div>
 </section>
@@ -221,35 +243,43 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: RSI Calculator</h2>
-    <p class="section-desc">Enter the average gain and average loss over your lookback period (e.g. 14 days) — see the resulting RSI and reading.</p>
+    <h2 class="section-title">Try It Yourself: Crossover Checker</h2>
+    <p class="section-desc">Enter the MACD line and signal line values for two consecutive periods — see whether a crossover occurred, and which direction.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadRsiPreset('overbought')">Load Overbought Example</button>
-        <button class="preset-btn" onclick="loadRsiPreset('oversold')">Load Oversold Example</button>
-        <button class="preset-btn" onclick="loadRsiPreset('neutral')">Load Neutral Example</button>
+        <button class="preset-btn" onclick="loadMacdPreset('bullish')">Load Bullish Crossover</button>
+        <button class="preset-btn" onclick="loadMacdPreset('bearish')">Load Bearish Crossover</button>
+        <button class="preset-btn" onclick="loadMacdPreset('none')">Load No Crossover</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="rsiGain">Average gain (over lookback period)</label>
-          <input type="number" id="rsiGain" value="2.4" step="0.01">
+          <label for="macdPrevMacd">Previous period: MACD line</label>
+          <input type="number" id="macdPrevMacd" value="-0.8" step="0.01">
         </div>
         <div class="calc-field">
-          <label for="rsiLoss">Average loss (over lookback period)</label>
-          <input type="number" id="rsiLoss" value="0.5" step="0.01">
+          <label for="macdPrevSignal">Previous period: Signal line</label>
+          <input type="number" id="macdPrevSignal" value="-0.3" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="macdNowMacd">Current period: MACD line</label>
+          <input type="number" id="macdNowMacd" value="0.2" step="0.01">
+        </div>
+        <div class="calc-field">
+          <label for="macdNowSignal">Current period: Signal line</label>
+          <input type="number" id="macdNowSignal" value="-0.1" step="0.01">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcRsi()">Calculate RSI →</button>
+        <button class="calc-btn" onclick="checkMacdCross()">Check for Crossover →</button>
       </div>
 
-      <div class="calc-results visible" id="rsiResults">
+      <div class="calc-results visible" id="macdResults">
         <div class="builder-stage">
-          <svg viewBox="0 0 460 100" id="rsiSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg viewBox="0 0 460 140" id="macdSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <div class="calc-callout" id="rsiCallout"></div>
-        <p class="calc-note">Model: RS = average gain ÷ average loss; RSI = 100 − (100 / (1 + RS)). This is the standard Wilder RSI formula used by most charting platforms.</p>
+        <div class="calc-callout" id="macdCallout"></div>
+        <p class="calc-note">Model: a bullish crossover is MACD moving from below the signal line to above it between the two periods; a bearish crossover is the reverse. No crossover means the MACD line stayed on the same side of the signal line in both periods.</p>
       </div>
     </div>
   </div>
@@ -268,59 +298,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What does RSI measure?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. How is the MACD line calculated?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The company's price-to-earnings ratio</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The total trading volume over a period</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The size of recent gains relative to recent losses, on a 0-100 scale</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The distance between support and resistance</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Today's closing price minus yesterday's closing price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The 12-period EMA minus the 26-period EMA</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Total volume divided by average volume</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The highest high minus the lowest low</label>
         </div>
-        <div class="quiz-explain">RSI compares average gains to average losses over a lookback period (typically 14) to produce a single 0-100 momentum reading.</div>
+        <div class="quiz-explain">The MACD line is the fast (12-period) EMA minus the slow (26-period) EMA of price.</div>
       </div>
 
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What does an RSI reading above 70 traditionally suggest?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. What does the MACD histogram represent?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The stock is definitely about to crash</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> The asset may be overbought — a pullback or pause becomes more likely</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The company has high debt</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Trading has been halted</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Total trading volume for the day</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> The company's earnings per share</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The gap between the MACD line and the signal line</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The stock's dividend yield</label>
         </div>
-        <div class="quiz-explain">Above 70 is the classic "overbought" zone — a signal to watch for exhaustion, not a guarantee of an immediate reversal.</div>
+        <div class="quiz-explain">The histogram bars plot MACD minus signal — a growing histogram means the two lines are pulling apart, a shrinking one means they're converging.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What is "bearish divergence" in RSI?</div>
+        <div class="quiz-q-title">3. Why might a shrinking histogram be useful even before a crossover happens?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> When RSI and price both make new highs together</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> When RSI is exactly 50</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> When volume falls to zero</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> When price makes a new high but RSI makes a lower high, hinting momentum is fading</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It never provides any useful information</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It guarantees a crossover will happen within 24 hours</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It means volume has stopped entirely</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It can hint that momentum is fading and a crossover may be approaching</label>
         </div>
-        <div class="quiz-explain">Bearish divergence — price up, RSI not confirming — is often considered more informative than the raw overbought/oversold level.</div>
+        <div class="quiz-explain">A shrinking histogram shows the MACD and signal lines converging — often visible before the actual crossover confirms the shift.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why can RSI stay above 70 for weeks during a strong uptrend?</div>
+        <div class="quiz-q-title">4. Why does a signal-line crossover that also crosses zero carry more weight?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> 70/30 are guidelines, not hard rules — powerful trends can sustain "overbought" readings for a long time</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> RSI can only go from 0-70, never higher</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It's always a data error</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Overbought readings automatically reset every Friday</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It means the fast EMA has overtaken the slow EMA outright, not just narrowed the gap</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Zero-line crosses are purely decorative and carry no extra meaning</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It means the stock has been delisted</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It only happens once per year</label>
         </div>
-        <div class="quiz-explain">RSI reflects recent momentum, not a countdown timer — a strong enough trend can keep it pinned in "overbought" territory for a long stretch.</div>
+        <div class="quiz-explain">Crossing zero means the fast EMA has actually moved past the slow EMA, a more decisive shift than a crossover that stays on one side of zero.</div>
       </div>
 
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. With an average gain of 2.4 and average loss of 0.5 over the lookback period, is RSI closer to overbought or oversold?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">5. Why can MACD generate frequent false signals in a sideways, range-bound market?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Oversold (RSI near 20)</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Exactly neutral (RSI = 50)</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Overbought (RSI well above 70)</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> RSI cannot be calculated from this information</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> MACD only works on cryptocurrencies</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> With no sustained trend, the two moving averages repeatedly cross back and forth without a real shift underway</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The MACD formula breaks down mathematically in sideways markets</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Sideways markets have no volume at all</label>
         </div>
-        <div class="quiz-explain">RS = 2.4 / 0.5 = 4.8; RSI = 100 - (100 / (1 + 4.8)) ≈ 82.8 — solidly in overbought territory.</div>
+        <div class="quiz-explain">MACD is built on moving averages, which work best when there's an actual trend to track — a choppy market causes the fast and slow EMAs to cross frequently without a genuine shift underway.</div>
       </div>
     </div>
 
@@ -337,22 +367,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/rsi-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/macd-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with a labelled price-and-RSI chart diagram, the RSI formula, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with a labelled price+MACD+histogram chart diagram, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/rsi-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/macd-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided, fill-in-the-blank exercises to calculate RSI yourself and identify divergence on a real chart.</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to identify crossovers and histogram shifts on a real chart.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/rsi-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/macd-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore RSI in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore MACD in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -361,19 +391,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: MACD</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can spot when momentum looks stretched, the next step is reading how momentum itself is shifting gear.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Bollinger Bands</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can read momentum shifts, the next step is measuring volatility itself to know when calm is about to break.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/chart-patterns" class="hub-card">
-        <div class="card-icon">📐</div>
-        <div class="card-title">Back to Chart Patterns</div>
-        <div class="card-desc">Review head & shoulders, double tops, and triangles.</div>
+      <a href="/learn/intermediate/rsi" class="hub-card">
+        <div class="card-icon">🌡️</div>
+        <div class="card-title">Back to RSI</div>
+        <div class="card-desc">Review overbought and oversold conditions.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/macd" class="hub-card">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Continue to MACD</div>
-        <div class="card-desc">See momentum shift before price fully confirms it.</div>
+      <a href="/learn/intermediate#tab-ta" class="hub-card">
+        <div class="card-icon">🎢</div>
+        <div class="card-title">Continue to Bollinger Bands</div>
+        <div class="card-desc">Know when calm is about to break.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -406,46 +436,69 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const RSI_PRESETS = {
-  overbought: { gain: 2.4, loss: 0.5 },
-  oversold: { gain: 0.4, loss: 2.1 },
-  neutral: { gain: 1.1, loss: 1.0 },
+const MACD_PRESETS = {
+  bullish: { prevMacd: -0.8, prevSignal: -0.3, nowMacd: 0.2, nowSignal: -0.1 },
+  bearish: { prevMacd: 0.9, prevSignal: 0.4, nowMacd: -0.1, nowSignal: 0.2 },
+  none: { prevMacd: 0.5, prevSignal: 0.2, nowMacd: 0.7, nowSignal: 0.3 },
 };
-function loadRsiPreset(kind) {
-  const p = RSI_PRESETS[kind];
-  document.getElementById('rsiGain').value = p.gain;
-  document.getElementById('rsiLoss').value = p.loss;
-  calcRsi();
+function loadMacdPreset(kind) {
+  const p = MACD_PRESETS[kind];
+  document.getElementById('macdPrevMacd').value = p.prevMacd;
+  document.getElementById('macdPrevSignal').value = p.prevSignal;
+  document.getElementById('macdNowMacd').value = p.nowMacd;
+  document.getElementById('macdNowSignal').value = p.nowSignal;
+  checkMacdCross();
 }
 
-function calcRsi() {
-  const gain = parseFloat(document.getElementById('rsiGain').value);
-  const loss = parseFloat(document.getElementById('rsiLoss').value);
-  if (isNaN(gain) || isNaN(loss) || gain < 0 || loss < 0) { alert('Please enter valid, non-negative average gain and loss.'); return; }
+function checkMacdCross() {
+  const prevMacd = parseFloat(document.getElementById('macdPrevMacd').value);
+  const prevSignal = parseFloat(document.getElementById('macdPrevSignal').value);
+  const nowMacd = parseFloat(document.getElementById('macdNowMacd').value);
+  const nowSignal = parseFloat(document.getElementById('macdNowSignal').value);
+  if ([prevMacd, prevSignal, nowMacd, nowSignal].some(isNaN)) { alert('Please fill in all 4 values.'); return; }
 
-  let rsi;
-  if (loss === 0) { rsi = 100; }
-  else { const rs = gain / loss; rsi = 100 - (100 / (1 + rs)); }
-
+  const wasBelow = prevMacd < prevSignal;
+  const isBelow = nowMacd < nowSignal;
   let verdict, color, desc;
-  if (rsi >= 70) { verdict = 'Overbought'; color = '#f87171'; desc = `RSI of ${rsi.toFixed(1)} is above the classic 70 threshold — momentum has been strongly to the upside, and a pullback or pause becomes more likely (though not guaranteed).`; }
-  else if (rsi <= 30) { verdict = 'Oversold'; color = '#4ade80'; desc = `RSI of ${rsi.toFixed(1)} is below the classic 30 threshold — momentum has been strongly to the downside, and a bounce becomes more likely (though not guaranteed).`; }
-  else { verdict = 'Neutral'; color = '#8892b0'; desc = `RSI of ${rsi.toFixed(1)} sits in the neutral 30-70 range — momentum isn't stretched in either direction right now.`; }
+  if (wasBelow && !isBelow) {
+    verdict = 'Bullish Crossover'; color = '#4ade80';
+    desc = `MACD moved from below the signal line (${prevMacd.toFixed(2)} < ${prevSignal.toFixed(2)}) to above it (${nowMacd.toFixed(2)} > ${nowSignal.toFixed(2)}) — a bullish crossover, read as rising momentum.`;
+  } else if (!wasBelow && isBelow) {
+    verdict = 'Bearish Crossover'; color = '#f87171';
+    desc = `MACD moved from above the signal line (${prevMacd.toFixed(2)} > ${prevSignal.toFixed(2)}) to below it (${nowMacd.toFixed(2)} < ${nowSignal.toFixed(2)}) — a bearish crossover, read as fading momentum.`;
+  } else {
+    verdict = 'No Crossover'; color = '#8892b0';
+    desc = `MACD stayed on the same side of the signal line in both periods (${isBelow ? 'below' : 'above'} it) — no crossover has occurred yet.`;
+  }
 
-  const svg = document.getElementById('rsiSvg');
-  const x = 20 + (rsi / 100) * 420;
+  const histPrev = prevMacd - prevSignal;
+  const histNow = nowMacd - nowSignal;
+  const vals = [prevMacd, prevSignal, nowMacd, nowSignal];
+  const min = Math.min(...vals) - 0.3, max = Math.max(...vals) + 0.3;
+  const yFor = v => 100 - ((v - min) / (max - min)) * 80;
+  const zeroY = yFor(0);
+
+  const svg = document.getElementById('macdSvg');
+  const barColor1 = histPrev >= 0 ? '#4ade80' : '#f87171';
+  const barColor2 = histNow >= 0 ? '#4ade80' : '#f87171';
+  const barH1 = Math.abs(yFor(histPrev + min) - zeroY) || 4;
   svg.innerHTML =
-    `<line x1="20" y1="50" x2="440" y2="50" stroke="#4b5563" stroke-width="2"/>` +
-    `<line x1="${20 + 0.3*420}" y1="30" x2="${20 + 0.3*420}" y2="70" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="3 3"/>` +
-    `<text x="${20 + 0.3*420}" y="85" font-size="10" fill="#4ade80" text-anchor="middle" font-family="Helvetica">30</text>` +
-    `<line x1="${20 + 0.7*420}" y1="30" x2="${20 + 0.7*420}" y2="70" stroke="#f87171" stroke-width="1.5" stroke-dasharray="3 3"/>` +
-    `<text x="${20 + 0.7*420}" y="85" font-size="10" fill="#f87171" text-anchor="middle" font-family="Helvetica">70</text>` +
-    `<circle cx="${x}" cy="50" r="8" fill="${color}"/>` +
-    `<text x="${x}" y="25" font-size="13" font-weight="bold" fill="${color}" text-anchor="middle" font-family="Helvetica">${rsi.toFixed(1)}</text>`;
+    `<line x1="20" y1="${zeroY}" x2="440" y2="${zeroY}" stroke="#4b5563" stroke-width="1"/>` +
+    `<text x="444" y="${zeroY+3}" font-size="9" fill="#4b5563" font-family="Helvetica">0</text>` +
+    `<rect x="90" y="${histPrev >= 0 ? zeroY - Math.abs(yFor(histPrev)-zeroY) : zeroY}" width="24" height="${Math.max(4, Math.abs(yFor(histPrev)-zeroY))}" fill="${barColor1}" opacity="0.5"/>` +
+    `<rect x="330" y="${histNow >= 0 ? zeroY - Math.abs(yFor(histNow)-zeroY) : zeroY}" width="24" height="${Math.max(4, Math.abs(yFor(histNow)-zeroY))}" fill="${barColor2}" opacity="0.5"/>` +
+    `<line x1="60" y1="${yFor(prevMacd)}" x2="300" y2="${yFor(nowMacd)}" stroke="#a855f7" stroke-width="2.6"/>` +
+    `<circle cx="60" cy="${yFor(prevMacd)}" r="4" fill="#a855f7"/><circle cx="300" cy="${yFor(nowMacd)}" r="4" fill="#a855f7"/>` +
+    `<line x1="60" y1="${yFor(prevSignal)}" x2="300" y2="${yFor(nowSignal)}" stroke="#eab308" stroke-width="2" stroke-dasharray="5 3"/>` +
+    `<circle cx="60" cy="${yFor(prevSignal)}" r="4" fill="#eab308"/><circle cx="300" cy="${yFor(nowSignal)}" r="4" fill="#eab308"/>` +
+    `<text x="60" y="118" font-size="9" fill="#8892b0" text-anchor="middle" font-family="Helvetica">Previous</text>` +
+    `<text x="300" y="118" font-size="9" fill="#8892b0" text-anchor="middle" font-family="Helvetica">Current</text>` +
+    `<text x="380" y="20" font-size="9" fill="#a855f7" font-family="Helvetica">— MACD</text>` +
+    `<text x="380" y="32" font-size="9" fill="#eab308" font-family="Helvetica">- - Signal</text>`;
 
-  document.getElementById('rsiCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict}: RSI ${rsi.toFixed(1)}</span>${desc}`;
+  document.getElementById('macdCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}`;
 }
-calcRsi();
+checkMacdCross();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
