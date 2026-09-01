@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Backtesting — Pro — Growth Capital Group</title>
+<title>Regime Detection — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -86,8 +86,8 @@ p.body-text b { color: var(--text); }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.margin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
-@media (max-width: 700px) { .margin-grid { grid-template-columns: repeat(2, 1fr); } }
+.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--teal); }
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 3 of 5</div>
-    <h1 class="hero-title">Backtesting — Proving an Idea Before Risking <span class="accent">Real Money</span></h1>
-    <p class="hero-sub">A backtest runs a strategy's rules against historical data to see how it would have performed. Done properly, it's the difference between a hunch and evidence — done carelessly, it's a very convincing way to fool yourself.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 4 of 5</div>
+    <h1 class="hero-title">Regime Detection — Knowing When the Rules <span class="accent">Change</span></h1>
+    <p class="hero-sub">Markets shift between calm, trending, and chaotic regimes, and a strategy that thrives in one can struggle badly in another. Regime detection uses volatility and correlation signals to recognize the shift.</p>
   </div>
 </div>
 
@@ -158,73 +158,74 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">From Idea to Evidence</h2>
-    <p class="body-text">A <b>backtest</b> takes a strategy's rules — precisely defined, no ambiguity — and simulates applying them to historical data, to see what would have happened. It answers a specific question: "if I had followed this exact rule in the past, what result would it have produced?" That's a narrower claim than "this strategy will work," but it's a necessary first filter before risking any real capital.</p>
-    <p class="body-text">The value of a backtest depends entirely on how honestly it's built. Two failure modes dominate: <b>lookahead bias</b> (accidentally using information that wouldn't have been available at the time — like a full year's earnings data applied to a trade made mid-year) and <b>overfitting</b> (tuning the rules so precisely to the historical data that the strategy has essentially memorized the past rather than found a real, repeatable pattern).</p>
-    <p class="body-text">A realistic backtest also has to account for costs that are easy to ignore on paper: trading commissions, the bid-ask spread, and <b>slippage</b> (the difference between the price you wanted and the price you actually got, especially in a fast-moving or illiquid market). A strategy that looks great with zero costs can turn unprofitable once realistic frictions are added — which is exactly why this step exists.</p>
+    <h2 class="section-title">Markets Don't Behave the Same Way All the Time</h2>
+    <p class="body-text">A backtest (previous lesson) produces one overall number, but that number is really an average across many different market conditions. Markets tend to move through distinct <b>regimes</b> — broadly, <b>low-volatility trending</b> periods (steady, directional, calmer), <b>range-bound</b> periods (choppy, no clear direction, prone to mean reversion), and <b>high-volatility crisis</b> periods (sharp moves, correlations spiking, calm relationships between assets breaking down).</p>
+    <p class="body-text">A strategy tuned for one regime can perform very differently in another. A momentum strategy (previous lesson) can shine in a steady trending regime and get whipsawed in a choppy, range-bound one. A mean-reversion strategy can work well range-bound and suffer badly in a strongly trending regime, since "stretched" prices keep getting more stretched rather than reverting.</p>
+    <p class="body-text"><b>Regime detection</b> uses measurable signals — rolling volatility, correlation between assets, and trend strength — to estimate which regime the market is currently in, so a strategy (or its position sizing) can be adjusted accordingly, rather than running one static rule regardless of conditions.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: The Same Backtest, With and Without Realistic Costs</h3>
-      <p class="body-text">A hypothetical strategy trades frequently. Here's how its results change once trading costs and slippage are added — illustrative numbers only.</p>
+      <h3>⚖️ Illustrative Example: Three Regimes, Same Index</h3>
+      <p class="body-text">A hypothetical equity index moving through three distinct stretches, characterized by simple, measurable signals — illustrative numbers only.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Version</th><th>Trades / Year</th><th>Gross Annual Return</th><th>Est. Cost Drag</th><th>Net Annual Return</th></tr>
+            <tr><th>Period</th><th>Rolling Volatility</th><th>Avg. Cross-Asset Correlation</th><th>Illustrative Regime</th></tr>
           </thead>
           <tbody>
-            <tr><td>No Costs Assumed</td><td>240</td><td>+18.0%</td><td>0.0%</td><td>+18.0%</td></tr>
-            <tr class="highlight-row"><td>Realistic Costs Assumed</td><td>240</td><td>+18.0%</td><td>-11.5%</td><td>+6.5%</td></tr>
+            <tr><td>Jan-Jun</td><td>11% (annualized)</td><td>0.35</td><td>Low-Vol Trending</td></tr>
+            <tr><td>Jul-Sep</td><td>14% (annualized)</td><td>0.42</td><td>Range-Bound / Choppy</td></tr>
+            <tr class="highlight-row"><td>Oct-Nov</td><td>34% (annualized)</td><td>0.81</td><td>High-Vol Crisis</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">240 trades a year at even a small per-trade cost (commission + spread + slippage) compounds into a large annual drag — the "no costs" version looks like a great strategy, the realistic version looks merely decent. Always ask which one you're looking at.</p>
+      <p class="stmt-note">Notice how correlation spikes alongside volatility in the crisis period — in sharp sell-offs, assets that normally move somewhat independently start falling together, which is exactly why diversification (Intermediate: Correlation) tends to work worse precisely when it's needed most.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Backtesting</h3>
+    <h3 class="subhead">5 Things to Know About Regime Detection</h3>
     <ol class="num-checklist">
-      <li><b>A great backtest is necessary, not sufficient</b> — it filters out obviously bad ideas, but a good result doesn't guarantee future performance.</li>
-      <li><b>Overfitting gets worse the more you tune</b> — the more parameters adjusted to fit historical data, the more likely the result is fitting noise, not signal.</li>
-      <li><b>Out-of-sample testing is the standard defense</b> — building rules on one period of data and testing them, unchanged, on a separate period the rules never saw.</li>
-      <li><b>Survivorship bias can silently inflate results</b> — testing only on companies that still exist today ignores the ones that went bankrupt or were delisted along the way.</li>
-      <li><b>A backtest is a simulation, not a guarantee</b> — market conditions, liquidity, and competition all change, and history never repeats exactly.</li>
+      <li><b>No single strategy dominates every regime</b> — momentum and mean reversion each have regimes where they shine and regimes where they struggle.</li>
+      <li><b>Volatility tends to cluster</b> — high-volatility periods tend to be followed by more high-volatility periods, not an immediate return to calm.</li>
+      <li><b>Correlation often spikes in crises</b> — "diversified" holdings can start moving together exactly when diversification is needed most.</li>
+      <li><b>Regime detection is probabilistic, not a light switch</b> — signals estimate which regime is more likely, not a certainty, and regimes can shift gradually or reverse quickly.</li>
+      <li><b>Adjusting exposure, not abandoning the strategy, is the usual response</b> — many practitioners scale position size down in high-volatility regimes rather than turning a strategy fully on or off.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check in Any Backtest</h3>
+    <h3 class="subhead">4 Things to Check When Reading Regime Signals</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🕰️ Check for Lookahead Bias</h4>
+        <h4>📈 Track Rolling Volatility</h4>
         <ul>
-          <li>Confirm every input used in a trade decision would genuinely have been known at that exact point in time.</li>
+          <li>A rising rolling volatility measure is often the earliest, simplest signal that conditions are shifting.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>💸 Include Realistic Costs</h4>
+        <h4>🔗 Watch Cross-Asset Correlation</h4>
         <ul>
-          <li>Model commissions, spread, and slippage — especially for strategies that trade frequently.</li>
+          <li>A jump in correlation between normally-independent assets is a classic early warning of stress building.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧪 Hold Out a True Test Period</h4>
+        <h4>📏 Use Multiple Signals, Not One</h4>
         <ul>
-          <li>Never tune parameters on the same data you're using to judge the final result.</li>
+          <li>Combining volatility, correlation, and trend strength gives a more robust read than any single measure alone.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📉 Stress-Test Across Regimes</h4>
+        <h4>⚖️ Adjust Sizing Gradually</h4>
         <ul>
-          <li>Check performance separately across calm, trending, and volatile periods, not just one smooth overall number.</li>
+          <li>Scale exposure down as signals shift, rather than making abrupt full on/off decisions based on noisy short-term readings.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related tool:</b> GCG's own <a href="/backtester">Backtester</a> tool lets you run a strategy's rules against historical data directly — a hands-on way to apply everything in this lesson. <a href="/learn/pro/regime-detection">Regime Detection</a> (next in this track) covers the stress-testing idea above in more depth.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/backtesting">Backtesting</a> (previous) shows how to test a strategy's average performance — this lesson is about recognizing when "average" stops applying. <a href="/learn/pro#tab-quant">Position Sizing & Risk Budgeting</a> (next in this track) covers how to translate a regime read into an actual sizing decision.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains backtesting methodology using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy or backtest result described here is a recommendation to trade. Past backtested performance, however carefully built, is never a guarantee of future results. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains regime detection concepts using illustrative numbers and historical framing — it isn't personalized financial advice, and no signal or threshold described here is a recommendation to trade. Regime signals are probabilistic estimates, not guarantees, and markets can shift faster or differently than any model expects. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -233,54 +234,46 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Cost Drag Calculator</h2>
-    <p class="section-desc">Enter a gross backtest return, trade frequency, and a per-trade cost estimate — see how much realistic costs eat into the headline number.</p>
+    <h2 class="section-title">Try It Yourself: Regime Classifier</h2>
+    <p class="section-desc">Enter a rolling volatility reading and an average cross-asset correlation — see which illustrative regime the combination suggests, under a simple rule.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadCostPreset('frequent')">Load Frequent Trading (240/yr)</button>
-        <button class="preset-btn" onclick="loadCostPreset('moderate')">Load Moderate Trading (52/yr)</button>
-        <button class="preset-btn" onclick="loadCostPreset('rare')">Load Rare Trading (12/yr)</button>
+        <button class="preset-btn" onclick="loadRegimePreset('calm')">Load Low-Vol Trending</button>
+        <button class="preset-btn" onclick="loadRegimePreset('choppy')">Load Range-Bound / Choppy</button>
+        <button class="preset-btn" onclick="loadRegimePreset('crisis')">Load High-Vol Crisis</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="costGrossReturn">Gross Annual Return (%)</label>
-          <input type="number" id="costGrossReturn" value="18" step="0.5">
+          <label for="regimeVol">Rolling Volatility (annualized %)</label>
+          <input type="number" id="regimeVol" value="11" step="0.5" min="0">
         </div>
         <div class="calc-field">
-          <label for="costTradesYear">Trades per Year</label>
-          <input type="number" id="costTradesYear" value="240" step="1" min="0">
-        </div>
-        <div class="calc-field">
-          <label for="costPerTrade">Est. Cost per Trade (%)</label>
-          <input type="number" id="costPerTrade" value="0.05" step="0.01" min="0">
-        </div>
-        <div class="calc-field">
-          <label for="costPortfolioVal">Portfolio Value ($)</label>
-          <input type="number" id="costPortfolioVal" value="100000" step="1000">
+          <label for="regimeCorr">Avg. Cross-Asset Correlation</label>
+          <input type="number" id="regimeCorr" value="0.35" step="0.01" min="-1" max="1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcCostDrag()">Calculate Net Return →</button>
+        <button class="calc-btn" onclick="calcRegime()">Classify Regime →</button>
       </div>
 
-      <div class="calc-results visible" id="costResults">
+      <div class="calc-results visible" id="regimeResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Est. Annual Cost Drag</div>
-            <div class="mc-value" id="costDragPct">—</div>
+            <div class="mc-label">Volatility Reading</div>
+            <div class="mc-value" id="regimeVolOut">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Net Annual Return</div>
-            <div class="mc-value" id="costNetReturn">—</div>
+            <div class="mc-label">Correlation Reading</div>
+            <div class="mc-value" id="regimeCorrOut">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Annual Cost in $</div>
-            <div class="mc-value" id="costDragDollar">—</div>
+            <div class="mc-label">Illustrative Regime</div>
+            <div class="mc-value" id="regimeLabel" style="font-size:16px;">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="costCallout"></div>
-        <p class="calc-note">Model: cost drag = trades per year × cost per trade (%). Net return = gross return − cost drag. Illustrative only — actual costs depend on the specific broker, asset, and market conditions.</p>
+        <div class="calc-callout" id="regimeCallout"></div>
+        <p class="calc-note">Model (illustrative only): volatility below 15% and correlation below 0.5 → Low-Vol Trending. Volatility 15-25% or correlation 0.5-0.7 → Range-Bound / Choppy. Volatility above 25% or correlation above 0.7 → High-Vol Crisis. Real regime detection uses more signals and statistical rigor than this simple threshold rule.</p>
       </div>
     </div>
   </div>
@@ -299,59 +292,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What does a backtest do?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">1. What is a "market regime" in this lesson?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Predicts exactly what a strategy will return in the future</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Simulates a strategy's precisely defined rules against historical data</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Automatically executes trades in a live account</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Guarantees a strategy is profitable if the result is positive</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> A government policy that controls stock prices</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A fixed calendar period like a fiscal quarter</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A broad market condition, like low-volatility trending, range-bound, or high-volatility crisis</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The exchange a stock is listed on</label>
         </div>
-        <div class="quiz-explain">A backtest answers "if I had followed this exact rule in the past, what would have happened?" — a narrower, evidence-based question, not a guarantee.</div>
+        <div class="quiz-explain">Regimes are broad market conditions that markets move between, each with different characteristic behavior.</div>
       </div>
 
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. What is lookahead bias?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">2. Why can a momentum strategy underperform in a range-bound regime?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Trading too infrequently</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Using too many years of historical data</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Accidentally using information that wouldn't have been available at the time</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Ignoring trading costs in a simulation</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Momentum strategies only work on bonds</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> A choppy, directionless market can whipsaw a strategy designed to ride a trend</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Momentum strategies are illegal in range-bound markets</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Range-bound markets have no prices at all</label>
         </div>
-        <div class="quiz-explain">Lookahead bias means the backtest used data (like full-year earnings) before it would genuinely have been known, inflating the apparent result.</div>
+        <div class="quiz-explain">Momentum strategies rely on trends continuing; a choppy, range-bound market lacks the sustained direction they depend on.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. In the illustrative example, why did realistic costs matter so much for the frequent-trading strategy?</div>
+        <div class="quiz-q-title">3. In the illustrative example, what happened to cross-asset correlation during the crisis period?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Because the strategy only traded once a year</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Because costs only apply to losing trades</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Because commissions are the same regardless of trade frequency</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Because 240 trades a year compounds even a small per-trade cost into a large annual drag</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It dropped to zero</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It became negative</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It stayed exactly the same as the calm period</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It spiked sharply higher, alongside volatility</label>
         </div>
-        <div class="quiz-explain">A high trade count multiplies even small per-trade frictions into a substantial annual cost, turning an 18% gross return into a 6.5% net return in the example.</div>
+        <div class="quiz-explain">Correlation rose from 0.35 in the calm period to 0.81 in the crisis period — assets that normally move somewhat independently started moving together.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. What is the standard defense against overfitting described in this lesson?</div>
+        <div class="quiz-q-title">4. Why does correlation spiking in a crisis matter for diversification?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Out-of-sample testing — testing rules, unchanged, on data they never saw during tuning</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Adding more parameters to the strategy</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Testing only on the most recent month of data</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Ignoring the backtest result entirely</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Diversification tends to work worse exactly when it's needed most, as holdings start falling together</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Diversification becomes more effective during a crisis</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Correlation has no relationship to diversification</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Crises only affect a single asset class</label>
         </div>
-        <div class="quiz-explain">Out-of-sample testing checks whether rules built on one period of data still hold up on a separate period they never influenced.</div>
+        <div class="quiz-explain">Rising correlation during stress periods means previously-independent holdings can start moving together, weakening diversification exactly when it matters most.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What is survivorship bias in this context?</div>
+        <div class="quiz-q-title">5. What is the usual practitioner response to a shifting regime signal, according to this lesson?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Only trading strategies that have never lost money</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Backtesting only during bull markets</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Testing only on companies that still exist today, ignoring ones that went bankrupt or were delisted</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Using too short a historical data window</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Ignore it completely and keep the strategy unchanged</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Immediately liquidate the entire portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Adjust exposure or position size gradually, rather than an abrupt full on/off decision</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Switch to a completely different asset class permanently</label>
         </div>
-        <div class="quiz-explain">Survivorship bias inflates results by silently excluding the companies that failed along the way, since they're no longer in today's easily-available datasets.</div>
+        <div class="quiz-explain">Many practitioners scale position size down in high-volatility regimes rather than making abrupt on/off decisions based on noisy short-term readings.</div>
       </div>
     </div>
 
@@ -368,22 +361,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/backtesting-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/regime-detection-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the cost-drag example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the three-regimes example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/backtesting-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/regime-detection-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to audit a hypothetical backtest for common biases and cost assumptions.</div>
+        <div class="dl-desc">Guided exercises to classify hypothetical periods and think through adjusting exposure by regime.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/backtesting-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/regime-detection-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore backtesting methodology in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore regime detection in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -392,19 +385,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Regime Detection</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">A backtest tells you how a strategy performed on average across history. The next lesson covers how to recognize when market conditions themselves have shifted, so you know when that average may no longer apply.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Position Sizing & Risk Budgeting</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You can now recognize when conditions have shifted. The final lesson in this track covers how professional quants translate that read into an actual sizing decision at the strategy level.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/momentum-factors" class="hub-card">
-        <div class="card-icon">📈</div>
-        <div class="card-title">Back to Momentum & Factor Models</div>
-        <div class="card-desc">Review isolating persistent drivers of returns.</div>
+      <a href="/learn/pro/backtesting" class="hub-card">
+        <div class="card-icon">🧪</div>
+        <div class="card-title">Back to Backtesting</div>
+        <div class="card-desc">Review proving an idea before risking real money.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/regime-detection" class="hub-card">
-        <div class="card-icon">🌗</div>
-        <div class="card-title">Continue to Regime Detection</div>
-        <div class="card-desc">Knowing when the rules change.</div>
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">🎛️</div>
+        <div class="card-title">Continue to Position Sizing & Risk Budgeting</div>
+        <div class="card-desc">Sizing every trade by statistical risk contribution.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -437,49 +430,53 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const COST_PRESETS = {
-  frequent: { gross: 18, trades: 240, perTrade: 0.05, portfolio: 100000 },
-  moderate: { gross: 14, trades: 52, perTrade: 0.05, portfolio: 100000 },
-  rare: { gross: 10, trades: 12, perTrade: 0.05, portfolio: 100000 },
+const REGIME_PRESETS = {
+  calm: { vol: 11, corr: 0.35 },
+  choppy: { vol: 18, corr: 0.55 },
+  crisis: { vol: 34, corr: 0.81 },
 };
-function loadCostPreset(kind) {
-  const p = COST_PRESETS[kind];
-  document.getElementById('costGrossReturn').value = p.gross;
-  document.getElementById('costTradesYear').value = p.trades;
-  document.getElementById('costPerTrade').value = p.perTrade;
-  document.getElementById('costPortfolioVal').value = p.portfolio;
-  calcCostDrag();
+function loadRegimePreset(kind) {
+  const p = REGIME_PRESETS[kind];
+  document.getElementById('regimeVol').value = p.vol;
+  document.getElementById('regimeCorr').value = p.corr;
+  calcRegime();
 }
 
-function calcCostDrag() {
-  const gross = parseFloat(document.getElementById('costGrossReturn').value);
-  const trades = parseFloat(document.getElementById('costTradesYear').value);
-  const perTrade = parseFloat(document.getElementById('costPerTrade').value);
-  const portfolio = parseFloat(document.getElementById('costPortfolioVal').value);
-  if ([gross, trades, perTrade, portfolio].some(isNaN) || trades < 0 || perTrade < 0 || portfolio <= 0) {
-    alert('Please enter valid, non-negative values.');
+function calcRegime() {
+  const vol = parseFloat(document.getElementById('regimeVol').value);
+  const corr = parseFloat(document.getElementById('regimeCorr').value);
+  if (isNaN(vol) || isNaN(corr) || vol < 0 || corr < -1 || corr > 1) {
+    alert('Please enter a valid, non-negative volatility and a correlation between -1 and 1.');
     return;
   }
 
-  const dragPct = trades * perTrade;
-  const netReturn = gross - dragPct;
-  const dragDollar = portfolio * (dragPct / 100);
+  document.getElementById('regimeVolOut').textContent = vol.toFixed(1) + '%';
+  document.getElementById('regimeCorrOut').textContent = corr.toFixed(2);
 
-  document.getElementById('costDragPct').textContent = '-' + dragPct.toFixed(1) + '%';
-  document.getElementById('costNetReturn').textContent = (netReturn >= 0 ? '+' : '') + netReturn.toFixed(1) + '%';
-  document.getElementById('costDragDollar').textContent = '$' + dragDollar.toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-  const callout = document.getElementById('costCallout');
-  const dragShare = gross !== 0 ? (dragPct / Math.abs(gross)) * 100 : 0;
-  if (dragShare >= 40) {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Costs Consumed ${dragShare.toFixed(0)}% of the Gross Return</span>At ${trades} trades/year, realistic costs took the ${gross.toFixed(1)}% gross return down to ${netReturn.toFixed(1)}% net — a stark reminder to always check which number a backtest is reporting.</span>`;
+  let regime, tone;
+  if (vol > 25 || corr > 0.7) {
+    regime = 'High-Vol Crisis';
+    tone = 'warn';
+  } else if (vol >= 15 || corr >= 0.5) {
+    regime = 'Range-Bound / Choppy';
+    tone = 'warn';
   } else {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Costs Are a Manageable Share</span>At ${trades} trades/year, costs took the ${gross.toFixed(1)}% gross return down to ${netReturn.toFixed(1)}% net — a more modest drag at this trade frequency.`;
+    regime = 'Low-Vol Trending';
+    tone = '';
+  }
+  document.getElementById('regimeLabel').textContent = regime;
+
+  const callout = document.getElementById('regimeCallout');
+  callout.className = 'calc-callout' + (tone ? ' ' + tone : '');
+  if (regime === 'High-Vol Crisis') {
+    callout.innerHTML = `<span class="verdict">⚠️ High-Vol Crisis Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} both point toward stressed conditions — many practitioners would consider scaling down exposure here, illustrative only.`;
+  } else if (regime === 'Range-Bound / Choppy') {
+    callout.innerHTML = `<span class="verdict">〰️ Range-Bound / Choppy Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} suggest a choppier, less directional environment — trend-following strategies may face more whipsaws here.`;
+  } else {
+    callout.innerHTML = `<span class="verdict">✓ Low-Vol Trending Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} both sit in calmer territory — historically a more favorable backdrop for trend-following strategies.`;
   }
 }
-calcCostDrag();
+calcRegime();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
