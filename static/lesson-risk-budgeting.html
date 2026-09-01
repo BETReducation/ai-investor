@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Regime Detection — Pro — Growth Capital Group</title>
+<title>Position Sizing & Risk Budgeting — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 4 of 5</div>
-    <h1 class="hero-title">Regime Detection — Knowing When the Rules <span class="accent">Change</span></h1>
-    <p class="hero-sub">Markets shift between calm, trending, and chaotic regimes, and a strategy that thrives in one can struggle badly in another. Regime detection uses volatility and correlation signals to recognize the shift.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 5 of 5</div>
+    <h1 class="hero-title">Position Sizing & Risk Budgeting at the <span class="accent">Strategy Level</span></h1>
+    <p class="hero-sub">Intermediate position sizing caps a single stock. At the strategy level, professional quants go further — sizing every signal or asset by its statistical risk contribution to the whole book, not a flat dollar amount.</p>
   </div>
 </div>
 
@@ -158,74 +158,74 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Markets Don't Behave the Same Way All the Time</h2>
-    <p class="body-text">A backtest (previous lesson) produces one overall number, but that number is really an average across many different market conditions. Markets tend to move through distinct <b>regimes</b> — broadly, <b>low-volatility trending</b> periods (steady, directional, calmer), <b>range-bound</b> periods (choppy, no clear direction, prone to mean reversion), and <b>high-volatility crisis</b> periods (sharp moves, correlations spiking, calm relationships between assets breaking down).</p>
-    <p class="body-text">A strategy tuned for one regime can perform very differently in another. A momentum strategy (previous lesson) can shine in a steady trending regime and get whipsawed in a choppy, range-bound one. A mean-reversion strategy can work well range-bound and suffer badly in a strongly trending regime, since "stretched" prices keep getting more stretched rather than reverting.</p>
-    <p class="body-text"><b>Regime detection</b> uses measurable signals — rolling volatility, correlation between assets, and trend strength — to estimate which regime the market is currently in, so a strategy (or its position sizing) can be adjusted accordingly, rather than running one static rule regardless of conditions.</p>
+    <h2 class="section-title">Sizing by Risk Contribution, Not Dollar Amount</h2>
+    <p class="body-text">The Intermediate <a href="/learn/intermediate/position-sizing">Position Sizing</a> lesson covered capping any single holding's weight or sizing by risk-to-stop-loss. <b>Risk budgeting</b> extends the same underlying idea — "how much can this hurt me if I'm wrong?" — from a single stock to an entire multi-strategy or multi-asset portfolio, where different positions carry very different amounts of volatility per dollar invested.</p>
+    <p class="body-text">The key insight: an equal dollar amount in two different assets is not an equal amount of <i>risk</i>. $10,000 in a low-volatility bond and $10,000 in a high-volatility small-cap stock contribute very different amounts of risk to a portfolio, even though the dollar amounts match. A <b>risk-parity</b> or <b>volatility-scaled</b> approach instead sizes each position so it contributes roughly the same amount of risk, adjusting the dollar amount to compensate for each asset's own volatility.</p>
+    <p class="body-text">A common formula: <b>position size = (target risk contribution) ÷ (asset's volatility)</b>. A more volatile asset gets a smaller dollar allocation for the same risk budget; a calmer asset gets a larger one. Applied across a whole book of strategies or signals, this keeps any single volatile bet from dominating total portfolio risk, purely because it happened to get the same dollar allocation as a much calmer one.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Three Regimes, Same Index</h3>
-      <p class="body-text">A hypothetical equity index moving through three distinct stretches, characterized by simple, measurable signals — illustrative numbers only.</p>
+      <h3>⚖️ Illustrative Example: Equal Dollars vs. Equal Risk</h3>
+      <p class="body-text">Three hypothetical assets with very different volatility, sized two ways from a $300,000 total allocation.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Period</th><th>Rolling Volatility</th><th>Avg. Cross-Asset Correlation</th><th>Illustrative Regime</th></tr>
+            <tr><th>Asset</th><th>Volatility</th><th>Equal-Dollar Size</th><th>Risk-Budgeted Size</th></tr>
           </thead>
           <tbody>
-            <tr><td>Jan-Jun</td><td>11% (annualized)</td><td>0.35</td><td>Low-Vol Trending</td></tr>
-            <tr><td>Jul-Sep</td><td>14% (annualized)</td><td>0.42</td><td>Range-Bound / Choppy</td></tr>
-            <tr class="highlight-row"><td>Oct-Nov</td><td>34% (annualized)</td><td>0.81</td><td>High-Vol Crisis</td></tr>
+            <tr><td>Bonds (Low Vol)</td><td>6%</td><td>$100,000</td><td>$192,000</td></tr>
+            <tr><td>Large-Cap Stocks (Med Vol)</td><td>16%</td><td>$100,000</td><td>$72,000</td></tr>
+            <tr class="highlight-row"><td>Small-Cap Stock (High Vol)</td><td>32%</td><td>$100,000</td><td>$36,000</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Notice how correlation spikes alongside volatility in the crisis period — in sharp sell-offs, assets that normally move somewhat independently start falling together, which is exactly why diversification (Intermediate: Correlation) tends to work worse precisely when it's needed most.</p>
+      <p class="stmt-note">Under the equal-dollar approach, the small-cap stock (32% volatility) contributes over 5x as much risk to the portfolio as the bonds (6% volatility), despite the identical dollar size. The risk-budgeted approach instead sizes each position so their risk contributions are roughly balanced.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Regime Detection</h3>
+    <h3 class="subhead">5 Things to Know About Risk Budgeting</h3>
     <ol class="num-checklist">
-      <li><b>No single strategy dominates every regime</b> — momentum and mean reversion each have regimes where they shine and regimes where they struggle.</li>
-      <li><b>Volatility tends to cluster</b> — high-volatility periods tend to be followed by more high-volatility periods, not an immediate return to calm.</li>
-      <li><b>Correlation often spikes in crises</b> — "diversified" holdings can start moving together exactly when diversification is needed most.</li>
-      <li><b>Regime detection is probabilistic, not a light switch</b> — signals estimate which regime is more likely, not a certainty, and regimes can shift gradually or reverse quickly.</li>
-      <li><b>Adjusting exposure, not abandoning the strategy, is the usual response</b> — many practitioners scale position size down in high-volatility regimes rather than turning a strategy fully on or off.</li>
+      <li><b>Equal dollars is not equal risk</b> — the single most important idea in this lesson; a flat dollar allocation silently over-weights risk toward the most volatile positions.</li>
+      <li><b>Volatility estimates are themselves uncertain</b> — risk budgeting depends on volatility forecasts, which can shift quickly, especially around regime changes (previous lesson).</li>
+      <li><b>Risk parity isn't automatically "safer"</b> — it changes how risk is distributed, but total portfolio risk still depends on how much leverage or overall exposure is applied.</li>
+      <li><b>This scales the Intermediate idea up, not replaces it</b> — the same "size by risk, not dollars" logic from single-stock position sizing, applied across an entire multi-asset or multi-strategy book.</li>
+      <li><b>Correlation between positions still matters</b> — risk budgeting by volatility alone ignores how positions move together; a fuller approach also accounts for correlation (see: Regime Detection, previous lesson).</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading Regime Signals</h3>
+    <h3 class="subhead">4 Things to Check When Risk-Budgeting a Book</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📈 Track Rolling Volatility</h4>
+        <h4>📏 Measure Volatility Consistently</h4>
         <ul>
-          <li>A rising rolling volatility measure is often the earliest, simplest signal that conditions are shifting.</li>
+          <li>Use the same lookback window and calculation method across every asset being compared.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔗 Watch Cross-Asset Correlation</h4>
+        <h4>🔗 Don't Ignore Correlation</h4>
         <ul>
-          <li>A jump in correlation between normally-independent assets is a classic early warning of stress building.</li>
+          <li>Two "equally risk-sized" positions that move together still concentrate risk more than two that don't.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📏 Use Multiple Signals, Not One</h4>
+        <h4>🔁 Rebalance as Volatility Shifts</h4>
         <ul>
-          <li>Combining volatility, correlation, and trend strength gives a more robust read than any single measure alone.</li>
+          <li>An asset's volatility isn't fixed — revisit sizing periodically as regimes and volatility estimates change.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>⚖️ Adjust Sizing Gradually</h4>
+        <h4>🎯 Set an Overall Risk Budget First</h4>
         <ul>
-          <li>Scale exposure down as signals shift, rather than making abrupt full on/off decisions based on noisy short-term readings.</li>
+          <li>Decide the total portfolio risk target before allocating it across positions — risk parity distributes risk, it doesn't cap it.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/backtesting">Backtesting</a> (previous) shows how to test a strategy's average performance — this lesson is about recognizing when "average" stops applying. <a href="/learn/pro#tab-quant">Position Sizing & Risk Budgeting</a> (next in this track) covers how to translate a regime read into an actual sizing decision.
+      🧮 <b>Related lessons:</b> <a href="/learn/intermediate/position-sizing">Position Sizing</a> (Intermediate) covers the single-stock version of this idea, and <a href="/learn/pro/regime-detection">Regime Detection</a> (previous in this track) covers how volatility and correlation estimates shift, which directly feeds into a risk budget.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains regime detection concepts using illustrative numbers and historical framing — it isn't personalized financial advice, and no signal or threshold described here is a recommendation to trade. Regime signals are probabilistic estimates, not guarantees, and markets can shift faster or differently than any model expects. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains risk-budgeting methodology using illustrative numbers and historical framing — it isn't personalized financial advice, and no allocation described here is a recommendation for your own portfolio. Volatility-based sizing depends on estimates that are never certain, and past volatility is not a guarantee of future volatility. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -234,46 +234,33 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Regime Classifier</h2>
-    <p class="section-desc">Enter a rolling volatility reading and an average cross-asset correlation — see which illustrative regime the combination suggests, under a simple rule.</p>
+    <h2 class="section-title">Try It Yourself: Risk-Budgeted Sizer</h2>
+    <p class="section-desc">Enter up to 3 assets with their volatility and a total allocation — see how much each would receive under equal-dollar sizing versus risk-budgeted sizing.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadRegimePreset('calm')">Load Low-Vol Trending</button>
-        <button class="preset-btn" onclick="loadRegimePreset('choppy')">Load Range-Bound / Choppy</button>
-        <button class="preset-btn" onclick="loadRegimePreset('crisis')">Load High-Vol Crisis</button>
+        <button class="preset-btn" onclick="loadRiskPreset('sample')">Load Sample 3-Asset Book</button>
+        <button class="preset-btn" onclick="loadRiskPreset('similar')">Load Similar Volatilities</button>
+        <button class="preset-btn" onclick="loadRiskPreset('extreme')">Load Wide Volatility Spread</button>
       </div>
       <div class="calc-grid">
-        <div class="calc-field">
-          <label for="regimeVol">Rolling Volatility (annualized %)</label>
-          <input type="number" id="regimeVol" value="11" step="0.5" min="0">
-        </div>
-        <div class="calc-field">
-          <label for="regimeCorr">Avg. Cross-Asset Correlation</label>
-          <input type="number" id="regimeCorr" value="0.35" step="0.01" min="-1" max="1">
-        </div>
+        <div class="calc-field"><label>Asset A — Volatility (%)</label><input type="number" class="risk-vol" data-name="Asset A" value="6" step="0.5" min="0.1"></div>
+        <div class="calc-field"><label>Asset B — Volatility (%)</label><input type="number" class="risk-vol" data-name="Asset B" value="16" step="0.5" min="0.1"></div>
+        <div class="calc-field"><label>Asset C — Volatility (%)</label><input type="number" class="risk-vol" data-name="Asset C" value="32" step="0.5" min="0.1"></div>
+        <div class="calc-field"><label>Total Allocation ($)</label><input type="number" id="riskTotalAlloc" value="300000" step="1000" min="1"></div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcRegime()">Classify Regime →</button>
+        <button class="calc-btn" onclick="calcRiskBudget()">Calculate Risk-Budgeted Sizes →</button>
       </div>
 
-      <div class="calc-results visible" id="regimeResults">
-        <div class="margin-grid">
-          <div class="margin-card">
-            <div class="mc-label">Volatility Reading</div>
-            <div class="mc-value" id="regimeVolOut">—</div>
-          </div>
-          <div class="margin-card">
-            <div class="mc-label">Correlation Reading</div>
-            <div class="mc-value" id="regimeCorrOut">—</div>
-          </div>
-          <div class="margin-card">
-            <div class="mc-label">Illustrative Regime</div>
-            <div class="mc-value" id="regimeLabel" style="font-size:16px;">—</div>
-          </div>
+      <div class="calc-results visible" id="riskResults">
+        <div class="stmt-table-wrap" style="margin-top:0;">
+          <table class="stmt-table">
+            <thead><tr><th>Asset</th><th>Volatility</th><th>Equal-Dollar Size</th><th>Risk-Budgeted Size</th></tr></thead>
+            <tbody id="riskTableBody"></tbody>
+          </table>
         </div>
-        <div class="calc-callout" id="regimeCallout"></div>
-        <p class="calc-note">Model (illustrative only): volatility below 15% and correlation below 0.5 → Low-Vol Trending. Volatility 15-25% or correlation 0.5-0.7 → Range-Bound / Choppy. Volatility above 25% or correlation above 0.7 → High-Vol Crisis. Real regime detection uses more signals and statistical rigor than this simple threshold rule.</p>
+        <p class="calc-note" style="margin-top:16px;">Model: risk-budgeted weight for each asset is proportional to 1 ÷ volatility, normalized so all weights sum to the total allocation — giving each asset roughly equal risk contribution. Illustrative only, and ignores correlation between assets.</p>
       </div>
     </div>
   </div>
@@ -293,58 +280,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is a "market regime" in this lesson?</div>
+        <div class="quiz-q-title">1. What is the key insight behind risk budgeting?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> A government policy that controls stock prices</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A fixed calendar period like a fiscal quarter</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A broad market condition, like low-volatility trending, range-bound, or high-volatility crisis</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The exchange a stock is listed on</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Every asset should get exactly the same dollar allocation</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Only bonds should be held in a portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> An equal dollar amount in two different assets is not an equal amount of risk</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Risk cannot be measured or estimated</label>
         </div>
-        <div class="quiz-explain">Regimes are broad market conditions that markets move between, each with different characteristic behavior.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. Why can a momentum strategy underperform in a range-bound regime?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Momentum strategies only work on bonds</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> A choppy, directionless market can whipsaw a strategy designed to ride a trend</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Momentum strategies are illegal in range-bound markets</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Range-bound markets have no prices at all</label>
-        </div>
-        <div class="quiz-explain">Momentum strategies rely on trends continuing; a choppy, range-bound market lacks the sustained direction they depend on.</div>
+        <div class="quiz-explain">The central idea is that a flat dollar allocation silently over-weights risk toward the most volatile positions, since volatility differs across assets.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. In the illustrative example, what happened to cross-asset correlation during the crisis period?</div>
+        <div class="quiz-q-title">2. In the illustrative example, why did the small-cap stock get a smaller risk-budgeted dollar size?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It dropped to zero</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It became negative</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It stayed exactly the same as the calm period</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It spiked sharply higher, alongside volatility</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because small-cap stocks are illegal to hold in large amounts</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because it had the lowest expected return</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because it was the newest position in the portfolio</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because its higher volatility meant a smaller dollar size was needed to contribute the same amount of risk</label>
         </div>
-        <div class="quiz-explain">Correlation rose from 0.35 in the calm period to 0.81 in the crisis period — assets that normally move somewhat independently started moving together.</div>
+        <div class="quiz-explain">Under risk budgeting, more volatile assets get smaller dollar allocations so each position contributes a roughly similar amount of risk.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">3. What does this lesson say risk parity does NOT automatically do?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Distribute risk more evenly across positions</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Make a portfolio automatically "safer" — total risk still depends on overall exposure and leverage</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Use volatility estimates in its sizing formula</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Apply the position-sizing idea across multiple assets</label>
+        </div>
+        <div class="quiz-explain">Risk parity changes how risk is distributed across positions, but total portfolio risk still depends on overall exposure and any leverage applied.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why does correlation spiking in a crisis matter for diversification?</div>
+        <div class="quiz-q-title">4. What does this lesson say a fuller risk-budgeting approach should also account for, beyond volatility alone?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Diversification tends to work worse exactly when it's needed most, as holdings start falling together</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Diversification becomes more effective during a crisis</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Correlation has no relationship to diversification</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Crises only affect a single asset class</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Correlation between positions</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> The color scheme of the trading platform</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> The number of employees at each company</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> The alphabetical order of ticker symbols</label>
         </div>
-        <div class="quiz-explain">Rising correlation during stress periods means previously-independent holdings can start moving together, weakening diversification exactly when it matters most.</div>
+        <div class="quiz-explain">Sizing by volatility alone ignores how positions move together — two "equally risk-sized" positions that move together still concentrate risk more than two that don't.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What is the usual practitioner response to a shifting regime signal, according to this lesson?</div>
+        <div class="quiz-q-title">5. How does risk budgeting relate to the Intermediate Position Sizing lesson, according to this lesson?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Ignore it completely and keep the strategy unchanged</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Immediately liquidate the entire portfolio</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Adjust exposure or position size gradually, rather than an abrupt full on/off decision</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Switch to a completely different asset class permanently</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> They are unrelated, completely different concepts</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Risk budgeting replaces and contradicts single-stock position sizing</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Risk budgeting scales the same "size by risk, not dollars" idea up to a whole multi-asset or multi-strategy book</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Risk budgeting only applies to cryptocurrency portfolios</label>
         </div>
-        <div class="quiz-explain">Many practitioners scale position size down in high-volatility regimes rather than making abrupt on/off decisions based on noisy short-term readings.</div>
+        <div class="quiz-explain">Risk budgeting extends the same core idea from single-stock position sizing — "how much can this hurt me if I'm wrong?" — to an entire portfolio of positions.</div>
       </div>
     </div>
 
@@ -361,22 +348,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/regime-detection-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/risk-budgeting-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the three-regimes example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the equal-dollar-vs-equal-risk example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/regime-detection-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/risk-budgeting-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to classify hypothetical periods and think through adjusting exposure by regime.</div>
+        <div class="dl-desc">Guided exercises to size a hypothetical multi-asset book by risk contribution instead of dollar amount.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/regime-detection-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/risk-budgeting-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore regime detection in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore risk budgeting and risk parity in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -385,20 +372,20 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Position Sizing & Risk Budgeting</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You can now recognize when conditions have shifted. The final lesson in this track covers how professional quants translate that read into an actual sizing decision at the strategy level.</p>
+    <h2 class="section-title" style="text-align:center;">Quantitative Strategy Design: Complete</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now covered all five lessons in this track — mean reversion, momentum & factors, backtesting, regime detection, and sizing a book by risk. Two more Pro tracks await: Options & Derivatives and Macro & Cross-Asset Analysis.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/backtesting" class="hub-card">
-        <div class="card-icon">🧪</div>
-        <div class="card-title">Back to Backtesting</div>
-        <div class="card-desc">Review proving an idea before risking real money.</div>
+      <a href="/learn/pro/regime-detection" class="hub-card">
+        <div class="card-icon">🌗</div>
+        <div class="card-title">Back to Regime Detection</div>
+        <div class="card-desc">Review knowing when the rules change.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/risk-budgeting" class="hub-card">
-        <div class="card-icon">🎛️</div>
-        <div class="card-title">Continue to Position Sizing & Risk Budgeting</div>
-        <div class="card-desc">Sizing every trade by statistical risk contribution.</div>
-        <div class="card-link">Open the lesson →</div>
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">🏁</div>
+        <div class="card-title">Back to Quantitative Strategy Hub</div>
+        <div class="card-desc">Revisit any of the five lessons in this track.</div>
+        <div class="card-link">Open the hub →</div>
       </a>
     </div>
   </div>
@@ -430,53 +417,46 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const REGIME_PRESETS = {
-  calm: { vol: 11, corr: 0.35 },
-  choppy: { vol: 18, corr: 0.55 },
-  crisis: { vol: 34, corr: 0.81 },
+const RISK_PRESETS = {
+  sample: [6, 16, 32],
+  similar: [10, 12, 14],
+  extreme: [3, 20, 60],
 };
-function loadRegimePreset(kind) {
-  const p = REGIME_PRESETS[kind];
-  document.getElementById('regimeVol').value = p.vol;
-  document.getElementById('regimeCorr').value = p.corr;
-  calcRegime();
+function loadRiskPreset(kind) {
+  const vals = RISK_PRESETS[kind];
+  document.querySelectorAll('.risk-vol').forEach((el, i) => { el.value = vals[i]; });
+  calcRiskBudget();
 }
 
-function calcRegime() {
-  const vol = parseFloat(document.getElementById('regimeVol').value);
-  const corr = parseFloat(document.getElementById('regimeCorr').value);
-  if (isNaN(vol) || isNaN(corr) || vol < 0 || corr < -1 || corr > 1) {
-    alert('Please enter a valid, non-negative volatility and a correlation between -1 and 1.');
-    return;
-  }
+function calcRiskBudget() {
+  const inputs = document.querySelectorAll('.risk-vol');
+  const total = parseFloat(document.getElementById('riskTotalAlloc').value);
+  if (isNaN(total) || total <= 0) { alert('Please enter a valid, positive total allocation.'); return; }
 
-  document.getElementById('regimeVolOut').textContent = vol.toFixed(1) + '%';
-  document.getElementById('regimeCorrOut').textContent = corr.toFixed(2);
+  const assets = [];
+  let valid = true;
+  inputs.forEach(el => {
+    const vol = parseFloat(el.value);
+    if (isNaN(vol) || vol <= 0) valid = false;
+    assets.push({ name: el.dataset.name, vol });
+  });
+  if (!valid) { alert('Please enter valid, positive volatility values for every asset.'); return; }
 
-  let regime, tone;
-  if (vol > 25 || corr > 0.7) {
-    regime = 'High-Vol Crisis';
-    tone = 'warn';
-  } else if (vol >= 15 || corr >= 0.5) {
-    regime = 'Range-Bound / Choppy';
-    tone = 'warn';
-  } else {
-    regime = 'Low-Vol Trending';
-    tone = '';
-  }
-  document.getElementById('regimeLabel').textContent = regime;
+  const n = assets.length;
+  const equalDollar = total / n;
 
-  const callout = document.getElementById('regimeCallout');
-  callout.className = 'calc-callout' + (tone ? ' ' + tone : '');
-  if (regime === 'High-Vol Crisis') {
-    callout.innerHTML = `<span class="verdict">⚠️ High-Vol Crisis Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} both point toward stressed conditions — many practitioners would consider scaling down exposure here, illustrative only.`;
-  } else if (regime === 'Range-Bound / Choppy') {
-    callout.innerHTML = `<span class="verdict">〰️ Range-Bound / Choppy Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} suggest a choppier, less directional environment — trend-following strategies may face more whipsaws here.`;
-  } else {
-    callout.innerHTML = `<span class="verdict">✓ Low-Vol Trending Signal</span>Volatility of ${vol.toFixed(1)}% and correlation of ${corr.toFixed(2)} both sit in calmer territory — historically a more favorable backdrop for trend-following strategies.`;
-  }
+  const invVolSum = assets.reduce((s, a) => s + 1 / a.vol, 0);
+  assets.forEach(a => { a.riskWeight = (1 / a.vol) / invVolSum; a.riskDollar = a.riskWeight * total; });
+
+  const tbody = document.getElementById('riskTableBody');
+  tbody.innerHTML = '';
+  assets.forEach(a => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${a.name}</td><td>${a.vol.toFixed(1)}%</td><td>$${equalDollar.toLocaleString(undefined,{maximumFractionDigits:0})}</td><td>$${a.riskDollar.toLocaleString(undefined,{maximumFractionDigits:0})}</td>`;
+    tbody.appendChild(tr);
+  });
 }
-calcRegime();
+calcRiskBudget();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');

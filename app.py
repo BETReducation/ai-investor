@@ -147,6 +147,7 @@ LESSON_PAGES = [
     {"slug": "momentum-factors", "level": "pro", "file": "lesson-momentum-factors.html", "title": "Momentum & Factor Models"},
     {"slug": "backtesting", "level": "pro", "file": "lesson-backtesting.html", "title": "Backtesting"},
     {"slug": "regime-detection", "level": "pro", "file": "lesson-regime-detection.html", "title": "Regime Detection"},
+    {"slug": "risk-budgeting", "level": "pro", "file": "lesson-risk-budgeting.html", "title": "Position Sizing & Risk Budgeting"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
