@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MACD — Intermediate — Growth Capital Group</title>
+<title>Bollinger Bands — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,10 +63,10 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.macd-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.macd-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.bb-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
+.bb-diagram-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
-.calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+.calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
 .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
 .calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
@@ -133,9 +133,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 3 of 5</div>
-    <h1 class="hero-title">MACD — Reading Momentum and <span class="accent">Trend Shifts</span></h1>
-    <p class="hero-sub">The Moving Average Convergence Divergence indicator compares two moving averages to reveal shifts in momentum — often one of the earliest clues that a trend is changing gear.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 4 of 5</div>
+    <h1 class="hero-title">Bollinger Bands — Measuring <span class="accent">Volatility</span> in Real Time</h1>
+    <p class="hero-sub">Bollinger Bands wrap a moving average in an upper and lower band based on volatility. Bands that squeeze tight often precede a big move; bands that stretch wide signal an already-extended market.</p>
   </div>
 </div>
 
@@ -143,98 +143,71 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">What MACD Actually Measures</h2>
-    <p class="body-text">MACD is built from two exponential moving averages (EMAs) of price: a fast 12-period EMA and a slower 26-period EMA. The <b>MACD line</b> is simply the fast EMA minus the slow EMA. When the fast average pulls away from the slow one, the MACD line rises; when they converge or the fast one falls below, it drops.</p>
-    <p class="body-text">A 9-period EMA of the MACD line itself is plotted alongside it, called the <b>signal line</b>. When the MACD line crosses above the signal line, that's read as a bullish signal — momentum is picking up. When it crosses below, that's read as bearish — momentum is fading.</p>
-    <p class="body-text">The gap between the two is often drawn as a <b>histogram</b> of bars above and below zero. A growing histogram means the MACD and signal lines are pulling apart (momentum accelerating); a shrinking histogram means they're converging (momentum fading) — often visible before the actual crossover happens.</p>
+    <h2 class="section-title">What Bollinger Bands Actually Measure</h2>
+    <p class="body-text">A Bollinger Band is three lines plotted around price: a <b>middle band</b> (typically a 20-period simple moving average), an <b>upper band</b> (the middle band plus 2 standard deviations of recent price), and a <b>lower band</b> (the middle band minus 2 standard deviations). Unlike RSI or MACD, Bollinger Bands measure <b>volatility</b>, not momentum.</p>
+    <p class="body-text">Standard deviation grows when price swings widely and shrinks when price is calm. So the bands themselves widen during volatile stretches and narrow during quiet ones — they physically expand and contract around price as volatility changes.</p>
+    <p class="body-text">The two classic readings: a <b>squeeze</b> (bands pulled tight together) suggests volatility has compressed and often precedes a sharp move in either direction. Price <b>touching or piercing a band</b> doesn't automatically mean "overbought" or "oversold" the way RSI does — in a strong trend, price can ride along the upper (or lower) band for an extended stretch.</p>
 
     <div class="example-card">
-      <h3>📊 MACD Alongside Price</h3>
-      <div class="macd-diagram-wrap">
-        <svg viewBox="0 0 460 230" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="10,50 60,65 110,40 160,55 210,25 260,35 310,20 360,45 410,60 450,40" fill="none" stroke="#8892b0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-          <text x="10" y="16" font-size="10" fill="#8892b0" font-family="Helvetica">Price</text>
+      <h3>🎢 Bollinger Bands Squeezing, Then Expanding</h3>
+      <div class="bb-diagram-wrap">
+        <svg viewBox="0 0 490 200" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 10,100 C 60,95 110,98 160,97 C 220,96 260,60 310,40 C 360,25 410,15 460,10" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <path d="M 10,120 C 60,122 110,119 160,120 C 220,121 260,150 310,165 C 360,175 410,185 460,190" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
+          <path d="M 10,110 C 60,108 110,109 160,109 C 220,109 260,105 310,102 C 360,100 410,100 460,100" fill="none" stroke="#8892b0" stroke-width="1.2" stroke-dasharray="2 3"/>
 
-          <line x1="10" y1="140" x2="450" y2="140" stroke="#4b5563" stroke-width="1"/>
-          <text x="452" y="143" font-size="9" fill="#4b5563" font-family="Helvetica">0</text>
+          <polyline points="10,105 40,115 70,102 100,112 130,105 160,110 190,90 220,95 250,70 280,80 310,50 340,60 370,30 400,45 430,20 460,35" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
 
-          <g>
-            <rect x="20" y="135" width="10" height="10" fill="#f87171" opacity="0.55"/>
-            <rect x="45" y="128" width="10" height="17" fill="#f87171" opacity="0.55"/>
-            <rect x="70" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
-            <rect x="95" y="118" width="10" height="6" fill="#4ade80" opacity="0.55"/>
-            <rect x="120" y="100" width="10" height="24" fill="#4ade80" opacity="0.55"/>
-            <rect x="145" y="88" width="10" height="36" fill="#4ade80" opacity="0.55"/>
-            <rect x="170" y="95" width="10" height="29" fill="#4ade80" opacity="0.55"/>
-            <rect x="195" y="115" width="10" height="9" fill="#4ade80" opacity="0.55"/>
-            <rect x="220" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
-            <rect x="245" y="145" width="10" height="11" fill="#f87171" opacity="0.55"/>
-            <rect x="270" y="120" width="10" height="14" fill="#4ade80" opacity="0.55"/>
-            <rect x="295" y="95" width="10" height="39" fill="#4ade80" opacity="0.55"/>
-            <rect x="320" y="105" width="10" height="29" fill="#4ade80" opacity="0.55"/>
-            <rect x="345" y="140" width="10" height="6" fill="#f87171" opacity="0.55"/>
-            <rect x="370" y="150" width="10" height="16" fill="#f87171" opacity="0.55"/>
-            <rect x="395" y="145" width="10" height="11" fill="#f87171" opacity="0.55"/>
-            <rect x="420" y="130" width="10" height="4" fill="#f87171" opacity="0.55"/>
-          </g>
-
-          <polyline points="10,145 60,155 110,148 160,130 210,105 260,100 310,110 360,145 410,165 450,148" fill="none" stroke="#a855f7" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-          <polyline points="10,148 60,150 110,152 160,140 210,120 260,105 310,108 360,130 410,150 450,155" fill="none" stroke="#eab308" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 3"/>
-
-          <circle cx="160" cy="130" r="4" fill="#4ade80"/>
-          <text x="160" y="118" font-size="8" fill="#4ade80" text-anchor="middle" font-family="Helvetica">bullish cross</text>
-          <circle cx="345" cy="140" r="4" fill="#f87171"/>
-          <text x="345" y="200" font-size="8" fill="#f87171" text-anchor="middle" font-family="Helvetica">bearish cross</text>
-
-          <text x="10" y="225" font-size="10" fill="#a855f7" font-family="Helvetica">— MACD line</text>
-          <text x="105" y="225" font-size="10" fill="#eab308" font-family="Helvetica">- - Signal line</text>
-          <text x="220" y="225" font-size="10" fill="#8892b0" font-family="Helvetica">▪ Histogram (MACD − signal)</text>
+          <text x="165" y="70" font-size="9" fill="#f59e0b" text-anchor="middle" font-family="Helvetica" font-weight="bold">SQUEEZE</text>
+          <text x="165" y="82" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands pull tight</text>
+          <text x="380" y="10" font-size="9" fill="#4ade80" text-anchor="middle" font-family="Helvetica" font-weight="bold">EXPANSION</text>
+          <text x="380" y="195" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands widen as the move plays out</text>
         </svg>
       </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Watch the histogram bars change color exactly where the MACD (purple) and signal (gold, dashed) lines cross — that transition from red to green (or back) is the crossover moment. Notice the histogram bars had already started shrinking before each crossover, a subtle early clue that momentum was fading before the lines actually met.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice how tightly the upper and lower bands (purple, dashed) squeeze together in the middle of the chart, right before price (green) breaks out and the bands widen dramatically to contain the new, more volatile move.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About MACD</h3>
+    <h3 class="subhead">5 Things to Know About Bollinger Bands</h3>
     <ol class="num-checklist">
-      <li><b>MACD is a lagging indicator built from moving averages</b> — like any moving-average-based tool, it confirms a shift after it's already begun, never before.</li>
-      <li><b>The crossover is the headline signal, but the histogram often moves first</b> — a shrinking histogram can hint a crossover is coming before it actually happens.</li>
-      <li><b>MACD can diverge from price, just like RSI</b> — price making a new high while MACD makes a lower high is a classic warning sign.</li>
-      <li><b>The zero line matters too</b> — MACD crossing above zero means the fast EMA has overtaken the slow EMA outright, a stronger signal than a crossover that stays below zero.</li>
-      <li><b>MACD works best in trending markets</b> — in a choppy, sideways market it can whipsaw with frequent false crossovers.</li>
+      <li><b>Bands measure volatility, not momentum or direction</b> — unlike RSI or MACD, they say nothing about whether price is likely to go up or down, only how much it's likely to move.</li>
+      <li><b>A squeeze often precedes a big move</b> — but it doesn't tell you which direction that move will be, only that one may be coming.</li>
+      <li><b>Riding the band isn't automatically a reversal signal</b> — in a strong trend, price can walk along the upper or lower band for an extended stretch without reversing.</li>
+      <li><b>The bands adapt automatically</b> — because they're based on standard deviation, they widen and narrow on their own as volatility changes, with no manual adjustment needed.</li>
+      <li><b>Bandwidth (the gap between bands) is a useful standalone measure</b> — it can be plotted on its own to spot squeezes more precisely.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading MACD</h3>
+    <h3 class="subhead">4 Things to Check When Reading Bollinger Bands</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📉 Watch the Histogram Shrink</h4>
+        <h4>🤏 Watch for the Squeeze</h4>
         <ul>
-          <li>A shrinking histogram before a crossover is often more useful than reacting to the cross itself.</li>
+          <li>The tighter the bands get, the more likely a significant move is building — though not the direction.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>0️⃣ Note the Zero-Line Cross</h4>
+        <h4>📈 Check the Trend First</h4>
         <ul>
-          <li>A signal-line crossover that also crosses zero carries more weight than one that stays on one side.</li>
+          <li>Price hugging the upper band in an uptrend is strength, not automatically "overbought."</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔍 Check for Divergence</h4>
+        <h4>🔗 Pair It With Momentum</h4>
         <ul>
-          <li>Compare MACD's recent peaks/troughs to price's, the same way you would with RSI.</li>
+          <li>Combine a band touch with RSI or MACD to judge whether the move looks stretched, not just wide.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧭 Confirm the Market Isn't Choppy</h4>
+        <h4>📊 Watch for the "Walk"</h4>
         <ul>
-          <li>MACD crossovers are far more reliable in a trending market than in a sideways, range-bound one.</li>
+          <li>Price repeatedly touching one band without reverting to the middle band signals sustained trend strength.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> MACD is a lagging indicator built from moving averages — it confirms a momentum shift after it's begun, not before. In choppy, range-bound markets it can generate frequent false crossovers. Pair it with trend context and volume rather than trading it in isolation.
+      <b>Worth knowing:</b> Bollinger Bands describe how much price has recently moved, not which direction it will move next. A squeeze flags rising odds of a breakout, but the breakout can go either way — pair it with trend and momentum tools rather than trading it alone.
     </div>
   </div>
 </section>
@@ -243,43 +216,38 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Crossover Checker</h2>
-    <p class="section-desc">Enter the MACD line and signal line values for two consecutive periods — see whether a crossover occurred, and which direction.</p>
+    <h2 class="section-title">Try It Yourself: Band Calculator</h2>
+    <p class="section-desc">Enter the 20-period moving average and the standard deviation of recent price — see the resulting upper and lower bands, and where the current price sits.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadMacdPreset('bullish')">Load Bullish Crossover</button>
-        <button class="preset-btn" onclick="loadMacdPreset('bearish')">Load Bearish Crossover</button>
-        <button class="preset-btn" onclick="loadMacdPreset('none')">Load No Crossover</button>
+        <button class="preset-btn" onclick="loadBbPreset('squeeze')">Load Tight Squeeze Example</button>
+        <button class="preset-btn" onclick="loadBbPreset('wide')">Load Wide/Volatile Example</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="macdPrevMacd">Previous period: MACD line</label>
-          <input type="number" id="macdPrevMacd" value="-0.8" step="0.01">
+          <label for="bbSma">20-period moving average ($)</label>
+          <input type="number" id="bbSma" value="100" step="0.01">
         </div>
         <div class="calc-field">
-          <label for="macdPrevSignal">Previous period: Signal line</label>
-          <input type="number" id="macdPrevSignal" value="-0.3" step="0.01">
+          <label for="bbStdev">Standard deviation ($)</label>
+          <input type="number" id="bbStdev" value="1.5" step="0.01">
         </div>
         <div class="calc-field">
-          <label for="macdNowMacd">Current period: MACD line</label>
-          <input type="number" id="macdNowMacd" value="0.2" step="0.01">
-        </div>
-        <div class="calc-field">
-          <label for="macdNowSignal">Current period: Signal line</label>
-          <input type="number" id="macdNowSignal" value="-0.1" step="0.01">
+          <label for="bbPrice">Current price ($)</label>
+          <input type="number" id="bbPrice" value="102.5" step="0.01">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="checkMacdCross()">Check for Crossover →</button>
+        <button class="calc-btn" onclick="calcBands()">Calculate Bands →</button>
       </div>
 
-      <div class="calc-results visible" id="macdResults">
+      <div class="calc-results visible" id="bbResults">
         <div class="builder-stage">
-          <svg viewBox="0 0 460 140" id="macdSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg viewBox="0 0 520 120" id="bbSvg" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <div class="calc-callout" id="macdCallout"></div>
-        <p class="calc-note">Model: a bullish crossover is MACD moving from below the signal line to above it between the two periods; a bearish crossover is the reverse. No crossover means the MACD line stayed on the same side of the signal line in both periods.</p>
+        <div class="calc-callout" id="bbCallout"></div>
+        <p class="calc-note">Model: upper band = SMA + (2 × standard deviation); lower band = SMA − (2 × standard deviation). Bandwidth = (upper − lower) / SMA, a simple way to compare how tight or wide the bands are relative to price.</p>
       </div>
     </div>
   </div>
@@ -299,58 +267,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. How is the MACD line calculated?</div>
+        <div class="quiz-q-title">1. What do Bollinger Bands primarily measure?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Today's closing price minus yesterday's closing price</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The 12-period EMA minus the 26-period EMA</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Total volume divided by average volume</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The highest high minus the lowest low</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The company's dividend yield</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Volatility — how much price has recently moved</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Trading volume</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Momentum direction</label>
         </div>
-        <div class="quiz-explain">The MACD line is the fast (12-period) EMA minus the slow (26-period) EMA of price.</div>
+        <div class="quiz-explain">Bollinger Bands are built from standard deviation, a measure of volatility — not momentum or direction like RSI or MACD.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. What does the MACD histogram represent?</div>
+        <div class="quiz-q-title">2. What does a "squeeze" (bands pulled tight together) suggest?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Total trading volume for the day</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> The company's earnings per share</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The gap between the MACD line and the signal line</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The stock's dividend yield</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The stock is about to be delisted</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Trading has been halted</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Volatility has compressed, and a significant move may be building</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The company just paid a dividend</label>
         </div>
-        <div class="quiz-explain">The histogram bars plot MACD minus signal — a growing histogram means the two lines are pulling apart, a shrinking one means they're converging.</div>
+        <div class="quiz-explain">A squeeze reflects compressed volatility, historically often followed by an expansion — though it doesn't say which direction.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. Why might a shrinking histogram be useful even before a crossover happens?</div>
+        <div class="quiz-q-title">3. If price is riding along the upper band during a strong uptrend, does that automatically mean it's overbought and about to reverse?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It never provides any useful information</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It guarantees a crossover will happen within 24 hours</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It means volume has stopped entirely</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It can hint that momentum is fading and a crossover may be approaching</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Yes, always — price must revert to the middle band immediately</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Yes, because bands can never be touched</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> No, because Bollinger Bands don't exist in uptrends</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> No — in a strong trend, price can "walk the band" for an extended stretch without reversing</label>
         </div>
-        <div class="quiz-explain">A shrinking histogram shows the MACD and signal lines converging — often visible before the actual crossover confirms the shift.</div>
+        <div class="quiz-explain">Unlike RSI's overbought reading, touching a Bollinger Band isn't automatically a reversal signal — strong trends can ride a band for a long time.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why does a signal-line crossover that also crosses zero carry more weight?</div>
+        <div class="quiz-q-title">4. With a 20-period SMA of $100 and a standard deviation of $1.5, what is the upper band (SMA + 2×stdev)?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> It means the fast EMA has overtaken the slow EMA outright, not just narrowed the gap</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Zero-line crosses are purely decorative and carry no extra meaning</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It means the stock has been delisted</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> It only happens once per year</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> $103.00</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> $101.50</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> $100.00</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> $97.00</label>
         </div>
-        <div class="quiz-explain">Crossing zero means the fast EMA has actually moved past the slow EMA, a more decisive shift than a crossover that stays on one side of zero.</div>
+        <div class="quiz-explain">Upper band = $100 + (2 × $1.5) = $100 + $3 = $103.00.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">5. Why can MACD generate frequent false signals in a sideways, range-bound market?</div>
+        <div class="quiz-q-title">5. Why is it useful to combine Bollinger Bands with a momentum tool like RSI or MACD?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> MACD only works on cryptocurrencies</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> With no sustained trend, the two moving averages repeatedly cross back and forth without a real shift underway</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The MACD formula breaks down mathematically in sideways markets</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Sideways markets have no volume at all</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> It isn't useful, they measure the exact same thing</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Bands show how much price is moving, while RSI/MACD help judge whether that move looks stretched</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Combining indicators is against exchange rules</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> RSI and MACD replace the need for price data entirely</label>
         </div>
-        <div class="quiz-explain">MACD is built on moving averages, which work best when there's an actual trend to track — a choppy market causes the fast and slow EMAs to cross frequently without a genuine shift underway.</div>
+        <div class="quiz-explain">Bands measure volatility (how much), while RSI/MACD measure momentum (how stretched) — together they give a fuller picture than either alone.</div>
       </div>
     </div>
 
@@ -367,22 +335,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/macd-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/bollinger-bands-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with a labelled price+MACD+histogram chart diagram, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with a labelled squeeze-then-expansion chart diagram, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/macd-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/bollinger-bands-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided, fill-in-the-blank exercises to identify crossovers and histogram shifts on a real chart.</div>
+        <div class="dl-desc">Guided, fill-in-the-blank exercises to calculate bands yourself and spot a squeeze on a real chart.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/macd-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/bollinger-bands-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore MACD in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore Bollinger Bands in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -391,19 +359,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Bollinger Bands</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can read momentum shifts, the next step is measuring volatility itself to know when calm is about to break.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Stacking Indicators for Confluence</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you know four indicators, the final step is combining them so you only act when they agree.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/rsi" class="hub-card">
-        <div class="card-icon">🌡️</div>
-        <div class="card-title">Back to RSI</div>
-        <div class="card-desc">Review overbought and oversold conditions.</div>
+      <a href="/learn/intermediate/macd" class="hub-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Back to MACD</div>
+        <div class="card-desc">Review reading momentum and trend shifts.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/bollinger-bands" class="hub-card">
-        <div class="card-icon">🎢</div>
-        <div class="card-title">Continue to Bollinger Bands</div>
-        <div class="card-desc">Know when calm is about to break.</div>
+      <a href="/learn/intermediate#tab-ta" class="hub-card">
+        <div class="card-icon">🔗</div>
+        <div class="card-title">Continue to Confluence</div>
+        <div class="card-desc">Filter out false signals by demanding agreement.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -436,69 +404,53 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const MACD_PRESETS = {
-  bullish: { prevMacd: -0.8, prevSignal: -0.3, nowMacd: 0.2, nowSignal: -0.1 },
-  bearish: { prevMacd: 0.9, prevSignal: 0.4, nowMacd: -0.1, nowSignal: 0.2 },
-  none: { prevMacd: 0.5, prevSignal: 0.2, nowMacd: 0.7, nowSignal: 0.3 },
+const BB_PRESETS = {
+  squeeze: { sma: 100, stdev: 0.4, price: 100.2 },
+  wide: { sma: 100, stdev: 4.5, price: 108 },
 };
-function loadMacdPreset(kind) {
-  const p = MACD_PRESETS[kind];
-  document.getElementById('macdPrevMacd').value = p.prevMacd;
-  document.getElementById('macdPrevSignal').value = p.prevSignal;
-  document.getElementById('macdNowMacd').value = p.nowMacd;
-  document.getElementById('macdNowSignal').value = p.nowSignal;
-  checkMacdCross();
+function loadBbPreset(kind) {
+  const p = BB_PRESETS[kind];
+  document.getElementById('bbSma').value = p.sma;
+  document.getElementById('bbStdev').value = p.stdev;
+  document.getElementById('bbPrice').value = p.price;
+  calcBands();
 }
 
-function checkMacdCross() {
-  const prevMacd = parseFloat(document.getElementById('macdPrevMacd').value);
-  const prevSignal = parseFloat(document.getElementById('macdPrevSignal').value);
-  const nowMacd = parseFloat(document.getElementById('macdNowMacd').value);
-  const nowSignal = parseFloat(document.getElementById('macdNowSignal').value);
-  if ([prevMacd, prevSignal, nowMacd, nowSignal].some(isNaN)) { alert('Please fill in all 4 values.'); return; }
+function calcBands() {
+  const sma = parseFloat(document.getElementById('bbSma').value);
+  const stdev = parseFloat(document.getElementById('bbStdev').value);
+  const price = parseFloat(document.getElementById('bbPrice').value);
+  if ([sma, stdev, price].some(isNaN) || stdev < 0) { alert('Please enter valid values (standard deviation must be non-negative).'); return; }
 
-  const wasBelow = prevMacd < prevSignal;
-  const isBelow = nowMacd < nowSignal;
+  const upper = sma + 2 * stdev;
+  const lower = sma - 2 * stdev;
+  const bandwidth = sma !== 0 ? ((upper - lower) / sma) * 100 : 0;
+
   let verdict, color, desc;
-  if (wasBelow && !isBelow) {
-    verdict = 'Bullish Crossover'; color = '#4ade80';
-    desc = `MACD moved from below the signal line (${prevMacd.toFixed(2)} < ${prevSignal.toFixed(2)}) to above it (${nowMacd.toFixed(2)} > ${nowSignal.toFixed(2)}) — a bullish crossover, read as rising momentum.`;
-  } else if (!wasBelow && isBelow) {
-    verdict = 'Bearish Crossover'; color = '#f87171';
-    desc = `MACD moved from above the signal line (${prevMacd.toFixed(2)} > ${prevSignal.toFixed(2)}) to below it (${nowMacd.toFixed(2)} < ${nowSignal.toFixed(2)}) — a bearish crossover, read as fading momentum.`;
-  } else {
-    verdict = 'No Crossover'; color = '#8892b0';
-    desc = `MACD stayed on the same side of the signal line in both periods (${isBelow ? 'below' : 'above'} it) — no crossover has occurred yet.`;
-  }
+  if (price >= upper) { verdict = 'At/Above Upper Band'; color = '#f87171'; desc = `Price ($${price.toFixed(2)}) is at or above the upper band ($${upper.toFixed(2)}) — a strong move, but not automatically a reversal signal in a trending market.`; }
+  else if (price <= lower) { verdict = 'At/Below Lower Band'; color = '#4ade80'; desc = `Price ($${price.toFixed(2)}) is at or below the lower band ($${lower.toFixed(2)}) — a strong downside move, but not automatically a bounce signal in a downtrend.`; }
+  else { verdict = 'Inside the Bands'; color = '#8892b0'; desc = `Price ($${price.toFixed(2)}) sits between the bands ($${lower.toFixed(2)} - $${upper.toFixed(2)}) — a normal reading, nothing stretched right now.`; }
 
-  const histPrev = prevMacd - prevSignal;
-  const histNow = nowMacd - nowSignal;
-  const vals = [prevMacd, prevSignal, nowMacd, nowSignal];
-  const min = Math.min(...vals) - 0.3, max = Math.max(...vals) + 0.3;
+  const bwNote = bandwidth < 3 ? ' Bandwidth is quite tight — this looks like a squeeze.' : bandwidth > 8 ? ' Bandwidth is quite wide — volatility is elevated right now.' : '';
+
+  const vals = [lower, sma, upper, price];
+  const min = Math.min(...vals) - 1, max = Math.max(...vals) + 1;
   const yFor = v => 100 - ((v - min) / (max - min)) * 80;
-  const zeroY = yFor(0);
 
-  const svg = document.getElementById('macdSvg');
-  const barColor1 = histPrev >= 0 ? '#4ade80' : '#f87171';
-  const barColor2 = histNow >= 0 ? '#4ade80' : '#f87171';
-  const barH1 = Math.abs(yFor(histPrev + min) - zeroY) || 4;
+  const svg = document.getElementById('bbSvg');
   svg.innerHTML =
-    `<line x1="20" y1="${zeroY}" x2="440" y2="${zeroY}" stroke="#4b5563" stroke-width="1"/>` +
-    `<text x="444" y="${zeroY+3}" font-size="9" fill="#4b5563" font-family="Helvetica">0</text>` +
-    `<rect x="90" y="${histPrev >= 0 ? zeroY - Math.abs(yFor(histPrev)-zeroY) : zeroY}" width="24" height="${Math.max(4, Math.abs(yFor(histPrev)-zeroY))}" fill="${barColor1}" opacity="0.5"/>` +
-    `<rect x="330" y="${histNow >= 0 ? zeroY - Math.abs(yFor(histNow)-zeroY) : zeroY}" width="24" height="${Math.max(4, Math.abs(yFor(histNow)-zeroY))}" fill="${barColor2}" opacity="0.5"/>` +
-    `<line x1="60" y1="${yFor(prevMacd)}" x2="300" y2="${yFor(nowMacd)}" stroke="#a855f7" stroke-width="2.6"/>` +
-    `<circle cx="60" cy="${yFor(prevMacd)}" r="4" fill="#a855f7"/><circle cx="300" cy="${yFor(nowMacd)}" r="4" fill="#a855f7"/>` +
-    `<line x1="60" y1="${yFor(prevSignal)}" x2="300" y2="${yFor(nowSignal)}" stroke="#eab308" stroke-width="2" stroke-dasharray="5 3"/>` +
-    `<circle cx="60" cy="${yFor(prevSignal)}" r="4" fill="#eab308"/><circle cx="300" cy="${yFor(nowSignal)}" r="4" fill="#eab308"/>` +
-    `<text x="60" y="118" font-size="9" fill="#8892b0" text-anchor="middle" font-family="Helvetica">Previous</text>` +
-    `<text x="300" y="118" font-size="9" fill="#8892b0" text-anchor="middle" font-family="Helvetica">Current</text>` +
-    `<text x="380" y="20" font-size="9" fill="#a855f7" font-family="Helvetica">— MACD</text>` +
-    `<text x="380" y="32" font-size="9" fill="#eab308" font-family="Helvetica">- - Signal</text>`;
+    `<line x1="20" y1="${yFor(upper)}" x2="440" y2="${yFor(upper)}" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 3"/>` +
+    `<text x="444" y="${yFor(upper)+3}" font-size="9" fill="#a855f7" font-family="Helvetica">upper $${upper.toFixed(2)}</text>` +
+    `<line x1="20" y1="${yFor(sma)}" x2="440" y2="${yFor(sma)}" stroke="#8892b0" stroke-width="1.2" stroke-dasharray="2 3"/>` +
+    `<text x="444" y="${yFor(sma)+3}" font-size="9" fill="#8892b0" font-family="Helvetica">SMA $${sma.toFixed(2)}</text>` +
+    `<line x1="20" y1="${yFor(lower)}" x2="440" y2="${yFor(lower)}" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 3"/>` +
+    `<text x="444" y="${yFor(lower)+3}" font-size="9" fill="#a855f7" font-family="Helvetica">lower $${lower.toFixed(2)}</text>` +
+    `<circle cx="230" cy="${yFor(price)}" r="6" fill="${color}"/>` +
+    `<text x="230" y="${yFor(price)-10}" font-size="10" font-weight="bold" fill="${color}" text-anchor="middle" font-family="Helvetica">$${price.toFixed(2)}</text>`;
 
-  document.getElementById('macdCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}`;
+  document.getElementById('bbCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}${bwNote} Bandwidth: ${bandwidth.toFixed(1)}%.`;
 }
-checkMacdCross();
+calcBands();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
