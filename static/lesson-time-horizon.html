@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Position Sizing — Intermediate — Growth Capital Group</title>
+<title>Time Horizon & Risk Tolerance — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -80,8 +80,8 @@ p.body-text b { color: var(--text); }
 .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: repeat(2, 1fr); } }
 .calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
-.calc-field input:focus { border-color: var(--purple2); }
+.calc-field input, .calc-field select { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.calc-field input:focus, .calc-field select:focus { border-color: var(--purple2); }
 .calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
@@ -91,6 +91,8 @@ p.body-text b { color: var(--text); }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--purple2); }
+.alloc-bar { display: flex; width: 100%; height: 28px; border-radius: 8px; overflow: hidden; margin-top: 6px; }
+.alloc-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #03130f; transition: width 0.4s ease; }
 .calc-callout { margin-top: 0; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
 .calc-callout.warn { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
 .calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; display: block; margin-bottom: 6px; }
@@ -148,9 +150,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 4 of 5</div>
-    <h1 class="hero-title">Position Sizing — How Much Is Too Much in <span class="accent">One Holding</span>?</h1>
-    <p class="hero-sub">A great idea can still wreck a portfolio if it's sized too large. Position sizing is the discipline of deciding, before you buy, how much of your capital any single holding is allowed to control.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 5 of 5</div>
+    <h1 class="hero-title">Time Horizon & Risk Tolerance — Matching the Plan to <span class="accent">You</span></h1>
+    <p class="hero-sub">A 25-year-old saving for retirement and a 60-year-old about to retire shouldn't hold the same portfolio. How long your money has to grow, and how much volatility you can actually stomach, should shape your entire allocation.</p>
   </div>
 </div>
 
@@ -158,75 +160,74 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Why Sizing Matters More Than Picking</h2>
-    <p class="body-text">Two investors can hold the exact same stock and end up with wildly different outcomes, purely because of how much of their portfolio they put into it. A stock that halves costs a 2% position 1% of the total portfolio — annoying, recoverable. The same stock at a 40% position costs 20% of the total portfolio — a hole that takes real time and gains elsewhere to dig out of.</p>
-    <p class="body-text"><b>Position sizing</b> is the decision, made before you buy, of what percentage of your total portfolio a single holding is allowed to occupy. It's a separate question from "is this a good investment?" — a great company can still be a bad position if it's sized too large relative to everything else you own.</p>
-    <p class="body-text">Two common approaches: a simple <b>maximum-weight rule</b> (e.g. "no single stock over 10% of my portfolio, cost basis or current value") and a <b>risk-based rule</b> more common in active trading (e.g. "risk no more than 1-2% of my account on any single trade's stop-loss distance"). Long-term investors tend to lean on the first; active traders lean on the second — but both exist to answer the same question: how much can this one position hurt me if I'm wrong?</p>
+    <h2 class="section-title">Two Different Questions That Both Shape Your Mix</h2>
+    <p class="body-text"><b>Time horizon</b> is simply how long until you need the money. A 25-year-old investing for a retirement 40 years away can ride out a multi-year downturn — there's time for markets to recover before the money is needed. A 60-year-old retiring next year doesn't have that luxury; a bad stretch right before or after retirement can permanently dent what's available to spend.</p>
+    <p class="body-text"><b>Risk tolerance</b> is a different question: how much volatility can you handle emotionally and financially without abandoning the plan? Even a 25-year-old with decades to go can have low risk tolerance — if a 30% portfolio drop would cause them to panic-sell at the bottom, a more aggressive allocation isn't actually right for them, however long their time horizon technically is.</p>
+    <p class="body-text">The two interact: a long time horizon generally supports taking more risk (there's time to recover), but risk tolerance is the ceiling on how much of that capacity you should actually use. The right allocation sits at the overlap of "how much risk can I afford to take" and "how much risk can I actually live with."</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Same Loss, Different Position Sizes</h3>
-      <p class="body-text">A $50,000 portfolio holds a stock that drops 30%. The dollar loss — and how much it dents the whole portfolio — depends entirely on the position size going in.</p>
+      <h3>⚖️ Illustrative Example: Same Goal, Different Stages, Different Mixes</h3>
+      <p class="body-text">Three investors, all saving for retirement, at different points along the same journey — illustrative allocations only, not a recommendation.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Position Size</th><th>Position Value</th><th>Loss at -30%</th><th>Loss as % of Portfolio</th></tr>
+            <tr><th>Investor</th><th>Time Horizon</th><th>Stocks</th><th>Bonds</th><th>Cash</th></tr>
           </thead>
           <tbody>
-            <tr><td>5% Position</td><td>$2,500</td><td>-$750</td><td>-1.5%</td></tr>
-            <tr><td>10% Position</td><td>$5,000</td><td>-$1,500</td><td>-3.0%</td></tr>
-            <tr class="highlight-row"><td>25% Position</td><td>$12,500</td><td>-$3,750</td><td>-7.5%</td></tr>
-            <tr><td>50% Position</td><td>$25,000</td><td>-$7,500</td><td>-15.0%</td></tr>
+            <tr><td>Age 25, 40 Years to Retirement</td><td>Long</td><td>90%</td><td>8%</td><td>2%</td></tr>
+            <tr><td>Age 45, 20 Years to Retirement</td><td>Medium</td><td>70%</td><td>25%</td><td>5%</td></tr>
+            <tr class="highlight-row"><td>Age 63, 2 Years to Retirement</td><td>Short</td><td>40%</td><td>50%</td><td>10%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Same stock, same -30% move — but the portfolio-level damage ranges from a shrug (-1.5%) to a serious setback (-15%), purely as a function of how large the position was allowed to get before it dropped.</p>
+      <p class="stmt-note">As the time horizon shortens, the mix shifts steadily away from stocks (higher expected return, higher volatility) toward bonds and cash (lower volatility, more capital preservation) — because there's less and less time to recover from a bad stretch before the money is actually needed.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Position Sizing</h3>
+    <h3 class="subhead">5 Things to Know About Time Horizon & Risk Tolerance</h3>
     <ol class="num-checklist">
-      <li><b>Conviction isn't a sizing plan</b> — "I'm really confident in this one" is exactly the thought that precedes most oversized, portfolio-damaging positions.</li>
-      <li><b>Sizing rules are set before you buy</b> — deciding the cap after you're already up big just rationalizes letting a winner run unchecked.</li>
-      <li><b>A max-weight rule protects against concentration risk</b> — capping any one stock at, say, 10% limits how much a single company's bad news can hurt the whole portfolio.</li>
-      <li><b>A risk-based rule protects against a single trade blowing up an account</b> — sizing by "% of account risked to my stop-loss" keeps any one wrong call small and survivable.</li>
-      <li><b>Winners can outgrow their size cap on their own</b> — this is exactly what rebalancing (the previous lesson) exists to fix, by trimming a position back toward its target weight.</li>
+      <li><b>Time horizon and risk tolerance are two separate questions</b> — one is about your timeline, the other is about your temperament, and both should shape the plan.</li>
+      <li><b>A longer horizon generally supports more risk</b> — more time means more opportunity to recover from a downturn before the money is needed.</li>
+      <li><b>Risk tolerance is the ceiling, not the goal</b> — taking on more volatility than you can actually stomach usually ends in panic-selling at the worst possible time, locking in losses that a calmer investor would have recovered from.</li>
+      <li><b>Horizon shortens as goals approach</b> — a common pattern is to gradually shift from stocks toward bonds and cash as a goal (like retirement) gets closer, exactly as rebalancing shifts weights within a fixed target.</li>
+      <li><b>The "right" allocation is personal</b> — it depends on your specific timeline, income stability, other assets, and how you actually behave under stress, not a single formula that fits everyone.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before You Buy</h3>
+    <h3 class="subhead">4 Things to Check When Setting Your Mix</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🎯 Set a Max Weight in Advance</h4>
+        <h4>📅 Know Your Actual Timeline</h4>
         <ul>
-          <li>Decide your cap per position (e.g. 5-10% for individual stocks) before you're emotionally attached to a specific idea.</li>
+          <li>Be specific about when you'll need the money — "eventually" isn't a time horizon, "in 8 years for a house deposit" is.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🛑 Know Your Risk-Per-Trade</h4>
+        <h4>🧠 Be Honest About Your Temperament</h4>
         <ul>
-          <li>If you use stop-losses, size so that hitting the stop only costs a small, defined slice of your total account — commonly 1-2%.</li>
+          <li>Think about how you reacted to past downturns, not how you'd like to imagine you'd react to a future one.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧮 Use a Calculator, Not a Gut Feel</h4>
+        <h4>📉 Stress-Test the Downside</h4>
         <ul>
-          <li>Working backward from risk amount and stop distance to a position size removes the guesswork — see the tool below.</li>
+          <li>Picture your portfolio dropping 30-40% — would you hold on, or would you sell? Size your risk to the honest answer.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔁 Re-check After Big Moves</h4>
+        <h4>🔁 Revisit as Your Horizon Shortens</h4>
         <ul>
-          <li>A winning position can drift past your cap on its own — that's a cue to rebalance, not a reason to abandon the rule.</li>
+          <li>Plan to gradually shift the mix as a goal approaches, rather than leaving a young-investor allocation in place right up until you need the money.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Try the real thing:</b> Growth Capital Group's <a href="/tools/calculator">Position Size Calculator</a> turns a risk amount and stop-loss distance into a suggested position size and unit count automatically — including a half-Kelly option for sizing more conservatively than the full Kelly Criterion suggests.
+      🧮 <b>Bringing it all together:</b> once you've settled on your target mix, the <a href="/learn/intermediate/asset-allocation">Asset Allocation</a> lesson's calculator estimates blended return and volatility for it, and the <a href="/learn/intermediate/rebalancing">Rebalancing</a> lesson shows how to keep it on track as markets move.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains the mechanics and reasoning behind position sizing rules using illustrative numbers — it isn't personalized financial advice, and any percentage caps shown are for teaching the concept, not a recommendation for your own portfolio. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains the reasoning behind matching a portfolio to time horizon and risk tolerance using illustrative allocations — it isn't personalized financial advice, and the example percentages shown are for teaching the concept, not a recommendation for your own portfolio. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -235,54 +236,51 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Max Position Size Calculator</h2>
-    <p class="section-desc">Enter your portfolio value, your chosen max-weight cap, and how much you're prepared to risk on this specific trade — see the resulting position size and portfolio-level risk.</p>
+    <h2 class="section-title">Try It Yourself: Time Horizon & Risk Tolerance Estimator</h2>
+    <p class="section-desc">Answer a few questions about your timeline and temperament — see an illustrative stocks/bonds/cash starting point to think about, not a recommendation.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadPosPreset('conservative')">Load Conservative (5% cap, 1% risk)</button>
-        <button class="preset-btn" onclick="loadPosPreset('moderate')">Load Moderate (10% cap, 2% risk)</button>
-        <button class="preset-btn" onclick="loadPosPreset('aggressive')">Load Aggressive (25% cap, 4% risk)</button>
+        <button class="preset-btn" onclick="loadHorizonPreset('young')">Load Long Horizon, High Tolerance</button>
+        <button class="preset-btn" onclick="loadHorizonPreset('mid')">Load Medium Horizon, Medium Tolerance</button>
+        <button class="preset-btn" onclick="loadHorizonPreset('near')">Load Short Horizon, Low Tolerance</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="posPortfolioVal">Portfolio Value ($)</label>
-          <input type="number" id="posPortfolioVal" value="50000" step="500">
+          <label for="horizonYears">Years Until You Need the Money</label>
+          <input type="number" id="horizonYears" value="40" step="1" min="0" max="60">
         </div>
         <div class="calc-field">
-          <label for="posMaxWeight">Max Position Weight Cap (%)</label>
-          <input type="number" id="posMaxWeight" value="10" step="1" min="1" max="100">
-        </div>
-        <div class="calc-field">
-          <label for="posRiskPct">Risk on This Trade (% of portfolio)</label>
-          <input type="number" id="posRiskPct" value="2" step="0.5" min="0.1" max="100">
-        </div>
-        <div class="calc-field">
-          <label for="posStopPct">Stop-Loss Distance (% below entry)</label>
-          <input type="number" id="posStopPct" value="15" step="1" min="1" max="100">
+          <label for="riskTolerance">Risk Tolerance</label>
+          <select id="riskTolerance">
+            <option value="low">Low — a big drop would worry me a lot</option>
+            <option value="medium" selected>Medium — I'd be uncomfortable but hold on</option>
+            <option value="high">High — I can ignore short-term swings</option>
+          </select>
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcPosition()">Calculate Position Size →</button>
+        <button class="calc-btn" onclick="calcHorizon()">See Illustrative Mix →</button>
       </div>
 
-      <div class="calc-results visible" id="posResults">
+      <div class="calc-results visible" id="horizonResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Risk-Based Position Size</div>
-            <div class="mc-value" id="posRiskSize">—</div>
+            <div class="mc-label">Stocks</div>
+            <div class="mc-value" id="horizonStocksPct">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Max-Weight Cap ($)</div>
-            <div class="mc-value" id="posCapDollar">—</div>
+            <div class="mc-label">Bonds</div>
+            <div class="mc-value" id="horizonBondsPct">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Position Used</div>
-            <div class="mc-value" id="posFinalSize">—</div>
+            <div class="mc-label">Cash</div>
+            <div class="mc-value" id="horizonCashPct">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="posCallout"></div>
-        <p class="calc-note">Model: risk-based size = (portfolio value × risk %) ÷ stop-loss %. This is then capped at the max-weight limit — whichever produces the smaller position wins, so a single trade can never breach either rule.</p>
+        <div class="alloc-bar" id="horizonAllocBar"></div>
+        <div class="calc-callout" style="margin-top:20px;" id="horizonCallout"></div>
+        <p class="calc-note">Model: a simplified "110 minus age-equivalent-years" style starting point for stocks, derived from your time horizon, then nudged down for lower risk tolerance and up for higher — a common rule-of-thumb pattern, not a formula that fits everyone.</p>
       </div>
     </div>
   </div>
@@ -301,59 +299,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is position sizing?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Predicting which stock will perform best</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Deciding when to buy or sell a stock</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Deciding, before buying, what percentage of the portfolio a single holding may occupy</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Choosing which broker to trade through</label>
-        </div>
-        <div class="quiz-explain">Position sizing is a separate decision from stock-picking — it's about how much capital any one idea, however good, is allowed to control.</div>
-      </div>
-
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. In the illustrative example, why did the same -30% stock move cause such different portfolio-level damage?</div>
+        <div class="quiz-q-title">1. What is "time horizon" in this context?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because different investors paid different prices for the stock</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the position sizes relative to the total portfolio were different</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because some investors used stop-losses and others didn't</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because the stock dropped by different amounts for different people</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> How long you've been investing so far</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> How long until you actually need the money</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> How many hours a day you spend researching stocks</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The length of a typical market cycle</label>
         </div>
-        <div class="quiz-explain">Same stock, same percentage move — but a 5% position and a 50% position translate that identical move into very different dents in the total portfolio.</div>
+        <div class="quiz-explain">Time horizon is simply how long until the money is needed — a longer horizon means more time to recover from a downturn.</div>
       </div>
 
-      <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What are the two common position sizing approaches described in this lesson?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. Why might a 25-year-old with 40 years to retirement still have low risk tolerance?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Buy low, sell high</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Technical and fundamental analysis</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Long-term and short-term</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> A maximum-weight rule and a risk-based rule</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because young investors are legally required to hold less risk</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because a long time horizon always means low risk tolerance</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because risk tolerance is about temperament, not just how much time is available</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because 25-year-olds have no income</label>
         </div>
-        <div class="quiz-explain">A max-weight rule caps a position's share of the portfolio; a risk-based rule sizes a position from how much you're willing to lose relative to your stop-loss.</div>
+        <div class="quiz-explain">Risk tolerance is a separate question from time horizon — even with decades to go, someone who'd panic-sell in a downturn has lower risk tolerance regardless of their timeline.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why should sizing rules be set before buying, not after?</div>
+        <div class="quiz-q-title">3. In the illustrative example, why did the mix shift toward bonds and cash as retirement approached?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Deciding the cap after a position is already up big just rationalizes letting a winner run unchecked</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It's required by law in most markets</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It has no effect on the outcome either way</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Brokers automatically enforce sizing rules for you</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Less time remained to recover from a downturn before the money would be needed</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Bonds always outperform stocks over any period</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Stocks become illegal to hold after a certain age</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Cash provides the highest long-term returns</label>
         </div>
-        <div class="quiz-explain">Setting the cap in advance removes the temptation to keep raising it just because a position happens to be doing well right now.</div>
+        <div class="quiz-explain">As a goal gets closer, there's less time to recover from a bad stretch, so the mix commonly shifts toward capital preservation.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. Why is risk tolerance described as "the ceiling, not the goal"?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Because higher risk tolerance always produces higher returns</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Because risk tolerance doesn't actually matter to portfolio construction</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Because it's set by regulators, not the individual</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Because taking on more volatility than you can stomach usually leads to panic-selling at the worst time</label>
+        </div>
+        <div class="quiz-explain">Exceeding your real risk tolerance tends to end in selling low during a downturn, locking in losses a calmer investor would have recovered from.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. What should you do if a winning position naturally grows past your size cap?</div>
+        <div class="quiz-q-title">5. What determines the "right" allocation according to this lesson?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Nothing — winners should always be left alone</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Sell the entire position immediately</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Treat it as a cue to rebalance, trimming it back toward its target weight</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Raise the size cap to match wherever the position has grown to</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> A single formula that applies to everyone the same way</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Whatever allocation had the best return last year</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The overlap between how much risk you can afford to take and how much you can actually live with</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Your age alone, with no other factors considered</label>
         </div>
-        <div class="quiz-explain">This is exactly the drift problem the Rebalancing lesson covers — a winner outgrowing its intended weight is a trigger to trim, not a reason to abandon the rule.</div>
+        <div class="quiz-explain">The right mix sits where your financial capacity for risk (from time horizon) and your emotional capacity for risk (tolerance) overlap.</div>
       </div>
     </div>
 
@@ -370,22 +368,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/position-sizing-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/time-horizon-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the position-size-vs-loss example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the three-investors-by-timeline example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/position-sizing-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/time-horizon-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to set your own max-weight cap and work through risk-based sizing by hand.</div>
+        <div class="dl-desc">Guided exercises to work out your own time horizon and honestly assess your risk tolerance.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/position-sizing-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/time-horizon-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore position sizing in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore this topic in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -394,20 +392,20 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Time Horizon & Risk Tolerance</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've capped how much any single holding can dominate your portfolio. The final step is matching the whole plan to your own timeline and appetite for risk.</p>
+    <h2 class="section-title" style="text-align:center;">Balancing a Portfolio: Complete</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now covered all five lessons in this track — allocation, correlation, rebalancing, position sizing, and matching the plan to your own timeline and temperament.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/rebalancing" class="hub-card">
-        <div class="card-icon">⚖️</div>
-        <div class="card-title">Back to Rebalancing</div>
-        <div class="card-desc">Review how to bring a drifted portfolio back to target.</div>
+      <a href="/learn/intermediate/position-sizing" class="hub-card">
+        <div class="card-icon">📏</div>
+        <div class="card-title">Back to Position Sizing</div>
+        <div class="card-desc">Review how much is too much in one holding.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/time-horizon" class="hub-card">
-        <div class="card-icon">🧭</div>
-        <div class="card-title">Continue to Time Horizon & Risk Tolerance</div>
-        <div class="card-desc">Matching the plan to you.</div>
-        <div class="card-link">Open the lesson →</div>
+      <a href="/learn/intermediate#tab-balance" class="hub-card">
+        <div class="card-icon">🏁</div>
+        <div class="card-title">Back to Balancing a Portfolio Hub</div>
+        <div class="card-desc">Revisit any of the five lessons in this track.</div>
+        <div class="card-link">Open the hub →</div>
       </a>
     </div>
   </div>
@@ -439,51 +437,51 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const POS_PRESETS = {
-  conservative: { portfolio: 50000, maxWeight: 5, risk: 1, stop: 15 },
-  moderate: { portfolio: 50000, maxWeight: 10, risk: 2, stop: 15 },
-  aggressive: { portfolio: 50000, maxWeight: 25, risk: 4, stop: 15 },
+const HORIZON_PRESETS = {
+  young: { years: 40, tolerance: 'high' },
+  mid: { years: 20, tolerance: 'medium' },
+  near: { years: 2, tolerance: 'low' },
 };
-function loadPosPreset(kind) {
-  const p = POS_PRESETS[kind];
-  document.getElementById('posPortfolioVal').value = p.portfolio;
-  document.getElementById('posMaxWeight').value = p.maxWeight;
-  document.getElementById('posRiskPct').value = p.risk;
-  document.getElementById('posStopPct').value = p.stop;
-  calcPosition();
+function loadHorizonPreset(kind) {
+  const p = HORIZON_PRESETS[kind];
+  document.getElementById('horizonYears').value = p.years;
+  document.getElementById('riskTolerance').value = p.tolerance;
+  calcHorizon();
 }
 
-function calcPosition() {
-  const portfolio = parseFloat(document.getElementById('posPortfolioVal').value);
-  const maxWeight = parseFloat(document.getElementById('posMaxWeight').value);
-  const riskPct = parseFloat(document.getElementById('posRiskPct').value);
-  const stopPct = parseFloat(document.getElementById('posStopPct').value);
-  if ([portfolio, maxWeight, riskPct, stopPct].some(isNaN) || portfolio <= 0 || maxWeight <= 0 || riskPct <= 0 || stopPct <= 0) {
-    alert('Please enter valid, positive values.');
-    return;
-  }
+function calcHorizon() {
+  const years = parseFloat(document.getElementById('horizonYears').value);
+  const tolerance = document.getElementById('riskTolerance').value;
+  if (isNaN(years) || years < 0) { alert('Please enter a valid number of years.'); return; }
 
-  const riskDollar = portfolio * (riskPct / 100);
-  const riskBasedSize = riskDollar / (stopPct / 100);
-  const capDollar = portfolio * (maxWeight / 100);
-  const finalSize = Math.min(riskBasedSize, capDollar);
-  const finalPct = (finalSize / portfolio) * 100;
-  const cappedByWeight = riskBasedSize > capDollar;
+  // Simplified rule-of-thumb: stocks % starts from time horizon (capped 0-100),
+  // then nudged by risk tolerance. Illustrative only.
+  let stocksPct = Math.min(90, years * 2.2);
+  const toleranceAdj = { low: -15, medium: 0, high: 10 }[tolerance];
+  stocksPct = Math.max(10, Math.min(95, stocksPct + toleranceAdj));
 
-  document.getElementById('posRiskSize').textContent = '$' + riskBasedSize.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  document.getElementById('posCapDollar').textContent = '$' + capDollar.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  document.getElementById('posFinalSize').textContent = '$' + finalSize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' (' + finalPct.toFixed(1) + '%)';
+  const remaining = 100 - stocksPct;
+  // Split remaining between bonds/cash, more cash as horizon shortens
+  const cashPct = years <= 3 ? Math.min(remaining, 15) : years <= 10 ? Math.min(remaining, 8) : Math.min(remaining, 3);
+  const bondsPct = remaining - cashPct;
 
-  const callout = document.getElementById('posCallout');
-  if (cappedByWeight) {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Capped by Max-Weight Rule</span>The risk-based calculation alone would suggest $${riskBasedSize.toLocaleString(undefined,{maximumFractionDigits:0})} — but your ${maxWeight}% max-weight cap limits the position to $${capDollar.toLocaleString(undefined,{maximumFractionDigits:0})} instead, keeping concentration risk in check.`;
-  } else {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Sized by Risk Rule</span>At $${riskBasedSize.toLocaleString(undefined,{maximumFractionDigits:0})}, this position stays comfortably under your ${maxWeight}% max-weight cap — the risk-based amount is what determines the size here.`;
-  }
+  document.getElementById('horizonStocksPct').textContent = stocksPct.toFixed(0) + '%';
+  document.getElementById('horizonBondsPct').textContent = bondsPct.toFixed(0) + '%';
+  document.getElementById('horizonCashPct').textContent = cashPct.toFixed(0) + '%';
+
+  const bar = document.getElementById('horizonAllocBar');
+  bar.innerHTML = `
+    <div class="alloc-seg" style="width:${stocksPct}%;background:var(--purple2);">${stocksPct.toFixed(0)}%</div>
+    <div class="alloc-seg" style="width:${bondsPct}%;background:var(--teal, #00d4aa);">${bondsPct.toFixed(0)}%</div>
+    <div class="alloc-seg" style="width:${cashPct}%;background:var(--gold, #fbbf24);">${cashPct.toFixed(0)}%</div>
+  `;
+
+  const toleranceLabel = { low: 'low', medium: 'medium', high: 'high' }[tolerance];
+  const callout = document.getElementById('horizonCallout');
+  callout.className = 'calc-callout';
+  callout.innerHTML = `<span class="verdict">Illustrative Starting Point</span>With a ${years}-year horizon and ${toleranceLabel} risk tolerance, a commonly-used rule-of-thumb points toward roughly ${stocksPct.toFixed(0)}% stocks / ${bondsPct.toFixed(0)}% bonds / ${cashPct.toFixed(0)}% cash — a starting point to think about, not a recommendation for your own portfolio.`;
 }
-calcPosition();
+calcHorizon();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
