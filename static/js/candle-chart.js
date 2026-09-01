@@ -149,7 +149,9 @@
 
   function render(svgNode, config) {
     var width = config.width || 640;
-    var marginLeft = 8, marginRight = 54, marginTop = 10;
+    var hasMarkerLabels = (config.verticalMarkers || []).some(function (m) { return m.label; });
+    var markerLabelSpace = hasMarkerLabels ? 18 : 0;
+    var marginLeft = 8, marginRight = 54, marginTop = 10 + markerLabelSpace;
     var panelGap = 10;
     var xCount = config.xCount;
     var plotWidth = width - marginLeft - marginRight;
@@ -185,9 +187,10 @@
     // vertical markers spanning the whole chart (confluence alignment line etc)
     (config.verticalMarkers || []).forEach(function (m) {
       var x = xScale(m.x);
-      svgNode.appendChild(svgEl('line', { x1: x, x2: x, y1: marginTop - 2, y2: totalHeight - 6, stroke: m.color, 'stroke-width': 1.4, 'stroke-dasharray': '4 3', opacity: 0.85 }));
+      var lineTop = m.label ? marginTop - markerLabelSpace + 4 : marginTop - 2;
+      svgNode.appendChild(svgEl('line', { x1: x, x2: x, y1: lineTop, y2: totalHeight - 6, stroke: m.color, 'stroke-width': 1.4, 'stroke-dasharray': '4 3', opacity: 0.85 }));
       if (m.label) {
-        var t = svgEl('text', { x: x, y: totalHeight - 8, fill: m.color, 'font-size': 9, 'font-family': 'Helvetica', 'text-anchor': 'middle', 'font-weight': 'bold' });
+        var t = svgEl('text', { x: x, y: 14, fill: m.color, 'font-size': 9, 'font-family': 'Helvetica', 'text-anchor': 'middle', 'font-weight': 'bold' });
         t.textContent = m.label;
         svgNode.appendChild(t);
       }
