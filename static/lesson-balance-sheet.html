@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reading the Income Statement — Intermediate — Growth Capital Group</title>
+<title>The Balance Sheet — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,6 +63,14 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+.bal-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+@media (max-width: 700px) { .bal-diagram { grid-template-columns: 1fr; } }
+.bal-side { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.bal-side h4 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 12px; }
+.bal-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border); color: var(--muted); }
+.bal-row:first-of-type { border-top: none; }
+.bal-row b { color: var(--text); }
+.bal-row.total { border-top: 2px solid var(--border2); font-weight: 700; color: var(--text); margin-top: 4px; }
 .stmt-table-wrap { max-height: 480px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; margin-top: 16px; }
 .stmt-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .stmt-table th { position: sticky; top: 0; background: var(--purple2); color: #03130f; font-family: 'Outfit', sans-serif; font-weight: 700; text-align: right; padding: 12px 10px; white-space: nowrap; }
@@ -71,7 +79,6 @@ p.body-text b { color: var(--text); }
 .stmt-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
 .stmt-table tbody tr:nth-child(even) { background: var(--bg3); }
 .stmt-table tr.highlight-row td { background: rgba(124,58,237,0.10); }
-.stmt-table tr.total-row td { font-weight: 700; color: var(--text); border-top: 2px solid var(--border2); }
 .stmt-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; margin-bottom: 0; line-height: 1.6; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -83,7 +90,7 @@ p.body-text b { color: var(--text); }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.margin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
 @media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -145,9 +152,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-picking">Learn / Intermediate / Stock Picking</a> / 1 of 5</div>
-    <h1 class="hero-title">Reading the Income Statement — Is It Actually <span class="accent">Profitable?</span></h1>
-    <p class="hero-sub">The income statement shows revenue, expenses, and profit over a period. Look beyond the headline number — is revenue growing, are margins expanding, and is profit coming from the core business?</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-picking">Learn / Intermediate / Stock Picking</a> / 2 of 5</div>
+    <h1 class="hero-title">The Balance Sheet — How Much <span class="accent">Debt</span> Is Too Much?</h1>
+    <p class="hero-sub">The balance sheet shows what a company owns versus what it owes at a single point in time. A healthy one has manageable debt and enough cash to survive a downturn without panicking.</p>
   </div>
 </div>
 
@@ -155,78 +162,73 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">What the Income Statement Actually Shows</h2>
-    <p class="body-text">The income statement (also called the profit &amp; loss, or P&amp;L) walks from <b>revenue</b> — the total money a company took in — down to <b>net income</b>, what's left after every cost. Each step along the way tells you something different: <b>gross profit</b> (revenue minus the direct cost of making the product) shows how much the core product itself makes; <b>operating income</b> (gross profit minus running-the-business costs like salaries and marketing) shows how profitable the whole operation is; <b>net income</b> (operating income minus interest and tax) is the true bottom line.</p>
-    <p class="body-text">Turning each of those into a <b>margin</b> — dividing by revenue — lets you compare companies of very different sizes on equal footing. A $2 billion company with a 20% net margin is more profitable, relative to its size, than a $20 billion company with a 5% net margin.</p>
-    <p class="body-text">The single most useful habit in this lesson: don't stop at the headline net income number. Check whether profit is <b>growing from the core business</b> (rising revenue, stable or expanding margins) or propped up by a <b>one-off item</b> — a asset sale, a legal settlement, a tax credit — that won't repeat next year.</p>
+    <h2 class="section-title">Assets, Liabilities, and the Equation That Always Balances</h2>
+    <p class="body-text">The balance sheet is built on one identity that always holds: <b>Assets = Liabilities + Equity</b>. Assets are everything the company owns (cash, inventory, buildings, equipment). Liabilities are everything it owes (loans, bonds, unpaid bills). Equity is what's left over for shareholders — the difference between the two.</p>
+    <p class="body-text">Both assets and liabilities split into <b>current</b> (due or usable within a year — cash, inventory, short-term debt) and <b>non-current</b> (longer-term — buildings, long-term debt). That split is the basis of the two ratios that matter most here: the <b>current ratio</b> (current assets ÷ current liabilities) measures short-term liquidity — can the company cover what it owes soon? The <b>debt-to-equity ratio</b> (total debt ÷ shareholder equity) measures leverage — how much of the business is funded by borrowing versus by owners' capital.</p>
+    <p class="body-text">Neither ratio has one "correct" number — a capital-intensive business like a utility naturally carries more debt than a software company with few physical assets. The goal is spotting <b>outliers</b>: a current ratio well below 1 (can't cover near-term bills) or a debt-to-equity ratio far above the company's own history or its peers.</p>
 
     <div class="example-card">
-      <h3>🧾 Illustrative Example: Two Years, One Real Improvement and One Fake One</h3>
-      <p class="body-text">Real income statements don't come with round numbers, so here's a clean illustrative example to see the mechanics clearly — the same logic applies to any real company's filing.</p>
-      <div class="stmt-table-wrap">
-        <table class="stmt-table">
-          <thead>
-            <tr><th>Line Item</th><th>Year 1</th><th>Year 2</th><th>Change</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Revenue</td><td>$400.0M</td><td>$460.0M</td><td>+15.0%</td></tr>
-            <tr><td>Cost of Goods Sold</td><td>$240.0M</td><td>$262.2M</td><td>+9.3%</td></tr>
-            <tr class="highlight-row total-row"><td>Gross Profit</td><td>$160.0M</td><td>$197.8M</td><td>+23.6%</td></tr>
-            <tr><td>Gross Margin</td><td>40.0%</td><td>43.0%</td><td>+3.0 pts</td></tr>
-            <tr><td>Operating Expenses</td><td>$104.0M</td><td>$124.2M</td><td>+19.4%</td></tr>
-            <tr class="highlight-row total-row"><td>Operating Income</td><td>$56.0M</td><td>$73.6M</td><td>+31.4%</td></tr>
-            <tr><td>Operating Margin</td><td>14.0%</td><td>16.0%</td><td>+2.0 pts</td></tr>
-            <tr><td>One-Off Gain (asset sale)</td><td>$0.0M</td><td>$18.0M</td><td>new</td></tr>
-            <tr><td>Interest &amp; Tax</td><td>$16.8M</td><td>$22.1M</td><td>+31.5%</td></tr>
-            <tr class="highlight-row total-row"><td>Net Income</td><td>$39.2M</td><td>$69.5M</td><td>+77.3%</td></tr>
-            <tr><td>Net Margin</td><td>9.8%</td><td>15.1%</td><td>+5.3 pts</td></tr>
-          </tbody>
-        </table>
+      <h3>⚖️ The Balance Sheet Equation, Illustrated</h3>
+      <div class="bal-diagram">
+        <div class="bal-side">
+          <h4>Assets</h4>
+          <div class="bal-row"><span>Cash &amp; equivalents</span><b>$40M</b></div>
+          <div class="bal-row"><span>Inventory &amp; receivables</span><b>$60M</b></div>
+          <div class="bal-row"><span>Property &amp; equipment</span><b>$150M</b></div>
+          <div class="bal-row total"><span>Total Assets</span><b>$250M</b></div>
+        </div>
+        <div class="bal-side">
+          <h4>Liabilities + Equity</h4>
+          <div class="bal-row"><span>Short-term debt &amp; payables</span><b>$45M</b></div>
+          <div class="bal-row"><span>Long-term debt</span><b>$80M</b></div>
+          <div class="bal-row"><span>Shareholder equity</span><b>$125M</b></div>
+          <div class="bal-row total"><span>Total Liabilities + Equity</span><b>$250M</b></div>
+        </div>
       </div>
-      <p class="stmt-note">Net income jumped 77.3% — an eye-catching headline. But look closer: operating income (the core business) grew a more modest, still-healthy 31.4%, while $18M of the Year 2 gain came from a one-off asset sale that won't repeat next year. Strip that out and net income growth is closer to 33% — still good, but far less dramatic than the headline number suggests. This is exactly the kind of gap between the headline and the real story this lesson is about.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice the two sides always match: $250M of assets is funded by $125M of debt (short-term + long-term) and $125M of shareholder equity. This company's debt-to-equity ratio is $125M ÷ $125M = <b>1.0</b> — debt and equity fund the business equally, a reasonably balanced position, though the "right" number depends heavily on the industry.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About the Income Statement</h3>
+    <h3 class="subhead">5 Things to Know About the Balance Sheet</h3>
     <ol class="num-checklist">
-      <li><b>Revenue growth alone isn't the full picture</b> — a company can grow revenue while margins shrink, meaning it's making less profit on each dollar sold.</li>
-      <li><b>Margins matter more than the raw profit number</b> — expanding margins mean the business is getting more efficient, not just bigger.</li>
-      <li><b>One-off items distort the headline</b> — asset sales, legal settlements, and tax credits inflate net income for a single period without reflecting the ongoing business.</li>
-      <li><b>Operating income is often the most honest number</b> — it sits below one-off gains/losses and above interest/tax, which can vary for reasons unrelated to how the business is actually performing.</li>
-      <li><b>Compare margins to the same company's history and to peers</b> — a 10% net margin is great in a low-margin industry like groceries, and mediocre in a high-margin one like software.</li>
+      <li><b>Assets always equal liabilities plus equity</b> — if the two sides don't match, something's wrong with the accounting, not the company.</li>
+      <li><b>Current ratio below 1 is a liquidity warning</b> — it means current liabilities exceed current assets, a potential sign of near-term cash strain.</li>
+      <li><b>Debt-to-equity has no universal "good" number</b> — capital-intensive industries (utilities, airlines) naturally run higher than asset-light ones (software, services).</li>
+      <li><b>Rising debt isn't automatically bad</b> — debt taken on to fund genuine growth is different from debt taken on to cover ongoing losses.</li>
+      <li><b>The balance sheet is a snapshot, not a trend</b> — always compare several periods, not just one, to see whether debt and liquidity are improving or deteriorating.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading an Income Statement</h3>
+    <h3 class="subhead">4 Things to Check When Reading a Balance Sheet</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📈 Check Multi-Year Trends</h4>
+        <h4>💧 Check the Current Ratio</h4>
         <ul>
-          <li>One good quarter or year means little — look for revenue and margin trends across several years.</li>
+          <li>Current assets ÷ current liabilities — below 1 is a flag worth investigating further.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔍 Scan for One-Off Items</h4>
+        <h4>⚖️ Check Debt-to-Equity vs Peers</h4>
         <ul>
-          <li>Look in the filing notes for asset sales, settlements, or unusual gains/losses called out separately.</li>
+          <li>Compare against direct competitors in the same industry, not a generic benchmark.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📊 Compare Margins to Peers</h4>
+        <h4>📈 Track the Trend Over Time</h4>
         <ul>
-          <li>A margin only means something in context — compare it to direct competitors in the same industry.</li>
+          <li>Is debt rising faster than equity or assets? That trend matters more than any single snapshot.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧮 Watch the Expense Lines</h4>
+        <h4>🔍 Ask Why Debt Exists</h4>
         <ul>
-          <li>Rising costs growing faster than revenue is an early warning sign, even if profit still looks fine this year.</li>
+          <li>Debt funding expansion is different from debt covering losses — check the cash flow statement (next lesson) for the answer.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> the income statement is one of three core financial statements — pair it with the balance sheet and cash flow statement (the next two lessons in this track) for the full picture. A company can look profitable on the income statement while quietly running into trouble elsewhere.
+      <b>Worth knowing:</b> the balance sheet is a snapshot at one moment, not the full story. Pair it with the income statement (previous lesson) and cash flow statement (next lesson) — a company can look fine on the balance sheet today while its underlying trend is deteriorating.
     </div>
   </div>
 </section>
@@ -235,54 +237,50 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Margin Calculator</h2>
-    <p class="section-desc">Enter simplified income statement figures — see the resulting margins, and whether one-off gains are propping up the bottom line.</p>
+    <h2 class="section-title">Try It Yourself: Balance Sheet Health Checker</h2>
+    <p class="section-desc">Enter simplified balance sheet figures — see the current ratio and debt-to-equity ratio, and whether either looks stretched.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadIncomePreset('healthy')">Load Healthy Growth Example</button>
-        <button class="preset-btn" onclick="loadIncomePreset('propped')">Load One-Off-Propped Example</button>
-        <button class="preset-btn" onclick="loadIncomePreset('shrinking')">Load Shrinking Margin Example</button>
+        <button class="preset-btn" onclick="loadBalPreset('healthy')">Load Healthy Balance Sheet</button>
+        <button class="preset-btn" onclick="loadBalPreset('stretched')">Load Stretched Example</button>
+        <button class="preset-btn" onclick="loadBalPreset('capitalIntensive')">Load Capital-Intensive Example</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="incRevenue">Revenue ($M)</label>
-          <input type="number" id="incRevenue" value="460" step="0.1">
+          <label for="balCurrentAssets">Current Assets ($M)</label>
+          <input type="number" id="balCurrentAssets" value="100" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="incCogs">Cost of Goods Sold ($M)</label>
-          <input type="number" id="incCogs" value="262.2" step="0.1">
+          <label for="balCurrentLiab">Current Liabilities ($M)</label>
+          <input type="number" id="balCurrentLiab" value="45" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="incOpex">Operating Expenses ($M)</label>
-          <input type="number" id="incOpex" value="124.2" step="0.1">
+          <label for="balTotalDebt">Total Debt ($M)</label>
+          <input type="number" id="balTotalDebt" value="125" step="0.1">
         </div>
         <div class="calc-field">
-          <label for="incOneoff">One-Off Gain ($M)</label>
-          <input type="number" id="incOneoff" value="18" step="0.1">
+          <label for="balEquity">Shareholder Equity ($M)</label>
+          <input type="number" id="balEquity" value="125" step="0.1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcIncome()">Calculate Margins →</button>
+        <button class="calc-btn" onclick="calcBalance()">Check Balance Sheet Health →</button>
       </div>
 
-      <div class="calc-results visible" id="incomeResults">
+      <div class="calc-results visible" id="balanceResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Gross Margin</div>
-            <div class="mc-value" id="incGrossMargin">—</div>
+            <div class="mc-label">Current Ratio</div>
+            <div class="mc-value" id="balCurrentRatio">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Operating Margin</div>
-            <div class="mc-value" id="incOpMargin">—</div>
-          </div>
-          <div class="margin-card">
-            <div class="mc-label">Net Margin (incl. one-off)</div>
-            <div class="mc-value" id="incNetMargin">—</div>
+            <div class="mc-label">Debt-to-Equity Ratio</div>
+            <div class="mc-value" id="balDebtEquity">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="incomeCallout"></div>
-        <p class="calc-note">Model: Gross Profit = Revenue − COGS. Operating Income = Gross Profit − OpEx. Net Income = Operating Income + One-Off Gain (simplified — ignores interest/tax for clarity). A one-off gain contributing more than 20% of net income is flagged as a headline that may not repeat next year.</p>
+        <div class="calc-callout" id="balanceCallout"></div>
+        <p class="calc-note">Model: Current Ratio = Current Assets ÷ Current Liabilities (below 1.0 flagged). Debt-to-Equity = Total Debt ÷ Shareholder Equity (above 2.0 flagged as worth extra scrutiny, though the "right" level varies a lot by industry).</p>
       </div>
     </div>
   </div>
@@ -302,58 +300,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What does gross profit measure?</div>
+        <div class="quiz-q-title">1. What is the fundamental balance sheet equation?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Total cash in the bank</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Revenue after all expenses including tax</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Revenue minus the direct cost of making the product</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> The company's stock price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Revenue = Expenses + Profit</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Cash = Assets − Liabilities</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Assets = Liabilities + Equity</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Equity = Revenue − Debt</label>
         </div>
-        <div class="quiz-explain">Gross profit is revenue minus cost of goods sold — it shows how much the core product itself makes before other business costs.</div>
+        <div class="quiz-explain">The balance sheet always balances: everything a company owns (assets) equals what it owes (liabilities) plus what belongs to shareholders (equity).</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. Why can a company's net income jump sharply without the core business improving much?</div>
+        <div class="quiz-q-title">2. What does a current ratio below 1.0 suggest?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Net income can only change if revenue changes</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> A one-off item like an asset sale can inflate net income for a single period</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Companies are required to grow net income every year</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> It's always due to a stock split</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The company has no debt at all</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Current liabilities exceed current assets — a potential near-term liquidity warning</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> The company is definitely about to go bankrupt</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The stock is undervalued</label>
         </div>
-        <div class="quiz-explain">One-off gains (asset sales, settlements, tax credits) can inflate the net income headline without reflecting an improvement in the ongoing business.</div>
+        <div class="quiz-explain">A current ratio below 1.0 means near-term obligations exceed near-term resources — worth investigating further, though not an automatic crisis.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. Why is operating income often considered a more honest measure of business performance than net income?</div>
+        <div class="quiz-q-title">3. Why doesn't debt-to-equity have one universal "good" number?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> It's always a bigger number</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It includes one-off gains, which net income excludes</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It's the same thing as revenue</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> It sits above one-off items and interest/tax, which can vary for reasons unrelated to core performance</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Because debt is always bad regardless of context</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Because equity never matters</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Because the ratio is calculated differently every year</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Because capital-intensive industries naturally carry more debt than asset-light ones</label>
         </div>
-        <div class="quiz-explain">Operating income reflects the core business's day-to-day performance, before items like one-off gains, interest expense, and tax that can swing for unrelated reasons.</div>
+        <div class="quiz-explain">A utility or airline naturally runs a higher debt-to-equity ratio than a software company with few physical assets — always compare to industry peers.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why does a margin need context to be meaningful?</div>
+        <div class="quiz-q-title">4. Why isn't rising debt automatically a bad sign?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> A given margin can be great in a low-margin industry and mediocre in a high-margin one</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Margins are always exactly 10% regardless of industry</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Margins only apply to technology companies</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Context never matters once you have the margin number</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Debt taken on to fund genuine growth is different from debt covering ongoing losses</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Debt is always good no matter the reason</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Rising debt always means the stock will go up</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Debt has no effect on a company's risk</label>
         </div>
-        <div class="quiz-explain">A 10% net margin is strong in low-margin industries like groceries, but mediocre in high-margin ones like software — always compare against peers in the same industry.</div>
+        <div class="quiz-explain">The reason behind rising debt matters — expansion-driven borrowing is a very different signal than debt used to plug ongoing losses.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. In the illustrative example, why was the 77.3% net income growth described as less impressive than it first appears?</div>
+        <div class="quiz-q-title">5. In the illustrated example ($125M debt, $125M equity), what is the debt-to-equity ratio?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because revenue actually fell that year</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because the company changed its accountant</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because a large chunk of the increase came from a one-off asset sale that won't repeat</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because net income growth is never a meaningful number</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> 0.5</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> 2.0</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> 1.0</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> 125</label>
         </div>
-        <div class="quiz-explain">Once the $18M one-off gain is stripped out, the underlying net income growth was closer to 33% — still healthy, but far less dramatic than the 77.3% headline.</div>
+        <div class="quiz-explain">Debt-to-equity = total debt ÷ shareholder equity = $125M ÷ $125M = 1.0 — debt and equity fund the business equally.</div>
       </div>
     </div>
 
@@ -370,22 +368,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/income-statement-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/balance-sheet-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the illustrative two-year income statement table, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the assets/liabilities/equity example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/income-statement-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/balance-sheet-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to calculate margins and spot one-off items on a real company's filing.</div>
+        <div class="dl-desc">Guided exercises to calculate current ratio and debt-to-equity on a real company's filing.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/income-statement-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/balance-sheet-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore reading financial statements in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore balance sheets in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -394,19 +392,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: The Balance Sheet</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge whether profit is real, the next step is checking what a company owns versus what it owes.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Cash Flow</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can judge what a company owns versus owes, the next step is following the actual cash moving through the business.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate#tab-picking" class="hub-card">
+      <a href="/learn/intermediate/income-statement" class="hub-card">
         <div class="card-icon">🧾</div>
-        <div class="card-title">Back to Stock Picking</div>
-        <div class="card-desc">Review the other four intermediate stock picking lessons.</div>
-        <div class="card-link">Back to Intermediate →</div>
+        <div class="card-title">Back to the Income Statement</div>
+        <div class="card-desc">Review whether profit is actually real.</div>
+        <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/balance-sheet" class="hub-card">
-        <div class="card-icon">⚖️</div>
-        <div class="card-title">Continue to The Balance Sheet</div>
-        <div class="card-desc">How much debt is too much?</div>
+      <a href="/learn/intermediate#tab-picking" class="hub-card">
+        <div class="card-icon">💧</div>
+        <div class="card-title">Continue to Cash Flow</div>
+        <div class="card-desc">Follow the money, not just the profit.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -439,52 +437,52 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const INCOME_PRESETS = {
-  healthy: { revenue: 460, cogs: 262.2, opex: 124.2, oneoff: 0 },
-  propped: { revenue: 460, cogs: 262.2, opex: 124.2, oneoff: 18 },
-  shrinking: { revenue: 460, cogs: 285, opex: 140, oneoff: 0 },
+const BAL_PRESETS = {
+  healthy: { ca: 100, cl: 45, debt: 125, equity: 125 },
+  stretched: { ca: 60, cl: 90, debt: 220, equity: 60 },
+  capitalIntensive: { ca: 40, cl: 35, debt: 300, equity: 150 },
 };
-function loadIncomePreset(kind) {
-  const p = INCOME_PRESETS[kind];
-  document.getElementById('incRevenue').value = p.revenue;
-  document.getElementById('incCogs').value = p.cogs;
-  document.getElementById('incOpex').value = p.opex;
-  document.getElementById('incOneoff').value = p.oneoff;
-  calcIncome();
+function loadBalPreset(kind) {
+  const p = BAL_PRESETS[kind];
+  document.getElementById('balCurrentAssets').value = p.ca;
+  document.getElementById('balCurrentLiab').value = p.cl;
+  document.getElementById('balTotalDebt').value = p.debt;
+  document.getElementById('balEquity').value = p.equity;
+  calcBalance();
 }
 
-function calcIncome() {
-  const revenue = parseFloat(document.getElementById('incRevenue').value);
-  const cogs = parseFloat(document.getElementById('incCogs').value);
-  const opex = parseFloat(document.getElementById('incOpex').value);
-  const oneoff = parseFloat(document.getElementById('incOneoff').value);
-  if ([revenue, cogs, opex, oneoff].some(isNaN) || revenue <= 0) { alert('Please enter valid figures, with revenue greater than 0.'); return; }
+function calcBalance() {
+  const ca = parseFloat(document.getElementById('balCurrentAssets').value);
+  const cl = parseFloat(document.getElementById('balCurrentLiab').value);
+  const debt = parseFloat(document.getElementById('balTotalDebt').value);
+  const equity = parseFloat(document.getElementById('balEquity').value);
+  if ([ca, cl, debt, equity].some(isNaN) || cl <= 0 || equity <= 0) { alert('Please enter valid figures — current liabilities and equity must be greater than 0.'); return; }
 
-  const grossProfit = revenue - cogs;
-  const opIncome = grossProfit - opex;
-  const netIncome = opIncome + oneoff;
-  const grossMargin = (grossProfit / revenue) * 100;
-  const opMargin = (opIncome / revenue) * 100;
-  const netMargin = (netIncome / revenue) * 100;
+  const currentRatio = ca / cl;
+  const debtEquity = debt / equity;
 
-  document.getElementById('incGrossMargin').textContent = grossMargin.toFixed(1) + '%';
-  document.getElementById('incOpMargin').textContent = opMargin.toFixed(1) + '%';
-  document.getElementById('incNetMargin').textContent = netMargin.toFixed(1) + '%';
+  document.getElementById('balCurrentRatio').textContent = currentRatio.toFixed(2);
+  document.getElementById('balDebtEquity').textContent = debtEquity.toFixed(2);
 
-  const oneoffShare = netIncome !== 0 ? (oneoff / netIncome) * 100 : 0;
-  const callout = document.getElementById('incomeCallout');
-  if (oneoff > 0 && oneoffShare > 20) {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ One-Off-Propped Result</span>The one-off gain makes up ${oneoffShare.toFixed(0)}% of net income ($${oneoff.toFixed(1)}M of $${netIncome.toFixed(1)}M). Without it, operating income alone would be $${opIncome.toFixed(1)}M (${opMargin.toFixed(1)}% margin) — a more sustainable read on the core business.`;
-  } else if (opMargin > grossMargin - 30 && opMargin > 5) {
+  const callout = document.getElementById('balanceCallout');
+  const liquidityOk = currentRatio >= 1.0;
+  const leverageOk = debtEquity <= 2.0;
+
+  if (liquidityOk && leverageOk) {
     callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Looks Like a Healthy Core Business</span>Operating margin of ${opMargin.toFixed(1)}% with little or no one-off support — this profit is coming from the actual business, not accounting one-offs.`;
+    callout.innerHTML = `<span class="verdict">✓ Looks Reasonably Healthy</span>Current ratio of ${currentRatio.toFixed(2)} covers near-term liabilities, and debt-to-equity of ${debtEquity.toFixed(2)} isn't obviously stretched. Still worth comparing to industry peers before drawing conclusions.`;
+  } else if (!liquidityOk && !leverageOk) {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Both Flags Raised</span>Current ratio of ${currentRatio.toFixed(2)} is below 1.0 (near-term liquidity strain) and debt-to-equity of ${debtEquity.toFixed(2)} is elevated. Worth digging into why — check the cash flow statement for the fuller picture.`;
+  } else if (!liquidityOk) {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Liquidity Flag</span>Current ratio of ${currentRatio.toFixed(2)} is below 1.0 — current liabilities exceed current assets, a potential near-term cash strain worth investigating.`;
   } else {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Thin or Shrinking Margins</span>Operating margin of ${opMargin.toFixed(1)}% is thin — check whether costs are growing faster than revenue and whether this is an industry-wide pattern or company-specific.`;
+    callout.innerHTML = `<span class="verdict">⚠️ Leverage Flag</span>Debt-to-equity of ${debtEquity.toFixed(2)} is elevated. This can be normal for capital-intensive industries — compare against direct peers before judging it as risky.`;
   }
 }
-calcIncome();
+calcBalance();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
