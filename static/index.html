@@ -816,6 +816,24 @@ section {
 .tc-teal .tc-link { color: var(--teal); }
 .tool-card:hover .tc-link { gap: 10px; }
 
+/* ── FOUR ARMS OVERVIEW ── kept separate from tc-green/purple/gold/teal
+   above (used by the "All Tools" grid below, left untouched) so each
+   arm card can use its exact confirmed brand colour: GCE blue, GCT
+   purple, Arena gold. */
+.arms-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 60px; }
+@media (max-width: 900px) { .arms-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .arms-grid { grid-template-columns: 1fr; } }
+.tool-card.tc-arm-education::before, .tool-card.tc-arm-alpha::before { background: radial-gradient(ellipse at 30% 0%, rgba(59,130,246,0.10) 0%, transparent 60%); }
+.tool-card.tc-arm-tools::before { background: radial-gradient(ellipse at 30% 0%, rgba(168,85,247,0.10) 0%, transparent 60%); }
+.tool-card.tc-arm-arena::before { background: radial-gradient(ellipse at 30% 0%, rgba(245,158,11,0.10) 0%, transparent 60%); }
+.tc-arm-education .tc-icon, .tc-arm-alpha .tc-icon { background: rgba(59,130,246,0.12); }
+.tc-arm-tools .tc-icon { background: rgba(168,85,247,0.12); }
+.tc-arm-arena .tc-icon { background: rgba(245,158,11,0.12); }
+.tc-arm-education .tc-link, .tc-arm-alpha .tc-link { color: #3b82f6; }
+.tc-arm-tools .tc-link { color: #a855f7; }
+.tc-arm-arena .tc-link { color: #f59e0b; }
+.arm-tag-mini { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
+
 /* ── CTA BANNER ── */
 .cta-section {
   padding: 100px 5%;
@@ -986,123 +1004,65 @@ section.alt-bg { background: var(--bg2); }
   </div>
 </div>
 
-<!-- FEATURE 1: LEARN -->
+<!-- FOUR ARMS OVERVIEW -->
 <section class="alt-bg">
   <div class="section-inner">
-    <div class="feature-row reverse reveal">
-      <div class="feature-text">
-        <div class="section-badge" style="color:var(--green)">
-          <span style="display:inline-block;width:18px;height:1px;background:var(--green);margin-right:7px;"></span>
-          Learn the Fundamentals
-        </div>
-        <h2 class="section-title">Go From Beginner to <span style="color:var(--green)">Confident Investor</span></h2>
-        <p class="section-desc">Clear, jargon-free lessons that take you from the very basics to building your own approach — bite-sized, self-paced, and written for real people, not finance pros.</p>
-        <ul class="feature-bullets">
-          <li><div class="bullet-check" style="background:rgba(0,212,170,0.10);border-color:rgba(0,212,170,0.25);color:var(--green);">✓</div><span>Plain-English lessons — no jargon, no assumptions</span></li>
-          <li><div class="bullet-check" style="background:rgba(0,212,170,0.10);border-color:rgba(0,212,170,0.25);color:var(--green);">✓</div><span>Start at the very beginning and build up at your own pace</span></li>
-          <li><div class="bullet-check" style="background:rgba(0,212,170,0.10);border-color:rgba(0,212,170,0.25);color:var(--green);">✓</div><span>Bite-sized lessons you can finish in a coffee break</span></li>
-          <li><div class="bullet-check" style="background:rgba(0,212,170,0.10);border-color:rgba(0,212,170,0.25);color:var(--green);">✓</div><span>Beginner, intermediate and pro tracks as you grow</span></li>
-        </ul>
-        <a href="/learn" class="btn-primary" style="padding:12px 28px;font-size:15px;background:var(--green);color:#03130f;box-shadow:0 0 40px rgba(0,212,170,0.25);">Explore the Lessons →</a>
-      </div>
-      <div class="feature-screen screen-glow-green">
-        <div class="feature-iframe-wrap">
-          <img class="feature-img" src="/static/img/features/learn-laptop-chart.jpg" alt="Over-the-shoulder view of a laptop screen showing an investment chart">
-          <div class="feature-fade-left"></div>
-        </div>
-      </div>
+    <div style="text-align:center; max-width: 620px; margin: 0 auto 20px;" class="reveal">
+      <div class="section-badge" style="justify-content:center;">Growth Capital Group</div>
+      <h2 class="section-title">Four Ways to <span style="color:var(--green)">Get Involved</span></h2>
+      <p class="section-desc" style="margin: 0 auto;">Growth Capital Group is structured into four focused arms — start wherever fits you best.</p>
     </div>
-  </div>
-</section>
+    <div class="arms-grid reveal">
 
-<!-- FEATURE 2: SIGNALS -->
-<section>
-  <div class="section-inner">
-    <div class="feature-row reveal">
-      <div class="feature-text">
-        <!-- Added style attribute, horizontal line span, and matched colors -->
-        <div class="section-badge badge-purple" style="color:var(--purple2)">
-          <span style="display:inline-block;width:18px;height:1px;background:var(--purple2);margin-right:7px;"></span>
-          Market Signals, Simplified
+      <a href="/learn" class="tool-card tc-arm-education">
+        <div class="tc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
         </div>
-        <!-- Fixed the class to a style attribute here -->
-        <h2 class="section-title">Understand What the Market Is <span style="color:var(--purple2)">Telling You</span></h2>
-        <p class="section-desc">We turn complex market data into simple, plain-English alerts — so you can start spotting opportunities without needing to be a chart expert.</p>
-        <ul class="feature-bullets">
-          <!-- Swapped background and border opacity colors to perfectly match the purple theme -->
-          <li><div class="bullet-check" style="background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.25);color:var(--purple2);">✓</div><span>Plain-English explanations of what's moving the market</span></li>
-          <li><div class="bullet-check" style="background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.25);color:var(--purple2);">✓</div><span>See the bigger picture — from daily moves to long-term trends</span></li>
-          <li><div class="bullet-check" style="background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.25);color:var(--purple2);">✓</div><span>Every alert shows how strong the opportunity is, in simple terms</span></li>
-          <li><div class="bullet-check" style="background:rgba(167,139,250,0.10);border-color:rgba(167,139,250,0.25);color:var(--purple2);">✓</div><span>Get notified the moment something worth knowing happens</span></li>
-        </ul>
-        <!-- Transferred button padding, font-size, background, and matching purple shadow styling -->
-        <a href="/signal-config" class="btn-primary" style="padding:12px 28px;font-size:15px;background:var(--purple2);color:#fff;box-shadow:0 0 40px rgba(167,139,250,0.25);">See How It Works →</a>
-      </div>
-      <div class="feature-screen screen-glow-purple">
-        <div class="feature-iframe-wrap">
-          <img class="feature-img feature-img-contain" src="/static/img/features/signals-output.png" alt="Strategy output panel showing multiple buy and sell signals firing at once">
-          <!-- Swapped feature-fade to feature-fade-left to match Feature 1's setup -->
-          <div class="feature-fade-left"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+        <div class="arm-tag-mini">GCE</div>
+        <div class="tc-title">Education</div>
+        <div class="tc-desc">Jargon-free lessons from your very first trade to a long-term strategy, at your own pace.</div>
+        <div class="tc-link">Start learning <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
 
-<!-- FEATURE 3: BACKTESTER -->
-<section class="alt-bg">
-  <div class="section-inner">
-    <div class="feature-row reverse reveal">
-      <div class="feature-text">
-        <div class="section-badge badge-gold" style="color:var(--gold)">
-          <span style="display:inline-block;width:18px;height:1px;background:var(--gold);margin-right:7px;"></span>
-          Practice Without Risk
+      <a href="/tools" class="tool-card tc-arm-tools">
+        <div class="tc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          </svg>
         </div>
-        <h2 class="section-title">Try Out Your Ideas <span style="color:var(--gold)">Before You Risk</span> a Dollar</h2>
-        <p class="section-desc">Test your investing ideas against real market history — completely free, with no real money involved. See what would have happened before you put a single pound in.</p>
-        <ul class="feature-bullets">
-          <li><div class="bullet-check" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);color:var(--gold);">✓</div><span>Years of real market history to learn from</span></li>
-          <li><div class="bullet-check" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);color:var(--gold);">✓</div><span>Simple, easy-to-read results showing how an idea would have performed</span></li>
-          <li><div class="bullet-check" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);color:var(--gold);">✓</div><span>Compare a few different ideas side by side</span></li>
-          <li><div class="bullet-check" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);color:var(--gold);">✓</div><span>Helpful suggestions to fine-tune your approach</span></li>
-        </ul>
-        <a href="/backtester" class="btn-primary" style="padding:12px 28px;font-size:15px;background:var(--gold);color:#0d0a00;box-shadow:0 0 40px rgba(251,191,36,0.20);">Try It Risk-Free →</a>
-      </div>
-      <div class="feature-screen screen-glow-gold">
-        <div class="feature-iframe-wrap">
-          <img class="feature-img" src="/static/img/features/backtester-result.png" alt="Backtester results showing a successful strategy with a 15.93% return">
-          <div class="feature-fade-left"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+        <div class="arm-tag-mini">GCT</div>
+        <div class="tc-title">Tools</div>
+        <div class="tc-desc">Signals, Backtester, Portfolio Balancer, Calculator and Data Visualisation — all in one place.</div>
+        <div class="tc-link">Explore the tools <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
 
-<!-- FEATURE 4: PORTFOLIO -->
-<section>
-  <div class="section-inner">
-    <div class="feature-row reveal">
-      <div class="feature-text">
-        <div class="section-badge badge-blue" style="color:var(--blue)">
-          <span style="display:inline-block;width:18px;height:1px;background:var(--blue);margin-right:7px;"></span>
-          Building a Balanced Portfolio
+      <a href="/alpha" class="tool-card tc-arm-alpha">
+        <div class="tc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
         </div>
-        <h2 class="section-title">Learn to Spread Your Money <span style="color:var(--blue)">Wisely</span></h2>
-        <p class="section-desc">Don't put all your eggs in one basket. See all your investments in one place, and get simple, friendly guidance on keeping a healthy, balanced mix.</p>
-        <ul class="feature-bullets">
-          <li><div class="bullet-check" style="background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.25);color:var(--blue);">✓</div><span>Add every investment you hold, with a starting value and running notes</span></li>
-          <li><div class="bullet-check" style="background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.25);color:var(--blue);">✓</div><span>See at a glance how spread out your money is, and your overall gain or loss</span></li>
-          <li><div class="bullet-check" style="background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.25);color:var(--blue);">✓</div><span>Top up an investment or update its value any time, with a dated history</span></li>
-          <li><div class="bullet-check" style="background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.25);color:var(--blue);">✓</div><span>Works for crypto, stocks, ETFs and more — whatever you're starting with</span></li>
-        </ul>
-        <a href="/portfolio-balancer" class="btn-primary" style="padding:12px 28px;font-size:15px;background:var(--blue);color:#fff;box-shadow:0 0 40px rgba(59,130,246,0.25);">Start Balancing →</a>
-      </div>
-      <div class="feature-screen screen-glow-blue">
-        <div class="feature-iframe-wrap">
-          <img class="feature-img feature-img-contain" src="/static/img/features/portfolio-wheel.png" alt="Portfolio allocation wheel showing a balanced mix across asset classes">
-          <div class="feature-fade"></div>
+        <div class="arm-tag-mini">GCE</div>
+        <div class="tc-title">Alpha</div>
+        <div class="tc-desc">Unfiltered market insight and commentary from four analysts, each with their own edge.</div>
+        <div class="tc-link">Read the takes <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+
+      <a href="/arena" class="tool-card tc-arm-arena">
+        <div class="tc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="6"/><path d="M8 14l-4 7h16l-4-7"/>
+          </svg>
         </div>
-      </div>
+        <div class="arm-tag-mini">ARENA</div>
+        <div class="tc-title">Arena</div>
+        <div class="tc-desc">Market Xi, trading competitions and predictions markets — put your skills to the test.</div>
+        <div class="tc-link">Enter the Arena <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+
     </div>
   </div>
 </section>
