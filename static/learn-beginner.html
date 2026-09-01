@@ -71,6 +71,20 @@
 [data-theme="light"] .tab-btn.active { background: #a78bfa; border-color: #a78bfa; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: fadeUp 0.4s ease both; }
+.term-accordion { display: flex; flex-direction: column; gap: 14px; max-width: 820px; margin: 0 auto; }
+.term-item { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.25s; }
+.term-item[open] { border-color: var(--border2); }
+.term-summary { list-style: none; cursor: pointer; padding: 22px 24px; display: flex; align-items: center; gap: 18px; }
+.term-summary::-webkit-details-marker { display: none; }
+.term-num { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25); display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: var(--purple2); }
+.term-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; color: var(--text); flex: 1; }
+.term-chevron { flex-shrink: 0; color: var(--muted); font-size: 12px; transition: transform 0.25s; }
+.term-item[open] .term-chevron { transform: rotate(180deg); }
+.term-body { padding: 0 24px 24px 82px; }
+.term-def { font-size: 14.5px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.term-example { background: rgba(124,58,237,0.06); border-left: 3px solid var(--purple2); padding: 12px 16px; border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--text); line-height: 1.65; }
+.term-example b { color: var(--purple2); }
+@media (max-width: 600px) { .term-body { padding-left: 24px; } }
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -282,48 +296,118 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="tab-panel" id="tab-terms">
       <h2 class="section-title">Key Terminology</h2>
-      <p class="section-desc">The five terms that show up everywhere in investing news and conversation — decoded in plain English.</p>
-      <div class="lesson-list">
-        <div class="lesson-item">
-          <div class="lesson-num">1</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-title">Bull Market vs Bear Market</span></div>
-            <p class="lesson-desc">A bull market means prices are generally rising and confidence is high. A bear market means prices have fallen sharply (typically 20%+ from a recent high) and pessimism dominates. Knowing which one you're in helps you set expectations.</p>
-            <span class="benefit-tag">Decode the headlines with confidence</span>
+      <p class="section-desc">10 terms that show up everywhere in investing news and conversation — click any one to expand it, with a plain-English definition and a real example.</p>
+      <div class="term-accordion reveal">
+        <details class="term-item" open>
+          <summary class="term-summary">
+            <div class="term-num">1</div>
+            <span class="term-title">Bull Market vs Bear Market</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">A bull market means prices are generally rising and confidence is high. A bear market means prices have fallen sharply (typically 20%+ from a recent high) and pessimism dominates. Knowing which one you're in helps you set expectations.</p>
+            <div class="term-example"><b>Example:</b> The S&amp;P 500 fell about 25% from its January 2022 high by October 2022 — a textbook bear market. It then rallied more than 20% off that low, marking the start of a new bull market.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">2</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-title">Market Capitalization ("Market Cap")</span></div>
-            <p class="lesson-desc">Market cap is a company's total value on the stock market — its share price multiplied by the number of shares. It's the fastest way to gauge whether you're looking at a small, scrappy company or a market giant.</p>
-            <span class="benefit-tag">Size up a company in seconds</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">2</div>
+            <span class="term-title">Market Capitalization ("Market Cap")</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Market cap is a company's total value on the stock market — its share price multiplied by the number of shares. It's the fastest way to gauge whether you're looking at a small, scrappy company or a market giant.</p>
+            <div class="term-example"><b>Example:</b> A company trading at $180/share with 15.4 billion shares outstanding has a market cap of roughly $2.8 trillion — putting it among the largest companies in the world.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">3</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-title">Dividends — Getting Paid to Hold</span></div>
-            <p class="lesson-desc">Some companies share their profits directly with shareholders through regular cash payments called dividends. It's a way to earn income from your investments without selling a single share.</p>
-            <span class="benefit-tag">Passive income, straight into your account</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">3</div>
+            <span class="term-title">Dividends — Getting Paid to Hold</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Some companies share their profits directly with shareholders through regular cash payments called dividends. It's a way to earn income from your investments without selling a single share.</p>
+            <div class="term-example"><b>Example:</b> A stock paying $1.84/share per year in dividends would pay you about $184/year if you owned 100 shares — regardless of whether the share price moves up or down that year.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">4</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-title">P/E Ratio — Is It Cheap or Expensive?</span></div>
-            <p class="lesson-desc">The Price-to-Earnings ratio compares a stock's price to its profits. A high P/E suggests investors expect strong future growth; a low P/E can signal a bargain — or a warning sign. It's a quick sanity check, not the full picture.</p>
-            <span class="benefit-tag">A fast gut-check on valuation</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">4</div>
+            <span class="term-title">P/E Ratio — Is It Cheap or Expensive?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">The Price-to-Earnings ratio compares a stock's price to its profits. A high P/E suggests investors expect strong future growth; a low P/E can signal a bargain — or a warning sign. It's a quick sanity check, not the full picture.</p>
+            <div class="term-example"><b>Example:</b> A stock trading at $50/share with $2/share in annual profit has a P/E of 25 (50 ÷ 2) — meaning investors are paying 25 times current earnings for a slice of the company.</div>
           </div>
-        </div>
-        <div class="lesson-item">
-          <div class="lesson-num">5</div>
-          <div class="lesson-body">
-            <div class="lesson-title-row"><span class="lesson-title">Volatility — How Bumpy Is the Ride?</span></div>
-            <p class="lesson-desc">Volatility measures how much and how quickly a price swings up and down. Higher volatility means bigger potential gains — and bigger potential losses. Understanding it helps you pick investments that match your comfort level.</p>
-            <span class="benefit-tag">Match your investments to your risk appetite</span>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">5</div>
+            <span class="term-title">Volatility — How Bumpy Is the Ride?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Volatility measures how much and how quickly a price swings up and down. Higher volatility means bigger potential gains — and bigger potential losses. Understanding it helps you pick investments that match your comfort level.</p>
+            <div class="term-example"><b>Example:</b> Bitcoin can swing 10%+ in a single day. A broad stock market index fund typically moves less than 1% on a normal day — bitcoin is by far the more volatile of the two.</div>
           </div>
-        </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">6</div>
+            <span class="term-title">Liquidity — How Fast Can You Cash Out?</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Liquidity is how quickly and easily you can convert an investment into cash without hurting its price. Highly liquid assets can be sold in seconds; illiquid ones can take weeks or months to sell at a fair price.</p>
+            <div class="term-example"><b>Example:</b> Selling shares in a large public company takes seconds during market hours at a known price. Selling a house — or a stake in a small private business — can take months and a lot of negotiation.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">7</div>
+            <span class="term-title">Diversification — Not All Eggs, One Basket</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Diversification means spreading your money across many different investments so that one bad outcome can't sink your whole portfolio. It's one of the few genuinely "free" ways to reduce risk without giving up expected return.</p>
+            <div class="term-example"><b>Example:</b> Put $10,000 into one company's stock and a single bad earnings report could cost you 30% overnight. Spread that $10,000 across a 500-company index fund and one company's bad quarter barely registers.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">8</div>
+            <span class="term-title">Compounding — Growth on Top of Growth</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Compounding happens when the returns your money earns start earning their own returns. It's slow at first and then accelerates dramatically — which is why starting early matters so much more than most people realize.</p>
+            <div class="term-example"><b>Example:</b> $10,000 growing at 7% a year becomes about $19,700 after 10 years — but roughly $76,000 after 30 years. The last 10 years of growth alone outpace the first 20 combined.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">9</div>
+            <span class="term-title">Asset Allocation — Your Investment Mix</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">Asset allocation is how you split your money across stocks, bonds, cash and other asset classes. It's widely considered the single biggest driver of a portfolio's long-term risk and return — bigger than picking individual investments.</p>
+            <div class="term-example"><b>Example:</b> A 25-year-old with decades until retirement might hold 80% stocks / 20% bonds for growth. Someone retiring next year might flip that to 30% stocks / 70% bonds to protect what they've already built.</div>
+          </div>
+        </details>
+        <details class="term-item">
+          <summary class="term-summary">
+            <div class="term-num">10</div>
+            <span class="term-title">Index Fund — Owning the Whole Market</span>
+            <span class="term-chevron">▾</span>
+          </summary>
+          <div class="term-body">
+            <p class="term-def">An index fund doesn't try to beat the market — it simply buys every company in a given index, in proportion to their size, so your return tracks the market's return, minus a small fee. It's the closest thing investing has to a "default setting."</p>
+            <div class="term-example"><b>Example:</b> An S&amp;P 500 index fund buys all 500 companies in the index automatically. If the index rises 8% in a year, your fund rises roughly 8% too, minus a tiny annual fee often under 0.1%.</div>
+          </div>
+        </details>
       </div>
       <div class="fine-print">
         <b>Worth knowing:</b> this is just the start of the vocabulary — as you move into Intermediate and Pro, you'll pick up dozens more terms. Bookmark this page as a quick refresher.
@@ -418,48 +502,11 @@ if (initialTab) activateTab(initialTab);
     }
   } catch {}
 })();
-function updateLogos(theme) {
-}
-function toggleMobileNav() {
-  const links = document.querySelector('.nav-links');
-  const btn = document.getElementById('navHamburger');
-  const isOpen = links.classList.toggle('open');
-  btn.classList.toggle('active', isOpen);
-  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-// Mobile dropdown-chevron toggling now lives in /static/js/nav.js
-// (loaded above) — this used to duplicate it, which meant a tap fired
-// BOTH listeners on the same chevron and the two toggles cancelled
-// each other out: the chevron still visually flips (browsers apply a
-// sticky :hover state after a tap on touch devices, which a separate
-// CSS rule keys off), but the dropdown itself never opens.
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 900) {
-    document.querySelector('.nav-links').classList.remove('open');
-    document.getElementById('navHamburger').classList.remove('active');
-    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
-  }
-});
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('gcg-theme', next);
-  updateToggleIcon(next); updateLogos(next);
-}
-function updateToggleIcon(theme) {
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
-}
-const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
-updateToggleIcon(_initialTheme); updateLogos(_initialTheme);
-const nav = document.querySelector('nav');
-window.addEventListener('scroll', () => {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  nav.style.background = window.scrollY > 40
-    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
-    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
-});
+// Theme toggle, mobile nav, and the nav-scroll background (incl. this page's
+// arm-coloured tint) all now live solely in /static/js/nav.js — this used to
+// duplicate all of it with a plain, non-arm-aware version that ran after
+// nav.js's and silently overwrote it, undoing the header colour-match on
+// every scroll and theme toggle. Removed rather than kept in sync by hand.
 </script>
 </body>
 </html>
