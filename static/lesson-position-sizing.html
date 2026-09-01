@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rebalancing — Intermediate — Growth Capital Group</title>
+<title>Position Sizing — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -44,6 +44,10 @@ p.body-text b { color: var(--text); }
 .example-card h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
 .fine-print { max-width: 900px; margin: 36px auto 0; padding: 20px 24px; border-left: 3px solid var(--gold); background: rgba(251,191,36,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
 .fine-print b { color: var(--text); }
+.tool-pointer { max-width: 900px; margin: 24px 0 0; padding: 18px 22px; border-left: 3px solid var(--purple2); background: rgba(124,58,237,0.06); border-radius: 0 12px 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.tool-pointer b { color: var(--text); }
+.tool-pointer a { color: var(--purple2); font-weight: 600; text-decoration: none; }
+.tool-pointer a:hover { text-decoration: underline; }
 .num-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; counter-reset: numitem; }
 .num-checklist li { position: relative; padding-left: 38px; font-size: 14px; color: var(--muted); line-height: 1.6; counter-increment: numitem; }
 .num-checklist li::before {
@@ -82,7 +86,7 @@ p.body-text b { color: var(--text); }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.margin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
 @media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -144,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 3 of 5</div>
-    <h1 class="hero-title">Rebalancing — Keeping Your Portfolio on <span class="accent">Target</span></h1>
-    <p class="hero-sub">Winners grow to take up more of your portfolio over time, quietly shifting your risk higher than intended. Rebalancing brings you back to your target mix and systematically locks in gains.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-balance">Learn / Intermediate / Balancing a Portfolio</a> / 4 of 5</div>
+    <h1 class="hero-title">Position Sizing — How Much Is Too Much in <span class="accent">One Holding</span>?</h1>
+    <p class="hero-sub">A great idea can still wreck a portfolio if it's sized too large. Position sizing is the discipline of deciding, before you buy, how much of your capital any single holding is allowed to control.</p>
   </div>
 </div>
 
@@ -154,70 +158,75 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Why Your Allocation Drifts Even If You Never Touch It</h2>
-    <p class="body-text">Say you build a 60/40 stocks/bonds portfolio. If stocks then rally hard while bonds stay flat, stocks will naturally grow to take up more than 60% of the total — not because you did anything, but simply because they grew faster. Left alone, your portfolio quietly drifts toward higher risk than you originally chose, exactly when a pullback would hurt the most.</p>
-    <p class="body-text"><b>Rebalancing</b> means periodically trimming the positions that have grown oversized and topping up the ones that have shrunk, to bring the mix back to target. Mechanically, that means selling some of what's gone up and buying some of what's lagged — a disciplined, systematic version of "sell high, buy low" that doesn't depend on predicting anything.</p>
-    <p class="body-text">There are two common approaches: <b>calendar-based</b> rebalancing (check and adjust on a fixed schedule, like annually) and <b>threshold-based</b> rebalancing (rebalance whenever an allocation drifts more than a set amount, like 5 percentage points, from target). Either works — what matters most is having a rule and actually following it, rather than rebalancing on gut feeling (which tends to mean never doing it, since it always feels wrong to sell what's been winning).</p>
+    <h2 class="section-title">Why Sizing Matters More Than Picking</h2>
+    <p class="body-text">Two investors can hold the exact same stock and end up with wildly different outcomes, purely because of how much of their portfolio they put into it. A stock that halves costs a 2% position 1% of the total portfolio — annoying, recoverable. The same stock at a 40% position costs 20% of the total portfolio — a hole that takes real time and gains elsewhere to dig out of.</p>
+    <p class="body-text"><b>Position sizing</b> is the decision, made before you buy, of what percentage of your total portfolio a single holding is allowed to occupy. It's a separate question from "is this a good investment?" — a great company can still be a bad position if it's sized too large relative to everything else you own.</p>
+    <p class="body-text">Two common approaches: a simple <b>maximum-weight rule</b> (e.g. "no single stock over 10% of my portfolio, cost basis or current value") and a <b>risk-based rule</b> more common in active trading (e.g. "risk no more than 1-2% of my account on any single trade's stop-loss distance"). Long-term investors tend to lean on the first; active traders lean on the second — but both exist to answer the same question: how much can this one position hurt me if I'm wrong?</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: A 60/40 Portfolio After a Stock Rally</h3>
-      <p class="body-text">Real portfolios don't come with round numbers, so here's a clean illustrative example to see the mechanics clearly.</p>
+      <h3>⚖️ Illustrative Example: Same Loss, Different Position Sizes</h3>
+      <p class="body-text">A $50,000 portfolio holds a stock that drops 30%. The dollar loss — and how much it dents the whole portfolio — depends entirely on the position size going in.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Stage</th><th>Stocks Value</th><th>Bonds Value</th><th>Stocks %</th><th>Bonds %</th></tr>
+            <tr><th>Position Size</th><th>Position Value</th><th>Loss at -30%</th><th>Loss as % of Portfolio</th></tr>
           </thead>
           <tbody>
-            <tr><td>Starting Portfolio ($100,000)</td><td>$60,000</td><td>$40,000</td><td>60%</td><td>40%</td></tr>
-            <tr><td>After a Strong Stock Rally</td><td>$84,000</td><td>$42,000</td><td>67%</td><td>33%</td></tr>
-            <tr class="highlight-row"><td>After Rebalancing Back to 60/40</td><td>$75,600</td><td>$50,400</td><td>60%</td><td>40%</td></tr>
+            <tr><td>5% Position</td><td>$2,500</td><td>-$750</td><td>-1.5%</td></tr>
+            <tr><td>10% Position</td><td>$5,000</td><td>-$1,500</td><td>-3.0%</td></tr>
+            <tr class="highlight-row"><td>25% Position</td><td>$12,500</td><td>-$3,750</td><td>-7.5%</td></tr>
+            <tr><td>50% Position</td><td>$25,000</td><td>-$7,500</td><td>-15.0%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">After the rally, stocks quietly drifted from 60% to 67% of the portfolio — nobody chose that, it just happened. Rebalancing means selling $8,400 of stocks (locking in some of the gain) and buying $8,400 of bonds, bringing the mix back to the originally intended 60/40 split — a real, mechanical action, not a guess about where markets go next.</p>
+      <p class="stmt-note">Same stock, same -30% move — but the portfolio-level damage ranges from a shrug (-1.5%) to a serious setback (-15%), purely as a function of how large the position was allowed to get before it dropped.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Rebalancing</h3>
+    <h3 class="subhead">5 Things to Know About Position Sizing</h3>
     <ol class="num-checklist">
-      <li><b>Drift happens automatically</b> — you don't need to do anything wrong for your allocation to shift; strong performers simply grow faster.</li>
-      <li><b>Rebalancing systematizes "sell high, buy low"</b> — you're trimming what's grown and topping up what's lagged, without needing to predict anything.</li>
-      <li><b>Calendar-based and threshold-based are both valid approaches</b> — the key is having a rule and sticking to it.</li>
-      <li><b>Rebalancing can have costs</b> — trading fees and potential tax consequences (in taxable accounts) mean it shouldn't be done excessively often.</li>
-      <li><b>It's emotionally uncomfortable by design</b> — selling your best performer to buy your worst one feels wrong in the moment, which is exactly why having a rule matters.</li>
+      <li><b>Conviction isn't a sizing plan</b> — "I'm really confident in this one" is exactly the thought that precedes most oversized, portfolio-damaging positions.</li>
+      <li><b>Sizing rules are set before you buy</b> — deciding the cap after you're already up big just rationalizes letting a winner run unchecked.</li>
+      <li><b>A max-weight rule protects against concentration risk</b> — capping any one stock at, say, 10% limits how much a single company's bad news can hurt the whole portfolio.</li>
+      <li><b>A risk-based rule protects against a single trade blowing up an account</b> — sizing by "% of account risked to my stop-loss" keeps any one wrong call small and survivable.</li>
+      <li><b>Winners can outgrow their size cap on their own</b> — this is exactly what rebalancing (the previous lesson) exists to fix, by trimming a position back toward its target weight.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Rebalancing</h3>
+    <h3 class="subhead">4 Things to Check Before You Buy</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📅 Pick a Rule and Stick to It</h4>
+        <h4>🎯 Set a Max Weight in Advance</h4>
         <ul>
-          <li>Calendar-based (e.g. annually) or threshold-based (e.g. 5pp drift) — either works if followed consistently.</li>
+          <li>Decide your cap per position (e.g. 5-10% for individual stocks) before you're emotionally attached to a specific idea.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>💰 Watch Trading Costs</h4>
+        <h4>🛑 Know Your Risk-Per-Trade</h4>
         <ul>
-          <li>Frequent rebalancing can rack up fees and, in taxable accounts, trigger capital gains tax.</li>
+          <li>If you use stop-losses, size so that hitting the stop only costs a small, defined slice of your total account — commonly 1-2%.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🎯 Use New Contributions First</h4>
+        <h4>🧮 Use a Calculator, Not a Gut Feel</h4>
         <ul>
-          <li>Directing new deposits toward underweight positions can rebalance without selling anything at all.</li>
+          <li>Working backward from risk amount and stop distance to a position size removes the guesswork — see the tool below.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧠 Expect the Discomfort</h4>
+        <h4>🔁 Re-check After Big Moves</h4>
         <ul>
-          <li>If rebalancing doesn't feel a little uncomfortable, you're probably not actually doing it.</li>
+          <li>A winning position can drift past your cap on its own — that's a cue to rebalance, not a reason to abandon the rule.</li>
         </ul>
       </div>
     </div>
 
+    <div class="tool-pointer">
+      🧮 <b>Try the real thing:</b> Growth Capital Group's <a href="/tools/calculator">Position Size Calculator</a> turns a risk amount and stop-loss distance into a suggested position size and unit count automatically — including a half-Kelly option for sizing more conservatively than the full Kelly Criterion suggests.
+    </div>
+
     <div class="fine-print">
-      <b>Worth knowing:</b> rebalancing is a risk-management discipline, not a way to boost returns on its own — its main job is keeping your portfolio's risk level where you actually intended it, not chasing extra performance.
+      <b>Worth knowing:</b> this lesson explains the mechanics and reasoning behind position sizing rules using illustrative numbers — it isn't personalized financial advice, and any percentage caps shown are for teaching the concept, not a recommendation for your own portfolio. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -226,50 +235,54 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Rebalancing Calculator</h2>
-    <p class="section-desc">Enter your current stocks/bonds values and target allocation — see exactly how much to buy and sell to get back on target.</p>
+    <h2 class="section-title">Try It Yourself: Max Position Size Calculator</h2>
+    <p class="section-desc">Enter your portfolio value, your chosen max-weight cap, and how much you're prepared to risk on this specific trade — see the resulting position size and portfolio-level risk.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadRebalPreset('afterRally')">Load After a Stock Rally</button>
-        <button class="preset-btn" onclick="loadRebalPreset('afterCrash')">Load After a Stock Crash</button>
-        <button class="preset-btn" onclick="loadRebalPreset('onTarget')">Load Already On Target</button>
+        <button class="preset-btn" onclick="loadPosPreset('conservative')">Load Conservative (5% cap, 1% risk)</button>
+        <button class="preset-btn" onclick="loadPosPreset('moderate')">Load Moderate (10% cap, 2% risk)</button>
+        <button class="preset-btn" onclick="loadPosPreset('aggressive')">Load Aggressive (25% cap, 4% risk)</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="rebalStocksVal">Current Stocks Value ($)</label>
-          <input type="number" id="rebalStocksVal" value="84000" step="100">
+          <label for="posPortfolioVal">Portfolio Value ($)</label>
+          <input type="number" id="posPortfolioVal" value="50000" step="500">
         </div>
         <div class="calc-field">
-          <label for="rebalBondsVal">Current Bonds Value ($)</label>
-          <input type="number" id="rebalBondsVal" value="42000" step="100">
+          <label for="posMaxWeight">Max Position Weight Cap (%)</label>
+          <input type="number" id="posMaxWeight" value="10" step="1" min="1" max="100">
         </div>
         <div class="calc-field">
-          <label for="rebalTargetStocks">Target Stocks (%)</label>
-          <input type="number" id="rebalTargetStocks" value="60" step="1" min="0" max="100">
+          <label for="posRiskPct">Risk on This Trade (% of portfolio)</label>
+          <input type="number" id="posRiskPct" value="2" step="0.5" min="0.1" max="100">
         </div>
         <div class="calc-field">
-          <label for="rebalTargetBonds">Target Bonds (%)</label>
-          <input type="number" id="rebalTargetBonds" value="40" step="1" min="0" max="100">
+          <label for="posStopPct">Stop-Loss Distance (% below entry)</label>
+          <input type="number" id="posStopPct" value="15" step="1" min="1" max="100">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcRebalance()">Calculate Rebalance →</button>
+        <button class="calc-btn" onclick="calcPosition()">Calculate Position Size →</button>
       </div>
 
-      <div class="calc-results visible" id="rebalResults">
+      <div class="calc-results visible" id="posResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Current Stocks Weight</div>
-            <div class="mc-value" id="rebalCurrentPct">—</div>
+            <div class="mc-label">Risk-Based Position Size</div>
+            <div class="mc-value" id="posRiskSize">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Drift From Target</div>
-            <div class="mc-value" id="rebalDrift">—</div>
+            <div class="mc-label">Max-Weight Cap ($)</div>
+            <div class="mc-value" id="posCapDollar">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">Position Used</div>
+            <div class="mc-value" id="posFinalSize">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="rebalCallout"></div>
-        <p class="calc-note">Model: current weight = stocks value ÷ total portfolio value. To rebalance, move (current weight − target weight) × total portfolio value from the overweight asset to the underweight one.</p>
+        <div class="calc-callout" id="posCallout"></div>
+        <p class="calc-note">Model: risk-based size = (portfolio value × risk %) ÷ stop-loss %. This is then capped at the max-weight limit — whichever produces the smaller position wins, so a single trade can never breach either rule.</p>
       </div>
     </div>
   </div>
@@ -289,58 +302,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. Why does a portfolio's allocation drift even if you never trade?</div>
+        <div class="quiz-q-title">1. What is position sizing?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> It doesn't — allocations stay fixed unless you actively change them</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Because brokers automatically change your holdings</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Because different assets grow at different rates, shifting their share of the total</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Because of currency exchange rates only</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Predicting which stock will perform best</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Deciding when to buy or sell a stock</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Deciding, before buying, what percentage of the portfolio a single holding may occupy</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Choosing which broker to trade through</label>
         </div>
-        <div class="quiz-explain">Stronger-performing assets naturally grow to take up a larger share of the portfolio over time, even with no trading at all.</div>
+        <div class="quiz-explain">Position sizing is a separate decision from stock-picking — it's about how much capital any one idea, however good, is allowed to control.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What does rebalancing mechanically involve?</div>
+        <div class="quiz-q-title">2. In the illustrative example, why did the same -30% stock move cause such different portfolio-level damage?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Buying more of whatever has performed best recently</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Trimming positions that have grown oversized and topping up ones that have shrunk</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Selling your entire portfolio and starting over</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Never touching your portfolio under any circumstances</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because different investors paid different prices for the stock</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the position sizes relative to the total portfolio were different</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because some investors used stop-losses and others didn't</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because the stock dropped by different amounts for different people</label>
         </div>
-        <div class="quiz-explain">Rebalancing means selling some of what's grown oversized and buying more of what's lagged, to return to target weights.</div>
+        <div class="quiz-explain">Same stock, same percentage move — but a 5% position and a 50% position translate that identical move into very different dents in the total portfolio.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What are the two common rebalancing approaches mentioned in this lesson?</div>
+        <div class="quiz-q-title">3. What are the two common position sizing approaches described in this lesson?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Random and emotional</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Daily and hourly</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Only when a financial advisor tells you to</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Calendar-based (fixed schedule) and threshold-based (drift trigger)</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Buy low, sell high</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Technical and fundamental analysis</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Long-term and short-term</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> A maximum-weight rule and a risk-based rule</label>
         </div>
-        <div class="quiz-explain">Calendar-based rebalancing happens on a fixed schedule; threshold-based rebalancing triggers when drift exceeds a set amount.</div>
+        <div class="quiz-explain">A max-weight rule caps a position's share of the portfolio; a risk-based rule sizes a position from how much you're willing to lose relative to your stop-loss.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Why should rebalancing not be done excessively often?</div>
+        <div class="quiz-q-title">4. Why should sizing rules be set before buying, not after?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Trading fees and potential capital gains tax add real costs</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It's illegal to rebalance more than once a year</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Rebalancing has no costs, so frequency doesn't matter at all</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Rebalancing always increases your allocation to stocks</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Deciding the cap after a position is already up big just rationalizes letting a winner run unchecked</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> It's required by law in most markets</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> It has no effect on the outcome either way</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Brokers automatically enforce sizing rules for you</label>
         </div>
-        <div class="quiz-explain">Rebalancing has real costs — trading fees and, in taxable accounts, potential capital gains tax — so excessive frequency erodes its benefit.</div>
+        <div class="quiz-explain">Setting the cap in advance removes the temptation to keep raising it just because a position happens to be doing well right now.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. In the illustrative example, why did rebalancing feel emotionally uncomfortable?</div>
+        <div class="quiz-q-title">5. What should you do if a winning position naturally grows past your size cap?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because it required predicting the market's next move</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because it involved no actual trading</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because it meant selling the recently-strong performer (stocks) to buy the laggard (bonds)</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because bonds are always a bad investment</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Nothing — winners should always be left alone</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Sell the entire position immediately</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Treat it as a cue to rebalance, trimming it back toward its target weight</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Raise the size cap to match wherever the position has grown to</label>
         </div>
-        <div class="quiz-explain">Selling what's been winning to buy what's been lagging feels counterintuitive in the moment — which is exactly why having a systematic rule matters.</div>
+        <div class="quiz-explain">This is exactly the drift problem the Rebalancing lesson covers — a winner outgrowing its intended weight is a trigger to trim, not a reason to abandon the rule.</div>
       </div>
     </div>
 
@@ -357,22 +370,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/rebalancing-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/position-sizing-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the 60/40-after-a-rally example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the position-size-vs-loss example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/rebalancing-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/position-sizing-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to check your own portfolio's drift and set a rebalancing rule.</div>
+        <div class="dl-desc">Guided exercises to set your own max-weight cap and work through risk-based sizing by hand.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/rebalancing-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/position-sizing-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore rebalancing in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore position sizing in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -381,19 +394,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Position Sizing</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you can keep your target mix on track, the next step is capping how much any single holding can dominate it in the first place.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Time Horizon & Risk Tolerance</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've capped how much any single holding can dominate your portfolio. The final step is matching the whole plan to your own timeline and appetite for risk.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/correlation" class="hub-card">
-        <div class="card-icon">🔀</div>
-        <div class="card-title">Back to Correlation</div>
-        <div class="card-desc">Review why owning 20 stocks isn't always diversified.</div>
+      <a href="/learn/intermediate/rebalancing" class="hub-card">
+        <div class="card-icon">⚖️</div>
+        <div class="card-title">Back to Rebalancing</div>
+        <div class="card-desc">Review how to bring a drifted portfolio back to target.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/position-sizing" class="hub-card">
-        <div class="card-icon">📏</div>
-        <div class="card-title">Continue to Position Sizing</div>
-        <div class="card-desc">How much is too much in one holding?</div>
+      <a href="/learn/intermediate#tab-balance" class="hub-card">
+        <div class="card-icon">🧭</div>
+        <div class="card-title">Continue to Time Horizon & Risk Tolerance</div>
+        <div class="card-desc">Matching the plan to you.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -426,50 +439,51 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const REBAL_PRESETS = {
-  afterRally: { stocks: 84000, bonds: 42000, targetStocks: 60, targetBonds: 40 },
-  afterCrash: { stocks: 42000, bonds: 46000, targetStocks: 60, targetBonds: 40 },
-  onTarget: { stocks: 60000, bonds: 40000, targetStocks: 60, targetBonds: 40 },
+const POS_PRESETS = {
+  conservative: { portfolio: 50000, maxWeight: 5, risk: 1, stop: 15 },
+  moderate: { portfolio: 50000, maxWeight: 10, risk: 2, stop: 15 },
+  aggressive: { portfolio: 50000, maxWeight: 25, risk: 4, stop: 15 },
 };
-function loadRebalPreset(kind) {
-  const p = REBAL_PRESETS[kind];
-  document.getElementById('rebalStocksVal').value = p.stocks;
-  document.getElementById('rebalBondsVal').value = p.bonds;
-  document.getElementById('rebalTargetStocks').value = p.targetStocks;
-  document.getElementById('rebalTargetBonds').value = p.targetBonds;
-  calcRebalance();
+function loadPosPreset(kind) {
+  const p = POS_PRESETS[kind];
+  document.getElementById('posPortfolioVal').value = p.portfolio;
+  document.getElementById('posMaxWeight').value = p.maxWeight;
+  document.getElementById('posRiskPct').value = p.risk;
+  document.getElementById('posStopPct').value = p.stop;
+  calcPosition();
 }
 
-function calcRebalance() {
-  const stocksVal = parseFloat(document.getElementById('rebalStocksVal').value);
-  const bondsVal = parseFloat(document.getElementById('rebalBondsVal').value);
-  const targetStocks = parseFloat(document.getElementById('rebalTargetStocks').value);
-  const targetBonds = parseFloat(document.getElementById('rebalTargetBonds').value);
-  if ([stocksVal, bondsVal, targetStocks, targetBonds].some(isNaN) || stocksVal < 0 || bondsVal < 0) { alert('Please enter valid, non-negative values.'); return; }
-  if (Math.abs((targetStocks + targetBonds) - 100) > 0.5) { alert('Target Stocks % + Target Bonds % should add up to 100%.'); return; }
+function calcPosition() {
+  const portfolio = parseFloat(document.getElementById('posPortfolioVal').value);
+  const maxWeight = parseFloat(document.getElementById('posMaxWeight').value);
+  const riskPct = parseFloat(document.getElementById('posRiskPct').value);
+  const stopPct = parseFloat(document.getElementById('posStopPct').value);
+  if ([portfolio, maxWeight, riskPct, stopPct].some(isNaN) || portfolio <= 0 || maxWeight <= 0 || riskPct <= 0 || stopPct <= 0) {
+    alert('Please enter valid, positive values.');
+    return;
+  }
 
-  const total = stocksVal + bondsVal;
-  const currentStocksPct = total > 0 ? (stocksVal / total) * 100 : 0;
-  const drift = currentStocksPct - targetStocks;
-  const targetStocksVal = total * (targetStocks / 100);
-  const moveAmount = stocksVal - targetStocksVal;
+  const riskDollar = portfolio * (riskPct / 100);
+  const riskBasedSize = riskDollar / (stopPct / 100);
+  const capDollar = portfolio * (maxWeight / 100);
+  const finalSize = Math.min(riskBasedSize, capDollar);
+  const finalPct = (finalSize / portfolio) * 100;
+  const cappedByWeight = riskBasedSize > capDollar;
 
-  document.getElementById('rebalCurrentPct').textContent = currentStocksPct.toFixed(1) + '%';
-  document.getElementById('rebalDrift').textContent = (drift >= 0 ? '+' : '') + drift.toFixed(1) + ' pts';
+  document.getElementById('posRiskSize').textContent = '$' + riskBasedSize.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  document.getElementById('posCapDollar').textContent = '$' + capDollar.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  document.getElementById('posFinalSize').textContent = '$' + finalSize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' (' + finalPct.toFixed(1) + '%)';
 
-  const callout = document.getElementById('rebalCallout');
-  if (Math.abs(drift) < 1) {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Already On Target</span>Current stocks weight of ${currentStocksPct.toFixed(1)}% is within 1 point of your ${targetStocks}% target — no rebalancing needed right now.`;
-  } else if (moveAmount > 0) {
+  const callout = document.getElementById('posCallout');
+  if (cappedByWeight) {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Stocks Overweight by ${drift.toFixed(1)} pts</span>Sell $${moveAmount.toFixed(0)} of stocks and buy $${moveAmount.toFixed(0)} of bonds to bring the portfolio back to your ${targetStocks}/${targetBonds} target.`;
+    callout.innerHTML = `<span class="verdict">⚠️ Capped by Max-Weight Rule</span>The risk-based calculation alone would suggest $${riskBasedSize.toLocaleString(undefined,{maximumFractionDigits:0})} — but your ${maxWeight}% max-weight cap limits the position to $${capDollar.toLocaleString(undefined,{maximumFractionDigits:0})} instead, keeping concentration risk in check.`;
   } else {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Stocks Underweight by ${Math.abs(drift).toFixed(1)} pts</span>Sell $${Math.abs(moveAmount).toFixed(0)} of bonds and buy $${Math.abs(moveAmount).toFixed(0)} of stocks to bring the portfolio back to your ${targetStocks}/${targetBonds} target.`;
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Sized by Risk Rule</span>At $${riskBasedSize.toLocaleString(undefined,{maximumFractionDigits:0})}, this position stays comfortably under your ${maxWeight}% max-weight cap — the risk-based amount is what determines the size here.`;
   }
 }
-calcRebalance();
+calcPosition();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
