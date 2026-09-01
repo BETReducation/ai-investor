@@ -2633,6 +2633,10 @@ def guide_backtester():
 def guide_portfolio():
     return send_from_directory("static", "guide-portfolio.html")
 
+@app.route("/guides/calculator")
+def guide_calculator():
+    return send_from_directory("static", "guide-calculator.html")
+
 # ── New nav routes ────────────────────────────────────────────────────────────
 
 @app.route("/learn")
@@ -3786,6 +3790,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Signal Tracker — Full Guide", "url": "/guides/signals", "sub": "Illustrated user guide"},
     {"title": "Backtester — Full Guide", "url": "/guides/backtester", "sub": "Illustrated user guide"},
     {"title": "Portfolio Balancer — Full Guide", "url": "/guides/portfolio", "sub": "Illustrated user guide"},
+    {"title": "Calculator — Full Guide", "url": "/guides/calculator", "sub": "Illustrated user guide"},
     {"title": "Learn", "url": "/learn", "sub": "Lessons for every level"},
     {"title": "Learn — Beginner", "url": "/learn/beginner", "sub": "Lesson hub"},
     {"title": "Learn — Intermediate", "url": "/learn/intermediate", "sub": "Lesson hub"},

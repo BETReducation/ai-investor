@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator Guide — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-hero { padding: 100px 5% 44px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.page-hero::before { content: ''; position: absolute; top: -10%; left: 50%; transform: translateX(-50%); width: 800px; height: 500px; background: radial-gradient(ellipse, rgba(168,85,247,0.10) 0%, transparent 65%); pointer-events: none; }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #a855f7; margin-bottom: 18px; opacity: 0.9; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: #a855f7; }
+@media (max-width: 600px) {
+  .section-badge { display: block; white-space: normal; text-align: center; }
+  .section-badge::before { display: none; }
+}
+
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(34px, 5.5vw, 58px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+.hero-title .accent { color: #a855f7; }
+.hero-sub { font-size: clamp(15px, 1.6vw, 18px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+.hero-open-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; background: #a855f7; color: #180a24; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 10px; text-decoration: none; transition: opacity 0.2s; }
+.hero-open-link:hover { opacity: 0.87; }
+
+.content-section { padding: 56px 5% 56px; }
+.alt-bg { background: var(--bg2); }
+.content-inner { max-width: 980px; margin: 0 auto; }
+.section-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.03em; color: var(--text); margin-bottom: 10px; text-align: center; }
+.section-desc { font-size: 14.5px; color: var(--muted); max-width: 560px; line-height: 1.7; margin: 0 auto 40px; text-align: center; }
+
+.diagram-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; overflow-x: auto; }
+.diagram-svg text { font-family: 'Space Grotesk', sans-serif; }
+.dg-box { fill: var(--bg3); stroke: var(--border2); stroke-width: 1; }
+.dg-panel { fill: var(--bg2); stroke: var(--border); stroke-width: 1; }
+.dg-accent { fill: #a855f7; }
+.dg-label { fill: var(--muted); font-size: 10px; letter-spacing: 0.4px; }
+.dg-value { fill: var(--text); font-size: 11px; font-weight: 600; }
+.dg-pin { fill: var(--bg); stroke: #a855f7; stroke-width: 2; }
+.dg-pin-text { fill: #a855f7; font-size: 12px; font-weight: 800; font-family: 'Outfit', sans-serif; }
+
+.step-list { display: flex; flex-direction: column; gap: 18px; margin-top: 40px; }
+.step { display: flex; gap: 18px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; }
+.step-num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: rgba(168,85,247,0.14); border: 1px solid rgba(168,85,247,0.35); color: #a855f7; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.step-body { flex: 1; }
+.step-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16.5px; color: var(--text); margin-bottom: 6px; }
+.step-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+.step-desc b { color: var(--text); }
+
+.gloss-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 700px) { .gloss-grid { grid-template-columns: 1fr; } }
+.gloss-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+.gloss-term { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #a855f7; margin-bottom: 6px; }
+.gloss-def { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+.gloss-def b { color: var(--text); }
+
+.mistake-list { display: flex; flex-direction: column; gap: 12px; }
+.mistake { display: flex; gap: 14px; align-items: flex-start; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 16px 18px; }
+.mistake-icon { font-size: 18px; flex-shrink: 0; }
+.mistake-text { font-size: 13.5px; color: var(--text); line-height: 1.6; }
+.mistake-text b { color: #ef4444; }
+
+.notify-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; text-align: center; max-width: 620px; margin: 0 auto; }
+.cta-link { display: inline-flex; flex-direction: column; gap: 6px; text-decoration: none; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 16px 26px; margin-top: 20px; }
+.cta-link:hover { border-color: #a855f7; }
+.cta-link .t { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
+.cta-link .d { font-size: 12.5px; color: var(--muted); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js" data-logo="GCT Square.png"></script>
+
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
+    <div class="section-badge">Full Guide · Calculator</div>
+    <h1 class="hero-title">Know your risk <span class="accent">before you trade</span></h1>
+    <p class="hero-sub">The Calculator is three connected tools in one — a Kelly Criterion sizer, a price/pip distance calculator, and a risk-to-position-size converter. Here's how the three boxes work together.</p>
+    <a href="/tools/calculator" class="hero-open-link">Open the Calculator →</a>
+  </div>
+</div>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The screen, labelled</h2>
+    <p class="section-desc">A schematic of the Calculator layout — each pin is explained in the steps below.</p>
+
+    <div class="diagram-wrap reveal">
+      <svg class="diagram-svg" viewBox="0 0 900 560" width="100%" style="min-width:640px;">
+        <!-- Kelly Criterion panel -->
+        <rect x="10" y="10" width="880" height="170" rx="12" class="dg-panel"/>
+        <text x="26" y="32" class="dg-label">KELLY CRITERION</text>
+
+        <rect x="24" y="44" width="200" height="44" rx="8" class="dg-box"/>
+        <text x="34" y="60" class="dg-label" style="font-size:8px;">ACCOUNT BALANCE</text>
+        <text x="34" y="78" class="dg-value" style="font-size:11px;">£10,000</text>
+
+        <rect x="234" y="44" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="244" y="60" class="dg-label" style="font-size:8px;">WIN RATE</text>
+        <text x="244" y="78" class="dg-value" style="font-size:11px;">55%</text>
+
+        <rect x="394" y="44" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="404" y="60" class="dg-label" style="font-size:8px;">AVG WIN</text>
+        <text x="404" y="78" class="dg-value" style="font-size:11px;">150</text>
+
+        <rect x="554" y="44" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="564" y="60" class="dg-label" style="font-size:8px;">AVG LOSS</text>
+        <text x="564" y="78" class="dg-value" style="font-size:11px;">100</text>
+
+        <rect x="24" y="104" width="278" height="60" rx="8" class="dg-box"/>
+        <text x="38" y="126" class="dg-label" style="font-size:9px;">QUARTER KELLY</text>
+        <text x="38" y="148" class="dg-value" style="font-size:14px;">2.5% · £250</text>
+
+        <rect x="311" y="104" width="278" height="60" rx="8" class="dg-box" style="stroke:#a855f7;stroke-width:2;"/>
+        <text x="325" y="126" class="dg-label" style="font-size:9px;color:#a855f7;fill:#a855f7;">HALF KELLY — RECOMMENDED</text>
+        <text x="325" y="148" class="dg-value" style="font-size:14px;">5.0% · £500</text>
+
+        <rect x="598" y="104" width="278" height="60" rx="8" class="dg-box"/>
+        <text x="612" y="126" class="dg-label" style="font-size:9px;">FULL KELLY</text>
+        <text x="612" y="148" class="dg-value" style="font-size:14px;">10.0% · £1,000</text>
+
+        <!-- Calculator panel -->
+        <rect x="10" y="196" width="880" height="150" rx="12" class="dg-panel"/>
+        <text x="26" y="218" class="dg-label">CALCULATOR — PRICE / PIP DISTANCE</text>
+
+        <rect x="24" y="230" width="200" height="44" rx="8" class="dg-box"/>
+        <text x="34" y="246" class="dg-label" style="font-size:8px;">CURRENCY PAIR</text>
+        <text x="34" y="264" class="dg-value" style="font-size:11px;">EUR/USD</text>
+
+        <rect x="234" y="230" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="244" y="246" class="dg-label" style="font-size:8px;">CURRENT PRICE</text>
+        <text x="244" y="264" class="dg-value" style="font-size:11px;">1.0850</text>
+
+        <rect x="394" y="230" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="404" y="246" class="dg-label" style="font-size:8px;">TARGET PRICE</text>
+        <text x="404" y="264" class="dg-value" style="font-size:11px;">1.0950</text>
+
+        <rect x="554" y="230" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="564" y="246" class="dg-label" style="font-size:8px;">LOT SIZE</text>
+        <text x="564" y="264" class="dg-value" style="font-size:11px;">1.00</text>
+
+        <rect x="24" y="290" width="424" height="44" rx="8" class="dg-box"/>
+        <text x="38" y="306" class="dg-label" style="font-size:8px;">DISTANCE TO TARGET</text>
+        <text x="38" y="326" class="dg-value" style="font-size:12px;">+0.0100 (+100.0 pips, +0.92%)</text>
+
+        <rect x="460" y="290" width="416" height="44" rx="8" class="dg-box" style="stroke:#00c87a;"/>
+        <text x="474" y="306" class="dg-label" style="font-size:8px;">VALUE OF MOVE</text>
+        <text x="474" y="326" class="dg-value" style="font-size:13px;color:var(--green);fill:var(--green);">$1,000.00</text>
+
+        <!-- Risk to Position Size panel -->
+        <rect x="10" y="360" width="880" height="190" rx="12" class="dg-panel"/>
+        <text x="26" y="382" class="dg-label">RISK → POSITION SIZE</text>
+
+        <rect x="24" y="394" width="424" height="60" rx="8" class="dg-box" style="stroke:#a855f7;stroke-width:2;"/>
+        <text x="38" y="416" class="dg-label" style="font-size:9px;">SUGGESTED POSITION SIZE</text>
+        <text x="38" y="440" class="dg-value" style="font-size:18px;">0.25 lots</text>
+
+        <rect x="460" y="394" width="416" height="60" rx="8" class="dg-box"/>
+        <text x="474" y="416" class="dg-label" style="font-size:9px;">IN UNITS</text>
+        <text x="474" y="440" class="dg-value" style="font-size:14px;">25,000 units</text>
+
+        <rect x="24" y="466" width="200" height="44" rx="8" class="dg-box"/>
+        <text x="34" y="482" class="dg-label" style="font-size:8px;">RISK AMOUNT</text>
+        <text x="34" y="500" class="dg-value" style="font-size:11px;">£500 (from Half Kelly)</text>
+
+        <rect x="234" y="466" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="244" y="482" class="dg-label" style="font-size:8px;">CURRENCY</text>
+        <text x="244" y="500" class="dg-value" style="font-size:11px;">£ GBP</text>
+
+        <rect x="394" y="466" width="150" height="44" rx="8" class="dg-box"/>
+        <text x="404" y="482" class="dg-label" style="font-size:8px;">STOP LOSS (PIPS)</text>
+        <text x="404" y="500" class="dg-value" style="font-size:11px;">20</text>
+
+        <!-- pins -->
+        <circle cx="18" cy="18" r="11" class="dg-pin"/><text x="14" y="22" class="dg-pin-text">1</text>
+        <circle cx="18" cy="112" r="11" class="dg-pin"/><text x="14" y="116" class="dg-pin-text">2</text>
+        <circle cx="18" cy="204" r="11" class="dg-pin"/><text x="14" y="208" class="dg-pin-text">3</text>
+        <circle cx="468" cy="298" r="11" class="dg-pin"/><text x="464" y="302" class="dg-pin-text">4</text>
+        <circle cx="18" cy="402" r="11" class="dg-pin"/><text x="14" y="406" class="dg-pin-text">5</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Step by step</h2>
+    <p class="section-desc">Follow the pins in order — from a blank calculator to a sized position, ready to trade.</p>
+    <div class="step-list">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Start with the Kelly Criterion inputs</div>
+          <div class="step-desc">Enter your <b>account balance</b> and, from your own trade history, your <b>win rate</b> and <b>average win/average loss</b> per trade. These can be in £, $, pips, or R-multiples — only the ratio between win and loss matters.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Read the three Kelly tiers</div>
+          <div class="step-desc">Quarter, Half, and Full Kelly each show a <b>% of your account balance</b> to risk on this trade, and that percentage converted into your account currency. Half Kelly is highlighted as the recommended starting point — full Kelly can suggest aggressive sizing that most traders find too volatile to hold.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Set up the Calculator box</div>
+          <div class="step-desc">Pick your <b>currency pair</b>, then enter the <b>current price</b> and your <b>target price</b>. This box also feeds the pip value used automatically in the box below — you don't need to look it up separately.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Check the distance and value of the move</div>
+          <div class="step-desc">The results show the distance to your target in price terms, pips, and percentage — then, using the <b>lot size</b> you enter, exactly what that move is worth in the pair's quote currency.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Convert risk into an exact position size</div>
+          <div class="step-desc">The <b>Risk Amount</b> field auto-fills from your Half Kelly figure above — override it if you want to test a different scenario. Add your <b>account currency</b> and <b>stop-loss distance in pips</b>, and the box returns the exact lot size and unit count to trade.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <h2 class="section-title">The one thing to understand</h2>
+    <p class="section-desc">This is the whole trick behind the numbers on this page.</p>
+    <div class="gloss-grid reveal">
+      <div class="gloss-card">
+        <div class="gloss-term">Kelly Criterion</div>
+        <div class="gloss-def">A formula estimating the mathematically optimal fraction of your account to risk per trade, given your win rate and win/loss ratio. It's a ceiling on rational sizing, not a target — most traders use a fraction of it to reduce variance.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Half Kelly</div>
+        <div class="gloss-def">Betting half the fraction the full formula suggests. It gives up some theoretical long-run growth in exchange for a much smoother ride — <b>why it's the recommended default</b> on this page.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Pip</div>
+        <div class="gloss-def">The standard smallest price move for a currency pair (usually the 4th decimal place, or 2nd for pairs involving the yen). The Calculator box converts your price distance into pips automatically.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Risk → Position Size</div>
+        <div class="gloss-def">Working backward from "how much am I willing to lose" and "how far away is my stop" to "how big should this trade be" — the exact opposite of picking a lot size first and hoping the risk works out.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section alt-bg">
+  <div class="content-inner">
+    <h2 class="section-title">Common mistakes to avoid</h2>
+    <div class="mistake-list reveal">
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Using Full Kelly as your actual position size.</b> The full formula assumes your win rate and win/loss ratio are exactly right, every time — in practice they're estimates, and full Kelly sizing amplifies any error in those estimates.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Feeding in a win rate or win/loss ratio from too few trades.</b> A handful of trades isn't a reliable sample — the Kelly output is only as good as the history behind it.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Forgetting to update the pair in the Calculator box.</b> The Risk → Position Size box pulls its pip value from whatever pair is currently selected above it — leaving the wrong pair selected will size the position off the wrong pip value.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Treating the suggested size as a guarantee.</b> This is a sizing tool, not a prediction — it tells you how big to make the bet, not whether the trade will win.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="content-section">
+  <div class="content-inner">
+    <div class="notify-box reveal">
+      <div style="font-size:30px;margin-bottom:14px;">🧮</div>
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;color:var(--text);margin-bottom:10px;">Ready to size your next trade?</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.6;">Free to use — no account required.</p>
+      <a href="/tools/calculator" class="cta-link"><span class="t">🧮 Open Calculator</span><span class="d">Kelly Criterion, price distance, and position sizing</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div><img id="footerLogo" src="/static/logos/Green Square.png" alt="Growth Capital Group" style="height:40px;width:auto;border-radius:6px;"></div>
+    <div class="footer-links">
+      <a href="/learn/tools">All Guides</a>
+      <a href="/tools/signals">Signals</a>
+      <a href="/backtester">Backtester</a>
+      <a href="/tools/portfolio">Portfolio</a>
+      <a href="/roadmap">Roadmap</a>
+      <a href="/partners">Partners</a>
+      <a href="/company">Company</a>
+    </div>
+    <div class="footer-copy">© 2026 Growth Capital Group. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.1 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
