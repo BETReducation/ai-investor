@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Income Strategies — Pro — Growth Capital Group</title>
+<title>Spreads & Hedging — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 4 of 5</div>
-    <h1 class="hero-title">Income Strategies — Covered Calls & Cash-Secured <span class="accent">Puts</span></h1>
-    <p class="hero-sub">Selling a covered call against stock you own — or a cash-secured put on stock you'd be happy to buy — lets you collect a premium in exchange for capping your upside or committing to a purchase price. A way to get paid for a view you already hold.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 5 of 5</div>
+    <h1 class="hero-title">Spreads & Hedging — Defining Your Risk on <span class="accent">Both Sides</span></h1>
+    <p class="hero-sub">Combining two option legs instead of one lets you define exactly how much you can gain and exactly how much you can lose — trading away some of the uncapped upside from earlier lessons for a genuinely bounded position.</p>
   </div>
 </div>
 
@@ -158,74 +158,75 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Getting Paid for a View You Already Hold</h2>
-    <p class="body-text">A <b>covered call</b> means selling a call option against stock you already own. In exchange for the premium collected upfront, you agree to sell your shares at the strike price if the option is exercised. It's "covered" because you already own the shares that would need to be delivered — unlike the uncovered (naked) call selling flagged as high-risk in the Greeks lesson.</p>
-    <p class="body-text">A <b>cash-secured put</b> means selling a put option while setting aside enough cash to buy the shares at the strike price if assigned. You collect the premium upfront, and if the stock stays above the strike, the put expires worthless and you simply keep the premium. If it falls below the strike, you're obligated to buy the shares at the strike price — a price you'd already decided you were happy to pay.</p>
-    <p class="body-text">Both strategies share the same basic trade-off: you collect premium income upfront in exchange for giving something up. A covered call caps your upside above the strike (your shares get called away at that price, no matter how high the stock goes). A cash-secured put commits you to buying more shares if the stock falls, even as it keeps falling further. Neither strategy eliminates the underlying stock risk — they reshape it, in exchange for income.</p>
+    <h2 class="section-title">Combining Legs to Bound the Outcome</h2>
+    <p class="body-text">Every strategy so far in this track has used a single option, or an option against stock. A <b>spread</b> combines two or more options of the same type (all calls, or all puts) on the same underlying, at different strikes or expirations, to create a position with a precisely defined maximum gain and maximum loss.</p>
+    <p class="body-text">The most common building block is the <b>vertical spread</b>: buying one option and simultaneously selling another of the same type and expiration, at a different strike. A <b>bull call spread</b> buys a lower-strike call and sells a higher-strike call — cheaper than buying the call alone (the premium collected from the short call offsets some of the cost), but with upside capped at the higher strike. A <b>bear put spread</b> does the mirror image with puts, for a bearish view with defined risk.</p>
+    <p class="body-text"><b>Hedging</b> uses an option (or a spread) not to speculate, but to offset risk already present elsewhere in a portfolio. A <b>protective put</b> — buying a put against stock you own — acts like insurance: it costs a premium, but puts a floor under how much you can lose on the stock, no matter how far it falls. A <b>collar</b> combines a protective put with a covered call (from the previous lesson), often structured so the premium collected from the call roughly offsets the cost of the put — trading away upside above the call strike in exchange for a cheaper, or even free, floor below the put strike.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: A Covered Call at Three Outcomes</h3>
-      <p class="body-text">100 shares owned at a $100 cost basis. A call is sold at a $110 strike for a $3 premium. Outcomes at three hypothetical stock prices at expiration.</p>
+      <h3>⚖️ Illustrative Example: A Bull Call Spread vs. a Single Call</h3>
+      <p class="body-text">Stock at $100. Compare buying a single $100 call for $6 against a bull call spread: buying the $100 call for $6 and selling a $110 call for $2 (net cost $4).</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Stock Price at Expiration</th><th>Call Outcome</th><th>Stock P&L</th><th>Premium Kept</th><th>Total P&L</th></tr>
+            <tr><th>Stock at Expiration</th><th>Single Call P&L</th><th>Bull Spread P&L</th></tr>
           </thead>
           <tbody>
-            <tr><td>$95 (Below Strike)</td><td>Expires worthless</td><td>-$500</td><td>+$300</td><td>-$200</td></tr>
-            <tr><td>$108 (Below Strike)</td><td>Expires worthless</td><td>+$800</td><td>+$300</td><td>+$1,100</td></tr>
-            <tr class="highlight-row"><td>$120 (Above Strike)</td><td>Shares called away at $110</td><td>+$1,000 (capped)</td><td>+$300</td><td>+$1,300 (capped)</td></tr>
+            <tr><td>$95</td><td>-$6 (Max Loss)</td><td>-$4 (Max Loss)</td></tr>
+            <tr><td>$105</td><td>-$1</td><td>+$1</td></tr>
+            <tr class="highlight-row"><td>$115</td><td>+$9</td><td>+$6 (Max Gain)</td></tr>
+            <tr><td>$130</td><td>+$24</td><td>+$6 (Max Gain, Still Capped)</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">Even though the stock rallied to $120, the covered call seller's total gain is capped at $1,300 — the shares are called away at $110, missing the additional $1,000 of upside a plain stockholder would have captured. The premium ($300) provides extra income and a small cushion in the -$200 scenario, but the trade-off is a hard ceiling on gains above the strike.</p>
+      <p class="stmt-note">The spread costs less upfront ($4 vs $6) and has a smaller maximum loss, and it breaks even sooner ($104 vs $106) — but it sacrifices unlimited upside for a hard cap at $6 gain, no matter how high the stock eventually goes. Defined risk on both sides is the trade-off for giving up the single call's uncapped potential.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Income Strategies</h3>
+    <h3 class="subhead">5 Things to Know About Spreads & Hedging</h3>
     <ol class="num-checklist">
-      <li><b>A covered call caps upside, it doesn't remove downside</b> — you still own the stock and lose right alongside it if it falls, just cushioned slightly by the premium.</li>
-      <li><b>A cash-secured put commits capital, not just risk</b> — the cash must genuinely be set aside and unavailable for other use while the position is open.</li>
-      <li><b>Both strategies work best on stock you already have a view on</b> — a covered call on a stock you'd be happy to sell at the strike; a cash-secured put on a stock you'd be happy to own at the strike.</li>
-      <li><b>"Assignment" can happen before expiration</b> — American-style options can technically be exercised early, though it's most common close to expiration or around dividend dates.</li>
-      <li><b>These are income-generation strategies, not risk-free ones</b> — the premium collected compensates for a real trade-off, not a free lunch.</li>
+      <li><b>Spreads trade unlimited potential for defined risk</b> — both the maximum gain and maximum loss are known before the trade is placed.</li>
+      <li><b>A spread is cheaper than the single option because you're also selling one</b> — the premium collected from the short leg partially offsets the cost of the long leg.</li>
+      <li><b>Hedging costs something, by design</b> — a protective put's premium is the price of a guaranteed floor, similar to any other insurance premium.</li>
+      <li><b>A collar can be structured near zero-cost</b> — but that typically means giving up meaningful upside to fund the downside protection.</li>
+      <li><b>Spreads and hedges reduce risk, they don't eliminate market exposure entirely</b> — a position can still lose money within its defined range.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Selling a Covered Call or Cash-Secured Put</h3>
+    <h3 class="subhead">4 Things to Check Before Using a Spread or Hedge</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🎯 Pick a Strike You're Genuinely Fine With</h4>
+        <h4>🎯 Confirm Both Legs Match</h4>
         <ul>
-          <li>For a covered call, choose a strike you'd be happy selling at; for a put, one you'd be happy buying at.</li>
+          <li>Same expiration, same underlying, matching contract sizes — small mismatches change the risk profile.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>💰 Confirm the Cash or Shares Are Truly Set Aside</h4>
+        <h4>📐 Know Your Max Gain and Max Loss Upfront</h4>
         <ul>
-          <li>Don't count on capital you might need elsewhere while a cash-secured put is open.</li>
+          <li>A defined-risk position should have both numbers calculated before you place the trade, not after.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📅 Check for Dividend and Earnings Dates</h4>
+        <h4>💰 Weigh the Hedge Cost Against What It Protects</h4>
         <ul>
-          <li>Early assignment risk rises around ex-dividend dates for calls; earnings can move the stock sharply either way.</li>
+          <li>A protective put's premium should be sized against the actual downside it's meant to guard against.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧮 Compare the Premium to the Capped Upside</h4>
+        <h4>🔄 Watch Both Legs Into Expiration</h4>
         <ul>
-          <li>Weigh the income collected against how much upside you're realistically giving away if the stock rallies hard.</li>
+          <li>Assignment risk (from the Income Strategies lesson) can apply to the short leg of a spread too.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/implied-volatility">Implied Volatility & Skew</a> (previous) explains why premiums are often richer when IV is elevated — exactly when sellers are best compensated. <a href="/learn/pro#tab-options">Spreads & Hedging</a> (next in this track) builds on selling options to define risk on both sides of a position.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/income-strategies">Income Strategies</a> (previous) covers the covered call that forms half of a collar, and <a href="/learn/pro/what-is-an-option">What Is an Option?</a> (first in this track) covers the single-leg payoffs a spread combines.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains covered calls and cash-secured puts using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Both strategies involve real downside risk in the underlying stock, and past option premiums are not a guarantee of future income. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains spreads and hedging using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. All options strategies carry risk, and defined-risk positions can still result in a loss within their stated range. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -234,54 +235,54 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Covered Call Outcome Calculator</h2>
-    <p class="section-desc">Enter your cost basis, the strike sold, the premium collected, and a hypothetical stock price at expiration — see the outcome.</p>
+    <h2 class="section-title">Try It Yourself: Bull Call Spread Calculator</h2>
+    <p class="section-desc">Enter the strikes and premiums for a long call and a short call — see the spread's cost, max gain, max loss, and breakeven.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadCcPreset('called')">Load Called Away</button>
-        <button class="preset-btn" onclick="loadCcPreset('notCalled')">Load Expires Worthless (Gain)</button>
-        <button class="preset-btn" onclick="loadCcPreset('down')">Load Stock Falls</button>
+        <button class="preset-btn" onclick="loadSpreadPreset('sample')">Load Sample Spread</button>
+        <button class="preset-btn" onclick="loadSpreadPreset('narrow')">Load Narrow Spread</button>
+        <button class="preset-btn" onclick="loadSpreadPreset('wide')">Load Wide Spread</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="ccCostBasis">Cost Basis per Share ($)</label>
-          <input type="number" id="ccCostBasis" value="100" step="1">
+          <label for="spLongStrike">Long Call Strike ($)</label>
+          <input type="number" id="spLongStrike" value="100" step="1">
         </div>
         <div class="calc-field">
-          <label for="ccStrike">Call Strike Sold ($)</label>
-          <input type="number" id="ccStrike" value="110" step="1">
+          <label for="spLongPremium">Long Call Premium ($)</label>
+          <input type="number" id="spLongPremium" value="6" step="0.25" min="0">
         </div>
         <div class="calc-field">
-          <label for="ccPremium">Premium Collected ($/share)</label>
-          <input type="number" id="ccPremium" value="3" step="0.25" min="0">
+          <label for="spShortStrike">Short Call Strike ($)</label>
+          <input type="number" id="spShortStrike" value="110" step="1">
         </div>
         <div class="calc-field">
-          <label for="ccExpiryPrice">Stock Price at Expiration ($)</label>
-          <input type="number" id="ccExpiryPrice" value="120" step="1">
+          <label for="spShortPremium">Short Call Premium ($)</label>
+          <input type="number" id="spShortPremium" value="2" step="0.25" min="0">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcCoveredCall()">Calculate Outcome →</button>
+        <button class="calc-btn" onclick="calcSpread()">Calculate Spread →</button>
       </div>
 
-      <div class="calc-results visible" id="ccResults">
+      <div class="calc-results visible" id="spResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Stock P&L (per share)</div>
-            <div class="mc-value" id="ccStockPnl">—</div>
+            <div class="mc-label">Net Cost</div>
+            <div class="mc-value" id="spNetCost">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Premium Kept</div>
-            <div class="mc-value" id="ccPremiumOut">—</div>
+            <div class="mc-label">Max Gain</div>
+            <div class="mc-value" id="spMaxGain">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Total P&L (per share)</div>
-            <div class="mc-value" id="ccTotalPnl">—</div>
+            <div class="mc-label">Max Loss</div>
+            <div class="mc-value" id="spMaxLoss">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="ccCallout"></div>
-        <p class="calc-note">Model (per share, ×100 for a standard contract): if stock ≥ strike, shares are called away — stock P&L caps at (strike − cost basis). If stock &lt; strike, the call expires worthless — stock P&L = (stock price − cost basis). Total P&L = stock P&L + premium kept. Illustrative only, ignores commissions and taxes.</p>
+        <div class="calc-callout" id="spCallout"></div>
+        <p class="calc-note">Model: net cost = long premium − short premium. Max gain = (short strike − long strike) − net cost. Max loss = net cost. Breakeven = long strike + net cost. Requires short strike above long strike. Illustrative only, ignores commissions.</p>
       </div>
     </div>
   </div>
@@ -301,58 +302,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What is a covered call?</div>
+        <div class="quiz-q-title">1. What is a vertical spread?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Buying a call option with borrowed money</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Selling a call option against stock you already own</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Selling a call option with no underlying stock position</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A guarantee that a stock will not fall</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Buying stock and a call at the same time</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Buying one option and selling another of the same type and expiration, at a different strike</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Selling an uncovered call with no other position</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A type of stock, not an options strategy</label>
         </div>
-        <div class="quiz-explain">A covered call means selling a call option against stock you already own — "covered" because you already hold the shares that would be delivered if exercised.</div>
+        <div class="quiz-explain">A vertical spread combines a long and short option of the same type and expiration at different strikes, defining risk on both sides.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. In the illustrative example, why was the total P&L capped at $1,300 even though the stock rose to $120?</div>
+        <div class="quiz-q-title">2. In the illustrative example, why did the bull call spread cost less than the single call?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because the premium was refunded</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the stock actually fell, not rose</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because the shares were called away at the $110 strike, missing further upside</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because covered calls always lose money above the strike</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because spreads are always free to enter</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the stock price was lower for the spread trade</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because the premium collected from selling the higher-strike call offset part of the cost</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because the broker waived the commission</label>
         </div>
-        <div class="quiz-explain">The shares are sold at the $110 strike once called away, capping the gain there regardless of how much higher the stock subsequently traded.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What must be true for a cash-secured put?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The seller must already own the underlying stock</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> No cash is required at all</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The put must be sold at an out-of-the-money strike only</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Enough cash must be set aside to buy the shares at the strike if assigned</label>
-        </div>
-        <div class="quiz-explain">A cash-secured put requires setting aside enough cash to buy the shares at the strike price if the put is assigned.</div>
+        <div class="quiz-explain">Selling the $110 call for $2 offset part of the $6 cost of the $100 call, reducing the net cost to $4.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. Does a covered call eliminate downside risk in the stock?</div>
+        <div class="quiz-q-title">3. What is a protective put?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> No — you still own the stock and lose alongside it if it falls, cushioned only slightly by the premium</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Yes, covered calls fully protect against any stock decline</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Yes, but only for stocks that pay dividends</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Covered calls cannot be sold on stocks that might decline</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Buying a put against stock you own, to put a floor under potential losses</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Selling a put with no other position</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> A put option that never expires</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> A type of covered call</label>
         </div>
-        <div class="quiz-explain">A covered call caps upside but does not remove downside — the stockholder still bears the loss if the stock falls, minus the small premium cushion.</div>
+        <div class="quiz-explain">A protective put means buying a put against stock you own, acting like insurance by capping the potential loss on the stock.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. What is a collar, according to this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Two calls bought at the same strike</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> A type of bond, not an options strategy</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Selling both a call and a put with no stock position</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> A protective put combined with a covered call, often structured so the premiums roughly offset</label>
+        </div>
+        <div class="quiz-explain">A collar combines a protective put with a covered call, trading away upside above the call strike for a cheaper (or free) floor below the put strike.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. According to this lesson, what compensates the seller in both strategies?</div>
+        <div class="quiz-q-title">5. Do spreads and hedges eliminate all risk?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> A government subsidy for options sellers</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Guaranteed profit regardless of outcome</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The premium collected upfront, in exchange for capping upside or committing to a purchase</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> A refund from the options exchange</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Yes, defined-risk strategies guarantee a profit</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Yes, but only for call spreads specifically</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> No, they reduce and bound risk, but a position can still lose money within its defined range</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> No, spreads always increase total risk compared to a single option</label>
         </div>
-        <div class="quiz-explain">Both strategies collect premium income upfront in exchange for a real trade-off — capped upside for a covered call, or a purchase commitment for a cash-secured put.</div>
+        <div class="quiz-explain">Spreads and hedges reduce and define risk, but they don't eliminate market exposure entirely — a loss within the defined range is still possible.</div>
       </div>
     </div>
 
@@ -369,22 +370,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/income-strategies-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/spreads-hedging-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the covered-call-at-three-outcomes example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the bull-call-spread-vs-single-call example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/income-strategies-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/spreads-hedging-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to calculate covered call and cash-secured put outcomes by hand.</div>
+        <div class="dl-desc">Guided exercises to calculate a bull call spread's max gain, max loss, and breakeven by hand.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/income-strategies-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/spreads-hedging-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore income strategies in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore spreads and hedging in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -393,20 +394,20 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Spreads & Hedging</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now sold options for income against a single view. The final lesson in this track combines multiple option legs to define risk precisely on both sides of a position.</p>
+    <h2 class="section-title" style="text-align:center;">Options & Derivatives: Complete</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now covered all five lessons in this track — option basics, the Greeks, implied volatility, income strategies, and combining legs into spreads and hedges. One more Pro track remains: Macro & Cross-Asset Analysis.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/implied-volatility" class="hub-card">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Back to Implied Volatility & Skew</div>
-        <div class="card-desc">Review what the market is actually afraid of.</div>
+      <a href="/learn/pro/income-strategies" class="hub-card">
+        <div class="card-icon">💵</div>
+        <div class="card-title">Back to Income Strategies</div>
+        <div class="card-desc">Review covered calls & cash-secured puts.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/spreads-hedging" class="hub-card">
-        <div class="card-icon">🛡️</div>
-        <div class="card-title">Continue to Spreads & Hedging</div>
-        <div class="card-desc">Defining your risk on both sides.</div>
-        <div class="card-link">Open the lesson →</div>
+      <a href="/learn/pro#tab-options" class="hub-card">
+        <div class="card-icon">🏁</div>
+        <div class="card-title">Back to Options & Derivatives Hub</div>
+        <div class="card-desc">Revisit any of the five lessons in this track.</div>
+        <div class="card-link">Open the hub →</div>
       </a>
     </div>
   </div>
@@ -438,48 +439,49 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const CC_PRESETS = {
-  called: { cost: 100, strike: 110, premium: 3, expiry: 120 },
-  notCalled: { cost: 100, strike: 110, premium: 3, expiry: 108 },
-  down: { cost: 100, strike: 110, premium: 3, expiry: 95 },
+const SPREAD_PRESETS = {
+  sample: { longStrike: 100, longPremium: 6, shortStrike: 110, shortPremium: 2 },
+  narrow: { longStrike: 100, longPremium: 6, shortStrike: 105, shortPremium: 3.5 },
+  wide: { longStrike: 100, longPremium: 6, shortStrike: 125, shortPremium: 0.75 },
 };
-function loadCcPreset(kind) {
-  const p = CC_PRESETS[kind];
-  document.getElementById('ccCostBasis').value = p.cost;
-  document.getElementById('ccStrike').value = p.strike;
-  document.getElementById('ccPremium').value = p.premium;
-  document.getElementById('ccExpiryPrice').value = p.expiry;
-  calcCoveredCall();
+function loadSpreadPreset(kind) {
+  const p = SPREAD_PRESETS[kind];
+  document.getElementById('spLongStrike').value = p.longStrike;
+  document.getElementById('spLongPremium').value = p.longPremium;
+  document.getElementById('spShortStrike').value = p.shortStrike;
+  document.getElementById('spShortPremium').value = p.shortPremium;
+  calcSpread();
 }
 
-function calcCoveredCall() {
-  const cost = parseFloat(document.getElementById('ccCostBasis').value);
-  const strike = parseFloat(document.getElementById('ccStrike').value);
-  const premium = parseFloat(document.getElementById('ccPremium').value);
-  const expiryPrice = parseFloat(document.getElementById('ccExpiryPrice').value);
-  if ([cost, strike, premium, expiryPrice].some(isNaN) || premium < 0) {
-    alert('Please enter valid values.');
+function calcSpread() {
+  const longStrike = parseFloat(document.getElementById('spLongStrike').value);
+  const longPremium = parseFloat(document.getElementById('spLongPremium').value);
+  const shortStrike = parseFloat(document.getElementById('spShortStrike').value);
+  const shortPremium = parseFloat(document.getElementById('spShortPremium').value);
+  if ([longStrike, longPremium, shortStrike, shortPremium].some(isNaN) || longPremium < 0 || shortPremium < 0) {
+    alert('Please enter valid, non-negative values.');
+    return;
+  }
+  if (shortStrike <= longStrike) {
+    alert('For a bull call spread, the short strike must be above the long strike.');
     return;
   }
 
-  const calledAway = expiryPrice >= strike;
-  const stockPnl = calledAway ? (strike - cost) : (expiryPrice - cost);
-  const totalPnl = stockPnl + premium;
+  const netCost = longPremium - shortPremium;
+  const width = shortStrike - longStrike;
+  const maxGain = width - netCost;
+  const maxLoss = netCost;
+  const breakeven = longStrike + netCost;
 
-  document.getElementById('ccStockPnl').textContent = (stockPnl >= 0 ? '+$' : '-$') + Math.abs(stockPnl).toFixed(2);
-  document.getElementById('ccPremiumOut').textContent = '+$' + premium.toFixed(2);
-  document.getElementById('ccTotalPnl').textContent = (totalPnl >= 0 ? '+$' : '-$') + Math.abs(totalPnl).toFixed(2);
+  document.getElementById('spNetCost').textContent = '$' + netCost.toFixed(2);
+  document.getElementById('spMaxGain').textContent = '$' + maxGain.toFixed(2);
+  document.getElementById('spMaxLoss').textContent = '$' + maxLoss.toFixed(2);
 
-  const callout = document.getElementById('ccCallout');
-  if (calledAway) {
-    callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Shares Called Away at $${strike.toFixed(2)}</span>At $${expiryPrice.toFixed(2)}, the stock closed above the strike — shares are sold at $${strike.toFixed(2)}, capping the total per-share P&L at ${totalPnl >= 0 ? '+$' : '-$'}${Math.abs(totalPnl).toFixed(2)}, regardless of how much further the stock rose.`;
-  } else {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Call Expires Worthless — Premium Kept</span>At $${expiryPrice.toFixed(2)}, the call expires worthless and you keep both the shares and the $${premium.toFixed(2)} premium — total per-share P&L is ${totalPnl >= 0 ? '+$' : '-$'}${Math.abs(totalPnl).toFixed(2)}.`;
-  }
+  const callout = document.getElementById('spCallout');
+  callout.className = 'calc-callout';
+  callout.innerHTML = `<span class="verdict">✓ Defined-Risk Spread</span>Net cost of $${netCost.toFixed(2)} per share caps the maximum loss there. Maximum gain is capped at $${maxGain.toFixed(2)} once the stock is at or above $${shortStrike.toFixed(2)}. Breakeven is $${breakeven.toFixed(2)}.`;
 }
-calcCoveredCall();
+calcSpread();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
