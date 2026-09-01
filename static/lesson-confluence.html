@@ -63,8 +63,8 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.stack-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.stack-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.tv-chart-wrap { border-radius: 10px; overflow: hidden; margin-top: 20px; }
+.tv-chart-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .confluence-check-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
 .confluence-check { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; cursor: pointer; }
@@ -126,6 +126,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <body>
 
 <script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+<script src="/static/js/candle-chart.js"></script>
 
 <div class="page-hero">
   <div class="hero-grid"></div>
@@ -147,31 +148,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="example-card">
       <h3>🔗 Three Independent Signals Lining Up</h3>
-      <div class="stack-diagram-wrap">
-        <svg viewBox="0 0 490 210" xmlns="http://www.w3.org/2000/svg">
-          <line x1="240" y1="10" x2="240" y2="200" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4 3"/>
-          <text x="240" y="205" font-size="8.5" fill="#4ade80" text-anchor="middle" font-family="Helvetica" font-weight="bold">signals align here</text>
-
-          <text x="20" y="30" font-size="9" fill="#8892b0" font-family="Helvetica">RSI</text>
-          <line x1="20" y1="45" x2="470" y2="45" stroke="#4b5563" stroke-width="0.8"/>
-          <polyline points="20,60 90,55 160,50 230,42 300,50 370,58 440,52" fill="none" stroke="#a855f7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="240" cy="43" r="4" fill="#4ade80"/>
-          <text x="440" y="42" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">oversold bounce</text>
-
-          <text x="20" y="95" font-size="9" fill="#8892b0" font-family="Helvetica">MACD</text>
-          <line x1="20" y1="110" x2="470" y2="110" stroke="#4b5563" stroke-width="0.8"/>
-          <polyline points="20,120 90,115 160,112 230,100 300,95 370,102 440,108" fill="none" stroke="#eab308" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="240" cy="103" r="4" fill="#4ade80"/>
-          <text x="440" y="98" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">bullish crossover</text>
-
-          <text x="20" y="160" font-size="9" fill="#8892b0" font-family="Helvetica">Price / Support</text>
-          <line x1="20" y1="185" x2="470" y2="185" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 2"/>
-          <polyline points="20,150 90,160 160,175 230,183 300,165 370,150 440,140" fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="240" cy="183" r="4" fill="#4ade80"/>
-          <text x="440" y="135" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">bounces off support</text>
-        </svg>
-      </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">All three green dots fall on the same vertical line: RSI turning up from oversold, MACD making a bullish crossover, and price bouncing off a known support level — three unrelated tools agreeing at the same moment. That's confluence.</p>
+      <div class="tv-chart-wrap"><svg id="confluenceChart"></svg></div>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">All three green markers fall on the same vertical line: RSI turning up from oversold, MACD making a bullish crossover, and price bouncing off a known support level — three unrelated tools agreeing at the same moment. That's confluence.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
@@ -402,6 +380,55 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+
+// ── Realistic 3-panel confluence chart (price+support / RSI / MACD) ─────────
+(function drawConfluenceChart() {
+  var segs = [
+    { n: 20, drift: -0.002, vol: 0.005 },  // mild decline, warmup
+    { n: 15, drift: -0.010, vol: 0.006 },  // steeper decline into oversold, toward support
+    { n: 2, drift: 0.0005, vol: 0.003 },   // brief consolidation right at support
+    { n: 16, drift: 0.011, vol: 0.006 },   // bounce back up
+  ];
+  var candles = GCGChart.buildCandles(707, 100, segs);
+  var closes = candles.map(function (c) { return c.c; });
+  var rsi = GCGChart.rsiSeries(closes, 14);
+  var m = GCGChart.macdSeries(closes, 12, 26, 9);
+
+  var preBounceEnd = 20 + 15 + 2; // index where the bounce segment begins
+  var searchStart = 20 + 15 - 3;
+  var bottomIdx = searchStart;
+  var bottomVal = Infinity;
+  for (var i = searchStart; i < preBounceEnd; i++) {
+    if (closes[i] < bottomVal) { bottomVal = closes[i]; bottomIdx = i; }
+  }
+  var supportPrice = Math.min.apply(null, candles.slice(searchStart, preBounceEnd).map(function (c) { return c.l; }));
+
+  var crossIdx = bottomIdx;
+  for (var j = bottomIdx; j < closes.length; j++) {
+    if (m.macdLine[j] == null || m.signalLine[j] == null || m.macdLine[j - 1] == null || m.signalLine[j - 1] == null) continue;
+    if (m.macdLine[j - 1] < m.signalLine[j - 1] && m.macdLine[j] >= m.signalLine[j]) { crossIdx = j; break; }
+  }
+
+  GCGChart.render(document.getElementById('confluenceChart'), {
+    width: 640, xCount: candles.length,
+    verticalMarkers: [{ x: crossIdx, color: '#26a69a', label: 'signals align here' }],
+    panels: [
+      {
+        type: 'price', height: 175, candles: candles, title: 'Price / Support',
+        levelLines: [{ price: supportPrice, color: '#f59e0b', dash: true, label: 'support' }],
+        annotations: [{ x: crossIdx, y: candles[crossIdx].c, color: '#26a69a', dy: -10, text: 'bounces off support' }],
+      },
+      {
+        type: 'rsi', height: 100, values: rsi,
+        annotations: [{ x: crossIdx, y: rsi[crossIdx], color: '#26a69a', dy: -10, text: 'oversold bounce' }],
+      },
+      {
+        type: 'macd', height: 100, macdLine: m.macdLine, signalLine: m.signalLine, hist: m.hist,
+        annotations: [{ x: crossIdx, y: m.macdLine[crossIdx], color: '#26a69a', dy: 16, text: 'bullish crossover' }],
+      },
+    ],
+  });
+})();
 
 function loadConfluencePreset(kind) {
   const ids = ['cf1', 'cf2', 'cf3', 'cf4', 'cf5', 'cf6'];

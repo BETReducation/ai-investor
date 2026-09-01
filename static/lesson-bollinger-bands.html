@@ -63,8 +63,8 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.bb-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.bb-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.tv-chart-wrap { border-radius: 10px; overflow: hidden; margin-top: 20px; }
+.tv-chart-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
@@ -129,6 +129,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <body>
 
 <script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+<script src="/static/js/candle-chart.js"></script>
 
 <div class="page-hero">
   <div class="hero-grid"></div>
@@ -150,21 +151,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="example-card">
       <h3>🎢 Bollinger Bands Squeezing, Then Expanding</h3>
-      <div class="bb-diagram-wrap">
-        <svg viewBox="0 0 490 200" xmlns="http://www.w3.org/2000/svg">
-          <path d="M 10,100 C 60,95 110,98 160,97 C 220,96 260,60 310,40 C 360,25 410,15 460,10" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
-          <path d="M 10,120 C 60,122 110,119 160,120 C 220,121 260,150 310,165 C 360,175 410,185 460,190" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
-          <path d="M 10,110 C 60,108 110,109 160,109 C 220,109 260,105 310,102 C 360,100 410,100 460,100" fill="none" stroke="#8892b0" stroke-width="1.2" stroke-dasharray="2 3"/>
-
-          <polyline points="10,105 40,115 70,102 100,112 130,105 160,110 190,90 220,95 250,70 280,80 310,50 340,60 370,30 400,45 430,20 460,35" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-
-          <text x="165" y="70" font-size="9" fill="#f59e0b" text-anchor="middle" font-family="Helvetica" font-weight="bold">SQUEEZE</text>
-          <text x="165" y="82" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands pull tight</text>
-          <text x="380" y="10" font-size="9" fill="#4ade80" text-anchor="middle" font-family="Helvetica" font-weight="bold">EXPANSION</text>
-          <text x="380" y="195" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands widen as the move plays out</text>
-        </svg>
-      </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice how tightly the upper and lower bands (purple, dashed) squeeze together in the middle of the chart, right before price (green) breaks out and the bands widen dramatically to contain the new, more volatile move.</p>
+      <div class="tv-chart-wrap"><svg id="bbMainChart"></svg></div>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice how tightly the upper and lower bands (purple, dashed) squeeze together in the middle of the chart, right before price breaks out and the bands widen dramatically to contain the new, more volatile move.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
@@ -403,6 +391,40 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+
+// ── Realistic candlestick + Bollinger Bands chart ───────────────────────────
+(function drawBbMainChart() {
+  var segs = [
+    { n: 20, drift: 0.001, vol: 0.0025 },  // warmup, low volatility
+    { n: 6, drift: 0.001, vol: 0.0015 },   // tight squeeze right before the move
+    { n: 18, drift: 0.013, vol: 0.008 },   // breakout, bands expand
+  ];
+  var candles = GCGChart.buildCandles(606, 100, segs);
+  var closes = candles.map(function (c) { return c.c; });
+  var sma = GCGChart.sma(closes, 20);
+  var stdev = GCGChart.stddevSeries(closes, 20);
+  var upper = closes.map(function (_, i) { return sma[i] != null ? sma[i] + 2 * stdev[i] : null; });
+  var lower = closes.map(function (_, i) { return sma[i] != null ? sma[i] - 2 * stdev[i] : null; });
+
+  var squeezeIdx = 24;
+  var expansionIdx = candles.length - 6;
+
+  GCGChart.render(document.getElementById('bbMainChart'), {
+    width: 640, xCount: candles.length,
+    panels: [{
+      type: 'price', height: 260, candles: candles,
+      overlays: [
+        { data: upper.map(function (v, i) { return [i, v]; }), color: '#b47cff', dash: true, width: 1.4 },
+        { data: sma.map(function (v, i) { return [i, v]; }), color: '#8892b0', dash: true, width: 1.1 },
+        { data: lower.map(function (v, i) { return [i, v]; }), color: '#b47cff', dash: true, width: 1.4 },
+      ],
+      annotations: [
+        { x: squeezeIdx, y: upper[squeezeIdx] || sma[squeezeIdx], color: '#f59e0b', dy: -10, text: 'SQUEEZE', dot: false },
+        { x: expansionIdx, y: upper[expansionIdx], color: '#26a69a', dy: -10, text: 'EXPANSION', dot: false },
+      ],
+    }],
+  });
+})();
 
 const BB_PRESETS = {
   squeeze: { sma: 100, stdev: 0.4, price: 100.2 },

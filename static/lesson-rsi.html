@@ -63,8 +63,8 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.rsi-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.rsi-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.tv-chart-wrap { border-radius: 10px; overflow: hidden; margin-top: 20px; }
+.tv-chart-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
 .calc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
@@ -129,6 +129,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <body>
 
 <script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+<script src="/static/js/candle-chart.js"></script>
 
 <div class="page-hero">
   <div class="hero-grid"></div>
@@ -150,25 +151,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="example-card">
       <h3>📉 RSI Alongside Price</h3>
-      <div class="rsi-diagram-wrap">
-        <svg viewBox="0 0 490 220" xmlns="http://www.w3.org/2000/svg">
-          <polyline points="10,50 60,65 110,40 160,55 210,25 260,20 310,45 360,60 410,50 450,70" fill="none" stroke="#8892b0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-          <text x="10" y="16" font-size="10" fill="#8892b0" font-family="Helvetica">Price</text>
-
-          <line x1="10" y1="100" x2="450" y2="100" stroke="#4b5563" stroke-width="1"/>
-          <line x1="10" y1="130" x2="450" y2="130" stroke="#f87171" stroke-width="1" stroke-dasharray="4 3"/>
-          <text x="452" y="133" font-size="9" fill="#f87171" font-family="Helvetica">70</text>
-          <line x1="10" y1="190" x2="450" y2="190" stroke="#4ade80" stroke-width="1" stroke-dasharray="4 3"/>
-          <text x="452" y="193" font-size="9" fill="#4ade80" font-family="Helvetica">30</text>
-
-          <polyline points="10,170 60,150 110,120 160,135 210,110 260,105 310,145 360,175 410,195 450,165" fill="none" stroke="#a855f7" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
-          <circle cx="260" cy="105" r="4" fill="#f87171"/>
-          <text x="260" y="95" font-size="8.5" fill="#f87171" text-anchor="middle" font-family="Helvetica">overbought zone</text>
-          <circle cx="410" cy="195" r="4" fill="#4ade80"/>
-          <text x="410" y="210" font-size="8.5" fill="#4ade80" text-anchor="middle" font-family="Helvetica">oversold zone</text>
-          <text x="10" y="215" font-size="10" fill="#8892b0" font-family="Helvetica">RSI (14)</text>
-        </svg>
-      </div>
+      <div class="tv-chart-wrap"><svg id="rsiMainChart"></svg></div>
       <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice RSI (purple) tends to lead or track the price swings above it: it climbs into the overbought zone as price rallies hard, and dips into the oversold zone as price falls hard. The value of RSI is spotting when that momentum looks stretched, not predicting the exact turn.</p>
     </div>
 
@@ -405,6 +388,42 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+
+// ── Realistic candlestick + RSI chart ───────────────────────────────────────
+(function drawRsiMainChart() {
+  var segs = [
+    { n: 10, drift: 0.001, vol: 0.006 },   // warmup chop
+    { n: 12, drift: 0.014, vol: 0.006 },   // strong rally into overbought
+    { n: 4, drift: 0.001, vol: 0.005 },    // pause at the top
+    { n: 14, drift: -0.015, vol: 0.007 },  // sharp decline into oversold
+    { n: 6, drift: 0.008, vol: 0.006 },    // recovery bounce
+  ];
+  var candles = GCGChart.buildCandles(404, 100, segs);
+  var closes = candles.map(function (c) { return c.c; });
+  var rsi = GCGChart.rsiSeries(closes, 14);
+
+  var obIdx = 14, obVal = -1;
+  var osIdx = 14, osVal = 101;
+  rsi.forEach(function (v, i) {
+    if (v == null) return;
+    if (v > obVal) { obVal = v; obIdx = i; }
+    if (v < osVal) { osVal = v; osIdx = i; }
+  });
+
+  GCGChart.render(document.getElementById('rsiMainChart'), {
+    width: 640, xCount: candles.length,
+    panels: [
+      { type: 'price', height: 190, candles: candles, title: 'Price' },
+      {
+        type: 'rsi', height: 130, values: rsi,
+        annotations: [
+          { x: obIdx, y: obVal, color: '#ef5350', dy: -10, text: 'overbought zone' },
+          { x: osIdx, y: osVal, color: '#26a69a', dy: 16, text: 'oversold zone' },
+        ],
+      },
+    ],
+  });
+})();
 
 const RSI_PRESETS = {
   overbought: { gain: 2.4, loss: 0.5 },
