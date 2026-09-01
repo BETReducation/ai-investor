@@ -177,48 +177,12 @@ revealEls.forEach(el => io.observe(el));
     }
   } catch {}
 })();
-function updateLogos(theme) {
-}
-function toggleMobileNav() {
-  const links = document.querySelector('.nav-links');
-  const btn = document.getElementById('navHamburger');
-  const isOpen = links.classList.toggle('open');
-  btn.classList.toggle('active', isOpen);
-  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-// Mobile dropdown-chevron toggling now lives in /static/js/nav.js
-// (loaded above) — this used to duplicate it, which meant a tap fired
-// BOTH listeners on the same chevron and the two toggles cancelled
-// each other out: the chevron still visually flips (browsers apply a
-// sticky :hover state after a tap on touch devices, which a separate
-// CSS rule keys off), but the dropdown itself never opens.
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 900) {
-    document.querySelector('.nav-links').classList.remove('open');
-    document.getElementById('navHamburger').classList.remove('active');
-    document.querySelectorAll('.has-dropdown.open').forEach(li => li.classList.remove('open'));
-  }
-});
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
-  const next = current === 'light' ? 'dark' : 'light';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('gcg-theme', next);
-  updateToggleIcon(next); updateLogos(next);
-}
-function updateToggleIcon(theme) {
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
-}
-const _initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
-updateToggleIcon(_initialTheme); updateLogos(_initialTheme);
-const nav = document.querySelector('nav');
-window.addEventListener('scroll', () => {
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  nav.style.background = window.scrollY > 40
-    ? (isDark ? 'rgba(6,8,18,0.96)' : 'rgba(245,247,255,0.96)')
-    : (isDark ? 'rgba(6,8,18,0.82)' : 'rgba(245,247,255,0.88)');
-});
+// Theme toggle, mobile nav, and the nav-scroll background (incl. this
+// page's arm-coloured tint) all now live solely in /static/js/nav.js —
+// this used to duplicate all of it with a plain, non-arm-aware version
+// that ran after nav.js's and silently overwrote it, undoing the header
+// colour-match on every scroll and theme toggle. Removed rather than
+// kept in sync by hand.
 </script>
 </body>
 </html>
