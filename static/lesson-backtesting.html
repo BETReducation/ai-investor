@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Momentum & Factor Models — Pro — Growth Capital Group</title>
+<title>Backtesting — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 2 of 5</div>
-    <h1 class="hero-title">Momentum & Factor <span class="accent">Models</span></h1>
-    <p class="hero-sub">Where mean reversion bets a stretched price snaps back, momentum bets the opposite: that a trend already in motion tends to keep going. Factor models formalize this and other persistent drivers of returns into rules-based portfolios.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 3 of 5</div>
+    <h1 class="hero-title">Backtesting — Proving an Idea Before Risking <span class="accent">Real Money</span></h1>
+    <p class="hero-sub">A backtest runs a strategy's rules against historical data to see how it would have performed. Done properly, it's the difference between a hunch and evidence — done carelessly, it's a very convincing way to fool yourself.</p>
   </div>
 </div>
 
@@ -158,76 +158,73 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">Betting the Trend Continues, Not Reverts</h2>
-    <p class="body-text"><b>Momentum</b> is the observed tendency for assets that have recently performed well to keep outperforming over the following months, and for recent laggards to keep lagging — the mirror image of the mean-reversion idea from the previous lesson. It's one of the most extensively studied and persistent patterns in academic finance, showing up across stocks, sectors, currencies and commodities, though it isn't guaranteed to continue and can suffer sharp, sudden reversals ("momentum crashes").</p>
-    <p class="body-text">A <b>factor</b> is a specific, measurable characteristic that has historically been associated with different returns across a group of securities. Momentum is one factor; others widely studied include <b>value</b> (cheap stocks relative to fundamentals outperforming expensive ones), <b>quality</b> (financially healthy companies outperforming weaker ones), and <b>size</b> (smaller companies historically carrying a different risk/return profile than larger ones).</p>
-    <p class="body-text">A <b>factor model</b> builds a portfolio systematically around one or more of these characteristics — ranking a universe of stocks by a factor score and holding the top slice — rather than relying on any single stock-specific thesis. The appeal is diversification across many small, uncorrelated bets on the same measurable driver, instead of concentrated bets on individual company stories.</p>
+    <h2 class="section-title">From Idea to Evidence</h2>
+    <p class="body-text">A <b>backtest</b> takes a strategy's rules — precisely defined, no ambiguity — and simulates applying them to historical data, to see what would have happened. It answers a specific question: "if I had followed this exact rule in the past, what result would it have produced?" That's a narrower claim than "this strategy will work," but it's a necessary first filter before risking any real capital.</p>
+    <p class="body-text">The value of a backtest depends entirely on how honestly it's built. Two failure modes dominate: <b>lookahead bias</b> (accidentally using information that wouldn't have been available at the time — like a full year's earnings data applied to a trade made mid-year) and <b>overfitting</b> (tuning the rules so precisely to the historical data that the strategy has essentially memorized the past rather than found a real, repeatable pattern).</p>
+    <p class="body-text">A realistic backtest also has to account for costs that are easy to ignore on paper: trading commissions, the bid-ask spread, and <b>slippage</b> (the difference between the price you wanted and the price you actually got, especially in a fast-moving or illiquid market). A strategy that looks great with zero costs can turn unprofitable once realistic frictions are added — which is exactly why this step exists.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Ranking a Universe by 6-Month Momentum</h3>
-      <p class="body-text">A simple momentum factor ranks stocks by their trailing 6-month return and holds the top decile. Five illustrative stocks from a hypothetical universe:</p>
+      <h3>⚖️ Illustrative Example: The Same Backtest, With and Without Realistic Costs</h3>
+      <p class="body-text">A hypothetical strategy trades frequently. Here's how its results change once trading costs and slippage are added — illustrative numbers only.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Stock</th><th>6-Month Return</th><th>Momentum Rank</th><th>Illustrative Action</th></tr>
+            <tr><th>Version</th><th>Trades / Year</th><th>Gross Annual Return</th><th>Est. Cost Drag</th><th>Net Annual Return</th></tr>
           </thead>
           <tbody>
-            <tr class="highlight-row"><td>Stock A</td><td>+42%</td><td>1</td><td>Hold (Top Momentum)</td></tr>
-            <tr class="highlight-row"><td>Stock B</td><td>+31%</td><td>2</td><td>Hold (Top Momentum)</td></tr>
-            <tr><td>Stock C</td><td>+8%</td><td>3</td><td>No Position</td></tr>
-            <tr><td>Stock D</td><td>-6%</td><td>4</td><td>No Position</td></tr>
-            <tr><td>Stock E</td><td>-19%</td><td>5</td><td>No Position (Bottom Momentum)</td></tr>
+            <tr><td>No Costs Assumed</td><td>240</td><td>+18.0%</td><td>0.0%</td><td>+18.0%</td></tr>
+            <tr class="highlight-row"><td>Realistic Costs Assumed</td><td>240</td><td>+18.0%</td><td>-11.5%</td><td>+6.5%</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">A momentum factor strategy holds Stocks A and B not because of any specific view on their businesses, but purely because their trailing return ranks them at the top of the universe — the same rule applied systematically across hundreds or thousands of names.</p>
+      <p class="stmt-note">240 trades a year at even a small per-trade cost (commission + spread + slippage) compounds into a large annual drag — the "no costs" version looks like a great strategy, the realistic version looks merely decent. Always ask which one you're looking at.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Momentum & Factors</h3>
+    <h3 class="subhead">5 Things to Know About Backtesting</h3>
     <ol class="num-checklist">
-      <li><b>Momentum and mean reversion aren't contradictions</b> — they tend to operate over different timeframes (momentum over months, mean reversion often over days to weeks) and different assets can favor one over the other.</li>
-      <li><b>Momentum crashes are a known, documented risk</b> — momentum strategies have historically suffered sharp, sudden reversals, particularly around market turning points.</li>
-      <li><b>Factors can go through long periods of underperformance</b> — value underperformed growth for much of the 2010s, a reminder that "persistent" doesn't mean "constant."</li>
-      <li><b>Factor investing is diversification across bets, not stocks</b> — a well-built factor portfolio holds many names, so no single company's news should dominate the outcome.</li>
-      <li><b>Factors can crowd</b> — when many funds chase the same factor definitions, the resulting mass buying/selling can itself become a source of risk during unwinds.</li>
+      <li><b>A great backtest is necessary, not sufficient</b> — it filters out obviously bad ideas, but a good result doesn't guarantee future performance.</li>
+      <li><b>Overfitting gets worse the more you tune</b> — the more parameters adjusted to fit historical data, the more likely the result is fitting noise, not signal.</li>
+      <li><b>Out-of-sample testing is the standard defense</b> — building rules on one period of data and testing them, unchanged, on a separate period the rules never saw.</li>
+      <li><b>Survivorship bias can silently inflate results</b> — testing only on companies that still exist today ignores the ones that went bankrupt or were delisted along the way.</li>
+      <li><b>A backtest is a simulation, not a guarantee</b> — market conditions, liquidity, and competition all change, and history never repeats exactly.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Trusting a Factor Strategy</h3>
+    <h3 class="subhead">4 Things to Check in Any Backtest</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📏 Define the Lookback Precisely</h4>
+        <h4>🕰️ Check for Lookahead Bias</h4>
         <ul>
-          <li>"Momentum" can mean 3-month, 6-month, or 12-month trailing return — the choice materially changes which names rank highest.</li>
+          <li>Confirm every input used in a trade decision would genuinely have been known at that exact point in time.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔄 Set a Rebalancing Rule</h4>
+        <h4>💸 Include Realistic Costs</h4>
         <ul>
-          <li>Rankings shift constantly — decide how often you'll re-rank and rebalance the holdings, and how much turnover (and cost) that implies.</li>
+          <li>Model commissions, spread, and slippage — especially for strategies that trade frequently.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧺 Diversify Across Names</h4>
+        <h4>🧪 Hold Out a True Test Period</h4>
         <ul>
-          <li>The statistical edge in a factor comes from holding many names, not a concentrated handful — narrow it too much and it stops behaving like a factor bet.</li>
+          <li>Never tune parameters on the same data you're using to judge the final result.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🛑 Plan for Drawdowns in the Factor Itself</h4>
+        <h4>📉 Stress-Test Across Regimes</h4>
         <ul>
-          <li>Expect the factor to underperform for extended stretches — a plan for riding that out matters as much as the factor definition.</li>
+          <li>Check performance separately across calm, trending, and volatile periods, not just one smooth overall number.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/mean-reversion">Mean Reversion</a> (previous in this track) covers the opposite bet, and <a href="/learn/pro/backtesting">Backtesting</a> (next) shows how to properly test a factor rule like this before risking real money.
+      🧮 <b>Related tool:</b> GCG's own <a href="/backtester">Backtester</a> tool lets you run a strategy's rules against historical data directly — a hands-on way to apply everything in this lesson. <a href="/learn/pro/regime-detection">Regime Detection</a> (next in this track) covers the stress-testing idea above in more depth.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains the historical, academic evidence behind momentum and factor investing using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Past patterns, including momentum, are never guaranteed to repeat. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains backtesting methodology using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy or backtest result described here is a recommendation to trade. Past backtested performance, however carefully built, is never a guarantee of future results. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -236,35 +233,54 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Momentum Ranker</h2>
-    <p class="section-desc">Enter trailing returns for up to 6 assets — see them ranked by momentum, with the top slice highlighted as an illustrative "hold" group.</p>
+    <h2 class="section-title">Try It Yourself: Cost Drag Calculator</h2>
+    <p class="section-desc">Enter a gross backtest return, trade frequency, and a per-trade cost estimate — see how much realistic costs eat into the headline number.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadMomPreset('sample')">Load Sample Universe</button>
-        <button class="preset-btn" onclick="loadMomPreset('tight')">Load Tightly Clustered Returns</button>
-        <button class="preset-btn" onclick="loadMomPreset('wide')">Load Widely Dispersed Returns</button>
+        <button class="preset-btn" onclick="loadCostPreset('frequent')">Load Frequent Trading (240/yr)</button>
+        <button class="preset-btn" onclick="loadCostPreset('moderate')">Load Moderate Trading (52/yr)</button>
+        <button class="preset-btn" onclick="loadCostPreset('rare')">Load Rare Trading (12/yr)</button>
       </div>
-      <div class="calc-grid" id="momInputGrid">
-        <div class="calc-field"><label>Asset A — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset A" value="42" step="0.5"></div>
-        <div class="calc-field"><label>Asset B — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset B" value="31" step="0.5"></div>
-        <div class="calc-field"><label>Asset C — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset C" value="8" step="0.5"></div>
-        <div class="calc-field"><label>Asset D — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset D" value="-6" step="0.5"></div>
-        <div class="calc-field"><label>Asset E — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset E" value="-19" step="0.5"></div>
-        <div class="calc-field"><label>Top Slice Held (# of assets)</label><input type="number" id="momTopN" value="2" step="1" min="1" max="5"></div>
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label for="costGrossReturn">Gross Annual Return (%)</label>
+          <input type="number" id="costGrossReturn" value="18" step="0.5">
+        </div>
+        <div class="calc-field">
+          <label for="costTradesYear">Trades per Year</label>
+          <input type="number" id="costTradesYear" value="240" step="1" min="0">
+        </div>
+        <div class="calc-field">
+          <label for="costPerTrade">Est. Cost per Trade (%)</label>
+          <input type="number" id="costPerTrade" value="0.05" step="0.01" min="0">
+        </div>
+        <div class="calc-field">
+          <label for="costPortfolioVal">Portfolio Value ($)</label>
+          <input type="number" id="costPortfolioVal" value="100000" step="1000">
+        </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcMomentum()">Rank by Momentum →</button>
+        <button class="calc-btn" onclick="calcCostDrag()">Calculate Net Return →</button>
       </div>
 
-      <div class="calc-results visible" id="momResults">
-        <div id="momRankTableWrap" class="stmt-table-wrap" style="margin-top:0;">
-          <table class="stmt-table">
-            <thead><tr><th>Asset</th><th>6M Return</th><th>Rank</th><th>Action</th></tr></thead>
-            <tbody id="momRankBody"></tbody>
-          </table>
+      <div class="calc-results visible" id="costResults">
+        <div class="margin-grid">
+          <div class="margin-card">
+            <div class="mc-label">Est. Annual Cost Drag</div>
+            <div class="mc-value" id="costDragPct">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">Net Annual Return</div>
+            <div class="mc-value" id="costNetReturn">—</div>
+          </div>
+          <div class="margin-card">
+            <div class="mc-label">Annual Cost in $</div>
+            <div class="mc-value" id="costDragDollar">—</div>
+          </div>
         </div>
-        <p class="calc-note" style="margin-top:16px;">Model: assets are sorted by trailing return, highest first, and the top N are marked "Hold" — a simplified illustration of how a momentum factor ranks a universe, not a real trading signal.</p>
+        <div class="calc-callout" id="costCallout"></div>
+        <p class="calc-note">Model: cost drag = trades per year × cost per trade (%). Net return = gross return − cost drag. Illustrative only — actual costs depend on the specific broker, asset, and market conditions.</p>
       </div>
     </div>
   </div>
@@ -284,58 +300,58 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
     <div class="quiz-list" id="quizList">
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What does a momentum strategy bet on?</div>
+        <div class="quiz-q-title">1. What does a backtest do?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> That a stretched price will snap back to its average</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> That assets which have recently performed well will keep outperforming</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> That all stocks will converge to the same return</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> That interest rates determine all stock returns</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Predicts exactly what a strategy will return in the future</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Simulates a strategy's precisely defined rules against historical data</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Automatically executes trades in a live account</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Guarantees a strategy is profitable if the result is positive</label>
         </div>
-        <div class="quiz-explain">Momentum is the tendency for recent winners to keep outperforming and recent laggards to keep lagging — the mirror image of mean reversion.</div>
+        <div class="quiz-explain">A backtest answers "if I had followed this exact rule in the past, what would have happened?" — a narrower, evidence-based question, not a guarantee.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. What is a "factor" in this context?</div>
+        <div class="quiz-q-title">2. What is lookahead bias?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> A company's stock ticker symbol</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> A type of brokerage account</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> A specific, measurable characteristic historically associated with different returns across securities</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> A government regulation on trading</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Trading too infrequently</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Using too many years of historical data</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Accidentally using information that wouldn't have been available at the time</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Ignoring trading costs in a simulation</label>
         </div>
-        <div class="quiz-explain">Momentum, value, quality and size are all examples of factors — measurable characteristics linked to differences in historical returns.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">3. In the illustrative example, why were Stocks A and B held?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Their trailing 6-month return ranked them at the top of the universe</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> They had the lowest P/E ratios in the universe</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> They paid the highest dividends</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> They were the largest companies by market cap</label>
-        </div>
-        <div class="quiz-explain">A momentum factor strategy ranks purely on trailing return, holding the top slice regardless of any company-specific view.</div>
+        <div class="quiz-explain">Lookahead bias means the backtest used data (like full-year earnings) before it would genuinely have been known, inflating the apparent result.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">4. What is a documented risk specific to momentum strategies?</div>
+        <div class="quiz-q-title">3. In the illustrative example, why did realistic costs matter so much for the frequent-trading strategy?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> They require no rebalancing at all</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> They can only be used on bonds</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> They are immune to market downturns</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> "Momentum crashes" — sharp, sudden reversals, particularly around market turning points</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Because the strategy only traded once a year</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Because costs only apply to losing trades</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> Because commissions are the same regardless of trade frequency</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Because 240 trades a year compounds even a small per-trade cost into a large annual drag</label>
         </div>
-        <div class="quiz-explain">Momentum strategies have historically suffered sharp, sudden reversals known as momentum crashes, especially around market turning points.</div>
+        <div class="quiz-explain">A high trade count multiplies even small per-trade frictions into a substantial annual cost, turning an 18% gross return into a 6.5% net return in the example.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. What is the standard defense against overfitting described in this lesson?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> Out-of-sample testing — testing rules, unchanged, on data they never saw during tuning</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Adding more parameters to the strategy</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Testing only on the most recent month of data</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Ignoring the backtest result entirely</label>
+        </div>
+        <div class="quiz-explain">Out-of-sample testing checks whether rules built on one period of data still hold up on a separate period they never influenced.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. Why does the lesson recommend diversifying across many names in a factor strategy?</div>
+        <div class="quiz-q-title">5. What is survivorship bias in this context?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because factors only work with exactly one stock</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because diversification eliminates all risk entirely</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because the statistical edge comes from holding many names, not concentrated bets on a few</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because regulators require a minimum number of holdings</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Only trading strategies that have never lost money</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Backtesting only during bull markets</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Testing only on companies that still exist today, ignoring ones that went bankrupt or were delisted</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Using too short a historical data window</label>
         </div>
-        <div class="quiz-explain">Factor investing works as diversification across many small, uncorrelated bets on the same measurable driver, not concentrated single-stock theses.</div>
+        <div class="quiz-explain">Survivorship bias inflates results by silently excluding the companies that failed along the way, since they're no longer in today's easily-available datasets.</div>
       </div>
     </div>
 
@@ -352,22 +368,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/momentum-factors-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/backtesting-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the momentum-ranking example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the cost-drag example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/momentum-factors-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/backtesting-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to rank a hypothetical universe and think through rebalancing and diversification rules.</div>
+        <div class="dl-desc">Guided exercises to audit a hypothetical backtest for common biases and cost assumptions.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/momentum-factors-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/backtesting-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore momentum and factor investing in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore backtesting methodology in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -376,19 +392,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Backtesting</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now seen two opposing rules-based edges — mean reversion and momentum. The next lesson covers how to properly test either one against history before risking real money.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Regime Detection</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">A backtest tells you how a strategy performed on average across history. The next lesson covers how to recognize when market conditions themselves have shifted, so you know when that average may no longer apply.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/mean-reversion" class="hub-card">
-        <div class="card-icon">🔄</div>
-        <div class="card-title">Back to Mean Reversion</div>
-        <div class="card-desc">Review the opposite bet — that stretched prices snap back.</div>
+      <a href="/learn/pro/momentum-factors" class="hub-card">
+        <div class="card-icon">📈</div>
+        <div class="card-title">Back to Momentum & Factor Models</div>
+        <div class="card-desc">Review isolating persistent drivers of returns.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/backtesting" class="hub-card">
-        <div class="card-icon">🧪</div>
-        <div class="card-title">Continue to Backtesting</div>
-        <div class="card-desc">Proving an idea before risking real money.</div>
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">🌗</div>
+        <div class="card-title">Continue to Regime Detection</div>
+        <div class="card-desc">Knowing when the rules change.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -421,45 +437,49 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const MOM_PRESETS = {
-  sample: [42, 31, 8, -6, -19],
-  tight: [6, 4, 2, 1, -1],
-  wide: [88, 15, -2, -34, -55],
+const COST_PRESETS = {
+  frequent: { gross: 18, trades: 240, perTrade: 0.05, portfolio: 100000 },
+  moderate: { gross: 14, trades: 52, perTrade: 0.05, portfolio: 100000 },
+  rare: { gross: 10, trades: 12, perTrade: 0.05, portfolio: 100000 },
 };
-function loadMomPreset(kind) {
-  const vals = MOM_PRESETS[kind];
-  document.querySelectorAll('.mom-input').forEach((el, i) => { el.value = vals[i]; });
-  calcMomentum();
+function loadCostPreset(kind) {
+  const p = COST_PRESETS[kind];
+  document.getElementById('costGrossReturn').value = p.gross;
+  document.getElementById('costTradesYear').value = p.trades;
+  document.getElementById('costPerTrade').value = p.perTrade;
+  document.getElementById('costPortfolioVal').value = p.portfolio;
+  calcCostDrag();
 }
 
-function calcMomentum() {
-  const inputs = document.querySelectorAll('.mom-input');
-  const topN = parseInt(document.getElementById('momTopN').value, 10);
-  if (isNaN(topN) || topN < 1) { alert('Please enter a valid number of assets to hold.'); return; }
+function calcCostDrag() {
+  const gross = parseFloat(document.getElementById('costGrossReturn').value);
+  const trades = parseFloat(document.getElementById('costTradesYear').value);
+  const perTrade = parseFloat(document.getElementById('costPerTrade').value);
+  const portfolio = parseFloat(document.getElementById('costPortfolioVal').value);
+  if ([gross, trades, perTrade, portfolio].some(isNaN) || trades < 0 || perTrade < 0 || portfolio <= 0) {
+    alert('Please enter valid, non-negative values.');
+    return;
+  }
 
-  const assets = [];
-  let valid = true;
-  inputs.forEach(el => {
-    const val = parseFloat(el.value);
-    if (isNaN(val)) valid = false;
-    assets.push({ name: el.dataset.name, ret: val });
-  });
-  if (!valid) { alert('Please enter valid numbers for every asset.'); return; }
+  const dragPct = trades * perTrade;
+  const netReturn = gross - dragPct;
+  const dragDollar = portfolio * (dragPct / 100);
 
-  assets.sort((a, b) => b.ret - a.ret);
+  document.getElementById('costDragPct').textContent = '-' + dragPct.toFixed(1) + '%';
+  document.getElementById('costNetReturn').textContent = (netReturn >= 0 ? '+' : '') + netReturn.toFixed(1) + '%';
+  document.getElementById('costDragDollar').textContent = '$' + dragDollar.toLocaleString(undefined, { maximumFractionDigits: 0 });
 
-  const tbody = document.getElementById('momRankBody');
-  tbody.innerHTML = '';
-  assets.forEach((a, i) => {
-    const rank = i + 1;
-    const isHeld = rank <= topN;
-    const tr = document.createElement('tr');
-    if (isHeld) tr.className = 'highlight-row';
-    tr.innerHTML = `<td>${a.name}</td><td>${a.ret >= 0 ? '+' : ''}${a.ret.toFixed(1)}%</td><td>${rank}</td><td>${isHeld ? 'Hold (Top Momentum)' : 'No Position'}</td>`;
-    tbody.appendChild(tr);
-  });
+  const callout = document.getElementById('costCallout');
+  const dragShare = gross !== 0 ? (dragPct / Math.abs(gross)) * 100 : 0;
+  if (dragShare >= 40) {
+    callout.className = 'calc-callout warn';
+    callout.innerHTML = `<span class="verdict">⚠️ Costs Consumed ${dragShare.toFixed(0)}% of the Gross Return</span>At ${trades} trades/year, realistic costs took the ${gross.toFixed(1)}% gross return down to ${netReturn.toFixed(1)}% net — a stark reminder to always check which number a backtest is reporting.</span>`;
+  } else {
+    callout.className = 'calc-callout';
+    callout.innerHTML = `<span class="verdict">✓ Costs Are a Manageable Share</span>At ${trades} trades/year, costs took the ${gross.toFixed(1)}% gross return down to ${netReturn.toFixed(1)}% net — a more modest drag at this trade frequency.`;
+  }
 }
-calcMomentum();
+calcCostDrag();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');

@@ -145,6 +145,7 @@ LESSON_PAGES = [
     {"slug": "time-horizon", "level": "intermediate", "file": "lesson-time-horizon.html", "title": "Time Horizon & Risk Tolerance"},
     {"slug": "mean-reversion", "level": "pro", "file": "lesson-mean-reversion.html", "title": "Mean Reversion"},
     {"slug": "momentum-factors", "level": "pro", "file": "lesson-momentum-factors.html", "title": "Momentum & Factor Models"},
+    {"slug": "backtesting", "level": "pro", "file": "lesson-backtesting.html", "title": "Backtesting"},
 ]
 
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
