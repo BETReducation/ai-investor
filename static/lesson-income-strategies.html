@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Implied Volatility & Skew — Pro — Growth Capital Group</title>
+<title>Income Strategies — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 3 of 5</div>
-    <h1 class="hero-title">Implied Volatility & Volatility <span class="accent">Skew</span></h1>
-    <p class="hero-sub">Implied volatility reflects what the market expects future price swings to look like — and it's rarely flat across strike prices. The resulting "skew" reveals where the market is pricing in the most fear or complacency.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-options">Learn / Pro / Options & Derivatives</a> / 4 of 5</div>
+    <h1 class="hero-title">Income Strategies — Covered Calls & Cash-Secured <span class="accent">Puts</span></h1>
+    <p class="hero-sub">Selling a covered call against stock you own — or a cash-secured put on stock you'd be happy to buy — lets you collect a premium in exchange for capping your upside or committing to a purchase price. A way to get paid for a view you already hold.</p>
   </div>
 </div>
 
@@ -158,76 +158,74 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">The Market's Own Forecast of Future Movement</h2>
-    <p class="body-text"><b>Implied volatility (IV)</b> is the volatility level that, when plugged into an options pricing model, produces the option's actual current market price. Rather than measuring what a stock has already done (that's historical, or "realized," volatility), IV reflects what the options market currently expects future price swings to look like — it's a forward-looking, market-implied forecast, embedded directly in option prices.</p>
-    <p class="body-text">If IV were the same for every strike price on the same expiration, plotting it would produce a flat line. In practice it almost never is — plotting IV across strikes typically produces a curve, commonly called the <b>volatility skew</b> (or "smile," when it curves up on both sides). For equity index options, the skew is usually <b>downward-sloping</b>: out-of-the-money puts (protection against a crash) trade at meaningfully higher implied volatility than out-of-the-money calls, reflecting persistent demand for downside protection.</p>
-    <p class="body-text">The skew is genuinely informative: a steepening skew (puts getting relatively more expensive versus calls) signals rising demand for crash protection — often a sign of building fear, even before the underlying stock has moved much. A flattening skew can signal the opposite. Reading the skew is reading what the options market is actually worried about, not just what the headline "IV" number says.</p>
+    <h2 class="section-title">Getting Paid for a View You Already Hold</h2>
+    <p class="body-text">A <b>covered call</b> means selling a call option against stock you already own. In exchange for the premium collected upfront, you agree to sell your shares at the strike price if the option is exercised. It's "covered" because you already own the shares that would need to be delivered — unlike the uncovered (naked) call selling flagged as high-risk in the Greeks lesson.</p>
+    <p class="body-text">A <b>cash-secured put</b> means selling a put option while setting aside enough cash to buy the shares at the strike price if assigned. You collect the premium upfront, and if the stock stays above the strike, the put expires worthless and you simply keep the premium. If it falls below the strike, you're obligated to buy the shares at the strike price — a price you'd already decided you were happy to pay.</p>
+    <p class="body-text">Both strategies share the same basic trade-off: you collect premium income upfront in exchange for giving something up. A covered call caps your upside above the strike (your shares get called away at that price, no matter how high the stock goes). A cash-secured put commits you to buying more shares if the stock falls, even as it keeps falling further. Neither strategy eliminates the underlying stock risk — they reshape it, in exchange for income.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: A Downward-Sloping Skew</h3>
-      <p class="body-text">Implied volatility across five strikes on a hypothetical index option, all same expiration, stock at $100 — a textbook downward skew shape.</p>
+      <h3>⚖️ Illustrative Example: A Covered Call at Three Outcomes</h3>
+      <p class="body-text">100 shares owned at a $100 cost basis. A call is sold at a $110 strike for a $3 premium. Outcomes at three hypothetical stock prices at expiration.</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Strike</th><th>Type</th><th>Moneyness</th><th>Implied Volatility</th></tr>
+            <tr><th>Stock Price at Expiration</th><th>Call Outcome</th><th>Stock P&L</th><th>Premium Kept</th><th>Total P&L</th></tr>
           </thead>
           <tbody>
-            <tr class="highlight-row"><td>$85</td><td>Put</td><td>15% OTM</td><td>28%</td></tr>
-            <tr><td>$95</td><td>Put</td><td>5% OTM</td><td>21%</td></tr>
-            <tr><td>$100</td><td>Both</td><td>At the Money</td><td>18%</td></tr>
-            <tr><td>$105</td><td>Call</td><td>5% OTM</td><td>16%</td></tr>
-            <tr><td>$115</td><td>Call</td><td>15% OTM</td><td>14%</td></tr>
+            <tr><td>$95 (Below Strike)</td><td>Expires worthless</td><td>-$500</td><td>+$300</td><td>-$200</td></tr>
+            <tr><td>$108 (Below Strike)</td><td>Expires worthless</td><td>+$800</td><td>+$300</td><td>+$1,100</td></tr>
+            <tr class="highlight-row"><td>$120 (Above Strike)</td><td>Shares called away at $110</td><td>+$1,000 (capped)</td><td>+$300</td><td>+$1,300 (capped)</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">The deep out-of-the-money put (15% below the current price) carries the highest implied volatility at 28% — nearly double the equivalent out-of-the-money call at 14%. That gap reflects the market pricing in persistent demand for downside crash protection, a pattern seen consistently in equity index options.</p>
+      <p class="stmt-note">Even though the stock rallied to $120, the covered call seller's total gain is capped at $1,300 — the shares are called away at $110, missing the additional $1,000 of upside a plain stockholder would have captured. The premium ($300) provides extra income and a small cushion in the -$200 scenario, but the trade-off is a hard ceiling on gains above the strike.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Implied Volatility</h3>
+    <h3 class="subhead">5 Things to Know About Income Strategies</h3>
     <ol class="num-checklist">
-      <li><b>IV is forward-looking, realized volatility is backward-looking</b> — they measure different things and can diverge substantially.</li>
-      <li><b>IV tends to spike around known events</b> — earnings, Fed announcements — then drop sharply right after, a pattern called "volatility crush."</li>
-      <li><b>Equity index skew is usually downward-sloping</b> — persistent demand for crash protection makes downside puts relatively more expensive.</li>
-      <li><b>A steepening skew often signals rising fear</b> — even before the underlying stock has actually moved much.</li>
-      <li><b>High IV doesn't mean a stock will definitely move a lot</b> — it means the market is pricing in a wider range of outcomes as more likely, not guaranteeing any particular one.</li>
+      <li><b>A covered call caps upside, it doesn't remove downside</b> — you still own the stock and lose right alongside it if it falls, just cushioned slightly by the premium.</li>
+      <li><b>A cash-secured put commits capital, not just risk</b> — the cash must genuinely be set aside and unavailable for other use while the position is open.</li>
+      <li><b>Both strategies work best on stock you already have a view on</b> — a covered call on a stock you'd be happy to sell at the strike; a cash-secured put on a stock you'd be happy to own at the strike.</li>
+      <li><b>"Assignment" can happen before expiration</b> — American-style options can technically be exercised early, though it's most common close to expiration or around dividend dates.</li>
+      <li><b>These are income-generation strategies, not risk-free ones</b> — the premium collected compensates for a real trade-off, not a free lunch.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Trading Around IV</h3>
+    <h3 class="subhead">4 Things to Check Before Selling a Covered Call or Cash-Secured Put</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📊 Compare IV to Its Own History</h4>
+        <h4>🎯 Pick a Strike You're Genuinely Fine With</h4>
         <ul>
-          <li>A given IV level only means something relative to where that same option's IV has traded recently.</li>
+          <li>For a covered call, choose a strike you'd be happy selling at; for a put, one you'd be happy buying at.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>💥 Watch for Volatility Crush</h4>
+        <h4>💰 Confirm the Cash or Shares Are Truly Set Aside</h4>
         <ul>
-          <li>Buying options right before a known event risks IV collapsing afterward, even if the direction call was right.</li>
+          <li>Don't count on capital you might need elsewhere while a cash-secured put is open.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📉 Read the Skew, Not Just One IV Number</h4>
+        <h4>📅 Check for Dividend and Earnings Dates</h4>
         <ul>
-          <li>The shape of IV across strikes carries information a single at-the-money IV figure doesn't.</li>
+          <li>Early assignment risk rises around ex-dividend dates for calls; earnings can move the stock sharply either way.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔗 Connect Back to Vega</h4>
+        <h4>🧮 Compare the Premium to the Capped Upside</h4>
         <ul>
-          <li>A position's vega (previous lesson) tells you exactly how much a shift in IV will move its value.</li>
+          <li>Weigh the income collected against how much upside you're realistically giving away if the stock rallies hard.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/pro/the-greeks">The Greeks</a> (previous) covers vega, the sensitivity measure this lesson's IV feeds directly into, and <a href="/learn/pro#tab-options">Income Strategies</a> (next in this track) shows how sellers can be compensated for taking the other side of persistently elevated IV.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/implied-volatility">Implied Volatility & Skew</a> (previous) explains why premiums are often richer when IV is elevated — exactly when sellers are best compensated. <a href="/learn/pro#tab-options">Spreads & Hedging</a> (next in this track) builds on selling options to define risk on both sides of a position.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains implied volatility and skew using illustrative numbers and historical framing — it isn't personalized financial advice, and no reading or level described here is a recommendation to trade. Implied volatility is a market-derived estimate, not a guarantee of future price movement. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains covered calls and cash-secured puts using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Both strategies involve real downside risk in the underlying stock, and past option premiums are not a guarantee of future income. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -236,46 +234,54 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Skew Reader</h2>
-    <p class="section-desc">Enter implied volatility for an out-of-the-money put and an equivalent out-of-the-money call — see the skew gap and what it suggests, under a simple rule.</p>
+    <h2 class="section-title">Try It Yourself: Covered Call Outcome Calculator</h2>
+    <p class="section-desc">Enter your cost basis, the strike sold, the premium collected, and a hypothetical stock price at expiration — see the outcome.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadSkewPreset('normal')">Load Typical Skew</button>
-        <button class="preset-btn" onclick="loadSkewPreset('steep')">Load Steep / Fearful Skew</button>
-        <button class="preset-btn" onclick="loadSkewPreset('flat')">Load Flat Skew</button>
+        <button class="preset-btn" onclick="loadCcPreset('called')">Load Called Away</button>
+        <button class="preset-btn" onclick="loadCcPreset('notCalled')">Load Expires Worthless (Gain)</button>
+        <button class="preset-btn" onclick="loadCcPreset('down')">Load Stock Falls</button>
       </div>
       <div class="calc-grid">
         <div class="calc-field">
-          <label for="skewPutIV">OTM Put Implied Volatility (%)</label>
-          <input type="number" id="skewPutIV" value="28" step="0.5" min="0">
+          <label for="ccCostBasis">Cost Basis per Share ($)</label>
+          <input type="number" id="ccCostBasis" value="100" step="1">
         </div>
         <div class="calc-field">
-          <label for="skewCallIV">OTM Call Implied Volatility (%)</label>
-          <input type="number" id="skewCallIV" value="14" step="0.5" min="0">
+          <label for="ccStrike">Call Strike Sold ($)</label>
+          <input type="number" id="ccStrike" value="110" step="1">
+        </div>
+        <div class="calc-field">
+          <label for="ccPremium">Premium Collected ($/share)</label>
+          <input type="number" id="ccPremium" value="3" step="0.25" min="0">
+        </div>
+        <div class="calc-field">
+          <label for="ccExpiryPrice">Stock Price at Expiration ($)</label>
+          <input type="number" id="ccExpiryPrice" value="120" step="1">
         </div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcSkew()">Read the Skew →</button>
+        <button class="calc-btn" onclick="calcCoveredCall()">Calculate Outcome →</button>
       </div>
 
-      <div class="calc-results visible" id="skewResults">
+      <div class="calc-results visible" id="ccResults">
         <div class="margin-grid">
           <div class="margin-card">
-            <div class="mc-label">Put IV</div>
-            <div class="mc-value" id="skewPutOut">—</div>
+            <div class="mc-label">Stock P&L (per share)</div>
+            <div class="mc-value" id="ccStockPnl">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Call IV</div>
-            <div class="mc-value" id="skewCallOut">—</div>
+            <div class="mc-label">Premium Kept</div>
+            <div class="mc-value" id="ccPremiumOut">—</div>
           </div>
           <div class="margin-card">
-            <div class="mc-label">Skew Gap</div>
-            <div class="mc-value" id="skewGapOut">—</div>
+            <div class="mc-label">Total P&L (per share)</div>
+            <div class="mc-value" id="ccTotalPnl">—</div>
           </div>
         </div>
-        <div class="calc-callout" id="skewCallout"></div>
-        <p class="calc-note">Model (illustrative only): skew gap = put IV − call IV. A gap under 3 points is read as roughly flat; 3-8 points as a typical downward skew; over 8 points as a steep, fear-driven skew. Real skew analysis uses many more strikes and statistical rigor than this simplified two-point rule.</p>
+        <div class="calc-callout" id="ccCallout"></div>
+        <p class="calc-note">Model (per share, ×100 for a standard contract): if stock ≥ strike, shares are called away — stock P&L caps at (strike − cost basis). If stock &lt; strike, the call expires worthless — stock P&L = (stock price − cost basis). Total P&L = stock P&L + premium kept. Illustrative only, ignores commissions and taxes.</p>
       </div>
     </div>
   </div>
@@ -294,59 +300,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What is implied volatility?</div>
+      <div class="quiz-q" data-correct="1">
+        <div class="quiz-q-title">1. What is a covered call?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> How much a stock has already moved in the past year</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> The option's strike price divided by the stock price</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> The volatility level that, when plugged into a pricing model, produces the option's current market price</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A guaranteed forecast of the stock's future price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Buying a call option with borrowed money</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Selling a call option against stock you already own</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Selling a call option with no underlying stock position</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A guarantee that a stock will not fall</label>
         </div>
-        <div class="quiz-explain">Implied volatility is a forward-looking, market-implied estimate embedded in the option's current price, not a backward-looking measure.</div>
+        <div class="quiz-explain">A covered call means selling a call option against stock you already own — "covered" because you already hold the shares that would be delivered if exercised.</div>
       </div>
 
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. What shape does equity index volatility skew usually take?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. In the illustrative example, why was the total P&L capped at $1,300 even though the stock rose to $120?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Perfectly flat across every strike</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Downward-sloping, with out-of-the-money puts trading at higher IV than calls</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Upward-sloping, with calls always more expensive than puts</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Random, with no consistent pattern ever observed</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Because the premium was refunded</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Because the stock actually fell, not rose</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Because the shares were called away at the $110 strike, missing further upside</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Because covered calls always lose money above the strike</label>
         </div>
-        <div class="quiz-explain">Equity index skew is usually downward-sloping, reflecting persistent demand for downside crash protection via puts.</div>
+        <div class="quiz-explain">The shares are sold at the $110 strike once called away, capping the gain there regardless of how much higher the stock subsequently traded.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. In the illustrative example, what did the wide gap between put and call IV suggest?</div>
+        <div class="quiz-q-title">3. What must be true for a cash-secured put?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The options were mispriced by mistake</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Calls always cost more than puts</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The stock was guaranteed to fall</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Persistent demand for downside crash protection, a pattern seen consistently in index options</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The seller must already own the underlying stock</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> No cash is required at all</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> The put must be sold at an out-of-the-money strike only</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> Enough cash must be set aside to buy the shares at the strike if assigned</label>
         </div>
-        <div class="quiz-explain">The 28% put IV versus 14% call IV reflects the market's ongoing willingness to pay up for downside protection.</div>
+        <div class="quiz-explain">A cash-secured put requires setting aside enough cash to buy the shares at the strike price if the put is assigned.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. What is "volatility crush"?</div>
+        <div class="quiz-q-title">4. Does a covered call eliminate downside risk in the stock?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> A sharp drop in implied volatility right after a known event like earnings</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> A stock crashing more than 50% in one day</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> An option expiring worthless</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> A broker closing a position without permission</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> No — you still own the stock and lose alongside it if it falls, cushioned only slightly by the premium</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Yes, covered calls fully protect against any stock decline</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Yes, but only for stocks that pay dividends</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Covered calls cannot be sold on stocks that might decline</label>
         </div>
-        <div class="quiz-explain">Volatility crush refers to implied volatility spiking ahead of an event, then dropping sharply once the uncertainty resolves.</div>
+        <div class="quiz-explain">A covered call caps upside but does not remove downside — the stockholder still bears the loss if the stock falls, minus the small premium cushion.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. Does high implied volatility guarantee a stock will move a lot?</div>
+        <div class="quiz-q-title">5. According to this lesson, what compensates the seller in both strategies?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Yes, IV is a guaranteed forecast</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> No, IV has no relationship to expected movement at all</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> No, it means a wider range of outcomes is being priced as more likely, not a guarantee of any specific one</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Yes, but only for put options</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> A government subsidy for options sellers</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Guaranteed profit regardless of outcome</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The premium collected upfront, in exchange for capping upside or committing to a purchase</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> A refund from the options exchange</label>
         </div>
-        <div class="quiz-explain">High IV reflects a wider expected range of outcomes being priced in, not a certainty that the stock will actually move that much.</div>
+        <div class="quiz-explain">Both strategies collect premium income upfront in exchange for a real trade-off — capped upside for a covered call, or a purchase commitment for a cash-secured put.</div>
       </div>
     </div>
 
@@ -363,22 +369,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/implied-volatility-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/income-strategies-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the downward-skew example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the covered-call-at-three-outcomes example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/implied-volatility-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/income-strategies-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to read a hypothetical skew and think through volatility crush around known events.</div>
+        <div class="dl-desc">Guided exercises to calculate covered call and cash-secured put outcomes by hand.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/implied-volatility-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/income-strategies-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore implied volatility and skew in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore income strategies in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -387,19 +393,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Income Strategies</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You now understand what drives an option's price beyond the stock itself. The next lesson shows how option sellers can be compensated in premium for taking the other side of that expectation.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Spreads & Hedging</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now sold options for income against a single view. The final lesson in this track combines multiple option legs to define risk precisely on both sides of a position.</p>
     <div class="cta-grid">
-      <a href="/learn/pro/the-greeks" class="hub-card">
-        <div class="card-icon">🧮</div>
-        <div class="card-title">Back to The Greeks</div>
-        <div class="card-desc">Review Delta, Gamma, Theta & Vega.</div>
+      <a href="/learn/pro/implied-volatility" class="hub-card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">Back to Implied Volatility & Skew</div>
+        <div class="card-desc">Review what the market is actually afraid of.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/income-strategies" class="hub-card">
-        <div class="card-icon">💵</div>
-        <div class="card-title">Continue to Income Strategies</div>
-        <div class="card-desc">Covered calls & cash-secured puts.</div>
+      <a href="/learn/pro#tab-options" class="hub-card">
+        <div class="card-icon">🛡️</div>
+        <div class="card-title">Continue to Spreads & Hedging</div>
+        <div class="card-desc">Defining your risk on both sides.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -432,44 +438,48 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const SKEW_PRESETS = {
-  normal: { put: 22, call: 17 },
-  steep: { put: 28, call: 14 },
-  flat: { put: 19, call: 18 },
+const CC_PRESETS = {
+  called: { cost: 100, strike: 110, premium: 3, expiry: 120 },
+  notCalled: { cost: 100, strike: 110, premium: 3, expiry: 108 },
+  down: { cost: 100, strike: 110, premium: 3, expiry: 95 },
 };
-function loadSkewPreset(kind) {
-  const p = SKEW_PRESETS[kind];
-  document.getElementById('skewPutIV').value = p.put;
-  document.getElementById('skewCallIV').value = p.call;
-  calcSkew();
+function loadCcPreset(kind) {
+  const p = CC_PRESETS[kind];
+  document.getElementById('ccCostBasis').value = p.cost;
+  document.getElementById('ccStrike').value = p.strike;
+  document.getElementById('ccPremium').value = p.premium;
+  document.getElementById('ccExpiryPrice').value = p.expiry;
+  calcCoveredCall();
 }
 
-function calcSkew() {
-  const putIV = parseFloat(document.getElementById('skewPutIV').value);
-  const callIV = parseFloat(document.getElementById('skewCallIV').value);
-  if (isNaN(putIV) || isNaN(callIV) || putIV < 0 || callIV < 0) {
-    alert('Please enter valid, non-negative implied volatility values.');
+function calcCoveredCall() {
+  const cost = parseFloat(document.getElementById('ccCostBasis').value);
+  const strike = parseFloat(document.getElementById('ccStrike').value);
+  const premium = parseFloat(document.getElementById('ccPremium').value);
+  const expiryPrice = parseFloat(document.getElementById('ccExpiryPrice').value);
+  if ([cost, strike, premium, expiryPrice].some(isNaN) || premium < 0) {
+    alert('Please enter valid values.');
     return;
   }
 
-  const gap = putIV - callIV;
-  document.getElementById('skewPutOut').textContent = putIV.toFixed(1) + '%';
-  document.getElementById('skewCallOut').textContent = callIV.toFixed(1) + '%';
-  document.getElementById('skewGapOut').textContent = (gap >= 0 ? '+' : '') + gap.toFixed(1) + ' pts';
+  const calledAway = expiryPrice >= strike;
+  const stockPnl = calledAway ? (strike - cost) : (expiryPrice - cost);
+  const totalPnl = stockPnl + premium;
 
-  const callout = document.getElementById('skewCallout');
-  if (gap > 8) {
+  document.getElementById('ccStockPnl').textContent = (stockPnl >= 0 ? '+$' : '-$') + Math.abs(stockPnl).toFixed(2);
+  document.getElementById('ccPremiumOut').textContent = '+$' + premium.toFixed(2);
+  document.getElementById('ccTotalPnl').textContent = (totalPnl >= 0 ? '+$' : '-$') + Math.abs(totalPnl).toFixed(2);
+
+  const callout = document.getElementById('ccCallout');
+  if (calledAway) {
     callout.className = 'calc-callout warn';
-    callout.innerHTML = `<span class="verdict">⚠️ Steep, Fear-Driven Skew</span>A ${gap.toFixed(1)}-point gap between put and call IV suggests elevated demand for downside protection — historically associated with more cautious or fearful market positioning, illustrative only.`;
-  } else if (gap > 3) {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Typical Downward Skew</span>A ${gap.toFixed(1)}-point gap is in line with the usual pattern seen in equity index options — modest, persistent demand for downside protection.`;
+    callout.innerHTML = `<span class="verdict">⚠️ Shares Called Away at $${strike.toFixed(2)}</span>At $${expiryPrice.toFixed(2)}, the stock closed above the strike — shares are sold at $${strike.toFixed(2)}, capping the total per-share P&L at ${totalPnl >= 0 ? '+$' : '-$'}${Math.abs(totalPnl).toFixed(2)}, regardless of how much further the stock rose.`;
   } else {
     callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">〰️ Relatively Flat Skew</span>A ${gap.toFixed(1)}-point gap is unusually small — put and call IV are pricing similarly, less of the typical crash-protection premium than usual.`;
+    callout.innerHTML = `<span class="verdict">✓ Call Expires Worthless — Premium Kept</span>At $${expiryPrice.toFixed(2)}, the call expires worthless and you keep both the shares and the $${premium.toFixed(2)} premium — total per-share P&L is ${totalPnl >= 0 ? '+$' : '-$'}${Math.abs(totalPnl).toFixed(2)}.`;
   }
 }
-calcSkew();
+calcCoveredCall();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
