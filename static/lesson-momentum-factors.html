@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mean Reversion — Pro — Growth Capital Group</title>
+<title>Momentum & Factor Models — Pro — Growth Capital Group</title>
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -86,11 +86,11 @@ p.body-text b { color: var(--text); }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.margin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
-@media (max-width: 700px) { .margin-grid { grid-template-columns: 1fr; } }
+.margin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 700px) { .margin-grid { grid-template-columns: repeat(2, 1fr); } }
 .margin-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
 .margin-card .mc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 22px; color: var(--teal); }
+.margin-card .mc-value { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; color: var(--teal); }
 .calc-callout { margin-top: 0; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
 .calc-callout.warn { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); }
 .calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 18px; display: block; margin-bottom: 6px; }
@@ -148,9 +148,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 1 of 5</div>
-    <h1 class="hero-title">Mean Reversion — Betting Prices Return to <span class="accent">"Normal"</span></h1>
-    <p class="hero-sub">When a price strays far from its historical average, a mean reversion strategy bets it eventually snaps back — replacing "it's gone too far" with a strict, testable statistical rule.</p>
+    <div class="section-badge"><a href="/learn/pro#tab-quant">Learn / Pro / Quantitative Strategy Design</a> / 2 of 5</div>
+    <h1 class="hero-title">Momentum & Factor <span class="accent">Models</span></h1>
+    <p class="hero-sub">Where mean reversion bets a stretched price snaps back, momentum bets the opposite: that a trend already in motion tends to keep going. Factor models formalize this and other persistent drivers of returns into rules-based portfolios.</p>
   </div>
 </div>
 
@@ -158,76 +158,76 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">From "That Looks Stretched" to a Testable Rule</h2>
-    <p class="body-text">Many prices and spreads oscillate around some underlying average rather than trending forever. <b>Mean reversion</b> strategies formalize the intuition that "this has gone too far" into a precise, repeatable rule: measure how far the current price has strayed from its historical average, in statistical terms, and act when that distance crosses a threshold.</p>
-    <p class="body-text">The standard tool for measuring "how far" is the <b>z-score</b>: (current price − historical mean) ÷ historical standard deviation. A z-score of +2 means the price is two standard deviations above its average — statistically unusual, and historically likely (though never certain) to pull back toward the mean. A z-score of -2 signals the opposite: unusually cheap relative to its own history.</p>
-    <p class="body-text">Pairs trading and statistical arbitrage extend this same idea to the <i>spread</i> between two related assets rather than a single price — betting that when two historically-linked securities drift apart, the gap itself will revert, regardless of which direction the market as a whole moves.</p>
+    <h2 class="section-title">Betting the Trend Continues, Not Reverts</h2>
+    <p class="body-text"><b>Momentum</b> is the observed tendency for assets that have recently performed well to keep outperforming over the following months, and for recent laggards to keep lagging — the mirror image of the mean-reversion idea from the previous lesson. It's one of the most extensively studied and persistent patterns in academic finance, showing up across stocks, sectors, currencies and commodities, though it isn't guaranteed to continue and can suffer sharp, sudden reversals ("momentum crashes").</p>
+    <p class="body-text">A <b>factor</b> is a specific, measurable characteristic that has historically been associated with different returns across a group of securities. Momentum is one factor; others widely studied include <b>value</b> (cheap stocks relative to fundamentals outperforming expensive ones), <b>quality</b> (financially healthy companies outperforming weaker ones), and <b>size</b> (smaller companies historically carrying a different risk/return profile than larger ones).</p>
+    <p class="body-text">A <b>factor model</b> builds a portfolio systematically around one or more of these characteristics — ranking a universe of stocks by a factor score and holding the top slice — rather than relying on any single stock-specific thesis. The appeal is diversification across many small, uncorrelated bets on the same measurable driver, instead of concentrated bets on individual company stories.</p>
 
     <div class="example-card">
-      <h3>⚖️ Illustrative Example: Z-Score Signal Zones</h3>
-      <p class="body-text">A stock's price has a 60-day historical mean of $100 and a standard deviation of $5. Here's how different current prices translate into z-scores and, under a simple rule, mean-reversion signals.</p>
+      <h3>⚖️ Illustrative Example: Ranking a Universe by 6-Month Momentum</h3>
+      <p class="body-text">A simple momentum factor ranks stocks by their trailing 6-month return and holds the top decile. Five illustrative stocks from a hypothetical universe:</p>
       <div class="stmt-table-wrap">
         <table class="stmt-table">
           <thead>
-            <tr><th>Current Price</th><th>Distance From Mean</th><th>Z-Score</th><th>Illustrative Signal</th></tr>
+            <tr><th>Stock</th><th>6-Month Return</th><th>Momentum Rank</th><th>Illustrative Action</th></tr>
           </thead>
           <tbody>
-            <tr><td>$115</td><td>+$15</td><td>+3.0</td><td>Strong Sell / Fade</td></tr>
-            <tr class="highlight-row"><td>$110</td><td>+$10</td><td>+2.0</td><td>Sell / Fade Threshold</td></tr>
-            <tr><td>$101</td><td>+$1</td><td>+0.2</td><td>No Signal — Near Mean</td></tr>
-            <tr class="highlight-row"><td>$90</td><td>-$10</td><td>-2.0</td><td>Buy / Fade Threshold</td></tr>
-            <tr><td>$82</td><td>-$18</td><td>-3.6</td><td>Strong Buy / Fade</td></tr>
+            <tr class="highlight-row"><td>Stock A</td><td>+42%</td><td>1</td><td>Hold (Top Momentum)</td></tr>
+            <tr class="highlight-row"><td>Stock B</td><td>+31%</td><td>2</td><td>Hold (Top Momentum)</td></tr>
+            <tr><td>Stock C</td><td>+8%</td><td>3</td><td>No Position</td></tr>
+            <tr><td>Stock D</td><td>-6%</td><td>4</td><td>No Position</td></tr>
+            <tr><td>Stock E</td><td>-19%</td><td>5</td><td>No Position (Bottom Momentum)</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="stmt-note">A common rule of thumb enters a mean-reversion trade once the z-score crosses ±2 (roughly the top/bottom 5% of a normal distribution) and exits as the price reverts back toward zero — illustrative only, and real markets don't move in a neat bell curve.</p>
+      <p class="stmt-note">A momentum factor strategy holds Stocks A and B not because of any specific view on their businesses, but purely because their trailing return ranks them at the top of the universe — the same rule applied systematically across hundreds or thousands of names.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Mean Reversion</h3>
+    <h3 class="subhead">5 Things to Know About Momentum & Factors</h3>
     <ol class="num-checklist">
-      <li><b>Not every asset mean-reverts</b> — the strategy assumes a stable underlying average exists; a genuinely trending asset can keep making the z-score more extreme instead of reverting.</li>
-      <li><b>"Historical mean" is a moving target</b> — using too short a lookback window makes the mean noisy; too long a window makes it slow to reflect real structural change.</li>
-      <li><b>This is the same math as Bollinger Bands</b> — a Bollinger Band touch is essentially a z-score extreme, expressed visually rather than numerically.</li>
-      <li><b>"Catching a falling knife" is the classic failure mode</b> — a stock cheap for a genuine, lasting reason (bad news, a broken business) can keep getting cheaper well past a -2 z-score.</li>
-      <li><b>Pairs trading isolates the spread, not market direction</b> — a well-constructed pair can profit in both up and down markets, since it bets on the relationship between two assets, not the market's overall direction.</li>
+      <li><b>Momentum and mean reversion aren't contradictions</b> — they tend to operate over different timeframes (momentum over months, mean reversion often over days to weeks) and different assets can favor one over the other.</li>
+      <li><b>Momentum crashes are a known, documented risk</b> — momentum strategies have historically suffered sharp, sudden reversals, particularly around market turning points.</li>
+      <li><b>Factors can go through long periods of underperformance</b> — value underperformed growth for much of the 2010s, a reminder that "persistent" doesn't mean "constant."</li>
+      <li><b>Factor investing is diversification across bets, not stocks</b> — a well-built factor portfolio holds many names, so no single company's news should dominate the outcome.</li>
+      <li><b>Factors can crowd</b> — when many funds chase the same factor definitions, the resulting mass buying/selling can itself become a source of risk during unwinds.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check Before Trusting a Mean-Reversion Signal</h3>
+    <h3 class="subhead">4 Things to Check Before Trusting a Factor Strategy</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>📏 Choose Your Lookback Window Deliberately</h4>
+        <h4>📏 Define the Lookback Precisely</h4>
         <ul>
-          <li>Test multiple windows (e.g. 20, 60, 120 days) — a signal that only appears with one specific window is a red flag.</li>
+          <li>"Momentum" can mean 3-month, 6-month, or 12-month trailing return — the choice materially changes which names rank highest.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧭 Ask Why It's Stretched</h4>
+        <h4>🔄 Set a Rebalancing Rule</h4>
         <ul>
-          <li>A statistically extreme z-score driven by a fundamental change, not noise, may never revert — check for news, not just numbers.</li>
+          <li>Rankings shift constantly — decide how often you'll re-rank and rebalance the holdings, and how much turnover (and cost) that implies.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🧪 Backtest With Realistic Costs</h4>
+        <h4>🧺 Diversify Across Names</h4>
         <ul>
-          <li>Mean reversion trades are often frequent and short-lived — trading costs and slippage can erase an edge that looks great on paper.</li>
+          <li>The statistical edge in a factor comes from holding many names, not a concentrated handful — narrow it too much and it stops behaving like a factor bet.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🛑 Define an Exit If It Doesn't Revert</h4>
+        <h4>🛑 Plan for Drawdowns in the Factor Itself</h4>
         <ul>
-          <li>Set a stop for when the z-score keeps extending rather than reverting, so a broken assumption has a bounded cost.</li>
+          <li>Expect the factor to underperform for extended stretches — a plan for riding that out matters as much as the factor definition.</li>
         </ul>
       </div>
     </div>
 
     <div class="tool-pointer">
-      🧮 <b>Related lessons:</b> <a href="/learn/intermediate/bollinger-bands">Bollinger Bands</a> (Intermediate) covers the same z-score logic visually, and <a href="/learn/pro/backtesting">Backtesting</a> (next in this track) shows how to properly test a rule like this before risking real money.
+      🧮 <b>Related lessons:</b> <a href="/learn/pro/mean-reversion">Mean Reversion</a> (previous in this track) covers the opposite bet, and <a href="/learn/pro/backtesting">Backtesting</a> (next) shows how to properly test a factor rule like this before risking real money.
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> this lesson explains the statistical reasoning behind mean-reversion strategies using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Past patterns, including reversion to a mean, are never guaranteed to repeat. Speak to a licensed advisor about what's appropriate for your situation.
+      <b>Worth knowing:</b> this lesson explains the historical, academic evidence behind momentum and factor investing using illustrative numbers and historical framing — it isn't personalized financial advice, and no strategy described here is a recommendation to trade. Past patterns, including momentum, are never guaranteed to repeat. Speak to a licensed advisor about what's appropriate for your situation.
     </div>
   </div>
 </section>
@@ -236,54 +236,35 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Z-Score Calculator</h2>
-    <p class="section-desc">Enter a current price and its historical mean and standard deviation — see the z-score and where it falls relative to common ±2 signal thresholds.</p>
+    <h2 class="section-title">Try It Yourself: Momentum Ranker</h2>
+    <p class="section-desc">Enter trailing returns for up to 6 assets — see them ranked by momentum, with the top slice highlighted as an illustrative "hold" group.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadZPreset('overbought')">Load Statistically Overbought</button>
-        <button class="preset-btn" onclick="loadZPreset('neutral')">Load Near the Mean</button>
-        <button class="preset-btn" onclick="loadZPreset('oversold')">Load Statistically Oversold</button>
+        <button class="preset-btn" onclick="loadMomPreset('sample')">Load Sample Universe</button>
+        <button class="preset-btn" onclick="loadMomPreset('tight')">Load Tightly Clustered Returns</button>
+        <button class="preset-btn" onclick="loadMomPreset('wide')">Load Widely Dispersed Returns</button>
       </div>
-      <div class="calc-grid">
-        <div class="calc-field">
-          <label for="zPrice">Current Price ($)</label>
-          <input type="number" id="zPrice" value="110" step="0.5">
-        </div>
-        <div class="calc-field">
-          <label for="zMean">Historical Mean ($)</label>
-          <input type="number" id="zMean" value="100" step="0.5">
-        </div>
-        <div class="calc-field">
-          <label for="zStdDev">Historical Std. Deviation ($)</label>
-          <input type="number" id="zStdDev" value="5" step="0.5" min="0.01">
-        </div>
-        <div class="calc-field">
-          <label for="zThreshold">Signal Threshold (±z)</label>
-          <input type="number" id="zThreshold" value="2" step="0.1" min="0.1">
-        </div>
+      <div class="calc-grid" id="momInputGrid">
+        <div class="calc-field"><label>Asset A — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset A" value="42" step="0.5"></div>
+        <div class="calc-field"><label>Asset B — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset B" value="31" step="0.5"></div>
+        <div class="calc-field"><label>Asset C — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset C" value="8" step="0.5"></div>
+        <div class="calc-field"><label>Asset D — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset D" value="-6" step="0.5"></div>
+        <div class="calc-field"><label>Asset E — 6M Return (%)</label><input type="number" class="mom-input" data-name="Asset E" value="-19" step="0.5"></div>
+        <div class="calc-field"><label>Top Slice Held (# of assets)</label><input type="number" id="momTopN" value="2" step="1" min="1" max="5"></div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcZScore()">Calculate Z-Score →</button>
+        <button class="calc-btn" onclick="calcMomentum()">Rank by Momentum →</button>
       </div>
 
-      <div class="calc-results visible" id="zResults">
-        <div class="margin-grid">
-          <div class="margin-card">
-            <div class="mc-label">Distance From Mean</div>
-            <div class="mc-value" id="zDistance">—</div>
-          </div>
-          <div class="margin-card">
-            <div class="mc-label">Z-Score</div>
-            <div class="mc-value" id="zScoreVal">—</div>
-          </div>
-          <div class="margin-card">
-            <div class="mc-label">vs. Threshold</div>
-            <div class="mc-value" id="zVsThreshold">—</div>
-          </div>
+      <div class="calc-results visible" id="momResults">
+        <div id="momRankTableWrap" class="stmt-table-wrap" style="margin-top:0;">
+          <table class="stmt-table">
+            <thead><tr><th>Asset</th><th>6M Return</th><th>Rank</th><th>Action</th></tr></thead>
+            <tbody id="momRankBody"></tbody>
+          </table>
         </div>
-        <div class="calc-callout" id="zCallout"></div>
-        <p class="calc-note">Model: z-score = (current price − historical mean) ÷ historical standard deviation. This is a statistical measure of stretch, not a prediction — historical patterns are never guaranteed to repeat.</p>
+        <p class="calc-note" style="margin-top:16px;">Model: assets are sorted by trailing return, highest first, and the top N are marked "Hold" — a simplified illustration of how a momentum factor ranks a universe, not a real trading signal.</p>
       </div>
     </div>
   </div>
@@ -302,59 +283,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">1. What does a mean-reversion strategy assume?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Prices always trend in one direction forever</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Trading volume predicts future prices</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> A price that strays far from its historical average tends to pull back toward it</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Company earnings are irrelevant to price</label>
-        </div>
-        <div class="quiz-explain">Mean reversion assumes a stable underlying average exists and that extreme deviations from it tend to correct back over time.</div>
-      </div>
-
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">2. How is a z-score calculated in this lesson?</div>
+        <div class="quiz-q-title">1. What does a momentum strategy bet on?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> Current price divided by trading volume</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> (Current price − historical mean) ÷ historical standard deviation</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Current price multiplied by the P/E ratio</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Yesterday's closing price minus today's opening price</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> That a stretched price will snap back to its average</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> That assets which have recently performed well will keep outperforming</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> That all stocks will converge to the same return</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> That interest rates determine all stock returns</label>
         </div>
-        <div class="quiz-explain">The z-score measures how many standard deviations the current price is from its historical mean.</div>
+        <div class="quiz-explain">Momentum is the tendency for recent winners to keep outperforming and recent laggards to keep lagging — the mirror image of mean reversion.</div>
       </div>
 
-      <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. What is the classic failure mode of mean reversion described in this lesson?</div>
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">2. What is a "factor" in this context?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> The strategy requires too much starting capital</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> It only works on cryptocurrency markets</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It cannot be backtested at all</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> "Catching a falling knife" — buying something cheap for a genuine, lasting reason that keeps getting cheaper</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> A company's stock ticker symbol</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> A type of brokerage account</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> A specific, measurable characteristic historically associated with different returns across securities</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> A government regulation on trading</label>
         </div>
-        <div class="quiz-explain">A statistically extreme z-score driven by real fundamental deterioration, not noise, can keep extending well past typical thresholds.</div>
+        <div class="quiz-explain">Momentum, value, quality and size are all examples of factors — measurable characteristics linked to differences in historical returns.</div>
       </div>
 
       <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. What does pairs trading bet on, according to this lesson?</div>
+        <div class="quiz-q-title">3. In the illustrative example, why were Stocks A and B held?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> That the spread between two historically-linked assets will revert, regardless of overall market direction</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> That the entire stock market will rise</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> That interest rates will fall</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> That one specific company will go bankrupt</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Their trailing 6-month return ranked them at the top of the universe</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> They had the lowest P/E ratios in the universe</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> They paid the highest dividends</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> They were the largest companies by market cap</label>
         </div>
-        <div class="quiz-explain">Pairs trading isolates the relationship (spread) between two related assets, aiming to profit regardless of which way the broader market moves.</div>
+        <div class="quiz-explain">A momentum factor strategy ranks purely on trailing return, holding the top slice regardless of any company-specific view.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="3">
+        <div class="quiz-q-title">4. What is a documented risk specific to momentum strategies?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> They require no rebalancing at all</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> They can only be used on bonds</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> They are immune to market downturns</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> "Momentum crashes" — sharp, sudden reversals, particularly around market turning points</label>
+        </div>
+        <div class="quiz-explain">Momentum strategies have historically suffered sharp, sudden reversals known as momentum crashes, especially around market turning points.</div>
       </div>
 
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">5. Why should mean-reversion signals be backtested with realistic trading costs?</div>
+        <div class="quiz-q-title">5. Why does the lesson recommend diversifying across many names in a factor strategy?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Trading costs don't affect mean-reversion strategies</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Regulators require it by law</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Mean-reversion trades are often frequent and short-lived, so costs and slippage can erase a paper edge</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> It guarantees the strategy will be profitable</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Because factors only work with exactly one stock</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Because diversification eliminates all risk entirely</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Because the statistical edge comes from holding many names, not concentrated bets on a few</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> Because regulators require a minimum number of holdings</label>
         </div>
-        <div class="quiz-explain">Because these trades tend to be frequent and short-lived, unrealistic cost assumptions in a backtest can make a losing strategy look profitable on paper.</div>
+        <div class="quiz-explain">Factor investing works as diversification across many small, uncorrelated bets on the same measurable driver, not concentrated single-stock theses.</div>
       </div>
     </div>
 
@@ -371,22 +352,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/mean-reversion-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/momentum-factors-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with the z-score signal zones example, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with the momentum-ranking example, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/mean-reversion-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/momentum-factors-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided exercises to calculate z-scores by hand and define your own signal thresholds.</div>
+        <div class="dl-desc">Guided exercises to rank a hypothetical universe and think through rebalancing and diversification rules.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/mean-reversion-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/momentum-factors-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore mean reversion in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore momentum and factor investing in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -395,19 +376,19 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Momentum & Factor Models</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Mean reversion bets on prices snapping back. The next lesson covers the opposite family of strategies — ones that bet a persistent trend continues.</p>
+    <h2 class="section-title" style="text-align:center;">Next Up: Backtesting</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've now seen two opposing rules-based edges — mean reversion and momentum. The next lesson covers how to properly test either one against history before risking real money.</p>
     <div class="cta-grid">
-      <a href="/learn/pro#tab-quant" class="hub-card">
-        <div class="card-icon">🏁</div>
-        <div class="card-title">Back to Quantitative Strategy Hub</div>
-        <div class="card-desc">Revisit all five lessons in this track.</div>
-        <div class="card-link">Back to hub →</div>
+      <a href="/learn/pro/mean-reversion" class="hub-card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Back to Mean Reversion</div>
+        <div class="card-desc">Review the opposite bet — that stretched prices snap back.</div>
+        <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/pro/momentum-factors" class="hub-card">
-        <div class="card-icon">📈</div>
-        <div class="card-title">Continue to Momentum & Factor Models</div>
-        <div class="card-desc">Isolating persistent drivers of returns.</div>
+      <a href="/learn/pro#tab-quant" class="hub-card">
+        <div class="card-icon">🧪</div>
+        <div class="card-title">Continue to Backtesting</div>
+        <div class="card-desc">Proving an idea before risking real money.</div>
         <div class="card-link">Open the lesson →</div>
       </a>
     </div>
@@ -440,49 +421,45 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const Z_PRESETS = {
-  overbought: { price: 115, mean: 100, stddev: 5, threshold: 2 },
-  neutral: { price: 101, mean: 100, stddev: 5, threshold: 2 },
-  oversold: { price: 82, mean: 100, stddev: 5, threshold: 2 },
+const MOM_PRESETS = {
+  sample: [42, 31, 8, -6, -19],
+  tight: [6, 4, 2, 1, -1],
+  wide: [88, 15, -2, -34, -55],
 };
-function loadZPreset(kind) {
-  const p = Z_PRESETS[kind];
-  document.getElementById('zPrice').value = p.price;
-  document.getElementById('zMean').value = p.mean;
-  document.getElementById('zStdDev').value = p.stddev;
-  document.getElementById('zThreshold').value = p.threshold;
-  calcZScore();
+function loadMomPreset(kind) {
+  const vals = MOM_PRESETS[kind];
+  document.querySelectorAll('.mom-input').forEach((el, i) => { el.value = vals[i]; });
+  calcMomentum();
 }
 
-function calcZScore() {
-  const price = parseFloat(document.getElementById('zPrice').value);
-  const mean = parseFloat(document.getElementById('zMean').value);
-  const stddev = parseFloat(document.getElementById('zStdDev').value);
-  const threshold = parseFloat(document.getElementById('zThreshold').value);
-  if ([price, mean, stddev, threshold].some(isNaN) || stddev <= 0 || threshold <= 0) {
-    alert('Please enter valid values (standard deviation and threshold must be positive).');
-    return;
-  }
+function calcMomentum() {
+  const inputs = document.querySelectorAll('.mom-input');
+  const topN = parseInt(document.getElementById('momTopN').value, 10);
+  if (isNaN(topN) || topN < 1) { alert('Please enter a valid number of assets to hold.'); return; }
 
-  const distance = price - mean;
-  const zScore = distance / stddev;
+  const assets = [];
+  let valid = true;
+  inputs.forEach(el => {
+    const val = parseFloat(el.value);
+    if (isNaN(val)) valid = false;
+    assets.push({ name: el.dataset.name, ret: val });
+  });
+  if (!valid) { alert('Please enter valid numbers for every asset.'); return; }
 
-  document.getElementById('zDistance').textContent = (distance >= 0 ? '+' : '') + '$' + distance.toFixed(2);
-  document.getElementById('zScoreVal').textContent = (zScore >= 0 ? '+' : '') + zScore.toFixed(2);
-  document.getElementById('zVsThreshold').textContent = Math.abs(zScore).toFixed(2) + ' / ' + threshold.toFixed(2);
+  assets.sort((a, b) => b.ret - a.ret);
 
-  const callout = document.getElementById('zCallout');
-  if (Math.abs(zScore) >= threshold) {
-    callout.className = 'calc-callout warn';
-    const direction = zScore > 0 ? 'above' : 'below';
-    const signal = zScore > 0 ? 'Fade / Sell Zone' : 'Fade / Buy Zone';
-    callout.innerHTML = `<span class="verdict">⚠️ ${signal}</span>At ${zScore.toFixed(2)}, the price is ${direction} its ±${threshold.toFixed(1)} signal threshold — a statistically stretched level some mean-reversion rules would flag, illustrative only.`;
-  } else {
-    callout.className = 'calc-callout';
-    callout.innerHTML = `<span class="verdict">✓ Within Normal Range</span>At ${zScore.toFixed(2)}, the price sits inside the ±${threshold.toFixed(1)} threshold — no mean-reversion signal under this rule.`;
-  }
+  const tbody = document.getElementById('momRankBody');
+  tbody.innerHTML = '';
+  assets.forEach((a, i) => {
+    const rank = i + 1;
+    const isHeld = rank <= topN;
+    const tr = document.createElement('tr');
+    if (isHeld) tr.className = 'highlight-row';
+    tr.innerHTML = `<td>${a.name}</td><td>${a.ret >= 0 ? '+' : ''}${a.ret.toFixed(1)}%</td><td>${rank}</td><td>${isHeld ? 'Hold (Top Momentum)' : 'No Position'}</td>`;
+    tbody.appendChild(tr);
+  });
 }
-calcZScore();
+calcMomentum();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
