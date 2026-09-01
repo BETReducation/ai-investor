@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bollinger Bands — Intermediate — Growth Capital Group</title>
+<title>Confluence — Intermediate — Growth Capital Group</title>
 <link rel="icon" type="image/svg+xml" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -63,21 +63,18 @@ p.body-text b { color: var(--text); }
 .tip-card li { font-size: 14px; color: var(--muted); line-height: 1.55; padding-left: 17px; position: relative; }
 .tip-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--purple2); }
 .subhead { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
-.bb-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
-.bb-diagram-wrap svg { width: 100%; height: auto; display: block; }
+.stack-diagram-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 20px; }
+.stack-diagram-wrap svg { width: 100%; height: auto; display: block; }
 .calc-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
-.calc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-@media (max-width: 900px) { .calc-grid { grid-template-columns: 1fr; } }
-.calc-field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
-.calc-field input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 12px 14px; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
-.calc-field input:focus { border-color: var(--purple2); }
+.confluence-check-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+.confluence-check { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; cursor: pointer; }
+.confluence-check input { width: 18px; height: 18px; accent-color: var(--purple2); flex-shrink: 0; }
+.confluence-check label { font-size: 14.5px; color: var(--text); cursor: pointer; }
 .calc-btn { background: var(--purple2); color: #03130f; border: none; padding: 13px 26px; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: opacity 0.2s; }
 .calc-btn:hover { opacity: 0.88; }
 .calc-results { margin-top: 28px; padding-top: 28px; border-top: 1px solid var(--border); display: none; }
 .calc-results.visible { display: block; animation: fadeUp 0.4s ease both; }
-.builder-stage { display: flex; align-items: center; justify-content: center; min-height: 160px; background: var(--bg3); border-radius: 12px; padding: 20px; }
-.builder-stage svg { width: 100%; max-width: 480px; height: auto; }
-.calc-callout { margin-top: 20px; padding: 16px 20px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
+.calc-callout { margin-top: 0; padding: 20px 24px; border-radius: 12px; background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.22); font-size: 14px; color: var(--text); line-height: 1.6; text-align: center; }
 .calc-callout .verdict { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; display: block; margin-bottom: 6px; }
 .calc-note { font-size: 12.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
 .preset-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
@@ -133,9 +130,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <div class="page-hero">
   <div class="hero-grid"></div>
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
-    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 4 of 5</div>
-    <h1 class="hero-title">Bollinger Bands — Measuring <span class="accent">Volatility</span> in Real Time</h1>
-    <p class="hero-sub">Bollinger Bands wrap a moving average in an upper and lower band based on volatility. Bands that squeeze tight often precede a big move; bands that stretch wide signal an already-extended market.</p>
+    <div class="section-badge"><a href="/learn/intermediate#tab-ta">Learn / Intermediate / Technical Analysis</a> / 5 of 5</div>
+    <h1 class="hero-title">Stacking Indicators for <span class="accent">Confluence</span></h1>
+    <p class="hero-sub">No single indicator is reliable on its own — they all lag or lie sometimes. The real skill is combining two or three and only acting when they agree. That agreement is called confluence.</p>
   </div>
 </div>
 
@@ -143,71 +140,81 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner reveal">
     <div class="section-eyebrow">The Concept</div>
-    <h2 class="section-title">What Bollinger Bands Actually Measure</h2>
-    <p class="body-text">A Bollinger Band is three lines plotted around price: a <b>middle band</b> (typically a 20-period simple moving average), an <b>upper band</b> (the middle band plus 2 standard deviations of recent price), and a <b>lower band</b> (the middle band minus 2 standard deviations). Unlike RSI or MACD, Bollinger Bands measure <b>volatility</b>, not momentum.</p>
-    <p class="body-text">Standard deviation grows when price swings widely and shrinks when price is calm. So the bands themselves widen during volatile stretches and narrow during quiet ones — they physically expand and contract around price as volatility changes.</p>
-    <p class="body-text">The two classic readings: a <b>squeeze</b> (bands pulled tight together) suggests volatility has compressed and often precedes a sharp move in either direction. Price <b>touching or piercing a band</b> doesn't automatically mean "overbought" or "oversold" the way RSI does — in a strong trend, price can ride along the upper (or lower) band for an extended stretch.</p>
+    <h2 class="section-title">Why One Indicator Is Never Enough</h2>
+    <p class="body-text">Every indicator covered in this track has a blind spot. RSI can stay "overbought" for weeks in a strong trend. MACD is a lagging indicator that confirms a shift after it's begun. Bollinger Bands tell you how much price is moving, but nothing about direction. Chart patterns can fail to confirm, or confirm and then reverse anyway. None of them is wrong to use — but none of them is enough on its own.</p>
+    <p class="body-text"><b>Confluence</b> means waiting until two or three independent signals line up before treating a setup as worth acting on. If RSI is oversold, MACD just made a bullish crossover, and price is sitting right at a known support level — that's three different tools, measuring three different things, all pointing the same way at once. That's a stronger case than any single one of them alone.</p>
+    <p class="body-text">The goal isn't to demand every indicator agree before doing anything — that almost never happens and you'd act on nothing. The goal is recognizing that <b>more independent confirmation lowers the odds you're reacting to noise</b>, not a real signal.</p>
 
     <div class="example-card">
-      <h3>🎢 Bollinger Bands Squeezing, Then Expanding</h3>
-      <div class="bb-diagram-wrap">
-        <svg viewBox="0 0 490 200" xmlns="http://www.w3.org/2000/svg">
-          <path d="M 10,100 C 60,95 110,98 160,97 C 220,96 260,60 310,40 C 360,25 410,15 460,10" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
-          <path d="M 10,120 C 60,122 110,119 160,120 C 220,121 260,150 310,165 C 360,175 410,185 460,190" fill="none" stroke="#a855f7" stroke-width="1.6" stroke-dasharray="4 3"/>
-          <path d="M 10,110 C 60,108 110,109 160,109 C 220,109 260,105 310,102 C 360,100 410,100 460,100" fill="none" stroke="#8892b0" stroke-width="1.2" stroke-dasharray="2 3"/>
+      <h3>🔗 Three Independent Signals Lining Up</h3>
+      <div class="stack-diagram-wrap">
+        <svg viewBox="0 0 490 210" xmlns="http://www.w3.org/2000/svg">
+          <line x1="240" y1="10" x2="240" y2="200" stroke="#4ade80" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="240" y="205" font-size="8.5" fill="#4ade80" text-anchor="middle" font-family="Helvetica" font-weight="bold">signals align here</text>
 
-          <polyline points="10,105 40,115 70,102 100,112 130,105 160,110 190,90 220,95 250,70 280,80 310,50 340,60 370,30 400,45 430,20 460,35" fill="none" stroke="#4ade80" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+          <text x="20" y="30" font-size="9" fill="#8892b0" font-family="Helvetica">RSI</text>
+          <line x1="20" y1="45" x2="470" y2="45" stroke="#4b5563" stroke-width="0.8"/>
+          <polyline points="20,60 90,55 160,50 230,42 300,50 370,58 440,52" fill="none" stroke="#a855f7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="240" cy="43" r="4" fill="#4ade80"/>
+          <text x="440" y="42" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">oversold bounce</text>
 
-          <text x="165" y="70" font-size="9" fill="#f59e0b" text-anchor="middle" font-family="Helvetica" font-weight="bold">SQUEEZE</text>
-          <text x="165" y="82" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands pull tight</text>
-          <text x="380" y="10" font-size="9" fill="#4ade80" text-anchor="middle" font-family="Helvetica" font-weight="bold">EXPANSION</text>
-          <text x="380" y="195" font-size="7.5" fill="#8892b0" text-anchor="middle" font-family="Helvetica">bands widen as the move plays out</text>
+          <text x="20" y="95" font-size="9" fill="#8892b0" font-family="Helvetica">MACD</text>
+          <line x1="20" y1="110" x2="470" y2="110" stroke="#4b5563" stroke-width="0.8"/>
+          <polyline points="20,120 90,115 160,112 230,100 300,95 370,102 440,108" fill="none" stroke="#eab308" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="240" cy="103" r="4" fill="#4ade80"/>
+          <text x="440" y="98" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">bullish crossover</text>
+
+          <text x="20" y="160" font-size="9" fill="#8892b0" font-family="Helvetica">Price / Support</text>
+          <line x1="20" y1="185" x2="470" y2="185" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="3 2"/>
+          <polyline points="20,150 90,160 160,175 230,183 300,165 370,150 440,140" fill="none" stroke="#4ade80" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="240" cy="183" r="4" fill="#4ade80"/>
+          <text x="440" y="135" font-size="7.5" fill="#4ade80" text-anchor="end" font-family="Helvetica">bounces off support</text>
         </svg>
       </div>
-      <p class="body-text" style="margin-top:16px;margin-bottom:0;">Notice how tightly the upper and lower bands (purple, dashed) squeeze together in the middle of the chart, right before price (green) breaks out and the bands widen dramatically to contain the new, more volatile move.</p>
+      <p class="body-text" style="margin-top:16px;margin-bottom:0;">All three green dots fall on the same vertical line: RSI turning up from oversold, MACD making a bullish crossover, and price bouncing off a known support level — three unrelated tools agreeing at the same moment. That's confluence.</p>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
-    <h3 class="subhead">5 Things to Know About Bollinger Bands</h3>
+    <h3 class="subhead">5 Things to Know About Confluence</h3>
     <ol class="num-checklist">
-      <li><b>Bands measure volatility, not momentum or direction</b> — unlike RSI or MACD, they say nothing about whether price is likely to go up or down, only how much it's likely to move.</li>
-      <li><b>A squeeze often precedes a big move</b> — but it doesn't tell you which direction that move will be, only that one may be coming.</li>
-      <li><b>Riding the band isn't automatically a reversal signal</b> — in a strong trend, price can walk along the upper or lower band for an extended stretch without reversing.</li>
-      <li><b>The bands adapt automatically</b> — because they're based on standard deviation, they widen and narrow on their own as volatility changes, with no manual adjustment needed.</li>
-      <li><b>Bandwidth (the gap between bands) is a useful standalone measure</b> — it can be plotted on its own to spot squeezes more precisely.</li>
+      <li><b>Independence matters more than quantity</b> — three momentum indicators that all measure similar things agreeing is weaker evidence than one momentum tool, one volatility tool, and one price-level tool agreeing.</li>
+      <li><b>Demanding perfect agreement means missing most opportunities</b> — waiting for every tool to align simultaneously is rare; two solid, independent confirmations is often a reasonable bar.</li>
+      <li><b>Confluence reduces false signals, it doesn't eliminate them</b> — even three aligned signals can still be wrong; it shifts the odds, not a guarantee.</li>
+      <li><b>Contradicting signals are information too</b> — if RSI says oversold but the trend and volume both say "still falling," that disagreement is itself useful to notice.</li>
+      <li><b>More isn't always better</b> — piling on five or six indicators tends to just add lag and noise rather than real extra confirmation.</li>
     </ol>
 
     <div class="section-eyebrow" style="margin-top:44px;">Put It Into Practice</div>
-    <h3 class="subhead">4 Things to Check When Reading Bollinger Bands</h3>
+    <h3 class="subhead">4 Things to Check for Confluence</h3>
     <div class="tip-grid">
       <div class="tip-card">
-        <h4>🤏 Watch for the Squeeze</h4>
+        <h4>🧩 Mix Categories, Not Just Tools</h4>
         <ul>
-          <li>The tighter the bands get, the more likely a significant move is building — though not the direction.</li>
+          <li>Combine a momentum tool (RSI/MACD), a volatility tool (Bollinger Bands), and a price-level tool (support/resistance, trend lines).</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📈 Check the Trend First</h4>
+        <h4>⏱️ Check the Same Point in Time</h4>
         <ul>
-          <li>Price hugging the upper band in an uptrend is strength, not automatically "overbought."</li>
+          <li>Signals need to line up at roughly the same moment — one from last week and one from today isn't real confluence.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>🔗 Pair It With Momentum</h4>
+        <h4>📊 Confirm With Volume</h4>
         <ul>
-          <li>Combine a band touch with RSI or MACD to judge whether the move looks stretched, not just wide.</li>
+          <li>Volume backing up a confluence setup adds a fourth, independent layer of confidence.</li>
         </ul>
       </div>
       <div class="tip-card">
-        <h4>📊 Watch for the "Walk"</h4>
+        <h4>🧭 Respect the Bigger Trend</h4>
         <ul>
-          <li>Price repeatedly touching one band without reverting to the middle band signals sustained trend strength.</li>
+          <li>Confluence signals working with the broader trend are historically more reliable than ones fighting against it.</li>
         </ul>
       </div>
     </div>
 
     <div class="fine-print">
-      <b>Worth knowing:</b> Bollinger Bands describe how much price has recently moved, not which direction it will move next. A squeeze flags rising odds of a breakout, but the breakout can go either way — pair it with trend and momentum tools rather than trading it alone.
+      <b>Worth knowing:</b> confluence is a way to filter out noise, not a guarantee. Even a strong multi-signal setup can fail — always pair it with sensible position sizing and a risk management plan rather than treating any signal, however well-confirmed, as a certainty.
     </div>
   </div>
 </section>
@@ -216,38 +223,30 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section alt-bg">
   <div class="content-inner reveal">
     <div class="section-eyebrow">Activity</div>
-    <h2 class="section-title">Try It Yourself: Band Calculator</h2>
-    <p class="section-desc">Enter the 20-period moving average and the standard deviation of recent price — see the resulting upper and lower bands, and where the current price sits.</p>
+    <h2 class="section-title">Try It Yourself: Confluence Checker</h2>
+    <p class="section-desc">Tick which signals are currently true for a setup you're looking at — see how many independent confirmations you have.</p>
 
     <div class="calc-box">
       <div class="preset-row">
-        <button class="preset-btn" onclick="loadBbPreset('squeeze')">Load Tight Squeeze Example</button>
-        <button class="preset-btn" onclick="loadBbPreset('wide')">Load Wide/Volatile Example</button>
+        <button class="preset-btn" onclick="loadConfluencePreset('strong')">Load Strong Confluence Example</button>
+        <button class="preset-btn" onclick="loadConfluencePreset('weak')">Load Weak/Mixed Example</button>
+        <button class="preset-btn" onclick="loadConfluencePreset('clear')">Clear All</button>
       </div>
-      <div class="calc-grid">
-        <div class="calc-field">
-          <label for="bbSma">20-period moving average ($)</label>
-          <input type="number" id="bbSma" value="100" step="0.01">
-        </div>
-        <div class="calc-field">
-          <label for="bbStdev">Standard deviation ($)</label>
-          <input type="number" id="bbStdev" value="1.5" step="0.01">
-        </div>
-        <div class="calc-field">
-          <label for="bbPrice">Current price ($)</label>
-          <input type="number" id="bbPrice" value="102.5" step="0.01">
-        </div>
+      <div class="confluence-check-grid" id="confluenceChecks">
+        <div class="confluence-check"><input type="checkbox" id="cf1"><label for="cf1">RSI is oversold (&lt;30) and turning back up</label></div>
+        <div class="confluence-check"><input type="checkbox" id="cf2"><label for="cf2">MACD just made a bullish crossover</label></div>
+        <div class="confluence-check"><input type="checkbox" id="cf3"><label for="cf3">Price is sitting at a known support level</label></div>
+        <div class="confluence-check"><input type="checkbox" id="cf4"><label for="cf4">Volume is picking up on the move</label></div>
+        <div class="confluence-check"><input type="checkbox" id="cf5"><label for="cf5">The broader trend is up, or at least not clearly down</label></div>
+        <div class="confluence-check"><input type="checkbox" id="cf6"><label for="cf6">Bollinger Bands are squeezing (a move may be building)</label></div>
       </div>
       <div style="text-align:center;">
-        <button class="calc-btn" onclick="calcBands()">Calculate Bands →</button>
+        <button class="calc-btn" onclick="checkConfluence()">Check Confluence Score →</button>
       </div>
 
-      <div class="calc-results visible" id="bbResults">
-        <div class="builder-stage">
-          <svg viewBox="0 0 520 120" id="bbSvg" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <div class="calc-callout" id="bbCallout"></div>
-        <p class="calc-note">Model: upper band = SMA + (2 × standard deviation); lower band = SMA − (2 × standard deviation). Bandwidth = (upper − lower) / SMA, a simple way to compare how tight or wide the bands are relative to price.</p>
+      <div class="calc-results visible" id="confluenceResults">
+        <div class="calc-callout" id="confluenceCallout"></div>
+        <p class="calc-note">Model: this is a simple count of independent, unrelated confirmations — not a formula any professional platform uses internally. It's here to build the habit of counting confirmations before treating a setup as strong, not to produce a precise score.</p>
       </div>
     </div>
   </div>
@@ -266,59 +265,59 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     </div>
 
     <div class="quiz-list" id="quizList">
-      <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">1. What do Bollinger Bands primarily measure?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q1" value="0"> The company's dividend yield</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="1"> Volatility — how much price has recently moved</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Trading volume</label>
-          <label class="quiz-opt"><input type="radio" name="q1" value="3"> Momentum direction</label>
-        </div>
-        <div class="quiz-explain">Bollinger Bands are built from standard deviation, a measure of volatility — not momentum or direction like RSI or MACD.</div>
-      </div>
-
       <div class="quiz-q" data-correct="2">
-        <div class="quiz-q-title">2. What does a "squeeze" (bands pulled tight together) suggest?</div>
+        <div class="quiz-q-title">1. What does "confluence" mean in technical analysis?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q2" value="0"> The stock is about to be delisted</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Trading has been halted</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Volatility has compressed, and a significant move may be building</label>
-          <label class="quiz-opt"><input type="radio" name="q2" value="3"> The company just paid a dividend</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="0"> Using only one indicator at a time</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="1"> A type of candlestick pattern</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="2"> Multiple independent signals lining up and pointing the same way at once</label>
+          <label class="quiz-opt"><input type="radio" name="q1" value="3"> A company's earnings report</label>
         </div>
-        <div class="quiz-explain">A squeeze reflects compressed volatility, historically often followed by an expansion — though it doesn't say which direction.</div>
+        <div class="quiz-explain">Confluence is waiting until two or three independent tools agree before treating a setup as worth acting on.</div>
       </div>
 
       <div class="quiz-q" data-correct="3">
-        <div class="quiz-q-title">3. If price is riding along the upper band during a strong uptrend, does that automatically mean it's overbought and about to reverse?</div>
+        <div class="quiz-q-title">2. Why is "independence" between signals more important than the raw number of signals?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Yes, always — price must revert to the middle band immediately</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Yes, because bands can never be touched</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="2"> No, because Bollinger Bands don't exist in uptrends</label>
-          <label class="quiz-opt"><input type="radio" name="q3" value="3"> No — in a strong trend, price can "walk the band" for an extended stretch without reversing</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="0"> It isn't — more signals of any kind is always better</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="1"> Independence has no effect on signal quality</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="2"> Only price-based signals count as real signals</label>
+          <label class="quiz-opt"><input type="radio" name="q2" value="3"> Several similar momentum tools agreeing is weaker evidence than different categories (momentum, volatility, price level) agreeing</label>
         </div>
-        <div class="quiz-explain">Unlike RSI's overbought reading, touching a Bollinger Band isn't automatically a reversal signal — strong trends can ride a band for a long time.</div>
-      </div>
-
-      <div class="quiz-q" data-correct="0">
-        <div class="quiz-q-title">4. With a 20-period SMA of $100 and a standard deviation of $1.5, what is the upper band (SMA + 2×stdev)?</div>
-        <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q4" value="0"> $103.00</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="1"> $101.50</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="2"> $100.00</label>
-          <label class="quiz-opt"><input type="radio" name="q4" value="3"> $97.00</label>
-        </div>
-        <div class="quiz-explain">Upper band = $100 + (2 × $1.5) = $100 + $3 = $103.00.</div>
+        <div class="quiz-explain">Three momentum indicators tend to move together anyway, so their agreement adds less real confirmation than genuinely different types of tools agreeing.</div>
       </div>
 
       <div class="quiz-q" data-correct="1">
-        <div class="quiz-q-title">5. Why is it useful to combine Bollinger Bands with a momentum tool like RSI or MACD?</div>
+        <div class="quiz-q-title">3. Why shouldn't you demand every possible indicator agree before acting on anything?</div>
         <div class="quiz-opts">
-          <label class="quiz-opt"><input type="radio" name="q5" value="0"> It isn't useful, they measure the exact same thing</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Bands show how much price is moving, while RSI/MACD help judge whether that move looks stretched</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="2"> Combining indicators is against exchange rules</label>
-          <label class="quiz-opt"><input type="radio" name="q5" value="3"> RSI and MACD replace the need for price data entirely</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="0"> Indicators are never useful, so it doesn't matter</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="1"> Perfect agreement across every tool is rare, so you'd end up acting on almost nothing</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="2"> It's against exchange rules to check more than one indicator</label>
+          <label class="quiz-opt"><input type="radio" name="q3" value="3"> All indicators always agree anyway, so checking is pointless</label>
         </div>
-        <div class="quiz-explain">Bands measure volatility (how much), while RSI/MACD measure momentum (how stretched) — together they give a fuller picture than either alone.</div>
+        <div class="quiz-explain">Demanding total agreement across many tools is an unrealistically high bar — two or three solid, independent confirmations is a more practical standard.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="0">
+        <div class="quiz-q-title">4. Does confluence guarantee a signal will play out correctly?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q4" value="0"> No — it lowers the odds of reacting to noise, but it's not a guarantee</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="1"> Yes, three aligned signals always play out correctly</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="2"> Yes, but only on Fridays</label>
+          <label class="quiz-opt"><input type="radio" name="q4" value="3"> Confluence has nothing to do with signal reliability</label>
+        </div>
+        <div class="quiz-explain">Confluence shifts the odds in your favor by filtering out noise — it never eliminates the possibility of being wrong.</div>
+      </div>
+
+      <div class="quiz-q" data-correct="2">
+        <div class="quiz-q-title">5. If RSI says oversold but the broader trend and volume both suggest price is still falling, what should you take from that?</div>
+        <div class="quiz-opts">
+          <label class="quiz-opt"><input type="radio" name="q5" value="0"> Always trust RSI over every other tool</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="1"> Ignore the disagreement entirely and act on RSI alone</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="2"> The disagreement itself is useful information — this is a weaker, less confirmed setup</label>
+          <label class="quiz-opt"><input type="radio" name="q5" value="3"> RSI is broken and should never be used again</label>
+        </div>
+        <div class="quiz-explain">Contradicting signals are information too — when tools disagree, that's a sign to treat the setup with more caution, not to pick a favorite and ignore the rest.</div>
       </div>
     </div>
 
@@ -335,22 +334,22 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h2 class="section-title" style="text-align:center;">Take This Lesson Offline</h2>
     <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Print-friendly resources to revisit, practice, and dig deeper — no login required.</p>
     <div class="dl-grid">
-      <a href="/static/downloads/bollinger-bands-explainer.pdf" class="dl-card" download>
+      <a href="/static/downloads/confluence-explainer.pdf" class="dl-card" download>
         <div class="dl-icon">📄</div>
         <div class="dl-title">A4 Lesson Explainer</div>
-        <div class="dl-desc">A printable summary of this whole lesson, with a labelled squeeze-then-expansion chart diagram, and the quiz with an answer key.</div>
+        <div class="dl-desc">A printable summary of this whole lesson, with a labelled three-signals-aligning chart diagram, and the quiz with an answer key.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/bollinger-bands-worksheet.pdf" class="dl-card" download>
+      <a href="/static/downloads/confluence-worksheet.pdf" class="dl-card" download>
         <div class="dl-icon">✏️</div>
         <div class="dl-title">Practice Worksheet</div>
-        <div class="dl-desc">Guided, fill-in-the-blank exercises to calculate bands yourself and spot a squeeze on a real chart.</div>
+        <div class="dl-desc">Guided exercises to score confluence on a real chart using everything from this track.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
-      <a href="/static/downloads/bollinger-bands-further-reading.pdf" class="dl-card" download>
+      <a href="/static/downloads/confluence-further-reading.pdf" class="dl-card" download>
         <div class="dl-icon">🔗</div>
         <div class="dl-title">Further Reading</div>
-        <div class="dl-desc">A short list of reputable, free resources if you want to explore Bollinger Bands in more depth.</div>
+        <div class="dl-desc">A short list of reputable, free resources if you want to explore combining indicators in more depth.</div>
         <div class="dl-link">Download PDF ↓</div>
       </a>
     </div>
@@ -359,20 +358,20 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <section class="content-section">
   <div class="content-inner reveal">
-    <h2 class="section-title" style="text-align:center;">Next Up: Stacking Indicators for Confluence</h2>
-    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">Now that you know four indicators, the final step is combining them so you only act when they agree.</p>
+    <h2 class="section-title" style="text-align:center;">Technical Analysis Track Complete</h2>
+    <p class="section-desc" style="text-align:center;margin-left:auto;margin-right:auto;">You've covered chart patterns, RSI, MACD, Bollinger Bands, and how to combine them. Explore the rest of the Intermediate track next.</p>
     <div class="cta-grid">
-      <a href="/learn/intermediate/macd" class="hub-card">
-        <div class="card-icon">📊</div>
-        <div class="card-title">Back to MACD</div>
-        <div class="card-desc">Review reading momentum and trend shifts.</div>
+      <a href="/learn/intermediate/bollinger-bands" class="hub-card">
+        <div class="card-icon">🎢</div>
+        <div class="card-title">Back to Bollinger Bands</div>
+        <div class="card-desc">Review measuring volatility in real time.</div>
         <div class="card-link">Back to previous lesson →</div>
       </a>
-      <a href="/learn/intermediate/confluence" class="hub-card">
-        <div class="card-icon">🔗</div>
-        <div class="card-title">Continue to Confluence</div>
-        <div class="card-desc">Filter out false signals by demanding agreement.</div>
-        <div class="card-link">Open the lesson →</div>
+      <a href="/learn/intermediate#tab-picking" class="hub-card">
+        <div class="card-icon">🧾</div>
+        <div class="card-title">Continue to Stock Picking</div>
+        <div class="card-desc">Move beyond the ticker symbol into reading company fundamentals.</div>
+        <div class="card-link">Explore the next section →</div>
       </a>
     </div>
   </div>
@@ -404,53 +403,31 @@ const io = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
 
-const BB_PRESETS = {
-  squeeze: { sma: 100, stdev: 0.4, price: 100.2 },
-  wide: { sma: 100, stdev: 4.5, price: 108 },
-};
-function loadBbPreset(kind) {
-  const p = BB_PRESETS[kind];
-  document.getElementById('bbSma').value = p.sma;
-  document.getElementById('bbStdev').value = p.stdev;
-  document.getElementById('bbPrice').value = p.price;
-  calcBands();
+function loadConfluencePreset(kind) {
+  const ids = ['cf1', 'cf2', 'cf3', 'cf4', 'cf5', 'cf6'];
+  const patterns = {
+    strong: [true, true, true, true, true, false],
+    weak: [true, false, false, true, false, false],
+    clear: [false, false, false, false, false, false],
+  };
+  ids.forEach((id, i) => { document.getElementById(id).checked = patterns[kind][i]; });
+  checkConfluence();
 }
 
-function calcBands() {
-  const sma = parseFloat(document.getElementById('bbSma').value);
-  const stdev = parseFloat(document.getElementById('bbStdev').value);
-  const price = parseFloat(document.getElementById('bbPrice').value);
-  if ([sma, stdev, price].some(isNaN) || stdev < 0) { alert('Please enter valid values (standard deviation must be non-negative).'); return; }
-
-  const upper = sma + 2 * stdev;
-  const lower = sma - 2 * stdev;
-  const bandwidth = sma !== 0 ? ((upper - lower) / sma) * 100 : 0;
+function checkConfluence() {
+  const ids = ['cf1', 'cf2', 'cf3', 'cf4', 'cf5', 'cf6'];
+  const checked = ids.filter(id => document.getElementById(id).checked);
+  const count = checked.length;
 
   let verdict, color, desc;
-  if (price >= upper) { verdict = 'At/Above Upper Band'; color = '#f87171'; desc = `Price ($${price.toFixed(2)}) is at or above the upper band ($${upper.toFixed(2)}) — a strong move, but not automatically a reversal signal in a trending market.`; }
-  else if (price <= lower) { verdict = 'At/Below Lower Band'; color = '#4ade80'; desc = `Price ($${price.toFixed(2)}) is at or below the lower band ($${lower.toFixed(2)}) — a strong downside move, but not automatically a bounce signal in a downtrend.`; }
-  else { verdict = 'Inside the Bands'; color = '#8892b0'; desc = `Price ($${price.toFixed(2)}) sits between the bands ($${lower.toFixed(2)} - $${upper.toFixed(2)}) — a normal reading, nothing stretched right now.`; }
+  if (count >= 4) { verdict = 'Strong Confluence'; color = '#4ade80'; desc = `${count} independent signals are lining up — this is the kind of multi-confirmed setup confluence is looking for. Still not a guarantee, but a well-supported case.`; }
+  else if (count >= 2) { verdict = 'Moderate Confluence'; color = '#eab308'; desc = `${count} signals agree — a reasonable amount of confirmation, but consider what's still missing before treating this as a strong setup.`; }
+  else if (count === 1) { verdict = 'Weak — Single Signal'; color = '#f87171'; desc = `Only 1 signal is present. Acting on a single indicator alone is exactly what confluence is designed to guard against.`; }
+  else { verdict = 'No Confirmation Yet'; color = '#8892b0'; desc = `No boxes checked — there's nothing here yet to build a confluence case around.`; }
 
-  const bwNote = bandwidth < 3 ? ' Bandwidth is quite tight — this looks like a squeeze.' : bandwidth > 8 ? ' Bandwidth is quite wide — volatility is elevated right now.' : '';
-
-  const vals = [lower, sma, upper, price];
-  const min = Math.min(...vals) - 1, max = Math.max(...vals) + 1;
-  const yFor = v => 100 - ((v - min) / (max - min)) * 80;
-
-  const svg = document.getElementById('bbSvg');
-  svg.innerHTML =
-    `<line x1="20" y1="${yFor(upper)}" x2="440" y2="${yFor(upper)}" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 3"/>` +
-    `<text x="444" y="${yFor(upper)+3}" font-size="9" fill="#a855f7" font-family="Helvetica">upper $${upper.toFixed(2)}</text>` +
-    `<line x1="20" y1="${yFor(sma)}" x2="440" y2="${yFor(sma)}" stroke="#8892b0" stroke-width="1.2" stroke-dasharray="2 3"/>` +
-    `<text x="444" y="${yFor(sma)+3}" font-size="9" fill="#8892b0" font-family="Helvetica">SMA $${sma.toFixed(2)}</text>` +
-    `<line x1="20" y1="${yFor(lower)}" x2="440" y2="${yFor(lower)}" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4 3"/>` +
-    `<text x="444" y="${yFor(lower)+3}" font-size="9" fill="#a855f7" font-family="Helvetica">lower $${lower.toFixed(2)}</text>` +
-    `<circle cx="230" cy="${yFor(price)}" r="6" fill="${color}"/>` +
-    `<text x="230" y="${yFor(price)-10}" font-size="10" font-weight="bold" fill="${color}" text-anchor="middle" font-family="Helvetica">$${price.toFixed(2)}</text>`;
-
-  document.getElementById('bbCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict}</span>${desc}${bwNote} Bandwidth: ${bandwidth.toFixed(1)}%.`;
+  document.getElementById('confluenceCallout').innerHTML = `<span class="verdict" style="color:${color};">${verdict} (${count}/6)</span>${desc}`;
 }
-calcBands();
+checkConfluence();
 
 function checkQuiz() {
   const questions = document.querySelectorAll('.quiz-q');
