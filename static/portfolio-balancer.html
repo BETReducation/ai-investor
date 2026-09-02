@@ -496,6 +496,7 @@ const INV_COLORS = ['#00c87a','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4',
 
 let investments  = [];
 let expandedInv  = {};
+let editingInv   = {};
 let nextInvId    = 1;
 let evtLog       = [];
 let pieChart     = null;
@@ -730,6 +731,27 @@ function toggleInv(id) {
   renderList();
 }
 
+function toggleEditInv(id, ev) {
+  if (ev) ev.stopPropagation();
+  editingInv[id] = !editingInv[id];
+  if (editingInv[id]) expandedInv[id] = true;
+  renderList();
+}
+
+function saveEditInv(id, ev) {
+  if (ev) ev.stopPropagation();
+  const inv = investments.find(i => i.id === id);
+  if (!inv) return;
+  const nameEl = document.getElementById(`editName-${id}`);
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+  inv.name = name;
+  inv.details = document.getElementById(`editDetails-${id}`).value.trim();
+  editingInv[id] = false;
+  save();
+  renderAll();
+}
+
 function addFundsTo(id) {
   const input = document.getElementById(`addFunds-${id}`);
   const amt = parseFloat(input.value);
@@ -814,6 +836,7 @@ function investmentCard(inv, idx) {
   const { invested, gain, pct } = gainOf(inv);
   const color = colorFor(idx);
   const open = !!expandedInv[inv.id];
+  const editing = !!editingInv[inv.id];
   const trendCls = gain > 0 ? 'up' : gain < 0 ? 'dn' : 'fl';
 
   const historyRows = inv.history.length
@@ -830,14 +853,20 @@ function investmentCard(inv, idx) {
     <div class="inv-hdr" onclick="toggleInv(${inv.id})">
       <div class="inv-dot" style="background:${color};"></div>
       <div class="inv-info">
+        ${editing ? `
+        <input type="text" id="editName-${inv.id}" value="${escapeHtml(inv.name)}" maxlength="60" onclick="event.stopPropagation()" style="width:100%;background:var(--bg-primary);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;padding:3px 5px;border-radius:3px;margin-bottom:3px;">
+        <input type="text" id="editDetails-${inv.id}" value="${escapeHtml(inv.details)}" maxlength="200" onclick="event.stopPropagation()" placeholder="Notes about this investment…" style="width:100%;background:var(--bg-primary);border:1px solid var(--border);color:var(--text-secondary);font-size:9px;padding:3px 5px;border-radius:3px;">
+        ` : `
         <div class="inv-name">${escapeHtml(inv.name)}</div>
         <div class="inv-sub">${escapeHtml(inv.details || 'No details added')}</div>
+        `}
       </div>
       <div class="inv-val">
         <div class="inv-val-num">${fmt(inv.currentValue)}</div>
         <div class="inv-val-pct ${trendCls}">${fmtGain(gain)} · ${fmtP(pct)}</div>
         ${stalenessBadge(inv)}
       </div>
+      <button onclick="event.stopPropagation();${editing ? `saveEditInv(${inv.id})` : `toggleEditInv(${inv.id})`}" title="${editing ? 'Save' : 'Rename / edit details'}" style="flex-shrink:0;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:3px;padding:3px 6px;font-size:9px;cursor:pointer;margin-left:4px;">${editing ? '✓ SAVE' : '✎'}</button>
       <svg class="inv-chev ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="inv-body ${open ? 'open' : ''}">
