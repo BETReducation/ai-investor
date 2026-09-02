@@ -330,7 +330,14 @@ window.addEventListener('resize', () => {
   <div class="pb-eyebrow">PORTFOLIO BALANCER</div>
   <div class="pb-title">PORTFOLIO BALANCER</div>
   <div class="pb-desc">Add every investment you hold — savings, stocks, crypto, property, anything — then keep it up to date as its value changes. See your total balance, your overall gain or loss, and how your money is spread out, all in one place.</div>
-  <div class="pb-badges" id="heroBadges"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="pb-badges" id="heroBadges"></div>
+    <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;">
+      DISPLAY CURRENCY
+      <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+    </label>
+  </div>
+  <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin-top:6px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;max-width:800px;"></div>
 </div>
 
 <!-- MAIN GRID -->
@@ -696,9 +703,38 @@ function gainOf(inv) {
 function totalPortfolio() { return investments.reduce((s, i) => s + i.currentValue, 0); }
 function totalInvested()  { return investments.reduce((s, i) => s + investedTotal(i), 0); }
 
-function fmt(n)       { return (n < 0 ? '−£' : '£') + Math.abs(n).toLocaleString('en-GB', {maximumFractionDigits:0}); }
+/* ══ DISPLAY CURRENCY (session-only, static rates) ════════════════════════════
+   Everything is entered and stored in GBP (£) — this only converts what's
+   shown on screen, for this browser tab, using a fixed approximate rate.
+   It resets to GBP on reload and is never saved, same as the inflation
+   toggle. Not live FX — real-time rates would fight the tool's "no live
+   prices" promise, so this is an illustrative snapshot like everything else. */
+const CURRENCY_RATES = {
+  GBP: { label: 'GBP — British Pound',    symbol: '£',  rate: 1 },
+  USD: { label: 'USD — US Dollar',        symbol: '$',  rate: 1.27 },
+  EUR: { label: 'EUR — Euro',             symbol: '€',  rate: 1.17 },
+  VND: { label: 'VND — Vietnamese Dong',  symbol: '₫',  rate: 31500 },
+  CNY: { label: 'CNY — Chinese Yuan',     symbol: '¥',  rate: 9.15 },
+  JPY: { label: 'JPY — Japanese Yen',     symbol: '¥',  rate: 188 },
+  KRW: { label: 'KRW — South Korean Won', symbol: '₩',  rate: 1730 },
+};
+function initCurrencyDropdown() {
+  const sel = document.getElementById('displayCurrency');
+  sel.innerHTML = Object.entries(CURRENCY_RATES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  sel.value = 'GBP';
+}
+function activeCurrency() { return CURRENCY_RATES[document.getElementById('displayCurrency')?.value] || CURRENCY_RATES.GBP; }
+function renderCurrencyNote() {
+  const note = document.getElementById('currencyNote');
+  if (!note) return;
+  const ccy = activeCurrency();
+  if (ccy === CURRENCY_RATES.GBP) { note.style.display = 'none'; return; }
+  note.style.display = 'block';
+  note.innerHTML = `Showing values converted to ${ccy.label} at a fixed illustrative rate (£1 ≈ ${ccy.symbol}${ccy.rate.toLocaleString('en-GB')}), not a live exchange rate. Everything is still stored in GBP — this only changes what's displayed in this browser tab, and resets to GBP next time you load the page.`;
+}
+function fmt(n)       { const c = activeCurrency(); const v = Math.abs(n) * c.rate; return (n < 0 ? `−${c.symbol}` : c.symbol) + v.toLocaleString('en-GB', {maximumFractionDigits: c.rate >= 100 ? 0 : (c.rate === 1 ? 0 : 2)}); }
 function fmtP(p, d=2) { return (p >= 0 ? '+' : '') + p.toFixed(d) + '%'; }
-function fmtGain(n)   { return (n >= 0 ? '+' : '−') + '£' + Math.abs(n).toLocaleString('en-GB', {maximumFractionDigits:0}); }
+function fmtGain(n)   { const c = activeCurrency(); const v = Math.abs(n) * c.rate; return (n >= 0 ? '+' : '−') + c.symbol + v.toLocaleString('en-GB', {maximumFractionDigits: c.rate >= 100 ? 0 : (c.rate === 1 ? 0 : 2)}); }
 function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}); }
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -987,6 +1023,7 @@ function renderStatBox() {
 }
 
 function renderAll() {
+  renderCurrencyNote();
   renderHero();
   renderList();
   renderChart();
@@ -1035,6 +1072,7 @@ function initChart() {
 /* ══ INIT ════════════════════════════════════════════════════════════════════ */
 if (!load()) seedDemo();
 initInflationDropdown();
+initCurrencyDropdown();
 initChart();
 renderAll();
 addEvt('READY', 'Portfolio Balancer loaded — add, update or remove investments any time.');
