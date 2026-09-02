@@ -1025,6 +1025,17 @@ initChart();
 renderAll();
 addEvt('READY', 'Portfolio Balancer loaded — add, update or remove investments any time.');
 initPortfolioPersistence();
+
+/* The disclaimer bar is fixed to the viewport bottom and can grow taller
+   (extra sync-status line, wrapping on narrow screens), which otherwise
+   covers the footer beneath it — nothing reserves that space. Reserve it. */
+function reserveDisclaimerSpace() {
+  const bar = document.querySelector('.disclaimer-bar');
+  if (bar) document.body.style.paddingBottom = bar.offsetHeight + 'px';
+}
+reserveDisclaimerSpace();
+window.addEventListener('resize', reserveDisclaimerSpace);
+new MutationObserver(reserveDisclaimerSpace).observe(document.getElementById('pbSyncStatus'), { childList: true, characterData: true, subtree: true });
 </script>
 </body>
 </html>
