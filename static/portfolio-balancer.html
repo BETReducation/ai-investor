@@ -375,6 +375,10 @@ window.addEventListener('resize', () => {
     </div>
 
     <div id="invList"></div>
+
+    <div style="text-align:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+      <a href="javascript:void(0)" onclick="exportPortfolioHistory()" style="font-size:9px;color:var(--accent-green);text-decoration:underline;font-weight:700;letter-spacing:0.5px;">⬇ DOWNLOAD PORTFOLIO HISTORY (CSV)</a>
+    </div>
   </div>
 
   <!-- CENTER: Chart + allocation table -->
@@ -893,6 +897,34 @@ function removeInvestment(id) {
   save();
   addEvt('INVESTMENT REMOVED', `${inv.name} removed`);
   renderAll();
+}
+
+function csvCell(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function exportPortfolioHistory() {
+  if (!investments.length) { alert('No investments to export yet.'); return; }
+  const rows = [['Investment', 'Details', 'Event Date', 'Event Type', 'Amount (GBP)', 'Target Allocation %']];
+  investments.forEach(inv => {
+    const base = [inv.name, inv.details || '', fmtDate(inv.createdAt), 'INVESTMENT ADDED', inv.initialValue, inv.targetPct ?? ''];
+    rows.push(base);
+    inv.history.forEach(h => {
+      const type = h.type === 'contribution' ? 'TOP-UP' : h.type === 'reset' ? 'GAIN/LOSS RESET' : 'VALUE UPDATE';
+      rows.push([inv.name, inv.details || '', fmtDate(h.date), type, h.amount, inv.targetPct ?? '']);
+    });
+  });
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `portfolio-history-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  addEvt('EXPORTED', 'Portfolio history downloaded as CSV');
 }
 
 /* ══ RENDER ══════════════════════════════════════════════════════════════════ */
