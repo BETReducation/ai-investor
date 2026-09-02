@@ -756,6 +756,17 @@ function updateValueOf(id) {
   renderAll();
 }
 
+function resetGainOf(id) {
+  const inv = investments.find(i => i.id === id);
+  if (!inv) return;
+  if (!confirm(`Reset gain/loss tracking for "${inv.name}"?\n\nThis sets today's value (${fmt(inv.currentValue)}) as the new baseline, so gain/loss starts from zero again. Use this after moving money between investments (rebalancing) so the shuffle doesn't show as a fake loss or gain. Your value and history stay — only the baseline moves.`)) return;
+  inv.initialValue = inv.currentValue;
+  inv.history = [{ date: new Date().toISOString(), type: 'reset', amount: inv.currentValue }]; // past top-ups/reprices are already baked into currentValue — clear so they aren't double-counted
+  save();
+  addEvt('BASELINE RESET', `${inv.name} gain/loss baseline reset to ${fmt(inv.currentValue)}`);
+  renderAll();
+}
+
 function updateTargetOf(id) {
   const input = document.getElementById(`target-${id}`);
   const raw = input.value.trim();
@@ -807,8 +818,8 @@ function investmentCard(inv, idx) {
     ? inv.history.slice().reverse().map(h => `
         <div class="inv-hist-row">
           <span class="inv-hist-time">${fmtDate(h.date)}</span>
-          <span class="inv-hist-tag" style="color:${h.type === 'contribution' ? 'var(--accent-green)' : 'var(--accent-cyan)'};">${h.type === 'contribution' ? 'TOP-UP' : 'VALUE UPDATE'}</span>
-          <span class="inv-hist-msg">${h.type === 'contribution' ? fmtGain(h.amount) : fmt(h.amount) + ' current value'}</span>
+          <span class="inv-hist-tag" style="color:${h.type === 'contribution' ? 'var(--accent-green)' : h.type === 'reset' ? 'var(--text-muted)' : 'var(--accent-cyan)'};">${h.type === 'contribution' ? 'TOP-UP' : h.type === 'reset' ? 'BASELINE RESET' : 'VALUE UPDATE'}</span>
+          <span class="inv-hist-msg">${h.type === 'contribution' ? fmtGain(h.amount) : fmt(h.amount) + (h.type === 'reset' ? ' new baseline' : ' current value')}</span>
         </div>`).join('')
     : `<div style="font-size:8px;color:var(--text-muted);padding:3px 0;">No updates yet — added ${fmtDate(inv.createdAt)}</div>`;
 
@@ -831,10 +842,10 @@ function investmentCard(inv, idx) {
       <div class="inv-detail-row"><span>Initial value</span><span>${fmt(inv.initialValue)}</span></div>
       <div class="inv-detail-row"><span>Total invested (incl. top-ups)</span><span>${fmt(invested)}</span></div>
       <div class="inv-detail-row"><span>Current value</span><span>${fmt(inv.currentValue)}</span></div>
-      <div class="inv-detail-row ${trendCls}"><span>Gain / loss since initial</span><span>${fmtGain(gain)} (${fmtP(pct)})</span></div>
+      <div class="inv-detail-row ${trendCls}"><span>Gain / loss since initial</span><span>${fmtGain(gain)} (${fmtP(pct)}) <a href="javascript:void(0)" onclick="event.stopPropagation();resetGainOf(${inv.id})" style="font-size:7px;color:var(--text-muted);text-decoration:underline;margin-left:4px;">reset</a></span></div>
       <div class="inv-detail-row" style="border-bottom:none;"><span>Target allocation</span><span>${inv.targetPct != null ? inv.targetPct + '%' : '— (equal split)'}</span></div>
 
-      <div style="font-size:7px;color:var(--text-muted);line-height:1.5;margin:6px 0 4px;">Putting money in? Use Add Funds. Just re-pricing what it's worth today? Use Update Value — mixing these up fakes a gain/loss.</div>
+      <div style="font-size:7px;color:var(--text-muted);line-height:1.5;margin:6px 0 4px;">Putting money in? Use Add Funds. Just re-pricing what it's worth today? Use Update Value — mixing these up fakes a gain/loss. Just moved money between investments (rebalancing)? Use Update Value, then hit "reset" above so the shuffle doesn't show as a fake gain/loss.</div>
       <div class="inv-actions">
         <input type="number" min="0" step="1" placeholder="Add funds £" id="addFunds-${inv.id}">
         <button onclick="addFundsTo(${inv.id})">+ ADD FUNDS</button>
