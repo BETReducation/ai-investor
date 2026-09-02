@@ -3082,6 +3082,8 @@ def api_get_profile():
         "display_name":   profile.get("display_name", current_user.id),
         "bio":            profile.get("bio", ""),
         "investor_type":  profile.get("investor_type", "beginner"),
+        "preferred_currency": profile.get("preferred_currency", "GBP"),
+        "preferred_region":   profile.get("preferred_region", ""),
         "profile_picture": profile.get("profile_picture", ""),
         "landing_page":   profile.get("landing_page", "/"),
         "preferences":    user_data.get("preferences", {}),
@@ -3089,6 +3091,8 @@ def api_get_profile():
 
 
 PRESET_AVATARS = {"preset:beginner", "preset:intermediate", "preset:pro"}
+PREFERRED_CURRENCIES = {"GBP", "USD", "EUR", "JPY", "CAD", "AUD", "CHF"}
+PREFERRED_REGIONS = {"", "UK", "US", "Europe", "Asia-Pacific", "Emerging Markets", "Global"}
 
 
 @app.route("/api/profile/update", methods=["POST"])
@@ -3112,6 +3116,16 @@ def api_update_profile():
         if value not in LANDING_PAGE_CHOICES:
             return jsonify({"error": "Invalid landing page"}), 400
         profile["landing_page"] = value
+    if "preferred_currency" in data:
+        value = str(data["preferred_currency"]).strip().upper()
+        if value not in PREFERRED_CURRENCIES:
+            return jsonify({"error": "Invalid currency"}), 400
+        profile["preferred_currency"] = value
+    if "preferred_region" in data:
+        value = str(data["preferred_region"]).strip()
+        if value not in PREFERRED_REGIONS:
+            return jsonify({"error": "Invalid region"}), 400
+        profile["preferred_region"] = value
     users[current_user.id]["profile"] = profile
     _save_users(users)
     return jsonify({"success": True, "profile": profile})

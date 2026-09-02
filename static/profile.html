@@ -279,6 +279,30 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
               <option value="advanced">Advanced</option>
             </select>
           </div>
+          <div class="form-group">
+            <div class="form-label">Preferred Currency</div>
+            <select id="fieldPreferredCurrency" class="form-input">
+              <option value="GBP">GBP — British Pound</option>
+              <option value="USD">USD — US Dollar</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="JPY">JPY — Japanese Yen</option>
+              <option value="CAD">CAD — Canadian Dollar</option>
+              <option value="AUD">AUD — Australian Dollar</option>
+              <option value="CHF">CHF — Swiss Franc</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Preferred Region</div>
+            <select id="fieldPreferredRegion" class="form-input">
+              <option value="">No preference</option>
+              <option value="UK">UK</option>
+              <option value="US">US</option>
+              <option value="Europe">Europe</option>
+              <option value="Asia-Pacific">Asia-Pacific</option>
+              <option value="Emerging Markets">Emerging Markets</option>
+              <option value="Global">Global</option>
+            </select>
+          </div>
           <div class="form-group span2">
             <div class="form-label">Sign-In Destination</div>
             <select id="fieldLandingPage" class="form-input">
@@ -604,6 +628,8 @@ function populateProfile(data) {
   document.getElementById('fieldEmail').value       = data.email || '';
   document.getElementById('fieldBio').value         = data.bio || '';
   document.getElementById('fieldInvestorType').value = data.investor_type || 'beginner';
+  document.getElementById('fieldPreferredCurrency').value = data.preferred_currency || 'GBP';
+  document.getElementById('fieldPreferredRegion').value = data.preferred_region || '';
   document.getElementById('fieldLandingPage').value = data.landing_page || '/';
 
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
@@ -826,6 +852,8 @@ async function saveProfile() {
     email:         document.getElementById('fieldEmail').value.trim(),
     bio:           document.getElementById('fieldBio').value.trim(),
     investor_type: document.getElementById('fieldInvestorType').value,
+    preferred_currency: document.getElementById('fieldPreferredCurrency').value,
+    preferred_region:   document.getElementById('fieldPreferredRegion').value,
     landing_page:  document.getElementById('fieldLandingPage').value,
   };
 
