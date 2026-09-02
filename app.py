@@ -1268,6 +1268,52 @@ def _fetch_market_pulse_live() -> dict:
     return result
 
 
+# Powers the Portfolio Balancer's session-only "display currency" converter —
+# real GBP-cross rates via yfinance (already a dependency, no new API key), so
+# the on-screen conversion isn't a stale hand-typed table. Cached the same way
+# as market pulse: one Yahoo round trip per TTL window, not one per visitor.
+_FX_RATES_CODES = ["USD", "EUR", "VND", "CNY", "JPY", "KRW"]
+_FX_RATES_CACHE_TTL_SECONDS = 900  # 15 min — plenty fresh for a display-only conversion
+_fx_rates_cache: dict = {"at": 0.0, "data": None}
+_fx_rates_lock = threading.Lock()
+
+
+def _fetch_fx_rates_live() -> dict:
+    now = time.monotonic()
+    with _fx_rates_lock:
+        cached = _fx_rates_cache["data"]
+        if cached is not None and now - _fx_rates_cache["at"] < _FX_RATES_CACHE_TTL_SECONDS:
+            return cached
+
+    symbols = [f"GBP{code}=X" for code in _FX_RATES_CODES]
+    rates = {"GBP": 1.0}
+    try:
+        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+                           threads=True, auto_adjust=False, progress=False)
+        for code, symbol in zip(_FX_RATES_CODES, symbols):
+            try:
+                df = raw[symbol] if len(symbols) > 1 else raw
+                closes = df["Close"].dropna()
+                if closes.empty:
+                    continue
+                rates[code] = round(float(closes.iloc[-1]), 6)
+            except Exception:
+                continue  # this cross missing from the batch — falls back client-side
+    except Exception:
+        pass
+
+    result = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "base": "GBP", "rates": rates}
+    with _fx_rates_lock:
+        _fx_rates_cache["at"] = now
+        # Same stale-over-empty rule as market pulse — a bad Yahoo batch shouldn't
+        # blank out rates that were working a minute ago.
+        if len(rates) > 1 or _fx_rates_cache["data"] is None:
+            _fx_rates_cache["data"] = result
+        else:
+            result = _fx_rates_cache["data"]
+    return result
+
+
 # Powers the "gold-silver-ratio" data-viz page: a live gold:silver price ratio
 # animated as a tilting balance scale, plus a real historical-average reference
 # line (not the ~50:1 folklore number often quoted, but an actual mean computed
@@ -4020,6 +4066,11 @@ def api_dataviz_public_content(slug):
 @app.route("/api/dataviz/global-heat-map/live", methods=["GET"])
 def api_market_pulse_live():
     return jsonify(_fetch_market_pulse_live())
+
+
+@app.route("/api/fx-rates", methods=["GET"])
+def api_fx_rates():
+    return jsonify(_fetch_fx_rates_live())
 
 
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])

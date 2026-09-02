@@ -467,7 +467,7 @@ window.addEventListener('resize', () => {
   <div class="edu-card" style="border-color:rgba(255,180,0,.25);">
     <div class="edu-title" style="color:var(--accent-amber);">⚠ NO LIVE PRICES — READ BEFORE YOU RELY ON THIS</div>
     <div class="edu-body">
-      This tool never fetches real accounts, brokers or market prices. Every value shown is only as accurate as the last time <em>you</em> clicked "↻ UPDATE VALUE" on that investment — it will not move on its own.
+      This tool never fetches real accounts, brokers or market prices. Every investment value shown is only as accurate as the last time <em>you</em> clicked "↻ UPDATE VALUE" on it — it will not move on its own. (The one exception is the display-currency dropdown above, which does use a real, regularly-refreshed exchange rate purely to convert what's shown on screen — it never changes your stored investment values.)
       <br><br>
       Use "+ ADD FUNDS" only for money you're putting in; use "↻ UPDATE VALUE" to reprice what something is worth today. Mixing the two up will show a fake gain or loss. Just moved money between investments (rebalancing)? Use Update Value, then hit "reset" on that card so the shuffle doesn't show as a fake gain/loss either.
       <br><br>
@@ -703,12 +703,12 @@ function gainOf(inv) {
 function totalPortfolio() { return investments.reduce((s, i) => s + i.currentValue, 0); }
 function totalInvested()  { return investments.reduce((s, i) => s + investedTotal(i), 0); }
 
-/* ══ DISPLAY CURRENCY (session-only, static rates) ════════════════════════════
+/* ══ DISPLAY CURRENCY (session-only) ══════════════════════════════════════════
    Everything is entered and stored in GBP (£) — this only converts what's
-   shown on screen, for this browser tab, using a fixed approximate rate.
-   It resets to GBP on reload and is never saved, same as the inflation
-   toggle. Not live FX — real-time rates would fight the tool's "no live
-   prices" promise, so this is an illustrative snapshot like everything else. */
+   shown on screen, for this browser tab. It resets to GBP on reload and is
+   never saved, same as the inflation toggle. Rates come from /api/fx-rates
+   (real GBP crosses via yfinance, cached server-side ~15min) when reachable;
+   the numbers below are only the offline fallback if that fetch fails. */
 const CURRENCY_RATES = {
   GBP: { label: 'GBP — British Pound',    symbol: '£',  rate: 1 },
   USD: { label: 'USD — US Dollar',        symbol: '$',  rate: 1.27 },
@@ -718,10 +718,25 @@ const CURRENCY_RATES = {
   JPY: { label: 'JPY — Japanese Yen',     symbol: '¥',  rate: 188 },
   KRW: { label: 'KRW — South Korean Won', symbol: '₩',  rate: 1730 },
 };
+let fxRatesLive = false;   // true once /api/fx-rates has answered successfully
+let fxRatesAt   = null;    // ISO timestamp the live rates were computed at
 function initCurrencyDropdown() {
   const sel = document.getElementById('displayCurrency');
   sel.innerHTML = Object.entries(CURRENCY_RATES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
   sel.value = 'GBP';
+}
+async function loadLiveFxRates() {
+  try {
+    const res = await fetch('/api/fx-rates');
+    if (!res.ok) return;
+    const data = await res.json();
+    Object.entries(data.rates || {}).forEach(([code, rate]) => {
+      if (CURRENCY_RATES[code] && rate) CURRENCY_RATES[code].rate = rate;
+    });
+    fxRatesLive = true;
+    fxRatesAt = data.updated_at || null;
+    renderAll();
+  } catch (e) { /* keep the static fallback rates */ }
 }
 function activeCurrency() { return CURRENCY_RATES[document.getElementById('displayCurrency')?.value] || CURRENCY_RATES.GBP; }
 function renderCurrencyNote() {
@@ -730,7 +745,11 @@ function renderCurrencyNote() {
   const ccy = activeCurrency();
   if (ccy === CURRENCY_RATES.GBP) { note.style.display = 'none'; return; }
   note.style.display = 'block';
-  note.innerHTML = `Showing values converted to ${ccy.label} at a fixed illustrative rate (£1 ≈ ${ccy.symbol}${ccy.rate.toLocaleString('en-GB')}), not a live exchange rate. Everything is still stored in GBP — this only changes what's displayed in this browser tab, and resets to GBP next time you load the page.`;
+  const rateDesc = `£1 ≈ ${ccy.symbol}${ccy.rate.toLocaleString('en-GB')}`;
+  const source = fxRatesLive
+    ? `a real exchange rate${fxRatesAt ? ` as of ${new Date(fxRatesAt).toLocaleString('en-GB', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}` : ''}`
+    : 'a fixed illustrative rate (live rate unavailable right now)';
+  note.innerHTML = `Showing values converted to ${ccy.label} at ${rateDesc} — ${source}. Everything is still stored in GBP — this only changes what's displayed in this browser tab, and resets to GBP next time you load the page.`;
 }
 function fmt(n)       { const c = activeCurrency(); const v = Math.abs(n) * c.rate; return (n < 0 ? `−${c.symbol}` : c.symbol) + v.toLocaleString('en-GB', {maximumFractionDigits: c.rate >= 100 ? 0 : (c.rate === 1 ? 0 : 2)}); }
 function fmtP(p, d=2) { return (p >= 0 ? '+' : '') + p.toFixed(d) + '%'; }
@@ -1073,6 +1092,7 @@ function initChart() {
 if (!load()) seedDemo();
 initInflationDropdown();
 initCurrencyDropdown();
+loadLiveFxRates();
 initChart();
 renderAll();
 addEvt('READY', 'Portfolio Balancer loaded — add, update or remove investments any time.');
