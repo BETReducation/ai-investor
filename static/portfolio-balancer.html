@@ -564,7 +564,12 @@ function load() {
     return true;
   } catch(e) { return false; }
 }
+// Resolves once the initial account-data fetch below has settled (data
+// loaded, or confirmed there's no account to load from) — so anything that
+// must not act on stale/pre-login data (e.g. export) can await this first.
+let pbPersistenceReady;
 async function initPortfolioPersistence() {
+  pbPersistenceReady = (async () => {
   try {
     const meRes = await fetch('/api/me', { credentials: 'include' });
     const me = await meRes.json();
@@ -581,6 +586,7 @@ async function initPortfolioPersistence() {
           investments = remote.investments;
           nextInvId = remote.nextInvId || (investments.length ? Math.max(...investments.map(i => i.id)) + 1 : 1);
           save();
+          renderAll();
         } else if (investments.length) {
           savePortfolioToAccount();
         }
@@ -590,6 +596,8 @@ async function initPortfolioPersistence() {
       setSyncStatus('local');
     }
   } catch (e) { setSyncStatus('local'); }
+  })();
+  return pbPersistenceReady;
 }
 function setSyncStatus(state) {
   const el = document.getElementById('pbSyncStatus');
@@ -903,7 +911,17 @@ function csvCell(v) {
   const s = String(v ?? '');
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
-function exportPortfolioHistory() {
+async function exportPortfolioHistory() {
+  // Guard against exporting local/demo data in the split-second before the
+  // signed-in account fetch (initPortfolioPersistence) has resolved — wait
+  // for it so a logged-in user always gets their real, saved data.
+  const link = document.querySelector('a[onclick*="exportPortfolioHistory"]');
+  if (pbPersistenceReady && link) {
+    const original = link.textContent;
+    link.textContent = 'LOADING YOUR DATA…';
+    await pbPersistenceReady;
+    link.textContent = original;
+  }
   if (!investments.length) { alert('No investments to export yet.'); return; }
   const rows = [['Investment', 'Details', 'Event Date', 'Event Type', 'Amount (GBP)', 'Target Allocation %']];
   investments.forEach(inv => {
