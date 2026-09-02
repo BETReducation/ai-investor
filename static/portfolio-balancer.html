@@ -663,6 +663,24 @@ function toggleRebalance() {
   if (open) renderRebalance();
 }
 function setRebalanceMode(mode) { rebalanceMode = mode; renderRebalance(); }
+/* Investments with an explicit target % keep it as-is; the % left over
+   (100 minus whatever's explicitly set, floored at 0) is split evenly across
+   whichever investments have no target set — rather than each of those
+   independently defaulting to 100/count, which is how targets could add up
+   to something other than 100% (e.g. one investment set to 30%, four others
+   silently defaulting to 20% each = 110%, or vice versa). Also reports the
+   raw total of explicit targets, so the UI can flag it if it's over 100%. */
+function computeEffectiveTargets() {
+  const withTarget = investments.filter(i => i.targetPct != null);
+  const withoutTarget = investments.filter(i => i.targetPct == null);
+  const explicitSum = withTarget.reduce((s, i) => s + i.targetPct, 0);
+  const remainder = Math.max(0, 100 - explicitSum);
+  const splitPct = withoutTarget.length ? remainder / withoutTarget.length : 0;
+  const map = {};
+  investments.forEach(inv => { map[inv.id] = inv.targetPct != null ? inv.targetPct : splitPct; });
+  return { map, explicitSum, withTargetCount: withTarget.length, withoutTargetCount: withoutTarget.length };
+}
+
 function renderRebalance() {
   const panel = document.getElementById('rebalancePanel');
   if (!investments.length) { panel.innerHTML = `<div class="inv-empty">Add investments first to see rebalancing suggestions.</div>`; return; }
@@ -671,19 +689,32 @@ function renderRebalance() {
   const equalPct = 100 / investments.length;
   const anyTargets = investments.some(i => i.targetPct != null);
   const useTargets = rebalanceMode === 'targets';
+  const effective = computeEffectiveTargets();
 
   const rows = investments.map((inv, i) => {
     const currentPct = total ? (inv.currentValue / total) * 100 : 0;
-    const targetPct = useTargets && inv.targetPct != null ? inv.targetPct : equalPct;
+    const targetPct = useTargets ? effective.map[inv.id] : equalPct;
     const targetValue = total * (targetPct / 100);
     const delta = targetValue - inv.currentValue;
     return { inv, i, currentPct, targetPct, delta };
   });
 
+  let targetsWarning = '';
+  if (useTargets && anyTargets) {
+    if (effective.explicitSum > 100) {
+      targetsWarning = `<div style="font-size:8px;color:var(--accent-red);line-height:1.6;margin-bottom:9px;padding:6px 8px;background:rgba(255,51,85,.08);border:1px solid rgba(255,51,85,.25);border-radius:2px;">⚠ Your set targets add up to ${effective.explicitSum.toFixed(1)}% — over 100%. ${effective.withoutTargetCount ? `The ${effective.withoutTargetCount} investment${effective.withoutTargetCount === 1 ? '' : 's'} without a target won't get any share until this is under 100%.` : 'Adjust one or more targets so they add up to 100% or less.'}</div>`;
+    } else if (effective.explicitSum < 100 && effective.withoutTargetCount) {
+      targetsWarning = `<div style="font-size:8px;color:var(--text-muted);line-height:1.6;margin-bottom:9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;">Your set targets add up to ${effective.explicitSum.toFixed(1)}%. The remaining ${(100 - effective.explicitSum).toFixed(1)}% is split evenly across the ${effective.withoutTargetCount} investment${effective.withoutTargetCount === 1 ? '' : 's'} without a target of its own.</div>`;
+    } else if (effective.explicitSum < 100 && !effective.withoutTargetCount) {
+      targetsWarning = `<div style="font-size:8px;color:var(--accent-amber);line-height:1.6;margin-bottom:9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;">⚠ Your targets add up to ${effective.explicitSum.toFixed(1)}%, not 100% — ${(100 - effective.explicitSum).toFixed(1)}% is going unallocated since every investment already has a target set. Adjust one to close the gap.</div>`;
+    }
+  }
+
   panel.innerHTML = `
     <div style="font-size:8px;color:var(--text-muted);line-height:1.6;margin-bottom:9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;">
       Suggestion only — nothing here changes your saved investment data. It shows what moving money would take to reach the target split below.
     </div>
+    ${targetsWarning}
     <div style="display:flex;gap:6px;margin-bottom:9px;">
       <button class="btn-cancel-inv" style="flex:1;${useTargets ? 'border-color:var(--accent-blue);color:var(--text-primary);' : ''}" onclick="setRebalanceMode('targets')">TOWARD MY TARGETS${anyTargets ? '' : ' (none set — using equal split)'}</button>
       <button class="btn-cancel-inv" style="flex:1;${!useTargets ? 'border-color:var(--accent-blue);color:var(--text-primary);' : ''}" onclick="setRebalanceMode('equal')">EQUAL SPLIT (${equalPct.toFixed(1)}% EACH)</button>
