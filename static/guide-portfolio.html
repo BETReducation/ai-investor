@@ -104,7 +104,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <section class="content-section">
   <div class="content-inner">
     <h2 class="section-title">The screen, labelled</h2>
-    <p class="section-desc">A schematic of the Portfolio Balancer layout — each pin is explained in the steps below.</p>
+    <p class="section-desc">A schematic of the Portfolio Balancer's core layout — each pin is explained in the steps below. Newer features (target %, rebalance, currency preview, CSV export) aren't pictured here but are covered in steps 6–10.</p>
 
     <div class="diagram-wrap reveal">
       <svg class="diagram-svg" viewBox="0 0 900 460" width="100%" style="min-width:640px;">
@@ -211,7 +211,42 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="step-num">5</div>
         <div class="step-body">
           <div class="step-title">Sign in to keep it saved</div>
-          <div class="step-desc">Signed in, your data is saved to your account and will be there next time you log in from any device. Signed out, everything is kept only in this browser — the status line at the bottom of the screen always tells you which one applies right now.</div>
+          <div class="step-desc">Signed in, your data is saved to your account and will be there next time you log in from any device. Signed out, everything is kept only in this browser. Either way, everything you enter saves automatically — there's no save button to remember, and the status line at the bottom of the screen always tells you which of the two applies right now.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-title">Rename an investment, or set its target %</div>
+          <div class="step-desc">Click the ✎ icon on any card to edit its name and details in place. Underneath, <b>Set Target %</b> lets you say what share of your total portfolio that investment is <i>meant</i> to be — leave it blank and it's treated as an equal split with everything else that also has no target set.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <div class="step-title">See how far you've drifted, with Rebalance</div>
+          <div class="step-desc">Click <b>⚖ Rebalance</b> below the allocation table to compare your current % in each investment against its target — either the targets you set, or an equal split. It suggests how much to move into or out of each one to get back on track. This is read-only: it never touches your actual investment values, it's just a suggestion.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <div class="step-title">Just rebalanced? Reset that investment's baseline</div>
+          <div class="step-desc">If you move money between investments to rebalance, an investment you took money <i>out</i> of will show a value drop that looks like a loss — even though nothing was actually lost. Click <b>reset</b> next to that card's gain/loss figure to set today's value as its new starting point. Nothing in its history is deleted, it just stops counting anything before the reset towards gain/loss.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <div class="step-title">Preview another currency, or adjust for inflation</div>
+          <div class="step-desc">The <b>Display Currency</b> dropdown at the top converts everything shown on screen — using a real, regularly-refreshed exchange rate — into USD, EUR, VND, CNY, JPY or KRW. It's for this browser tab only: your data stays stored in GBP and the choice resets on reload. Separately, <b>Adjust for Inflation</b> above the chart shows what your current value is worth in "today's money" for a chosen country, using static historical CPI averages — not a currency conversion, and not live.</div>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <div class="step-title">Download your full history</div>
+          <div class="step-desc">The <b>Download Portfolio History (CSV)</b> link below your investments exports every investment-added, top-up, value-update and baseline-reset event — dated, in GBP — so you always have your own copy outside the tool.</div>
         </div>
       </div>
     </div>
@@ -239,6 +274,18 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="gloss-term">Balanced Portfolio Value</div>
         <div class="gloss-def">Simply the sum of every investment's current value. "Balanced" here just means "everything, added together" — it isn't suggesting your allocation is optimal, that's your call.</div>
       </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Target allocation</div>
+        <div class="gloss-def">The % of your total portfolio you intend an investment to make up. Optional per investment — leave it blank and it defaults to an equal split. Used only by Rebalance; it doesn't affect your gain/loss figures.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Baseline reset</div>
+        <div class="gloss-def">Sets an investment's current value as its new starting point for gain/loss, without deleting anything. Use it after rebalancing, so moving money between investments doesn't show up as a fake loss on the one you took money out of.</div>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Display currency</div>
+        <div class="gloss-def">A tab-only preview of your portfolio in another currency, at a real exchange rate. It's the one thing on this page that <i>is</i> live — everything else is exactly as accurate as your last update.</div>
+      </div>
     </div>
   </div>
 </section>
@@ -253,11 +300,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       </div>
       <div class="mistake">
         <div class="mistake-icon">⚠️</div>
-        <div class="mistake-text"><b>Assuming this pulls live prices.</b> It doesn't — nothing here is fetched from real accounts or brokers. Every value is only as accurate as the last time you updated it yourself.</div>
+        <div class="mistake-text"><b>Assuming this pulls live prices.</b> It doesn't — no investment value here is fetched from real accounts or brokers. Every value is only as accurate as the last time you updated it yourself. (The one exception is the Display Currency dropdown, which does use a real exchange rate — but only to convert what's shown on screen, never your stored investment values.)</div>
       </div>
       <div class="mistake">
         <div class="mistake-icon">⚠️</div>
-        <div class="mistake-text"><b>Not signing in.</b> If you're not signed in, your data lives only in this browser — clear your cache or switch device and it's gone. Sign in to keep it safe on your account.</div>
+        <div class="mistake-text"><b>Rebalancing and forgetting to reset.</b> After you move money between investments to match a suggested rebalance, the investment you took money out of will look like it lost value. Click <b>reset</b> on that card so the shuffle doesn't get recorded as a real loss.</div>
+      </div>
+      <div class="mistake">
+        <div class="mistake-icon">⚠️</div>
+        <div class="mistake-text"><b>Not signing in.</b> If you're not signed in, your data lives only in this browser — clear your cache or switch device and it's gone. Sign in to keep it safe on your account, or use the CSV download to keep your own copy either way.</div>
       </div>
     </div>
   </div>
