@@ -755,6 +755,23 @@ function updateValueOf(id) {
   renderAll();
 }
 
+function updateTargetOf(id) {
+  const input = document.getElementById(`target-${id}`);
+  const raw = input.value.trim();
+  const inv = investments.find(i => i.id === id);
+  if (!inv) return;
+  if (raw === '') {
+    inv.targetPct = null;
+  } else {
+    const val = parseFloat(raw);
+    if (isNaN(val) || val < 0 || val > 100) return;
+    inv.targetPct = val;
+  }
+  save();
+  addEvt('TARGET UPDATED', `${inv.name} target set to ${inv.targetPct != null ? inv.targetPct + '%' : 'equal split'}`);
+  renderAll();
+}
+
 function removeInvestment(id) {
   const inv = investments.find(i => i.id === id);
   if (!inv) return;
@@ -824,6 +841,10 @@ function investmentCard(inv, idx) {
       <div class="inv-actions">
         <input type="number" min="0" step="1" placeholder="New current value £" id="updVal-${inv.id}">
         <button onclick="updateValueOf(${inv.id})">↻ UPDATE VALUE</button>
+      </div>
+      <div class="inv-actions">
+        <input type="number" min="0" max="100" step="1" placeholder="Target % (blank = equal split)" id="target-${inv.id}" value="${inv.targetPct != null ? inv.targetPct : ''}">
+        <button onclick="updateTargetOf(${inv.id})">SET TARGET %</button>
       </div>
 
       <div class="inv-history">${historyRows}</div>
