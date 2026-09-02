@@ -332,12 +332,7 @@ window.addEventListener('resize', () => {
   <div class="pb-desc">Add every investment you hold — savings, stocks, crypto, property, anything — then keep it up to date as its value changes. See your total balance, your overall gain or loss, and how your money is spread out, all in one place.</div>
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <div class="pb-badges" id="heroBadges"></div>
-    <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;">
-      DISPLAY CURRENCY
-      <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
-    </label>
   </div>
-  <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin-top:6px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;max-width:800px;"></div>
 </div>
 
 <!-- MAIN GRID -->
@@ -386,7 +381,11 @@ window.addEventListener('resize', () => {
   <div class="pb-col pb-col-center">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
       <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;">YOUR ALLOCATION</div>
-      <div style="display:flex;align-items:center;gap:6px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;">
+          DISPLAY CURRENCY
+          <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+        </label>
         <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;cursor:pointer;">
           <input type="checkbox" id="inflToggle" onchange="renderAll()" style="cursor:pointer;">
           ADJUST FOR INFLATION
@@ -394,6 +393,7 @@ window.addEventListener('resize', () => {
         <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
       </div>
     </div>
+    <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
     <div id="inflNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
     <div class="chart-wrap">
       <canvas id="pieChart" width="286" height="286"></canvas>
@@ -613,13 +613,13 @@ function seedDemo() {
    first added. Not currency conversion — currency fluctuations are a
    separate, unrelated thing and are intentionally not modelled here. */
 const INFLATION_RATES = {
-  UK:          { label: 'United Kingdom (GBP)', rate: 3.2 },
-  US:          { label: 'United States (USD)',  rate: 3.0 },
-  EUROZONE:    { label: 'Eurozone (EUR)',        rate: 2.4 },
-  VIETNAM:     { label: 'Vietnam (VND)',         rate: 3.5 },
-  CHINA:       { label: 'China (CNY)',           rate: 1.0 },
-  JAPAN:       { label: 'Japan (JPY)',           rate: 2.0 },
-  SOUTH_KOREA: { label: 'South Korea (KRW)',     rate: 2.3 },
+  UK:          { label: 'United Kingdom', rate: 3.2 },
+  US:          { label: 'United States',  rate: 3.0 },
+  EUROZONE:    { label: 'Eurozone',       rate: 2.4 },
+  VIETNAM:     { label: 'Vietnam',        rate: 3.5 },
+  CHINA:       { label: 'China',          rate: 1.0 },
+  JAPAN:       { label: 'Japan',          rate: 2.0 },
+  SOUTH_KOREA: { label: 'South Korea',    rate: 2.3 },
 };
 function initInflationDropdown() {
   const sel = document.getElementById('inflCountry');
