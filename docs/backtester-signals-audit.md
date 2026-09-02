@@ -63,3 +63,77 @@ pie chart, allocation table, event log), localStorage always + debounced sync to
    (strategy-lab.html:691-701)
 7. Surface (log or banner) when sector/peer trade enrichment silently fails.
    (app.py:4678-4685)
+
+## Phase 2 UX audit — 2026-09-02
+
+Everything above was correctness/completeness. This pass is about what it actually
+feels like to use these two pages, especially for someone who isn't already fluent in
+technical indicators — which is most of the target audience for an education platform.
+
+### Signals is well taught; Backtester isn't
+
+`signal_config.html` explains itself. Every strategy chip carries a plain-English
+`title` tooltip ("BUY when RSI is oversold and price is near the lower Bollinger Band —
+a mean-reversion bounce setup"), and the confidence slider, chart-type picker, and data
+source are all tooltipped too (24 tooltips total).
+
+`strategy-lab.html` (Backtester) has 6 tooltips, and none of them are about trading —
+they're all UI chrome ("Toggle light/dark mode", "Delete selected strategy"). Switch to
+Detailed mode and you get 25+ indicators (ADX, PSAR, Ichimoku, Supertrend, HMA, Stoch,
+StochRSI, CCI, Williams %R, ROC, MFI, TSI, Awesome Oscillator, Keltner, StDev, Chaikin
+Volatility, Historical Volatility, OBV, VWAP, A/D, CMF, Volume Profile, Fibonacci,
+inverse H&S) and ~90 numeric parameters between them, with zero explanation of what any
+of them do or what a sane value looks like. A beginner who came from a Learn lesson has
+no way to connect "RSI Length: 14" back to what they just read.
+
+This is a bigger miss than it looks, because the site already has 42 lessons covering
+exactly this material (`LESSON_PAGES` in app.py) and zero of them are linked from the
+tool. Nothing on the Backtester page points at `/learn` for a specific indicator — the
+only link is the generic nav dropdown.
+
+**Fix:** at minimum, port the tooltip pattern from Signals onto the Backtester's
+indicator toggles/labels. Better: link each indicator name to its Learn lesson anchor
+if one exists (some indicators — e.g. ADX, Ichimoku — may not have a lesson yet, which
+is its own gap worth flagging back to the content side).
+
+### Results dumped in the same jargon
+
+`renderResults()` labels the headline metrics as "Sharpe Ratio", "Profit Factor", "Max
+Drawdown %" with no tooltip or plain-English gloss (strategy-lab.html:3383-3487) — the
+exact moment a first-time user most needs "this number is good/bad because...". Signals
+doesn't have this problem because its outputs are BUY/SELL/WAIT, not statistics.
+
+**Fix:** short tooltip per metric (Signals already proves the pattern works well and is
+cheap to add — same `title="..."` attribute).
+
+### Backtester mobile: sidebar-before-results, no shortcut to Run
+
+Confirmed still unfixed from Phase 1 (item 6): at ≤768px the sidebar just stacks above
+the results (`strategy-lab.html:691-701`, `flex-direction: column`). The sidebar HTML
+runs ~1,250 lines (807-2058) — symbol search, period, both indicator modes, risk
+management — all of it between the top of the page and the Run button. A phone user
+scrolls through the entire config before they can even press Run, and past it again to
+see results. There's no sticky/floating Run button to shortcut this.
+
+Signals solved the equivalent problem with a purpose-built mobile tab UI; Backtester
+still hasn't adopted it. This is the single highest-impact mobile fix available.
+
+### Everything else checked and fine
+
+Loading/error/idle states are all present and clearly worded on both pages (no bare
+`alert()` dialogs anywhere in either file). Switching Basic ⇄ Detailed mode on the
+Backtester preserves both panels' state independently — no silent data loss. Signal
+condition builder's confidence-threshold tooltip is a good model of explaining a
+non-obvious control in one sentence; worth reusing that voice anywhere else jargon
+shows up.
+
+### Updated punch list (adds to Phase 1's, in priority order)
+
+8. Add plain-English tooltips to Backtester's indicator toggles/params, matching the
+   Signals pattern. (strategy-lab.html, `detailedIndicators` block)
+9. Add a one-line gloss/tooltip to each results metric (Sharpe, Profit Factor, Max
+   Drawdown, Sortino, etc.). (strategy-lab.html:3383-3487)
+10. Link indicator names to their Learn lesson where one exists. (strategy-lab.html,
+    app.py `LESSON_PAGES`)
+11. Ship the mobile tab UI for Backtester (still open from item 6) — now the top
+    mobile-UX priority across both pages.
