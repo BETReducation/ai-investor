@@ -3860,7 +3860,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
     {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},
     {"title": "Backtester", "url": "/backtester", "sub": "Tool"},
-    {"title": "Portfolio Manager", "url": "/tools/portfolio", "sub": "Tool"},
+    {"title": "Portfolio Balancer", "url": "/tools/portfolio", "sub": "Tool"},
     {"title": "Calculator", "url": "/tools/calculator", "sub": "Tool"},
     {"title": "Data Visualisation", "url": "/tools/data-visualisation", "sub": "Tool"},
     {"title": "The Arena", "url": "/arena", "sub": "Arena hub"},
