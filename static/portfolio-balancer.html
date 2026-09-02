@@ -211,8 +211,7 @@
      mid-control on narrow screens — force each one onto its own full-width row. */
   .pb-alloc-controls { flex-direction:column; align-items:stretch; gap:8px; width:100%; }
   .pb-alloc-ctrl      { justify-content:space-between; width:100%; }
-  .pb-alloc-ctrl select, .pb-alloc-ctrl-select { flex:1; width:auto !important; max-width:160px; }
-  .pb-alloc-ctrl-select { width:100% !important; max-width:none; }
+  .pb-alloc-ctrl select { width:auto !important; flex:none; }
 }
 </style>
 </head>
@@ -398,13 +397,16 @@ window.addEventListener('resize', () => {
       <div class="pb-alloc-controls">
         <label class="pb-alloc-ctrl">
           DISPLAY CURRENCY
-          <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:60px;"></select>
+          <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
         </label>
         <label class="pb-alloc-ctrl" style="cursor:pointer;">
+          <span>ADJUST FOR INFLATION</span>
           <input type="checkbox" id="inflToggle" onchange="renderAll()" style="cursor:pointer;">
-          ADJUST FOR INFLATION
         </label>
-        <select id="inflCountry" onchange="renderAll()" class="pb-alloc-ctrl-select" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:110px;"></select>
+        <label class="pb-alloc-ctrl">
+          <span>COUNTRY</span>
+          <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+        </label>
       </div>
     </div>
     <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
