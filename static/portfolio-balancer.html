@@ -354,8 +354,8 @@ window.addEventListener('resize', () => {
       </div>
       <div class="form-row">
         <div class="form-field">
-          <label>INITIAL VALUE (£)</label>
-          <input type="number" id="newInvInitial" min="0" step="1" placeholder="0">
+          <label>INITIAL VALUE (£) *</label>
+          <input type="number" id="newInvInitial" min="0" step="1" placeholder="required">
         </div>
         <div class="form-field">
           <label>CURRENT VALUE (£)</label>
@@ -706,7 +706,9 @@ function submitAddInvestment() {
   const name = nameEl.value.trim();
   if (!name) { nameEl.focus(); return; }
   const details = document.getElementById('newInvDetails').value.trim();
-  const initial = Math.max(0, parseFloat(document.getElementById('newInvInitial').value) || 0);
+  const initialEl = document.getElementById('newInvInitial');
+  const initial = parseFloat(initialEl.value);
+  if (isNaN(initial) || initial <= 0) { initialEl.focus(); return; } // required — an empty/0 initial value breaks gain/loss tracking (nothing to compare current value against)
   let current = parseFloat(document.getElementById('newInvCurrent').value);
   if (isNaN(current)) current = initial;
   current = Math.max(0, current);
