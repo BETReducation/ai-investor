@@ -384,13 +384,13 @@ window.addEventListener('resize', () => {
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;">
           DISPLAY CURRENCY
-          <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+          <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:60px;"></select>
         </label>
         <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;cursor:pointer;">
           <input type="checkbox" id="inflToggle" onchange="renderAll()" style="cursor:pointer;">
           ADJUST FOR INFLATION
         </label>
-        <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+        <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:110px;"></select>
       </div>
     </div>
     <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
@@ -722,7 +722,7 @@ let fxRatesLive = false;   // true once /api/fx-rates has answered successfully
 let fxRatesAt   = null;    // ISO timestamp the live rates were computed at
 function initCurrencyDropdown() {
   const sel = document.getElementById('displayCurrency');
-  sel.innerHTML = Object.entries(CURRENCY_RATES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  sel.innerHTML = Object.keys(CURRENCY_RATES).map(k => `<option value="${k}">${k}</option>`).join('');
   sel.value = 'GBP';
 }
 async function loadLiveFxRates() {
