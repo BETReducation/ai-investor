@@ -656,10 +656,12 @@ function renderInflationNote() {
 
 /* ══ REBALANCING (suggestion only — never changes stored data) ═══════════════ */
 let rebalanceMode = 'targets'; // 'targets' | 'equal'
-function toggleRebalance() {
+function toggleRebalance(forceOpen) {
   const panel = document.getElementById('rebalancePanel');
-  const open = panel.style.display === 'none';
+  const open = forceOpen || panel.style.display === 'none';
   panel.style.display = open ? 'block' : 'none';
+  const btn = document.getElementById('btnRebalance');
+  if (btn) btn.textContent = open ? '✕ HIDE REBALANCE' : '⚖ REBALANCE';
   if (open) renderRebalance();
 }
 function setRebalanceMode(mode) { rebalanceMode = mode; renderRebalance(); }
