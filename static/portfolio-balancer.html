@@ -197,12 +197,22 @@
 
 .pb-footer { padding:7px 26px; font-size:8px; color:var(--text-muted); letter-spacing:1px; border-top:1px solid var(--border); text-align:center; }
 
+.pb-alloc-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+.pb-alloc-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.pb-alloc-ctrl      { display:flex; align-items:center; gap:5px; font-size:8px; color:var(--text-muted); letter-spacing:1px; }
+
 @media(max-width:860px) {
   .pb-grid { grid-template-columns:1fr; }
   .edu-grid { grid-template-columns:1fr; }
 }
 @media (max-width: 768px) {
   body { overflow: auto; }
+  /* Currency/inflation controls were cramming onto shared lines and wrapping
+     mid-control on narrow screens — force each one onto its own full-width row. */
+  .pb-alloc-controls { flex-direction:column; align-items:stretch; gap:8px; width:100%; }
+  .pb-alloc-ctrl      { justify-content:space-between; width:100%; }
+  .pb-alloc-ctrl select, .pb-alloc-ctrl-select { flex:1; width:auto !important; max-width:160px; }
+  .pb-alloc-ctrl-select { width:100% !important; max-width:none; }
 }
 </style>
 </head>
@@ -383,18 +393,18 @@ window.addEventListener('resize', () => {
 
   <!-- CENTER: Chart + allocation table -->
   <div class="pb-col pb-col-center">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+    <div class="pb-alloc-header">
       <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;">YOUR ALLOCATION</div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;">
+      <div class="pb-alloc-controls">
+        <label class="pb-alloc-ctrl">
           DISPLAY CURRENCY
           <select id="displayCurrency" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:60px;"></select>
         </label>
-        <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;cursor:pointer;">
+        <label class="pb-alloc-ctrl" style="cursor:pointer;">
           <input type="checkbox" id="inflToggle" onchange="renderAll()" style="cursor:pointer;">
           ADJUST FOR INFLATION
         </label>
-        <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:110px;"></select>
+        <select id="inflCountry" onchange="renderAll()" class="pb-alloc-ctrl-select" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;width:110px;"></select>
       </div>
     </div>
     <div id="currencyNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
