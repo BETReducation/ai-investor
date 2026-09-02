@@ -362,6 +362,10 @@ window.addEventListener('resize', () => {
           <input type="number" id="newInvCurrent" min="0" step="1" placeholder="0">
         </div>
       </div>
+      <div class="form-field">
+        <label>TARGET ALLOCATION % (OPTIONAL)</label>
+        <input type="number" id="newInvTarget" min="0" max="100" step="1" placeholder="e.g. 40 — leave blank for equal split">
+      </div>
       <div class="form-actions">
         <button class="btn-save-inv" onclick="submitAddInvestment()">✓ ADD INVESTMENT</button>
         <button class="btn-cancel-inv" onclick="toggleAddForm(false)">CANCEL</button>
@@ -373,7 +377,17 @@ window.addEventListener('resize', () => {
 
   <!-- CENTER: Chart + allocation table -->
   <div class="pb-col pb-col-center">
-    <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:10px;">YOUR ALLOCATION</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;">YOUR ALLOCATION</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:8px;color:var(--text-muted);letter-spacing:1px;cursor:pointer;">
+          <input type="checkbox" id="inflToggle" onchange="renderAll()" style="cursor:pointer;">
+          ADJUST FOR INFLATION
+        </label>
+        <select id="inflCountry" onchange="renderAll()" style="font-family:'IBM Plex Mono',monospace;font-size:9px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:2px;padding:3px 5px;"></select>
+      </div>
+    </div>
+    <div id="inflNote" style="display:none;font-size:8px;color:var(--text-muted);line-height:1.6;margin:-4px 0 9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;"></div>
     <div class="chart-wrap">
       <canvas id="pieChart" width="286" height="286"></canvas>
       <div class="chart-center">
@@ -383,6 +397,12 @@ window.addEventListener('resize', () => {
       </div>
     </div>
     <table class="alloc-tbl" id="allocTbl"></table>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px;">
+      <div style="font-size:8px;color:var(--text-muted);letter-spacing:2px;">REBALANCING</div>
+      <button class="btn-add-inv" onclick="toggleRebalance()" id="btnRebalance">⚖ REBALANCE</button>
+    </div>
+    <div id="rebalancePanel" style="display:none;"></div>
   </div>
 
   <!-- RIGHT: Stats + log -->
@@ -456,8 +476,8 @@ window.addEventListener('resize', () => {
 
 <!-- EDUCATIONAL DISCLAIMER -->
 <div class="disclaimer-bar">
-  <strong>EDUCATIONAL USE ONLY</strong> &nbsp;|&nbsp;
-  Growth Capital Group is an educational tool. It is not investment advice. All figures are entered and tracked by you — nothing here is fetched from real accounts or brokers. All investment decisions are your own.
+  <strong>⚠ NO LIVE PRICES</strong> &nbsp;|&nbsp;
+  This tool never fetches real accounts, brokers or market prices. Every value shown is only as accurate as the last time <em>you</em> clicked "↻ UPDATE VALUE" on that investment — it will not move on its own. Use "+ ADD FUNDS" only for money you're putting in; use "↻ UPDATE VALUE" to reprice what something is worth today. Mixing the two up will show a fake gain or loss.
   &nbsp;|&nbsp; <a href="/guides/portfolio" class="disclaimer-guide-link">📖 New here? Read the full guide</a>
   <br><span id="pbSyncStatus" class="pb-sync-status"></span>
 </div>
@@ -554,14 +574,97 @@ function setSyncStatus(state) {
 }
 function seedDemo() {
   investments = [
-    { id:1, name:'Stocks & Shares ISA', details:'Global index tracker fund', initialValue:20000, currentValue:22150, createdAt:'2026-01-15T09:00:00Z',
+    { id:1, name:'Stocks & Shares ISA', details:'Global index tracker fund', initialValue:20000, currentValue:22150, targetPct:null, createdAt:'2026-01-15T09:00:00Z',
       history:[{date:'2026-04-01T09:00:00Z',type:'update',amount:21200},{date:'2026-08-01T09:00:00Z',type:'update',amount:22150}] },
-    { id:2, name:'Crypto Wallet', details:'Bitcoin & Ethereum, held long-term', initialValue:5000, currentValue:6420, createdAt:'2026-02-10T09:00:00Z',
+    { id:2, name:'Crypto Wallet', details:'Bitcoin & Ethereum, held long-term', initialValue:5000, currentValue:6420, targetPct:null, createdAt:'2026-02-10T09:00:00Z',
       history:[{date:'2026-06-01T09:00:00Z',type:'contribution',amount:1000},{date:'2026-08-01T09:00:00Z',type:'update',amount:6420}] },
-    { id:3, name:'Cash Savings', details:'Easy-access savings account', initialValue:15000, currentValue:15300, createdAt:'2026-01-15T09:00:00Z',
+    { id:3, name:'Cash Savings', details:'Easy-access savings account', initialValue:15000, currentValue:15300, targetPct:null, createdAt:'2026-01-15T09:00:00Z',
       history:[{date:'2026-08-01T09:00:00Z',type:'update',amount:15300}] },
   ];
   nextInvId = 4;
+}
+
+/* ══ INFLATION (illustrative, static — see disclaimer) ═══════════════════════
+   Approximate average annual CPI %, used only to show what a portfolio's
+   current value is worth in "today's money" terms relative to when it was
+   first added. Not currency conversion — currency fluctuations are a
+   separate, unrelated thing and are intentionally not modelled here. */
+const INFLATION_RATES = {
+  UK:          { label: 'United Kingdom (GBP)', rate: 3.2 },
+  US:          { label: 'United States (USD)',  rate: 3.0 },
+  EUROZONE:    { label: 'Eurozone (EUR)',        rate: 2.4 },
+  VIETNAM:     { label: 'Vietnam (VND)',         rate: 3.5 },
+  CHINA:       { label: 'China (CNY)',           rate: 1.0 },
+  JAPAN:       { label: 'Japan (JPY)',           rate: 2.0 },
+  SOUTH_KOREA: { label: 'South Korea (KRW)',     rate: 2.3 },
+};
+function initInflationDropdown() {
+  const sel = document.getElementById('inflCountry');
+  sel.innerHTML = Object.entries(INFLATION_RATES).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+  sel.value = 'UK';
+}
+function inflationAdjustedValue(inv) {
+  const country = INFLATION_RATES[document.getElementById('inflCountry').value] || INFLATION_RATES.UK;
+  const years = Math.max(0, daysSince(inv.createdAt) / 365.25);
+  return inv.currentValue / Math.pow(1 + country.rate / 100, years);
+}
+function inflationOn() { return document.getElementById('inflToggle').checked; }
+function displayValue(inv) { return inflationOn() ? inflationAdjustedValue(inv) : inv.currentValue; }
+
+function renderInflationNote() {
+  const note = document.getElementById('inflNote');
+  if (!inflationOn()) { note.style.display = 'none'; return; }
+  const country = INFLATION_RATES[document.getElementById('inflCountry').value] || INFLATION_RATES.UK;
+  note.style.display = 'block';
+  note.innerHTML = `Adjusted for ${country.label} inflation (~${country.rate}%/yr average, not a live rate) since each investment was added — shows purchasing power in today's money, not currency conversion. Values below are illustrative estimates, same as everything else in this tool.`;
+}
+
+/* ══ REBALANCING (suggestion only — never changes stored data) ═══════════════ */
+let rebalanceMode = 'targets'; // 'targets' | 'equal'
+function toggleRebalance() {
+  const panel = document.getElementById('rebalancePanel');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  if (open) renderRebalance();
+}
+function setRebalanceMode(mode) { rebalanceMode = mode; renderRebalance(); }
+function renderRebalance() {
+  const panel = document.getElementById('rebalancePanel');
+  if (!investments.length) { panel.innerHTML = `<div class="inv-empty">Add investments first to see rebalancing suggestions.</div>`; return; }
+
+  const total = totalPortfolio();
+  const equalPct = 100 / investments.length;
+  const anyTargets = investments.some(i => i.targetPct != null);
+  const useTargets = rebalanceMode === 'targets';
+
+  const rows = investments.map((inv, i) => {
+    const currentPct = total ? (inv.currentValue / total) * 100 : 0;
+    const targetPct = useTargets && inv.targetPct != null ? inv.targetPct : equalPct;
+    const targetValue = total * (targetPct / 100);
+    const delta = targetValue - inv.currentValue;
+    return { inv, i, currentPct, targetPct, delta };
+  });
+
+  panel.innerHTML = `
+    <div style="font-size:8px;color:var(--text-muted);line-height:1.6;margin-bottom:9px;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;">
+      Suggestion only — nothing here changes your saved investment data. It shows what moving money would take to reach the target split below.
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:9px;">
+      <button class="btn-cancel-inv" style="flex:1;${useTargets ? 'border-color:var(--accent-blue);color:var(--text-primary);' : ''}" onclick="setRebalanceMode('targets')">TOWARD MY TARGETS${anyTargets ? '' : ' (none set — using equal split)'}</button>
+      <button class="btn-cancel-inv" style="flex:1;${!useTargets ? 'border-color:var(--accent-blue);color:var(--text-primary);' : ''}" onclick="setRebalanceMode('equal')">EQUAL SPLIT (${equalPct.toFixed(1)}% EACH)</button>
+    </div>
+    <table class="alloc-tbl">
+      <thead><tr><th></th><th>INVESTMENT</th><th style="text-align:right;">CURRENT %</th><th style="text-align:right;">TARGET %</th><th style="text-align:right;">SUGGESTED MOVE</th></tr></thead>
+      <tbody>${rows.map(({inv, i, currentPct, targetPct, delta}, idx) => `
+        <tr${idx === rows.length - 1 ? ' class="last-row"' : ''}>
+          <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colorFor(i)};"></span></td>
+          <td>${escapeHtml(inv.name)}</td>
+          <td style="text-align:right;">${currentPct.toFixed(1)}%</td>
+          <td style="text-align:right;">${targetPct.toFixed(1)}%</td>
+          <td style="text-align:right;font-weight:700;" class="${delta > 0.5 ? 'drift-pos' : delta < -0.5 ? 'drift-neg' : ''}">${Math.abs(delta) < 0.5 ? 'on target' : (delta > 0 ? '+' : '−') + fmt(Math.abs(delta)).replace('£','£')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
 }
 
 /* ══ CALCULATIONS ════════════════════════════════════════════════════════════ */
@@ -593,7 +696,7 @@ function toggleAddForm(state) {
   if (open) {
     document.getElementById('newInvName').focus();
   } else {
-    ['newInvName','newInvDetails','newInvInitial','newInvCurrent'].forEach(id => document.getElementById(id).value = '');
+    ['newInvName','newInvDetails','newInvInitial','newInvCurrent','newInvTarget'].forEach(id => document.getElementById(id).value = '');
   }
 }
 
@@ -606,8 +709,10 @@ function submitAddInvestment() {
   let current = parseFloat(document.getElementById('newInvCurrent').value);
   if (isNaN(current)) current = initial;
   current = Math.max(0, current);
+  const targetRaw = parseFloat(document.getElementById('newInvTarget').value);
+  const targetPct = (!isNaN(targetRaw) && targetRaw >= 0 && targetRaw <= 100) ? targetRaw : null;
 
-  const inv = { id: nextInvId++, name, details, initialValue: initial, currentValue: current, createdAt: new Date().toISOString(), history: [] };
+  const inv = { id: nextInvId++, name, details, initialValue: initial, currentValue: current, targetPct, createdAt: new Date().toISOString(), history: [] };
   investments.push(inv);
   expandedInv[inv.id] = true;
   save();
@@ -662,6 +767,18 @@ function removeInvestment(id) {
 }
 
 /* ══ RENDER ══════════════════════════════════════════════════════════════════ */
+function daysSince(iso) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+function lastUpdatedIso(inv) {
+  return inv.history.length ? inv.history[inv.history.length - 1].date : inv.createdAt;
+}
+function stalenessBadge(inv) {
+  const d = daysSince(lastUpdatedIso(inv));
+  let cls = 'fl', label = d === 0 ? 'updated today' : d === 1 ? 'updated 1d ago' : `updated ${d}d ago`;
+  if (d >= 90) { cls = 'dn'; label = `⚠ stale — ${label}`; }
+  else if (d >= 30) { cls = 'dn'; }
+  return `<span class="inv-val-pct ${cls}" style="display:block;margin-top:1px;font-weight:400;">${label}</span>`;
+}
+
 function investmentCard(inv, idx) {
   const { invested, gain, pct } = gainOf(inv);
   const color = colorFor(idx);
@@ -688,6 +805,7 @@ function investmentCard(inv, idx) {
       <div class="inv-val">
         <div class="inv-val-num">${fmt(inv.currentValue)}</div>
         <div class="inv-val-pct ${trendCls}">${fmtGain(gain)} · ${fmtP(pct)}</div>
+        ${stalenessBadge(inv)}
       </div>
       <svg class="inv-chev ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
@@ -695,8 +813,10 @@ function investmentCard(inv, idx) {
       <div class="inv-detail-row"><span>Initial value</span><span>${fmt(inv.initialValue)}</span></div>
       <div class="inv-detail-row"><span>Total invested (incl. top-ups)</span><span>${fmt(invested)}</span></div>
       <div class="inv-detail-row"><span>Current value</span><span>${fmt(inv.currentValue)}</span></div>
-      <div class="inv-detail-row ${trendCls}" style="border-bottom:none;"><span>Gain / loss since initial</span><span>${fmtGain(gain)} (${fmtP(pct)})</span></div>
+      <div class="inv-detail-row ${trendCls}"><span>Gain / loss since initial</span><span>${fmtGain(gain)} (${fmtP(pct)})</span></div>
+      <div class="inv-detail-row" style="border-bottom:none;"><span>Target allocation</span><span>${inv.targetPct != null ? inv.targetPct + '%' : '— (equal split)'}</span></div>
 
+      <div style="font-size:7px;color:var(--text-muted);line-height:1.5;margin:6px 0 4px;">Putting money in? Use Add Funds. Just re-pricing what it's worth today? Use Update Value — mixing these up fakes a gain/loss.</div>
       <div class="inv-actions">
         <input type="number" min="0" step="1" placeholder="Add funds £" id="addFunds-${inv.id}">
         <button onclick="addFundsTo(${inv.id})">+ ADD FUNDS</button>
@@ -734,7 +854,7 @@ function renderList() {
 
 function renderChart() {
   if (!pieChart) return;
-  const data = investments.map(i => i.currentValue);
+  const data = investments.map(i => displayValue(i));
   const colors = investments.map((_, i) => colorFor(i));
   pieChart.data.labels = investments.map(i => i.name);
   pieChart.data.datasets[0].data = data.length ? data : [1];
@@ -742,12 +862,14 @@ function renderChart() {
   pieChart.data.datasets[0].borderColor = data.length ? colors : ['#2a3442'];
   pieChart.update('none');
 
-  const total = totalPortfolio(), invested = totalInvested(), gain = total - invested;
+  const total = data.reduce((s, v) => s + v, 0), invested = totalInvested(), gain = total - invested;
   const pct = invested ? (gain / invested) * 100 : 0;
   document.getElementById('ctrVal').textContent = fmt(total);
+  document.getElementById('ctrVal').title = inflationOn() ? 'Inflation-adjusted (today\'s money)' : '';
   const ctrPct = document.getElementById('ctrPct');
   ctrPct.textContent = investments.length ? fmtP(pct) : '';
   ctrPct.style.color = gain >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  renderInflationNote();
 }
 
 function renderAllocTable() {
@@ -756,17 +878,19 @@ function renderAllocTable() {
     tbl.innerHTML = `<tbody><tr><td style="padding:10px 4px;color:var(--text-muted);">No investments yet — add one on the left to see your allocation.</td></tr></tbody>`;
     return;
   }
-  const total = totalPortfolio();
+  const adj = inflationOn();
+  const values = investments.map(i => displayValue(i));
+  const total = values.reduce((s, v) => s + v, 0);
   tbl.innerHTML = `
-    <thead><tr><th></th><th>INVESTMENT</th><th style="text-align:right;">VALUE</th><th style="text-align:right;">% PORTFOLIO</th><th style="text-align:right;">GAIN/LOSS</th></tr></thead>
+    <thead><tr><th></th><th>INVESTMENT</th><th style="text-align:right;">${adj ? 'REAL VALUE' : 'VALUE'}</th><th style="text-align:right;">% PORTFOLIO</th><th style="text-align:right;">GAIN/LOSS</th></tr></thead>
     <tbody>${investments.map((inv, i) => {
       const { gain, pct } = gainOf(inv);
-      const pctOfPortfolio = total ? (inv.currentValue / total) * 100 : 0;
+      const pctOfPortfolio = total ? (values[i] / total) * 100 : 0;
       const last = i === investments.length - 1;
       return `<tr${last ? ' class="last-row"' : ''}>
         <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${colorFor(i)};"></span></td>
         <td>${escapeHtml(inv.name)}</td>
-        <td style="text-align:right;font-weight:700;color:var(--text-primary);">${fmt(inv.currentValue)}</td>
+        <td style="text-align:right;font-weight:700;color:var(--text-primary);">${fmt(values[i])}</td>
         <td style="text-align:right;">${pctOfPortfolio.toFixed(1)}%</td>
         <td style="text-align:right;" class="${gain > 0 ? 'drift-pos' : gain < 0 ? 'drift-neg' : ''}">${fmtGain(gain)} (${fmtP(pct)})</td>
       </tr>`;
@@ -790,6 +914,7 @@ function renderAll() {
   renderChart();
   renderAllocTable();
   renderStatBox();
+  if (document.getElementById('rebalancePanel').style.display !== 'none') renderRebalance();
 }
 
 /* ══ EVENT LOG ═══════════════════════════════════════════════════════════════ */
@@ -831,6 +956,7 @@ function initChart() {
 
 /* ══ INIT ════════════════════════════════════════════════════════════════════ */
 if (!load()) seedDemo();
+initInflationDropdown();
 initChart();
 renderAll();
 addEvt('READY', 'Portfolio Balancer loaded — add, update or remove investments any time.');
