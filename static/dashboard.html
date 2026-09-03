@@ -369,7 +369,7 @@
   <!-- RIGHT PANEL: Alerts -->
   <div class="panel" id="rightPanel" style="position:relative;">
 
-    <!-- Tier lock overlay — hidden when user has signal_tester+ -->
+    <!-- Tier lock overlay — hidden when user has pro+ -->
     <div id="tierLock" style="display:none;position:absolute;inset:0;background:rgba(5,6,8,0.88);backdrop-filter:blur(3px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;">
       <div style="font-size:24px;line-height:1;">&#128274;</div>
       <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent-amber);">SIGNAL TESTER REQUIRED</div>
@@ -546,8 +546,8 @@ let watchlistEditMode = false;
 Object.keys(assets).forEach(sym => { watchlistEnabled[sym] = true; });
 
 // --- TIER SYSTEM ---
-const TIER_RANKS = { basic: 0, signal_tester: 1, power_user: 2 };
-let userTier = 'basic';
+const TIER_RANKS = { free: 0, pro: 1, founder: 2 };
+let userTier = 'free';
 let userAuthenticated = false;
 
 function hasAccess(minTier) {
@@ -559,9 +559,9 @@ async function checkTier() {
     const res = await fetch('/api/me', { credentials: 'include' });
     const data = await res.json();
     userAuthenticated = data.authenticated || false;
-    userTier = data.tier || 'basic';
+    userTier = data.tier || 'free';
   } catch (_) {
-    userTier = 'basic';
+    userTier = 'free';
     userAuthenticated = false;
   }
   applyTierUI();
@@ -570,7 +570,7 @@ async function checkTier() {
 function applyTierUI() {
   const lock = document.getElementById('tierLock');
   const btn  = document.getElementById('engineBtn');
-  if (hasAccess('signal_tester')) {
+  if (hasAccess('pro')) {
     lock.style.display = 'none';
     if (btn) btn.disabled = false;
   } else {
@@ -805,7 +805,7 @@ function toggleEngine() {
 
 async function startEngine() {
   await checkTier();
-  if (!hasAccess('signal_tester')) return;
+  if (!hasAccess('pro')) return;
   engineRunning = true;
   document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
   document.getElementById('engineBtn').className = 'btn-engine stop';
@@ -1546,7 +1546,7 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Login failed'); return; }
     currentUser = data.username;
-    userTier = data.tier || 'basic';
+    userTier = data.tier || 'free';
     userAuthenticated = true;
     applyTierUI();
     if (remember) localStorage.setItem('gcgSession', '1');
@@ -1584,7 +1584,7 @@ async function doRegister() {
     const data = await res.json();
     if (!res.ok) { showAuthError(errEl, data.error || 'Registration failed'); return; }
     currentUser = data.username;
-    userTier = data.tier || 'basic';
+    userTier = data.tier || 'free';
     userAuthenticated = true;
     applyTierUI();
     localStorage.setItem('gcgSession', '1');

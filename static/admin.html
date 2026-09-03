@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.page-hero { padding: 100px 5% 30px; text-align: center; }
+.page-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 28px; }
+.page-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.content-section { padding: 0 5% 80px; }
+.content-inner { max-width: 1200px; margin: 0 auto; }
+#gate { text-align: center; padding: 120px 5%; color: var(--muted); font-size: 14px; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; background: var(--card); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 980px; }
+th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+tr:last-child td { border-bottom: none; }
+.uname { font-weight: 700; }
+.uemail { color: var(--muted); font-size: 12px; }
+select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 6px 8px; border-radius: 8px; font-size: 12px; font-family: inherit; cursor: pointer; }
+select:disabled { opacity: 0.5; cursor: not-allowed; }
+select.tier-free { border-color: rgba(136,146,176,0.4); }
+select.tier-pro { border-color: #0088ff; color: #0088ff; }
+select.tier-founder { border-color: var(--gold); color: var(--gold); }
+.save-flash { display: inline-block; margin-left: 6px; font-size: 11px; color: var(--green); opacity: 0; transition: opacity 0.2s; }
+.save-flash.show { opacity: 1; }
+.err-banner { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+
+<div class="page-hero">
+  <div class="page-title">Admin</div>
+  <div class="page-sub">Account tiers, per-feature entitlements, and alpha-author roles — hand-set per user.</div>
+</div>
+
+<div class="content-section">
+  <div class="content-inner">
+    <div id="gate">Checking access…</div>
+    <div id="panel" style="display:none;">
+      <div class="err-banner" id="errBanner"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Tier</th>
+              <th>Backtester</th>
+              <th>Signals</th>
+              <th>Market Xi</th>
+              <th>Learn AI</th>
+              <th>Alpha role</th>
+            </tr>
+          </thead>
+          <tbody id="userRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TIERS = ['free', 'pro', 'founder'];
+const ALPHA_ROLES = ['', 'gary', 'tom', 'dave', 'connor'];
+let FEATURE_LEVELS = {};
+
+function showError(msg) {
+  const b = document.getElementById('errBanner');
+  b.textContent = msg;
+  b.style.display = 'block';
+}
+
+function optionsHtml(values, current) {
+  return values.map(v => `<option value="${v}" ${v === current ? 'selected' : ''}>${v || '—'}</option>`).join('');
+}
+
+function rowHtml(u) {
+  const ent = u.entitlements || {};
+  return `
+    <tr data-username="${u.username}">
+      <td><div class="uname">${u.username}</div><div class="uemail">${u.email || ''}</div></td>
+      <td><select class="tier-select tier-${u.tier}" data-field="tier">${optionsHtml(TIERS, u.tier)}</select><span class="save-flash">✓</span></td>
+      <td><select data-field="backtester">${optionsHtml(FEATURE_LEVELS.backtester, ent.backtester)}</select><span class="save-flash">✓</span></td>
+      <td><select data-field="signals">${optionsHtml(FEATURE_LEVELS.signals, ent.signals)}</select><span class="save-flash">✓</span></td>
+      <td><select data-field="market_xi">${optionsHtml(FEATURE_LEVELS.market_xi, ent.market_xi)}</select><span class="save-flash">✓</span></td>
+      <td><select data-field="learn_ai">${optionsHtml(FEATURE_LEVELS.learn_ai, ent.learn_ai)}</select><span class="save-flash">✓</span></td>
+      <td><select data-field="alpha_role" ${u.tier !== 'founder' ? 'disabled title="Only founder-tier accounts author alpha"' : ''}>${optionsHtml(ALPHA_ROLES, u.alpha_role || '')}</select><span class="save-flash">✓</span></td>
+    </tr>`;
+}
+
+function flash(el) {
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 900);
+}
+
+async function loadUsers() {
+  const res = await fetch('/api/admin/users');
+  if (res.status === 403 || res.status === 401) {
+    document.getElementById('gate').textContent = 'Admin access only.';
+    return;
+  }
+  const data = await res.json();
+  FEATURE_LEVELS = data.feature_levels;
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('panel').style.display = 'block';
+  document.getElementById('userRows').innerHTML = data.users.map(rowHtml).join('');
+}
+
+document.addEventListener('change', async (e) => {
+  const sel = e.target;
+  if (!sel.matches('select[data-field]')) return;
+  const row = sel.closest('tr');
+  const username = row.dataset.username;
+  const field = sel.dataset.field;
+  const flashEl = sel.nextElementSibling;
+
+  try {
+    if (field === 'tier') {
+      const res = await fetch('/api/admin/set-tier', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, tier: sel.value }),
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || 'Failed');
+      sel.className = 'tier-select tier-' + sel.value;
+      // Tier change resets entitlements + alpha role eligibility server-side — reload this row.
+      await loadUsers();
+      return;
+    }
+    if (field === 'alpha_role') {
+      const res = await fetch('/api/admin/set-alpha-role', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, alpha_role: sel.value || null }),
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || 'Failed');
+      flash(flashEl);
+      return;
+    }
+    const res = await fetch('/api/admin/set-entitlement', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, feature: field, level: sel.value }),
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.error || 'Failed');
+    flash(flashEl);
+  } catch (err) {
+    showError(err.message);
+  }
+});
+
+loadUsers();
+</script>
+</body>
+</html>

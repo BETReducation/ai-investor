@@ -37,9 +37,9 @@
 .profile-meta-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .hero-username { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
 .tier-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.tier-pill.basic { background: rgba(136,146,176,0.14); border: 1px solid rgba(136,146,176,0.3); color: var(--muted); }
-.tier-pill.signal_tester { background: rgba(0,136,255,0.1); border: 1px solid #0088ff; color: #0088ff; }
-.tier-pill.power_user { background: rgba(251,191,36,0.12); border: 1px solid var(--gold); color: var(--gold); }
+.tier-pill.free { background: rgba(136,146,176,0.14); border: 1px solid rgba(136,146,176,0.3); color: var(--muted); }
+.tier-pill.pro { background: rgba(0,136,255,0.1); border: 1px solid #0088ff; color: #0088ff; }
+.tier-pill.founder { background: rgba(251,191,36,0.12); border: 1px solid var(--gold); color: var(--gold); }
 
 /* Avatar */
 .avatar-wrap { position: relative; flex-shrink: 0; }
@@ -244,7 +244,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
               <div class="profile-title">Profile</div>
               <div class="profile-email" id="heroEmail">—</div>
               <div class="profile-meta-row">
-                <span class="tier-pill basic" id="heroPill">BASIC</span>
+                <span class="tier-pill free" id="heroPill">FREE</span>
                 <span class="hero-username" id="heroUsername">@—</span>
               </div>
             </div>
@@ -415,8 +415,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
         <div class="card-header-sub">Current plan highlighted below. Contact us to upgrade.</div>
         <div class="plan-grid">
-          <div class="plan-card" id="planBasic">
-            <div class="plan-name">BASIC</div>
+          <div class="plan-card" id="planFree">
+            <div class="plan-name">FREE</div>
             <div class="plan-price">Free <small>/month</small></div>
             <ul class="plan-features">
               <li><span class="feat-tick">✓</span><span>Strategy backtesting</span></li>
@@ -425,23 +425,23 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
               <li><span class="feat-lock">✕</span><span>Social package</span></li>
             </ul>
           </div>
-          <div class="plan-card" id="planSignal">
-            <div class="plan-name">SIGNAL TESTER</div>
+          <div class="plan-card" id="planPro">
+            <div class="plan-name">PRO</div>
             <div class="plan-price">£5 <small>/month</small></div>
             <ul class="plan-features">
-              <li><span class="feat-tick">✓</span><span>Everything in Basic</span></li>
+              <li><span class="feat-tick">✓</span><span>Everything in Free</span></li>
               <li><span class="feat-tick">✓</span><span>Live signal generator</span></li>
               <li><span class="feat-tick">✓</span><span>Custom strategies</span></li>
               <li><span class="feat-lock">✕</span><span>Social package</span></li>
             </ul>
           </div>
-          <div class="plan-card" id="planPower">
-            <div class="plan-name">POWER USER</div>
-            <div class="plan-price">£20 <small>/month</small></div>
+          <div class="plan-card" id="planFounder">
+            <div class="plan-name">FOUNDER</div>
+            <div class="plan-price">Invite only</div>
             <ul class="plan-features">
-              <li><span class="feat-tick">✓</span><span>Everything in Signal Tester</span></li>
+              <li><span class="feat-tick">✓</span><span>Everything in Pro</span></li>
+              <li><span class="feat-tick">✓</span><span>Alpha authoring</span></li>
               <li><span class="feat-tick">✓</span><span>Discord integration</span></li>
-              <li><span class="feat-tick">✓</span><span>Telegram &amp; Signal</span></li>
               <li><span class="feat-tick">✓</span><span>X (Twitter) posting</span></li>
             </ul>
           </div>
@@ -552,7 +552,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
 <script>
 let profileUsername = null;
-let profileTier = 'basic';
+let profileTier = 'free';
 let pendingAction = null;
 
 const AVATAR_PRESETS = {
@@ -583,7 +583,7 @@ async function boot() {
     }
     const data = await res.json();
     profileUsername = data.username;
-    profileTier = data.tier || 'basic';
+    profileTier = data.tier || 'free';
     populateProfile(data);
     document.getElementById('profilePage').style.display = 'block';
     if (data.username === 'admin') {
@@ -602,9 +602,9 @@ function populateProfile(data) {
   document.getElementById('heroUsername').textContent = '@' + data.username;
 
   const pill = document.getElementById('heroPill');
-  const tierLabels = { basic: 'Basic', signal_tester: 'Signal Tester', power_user: 'Power User' };
+  const tierLabels = { free: 'Free', pro: 'Pro', founder: 'Founder' };
   pill.textContent = tierLabels[data.tier] || data.tier;
-  pill.className = 'tier-pill ' + (data.tier || 'basic');
+  pill.className = 'tier-pill ' + (data.tier || 'free');
 
   document.getElementById('fieldUsername').value   = data.username;
   document.getElementById('fieldDisplayName').value = data.display_name || '';
@@ -732,15 +732,15 @@ function setAvatarDisplay(value, name) {
 }
 
 function highlightCurrentPlan(tier) {
-  document.getElementById('planBasic').className  = 'plan-card' + (tier === 'basic'         ? ' active' : '');
-  document.getElementById('planSignal').className = 'plan-card' + (tier === 'signal_tester' ? ' active' : '');
-  document.getElementById('planPower').className  = 'plan-card' + (tier === 'power_user'    ? ' active' : '');
+  document.getElementById('planFree').className    = 'plan-card' + (tier === 'free'    ? ' active' : '');
+  document.getElementById('planPro').className     = 'plan-card' + (tier === 'pro'     ? ' active' : '');
+  document.getElementById('planFounder').className = 'plan-card' + (tier === 'founder' ? ' active' : '');
 
-  ['Basic','Signal','Power'].forEach(n => {
+  ['Free','Pro','Founder'].forEach(n => {
     const el = document.getElementById('plan'+n).querySelector('.plan-badge');
     if (el) el.remove();
   });
-  const mapping = { basic: 'Basic', signal_tester: 'Signal', power_user: 'Power' };
+  const mapping = { free: 'Free', pro: 'Pro', founder: 'Founder' };
   const card = document.getElementById('plan' + mapping[tier]);
   if (card) {
     const b = document.createElement('div');
@@ -752,9 +752,9 @@ function highlightCurrentPlan(tier) {
 
 function updateDangerZone(tier) {
   const subBtn = document.getElementById('cancelSubBtn');
-  if (tier === 'basic') {
+  if (tier === 'free') {
     subBtn.disabled = true;
-    subBtn.title = 'You are already on the free Basic plan';
+    subBtn.title = 'You are already on the Free plan';
   }
 }
 
@@ -967,12 +967,12 @@ async function doCancelSub() {
     const res  = await fetch('/api/subscription/cancel', { method: 'POST', credentials: 'include' });
     const data = await res.json();
     if (!res.ok) { showToast(data.error || 'Failed', 'err'); return; }
-    profileTier = 'basic';
-    highlightCurrentPlan('basic');
-    updateDangerZone('basic');
+    profileTier = 'free';
+    highlightCurrentPlan('free');
+    updateDangerZone('free');
     const pill = document.getElementById('heroPill');
-    pill.textContent = 'Basic'; pill.className = 'tier-pill basic';
-    showToast('Subscription cancelled — now on Basic plan', 'ok');
+    pill.textContent = 'Free'; pill.className = 'tier-pill free';
+    showToast('Subscription cancelled — now on Free plan', 'ok');
   } catch (e) {
     showToast('Cannot reach server', 'err');
   }

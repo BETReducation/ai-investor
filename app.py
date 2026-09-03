@@ -184,10 +184,27 @@ def _ensure_table() -> None:
         """)
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'basic'")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB NOT NULL DEFAULT '{}'::jsonb")
-        cur.execute("UPDATE users SET tier = 'power_user' WHERE tier IN ('basic', 'signal_tester')")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS alpha_role TEXT")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_file BYTEA")
         cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_filename TEXT")
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS entitlements JSONB NOT NULL DEFAULT '{}'::jsonb")
+        # One-off rename of the old tier scheme (basic/signal_tester/power_user) to the
+        # new one (free/pro/founder). power_user holders who also carry an alpha_role
+        # become founders (the tier alpha-authoring is now gated on); other power_users
+        # and signal_testers land on pro; plain basic on free. Safe to re-run — a second
+        # pass finds nothing left in the old names.
+        cur.execute("UPDATE users SET tier = 'founder' WHERE tier = 'power_user' AND alpha_role IS NOT NULL")
+        cur.execute("UPDATE users SET tier = 'pro' WHERE tier IN ('power_user', 'signal_tester')")
+        cur.execute("UPDATE users SET tier = 'free' WHERE tier = 'basic'")
+        cur.execute("""
+            UPDATE users SET entitlements = %s
+            WHERE entitlements = '{}'::jsonb
+        """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"]),))
+        for tier in ("pro", "founder"):
+            cur.execute("""
+                UPDATE users SET entitlements = %s
+                WHERE tier = %s AND entitlements = %s
+            """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER[tier]), tier, json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"])))
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content (
                 id              SERIAL PRIMARY KEY,
@@ -515,16 +532,37 @@ def _extract_backtest_calc_params(args) -> dict:
 
 VALID_PERIODS = {"1d", "5d", "60d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
-TIER_RANKS = {"basic": 0, "signal_tester": 1, "power_user": 2}
+TIER_RANKS = {"free": 0, "pro": 1, "founder": 2}
+
+# Per-feature entitlement levels, independent of account tier so any one of them
+# can be hand-overridden by admin (comped access, support fixes) without changing
+# a user's whole account tier. FEATURE_LEVELS is the valid-values source of truth;
+# DEFAULT_ENTITLEMENTS_BY_TIER is what a user gets automatically at each tier.
+FEATURE_LEVELS = {
+    "backtester": ["basic", "pro"],
+    "signals": ["basic", "pro"],
+    "market_xi": ["not_entered", "entered"],
+    "learn_ai": ["free_quota", "unlimited"],
+}
+DEFAULT_ENTITLEMENTS_BY_TIER = {
+    "free": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
+    "pro": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
+    "founder": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
+}
+
+
+def default_entitlements(tier: str) -> dict:
+    return dict(DEFAULT_ENTITLEMENTS_BY_TIER.get(tier, DEFAULT_ENTITLEMENTS_BY_TIER["free"]))
 
 
 # ── User model ───────────────────────────────────────────────────────────────
 
 class User(UserMixin):
-    def __init__(self, username: str, tier: str = "basic", alpha_role: str | None = None):
+    def __init__(self, username: str, tier: str = "free", alpha_role: str | None = None, entitlements: dict | None = None):
         self.id = username
         self.tier = tier
         self.alpha_role = alpha_role
+        self.entitlements = entitlements or default_entitlements(tier)
 
 
 @login_manager.user_loader
@@ -532,7 +570,7 @@ def load_user(username: str):
     users = _load_users()
     if username in users:
         u = users[username]
-        return User(username, u.get("tier", "basic"), u.get("alpha_role"))
+        return User(username, u.get("tier", "free"), u.get("alpha_role"), u.get("entitlements"))
     return None
 
 
@@ -560,12 +598,14 @@ def tier_required(min_tier: str):
 
 
 def alpha_author_required(f):
-    """Gates an endpoint to users with an assigned alpha_role (one of the 4 partners)."""
+    """Gates an endpoint to founder-tier accounts with an assigned alpha_role (one of
+    the 4 partners). Guest alpha authors, if/when that becomes a thing, will need their
+    own entitlement flag rather than founder tier — see [[project_mvp_roadmap_sept2026]]."""
     @wraps(f)
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return jsonify({"error": "Login required"}), 401
-        if not getattr(current_user, "alpha_role", None):
+        if getattr(current_user, "tier", None) != "founder" or not getattr(current_user, "alpha_role", None):
             return jsonify({"error": "This account has no Alpha author access"}), 403
         return f(*args, **kwargs)
     return wrapped
@@ -575,15 +615,38 @@ DATAVIZ_AUTHORS = {"tom", "gary"}
 
 
 def dataviz_author_required(f):
-    """Gates the Data Visualisation studio to authorized accounts (alpha_role in DATAVIZ_AUTHORS)."""
+    """Gates the Data Visualisation studio to authorized founder accounts (alpha_role in DATAVIZ_AUTHORS)."""
     @wraps(f)
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return jsonify({"error": "Login required"}), 401
-        if getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
+        if getattr(current_user, "tier", None) != "founder" or getattr(current_user, "alpha_role", None) not in DATAVIZ_AUTHORS:
             return jsonify({"error": "This account has no Data Visualisation author access"}), 403
         return f(*args, **kwargs)
     return wrapped
+
+
+def entitlement_required(feature: str, min_level: str):
+    """Gates an endpoint to a per-feature entitlement level, independent of account
+    tier — e.g. @entitlement_required('backtester', 'pro'). Not yet wired into any
+    Backtester/Signals routes; those pages still self-gate client-side on tier."""
+    levels = FEATURE_LEVELS.get(feature, [])
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return jsonify({"error": "Login required", "feature": feature, "level_required": min_level}), 401
+            current_level = getattr(current_user, "entitlements", {}).get(feature, levels[0] if levels else None)
+            if levels and levels.index(current_level) < levels.index(min_level):
+                return jsonify({
+                    "error": "Upgrade required",
+                    "feature": feature,
+                    "level_required": min_level,
+                    "current_level": current_level,
+                }), 403
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
 
 
 # ── User-store helpers ───────────────────────────────────────────────────────
@@ -591,21 +654,34 @@ def dataviz_author_required(f):
 def _load_users() -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT username, password_hash, preferences, tier, profile, alpha_role FROM users")
+            cur.execute("SELECT username, password_hash, preferences, tier, profile, alpha_role, entitlements FROM users")
             return {
                 row["username"]: {
                     "password_hash": row["password_hash"],
                     "preferences":   row["preferences"] or {},
-                    "tier":          row.get("tier", "basic"),
+                    "tier":          row.get("tier", "free"),
                     "profile":       row.get("profile") or {},
                     "alpha_role":    row.get("alpha_role"),
+                    "entitlements":  row.get("entitlements") or default_entitlements(row.get("tier", "free")),
                 }
                 for row in cur.fetchall()
             }
     if not os.path.exists(USERS_FILE):
         return {}
     with open(USERS_FILE, "r") as f:
-        return json.load(f).get("users", {})
+        users = json.load(f).get("users", {})
+    # Same old-tier-scheme rename as the Postgres path (see _ensure_table), for the
+    # local-dev JSON fallback — old files on disk still carry basic/signal_tester/power_user.
+    _OLD_TIER_MAP = {"basic": "free", "signal_tester": "pro", "power_user": "pro"}
+    for data in users.values():
+        old_tier = data.get("tier")
+        if old_tier == "power_user" and data.get("alpha_role"):
+            data["tier"] = "founder"
+        elif old_tier in _OLD_TIER_MAP:
+            data["tier"] = _OLD_TIER_MAP[old_tier]
+        if not data.get("entitlements"):
+            data["entitlements"] = default_entitlements(data.get("tier", "free"))
+    return users
 
 
 def _save_users(users: dict) -> None:
@@ -613,15 +689,20 @@ def _save_users(users: dict) -> None:
         with _db_conn() as conn, conn.cursor() as cur:
             for username, data in users.items():
                 cur.execute("""
-                    INSERT INTO users (username, password_hash, preferences, tier, profile, alpha_role)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    INSERT INTO users (username, password_hash, preferences, tier, profile, alpha_role, entitlements)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (username) DO UPDATE
                         SET password_hash = EXCLUDED.password_hash,
                             preferences   = EXCLUDED.preferences,
                             tier          = EXCLUDED.tier,
                             profile       = EXCLUDED.profile,
-                            alpha_role    = EXCLUDED.alpha_role
-                """, (username, data["password_hash"], json.dumps(data.get("preferences", {})), data.get("tier", "basic"), json.dumps(data.get("profile", {})), data.get("alpha_role")))
+                            alpha_role    = EXCLUDED.alpha_role,
+                            entitlements  = EXCLUDED.entitlements
+                """, (
+                    username, data["password_hash"], json.dumps(data.get("preferences", {})),
+                    data.get("tier", "free"), json.dumps(data.get("profile", {})), data.get("alpha_role"),
+                    json.dumps(data.get("entitlements") or default_entitlements(data.get("tier", "free"))),
+                ))
         return
     with open(USERS_FILE, "w") as f:
         json.dump({"users": users}, f, indent=2)
@@ -2372,15 +2453,15 @@ def _ensure_default_user() -> None:
                 return
         password = secrets.token_urlsafe(12)
         pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
-        print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: power_user\n")
+        _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "founder", "alpha_role": "gary", "entitlements": default_entitlements("founder")}})
+        print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: founder\n")
         return
     if os.path.exists(USERS_FILE):
         return
     password = secrets.token_urlsafe(12)
     pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "power_user"}})
-    print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: power_user\n")
+    _save_users({"admin": {"password_hash": pw_hash, "preferences": {}, "tier": "founder", "alpha_role": "gary", "entitlements": default_entitlements("founder")}})
+    print(f"\n  ✓ Created default user  →  username: admin  |  password: {password}  |  tier: founder\n")
 
 
 # ── OHLCV helper ─────────────────────────────────────────────────────────────
@@ -2846,6 +2927,11 @@ def profile_page():
     return send_from_directory("static", "profile.html")
 
 
+@app.route("/admin")
+def admin_page():
+    return send_from_directory("static", "admin.html")
+
+
 # ── Auth endpoints ───────────────────────────────────────────────────────────
 
 @app.route("/api/register", methods=["POST"])
@@ -2870,7 +2956,8 @@ def api_register():
     users[username] = {
         "password_hash": pw_hash,
         "preferences": {},
-        "tier": "power_user",
+        "tier": "free",
+        "entitlements": default_entitlements("free"),
         "profile": {
             "email": email,
             "display_name": username,
@@ -2882,8 +2969,8 @@ def api_register():
     _save_users(users)
 
     session.permanent = True
-    login_user(User(username, "power_user"), remember=True)
-    return jsonify({"success": True, "username": username, "tier": "power_user", "preferences": {}, "landing_page": "/"})
+    login_user(User(username, "free"), remember=True)
+    return jsonify({"success": True, "username": username, "tier": "free", "preferences": {}, "landing_page": "/"})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -3005,14 +3092,16 @@ def api_logout():
 def api_me():
     if not current_user.is_authenticated:
         return jsonify({
-            "authenticated": False, "username": None, "tier": "basic", "alpha_role": None,
+            "authenticated": False, "username": None, "tier": "free", "alpha_role": None,
+            "entitlements": default_entitlements("free"),
             "realtime_base_url": _REALTIME_BASE_URL,
         })
     return jsonify({
         "authenticated": True,
         "username": current_user.id,
-        "tier": getattr(current_user, "tier", "basic"),
+        "tier": getattr(current_user, "tier", "free"),
         "alpha_role": getattr(current_user, "alpha_role", None),
+        "entitlements": getattr(current_user, "entitlements", None) or default_entitlements(getattr(current_user, "tier", "free")),
         # Empty until the realtime/ service (docs/scaling-plan.md, Workstream 1/5)
         # is actually deployed — see signal_config.html's engine SSE wiring, which
         # falls back to the existing poll loop whenever this is blank.
@@ -3034,8 +3123,34 @@ def admin_set_tier():
     if username not in users:
         return jsonify({"error": "User not found"}), 404
     users[username]["tier"] = new_tier
+    # Reset entitlements to the new tier's defaults — any per-feature overrides the
+    # user had get cleared too, so set them again via set-entitlement after this if needed.
+    users[username]["entitlements"] = default_entitlements(new_tier)
     _save_users(users)
-    return jsonify({"success": True, "username": username, "tier": new_tier})
+    return jsonify({"success": True, "username": username, "tier": new_tier, "entitlements": users[username]["entitlements"]})
+
+
+@app.route("/api/admin/set-entitlement", methods=["POST"])
+@login_required
+def admin_set_entitlement():
+    if current_user.id != "admin":
+        return jsonify({"error": "Admin only"}), 403
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    feature = data.get("feature", "").strip()
+    level = data.get("level", "").strip()
+    if feature not in FEATURE_LEVELS:
+        return jsonify({"error": f"Invalid feature. Valid options: {list(FEATURE_LEVELS.keys())}"}), 400
+    if level not in FEATURE_LEVELS[feature]:
+        return jsonify({"error": f"Invalid level for {feature}. Valid options: {FEATURE_LEVELS[feature]}"}), 400
+    users = _load_users()
+    if username not in users:
+        return jsonify({"error": "User not found"}), 404
+    entitlements = users[username].get("entitlements") or default_entitlements(users[username].get("tier", "free"))
+    entitlements[feature] = level
+    users[username]["entitlements"] = entitlements
+    _save_users(users)
+    return jsonify({"success": True, "username": username, "entitlements": entitlements})
 
 
 @app.route("/api/admin/users", methods=["GET"])
@@ -3045,9 +3160,15 @@ def admin_list_users():
         return jsonify({"error": "Admin only"}), 403
     users = _load_users()
     return jsonify({"users": [
-        {"username": u, "alpha_role": data.get("alpha_role"), "tier": data.get("tier", "basic")}
+        {
+            "username": u,
+            "alpha_role": data.get("alpha_role"),
+            "tier": data.get("tier", "free"),
+            "entitlements": data.get("entitlements") or default_entitlements(data.get("tier", "free")),
+            "email": (data.get("profile") or {}).get("email"),
+        }
         for u, data in sorted(users.items())
-    ]})
+    ], "feature_levels": FEATURE_LEVELS, "tiers": list(TIER_RANKS.keys())})
 
 
 @app.route("/api/admin/set-alpha-role", methods=["POST"])
