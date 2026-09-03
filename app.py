@@ -579,6 +579,22 @@ def unauthorized():
     return jsonify({"error": "Authentication required"}), 401
 
 
+# Usernames/emails allowed into /admin and the admin API, beyond the original "admin"
+# account. Add here rather than granting founder tier — admin access and founder tier
+# are different things (one runs the site, the other authors Alpha content).
+ADMIN_USERNAMES = {"admin", "garybyatt"}
+ADMIN_EMAILS = {"gbyatt@gmail.com"}
+
+
+def is_admin_user(user) -> bool:
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if user.id in ADMIN_USERNAMES:
+        return True
+    profile = (_load_users().get(user.id, {}) or {}).get("profile", {}) or {}
+    return (profile.get("email") or "").strip().lower() in ADMIN_EMAILS
+
+
 def tier_required(min_tier: str):
     def decorator(f):
         @wraps(f)
@@ -3112,7 +3128,7 @@ def api_me():
 @app.route("/api/admin/set-tier", methods=["POST"])
 @login_required
 def admin_set_tier():
-    if current_user.id != "admin":
+    if not is_admin_user(current_user):
         return jsonify({"error": "Admin only"}), 403
     data = request.get_json() or {}
     username = data.get("username", "").strip()
@@ -3133,7 +3149,7 @@ def admin_set_tier():
 @app.route("/api/admin/set-entitlement", methods=["POST"])
 @login_required
 def admin_set_entitlement():
-    if current_user.id != "admin":
+    if not is_admin_user(current_user):
         return jsonify({"error": "Admin only"}), 403
     data = request.get_json() or {}
     username = data.get("username", "").strip()
@@ -3156,7 +3172,7 @@ def admin_set_entitlement():
 @app.route("/api/admin/users", methods=["GET"])
 @login_required
 def admin_list_users():
-    if current_user.id != "admin":
+    if not is_admin_user(current_user):
         return jsonify({"error": "Admin only"}), 403
     users = _load_users()
     return jsonify({"users": [
@@ -3174,7 +3190,7 @@ def admin_list_users():
 @app.route("/api/admin/set-alpha-role", methods=["POST"])
 @login_required
 def admin_set_alpha_role():
-    if current_user.id != "admin":
+    if not is_admin_user(current_user):
         return jsonify({"error": "Admin only"}), 403
     data = request.get_json() or {}
     username = data.get("username", "").strip()
