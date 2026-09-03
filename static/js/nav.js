@@ -96,6 +96,7 @@
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +
+'    <a href="/admin" class="nav-admin-link" id="navAdminLink" style="display:none;" title="Admin panel">Admin</a>' +
 '    <div class="nav-search" id="navSearch">' +
 '      <button class="nav-search-toggle" id="navSearchToggle" title="Search" aria-label="Search">🔍</button>' +
 '      <div class="nav-search-box" id="navSearchBox">' +
@@ -140,6 +141,10 @@
             signIn.href = '/profile';
             signIn.style.color = 'var(--green)';
             signIn.style.borderColor = 'var(--green)';
+          }
+          if (data.is_admin) {
+            const adminLink = document.getElementById('navAdminLink');
+            if (adminLink) adminLink.style.display = '';
           }
           if (data.alpha_role) {
             const studioLink = document.getElementById('navStudioLi');

@@ -3109,7 +3109,7 @@ def api_me():
     if not current_user.is_authenticated:
         return jsonify({
             "authenticated": False, "username": None, "tier": "free", "alpha_role": None,
-            "entitlements": default_entitlements("free"),
+            "entitlements": default_entitlements("free"), "is_admin": False,
             "realtime_base_url": _REALTIME_BASE_URL,
         })
     return jsonify({
@@ -3118,6 +3118,7 @@ def api_me():
         "tier": getattr(current_user, "tier", "free"),
         "alpha_role": getattr(current_user, "alpha_role", None),
         "entitlements": getattr(current_user, "entitlements", None) or default_entitlements(getattr(current_user, "tier", "free")),
+        "is_admin": is_admin_user(current_user),
         # Empty until the realtime/ service (docs/scaling-plan.md, Workstream 1/5)
         # is actually deployed — see signal_config.html's engine SSE wiring, which
         # falls back to the existing poll loop whenever this is blank.
