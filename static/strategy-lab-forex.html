@@ -254,6 +254,32 @@
   }
   .bt-mysym-chip button:hover { color: var(--accent-red); }
 
+  /* Basic-tier asset picker — collapsible category list instead of free search,
+     since Basic accounts can only run the curated 5-pair allowlist and a
+     search box just invites typing a symbol that'll 403. */
+  .bt-asset-picker { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .bt-asset-cat { border-bottom: 1px solid var(--border); }
+  .bt-asset-cat:last-child { border-bottom: none; }
+  .bt-asset-cat summary {
+    list-style: none; cursor: pointer; padding: 7px 8px;
+    font-size: 10px; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary);
+    background: var(--bg-card); display: flex; align-items: center; justify-content: space-between;
+    user-select: none;
+  }
+  .bt-asset-cat summary::-webkit-details-marker { display: none; }
+  .bt-asset-cat summary::after { content: '+'; color: var(--text-muted); font-size: 12px; }
+  .bt-asset-cat[open] summary::after { content: '−'; }
+  .bt-asset-cat summary:hover { color: var(--text-primary); }
+  .bt-asset-list { display: flex; flex-direction: column; }
+  .bt-asset-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    cursor: pointer; font-size: 10px; border-top: 1px solid var(--border);
+  }
+  .bt-asset-item:hover { background: var(--bg-hover); }
+  .bt-asset-item.active { background: var(--accent-green); color: #000; }
+  .bt-asset-item .bt-sr-sym { min-width: 66px; }
+  .bt-asset-item.active .bt-sr-sym, .bt-asset-item.active .bt-sr-name { color: #000; }
+
   /* Indicator toggle rows */
   .ind-row {
     display: flex;
@@ -828,7 +854,7 @@ window.addEventListener('resize', () => {
     <!-- Symbol + Period + Interval -->
     <div class="ctrl-section">
       <div class="ctrl-label">ASSET</div>
-      <div class="bt-symbol-row">
+      <div class="bt-symbol-row" id="btSymbolRow">
         <input type="text" id="btSymbol" class="lab-input" placeholder="e.g. EURUSD=X, GBPJPY=X" value="EURUSD=X" autocomplete="off"
                style="text-transform:uppercase;"
                oninput="this.value=this.value.toUpperCase(); onBtSymbolInput(this.value);"
@@ -836,6 +862,10 @@ window.addEventListener('resize', () => {
         <button type="button" class="bt-save-sym-btn" id="btSaveSymBtn" onclick="saveCurrentSymbol()" title="Save to My Symbols">☆</button>
       </div>
       <div class="bt-search-results" id="btSearchResults"></div>
+      <!-- Basic tier: shown instead of the search box above (hidden via
+           applyBacktesterGating) — collapsible list of the 5 allowed forex
+           pairs, built client-side by renderBasicAssetPicker(). -->
+      <div class="bt-asset-picker" id="btAssetPicker" style="display:none;"></div>
       <div class="bt-mysymbols" id="btMySymbols"></div>
 
       <div class="ctrl-label" style="margin-top:6px;">PERIOD</div>
@@ -2325,12 +2355,54 @@ async function applyBacktesterGating() {
     } else {
       note.textContent = `${btGating.remaining} of ${btGating.limit} backtests left today — upgrade to Pro for unlimited.`;
     }
+    document.getElementById('btSymbolRow').style.display = 'none';
+    renderBasicAssetPicker();
   } else {
     document.getElementById('modeBasic').style.display = 'none';
     setIndicatorMode('detailed');
   }
 }
 const FREE_TIER_DAILY_LIMIT_LABEL = 20;
+
+// Friendly names for the Basic-tier allowlist — mirrors BASIC_TIER_SYMBOLS in
+// app.py, keep the two in sync. Only the forex pairs apply here (this page's
+// SL/TP is pip-based, which only makes sense for currency pairs — same reason
+// runBtSymbolSearch above filters search results to forex-only). Basic users
+// often won't know which pair they want, so this replaces the search box with
+// a collapsible pick list instead of asking them to type one.
+const BASIC_ASSET_CATEGORIES = [
+  { label: 'FOREX', items: [
+    { symbol: 'EURUSD=X', name: 'EUR / USD' },
+    { symbol: 'GBPUSD=X', name: 'GBP / USD' },
+    { symbol: 'USDJPY=X', name: 'USD / JPY' },
+    { symbol: 'AUDUSD=X', name: 'AUD / USD' },
+    { symbol: 'USDCAD=X', name: 'USD / CAD' },
+  ]},
+];
+
+function renderBasicAssetPicker() {
+  const el = document.getElementById('btAssetPicker');
+  const current = document.getElementById('btSymbol').value.trim().toUpperCase();
+  el.innerHTML = BASIC_ASSET_CATEGORIES.map((cat, ci) => `
+    <details class="bt-asset-cat" open>
+      <summary>${cat.label}</summary>
+      <div class="bt-asset-list">
+        ${cat.items.map(i => `
+          <div class="bt-asset-item ${i.symbol === current ? 'active' : ''}" onclick="pickBasicAsset('${i.symbol}')">
+            <span class="bt-sr-sym">${i.symbol}</span>
+            <span class="bt-sr-name">${i.name}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `).join('');
+  el.style.display = 'block';
+}
+
+function pickBasicAsset(symbol) {
+  pickBtSymbol(symbol);
+  renderBasicAssetPicker();
+}
 
 // ── Save / load backtest strategies ────────────────────────────────────────
 // Generic: every labelled control in the sidebar has a stable id, so a saved
