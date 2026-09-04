@@ -571,6 +571,19 @@ def default_entitlements(tier: str) -> dict:
     return dict(DEFAULT_ENTITLEMENTS_BY_TIER.get(tier, DEFAULT_ENTITLEMENTS_BY_TIER["free"]))
 
 
+def _clear_custom_symbols_on_backtester_downgrade(users: dict, username: str, old_level, new_level) -> None:
+    """A pro-tier user's starred "my symbols" list can hold anything; dropping to
+    basic backtester access makes most of those unusable (backend 403s them, but
+    the star would sit there forever looking like it still works). Wipe the list
+    on a pro->basic downgrade so there's nothing stale to trip over — mutates
+    `users` in place, caller still needs to _save_users() it."""
+    if old_level == "pro" and new_level == "basic":
+        prefs = users.get(username, {}).get("preferences") or {}
+        if prefs.get("custom_symbols"):
+            prefs["custom_symbols"] = []
+            users[username]["preferences"] = prefs
+
+
 # ── Backtester gating (basic entitlement = anonymous visitors AND free-tier
 # accounts; "basic" here is the same value as entitlements['backtester']) ────
 
@@ -3286,10 +3299,12 @@ def admin_set_tier():
     users = _load_users()
     if username not in users:
         return jsonify({"error": "User not found"}), 404
+    old_backtester_level = (users[username].get("entitlements") or {}).get("backtester")
     users[username]["tier"] = new_tier
     # Reset entitlements to the new tier's defaults — any per-feature overrides the
     # user had get cleared too, so set them again via set-entitlement after this if needed.
     users[username]["entitlements"] = default_entitlements(new_tier)
+    _clear_custom_symbols_on_backtester_downgrade(users, username, old_backtester_level, users[username]["entitlements"].get("backtester"))
     _save_users(users)
     return jsonify({"success": True, "username": username, "tier": new_tier, "entitlements": users[username]["entitlements"]})
 
@@ -3311,8 +3326,11 @@ def admin_set_entitlement():
     if username not in users:
         return jsonify({"error": "User not found"}), 404
     entitlements = users[username].get("entitlements") or default_entitlements(users[username].get("tier", "free"))
+    old_level = entitlements.get(feature)
     entitlements[feature] = level
     users[username]["entitlements"] = entitlements
+    if feature == "backtester":
+        _clear_custom_symbols_on_backtester_downgrade(users, username, old_level, level)
     _save_users(users)
     return jsonify({"success": True, "username": username, "entitlements": entitlements})
 

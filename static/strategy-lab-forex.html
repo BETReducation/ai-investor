@@ -2444,6 +2444,16 @@ function loadSavedBacktestStrategy(name) {
   if (!s) return;
   document.getElementById('btStrategyName').value = s.name;
   applyBacktestConfig(s.config);
+  // A strategy saved in Advanced mode back when this account still had Pro access
+  // would otherwise flip the UI into Advanced (its indicator toggles included)
+  // even though the account can no longer run any of that — the server would
+  // silently strip it all on Run with no explanation. Force Basic and say why.
+  const wasAdvanced = s.config && s.config._indicatorMode === 'detailed';
+  if (wasAdvanced && btGating && btGating.restricted) {
+    setIndicatorMode('basic');
+    if (hint) hint.textContent = `Loaded "${s.name}" — its Advanced indicators aren't available on your plan, so only the Basic set will run. Upgrade to Pro to use it as saved.`;
+    return;
+  }
   if (hint) hint.textContent = `Loaded "${s.name}".`;
 }
 
