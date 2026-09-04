@@ -93,6 +93,7 @@
 '        <li><a href="/partners">Partners</a></li>' +
 '      </ul>' +
 '    </li>' +
+'    <li id="navAdminMobileLi" class="nav-admin-mobile-li" style="display:none;"><a href="/admin">Admin</a></li>' +
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +
@@ -145,6 +146,8 @@
           if (data.is_admin) {
             const adminLink = document.getElementById('navAdminLink');
             if (adminLink) adminLink.style.display = '';
+            const adminMobileLi = document.getElementById('navAdminMobileLi');
+            if (adminMobileLi) adminMobileLi.style.display = 'list-item';
           }
           if (data.alpha_role) {
             const studioLink = document.getElementById('navStudioLi');

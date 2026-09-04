@@ -38,6 +38,7 @@ nav {
 .nav-logo img { height: 48px; width: auto; border-radius: 8px; display: block; }
 
 .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+.nav-admin-mobile-li { display: none; } /* only ever shown inside the <=900px hamburger dropdown, toggled there */
 .nav-links li { position: relative; list-style: none; }
 .nav-links > li > a {
   display: flex; align-items: center; gap: 3px;
@@ -157,6 +158,13 @@ nav {
 
 @media (max-width: 900px) {
   .nav-hamburger { display: flex; }
+  /* The header pill version is dropped in favour of an Admin row inside the
+     hamburger menu (#navAdminMobileLi below) — there just isn't room in the
+     top bar for logo + admin pill + search + theme toggle + account +
+     hamburger on a phone width without clipping the hamburger off-screen. */
+  .nav-admin-link { display: none; }
+  .nav-cta { gap: 8px; }
+  #navSignIn { max-width: 90px; padding: 9px 12px; }
   .nav-links {
     display: none; position: fixed; top: 68px; left: 0; right: 0;
     flex-direction: column; align-items: stretch; gap: 0;
