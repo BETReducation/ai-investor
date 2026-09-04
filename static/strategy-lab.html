@@ -812,7 +812,7 @@ window.addEventListener('resize', () => {
          (% of trade amount vs pips). -->
     <div style="display:flex;gap:4px;padding:10px 16px 0;">
       <a href="/backtester"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">STOCKS/ETFs/FUTURES</a>
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">STOCKS / ETFs / CRYPTO</a>
       <a href="/backtester/forex"
         style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;text-align:center;text-decoration:none;display:block;">FOREX</a>
     </div>
@@ -822,7 +822,7 @@ window.addEventListener('resize', () => {
       <button id="modeBasic" onclick="setIndicatorMode('basic')"
         style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--accent-green);color:#000;cursor:pointer;font-weight:700;">BASIC</button>
       <button id="modeDetailed" onclick="setIndicatorMode('detailed')"
-        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">DETAILED</button>
+        style="flex:1;padding:5px 0;font-size:9px;letter-spacing:1px;border-radius:3px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;font-weight:700;">ADVANCED</button>
     </div>
 
     <!-- Symbol + Period + Interval -->
@@ -2294,7 +2294,43 @@ initMySymbols();
       }
     }
   } catch {}
+  applyBacktesterGating();
 })();
+
+// ── Tier gating: Basic (anonymous + free-tier) gets the curated Basic
+// indicator set + symbol allowlist only; Pro/Founder gets Advanced only.
+// Reads /api/backtest/quota (a read-only lookup, doesn't burn a try) and
+// hides whichever mode tab doesn't apply, forces the other, restricts symbol
+// search results, and shows a small remaining-tries note when relevant.
+let btGating = null;
+async function applyBacktesterGating() {
+  try {
+    const res = await fetch('/api/backtest/quota', { credentials: 'include' });
+    btGating = await res.json();
+  } catch { return; }
+
+  const modeRow = document.getElementById('modeBasic').parentElement;
+  if (btGating.restricted) {
+    document.getElementById('modeDetailed').style.display = 'none';
+    setIndicatorMode('basic');
+    let note = document.getElementById('btGatingNote');
+    if (!note) {
+      note = document.createElement('div');
+      note.id = 'btGatingNote';
+      note.style.cssText = 'padding:6px 16px 0;font-size:10px;color:var(--text-secondary);';
+      modeRow.insertAdjacentElement('afterend', note);
+    }
+    if (btGating.anonymous) {
+      note.textContent = `Free trial: ${btGating.remaining} of ${btGating.limit} backtests left — sign up for a free account for ${FREE_TIER_DAILY_LIMIT_LABEL}/day.`;
+    } else {
+      note.textContent = `${btGating.remaining} of ${btGating.limit} backtests left today — upgrade to Pro for unlimited.`;
+    }
+  } else {
+    document.getElementById('modeBasic').style.display = 'none';
+    setIndicatorMode('detailed');
+  }
+}
+const FREE_TIER_DAILY_LIMIT_LABEL = 20;
 
 // Keeps a range slider and its paired free-typed number box in sync. The slider
 // stays the source of truth read by serializeBacktestConfig()/the backtest request —
@@ -2389,7 +2425,7 @@ function renderBacktestStrategyDropdown() {
   const current = sel.value;
   sel.innerHTML = '<option value="">— New Strategy —</option>' +
     savedBacktests.map(s => {
-      const mode = (s.config && s.config._indicatorMode === 'basic') ? 'Basic' : 'Detailed';
+      const mode = (s.config && s.config._indicatorMode === 'basic') ? 'Basic' : 'Advanced';
       return `<option value="${s.name}">${s.name}  ·  ${mode}</option>`;
     }).join('');
   if (savedBacktests.find(s => s.name === current)) sel.value = current;
@@ -2519,6 +2555,11 @@ async function runBtSymbolSearch(query) {
   const alias = matchIndexAlias(query);
   if (alias && !results.some(r => r.symbol === alias.symbol)) {
     results = [alias, ...results];
+  }
+  // Free tier / anonymous: only the curated allowlist is backtestable server-side —
+  // don't show results that would just 403 on Run.
+  if (btGating && btGating.restricted) {
+    results = results.filter(r => btGating.allowed_symbols.includes((r.symbol || '').toUpperCase()));
   }
   btSearchResults = results;
   renderBtSearchResults(query);

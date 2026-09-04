@@ -82,6 +82,8 @@ login_manager = LoginManager(app)
 login_manager.session_protection = "basic"
 
 USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
+ANON_BACKTEST_FILE  = os.path.join(os.path.dirname(__file__), "anon_backtest_usage.json")
+DAILY_BACKTEST_FILE = os.path.join(os.path.dirname(__file__), "backtest_daily_usage.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
@@ -205,6 +207,20 @@ def _ensure_table() -> None:
                 UPDATE users SET entitlements = %s
                 WHERE tier = %s AND entitlements = %s
             """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER[tier]), tier, json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"])))
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS anon_backtest_usage (
+                ip    TEXT PRIMARY KEY,
+                count INT NOT NULL DEFAULT 0
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS backtest_daily_usage (
+                username TEXT NOT NULL,
+                day      DATE NOT NULL,
+                count    INT NOT NULL DEFAULT 0,
+                PRIMARY KEY (username, day)
+            )
+        """)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS alpha_content (
                 id              SERIAL PRIMARY KEY,
@@ -553,6 +569,137 @@ DEFAULT_ENTITLEMENTS_BY_TIER = {
 
 def default_entitlements(tier: str) -> dict:
     return dict(DEFAULT_ENTITLEMENTS_BY_TIER.get(tier, DEFAULT_ENTITLEMENTS_BY_TIER["free"]))
+
+
+# ── Backtester gating (basic entitlement = anonymous visitors AND free-tier
+# accounts; "basic" here is the same value as entitlements['backtester']) ────
+
+# Anonymous visitors: a lifetime cap per IP (never resets) before the tool asks
+# them to sign up. IP-based limiting is a soft speed bump, not real abuse-proofing
+# — trivially bypassed by VPN/incognito/mobile data — but it stops casual reuse
+# without needing an account, which is the point.
+ANON_BACKTEST_LIMIT = 5
+
+# Free-tier accounts: N runs per *calendar* day (UTC), not a rolling 24h window —
+# resets at midnight UTC regardless of when the user's first run that day was.
+FREE_TIER_DAILY_BACKTEST_LIMIT = 20
+
+# Symbol allowlist for anonymous + free-tier (basic) backtesting — top 5 of each
+# asset type the backtester supports. Pro/founder have no symbol restriction.
+BASIC_TIER_SYMBOLS = {
+    # stocks
+    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
+    # crypto
+    "BTC-USD", "ETH-USD", "ADA-USD", "SOL-USD", "XRP-USD",
+    # forex
+    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X",
+    # indices
+    "^GSPC", "^NDX", "^DJI", "^FTSE", "^GDAXI",
+}
+
+# Indicator query params only meaningful in Advanced mode (everything past the
+# 5-indicator Basic set: RSI/MACD/BB/MA/Volume). Stripped server-side for
+# anonymous/basic-entitlement requests so the API can't be used to bypass the
+# client-side Basic/Advanced tab restriction. Mirrors the "Extended indicator
+# set" block in the /api/backtest threshold-parsing list below — keep in sync.
+ADVANCED_ONLY_THRESHOLD_KEYS = {
+    "adx_on", "adx_trend_threshold",
+    "psar_on", "psar_flip_lookback",
+    "ichimoku_on",
+    "supertrend_on", "supertrend_flip_lookback",
+    "donchian_on",
+    "hma_on",
+    "stoch_on", "stoch_oversold", "stoch_overbought",
+    "stochrsi_on", "stochrsi_oversold", "stochrsi_overbought",
+    "cci_on", "cci_oversold", "cci_overbought",
+    "willr_on", "willr_oversold", "willr_overbought",
+    "roc_on", "roc_threshold",
+    "mfi_on", "mfi_oversold", "mfi_overbought",
+    "tsi_on", "tsi_oversold", "tsi_overbought",
+    "ao_on",
+    "atr_on", "atr_trend_lookback",
+    "keltner_on",
+    "stdev_on", "stdev_trend_lookback",
+    "chaikin_vol_on", "chaikin_vol_trend_lookback",
+    "hist_vol_on", "hist_vol_trend_lookback",
+    "obv_on",
+    "vwap_on",
+    "ad_on",
+    "cmf_on", "cmf_threshold",
+    "vol_profile_on",
+    "fib_on", "fib_tolerance_pct",
+    "inv_hs_on", "inv_hs_tolerance_pct",
+    "macd_centerline_lookback", "macd_zscore_overbought", "macd_zscore_oversold",
+    "ma_trigger_lookback",
+    "adx_di_cross_lookback",
+    "psar_gap_lookback", "supertrend_gap_lookback",
+    "ichimoku_tk_cross_lookback", "donchian_mid_cross_lookback", "hma_price_cross_lookback",
+    "hma_two_cross_lookback",
+    "stoch_signal_cross_lookback", "stochrsi_signal_cross_lookback",
+    "cci_centerline_lookback", "willr_midline_lookback", "roc_centerline_lookback",
+    "mfi_centerline_lookback", "tsi_centerline_lookback", "ao_zero_cross_lookback",
+    "keltner_mid_cross_lookback", "cmf_centerline_lookback", "vol_profile_breakout_lookback",
+    "bb_breakout_margin_pct", "bb_pct_below_high", "bb_pct_above_low",
+    "donchian_retest_lookback", "donchian_retest_tolerance_pct",
+}
+BASIC_TRIGGER_KEYS = {"rsi_trigger", "macd_trigger", "bb_trigger", "ma_trigger"}
+
+
+def _client_ip() -> str:
+    # Railway (and most PaaS) sit behind a proxy — the real client IP is the
+    # first hop in X-Forwarded-For, not request.remote_addr (which is the proxy).
+    fwd = request.headers.get("X-Forwarded-For", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def _anon_backtest_try(ip: str) -> tuple[bool, int]:
+    """Increments this IP's lifetime anonymous-backtest count and reports whether
+    this run is allowed. Returns (allowed, count_after)."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO anon_backtest_usage (ip, count) VALUES (%s, 1)
+                ON CONFLICT (ip) DO UPDATE SET count = anon_backtest_usage.count + 1
+                RETURNING count
+            """, (ip,))
+            count = cur.fetchone()[0]
+        return count <= ANON_BACKTEST_LIMIT, count
+    data = {}
+    if os.path.exists(ANON_BACKTEST_FILE):
+        with open(ANON_BACKTEST_FILE) as f:
+            data = json.load(f)
+    count = data.get(ip, 0) + 1
+    data[ip] = count
+    with open(ANON_BACKTEST_FILE, "w") as f:
+        json.dump(data, f)
+    return count <= ANON_BACKTEST_LIMIT, count
+
+
+def _daily_backtest_try(username: str) -> tuple[bool, int]:
+    """Increments this user's count for today (UTC calendar day) and reports
+    whether this run is allowed. Returns (allowed, count_after)."""
+    today = _dt.datetime.utcnow().date()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO backtest_daily_usage (username, day, count) VALUES (%s, %s, 1)
+                ON CONFLICT (username, day) DO UPDATE SET count = backtest_daily_usage.count + 1
+                RETURNING count
+            """, (username, today))
+            count = cur.fetchone()[0]
+        return count <= FREE_TIER_DAILY_BACKTEST_LIMIT, count
+    data = {}
+    if os.path.exists(DAILY_BACKTEST_FILE):
+        with open(DAILY_BACKTEST_FILE) as f:
+            data = json.load(f)
+    key = f"{username}|{today.isoformat()}"
+    count = data.get(key, 0) + 1
+    data[key] = count
+    with open(DAILY_BACKTEST_FILE, "w") as f:
+        json.dump(data, f)
+    return count <= FREE_TIER_DAILY_BACKTEST_LIMIT, count
 
 
 # ── User model ───────────────────────────────────────────────────────────────
@@ -4744,6 +4891,56 @@ def _engine_worker_loop() -> None:
 
 # ── Backtest endpoint (public) ───────────────────────────────────────────────
 
+@app.route("/api/backtest/quota", methods=["GET"])
+def backtest_quota():
+    """Read-only lookup for the strategy-lab UI — reports the caller's backtester
+    entitlement, symbol allowlist (if restricted), and remaining tries, without
+    consuming one. Used to show/hide tabs and a tries-remaining note up front."""
+    if current_user.is_authenticated:
+        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
+    else:
+        entitlement_level = "basic"
+
+    if entitlement_level == "pro":
+        return jsonify({"entitlement": "pro", "restricted": False})
+
+    if not current_user.is_authenticated:
+        ip = _client_ip()
+        if DATABASE_URL:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("SELECT count FROM anon_backtest_usage WHERE ip = %s", (ip,))
+                row = cur.fetchone()
+                used = row[0] if row else 0
+        else:
+            used = 0
+            if os.path.exists(ANON_BACKTEST_FILE):
+                with open(ANON_BACKTEST_FILE) as f:
+                    used = json.load(f).get(ip, 0)
+        return jsonify({
+            "entitlement": "basic", "restricted": True, "anonymous": True,
+            "limit": ANON_BACKTEST_LIMIT, "used": used,
+            "remaining": max(0, ANON_BACKTEST_LIMIT - used),
+            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
+        })
+
+    today = _dt.datetime.utcnow().date()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT count FROM backtest_daily_usage WHERE username = %s AND day = %s", (current_user.id, today))
+            row = cur.fetchone()
+            used = row[0] if row else 0
+    else:
+        used = 0
+        if os.path.exists(DAILY_BACKTEST_FILE):
+            with open(DAILY_BACKTEST_FILE) as f:
+                used = json.load(f).get(f"{current_user.id}|{today.isoformat()}", 0)
+    return jsonify({
+        "entitlement": "basic", "restricted": True, "anonymous": False,
+        "limit": FREE_TIER_DAILY_BACKTEST_LIMIT, "used": used,
+        "remaining": max(0, FREE_TIER_DAILY_BACKTEST_LIMIT - used),
+        "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
+    })
+
 @app.route("/api/backtest", methods=["GET"])
 def backtest():
     symbol     = request.args.get("symbol", "").strip()
@@ -4754,6 +4951,40 @@ def backtest():
 
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
+
+    # ── Tier gating ──────────────────────────────────────────────────────────
+    # Anonymous visitors and free-tier ("basic" entitlement) accounts share the
+    # same restrictions: a curated symbol list and Basic-only indicators. On top
+    # of that, anonymous gets a lifetime try cap and free-tier gets a daily cap.
+    # Pro/founder accounts (entitlements['backtester'] == 'pro') skip all of it.
+    if current_user.is_authenticated:
+        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
+    else:
+        entitlement_level = "basic"
+
+    if not current_user.is_authenticated:
+        allowed, tries_used = _anon_backtest_try(_client_ip())
+        if not allowed:
+            return jsonify({
+                "error": f"You've used your {ANON_BACKTEST_LIMIT} free backtests. Sign up for a free account to keep going.",
+                "anon_limit_reached": True,
+                "limit": ANON_BACKTEST_LIMIT,
+            }), 403
+    elif entitlement_level != "pro":
+        allowed, count = _daily_backtest_try(current_user.id)
+        if not allowed:
+            return jsonify({
+                "error": f"Daily backtest limit reached ({FREE_TIER_DAILY_BACKTEST_LIMIT}/day). Upgrade to Pro for unlimited backtests, or try again tomorrow.",
+                "daily_limit_reached": True,
+                "limit": FREE_TIER_DAILY_BACKTEST_LIMIT,
+            }), 403
+
+    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
+        return jsonify({
+            "error": f"'{symbol}' isn't available on the free plan. Free backtesting is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
+            "symbol_restricted": True,
+            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
+        }), 403
 
     try:
         stop_loss_pct   = float(request.args.get("stop_loss",     100.0))
@@ -4840,6 +5071,15 @@ def backtest():
                 if v not in cleaned:
                     cleaned.append(v)
             thresholds[trig_key] = cleaned
+
+    # Strip Advanced-only indicator params server-side for basic entitlement —
+    # a raw API request can't use this to see the Advanced indicator set even
+    # though the client-side tab restriction is what stops it in the UI.
+    if entitlement_level != "pro":
+        for key in ADVANCED_ONLY_THRESHOLD_KEYS:
+            thresholds.pop(key, None)
+        for key in set(_TRIGGER_WHITELISTS) - BASIC_TRIGGER_KEYS:
+            thresholds.pop(key, None)
 
     calc_params = _extract_calc_params(request.args)
     calc_params.update(_extract_backtest_calc_params(request.args))
