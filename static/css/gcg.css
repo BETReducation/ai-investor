@@ -915,6 +915,32 @@
     color: var(--accent-red); background: rgba(255,51,85,.08); border-color: rgba(255,51,85,.3);
   }
 
+  /* Basic-tier asset picker — collapsible category list instead of free search,
+     since Basic accounts can only watch the curated 5-per-category allowlist and
+     a search box just invites adding a symbol that'll 403 once monitoring starts. */
+  .wl-asset-picker { margin: 8px 10px; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .wl-asset-cat { border-bottom: 1px solid var(--border); }
+  .wl-asset-cat:last-child { border-bottom: none; }
+  .wl-asset-cat summary {
+    list-style: none; cursor: pointer; padding: 7px 8px;
+    font-size: 10px; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary);
+    background: var(--bg-card); display: flex; align-items: center; justify-content: space-between;
+    user-select: none;
+  }
+  .wl-asset-cat summary::-webkit-details-marker { display: none; }
+  .wl-asset-cat summary::after { content: '+'; color: var(--text-muted); font-size: 12px; }
+  .wl-asset-cat[open] summary::after { content: '−'; }
+  .wl-asset-cat summary:hover { color: var(--text-primary); }
+  .wl-asset-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    cursor: pointer; font-size: 10px; border-top: 1px solid var(--border);
+  }
+  .wl-asset-item:hover { background: var(--bg-hover); }
+  .wl-asset-item.active { background: var(--accent-green); color: #000; }
+  .wl-asset-item .wl-sr-sym { min-width: 66px; }
+  .wl-asset-item.active .wl-sr-sym, .wl-asset-item.active .wl-sr-name { color: #000; }
+  .wl-gating-note { padding: 6px 10px 0; font-size: 9px; color: var(--text-secondary); }
+
   /* Active asset list — scrollable so it never dominates the panel */
   .wl-active-list { max-height: 220px; overflow-y: auto; scrollbar-width: thin; }
 

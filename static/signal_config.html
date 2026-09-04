@@ -361,13 +361,18 @@ window.addEventListener('resize', () => {
           <span class="wl-dropdown-info" id="wlDropdownInfo">0 of 0 assets selected</span>
           <button class="wl-done-btn" onclick="toggleWatchlistDropdown()">✓ DONE</button>
         </div>
-        <div class="wl-search">
+        <div class="wl-search" id="wlSearch">
           <input type="text" id="wlSearchInput" placeholder="Search any stock, ETF, crypto, forex, futures…"
                  autocomplete="off" oninput="onSymbolSearchInput(this.value)"
                  onfocus="if(this.value) onSymbolSearchInput(this.value)">
           <div class="wl-search-hint" id="wlSearchHint" style="display:none;">Sign in to save symbols you search for</div>
           <div class="wl-search-results" id="wlSearchResults"></div>
         </div>
+        <!-- Basic tier: shown instead of the search box above (toggled in
+             applyTierUI) — collapsible per-category list of the 5 allowed
+             symbols each, built client-side by renderBasicAssetPicker(). -->
+        <div class="wl-asset-picker" id="wlAssetPicker" style="display:none;"></div>
+        <div class="wl-gating-note" id="wlGatingNote" style="display:none;"></div>
         <div class="wl-check-list" id="wlCheckList"></div>
       </div>
     </div>
@@ -529,9 +534,9 @@ window.addEventListener('resize', () => {
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
           <button type="button" class="qs-chip" onclick="applyTemplate('oversold_bounce')" title="BUY when RSI is oversold and price is near the lower Bollinger Band — a mean-reversion bounce setup.">Oversold Bounce</button>
           <button type="button" class="qs-chip" onclick="applyTemplate('momentum_breakout')" title="BUY on a MACD bull cross while price holds above its 50-period MA on a volume spike — a momentum breakout.">Momentum Breakout</button>
-          <button type="button" class="qs-chip" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow.">Golden Cross Trend</button>
+          <button type="button" class="qs-chip" id="qsGoldenCross" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow. Requires Pro (uses ADX).">Golden Cross Trend</button>
           <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
-          <button type="button" class="qs-chip" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike.">Inverse H&amp;S Breakout</button>
+          <button type="button" class="qs-chip" id="qsInverseHs" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike. Requires Pro (uses Inverse H&amp;S).">Inverse H&amp;S Breakout</button>
         </div>
       </div>
 
@@ -667,14 +672,16 @@ window.addEventListener('resize', () => {
   <!-- RIGHT PANEL: Alerts -->
   <div class="panel" id="rightPanel" style="position:relative;">
 
-    <!-- Tier lock overlay — hidden when user has pro+ -->
+    <!-- Login lock overlay — hidden once authenticated. Basic/Pro no longer gates
+         the whole panel (see wlAssetPicker/wlGatingNote/renderConditions above),
+         just what symbols/conditions are available. -->
     <div id="tierLock" style="display:none;position:absolute;inset:0;background:rgba(5,6,8,0.88);backdrop-filter:blur(3px);z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;">
       <div style="font-size:24px;line-height:1;">&#128274;</div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent-amber);">SIGNAL TESTER REQUIRED</div>
-      <div style="font-size:9px;color:var(--text-muted);line-height:1.9;max-width:240px;">Live signal generation requires a <strong style="color:var(--text-secondary);">Signal Tester</strong> plan (£5/mo). The Backtester is free for all users.</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent-amber);">SIGN IN REQUIRED</div>
+      <div style="font-size:9px;color:var(--text-muted);line-height:1.9;max-width:240px;">Live signal generation requires a free account. <strong style="color:var(--text-secondary);">Free</strong> gets a curated symbol list and core indicators — <strong style="color:var(--text-secondary);">Pro</strong> (£20/mo) unlocks any symbol and the full indicator set.</div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
-        <button onclick="document.getElementById('loginOverlay').style.display='flex'" style="padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:600;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);cursor:pointer;border-radius:2px;">LOGIN / UPGRADE</button>
-        <a href="/static/strategy-lab.html" style="font-size:9px;color:var(--text-muted);text-decoration:underline;letter-spacing:1px;">Go to free backtester →</a>
+        <button onclick="document.getElementById('loginOverlay').style.display='flex'" style="padding:8px 20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:600;background:rgba(0,136,255,0.1);color:var(--accent-blue);border:1px solid var(--accent-blue);cursor:pointer;border-radius:2px;">LOGIN / SIGN UP</button>
+        <a href="/static/strategy-lab.html" style="font-size:9px;color:var(--text-muted);text-decoration:underline;letter-spacing:1px;">Go to the backtester →</a>
       </div>
     </div>
 
@@ -1249,6 +1256,12 @@ let searchResults = [];
 const TIER_RANKS = { free: 0, pro: 1, founder: 2 };
 let userTier = 'free';
 let userAuthenticated = false;
+// Per-feature entitlement (independent of account tier — an admin can comp Signals
+// access without changing someone's whole plan). Signals has no anonymous access
+// (always @login_required server-side) and no daily-call cap, unlike the
+// Backtester — it's continuous watchlist monitoring, not one-shot runs, so the
+// only Basic restriction is the curated symbol allowlist + indicator group set.
+let signalsRestricted = false;
 
 function hasAccess(minTier) {
   return (TIER_RANKS[userTier] || 0) >= (TIER_RANKS[minTier] || 0);
@@ -1260,6 +1273,7 @@ async function checkTier() {
     const data = await res.json();
     userAuthenticated = data.authenticated || false;
     userTier = data.tier || 'free';
+    signalsRestricted = (data.entitlements && data.entitlements.signals) !== 'pro';
     // Workstream 5 (docs/scaling-plan.md) — blank until the realtime/ service
     // is actually deployed; startEngine() falls back to the existing poll
     // loop whenever this is empty, so nothing changes until it's set.
@@ -1293,6 +1307,105 @@ function applyTierUI() {
     lock.style.display = 'flex';
     if (btn) btn.disabled = true;
   }
+
+  const search = document.getElementById('wlSearch');
+  const picker = document.getElementById('wlAssetPicker');
+  const note   = document.getElementById('wlGatingNote');
+  if (search)  search.style.display = signalsRestricted ? 'none' : '';
+  if (picker)  picker.style.display = signalsRestricted ? 'block' : 'none';
+  if (note) {
+    note.style.display = signalsRestricted ? 'block' : 'none';
+    note.textContent = signalsRestricted
+      ? 'Free plan: RSI, MACD, Bollinger, MA, Volume and Donchian conditions on a curated symbol list. Upgrade to Pro for any symbol and the full indicator set.'
+      : '';
+  }
+  if (signalsRestricted) renderBasicAssetPicker();
+  // Two Quick Start templates use Pro-only condition groups (Golden Cross needs
+  // ADX, Inverse H&S needs its own pattern-detection group) — disable rather
+  // than hide, so it's discoverable as a Pro feature instead of just missing.
+  ['qsGoldenCross', 'qsInverseHs'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = signalsRestricted;
+    el.style.opacity = signalsRestricted ? '0.4' : '';
+    el.style.cursor = signalsRestricted ? 'not-allowed' : '';
+  });
+  // Re-render so the condition-type dropdown's option list picks up the
+  // Basic/Pro group filter — matters when this fires after page load (login
+  // completing async) rather than only on first paint.
+  if (typeof renderConditions === 'function') renderConditions();
+}
+
+// Condition-type groups available on Basic/free — mirrors the Backtester's Basic
+// indicator set (RSI/MACD/BB/MA/Volume/Donchian breakout) for consistency between
+// the two tools. Everything else (Stochastic, ADX, Ichimoku, etc.) is Pro-only.
+const BASIC_CONDITION_GROUPS = new Set(['RSI', 'MACD', 'Bollinger', 'MA', 'Volume', 'Donchian']);
+
+// Friendly names/categories for the Basic-tier symbol allowlist — mirrors
+// BASIC_TIER_SYMBOLS in app.py, keep the two in sync. Basic users often won't
+// know which ticker they want, so this replaces the search box with a
+// collapsible per-category pick list instead of asking them to type one.
+const BASIC_ASSET_CATEGORIES = [
+  { label: 'STOCKS', items: [
+    { symbol: 'AAPL',  name: 'Apple' },
+    { symbol: 'MSFT',  name: 'Microsoft' },
+    { symbol: 'GOOGL', name: 'Alphabet (Google)' },
+    { symbol: 'AMZN',  name: 'Amazon' },
+    { symbol: 'TSLA',  name: 'Tesla' },
+  ]},
+  { label: 'CRYPTO', items: [
+    { symbol: 'BTC-USD', name: 'Bitcoin' },
+    { symbol: 'ETH-USD', name: 'Ethereum' },
+    { symbol: 'ADA-USD', name: 'Cardano' },
+    { symbol: 'SOL-USD', name: 'Solana' },
+    { symbol: 'XRP-USD', name: 'XRP' },
+  ]},
+  { label: 'FOREX', items: [
+    { symbol: 'EURUSD=X', name: 'EUR / USD' },
+    { symbol: 'GBPUSD=X', name: 'GBP / USD' },
+    { symbol: 'USDJPY=X', name: 'USD / JPY' },
+    { symbol: 'AUDUSD=X', name: 'AUD / USD' },
+    { symbol: 'USDCAD=X', name: 'USD / CAD' },
+  ]},
+  { label: 'INDICES', items: [
+    { symbol: '^GSPC',  name: 'S&P 500' },
+    { symbol: '^NDX',   name: 'Nasdaq 100' },
+    { symbol: '^DJI',   name: 'Dow Jones' },
+    { symbol: '^FTSE',  name: 'FTSE 100' },
+    { symbol: '^GDAXI', name: 'DAX' },
+  ]},
+];
+
+function renderBasicAssetPicker() {
+  const el = document.getElementById('wlAssetPicker');
+  if (!el) return;
+  el.innerHTML = BASIC_ASSET_CATEGORIES.map(cat => `
+    <details class="wl-asset-cat" ${cat.items.some(i => assets[i.symbol] && watchlistEnabled[i.symbol]) ? 'open' : ''}>
+      <summary>${cat.label}</summary>
+      <div>
+        ${cat.items.map(i => `
+          <div class="wl-asset-item ${assets[i.symbol] && watchlistEnabled[i.symbol] ? 'active' : ''}" onclick="pickBasicAsset('${i.symbol}', '${cat.label.toLowerCase()}')">
+            <span class="wl-sr-sym">${i.symbol}</span>
+            <span class="wl-sr-name">${i.name}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `).join('');
+}
+
+function pickBasicAsset(symbol, category) {
+  if (assets[symbol]) {
+    // Already tracked (from an earlier add or a saved default) — just toggle it
+    // on/off in the active watchlist rather than re-adding.
+    watchlistEnabled[symbol] = !watchlistEnabled[symbol];
+    renderWatchlist();
+    renderWlDropdown();
+    savePreferences();
+  } else {
+    addCustomSymbol(symbol, symbol, category, '');
+  }
+  renderBasicAssetPicker();
 }
 
 // --- INIT ---
@@ -1455,6 +1568,11 @@ function _condOpts(selected) {
   const groups = {};
   Object.entries(CONDITION_DEFS).forEach(([k, d]) => {
     const g = d.group || 'Other';
+    // Basic/free: only the same indicator set as the Backtester's Basic mode.
+    // The currently-selected value stays offered even if it's Pro-only, so a
+    // saved strategy loaded on a downgraded account still shows what it was
+    // set to (loadSavedStrategy below is what actually strips/resets those).
+    if (signalsRestricted && !BASIC_CONDITION_GROUPS.has(g) && k !== selected) return;
     if (!groups[g]) groups[g] = [];
     groups[g].push({ k, label: d.label });
   });
@@ -1523,6 +1641,20 @@ function loadSavedStrategy(name) {
   document.getElementById('stratMatch').value   = s.match;
   strategyMatch = s.match;
   strategyConditions = s.conditions.map(c => ({ ...c }));
+  // A strategy saved back when this account still had Pro access can carry
+  // condition types (Stochastic, Ichimoku, ADX...) that are no longer available —
+  // drop those rather than silently keep them around unable to fire, same as the
+  // Backtester does for a downgraded account's saved Advanced-mode strategies.
+  if (signalsRestricted) {
+    const before = strategyConditions.length;
+    strategyConditions = strategyConditions.filter(c => {
+      const def = CONDITION_DEFS[c.type];
+      return def && BASIC_CONDITION_GROUPS.has(def.group);
+    });
+    if (strategyConditions.length < before) {
+      addLog('warn', 'STRAT', `Loaded "${s.name}" — ${before - strategyConditions.length} condition(s) need Pro and were dropped. Upgrade to use it as saved.`);
+    }
+  }
   setStratType(s.type);
   renderConditions();
   updateStrategyStatus();

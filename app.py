@@ -571,12 +571,14 @@ def default_entitlements(tier: str) -> dict:
     return dict(DEFAULT_ENTITLEMENTS_BY_TIER.get(tier, DEFAULT_ENTITLEMENTS_BY_TIER["free"]))
 
 
-def _clear_custom_symbols_on_backtester_downgrade(users: dict, username: str, old_level, new_level) -> None:
+def _clear_custom_symbols_on_downgrade(users: dict, username: str, old_level, new_level) -> None:
     """A pro-tier user's starred "my symbols" list can hold anything; dropping to
-    basic backtester access makes most of those unusable (backend 403s them, but
-    the star would sit there forever looking like it still works). Wipe the list
-    on a pro->basic downgrade so there's nothing stale to trip over — mutates
-    `users` in place, caller still needs to _save_users() it."""
+    basic Backtester or Signals access makes most of those unusable (backend
+    403s them, but the star would sit there forever looking like it still
+    works). custom_symbols is one shared list used by both tools (same
+    /api/custom-symbols preference key), so a downgrade in either one wipes
+    it. Wipe on a pro->basic downgrade so there's nothing stale to trip over —
+    mutates `users` in place, caller still needs to _save_users() it."""
     if old_level == "pro" and new_level == "basic":
         prefs = users.get(username, {}).get("preferences") or {}
         if prefs.get("custom_symbols"):
@@ -3303,12 +3305,13 @@ def admin_set_tier():
     users = _load_users()
     if username not in users:
         return jsonify({"error": "User not found"}), 404
-    old_backtester_level = (users[username].get("entitlements") or {}).get("backtester")
+    old_entitlements = dict(users[username].get("entitlements") or {})
     users[username]["tier"] = new_tier
     # Reset entitlements to the new tier's defaults — any per-feature overrides the
     # user had get cleared too, so set them again via set-entitlement after this if needed.
     users[username]["entitlements"] = default_entitlements(new_tier)
-    _clear_custom_symbols_on_backtester_downgrade(users, username, old_backtester_level, users[username]["entitlements"].get("backtester"))
+    for feature in ("backtester", "signals"):
+        _clear_custom_symbols_on_downgrade(users, username, old_entitlements.get(feature), users[username]["entitlements"].get(feature))
     _save_users(users)
     return jsonify({"success": True, "username": username, "tier": new_tier, "entitlements": users[username]["entitlements"]})
 
@@ -3333,8 +3336,8 @@ def admin_set_entitlement():
     old_level = entitlements.get(feature)
     entitlements[feature] = level
     users[username]["entitlements"] = entitlements
-    if feature == "backtester":
-        _clear_custom_symbols_on_backtester_downgrade(users, username, old_level, level)
+    if feature in ("backtester", "signals"):
+        _clear_custom_symbols_on_downgrade(users, username, old_level, level)
     _save_users(users)
     return jsonify({"success": True, "username": username, "entitlements": entitlements})
 
@@ -4750,6 +4753,19 @@ def signals():
 
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
+
+    # Signals is always login-required (unlike Backtester, which allows a limited
+    # anonymous trial), so the only gate that applies here is basic vs pro. Signals
+    # is continuous watchlist monitoring rather than one-shot runs, so unlike the
+    # Backtester there's no daily-call cap — basic just can't watch anything outside
+    # the same curated symbol allowlist. See BASIC_TIER_SYMBOLS for why these 20.
+    entitlement_level = getattr(current_user, "entitlements", {}).get("signals", "basic")
+    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
+        return jsonify({
+            "error": f"'{symbol}' isn't available on the free plan. Free signal monitoring is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
+            "symbol_restricted": True,
+            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
+        }), 403
 
     try:
         thresholds = _extract_signal_thresholds(request.args)
