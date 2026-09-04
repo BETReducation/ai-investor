@@ -611,16 +611,20 @@ BASIC_TIER_SYMBOLS = {
 }
 
 # Indicator query params only meaningful in Advanced mode (everything past the
-# 5-indicator Basic set: RSI/MACD/BB/MA/Volume). Stripped server-side for
-# anonymous/basic-entitlement requests so the API can't be used to bypass the
-# client-side Basic/Advanced tab restriction. Mirrors the "Extended indicator
-# set" block in the /api/backtest threshold-parsing list below — keep in sync.
+# Basic set: RSI/MACD/BB/MA/Volume, plus Donchian Breakout — the one extended
+# indicator strategy-lab.html's Basic mode also exposes, see the
+# "extended indicator is forced off there" comment by its donchian_on param).
+# Stripped server-side for anonymous/basic-entitlement requests so the API
+# can't be used to bypass the client-side Basic/Advanced tab restriction.
+# Mirrors the "Extended indicator set" block in the /api/backtest
+# threshold-parsing list below — keep in sync. donchian_on is deliberately
+# NOT in this set (see above); the other donchian_* keys are, since Basic
+# mode's Donchian only ever uses the breakout trigger and length.
 ADVANCED_ONLY_THRESHOLD_KEYS = {
     "adx_on", "adx_trend_threshold",
     "psar_on", "psar_flip_lookback",
     "ichimoku_on",
     "supertrend_on", "supertrend_flip_lookback",
-    "donchian_on",
     "hma_on",
     "stoch_on", "stoch_oversold", "stoch_overbought",
     "stochrsi_on", "stochrsi_oversold", "stochrsi_overbought",
@@ -655,7 +659,7 @@ ADVANCED_ONLY_THRESHOLD_KEYS = {
     "bb_breakout_margin_pct", "bb_pct_below_high", "bb_pct_above_low",
     "donchian_retest_lookback", "donchian_retest_tolerance_pct",
 }
-BASIC_TRIGGER_KEYS = {"rsi_trigger", "macd_trigger", "bb_trigger", "ma_trigger"}
+BASIC_TRIGGER_KEYS = {"rsi_trigger", "macd_trigger", "bb_trigger", "ma_trigger", "donchian_trigger"}
 
 
 def _client_ip() -> str:
