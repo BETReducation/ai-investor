@@ -16,6 +16,8 @@ TEXT_REPLACEMENTS = [
     ("GROWTH CAPITAL ACADEMY", "GROWTH CAPITAL GROUP"),
     ("Growth Capital Academy", "Growth Capital Group"),
     ("growthcapitalacademy.com", "growthcapitalgroup.co"),
+    ("growthcapitalgroup.org", "growthcapitalgroup.co"),
+    ("growthcapitalgroup.com", "growthcapitalgroup.co"),
 ]
 
 
