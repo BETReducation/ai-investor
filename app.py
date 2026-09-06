@@ -5060,8 +5060,8 @@ def backtest():
         }), 403
 
     try:
-        stop_loss_pct   = float(request.args.get("stop_loss",     100.0))
-        take_profit_pct = float(request.args.get("take_profit",   200.0))
+        stop_loss_pct   = float(request.args.get("stop_loss",     5.0))
+        take_profit_pct = float(request.args.get("take_profit",   5.0))
         min_confidence  = float(request.args.get("min_confidence", 60.0))
         trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
         trail_distance_pct = float(request.args.get("trail_distance", 1.5))
