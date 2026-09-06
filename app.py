@@ -663,6 +663,40 @@ ADVANCED_ONLY_THRESHOLD_KEYS = {
 }
 BASIC_TRIGGER_KEYS = {"rsi_trigger", "macd_trigger", "bb_trigger", "ma_trigger", "donchian_trigger"}
 
+# Top-level keys of calculate_all()'s (api/indicators.py) return dict that only the
+# Advanced-only Signals condition groups (Stochastic, StochRSI, CCI, Williams %R,
+# ADX, ATR, MFI, VWAP, PSAR, Supertrend, Aroon, ROC, Inverse H&S, HMA, Ichimoku,
+# Keltner, Stdev, Chaikin Vol, Historical Vol, A/D Line, CMF, TSI, Awesome
+# Oscillator, OBV divergence/trend, Volume Profile, Fibonacci) ever read. Popped
+# from /api/signals' response for basic-entitlement requests so a Basic account
+# can't build a Pro-only condition by reading indicator values straight off the
+# network response instead of through the (already-restricted) UI. Everything
+# NOT in this set is safe to keep — it's what RSI/MACD/Bollinger/MA/Volume/
+# Donchian (the Basic set) actually read; see signal_config.html's big
+# `case '...'` switch for the exhaustive cross-reference used to build this.
+ADVANCED_ONLY_INDICATOR_KEYS = {
+    "stochastic", "stochrsi", "cci", "willr", "adx", "atr", "atr_expanding",
+    "mfi", "vwap", "psar", "supertrend", "aroon", "roc", "inverse_hs",
+    "adx_di_cross_bars_since_cross",
+    "psar_flip_bars_since_cross", "psar_narrowing",
+    "supertrend_flip_bars_since_cross", "supertrend_narrowing",
+    "stoch_signal_bars_since_cross",
+    "stochrsi_signal_bars_since_cross", "stochrsi_bullish_divergence", "stochrsi_bearish_divergence",
+    "cci_centerline_bars_since_cross", "cci_breakout_bull", "cci_breakout_bear",
+    "willr_midline_bars_since_cross", "willr_bullish_divergence", "willr_bearish_divergence",
+    "willr_trend_confirmation_bull", "willr_trend_confirmation_bear",
+    "willr_failure_swing_bull", "willr_failure_swing_bear",
+    "roc_centerline_bars_since_cross", "roc_bull_momentum", "roc_bear_momentum",
+    "roc_bullish_divergence", "roc_bearish_divergence",
+    "mfi_centerline_bars_since_cross", "mfi_bullish_divergence", "mfi_bearish_divergence",
+    "hma_slope_bull", "hma_slope_bear", "hma_price_bars_since_cross", "hma_two_bars_since_cross",
+    "atr_bullish_expansion", "atr_bearish_expansion", "atr_contracting",
+    "ichimoku", "keltner", "stdev", "chaikin_vol", "hist_vol", "vwap_rolling",
+    "ad_line", "cmf", "tsi", "ao",
+    "obv_trend_bull", "obv_bullish_divergence", "obv_bearish_divergence",
+    "volume_profile", "fibonacci",
+}
+
 
 def _client_ip() -> str:
     # Railway (and most PaaS) sit behind a proxy — the real client IP is the
@@ -4778,11 +4812,12 @@ def signals():
         df = _fetch_ohlcv(symbol, period, interval)
         indicator_data = calculate_all(df, **calc_params)
         signal_result = score_signals(indicator_data, thresholds or None)
+        excluded_keys = {"history"} | (ADVANCED_ONLY_INDICATOR_KEYS if entitlement_level != "pro" else set())
         return jsonify({
             "symbol": symbol.upper(),
             "period": period,
             "interval": interval,
-            "indicators": {k: v for k, v in indicator_data.items() if k != "history"},
+            "indicators": {k: v for k, v in indicator_data.items() if k not in excluded_keys},
             **signal_result,
         })
     except ValueError as e:
