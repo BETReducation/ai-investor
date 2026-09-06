@@ -1728,7 +1728,18 @@ function renderStrategyDropdown() {
 }
 
 function loadSavedStrategy(name) {
-  if (!name) return;
+  if (!name) {
+    // "— New Strategy —" selected — start from a blank slate instead of
+    // leaving whatever strategy was loaded before still sitting in the fields.
+    document.getElementById('strategyName').value = '';
+    document.getElementById('stratMatch').value = 'all';
+    strategyMatch = 'all';
+    strategyConditions = [];
+    condExpanded = {};
+    renderConditions();
+    updateStrategyStatus();
+    return;
+  }
   const s = savedStrategies.find(s => s.name === name);
   if (!s) return;
   document.getElementById('strategyName').value = s.name;
