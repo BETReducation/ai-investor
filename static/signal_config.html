@@ -1933,6 +1933,13 @@ const BT_INDICATOR_MAP = {
   togInvHs:      { group: 'Inverse H&S',          chips: 'invHsTriggerChips',     modes: {
     neckline_touch: ['inv_hs_neckline'], neckline_break: ['inv_hs_neckline'],
   }},
+  // Volume has no trigger-mode chip row in the Backtester (it's a plain on/off
+  // confirmation filter, not a multi-mode indicator) — valueKey instead of chips
+  // tells the loop below which field holds the surge multiplier to carry over,
+  // since _buildCondition's `value` (the "At least ×avg" threshold) would
+  // otherwise silently reset to volume_spike's 1.5 default on every import.
+  togVol:        { group: 'Volume', modes: { spike: ['volume_spike'] },
+                   valueKey: { basic: 'volSurgeBasic', detailed: 'volSurge' } },
 };
 
 function _snakeToCamel(s) {
@@ -1963,8 +1970,7 @@ const BT_BASIC_TOGGLE_MAP = {
   togBbBasic:       { togId: 'togBb',       chips: 'bbTriggerChips',       defaultMode: 'percent_b' },
   togMaBasic:       { togId: 'togMa',       chips: 'maTriggerChips',       defaultMode: 'dual_cross' },
   togDonchianBasic: { togId: 'togDonchian', chips: 'donchianTriggerChips', defaultMode: 'breakout' },
-  // togVolBasic has no trigger of its own in Basic mode (volume is a confirmation
-  // filter only) — no CONDITION_DEFS equivalent to translate it to.
+  togVolBasic:      { togId: 'togVol',      chips: null,                  defaultMode: 'spike' },
 };
 
 function translateBacktestConfig(cfg) {
@@ -1985,11 +1991,13 @@ function translateBacktestConfig(cfg) {
       modesToUse = activeModes.length ? activeModes : Object.keys(spec.modes).slice(0, 1);
     }
     const paramOverrides = _paramsFromBacktestConfig(spec.group, cfg);
+    const rawValue = spec.valueKey ? cfg[isBasic ? spec.valueKey.basic : spec.valueKey.detailed] : undefined;
+    const value = rawValue !== undefined ? parseFloat(rawValue) : undefined;
     modesToUse.forEach(mode => {
       const types = spec.modes[mode];
       if (!types) return;
       if (types.length === 0) { skippedModes.push(`${spec.group}: ${mode}`); return; }
-      types.forEach(type => conditions.push(_buildCondition(type, undefined, paramOverrides)));
+      types.forEach(type => conditions.push(_buildCondition(type, value, paramOverrides)));
     });
   });
   return { conditions, skippedModes };
