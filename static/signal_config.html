@@ -498,13 +498,10 @@ window.addEventListener('resize', () => {
         title="Import a strategy you saved on the Backtester page — its indicators/conditions get translated into this page's condition builder"
         style="width:100%;margin-bottom:10px;padding:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;background:rgba(0,255,136,0.06);border:1px dashed var(--accent-green);color:var(--accent-green);cursor:pointer;border-radius:2px;">⇩ IMPORT FROM BACKTESTER</button>
 
-      <!-- Strategy name + BUY / SELL type -->
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
-        <input type="text" id="strategyName" placeholder="My Strategy" style="flex:1;font-size:10px;">
-        <div class="strat-type-toggle">
-          <button id="stratBuyBtn"  class="strat-type-btn strat-buy active" onclick="setStratType('BUY')">BUY</button>
-          <button id="stratSellBtn" class="strat-type-btn strat-sell"       onclick="setStratType('SELL')">SELL</button>
-        </div>
+      <!-- Strategy name — Buy/Sell is set per-condition now (see the toggle on
+           each condition card below), not as one whole-strategy setting. -->
+      <div style="margin-bottom:10px;">
+        <input type="text" id="strategyName" placeholder="My Strategy" style="width:100%;font-size:10px;">
       </div>
 
       <!-- Match logic -->
@@ -855,7 +852,6 @@ let liveCache = {};
 
 // ── Strategy builder state ────────────────────────────────────────────────────
 let strategyConditions = [];
-let strategyType  = 'BUY';
 let strategyMatch = 'all';
 let savedStrategies = [];
 let condExpanded  = {};
@@ -1106,6 +1102,101 @@ const CONDITION_DEFS = {
   // ── Fibonacci (new group) ────────────────────────────────────────────────────
   fib_any_touch: { label: 'Price Touching a Fib Level', group: 'Fibonacci', desc: 'Price is within tolerance of a Fibonacci retracement level (23.6/38.2/50/61.8/78.6%) of the recent swing — a common support/resistance zone', inputLabel: null, defaultVal: 0 },
 };
+
+// Which side (buy/sell) each condition points to by default — e.g. RSI Oversold
+// defaults to Buy (a bounce read) and RSI Overbought to Sell (a pullback read),
+// but every condition carries its own direction the user can flip per-condition
+// (see the ⇅ toggle on each condition card) rather than one whole-strategy
+// BUY/SELL setting forcing every indicator the same way. A few conditions here
+// are genuinely direction-neutral by nature (pure volatility/state reads like
+// "ATR Expanding" or "TTM Squeeze Active", with no inherent up/down lean) —
+// those default to Buy purely as a starting point, same as any other condition;
+// flip them if they're being used as a Sell-side filter instead.
+const CONDITION_DEFAULT_DIRECTION = {
+  rsi_below: 'buy', rsi_above: 'sell',
+  stoch_k_below: 'buy', stoch_k_above: 'sell', stoch_bull_cross: 'buy', stoch_bear_cross: 'sell',
+  stochrsi_below: 'buy', stochrsi_above: 'sell',
+  macd_bull_cross: 'buy', macd_bear_cross: 'sell', macd_above_zero: 'buy', macd_below_zero: 'sell',
+  cci_below: 'buy', cci_above: 'sell',
+  willr_below: 'buy', willr_above: 'sell',
+  bb_lower: 'buy', bb_upper: 'sell', bb_broke_lower: 'sell', bb_broke_upper: 'buy',
+  adx_above: 'buy', adx_di_bull: 'buy', adx_di_bear: 'sell',
+  atr_expanding: 'buy',
+  mfi_below: 'buy', mfi_above: 'sell',
+  supertrend_bull: 'buy', supertrend_bear: 'sell',
+  aroon_up_above: 'buy', aroon_down_above: 'sell',
+  psar_bull: 'buy', psar_bear: 'sell',
+  price_above_vwap: 'buy', price_below_vwap: 'sell',
+  roc_positive: 'buy', roc_negative: 'sell',
+  ma_golden: 'buy', ma_death: 'sell',
+  price_above_ma20: 'buy', price_below_ma20: 'sell', price_above_ma50: 'buy', price_below_ma50: 'sell',
+  volume_spike: 'buy', price_dip: 'buy', inv_hs_neckline: 'buy',
+  rsi_centerline_up: 'buy', rsi_centerline_down: 'sell',
+  rsi_bull_divergence: 'buy', rsi_bear_divergence: 'sell',
+  rsi_failure_swing_bull: 'buy', rsi_failure_swing_bear: 'sell',
+  macd_centerline_up: 'buy', macd_centerline_down: 'sell',
+  macd_bull_divergence: 'buy', macd_bear_divergence: 'sell',
+  macd_histogram_reversal_bull: 'buy', macd_histogram_reversal_bear: 'sell',
+  macd_zscore_overbought: 'sell', macd_zscore_oversold: 'buy',
+  bb_volatility_breakout_bull: 'buy', bb_volatility_breakout_bear: 'sell',
+  bb_walking_upper: 'buy', bb_walking_lower: 'sell', bb_w_bottom: 'buy', bb_m_top: 'sell',
+  ma_two_bull: 'buy', ma_two_bear: 'sell', ma_three_bull: 'buy', ma_three_bear: 'sell',
+  ma_price_cross_bull: 'buy', ma_price_cross_bear: 'sell',
+  adx_di_bull_cross: 'buy', adx_di_bear_cross: 'sell',
+  atr_bullish_expansion: 'buy', atr_bearish_expansion: 'sell', atr_contracting: 'buy',
+  psar_bull_flip: 'buy', psar_bear_flip: 'sell', psar_narrowing: 'buy',
+  supertrend_bull_flip: 'buy', supertrend_bear_flip: 'sell', supertrend_narrowing: 'buy',
+  stochrsi_bull_cross: 'buy', stochrsi_bear_cross: 'sell',
+  stochrsi_bull_divergence: 'buy', stochrsi_bear_divergence: 'sell',
+  cci_centerline_up: 'buy', cci_centerline_down: 'sell',
+  cci_breakout_bull: 'buy', cci_breakout_bear: 'sell',
+  willr_midline_bull: 'buy', willr_midline_bear: 'sell',
+  willr_bull_divergence: 'buy', willr_bear_divergence: 'sell',
+  willr_trend_confirm_bull: 'buy', willr_trend_confirm_bear: 'sell',
+  willr_failure_swing_bull: 'buy', willr_failure_swing_bear: 'sell',
+  roc_bull_momentum: 'buy', roc_bear_momentum: 'sell',
+  roc_bull_divergence: 'buy', roc_bear_divergence: 'sell',
+  mfi_centerline_up: 'buy', mfi_centerline_down: 'sell',
+  mfi_bull_divergence: 'buy', mfi_bear_divergence: 'sell',
+  vwap_rolling_band_touch: 'buy',
+  hma_slope_bull: 'buy', hma_slope_bear: 'sell',
+  hma_price_cross_bull: 'buy', hma_price_cross_bear: 'sell',
+  hma_two_cross_bull: 'buy', hma_two_cross_bear: 'sell',
+  ichimoku_cloud_bullish: 'buy', ichimoku_cloud_bearish: 'sell',
+  ichimoku_tk_bull_cross: 'buy', ichimoku_tk_bear_cross: 'sell',
+  donchian_breakout_bull: 'buy', donchian_breakout_bear: 'sell',
+  donchian_mid_cross_bull: 'buy', donchian_mid_cross_bear: 'sell',
+  keltner_breakout_bull: 'buy', keltner_breakout_bear: 'sell',
+  keltner_walking_upper: 'buy', keltner_walking_lower: 'sell', keltner_squeeze: 'buy',
+  keltner_squeeze_release_bull: 'buy', keltner_squeeze_release_bear: 'sell',
+  stdev_bullish_expansion: 'buy', stdev_bearish_expansion: 'sell', stdev_contracting: 'buy',
+  chaikin_vol_bullish_expansion: 'buy', chaikin_vol_bearish_expansion: 'sell', chaikin_vol_contracting: 'buy',
+  hist_vol_bullish_expansion: 'buy', hist_vol_bearish_expansion: 'sell', hist_vol_contracting: 'buy',
+  ad_line_trend_bull: 'buy', ad_line_trend_bear: 'sell',
+  ad_line_bull_divergence: 'buy', ad_line_bear_divergence: 'sell',
+  cmf_above: 'buy', cmf_below: 'sell', cmf_centerline_up: 'buy', cmf_centerline_down: 'sell',
+  tsi_bull_cross: 'buy', tsi_bear_cross: 'sell',
+  tsi_centerline_up: 'buy', tsi_centerline_down: 'sell',
+  tsi_bull_divergence: 'buy', tsi_bear_divergence: 'sell',
+  ao_zero_cross_bull: 'buy', ao_zero_cross_bear: 'sell',
+  ao_bull_saucer: 'buy', ao_bear_saucer: 'sell',
+  ao_bull_twin_peaks: 'buy', ao_bear_twin_peaks: 'sell',
+  ao_bull_divergence: 'buy', ao_bear_divergence: 'sell',
+  obv_trend_bull: 'buy', obv_trend_bear: 'sell',
+  obv_bull_divergence: 'buy', obv_bear_divergence: 'sell',
+  vp_poc_bullish: 'buy', vp_poc_breakout_bull: 'buy', vp_poc_breakout_bear: 'sell',
+  fib_any_touch: 'buy',
+};
+
+// Assigns `.direction` to any condition that doesn't already have one — used
+// both for brand-new conditions (_buildCondition below) and for migrating
+// strategies saved before per-condition direction existed (loadSavedStrategy /
+// loadPreferences), where `legacyType` is that old strategy's single whole-
+// strategy BUY/SELL setting.
+function conditionDirection(type, legacyType) {
+  if (legacyType) return legacyType.toLowerCase() === 'sell' ? 'sell' : 'buy';
+  return CONDITION_DEFAULT_DIRECTION[type] || 'buy';
+}
 
 // Per-indicator parameter definitions, keyed by CONDITION_DEFS group name.
 // These inputs appear inside each condition card and override the global indicator settings.
@@ -1437,12 +1528,6 @@ function setupToggles() {
 
 // ── Strategy Builder ─────────────────────────────────────────────────────────
 
-function setStratType(type) {
-  strategyType = type;
-  document.getElementById('stratBuyBtn').classList.toggle('active',  type === 'BUY');
-  document.getElementById('stratSellBtn').classList.toggle('active', type === 'SELL');
-}
-
 // ── Quick-start strategy templates ───────────────────────────────────────────
 // Each condition is { type, value? } — value falls back to the condition's own
 // default. Params are filled from INDICATOR_PARAMS exactly as addCondition does,
@@ -1475,7 +1560,7 @@ function _buildCondition(type, value, paramOverrides) {
   const params = {};
   (INDICATOR_PARAMS[def.group] || []).forEach(p => { params[p.id] = p.default; });
   if (paramOverrides) Object.assign(params, paramOverrides);
-  return { type, value: value ?? def.defaultVal ?? 0, params };
+  return { type, value: value ?? def.defaultVal ?? 0, params, direction: conditionDirection(type) };
 }
 
 function applyTemplate(key) {
@@ -1486,7 +1571,6 @@ function applyTemplate(key) {
   const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
   const nameEl  = document.getElementById('strategyName'); if (nameEl) nameEl.value = tpl.name;
   const selEl   = document.getElementById('strategySelect'); if (selEl) selEl.value = '';
-  setStratType(tpl.type);
   condExpanded = {};
   renderConditions();
   updateStrategyStatus();
@@ -1511,11 +1595,19 @@ function updateCondition(i, field, val) {
   if (field === 'type') {
     const def = CONDITION_DEFS[val] || {};
     strategyConditions[i].value = def.defaultVal ?? 0;
+    strategyConditions[i].direction = conditionDirection(val);
     const initParams = {};
     (INDICATOR_PARAMS[def.group] || []).forEach(p => { initParams[p.id] = p.default; });
     strategyConditions[i].params = initParams;
     renderConditions();
   }
+  updateStrategyStatus();
+}
+
+function toggleConditionDirection(i) {
+  if (!strategyConditions[i]) return;
+  strategyConditions[i].direction = strategyConditions[i].direction === 'sell' ? 'buy' : 'sell';
+  renderConditions();
   updateStrategyStatus();
 }
 
@@ -1604,10 +1696,12 @@ function renderConditions() {
           onchange="updateCondition(${i},'value',this.value)" style="width:62px;font-size:11px;">
         ${def.suffix ? `<span class="cond-input-label">${def.suffix}</span>` : ''}
       </div>` : '';
+    const dir = cond.direction === 'sell' ? 'sell' : 'buy';
     return `
       <div class="condition-card unmet" id="cond-${i}">
         <div class="cond-header" onclick="toggleCondExpand(${i})">
           <span class="cond-name">${def.label || cond.type}</span>
+          <button class="cond-dir-btn cond-dir-${dir}" onclick="toggleConditionDirection(${i});event.stopPropagation()" title="This condition counts as evidence for a Buy or a Sell — click to flip">${dir.toUpperCase()}</button>
           <svg id="cond-chev-${i}" class="cond-chevron ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
@@ -1640,7 +1734,10 @@ function loadSavedStrategy(name) {
   document.getElementById('strategyName').value = s.name;
   document.getElementById('stratMatch').value   = s.match;
   strategyMatch = s.match;
-  strategyConditions = s.conditions.map(c => ({ ...c }));
+  // Strategies saved before per-condition direction existed have no `.direction`
+  // on their conditions — migrate using that old save's single whole-strategy
+  // BUY/SELL setting (s.type), same idea as the tier-downgrade case below.
+  strategyConditions = s.conditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, s.type) }));
   // A strategy saved back when this account still had Pro access can carry
   // condition types (Stochastic, Ichimoku, ADX...) that are no longer available —
   // drop those rather than silently keep them around unable to fire, same as the
@@ -1655,7 +1752,6 @@ function loadSavedStrategy(name) {
       addLog('warn', 'STRAT', `Loaded "${s.name}" — ${before - strategyConditions.length} condition(s) need Pro and were dropped. Upgrade to use it as saved.`);
     }
   }
-  setStratType(s.type);
   renderConditions();
   updateStrategyStatus();
   addLog('info', 'STRAT', `Loaded: ${s.name}`);
@@ -2226,17 +2322,35 @@ function evaluateCondition(cond, cache, sym) {
   }
 }
 
+// Each condition points at Buy or Sell individually (see the toggle on its
+// card) — there's no single whole-strategy direction any more, so this
+// evaluates the Buy-tagged and Sell-tagged conditions as two independent
+// groups against the same ALL/ANY match rule, and reports each separately.
+// A symbol can fire Buy, Sell, both (rare, but possible if conditions in each
+// group happen to hold at once), or neither.
+function _evaluateDirectionGroup(results, direction, match, minConfidence) {
+  const group = results.filter(r => (r.direction === 'sell' ? 'sell' : 'buy') === direction);
+  if (group.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], confidence: 0, total: 0 };
+  const matched = group.filter(r => r.met);
+  const confidence = matched.length / group.length * 100;
+  const meetsMatch = match === 'all' ? matched.length === group.length : matched.length > 0;
+  return { fired: meetsMatch && confidence >= minConfidence, matchedCount: matched.length, matchedConditions: matched, confidence, total: group.length };
+}
+
 function evaluateStrategy(sym) {
   const cache = liveCache[sym];
-  if (!cache || strategyConditions.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], results: [], confidence: 0 };
+  if (!cache || strategyConditions.length === 0) {
+    const empty = { fired: false, matchedCount: 0, matchedConditions: [], confidence: 0, total: 0 };
+    return { buy: empty, sell: { ...empty }, results: [] };
+  }
   const match = document.getElementById('stratMatch')?.value || strategyMatch;
-  const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
-  const matched = results.filter(r => r.met);
-  const confidence = strategyConditions.length ? (matched.length / strategyConditions.length * 100) : 0;
   const minConfidence = parseFloat(document.getElementById('minConfidence')?.value) || 50;
-  const meetsMatch = match === 'all' ? matched.length === strategyConditions.length : matched.length > 0;
-  const fired = meetsMatch && confidence >= minConfidence;
-  return { fired, matchedCount: matched.length, matchedConditions: matched, results, confidence };
+  const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
+  return {
+    buy:  _evaluateDirectionGroup(results, 'buy',  match, minConfidence),
+    sell: _evaluateDirectionGroup(results, 'sell', match, minConfidence),
+    results,
+  };
 }
 
 function updateStrategyStatus() {
@@ -2248,15 +2362,16 @@ function updateStrategyStatus() {
 
   const result = evaluateStrategy(currentAsset);
   statusEl.style.display = 'block';
-  const total   = strategyConditions.length;
-  const matched = result.matchedCount;
-  const color   = result.fired ? 'var(--accent-green)' : (matched > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
+  const dirLine = (label, d, color) => {
+    if (d.total === 0) return '';
+    const state = d.fired ? `▶ ${label} FIRING` : (d.matchedCount > 0 ? '◐ partial' : '⏸ no match');
+    const lineColor = d.fired ? color : (d.matchedCount > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
+    return `<div style="display:flex;justify-content:space-between;"><span style="color:${color};font-weight:700;">${label}</span><span style="color:${lineColor};">${state} · ${d.matchedCount}/${d.total}</span></div>`;
+  };
   statusEl.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-      <span style="letter-spacing:1px;color:var(--text-muted);">LIVE · ${currentAsset}</span>
-      <span style="font-weight:700;color:${color};">${result.fired ? '▶ STRATEGY FIRING' : (matched > 0 ? '◐ PARTIAL MATCH' : '⏸ NO MATCH')}</span>
-    </div>
-    <div style="color:var(--text-secondary);">${matched} of ${total} condition${total !== 1 ? 's' : ''} met</div>`;
+    <div style="letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">LIVE · ${currentAsset}</div>
+    ${dirLine('BUY', result.buy, 'var(--accent-green)') || '<div style="color:var(--text-muted);">No Buy-tagged conditions</div>'}
+    ${dirLine('SELL', result.sell, 'var(--accent-red)') || '<div style="color:var(--text-muted);">No Sell-tagged conditions</div>'}`;
 
   result.results.forEach((r, i) => {
     const dot  = document.getElementById(`cond-dot-${i}`);
@@ -2441,6 +2556,17 @@ async function fetchAllAssets() {
 }
 
 // --- SCAN SIGNALS ---
+// Fires a Buy and/or Sell alert for whichever direction(s) evaluateStrategy()
+// says are currently satisfied — shared by the polling path (scanSignals) and
+// the SSE push path (handleEngineSignalMessage) below.
+function _fireDirectionalAlerts(sym, result) {
+  [['BUY', result.buy], ['SELL', result.sell]].forEach(([type, d]) => {
+    if (!d.fired) return;
+    const reasons = d.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
+    fireAlert(sym, { type, score: d.matchedCount, confidence: d.confidence / 100, reasons });
+  });
+}
+
 async function scanSignals() {
   if (!engineRunning) return;
   const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
@@ -2457,15 +2583,7 @@ async function scanSignals() {
     try {
       await fetchSignals(sym);
       const result = evaluateStrategy(sym);
-      if (result.fired) {
-        const reasons = result.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
-        fireAlert(sym, {
-          type: strategyType,
-          score: result.matchedCount,
-          confidence: result.matchedCount / strategyConditions.length,
-          reasons,
-        });
-      }
+      _fireDirectionalAlerts(sym, result);
     } catch (e) {
       addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
     }
@@ -2501,15 +2619,7 @@ function handleEngineSignalMessage(sym, evt) {
   liveCache[sym] = data;
   try {
     const result = evaluateStrategy(sym);
-    if (result.fired) {
-      const reasons = result.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
-      fireAlert(sym, {
-        type: strategyType,
-        score: result.matchedCount,
-        confidence: result.matchedCount / strategyConditions.length,
-        reasons,
-      });
-    }
+    _fireDirectionalAlerts(sym, result);
   } catch (e) {
     addLog('err', 'STREAM', `Signal evaluation failed for ${sym}: ${e.message}`);
   }
@@ -4640,7 +4750,6 @@ async function saveStrategy() {
   }
   const strategy = {
     name,
-    type:       strategyType,
     match:      document.getElementById('stratMatch').value,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
   };
@@ -4680,7 +4789,6 @@ async function savePreferences() {
     currentAsset,
     watchlistEnabled: { ...watchlistEnabled },
     strategyName:       document.getElementById('strategyName').value,
-    strategyType,
     strategyMatch:      document.getElementById('stratMatch').value,
     minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
@@ -4776,14 +4884,16 @@ function applyPreferences(prefs) {
 
   // Restore strategy
   if (prefs.strategyName)       set('strategyName', prefs.strategyName);
-  if (prefs.strategyType)       setStratType(prefs.strategyType);
   if (prefs.strategyMatch)      { set('stratMatch', prefs.strategyMatch); strategyMatch = prefs.strategyMatch; }
   if (prefs.minConfidence !== undefined) {
     set('minConfidence', prefs.minConfidence);
     setText('minConfidenceVal', prefs.minConfidence + '%');
   }
   if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length > 0) {
-    strategyConditions = prefs.strategyConditions.map(c => ({ ...c }));
+    // prefs.strategyType is the old whole-strategy BUY/SELL setting, from before
+    // per-condition direction existed — used only to migrate conditions saved
+    // without their own `.direction`.
+    strategyConditions = prefs.strategyConditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, prefs.strategyType) }));
     renderConditions();
   }
   if (Array.isArray(prefs.savedStrategies)) {
