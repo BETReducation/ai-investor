@@ -1638,6 +1638,30 @@ _gold_silver_hist_cache: dict = {"at": 0.0, "data": None}
 _gold_silver_hist_lock = threading.Lock()
 
 
+# Threshold bands for the gold:silver ratio mini-explainer (dataviz page) — purely
+# historical/educational framing per house style, never "you should buy X".
+# Bands and the historical episodes they cite are approximate/illustrative, not
+# a precision backtest — good enough for "here's what a reading like this has
+# historically meant" context, not for anything load-bearing.
+_GOLD_SILVER_EXPLAINER_BANDS = [
+    (40, "Historically low", "Readings this low have been rare over the last century — the ratio briefly traded near here during the 1980 Hunt Brothers silver squeeze and the 2011 silver rally. By modern historical standards, silver has been expensive relative to gold at levels like this."),
+    (55, "Below its long-run average", "This sits below the ratio's long-run modern average shown above. Historically, silver has traded relatively expensive against gold compared with its typical range since the 1990s at levels like this."),
+    (75, "Around its typical range", "This is close to the ratio's long-run modern average. Historically, a reading here has looked fairly ordinary rather than stretched toward either metal."),
+    (90, "Above its long-run average", "This sits above the ratio's long-run modern average shown above. Historically, silver has traded relatively cheap against gold compared with its typical range at levels like this."),
+    (110, "Historically elevated", "Readings this high have been uncommon, seen mainly around periods of financial stress such as 1991 and the 2008 crisis. Historically, silver has been very cheap relative to gold by comparison with its typical range at levels like this."),
+    (float("inf"), "Near historic extremes", "This is close to the highest readings on record, comparable to the brief spike during the 2020 pandemic shock. Levels this extreme have historically been short-lived rather than a sustained new range."),
+]
+
+
+def _gold_silver_explainer(ratio) -> dict | None:
+    if ratio is None:
+        return None
+    for ceiling, title, body in _GOLD_SILVER_EXPLAINER_BANDS:
+        if ratio < ceiling:
+            return {"title": title, "body": body}
+    return None
+
+
 def _fetch_gold_silver_historical_average() -> dict | None:
     """Mean gold:silver ratio across the full daily history both GC=F and SI=F carry
     on Yahoo — a real computed average rather than the commonly-quoted-but-unsourced
@@ -1705,13 +1729,17 @@ def _fetch_gold_silver_ratio_live(force: bool = False) -> dict:
         if len(xau) and len(xag):
             xau_price, xag_price = float(xau.iloc[-1]), float(xag.iloc[-1])
             hist = _fetch_gold_silver_historical_average()
+            ratio = round(xau_price / xag_price, 1)
+            explainer = _gold_silver_explainer(ratio)
             result = {
                 "updated_at": _dt.datetime.utcnow().isoformat() + "Z",
                 "xau_usd": round(xau_price, 2),
                 "xag_usd": round(xag_price, 2),
-                "ratio": round(xau_price / xag_price, 1),
+                "ratio": ratio,
                 "historical_average": hist["average"] if hist else None,
                 "historical_since": hist["since"] if hist else None,
+                "explainer_title": explainer["title"] if explainer else None,
+                "explainer_body": explainer["body"] if explainer else None,
             }
     except Exception:
         result = None
@@ -1723,7 +1751,8 @@ def _fetch_gold_silver_ratio_live(force: bool = False) -> dict:
         else:
             result = _gold_silver_live_cache["data"]
     return result or {"updated_at": None, "xau_usd": None, "xag_usd": None, "ratio": None,
-                       "historical_average": None, "historical_since": None}
+                       "historical_average": None, "historical_since": None,
+                       "explainer_title": None, "explainer_body": None}
 
 
 # ── Data Visualisation content store ─────────────────────────────────────────

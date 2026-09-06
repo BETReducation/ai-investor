@@ -291,6 +291,11 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
 .gsr-sub { font-size: 13px; color: var(--muted); margin-top: 8px; }
 .gsr-sub strong { color: var(--text); font-weight: 700; }
 
+.gsr-explainer { margin-top: 22px; padding: 18px 20px; border-radius: 14px; text-align: left; background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--gold); transition: border-color 0.3s; }
+.gsr-explainer-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+.gsr-explainer-body { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.gsr-explainer-note { font-size: 11px; color: var(--muted); opacity: 0.75; margin-top: 10px; font-style: italic; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -985,6 +990,11 @@ function initGoldSilverRatio() {
           <span class="gsr-headline-value" id="gsrRatio">—</span>
         </div>
         <div class="gsr-sub" id="gsrHistorical">Comparing against the real historical average…</div>
+        <div class="gsr-explainer" id="gsrExplainer" style="display:none;">
+          <div class="gsr-explainer-title" id="gsrExplainerTitle"></div>
+          <div class="gsr-explainer-body" id="gsrExplainerBody"></div>
+          <div class="gsr-explainer-note">Historical framing only, not a trading signal or personal advice — the ratio's past behaviour, not a prediction of what it will do next.</div>
+        </div>
       </div>
     </div>
   `;
@@ -1077,6 +1087,14 @@ async function fetchGoldSilverRatio(force) {
     document.getElementById('gsrStatGold').textContent = `$${data.xau_usd.toLocaleString()}`;
     document.getElementById('gsrStatSilver').textContent = `$${data.xag_usd.toLocaleString()}`;
     updated.textContent = `Live · updated ${gsrTimeAgo(data.updated_at)}`;
+    const explainer = document.getElementById('gsrExplainer');
+    if (data.explainer_title && explainer) {
+      document.getElementById('gsrExplainerTitle').textContent = data.explainer_title;
+      document.getElementById('gsrExplainerBody').textContent = data.explainer_body;
+      explainer.style.display = 'block';
+    } else if (explainer) {
+      explainer.style.display = 'none';
+    }
   } catch {
     updated.textContent = "Couldn't load live prices — showing the last known values.";
   }
