@@ -1604,6 +1604,15 @@ function updateCondition(i, field, val) {
   updateStrategyStatus();
 }
 
+function toggleConditionLevel(i) {
+  const cond = strategyConditions[i];
+  const partner = cond && LEVEL_CONDITION_PAIRS[cond.type];
+  if (!partner) return;
+  cond.type = partner; // value/params/direction all carry over unchanged
+  renderConditions();
+  updateStrategyStatus();
+}
+
 function toggleConditionDirection(i) {
   if (!strategyConditions[i]) return;
   strategyConditions[i].direction = strategyConditions[i].direction === 'sell' ? 'buy' : 'sell';
@@ -1656,6 +1665,28 @@ function _buildCondParams(i, cond) {
 }
 
 // Build grouped <optgroup> options for the type selector
+// Oversold/Overbought-style pairs where "which one" is really just a comparator
+// on the same underlying value (RSI/CCI/Williams %R/MFI/Stochastic %K/StochRSI %K
+// all being below vs. above a threshold) — picking between two separately-named
+// catalog entries for that was the friction Gary flagged (2026-09), buried among
+// each group's crosses/divergences/failure-swings. The "below" side of each pair
+// stays the one dropdown entry; toggleConditionLevel (cond-level-btn on the card)
+// flips a condition between the two in place, keeping its value/params/direction,
+// instead of making the user re-pick from the list. Buy/Sell stays fully
+// independent of this — flipping Below/Above never touches .direction.
+const LEVEL_CONDITION_PAIRS = {
+  rsi_below: 'rsi_above', rsi_above: 'rsi_below',
+  cci_below: 'cci_above', cci_above: 'cci_below',
+  willr_below: 'willr_above', willr_above: 'willr_below',
+  mfi_below: 'mfi_above', mfi_above: 'mfi_below',
+  stoch_k_below: 'stoch_k_above', stoch_k_above: 'stoch_k_below',
+  stochrsi_below: 'stochrsi_above', stochrsi_above: 'stochrsi_below',
+};
+// The "above" half of each pair — hidden from the type dropdown (reachable via
+// the Below/Above toggle instead) unless it's what's currently selected, so a
+// strategy saved with one directly still shows correctly.
+const HIDDEN_LEVEL_PARTNERS = new Set(['rsi_above', 'cci_above', 'willr_above', 'mfi_above', 'stoch_k_above', 'stochrsi_above']);
+
 function _condOpts(selected) {
   const groups = {};
   Object.entries(CONDITION_DEFS).forEach(([k, d]) => {
@@ -1665,6 +1696,7 @@ function _condOpts(selected) {
     // saved strategy loaded on a downgraded account still shows what it was
     // set to (loadSavedStrategy below is what actually strips/resets those).
     if (signalsRestricted && !BASIC_CONDITION_GROUPS.has(g) && k !== selected) return;
+    if (HIDDEN_LEVEL_PARTNERS.has(k) && k !== selected) return;
     if (!groups[g]) groups[g] = [];
     groups[g].push({ k, label: d.label });
   });
@@ -1697,10 +1729,13 @@ function renderConditions() {
         ${def.suffix ? `<span class="cond-input-label">${def.suffix}</span>` : ''}
       </div>` : '';
     const dir = cond.direction === 'sell' ? 'sell' : 'buy';
+    const levelPartner = LEVEL_CONDITION_PAIRS[cond.type];
+    const levelBtn = levelPartner ? `<button class="cond-dir-btn cond-level-btn" onclick="toggleConditionLevel(${i});event.stopPropagation()" title="Switch between below/above this value — independent of Buy/Sell">${cond.type.endsWith('_above') ? 'ABOVE' : 'BELOW'}</button>` : '';
     return `
       <div class="condition-card unmet" id="cond-${i}">
         <div class="cond-header" onclick="toggleCondExpand(${i})">
           <span class="cond-name">${def.label || cond.type}</span>
+          ${levelBtn}
           <button class="cond-dir-btn cond-dir-${dir}" onclick="toggleConditionDirection(${i});event.stopPropagation()" title="This condition counts as evidence for a Buy or a Sell — click to flip">${dir.toUpperCase()}</button>
           <svg id="cond-chev-${i}" class="cond-chevron ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"/>
