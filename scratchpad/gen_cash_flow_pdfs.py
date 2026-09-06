@@ -39,7 +39,7 @@ def footer(c, title, page_num):
     c.setFont("Helvetica", 8)
     c.setFillColor(GRAY)
     c.drawString(LEFT, FOOTER_Y, f"{title} Growth Capital Group")
-    c.drawRightString(RIGHT, FOOTER_Y, f"growthcapitalgroup.org   Page {page_num}")
+    c.drawRightString(RIGHT, FOOTER_Y, f"growthcapitalgroup.co   Page {page_num}")
 
 
 def running_header(c, title):

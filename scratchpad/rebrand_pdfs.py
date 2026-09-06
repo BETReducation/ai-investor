@@ -15,7 +15,7 @@ NEW_LOGO = Image.open("static/logos/GCE Square.png")
 TEXT_REPLACEMENTS = [
     ("GROWTH CAPITAL ACADEMY", "GROWTH CAPITAL GROUP"),
     ("Growth Capital Academy", "Growth Capital Group"),
-    ("growthcapitalacademy.com", "growthcapitalgroup.org"),
+    ("growthcapitalacademy.com", "growthcapitalgroup.co"),
 ]
 
 
