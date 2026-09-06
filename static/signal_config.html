@@ -1934,12 +1934,40 @@ const BT_INDICATOR_MAP = {
     neckline_touch: ['inv_hs_neckline'], neckline_break: ['inv_hs_neckline'],
   }},
   // Volume has no trigger-mode chip row in the Backtester (it's a plain on/off
-  // confirmation filter, not a multi-mode indicator) — valueKey instead of chips
-  // tells the loop below which field holds the surge multiplier to carry over,
-  // since _buildCondition's `value` (the "At least ×avg" threshold) would
-  // otherwise silently reset to volume_spike's 1.5 default on every import.
-  togVol:        { group: 'Volume', modes: { spike: ['volume_spike'] },
-                   valueKey: { basic: 'volSurgeBasic', detailed: 'volSurge' } },
+  // confirmation filter, not a multi-mode indicator) — CONDITION_VALUE_KEYS
+  // below carries its surge multiplier across the same way as any other
+  // condition's threshold.
+  togVol:        { group: 'Volume', modes: { spike: ['volume_spike'] } },
+};
+
+// Maps a translated condition type to the Backtester field holding its actual
+// configured threshold — without this, every imported condition's `value`
+// falls back to CONDITION_DEFS' hardcoded default (e.g. RSI 30/70) regardless
+// of what the strategy being imported was actually set to. Only covers types
+// where the Backtester has a genuine matching field to read (Bollinger's %B
+// threshold, MACD Z-Score, Aroon, TSI oversold/overbought etc. have no
+// Backtester-side equivalent field, so those keep CONDITION_DEFS' default).
+// `basic` is only given where Basic mode actually exposes that indicator
+// (only RSI and Volume do — see strategy-lab.html's Basic panel); `transform`
+// covers cmf_below, where the Backtester stores a bare positive magnitude but
+// the condition's own value is signed negative.
+const CONDITION_VALUE_KEYS = {
+  rsi_below:      { basic: 'rsiOversoldBasic',   detailed: 'rsiOversold' },
+  rsi_above:      { basic: 'rsiOverboughtBasic', detailed: 'rsiOverbought' },
+  volume_spike:   { basic: 'volSurgeBasic',      detailed: 'volSurge' },
+  cci_below:      { detailed: 'cciOversold' },
+  cci_above:      { detailed: 'cciOverbought' },
+  willr_below:    { detailed: 'willrOversold' },
+  willr_above:    { detailed: 'willrOverbought' },
+  mfi_below:      { detailed: 'mfiOversold' },
+  mfi_above:      { detailed: 'mfiOverbought' },
+  stoch_k_below:  { detailed: 'stochOversold' },
+  stoch_k_above:  { detailed: 'stochOverbought' },
+  stochrsi_below: { detailed: 'stochrsiOversold' },
+  stochrsi_above: { detailed: 'stochrsiOverbought' },
+  adx_above:      { detailed: 'adxTrendThreshold' },
+  cmf_above:      { detailed: 'cmfThreshold' },
+  cmf_below:      { detailed: 'cmfThreshold', transform: v => -v },
 };
 
 function _snakeToCamel(s) {
@@ -1991,13 +2019,18 @@ function translateBacktestConfig(cfg) {
       modesToUse = activeModes.length ? activeModes : Object.keys(spec.modes).slice(0, 1);
     }
     const paramOverrides = _paramsFromBacktestConfig(spec.group, cfg);
-    const rawValue = spec.valueKey ? cfg[isBasic ? spec.valueKey.basic : spec.valueKey.detailed] : undefined;
-    const value = rawValue !== undefined ? parseFloat(rawValue) : undefined;
     modesToUse.forEach(mode => {
       const types = spec.modes[mode];
       if (!types) return;
       if (types.length === 0) { skippedModes.push(`${spec.group}: ${mode}`); return; }
-      types.forEach(type => conditions.push(_buildCondition(type, value, paramOverrides)));
+      types.forEach(type => {
+        const valueKey = CONDITION_VALUE_KEYS[type];
+        const fieldName = valueKey && (isBasic ? valueKey.basic : valueKey.detailed);
+        const rawValue = fieldName ? cfg[fieldName] : undefined;
+        let value = rawValue !== undefined && rawValue !== '' ? parseFloat(rawValue) : undefined;
+        if (value !== undefined && valueKey.transform) value = valueKey.transform(value);
+        conditions.push(_buildCondition(type, value, paramOverrides));
+      });
     });
   });
   return { conditions, skippedModes };
