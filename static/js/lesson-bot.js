@@ -86,11 +86,18 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: slug, question: q, history: history }),
     })
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
+      .then(function (r) {
+        return r.json().then(function (data) { return { status: r.status, data: data }; });
+      })
+      .then(function (res) {
+        var data = res.data;
+        if (res.status === 401) {
+          pending.textContent = 'Sign in to ask the lesson tutor questions.';
+          return;
+        }
         var answer = data.answer || data.error || "Sorry, I couldn't answer that.";
         pending.textContent = answer;
-        history.push({ role: 'assistant', content: answer });
+        if (data.answer) history.push({ role: 'assistant', content: answer });
       })
       .catch(function () {
         pending.textContent = 'Something went wrong reaching the tutor. Try again in a moment.';

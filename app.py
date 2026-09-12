@@ -84,6 +84,7 @@ login_manager.session_protection = "basic"
 USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
 ANON_BACKTEST_FILE  = os.path.join(os.path.dirname(__file__), "anon_backtest_usage.json")
 DAILY_BACKTEST_FILE = os.path.join(os.path.dirname(__file__), "backtest_daily_usage.json")
+DAILY_LEARN_QA_FILE = os.path.join(os.path.dirname(__file__), "learn_qa_daily_usage.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
@@ -215,6 +216,14 @@ def _ensure_table() -> None:
         """)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS backtest_daily_usage (
+                username TEXT NOT NULL,
+                day      DATE NOT NULL,
+                count    INT NOT NULL DEFAULT 0,
+                PRIMARY KEY (username, day)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS learn_qa_daily_usage (
                 username TEXT NOT NULL,
                 day      DATE NOT NULL,
                 count    INT NOT NULL DEFAULT 0,
@@ -599,6 +608,13 @@ ANON_BACKTEST_LIMIT = 5
 # resets at midnight UTC regardless of when the user's first run that day was.
 FREE_TIER_DAILY_BACKTEST_LIMIT = 20
 
+# Lesson Q&A bot: free-tier gets a small taste per day; pro/founder are
+# "unlimited" per DEFAULT_ENTITLEMENTS_BY_TIER but still get a high sanity
+# ceiling here as a circuit-breaker (compromised/scripted account), not a
+# real limit — this runs against Gary's personal Anthropic API key.
+FREE_TIER_DAILY_LEARN_QA_LIMIT = 3
+PRO_TIER_DAILY_LEARN_QA_LIMIT = 100
+
 # Symbol allowlist for anonymous + free-tier (basic) backtesting — top 5 of each
 # asset type the backtester supports. Pro/founder have no symbol restriction.
 BASIC_TIER_SYMBOLS = {
@@ -753,6 +769,31 @@ def _daily_backtest_try(username: str) -> tuple[bool, int]:
     with open(DAILY_BACKTEST_FILE, "w") as f:
         json.dump(data, f)
     return count <= FREE_TIER_DAILY_BACKTEST_LIMIT, count
+
+
+def _daily_learn_qa_try(username: str, limit: int) -> tuple[bool, int]:
+    """Same pattern as _daily_backtest_try, for the lesson Q&A bot. `limit` is
+    the caller's tier-specific cap (FREE_TIER_ vs PRO_TIER_)."""
+    today = _dt.datetime.utcnow().date()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO learn_qa_daily_usage (username, day, count) VALUES (%s, %s, 1)
+                ON CONFLICT (username, day) DO UPDATE SET count = learn_qa_daily_usage.count + 1
+                RETURNING count
+            """, (username, today))
+            count = cur.fetchone()[0]
+        return count <= limit, count
+    data = {}
+    if os.path.exists(DAILY_LEARN_QA_FILE):
+        with open(DAILY_LEARN_QA_FILE) as f:
+            data = json.load(f)
+    key = f"{username}|{today.isoformat()}"
+    count = data.get(key, 0) + 1
+    data[key] = count
+    with open(DAILY_LEARN_QA_FILE, "w") as f:
+        json.dump(data, f)
+    return count <= limit, count
 
 
 # ── User model ───────────────────────────────────────────────────────────────
@@ -5422,10 +5463,20 @@ def _lesson_plain_text(slug: str) -> str | None:
 
 
 @app.route("/api/lesson-qa", methods=["POST"])
+@login_required  # anonymous visitors get none — must be signed in to use API credits at all
 def lesson_qa():
     if not os.environ.get("ANTHROPIC_API_KEY"):
         return jsonify({"error": "No Anthropic API key is configured on the server "
                                  "(set the ANTHROPIC_API_KEY environment variable)."}), 503
+
+    learn_ai = getattr(current_user, "entitlements", {}).get("learn_ai", "free_quota")
+    limit = PRO_TIER_DAILY_LEARN_QA_LIMIT if learn_ai == "unlimited" else FREE_TIER_DAILY_LEARN_QA_LIMIT
+    allowed, used = _daily_learn_qa_try(current_user.id, limit)
+    if not allowed:
+        msg = ("You've used today's free question limit for the lesson tutor — it resets at "
+               "midnight UTC. Upgrade to Pro for a much higher daily limit.") if learn_ai != "unlimited" else (
+               "You've hit today's usage ceiling for the lesson tutor — it resets at midnight UTC.")
+        return jsonify({"error": msg, "quota_exceeded": True, "limit": limit, "used": used}), 429
 
     data = request.get_json(silent=True) or {}
     slug = (data.get("slug") or "").strip()
@@ -5446,7 +5497,12 @@ def lesson_qa():
         if content:
             history_lines.append(f"{role}: {content}")
 
-    prompt = (
+    # Static per-lesson instructions + full lesson text go in a cached system
+    # block — identical for every student asking about this lesson, so after
+    # the first request in the cache window (~5min, refreshed on each hit)
+    # Anthropic bills those input tokens at a fraction of the normal rate
+    # instead of re-charging the full lesson text on every single question.
+    system_text = (
         "You are a patient tutor helping a student understand ONE specific investing-education "
         f"lesson, titled \"{lesson['title']}\", on Global Capital Academy. Answer only using the "
         "lesson text below plus general explanation of the concepts it covers — do not bring in "
@@ -5458,8 +5514,10 @@ def lesson_qa():
         "- If asked for advice or a recommendation, explain you can only help them understand the "
         "concept, not advise on personal decisions.\n"
         "- Keep answers concise (a few short paragraphs at most) and use plain language.\n\n"
-        f"LESSON TEXT:\n{lesson_text[:12000]}\n\n"
+        f"LESSON TEXT:\n{lesson_text[:12000]}"
     )
+
+    prompt = ""
     if history_lines:
         prompt += "CONVERSATION SO FAR:\n" + "\n".join(history_lines) + "\n\n"
     prompt += f"Student's new question: {question}"
@@ -5468,14 +5526,15 @@ def lesson_qa():
         import anthropic
         client = anthropic.Anthropic()
         response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=800,
+            model="claude-haiku-4-5-20251001",  # cheapest model — plenty for grounded Q&A on one lesson
+            max_tokens=600,
+            system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": prompt}],
         )
         if response.stop_reason == "refusal":
             return jsonify({"error": "The tutor declined to answer that."}), 502
         answer = next((b.text for b in response.content if b.type == "text"), "").strip()
-        return jsonify({"answer": answer})
+        return jsonify({"answer": answer, "remaining": max(0, limit - used)})
     except Exception as e:
         return jsonify({"error": f"Generation failed: {e}"}), 502
 
