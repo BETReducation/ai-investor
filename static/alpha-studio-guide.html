@@ -111,18 +111,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <div class="step">
       <div class="step-head"><span class="step-num">01</span><span class="step-title">Format your notes with the AI prompt first</span></div>
       <p class="step-note">This is the step that gets skipped most often. Studio's own upload box does <strong>not</strong> automatically format your text — if you paste raw notes straight in, that's exactly what comes out: raw notes. The prompt below does the formatting, and it has to run in a separate AI chat before Studio ever sees your text.</p>
-      <p class="step-note"><strong>Copy the AI's reply as raw/plain text, not the rendered chat bubble.</strong> Chat apps (Claude, Gemini, ChatGPT, all of them) render a line starting with <code>## </code> as an actual heading on screen — so if you select that rendered heading text and copy it, the <code>## </code> characters are gone, because they were never displayed, only used to draw the heading. Try the app's own <strong>copy</strong> button first (usually a small clipboard icon under the reply, not manual text selection) — that's meant to copy the underlying raw text with the <code>## </code> markers intact.</p>
-      <p class="step-note"><strong>If the markers are still missing after that</strong> (confirmed with Gemini — its copy button gives you clean text on purpose, stripped of markdown syntax, so no copy method in the app preserves the hashes), use this reliable workaround instead:</p>
-      <ol>
-        <li>Reply to the AI: <em>"Put your entire previous answer inside a single code block, unchanged, so none of it renders as markdown."</em></li>
-        <li>Copy from that code block using its own copy icon — text inside a code block is never turned into headings, so it copies exactly as written, hashes included.</li>
-        <li>Before pasting into Studio, delete the two &#96;&#96;&#96; lines (one at the very top, one at the very bottom) — Studio doesn't want those, just the <code>## </code> content itself.</li>
-      </ol>
+      <p class="step-note">The prompt now tells the AI to put its whole reply inside a single code block, on purpose — a chat app would normally render a line starting with <code>## </code> as an actual on-screen heading, and copying that rendered heading strips the <code>## </code> characters (they were never actually displayed, only used to draw the heading). Text inside a code block is never re-rendered that way, so copying from it preserves the markers exactly.</p>
       <ol>
         <li>Open <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> (or whichever AI chat app you use) in another tab.</li>
         <li>Tap the <strong>📋 Copy prompt</strong> button below, then paste it in as your message.</li>
         <li>Where it says <code>[PASTE YOUR NOTES HERE]</code>, replace that line with your actual draft — bullet points, a rough paragraph, whatever you've got. Doesn't need to be tidy yet.</li>
-        <li>Send it, and copy the AI's reply in full — using the app's copy button, not manual selection (see below for why that matters).</li>
+        <li>Send it. The reply should come back entirely inside one code block — copy it using that code block's own copy icon, not manual text selection.</li>
+        <li>Before pasting into Studio, delete the two &#96;&#96;&#96; lines (one at the very top, one at the very bottom) — Studio doesn't want those, just the <code>## </code> content itself.</li>
       </ol>
 
       <div class="prompt-card">
@@ -147,8 +142,8 @@ FORMAT RULES
   - **bold**, _italic_, ++underline++
   - "- item" for a bullet list, "1. item" for a numbered list (one per line)
   - A real markdown table (header row, "---" separator row, data rows, pipe-delimited) — put it under a "## [TABLE]" heading, or just leave it bare and it'll still be detected as a table.
-- Do not wrap your output in a ``` code fence.
 - Every "## " must be at the very start of its own line — don't let anything join lines together or strip the line breaks.
+- Output your entire reply as plaintext inside a single code block (triple backticks), with nothing outside it. This is required — if the "## " lines render as normal text instead of staying inside a code block, your chat app will likely display them as actual headings, and I won't be able to copy the literal "## " characters back out. Do not format any part of the reply as real Markdown headings, bold, or lists outside the code block — the whole thing, including the "## " markers themselves, must stay literal text inside that one code block.
 
 CONTENT RULES
 - Educational/historical framing only — describe what a strategy or indicator would have done historically, never advice, predictions, or personalised recommendations.
@@ -160,7 +155,7 @@ Here's my draft/notes to turn into a post:
 [PASTE YOUR NOTES HERE]</pre>
       </div>
 
-      <div class="warn-card"><strong>This is a manual step, every time.</strong> Studio can't run the prompt for you yet — you run it in your own AI chat, then bring the finished text over. If a post you've published still reads unformatted, this is almost always why: either the raw notes went straight into Studio without a trip through the prompt first, or the AI's reply was copied from the rendered chat bubble instead of via the app's copy button (see above).</div>
+      <div class="warn-card"><strong>This is a manual step, every time.</strong> Studio can't run the prompt for you yet — you run it in your own AI chat, then bring the finished text over. If a post you've published still reads unformatted, this is almost always why: either the raw notes went straight into Studio without a trip through the prompt first, or the AI ignored the code-block instruction and the <code>## </code> markers got rendered away and lost on copy (see below for what to do if that happens).</div>
     </div>
 
     <div class="step">
@@ -211,7 +206,7 @@ Here's my draft/notes to turn into a post:
 
     <div class="step">
       <div class="step-head"><span class="step-num">06</span><span class="step-title">Stuck on something else?</span></div>
-      <div class="help-item"><strong>"My post looks like a wall of plain text."</strong> — almost always a copy problem, not a formatting problem: the <code>## </code> markers were rendered as real headings in the AI chat, and copying that rendered text drops them. Try the AI's own <strong>copy</strong> button (clipboard icon) instead of selecting the text by hand. If that still doesn't preserve the hashes (known issue with Gemini), use the code-block workaround in Section 1 — ask the AI to wrap its reply in a single code block, copy from that, then remove the two &#96;&#96;&#96; lines before pasting into a fresh draft.</div>
+      <div class="help-item"><strong>"My post looks like a wall of plain text."</strong> — almost always a copy problem, not a formatting problem: the <code>## </code> markers were rendered as real headings in the AI chat, and copying that rendered text drops them. The prompt in Section 1 already tells the AI to reply inside one code block to prevent this — if it didn't do that, ask it directly: <em>"Put your entire previous answer inside a single code block, unchanged, so none of it renders as markdown."</em> Copy from that code block using its own copy icon, remove the two &#96;&#96;&#96; lines, then paste into a fresh draft. (Skip suggestions like escaping hashes with backslashes or zero-width spaces — those change the actual characters and need extra cleanup or risk invisible characters breaking things; the code-block method is the reliable one.)</div>
       <div class="help-item"><strong>"Publish button won't light up."</strong> — you're missing the subtitle or the main image. Check both are filled in (Section 3).</div>
       <div class="help-item"><strong>"My table isn't rendering as a table."</strong> — it needs a header row, then a <code>---</code> separator row, then data rows, all pipe (<code>|</code>) delimited. A <code>## [TABLE]</code> heading directly above it helps but a well-formed table is usually detected either way.</div>
       <div class="help-item"><strong>Anything not covered here</strong> — ask Gary directly rather than guessing; Studio is still evolving and this guide will get updated as it does.</div>
