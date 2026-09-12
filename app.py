@@ -5397,6 +5397,89 @@ def social_posts():
         return jsonify({"error": f"Generation failed: {e}"}), 502
 
 
+_LESSON_TEXT_CACHE = {}  # slug -> extracted plain text, filled lazily
+
+
+def _lesson_plain_text(slug: str) -> str | None:
+    """Plain-text content of a lesson page, for feeding to the Q&A bot as
+    context. Cached per slug — the HTML files don't change at runtime."""
+    if slug in _LESSON_TEXT_CACHE:
+        return _LESSON_TEXT_CACHE[slug]
+    lesson = _LESSON_BY_SLUG.get(slug)
+    if not lesson:
+        return None
+    path = os.path.join(app.static_folder, lesson["file"])
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+    except OSError:
+        return None
+    for tag in soup(["script", "style", "nav"]):
+        tag.decompose()
+    text = re.sub(r"\n{3,}", "\n\n", soup.get_text("\n").strip())
+    _LESSON_TEXT_CACHE[slug] = text
+    return text
+
+
+@app.route("/api/lesson-qa", methods=["POST"])
+def lesson_qa():
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify({"error": "No Anthropic API key is configured on the server "
+                                 "(set the ANTHROPIC_API_KEY environment variable)."}), 503
+
+    data = request.get_json(silent=True) or {}
+    slug = (data.get("slug") or "").strip()
+    question = (data.get("question") or "").strip()[:1000]
+    if not question:
+        return jsonify({"error": "Ask a question first."}), 400
+
+    lesson = _LESSON_BY_SLUG.get(slug)
+    lesson_text = _lesson_plain_text(slug)
+    if not lesson or lesson_text is None:
+        return jsonify({"error": "Unknown lesson."}), 400
+
+    history = data.get("history") or []
+    history_lines = []
+    for turn in history[-6:]:
+        role = "Student" if turn.get("role") == "user" else "Tutor"
+        content = str(turn.get("content", ""))[:600]
+        if content:
+            history_lines.append(f"{role}: {content}")
+
+    prompt = (
+        "You are a patient tutor helping a student understand ONE specific investing-education "
+        f"lesson, titled \"{lesson['title']}\", on Global Capital Academy. Answer only using the "
+        "lesson text below plus general explanation of the concepts it covers — do not bring in "
+        "unrelated strategies or products.\n\n"
+        "Rules:\n"
+        "- Stay strictly educational and historical/conceptual in framing. Never give personalised "
+        "investment advice, never recommend buying/selling a specific asset, and never tell the "
+        "student what they should do with their own money.\n"
+        "- If asked for advice or a recommendation, explain you can only help them understand the "
+        "concept, not advise on personal decisions.\n"
+        "- Keep answers concise (a few short paragraphs at most) and use plain language.\n\n"
+        f"LESSON TEXT:\n{lesson_text[:12000]}\n\n"
+    )
+    if history_lines:
+        prompt += "CONVERSATION SO FAR:\n" + "\n".join(history_lines) + "\n\n"
+    prompt += f"Student's new question: {question}"
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        response = client.messages.create(
+            model="claude-opus-4-8",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if response.stop_reason == "refusal":
+            return jsonify({"error": "The tutor declined to answer that."}), 502
+        answer = next((b.text for b in response.content if b.type == "text"), "").strip()
+        return jsonify({"answer": answer})
+    except Exception as e:
+        return jsonify({"error": f"Generation failed: {e}"}), 502
+
+
 # ── Startup ───────────────────────────────────────────────────────────────────
 
 _ensure_table()
