@@ -103,13 +103,25 @@
 
   pre{
     background:var(--code-bg); color:var(--code-text); border-radius:10px; padding:18px 20px;
-    overflow-x:auto; font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6;
-    margin:14px 0 20px;
+    font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6;
+    margin:0; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;
+  }
+  .prompt-box{margin:14px 0 20px;}
+  .prompt-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom:6px;
   }
   .pre-label{
     font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--pb-muted); margin-bottom:6px;
+    color:var(--pb-muted);
   }
+  .copy-btn{
+    font-family:'Outfit', sans-serif; font-weight:700; font-size:13px; color:var(--pb-bg);
+    background:var(--accent); border:none; border-radius:7px; padding:8px 16px; cursor:pointer;
+    white-space:nowrap; flex-shrink:0;
+  }
+  .copy-btn:hover{opacity:0.88;}
+  .copy-btn.copied{background:#3a7d5c;}
 
   .field-list{list-style:none; padding:0; margin:14px 0;}
   .field-list li{
@@ -164,13 +176,17 @@
 
   <ol>
     <li>Open <a href="https://claude.ai">claude.ai</a> (or whichever AI chat you use) in another tab.</li>
-    <li>Copy the whole prompt block below and paste it in as your message.</li>
+    <li>Tap the <strong>📋 Copy prompt</strong> button below, then paste it in as your message.</li>
     <li>Where it says <code>[PASTE YOUR NOTES HERE]</code>, replace that line with your actual draft — bullet points, a rough paragraph, whatever you've got. Doesn't need to be tidy yet.</li>
     <li>Send it, and copy the AI's reply in full.</li>
   </ol>
 
-  <div class="pre-label">The prompt — copy everything below</div>
-  <pre>You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
+  <div class="prompt-box">
+  <div class="prompt-bar">
+    <div class="pre-label">The prompt</div>
+    <button class="copy-btn" id="copyPromptBtn" type="button">📋 Copy prompt</button>
+  </div>
+  <pre id="promptText">You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
 
 FORMAT RULES
 - Start every new section with a line that begins "## " (two hashes, one space).
@@ -198,6 +214,7 @@ CONTENT RULES
 Here's my draft/notes to turn into a post:
 
 [PASTE YOUR NOTES HERE]</pre>
+  </div>
 
   <div class="warn"><strong>This is a manual step, every time.</strong> Studio can't run the prompt for you yet — you run it in your own AI chat, then bring the finished text over. If a post you've published still reads unformatted, this is almost always why: the raw notes went straight into Studio without a trip through the prompt first.</div>
 
@@ -252,6 +269,42 @@ Here's my draft/notes to turn into a post:
 </div>
 
 <script src="/static/js/footer.js" data-logo="GCE Square.png"></script>
+
+<script>
+(function () {
+  var btn = document.getElementById('copyPromptBtn');
+  var pre = document.getElementById('promptText');
+  if (!btn || !pre) return;
+  btn.addEventListener('click', function () {
+    var text = pre.textContent;
+    function done(ok) {
+      btn.textContent = ok ? '✅ Copied!' : 'Select the text manually — copy failed';
+      btn.classList.toggle('copied', ok);
+      setTimeout(function () {
+        btn.textContent = '📋 Copy prompt';
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else {
+      // Fallback for non-HTTPS/older browsers — select the text via a hidden
+      // textarea and use the legacy execCommand copy path.
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      done(ok);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
