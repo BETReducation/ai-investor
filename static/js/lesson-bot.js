@@ -18,12 +18,19 @@
     'font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,0.25);display:flex;align-items:center;' +
     'justify-content:center;}' +
     '#lb-panel{position:fixed;bottom:90px;right:24px;z-index:9999;width:480px;max-width:92vw;' +
-    'height:620px;max-height:82vh;background:var(--lb-bg,#0b0f1a);color:var(--lb-fg,#e8ecf4);' +
-    'border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);display:none;flex-direction:column;' +
-    'overflow:hidden;font:14px/1.4 system-ui,sans-serif;border:1px solid rgba(255,255,255,0.08);}' +
+    'height:620px;max-height:82vh;min-width:300px;min-height:320px;background:var(--lb-bg,#0b0f1a);' +
+    'color:var(--lb-fg,#e8ecf4);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);' +
+    'display:none;flex-direction:column;overflow:hidden;font:14px/1.4 system-ui,sans-serif;' +
+    'border:1px solid rgba(255,255,255,0.08);resize:both;}' +
     '#lb-panel.lb-open{display:flex;}' +
+    '#lb-panel.lb-full{position:fixed;top:5vh;left:5vw;right:5vw;bottom:5vh;width:auto!important;' +
+    'height:auto!important;max-width:none;max-height:none;resize:none;}' +
     '#lb-head{padding:12px 14px;background:rgba(0,212,170,0.12);font-weight:600;' +
-    'border-bottom:1px solid rgba(255,255,255,0.08);}' +
+    'border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;' +
+    'justify-content:space-between;flex-shrink:0;}' +
+    '#lb-expand{border:none;background:none;color:inherit;opacity:0.7;cursor:pointer;' +
+    'font-size:16px;padding:2px 6px;line-height:1;}' +
+    '#lb-expand:hover{opacity:1;}' +
     '#lb-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}' +
     '.lb-msg{max-width:85%;padding:8px 11px;border-radius:10px;white-space:pre-wrap;}' +
     '.lb-user{align-self:flex-end;background:#00d4aa;color:#04120e;}' +
@@ -48,7 +55,8 @@
   var panel = document.createElement('div');
   panel.id = 'lb-panel';
   panel.innerHTML =
-    '<div id="lb-head">Ask about this lesson</div>' +
+    '<div id="lb-head"><span>Ask about this lesson</span>' +
+    '<button id="lb-expand" type="button" title="Toggle fullscreen">⤢</button></div>' +
     '<div id="lb-msgs"></div>' +
     '<div id="lb-chips"></div>' +
     '<div class="lb-hint">Educational explanations only — not personalised investment advice.</div>' +
@@ -59,7 +67,31 @@
   var msgsEl = panel.querySelector('#lb-msgs');
   var chipsEl = panel.querySelector('#lb-chips');
   var inputEl = panel.querySelector('#lb-input');
+  var expandBtn = panel.querySelector('#lb-expand');
   var suggestionsLoaded = false;
+
+  // Remember a manually drag-resized size across visits (per browser, this
+  // origin only). Wrapped in try/catch — storage can be blocked or throw in
+  // some browser contexts, and the widget should degrade to default size.
+  try {
+    var savedSize = JSON.parse(localStorage.getItem('lb-size') || 'null');
+    if (savedSize && savedSize.w && savedSize.h) {
+      panel.style.width = savedSize.w;
+      panel.style.height = savedSize.h;
+    }
+  } catch (e) {}
+
+  new ResizeObserver(function () {
+    if (panel.classList.contains('lb-full')) return; // don't persist the fullscreen size
+    try {
+      localStorage.setItem('lb-size', JSON.stringify({ w: panel.style.width || panel.offsetWidth + 'px', h: panel.style.height || panel.offsetHeight + 'px' }));
+    } catch (e) {}
+  }).observe(panel);
+
+  expandBtn.addEventListener('click', function () {
+    panel.classList.toggle('lb-full');
+    expandBtn.textContent = panel.classList.contains('lb-full') ? '⤡' : '⤢';
+  });
 
   function addMsg(role, text) {
     var el = document.createElement('div');
