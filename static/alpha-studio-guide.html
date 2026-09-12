@@ -56,7 +56,8 @@ code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: 
 .field-tag { flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; background: rgba(0,212,170,0.14); color: var(--green); padding: 4px 9px; border-radius: 6px; height: fit-content; white-space: nowrap; }
 
 .prompt-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 16px 0 20px; }
-.prompt-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.prompt-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.prompt-btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 .prompt-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .copy-btn { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; color: #03130f; background: var(--green); border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s; }
 .copy-btn:hover { opacity: 0.88; }
@@ -113,8 +114,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <p class="step-note">This is the step that gets skipped most often. Studio's own upload box does <strong>not</strong> automatically format your text — if you paste raw notes straight in, that's exactly what comes out: raw notes. The prompt below does the formatting, and it has to run in a separate AI chat before Studio ever sees your text.</p>
       <p class="step-note">The prompt now tells the AI to put its whole reply inside a single code block, on purpose — a chat app would normally render a line starting with <code>## </code> as an actual on-screen heading, and copying that rendered heading strips the <code>## </code> characters (they were never actually displayed, only used to draw the heading). Text inside a code block is never re-rendered that way, so copying from it preserves the markers exactly.</p>
       <ol>
-        <li>Open <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> (or whichever AI chat app you use) in another tab.</li>
-        <li>Tap the <strong>📋 Copy prompt</strong> button below, then paste it in as your message.</li>
+        <li>Open <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a>, <a href="https://gemini.google.com" target="_blank" rel="noopener">gemini.google.com</a>, or <a href="https://chatgpt.com" target="_blank" rel="noopener">chatgpt.com</a> in another tab — whichever you use.</li>
+        <li>Tap the matching copy button below (Claude / Gemini / ChatGPT) and paste it in as your message. Each one is the same core prompt with extra instructions tuned to that model's known quirks.</li>
         <li>Where it says <code>[PASTE YOUR NOTES HERE]</code>, replace that line with your actual draft — bullet points, a rough paragraph, whatever you've got. Doesn't need to be tidy yet.</li>
         <li>Send it. The reply should come back entirely inside one code block — copy it using that code block's own copy icon, not manual text selection.</li>
         <li>Before pasting into Studio, delete the two &#96;&#96;&#96; lines (one at the very top, one at the very bottom) — Studio doesn't want those, just the <code>## </code> content itself.</li>
@@ -123,8 +124,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="prompt-card">
         <div class="prompt-bar">
           <span class="prompt-label">The prompt</span>
-          <button class="copy-btn" id="copyPromptBtn" type="button">📋 Copy prompt</button>
+          <span class="prompt-btn-group">
+            <button class="copy-btn" id="copyPromptClaude" type="button">📋 Copy for Claude</button>
+            <button class="copy-btn" id="copyPromptGemini" type="button">📋 Copy for Gemini</button>
+            <button class="copy-btn" id="copyPromptChatGPT" type="button">📋 Copy for ChatGPT</button>
+          </span>
         </div>
+        <p class="step-note" style="margin-top:0">Base prompt shown below — each button appends a short note tuned to that model's known formatting quirks before copying.</p>
         <pre id="promptText">You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
 
 FORMAT RULES
@@ -222,35 +228,58 @@ Here's my draft/notes to turn into a post:
 
 <script>
 (function () {
-  var btn = document.getElementById('copyPromptBtn');
   var pre = document.getElementById('promptText');
-  if (!btn || !pre) return;
-  btn.addEventListener('click', function () {
-    var text = pre.textContent;
-    function done(ok) {
-      btn.textContent = ok ? '✅ Copied!' : 'Select the text manually — copy failed';
-      btn.classList.toggle('copied', ok);
-      setTimeout(function () {
-        btn.textContent = '📋 Copy prompt';
-        btn.classList.remove('copied');
-      }, 2000);
-    }
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
-    } else {
-      var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      var ok = false;
-      try { ok = document.execCommand('copy'); } catch (e) {}
-      document.body.removeChild(ta);
-      done(ok);
-    }
-  });
+  if (!pre) return;
+
+  var MARKER = "Here's my draft/notes to turn into a post:";
+
+  var NOTES = {
+    claude: "MODEL-SPECIFIC NOTE FOR CLAUDE\nYou're generally reliable at this. Just double-check before sending: the single code block must contain absolutely everything, with no stray blank line or comment before the opening ``` or after the closing ```.",
+    gemini: "MODEL-SPECIFIC NOTE FOR GEMINI\nYou have a known tendency to render the \"## \" lines as real on-screen headings even when asked to keep them as literal text in a code block. Before you send your reply, re-read your own draft: if any \"## \" line is not literal text sitting inside the single code block, rewrite it so it is. Don't add any commentary before or after the code block.",
+    chatgpt: "MODEL-SPECIFIC NOTE FOR CHATGPT\nYou have two known tendencies that break this format — do not do either:\n1. Ignoring the code-block instruction and replying with real rendered Markdown headings/bullets instead of literal text in a code block. Wrap your ENTIRE reply, with nothing outside it, in a single triple-backtick code block.\n2. Rendering bullet points using a special bullet character followed by an invisible joiner character (looks like \"•⁠  ⁠\" instead of a plain hyphen). Every bullet must be a literal \"- \" (hyphen, space) at the start of the line — no other bullet characters, no invisible formatting characters of any kind."
+  };
+
+  function buildText(key) {
+    var base = pre.textContent;
+    var idx = base.indexOf(MARKER);
+    if (idx === -1) return base;
+    return base.slice(0, idx) + NOTES[key] + '\n\n' + base.slice(idx);
+  }
+
+  function wire(id, key, label) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var text = buildText(key);
+      function done(ok) {
+        btn.textContent = ok ? '✅ Copied!' : 'Select the text manually — copy failed';
+        btn.classList.toggle('copied', ok);
+        setTimeout(function () {
+          btn.textContent = '📋 Copy for ' + label;
+          btn.classList.remove('copied');
+        }, 2000);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done(ok);
+      }
+    });
+  }
+
+  wire('copyPromptClaude', 'claude', 'Claude');
+  wire('copyPromptGemini', 'gemini', 'Gemini');
+  wire('copyPromptChatGPT', 'chatgpt', 'ChatGPT');
 })();
 </script>
 
