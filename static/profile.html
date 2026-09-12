@@ -350,6 +350,31 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      <!-- PASSWORD -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🔒</span>Password</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="form-label">Current Password</div>
+            <input type="password" id="fieldCurrentPassword" class="form-input" autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <div class="form-label">New Password</div>
+            <input type="password" id="fieldNewPassword" class="form-input" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Confirm New Password</div>
+            <input type="password" id="fieldConfirmPassword" class="form-input" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="changePasswordBtn" onclick="changePassword()">Update Password</button>
+          <span class="form-hint" id="changePasswordHint"></span>
+        </div>
+      </div>
+
       <!-- PREFERENCES: sign-in + signal tracker notifications -->
       <div class="profile-card">
         <div class="card-header-row">
@@ -855,6 +880,45 @@ async function saveProfile() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Save Changes';
+  }
+}
+
+// ── Change password ──────────────────────────────────────────────────────────
+
+async function changePassword() {
+  const btn     = document.getElementById('changePasswordBtn');
+  const hint    = document.getElementById('changePasswordHint');
+  const current = document.getElementById('fieldCurrentPassword').value;
+  const next    = document.getElementById('fieldNewPassword').value;
+  const confirm = document.getElementById('fieldConfirmPassword').value;
+
+  hint.style.color = '#ff4757';
+  if (!current || !next || !confirm) { hint.textContent = 'Fill in all three fields.'; return; }
+  if (next.length < 6) { hint.textContent = 'New password must be at least 6 characters.'; return; }
+  if (next !== confirm) { hint.textContent = 'New passwords don\'t match.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating...';
+  hint.textContent = '';
+
+  try {
+    const res  = await fetch('/api/profile/change-password', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_password: current, new_password: next }),
+    });
+    const data = await res.json();
+    if (!res.ok) { hint.textContent = data.error || 'Failed to update password.'; return; }
+    document.getElementById('fieldCurrentPassword').value = '';
+    document.getElementById('fieldNewPassword').value = '';
+    document.getElementById('fieldConfirmPassword').value = '';
+    hint.style.color = 'var(--green)';
+    hint.textContent = 'Password updated.';
+  } catch (e) {
+    hint.textContent = 'Cannot reach server.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Update Password';
   }
 }
 

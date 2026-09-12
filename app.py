@@ -3550,6 +3550,29 @@ def api_update_profile():
     return jsonify({"success": True, "profile": profile})
 
 
+@app.route("/api/profile/change-password", methods=["POST"])
+@login_required
+def api_change_password():
+    data = request.get_json() or {}
+    current_password = data.get("current_password", "")
+    new_password      = data.get("new_password", "")
+    if not current_password or not new_password:
+        return jsonify({"error": "Current and new password required"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
+
+    users = _load_users()
+    user_data = users.get(current_user.id)
+    if not user_data:
+        return jsonify({"error": "User not found"}), 404
+    if not bcrypt.checkpw(current_password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
+        return jsonify({"error": "Current password is incorrect"}), 400
+
+    user_data["password_hash"] = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    _save_users(users)
+    return jsonify({"success": True})
+
+
 @app.route("/api/profile/avatar", methods=["POST"])
 @login_required
 def api_upload_avatar():
