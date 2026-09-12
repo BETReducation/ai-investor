@@ -4395,6 +4395,12 @@ def alpha_studio():
     # on the JS auth check rather than a redirect-on-401 pattern.
     return send_from_directory("static", "alpha-studio.html")
 
+@app.route("/alpha/studio/guide")
+def alpha_studio_guide():
+    # Not gated — same reasoning as the page itself carrying no secrets, just
+    # workflow instructions. Linked from a "User Guide" link inside Studio.
+    return send_from_directory("static", "alpha-studio-guide.html")
+
 
 @app.route("/api/dataviz/content", methods=["GET", "POST"])
 @login_required
