@@ -3229,6 +3229,14 @@ def api_login():
     users = _load_users()
     user_data = users.get(username)
     if not user_data:
+        # Not a username match — try matching by email instead.
+        identifier = username.lower()
+        for uname, udata in users.items():
+            email = (udata.get("profile", {}) or {}).get("email", "").strip().lower()
+            if email and email == identifier:
+                username, user_data = uname, udata
+                break
+    if not user_data:
         return jsonify({"error": "Invalid credentials"}), 401
 
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
