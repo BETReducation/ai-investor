@@ -139,6 +139,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+.curve-chart-wrap { margin-top: 20px; }
+.curve-chart-wrap svg { width: 100%; height: auto; display: block; }
+.curve-legend { display: flex; justify-content: center; gap: 24px; margin-top: 8px; }
+.curve-legend-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.curve-legend-item .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.curve-legend-item .dot.normal { background: var(--teal); }
+.curve-legend-item .dot.inverted { background: #ff3355; }
 </style>
 </head>
 <body>
@@ -182,6 +189,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </table>
       </div>
       <p class="stmt-note">In the normal scenario, yields rise steadily with maturity. In the inverted scenario, the 2-year (4.8%) yields more than the 10-year (4.0%) — the classic inversion signal, with short rates pricing in near-term tightness while long rates already reflect expectations of future cuts.</p>
+      <div class="curve-chart-wrap">
+        <svg id="curveChart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Line chart comparing a normal upward-sloping yield curve to an inverted yield curve across five maturities"></svg>
+        <div class="curve-legend">
+          <span class="curve-legend-item"><i class="dot normal"></i>Normal Curve</span>
+          <span class="curve-legend-item"><i class="dot inverted"></i>Inverted Curve</span>
+        </div>
+      </div>
     </div>
 
     <div class="section-eyebrow" style="margin-top:44px;">Watch For This</div>
@@ -415,6 +429,53 @@ const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => io.observe(el));
+
+const CURVE_CHART_DATA = {
+  labels: ['3M', '2Y', '5Y', '10Y', '30Y'],
+  normal: [3.0, 3.4, 3.7, 4.0, 4.3],
+  inverted: [5.2, 4.8, 4.3, 4.0, 4.2],
+};
+function drawCurveChart() {
+  const svg = document.getElementById('curveChart');
+  if (!svg) return;
+  const W = 640, H = 320, padL = 46, padR = 20, padT = 20, padB = 36;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const { labels, normal, inverted } = CURVE_CHART_DATA;
+  const all = normal.concat(inverted);
+  const yMin = Math.floor(Math.min(...all) * 2) / 2 - 0.5;
+  const yMax = Math.ceil(Math.max(...all) * 2) / 2 + 0.5;
+  const x = i => padL + (i / (labels.length - 1)) * plotW;
+  const y = v => padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+  const style = getComputedStyle(document.documentElement);
+  const gridColor = style.getPropertyValue('--border').trim() || '#333';
+  const textColor = style.getPropertyValue('--muted').trim() || '#888';
+  const tealColor = style.getPropertyValue('--teal').trim() || '#2dd4bf';
+  const path = arr => arr.map((v, i) => (i === 0 ? 'M' : 'L') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+  let gridLines = '', yLabels = '';
+  const steps = 5;
+  for (let s = 0; s <= steps; s++) {
+    const v = yMin + (s / steps) * (yMax - yMin);
+    const yy = y(v);
+    gridLines += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W - padR}" y2="${yy.toFixed(1)}" stroke="${gridColor}" stroke-width="1" />`;
+    yLabels += `<text x="${padL - 8}" y="${(yy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="${textColor}" font-family="JetBrains Mono, monospace">${v.toFixed(1)}%</text>`;
+  }
+  let xLabels = '', dots = '';
+  labels.forEach((lab, i) => {
+    xLabels += `<text x="${x(i).toFixed(1)}" y="${H - padB + 20}" text-anchor="middle" font-size="11" fill="${textColor}" font-family="JetBrains Mono, monospace">${lab}</text>`;
+    dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(normal[i]).toFixed(1)}" r="4" fill="${tealColor}" />`;
+    dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(inverted[i]).toFixed(1)}" r="4" fill="#ff3355" />`;
+  });
+  svg.innerHTML = `
+    ${gridLines}
+    <path d="${path(normal)}" fill="none" stroke="${tealColor}" stroke-width="2.5" />
+    <path d="${path(inverted)}" fill="none" stroke="#ff3355" stroke-width="2.5" />
+    ${dots}
+    ${yLabels}
+    ${xLabels}
+  `;
+}
+drawCurveChart();
+window.addEventListener('resize', drawCurveChart);
 
 const CURVE_PRESETS = {
   normal: { y2: 3.4, y10: 4.0 },
