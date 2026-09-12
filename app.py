@@ -2078,20 +2078,17 @@ def _strip_markdown_links(text: str) -> str:
 def normalize_content(raw_text: str, author: str, topics: list) -> dict:
     """Turns raw extracted text into {title, subtitle, topic, snippet, body} for a draft post.
 
-    STUB — no ANTHROPIC_API_KEY is wired in yet. This does a naive extractive
-    pass (first sentence as title, second sentence as a subtitle suggestion,
-    next couple of sentences as snippet, raw text reflowed into paragraphs as
-    the body, first nominated topic as the default) so the rest of the
-    pipeline — upload, draft review, edit, publish, public rendering — is
-    fully testable right now.
-
-    To make this real: call the Claude API (see the claude-api skill for the
-    current model id and Messages API usage) with a prompt that gives it
-    `author`, the exact `topics` list (it must pick one of these three, not
-    invent a new one), and `raw_text`, instructing it to return JSON
-    {title, subtitle, topic, snippet, body} — allowed to tighten/condense
-    wording (per the earlier scoping decision) but not invent facts absent
-    from raw_text. Keep the same return shape so no caller needs to change.
+    Deliberately NOT an AI call, by design (Gary's decision, 2026-09) — Alpha
+    Studio never calls an external API for this, to keep it free and
+    predictable to run. This does a naive extractive pass instead (first
+    sentence as title, second sentence as a subtitle suggestion, next couple
+    of sentences as snippet, raw text reflowed into paragraphs as the body,
+    first nominated topic as the default). Actual formatting (headings, tips,
+    tables, etc.) is expected to happen *before* upload, via the AI prompt in
+    the Alpha Studio Playbook guide (linked from the Studio page) — partners
+    run their notes through their own AI chat first, then paste the result
+    in. Don't wire a real API call into this function; that idea was
+    considered and explicitly rejected.
     """
     text = " ".join(raw_text.split())
     sentences = re.split(r"(?<=[.!?])\s+", text)
