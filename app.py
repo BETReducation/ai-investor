@@ -5438,6 +5438,43 @@ def social_posts():
         return jsonify({"error": f"Generation failed: {e}"}), 502
 
 
+# Pre-written Q&A per lesson, shown as tap-to-ask chips in the lesson bot
+# widget. Answering from here costs no API call and doesn't touch the daily
+# quota — only free-text questions hit the model. Add entries as you notice
+# which questions students actually ask; not every lesson needs entries.
+LESSON_FAQ = {
+    "start-early": [
+        {
+            "question": "Can you give me a real example?",
+            "answer": "Sure — take Sarah and Mike from the lesson. Sarah invests $200/month starting "
+                      "at 25. Mike waits until 35 and invests $400/month, twice as much. Both earn a "
+                      "typical long-run average of 7% a year and keep going to 65. Even though Mike "
+                      "puts in twice as much money every month, Sarah ends up with more — because her "
+                      "money had ten extra years to compound. That's the core lesson: time in the "
+                      "market usually beats a bigger monthly amount started later.",
+        },
+        {
+            "question": "What's the biggest mistake people make here?",
+            "answer": "Waiting for the 'right moment' to start — trying to save up a bigger lump sum "
+                      "first, or waiting until they feel more confident about investing. Every year "
+                      "spent waiting is a year of compounding you can't get back, and historically "
+                      "that lost time costs more than almost any other investing mistake, including "
+                      "picking mediocre investments. Starting small and early has historically "
+                      "outperformed starting big and late.",
+        },
+        {
+            "question": "Why does compounding matter more later in life?",
+            "answer": "Because compounding is exponential, not linear — growth builds on top of "
+                      "previous growth, so the biggest dollar gains tend to show up in the final "
+                      "years, once the base amount is large. Early years look slow and unexciting by "
+                      "comparison, which is exactly why people underestimate how much starting early "
+                      "matters — most of the snowball's size comes from how long it's been rolling, "
+                      "not from how fast it grew at the very start.",
+        },
+    ],
+}
+
+
 _LESSON_TEXT_CACHE = {}  # slug -> extracted plain text, filled lazily
 
 
@@ -5460,6 +5497,15 @@ def _lesson_plain_text(slug: str) -> str | None:
     text = re.sub(r"\n{3,}", "\n\n", soup.get_text("\n").strip())
     _LESSON_TEXT_CACHE[slug] = text
     return text
+
+
+@app.route("/api/lesson-qa/suggestions", methods=["GET"])
+def lesson_qa_suggestions():
+    """Pre-written FAQ for a lesson — public, no login, no API call, no quota
+    impact. The widget shows these as tap-to-ask chips with the answer already
+    attached, so picking one costs nothing at all."""
+    slug = (request.args.get("slug") or "").strip()
+    return jsonify({"suggestions": LESSON_FAQ.get(slug, [])})
 
 
 @app.route("/api/lesson-qa", methods=["POST"])

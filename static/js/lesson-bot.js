@@ -29,6 +29,10 @@
     '.lb-user{align-self:flex-end;background:#00d4aa;color:#04120e;}' +
     '.lb-bot{align-self:flex-start;background:rgba(255,255,255,0.08);}' +
     '.lb-hint{opacity:0.6;font-size:12px;padding:0 12px 8px;}' +
+    '#lb-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px;}' +
+    '.lb-chip{border:1px solid rgba(0,212,170,0.5);color:#00d4aa;background:none;' +
+    'border-radius:14px;padding:5px 10px;font-size:12px;cursor:pointer;text-align:left;}' +
+    '.lb-chip:hover{background:rgba(0,212,170,0.12);}' +
     '#lb-form{display:flex;border-top:1px solid rgba(255,255,255,0.08);}' +
     '#lb-input{flex:1;border:none;background:transparent;color:inherit;padding:10px;font:inherit;}' +
     '#lb-input:focus{outline:none;}' +
@@ -46,13 +50,16 @@
   panel.innerHTML =
     '<div id="lb-head">Ask about this lesson</div>' +
     '<div id="lb-msgs"></div>' +
+    '<div id="lb-chips"></div>' +
     '<div class="lb-hint">Educational explanations only — not personalised investment advice.</div>' +
     '<form id="lb-form"><input id="lb-input" autocomplete="off" placeholder="Ask a question…">' +
     '<button id="lb-send" type="submit">Send</button></form>';
   document.body.appendChild(panel);
 
   var msgsEl = panel.querySelector('#lb-msgs');
+  var chipsEl = panel.querySelector('#lb-chips');
   var inputEl = panel.querySelector('#lb-input');
+  var suggestionsLoaded = false;
 
   function addMsg(role, text) {
     var el = document.createElement('div');
@@ -63,11 +70,34 @@
     return el;
   }
 
+  function loadSuggestions() {
+    if (suggestionsLoaded) return;
+    suggestionsLoaded = true;
+    fetch('/api/lesson-qa/suggestions?slug=' + encodeURIComponent(slug))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        (data.suggestions || []).forEach(function (item) {
+          var chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'lb-chip';
+          chip.textContent = item.question;
+          // Pre-written answer — no fetch, no API call, no quota used.
+          chip.addEventListener('click', function () {
+            addMsg('user', item.question);
+            addMsg('bot', item.answer);
+          });
+          chipsEl.appendChild(chip);
+        });
+      })
+      .catch(function () {});
+  }
+
   fab.addEventListener('click', function () {
     open = !open;
     panel.classList.toggle('lb-open', open);
     if (open && !msgsEl.childElementCount) {
       addMsg('bot', "Hi! Ask me anything about this lesson and I'll explain it.");
+      loadSuggestions();
       inputEl.focus();
     }
   });
