@@ -2090,6 +2090,11 @@ async function updateItem(id, updates, actionLabel) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+    // Publishing moves the card from Drafts to Published — collapse it here
+    // rather than carrying its expanded state over, so the freshly-published
+    // post doesn't sit open in the Published list on its own (openCardIds
+    // otherwise persists expansion across any list rebuild, drafts included).
+    if (updates.status === 'published') openCardIds.delete(id);
     loadContent();
   } catch (e) { alert(actionErrorMessage(e, actionLabel || 'save your changes')); }
 }
