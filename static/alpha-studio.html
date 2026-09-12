@@ -213,6 +213,13 @@
 .studio-card.locked .edit-chrome { display: none !important; }
 .staged-note { font-size: 12.5px; line-height: 1.5; color: #b7791f; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; }
 
+.ai-prompt-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+.ai-prompt-label { font-size: 13px; color: var(--muted); }
+.ai-prompt-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.ai-prompt-btn { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12.5px; color: #03130f; background: var(--teal); border: none; border-radius: 7px; padding: 6px 12px; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+.ai-prompt-btn:hover { opacity: 0.88; }
+.ai-prompt-btn.copied { background: #34d399; }
+
 footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
@@ -253,6 +260,14 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       <div class="studio-panel">
         <h2><span>Add a Post</span><a class="user-guide-link" href="/alpha/studio/guide" target="_blank" rel="noopener">📘 User Guide</a></h2>
         <p class="panel-desc">Upload a Word doc, PDF or Excel file, paste a link, or paste raw text. It'll come back as a draft below for you to review before publishing.</p>
+        <div class="ai-prompt-row">
+          <span class="ai-prompt-label">Format your notes first — copy the prompt into:</span>
+          <div class="ai-prompt-buttons">
+            <button class="ai-prompt-btn" type="button" id="copyPromptClaude">📋 Claude</button>
+            <button class="ai-prompt-btn" type="button" id="copyPromptGemini">📋 Gemini</button>
+            <button class="ai-prompt-btn" type="button" id="copyPromptChatGPT">📋 ChatGPT</button>
+          </div>
+        </div>
         <div class="upload-tabs">
           <button class="upload-tab active" data-mode="file" onclick="setUploadMode('file')">File</button>
           <button class="upload-tab" data-mode="link" onclick="setUploadMode('link')">Link</button>
@@ -368,6 +383,84 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 <script src="/static/js/footer.js"></script>
 
 <script>
+// Keep this in sync with the base prompt in static/alpha-studio-guide.html —
+// same core instructions, same per-model notes.
+const AI_BASE_PROMPT = `You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
+
+FORMAT RULES
+- Start every new section with a line that begins "## " (two hashes, one space).
+- Right after "## " you can optionally add one bracket tag to set that section's style, then the heading text:
+  - "## [TIP] Heading text" — a highlighted tip callout
+  - "## [QUOTE] Heading text" — a pull-quote block
+  - "## [TABLE] Heading text" — followed by a markdown table (see below)
+  - "## [IMAGE] Heading text" or "## [IMAGE RIGHT] Heading text" — a placeholder for an image, layout left or right
+  - "## Heading text" (no tag) — an ordinary section with a plain heading
+- Two special one-off tags don't create a section — they set post metadata instead, and should each appear once, near the top:
+  - "## [SUBTITLE] One-line subtitle here"
+  - "## [SNIPPET] One or two sentence teaser/summary here"
+- Within a section's body text you can use:
+  - **bold**, _italic_, ++underline++
+  - "- item" for a bullet list, "1. item" for a numbered list (one per line)
+  - A real markdown table (header row, "---" separator row, data rows, pipe-delimited) — put it under a "## [TABLE]" heading, or just leave it bare and it'll still be detected as a table.
+- Every "## " must be at the very start of its own line — don't let anything join lines together or strip the line breaks.
+- Output your entire reply as plaintext inside a single code block (triple backticks), with nothing outside it. This is required — if the "## " lines render as normal text instead of staying inside a code block, your chat app will likely display them as actual headings, and I won't be able to copy the literal "## " characters back out. Do not format any part of the reply as real Markdown headings, bold, or lists outside the code block — the whole thing, including the "## " markers themselves, must stay literal text inside that one code block.
+
+CONTENT RULES
+- Educational/historical framing only — describe what a strategy or indicator would have done historically, never advice, predictions, or personalised recommendations.
+- Keep my voice and facts — don't invent numbers, trades, or claims I didn't give you.
+- Include a [SUBTITLE] and [SNIPPET] near the top, then organise the rest into logical ## sections (at least one heading, more if the content has natural sub-topics).
+
+Here's my draft/notes to turn into a post:
+
+[PASTE YOUR NOTES HERE]`;
+
+const AI_MODEL_NOTES = {
+  claude: "MODEL-SPECIFIC NOTE FOR CLAUDE\nYou're generally reliable at this. Just double-check before sending: the single code block must contain absolutely everything, with no stray blank line or comment before the opening ``` or after the closing ```.",
+  gemini: "MODEL-SPECIFIC NOTE FOR GEMINI\nYou have a known tendency to render the \"## \" lines as real on-screen headings even when asked to keep them as literal text in a code block. Before you send your reply, re-read your own draft: if any \"## \" line is not literal text sitting inside the single code block, rewrite it so it is. Don't add any commentary before or after the code block.",
+  chatgpt: "MODEL-SPECIFIC NOTE FOR CHATGPT\nYou have two known tendencies that break this format — do not do either:\n1. Ignoring the code-block instruction and replying with real rendered Markdown headings/bullets instead of literal text in a code block. Wrap your ENTIRE reply, with nothing outside it, in a single triple-backtick code block.\n2. Rendering bullet points using a special bullet character followed by an invisible joiner character (looks like \"•⁠  ⁠\" instead of a plain hyphen). Every bullet must be a literal \"- \" (hyphen, space) at the start of the line — no other bullet characters, no invisible formatting characters of any kind."
+};
+
+function buildAiPrompt(modelKey) {
+  const marker = "Here's my draft/notes to turn into a post:";
+  const idx = AI_BASE_PROMPT.indexOf(marker);
+  if (idx === -1) return AI_BASE_PROMPT;
+  return AI_BASE_PROMPT.slice(0, idx) + AI_MODEL_NOTES[modelKey] + '\n\n' + AI_BASE_PROMPT.slice(idx);
+}
+
+function wireAiPromptButton(id, modelKey, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const text = buildAiPrompt(modelKey);
+    let ok = true;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    } catch (e) { ok = false; }
+    btn.textContent = ok ? '✅ Copied!' : 'Copy failed';
+    btn.classList.toggle('copied', ok);
+    setTimeout(() => {
+      btn.textContent = '📋 ' + label;
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+wireAiPromptButton('copyPromptClaude', 'claude', 'Claude');
+wireAiPromptButton('copyPromptGemini', 'gemini', 'Gemini');
+wireAiPromptButton('copyPromptChatGPT', 'chatgpt', 'ChatGPT');
+
 // Must match ALPHA_TOPICS in app.py and the topic-pill labels on each
 // static/alpha-<name>.html page — kept in sync by hand.
 const AUTHOR_TOPICS = {
