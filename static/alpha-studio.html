@@ -646,8 +646,22 @@ async function submitUpload() {
     const res = await fetch('/api/alpha/upload', { method: 'POST', credentials: 'include', body: form });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
-    msg.textContent = 'Draft created — review it below.';
-    msg.className = 'form-msg success';
+    // The body only gets split into proper sections/tips/tables if it has
+    // real "## " markers — that only happens when the source text was run
+    // through the AI prompt (and the AI actually followed it; some chat
+    // apps paraphrase the instructions instead of using "## " literally).
+    // Catching that here, right after upload, is more reliable than relying
+    // on everyone remembering the manual step every time.
+    const looksFormatted = /^##\s/m.test((data.item && data.item.body) || '');
+    if (looksFormatted) {
+      msg.textContent = 'Draft created — review it below.';
+      msg.className = 'form-msg success';
+    } else {
+      msg.textContent = "Draft created, but this doesn't look AI-formatted (no \"## \" section markers found) — " +
+        "it'll likely publish as a wall of plain text. This usually means the AI's reply was copied from the " +
+        "rendered chat bubble instead of via the app's copy button, which drops the \"## \" markers. See the User Guide.";
+      msg.className = 'form-msg error';
+    }
     document.getElementById('uploadFile').value = '';
     document.getElementById('uploadLink').value = '';
     document.getElementById('uploadPaste').value = '';

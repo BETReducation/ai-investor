@@ -1,192 +1,130 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Alpha Studio Playbook — Growth Capital Group</title>
 <meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
 <link rel="stylesheet" href="/static/css/site-nav.css">
-<style>
-  /* This page loads the shared site-nav.css, whose own convention is
-     dark-by-default (bare :root = dark palette) with [data-theme="light"]
-     as the override — the opposite of the usual light-default pattern.
-     Matching that here so this page follows the same toggle the rest of
-     the site uses instead of fighting it via prefers-color-scheme. */
-  :root{
-    --pb-bg:#171510; --surface:#211e17; --surface-2:#2a271e; --pb-border:#3a362a;
-    --pb-text:#eee9dc; --pb-muted:#a39a86; --accent:#3fcf9c; --accent-soft:#1c2e26;
-    --code-bg:#0f0e0a; --code-text:#d9d3c2; --warn-bg:#2e2410; --warn-border:#6b5420; --warn-text:#e3c375;
-  }
-  [data-theme="light"]{
-    --pb-bg:#f7f5f1; --surface:#ffffff; --surface-2:#efece5; --pb-border:#dcd7cc;
-    --pb-text:#242019; --pb-muted:#6b6558; --accent:#1f7a5c; --accent-soft:#e3efe9;
-    --code-bg:#221f19; --code-text:#e8e3d6; --warn-bg:#fdf3e2; --warn-border:#e3c98a; --warn-text:#6b4e10;
-  }
-
-  *{box-sizing:border-box;}
-  html,body{margin:0; padding:0;}
-  body{
-    background:var(--pb-bg); color:var(--pb-text);
-    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
-    line-height:1.65;
-  }
-  .wrap{max-width:760px; margin:0 auto; padding:130px 24px 100px;}
-
-  .back-link{
-    display:inline-flex; align-items:center; gap:6px; font-family:'Outfit', 'Source Serif 4', sans-serif;
-    font-weight:600; font-size:14px; color:var(--accent); text-decoration:none; margin-bottom:28px;
-  }
-  .back-link:hover{text-decoration:underline;}
-
-  .eyebrow{
-    font-family:'JetBrains Mono', 'Courier New', monospace; font-size:12px; letter-spacing:0.14em;
-    text-transform:uppercase; color:var(--accent); margin-bottom:14px;
-  }
-  h1{
-    font-family:'Fraunces', 'Source Serif 4', Georgia, serif; font-weight:600; font-size:clamp(32px,5vw,46px);
-    letter-spacing:-0.01em; margin:0 0 10px; text-wrap:balance; color:var(--pb-text);
-  }
-  .sub{color:var(--pb-muted); font-size:17px; max-width:60ch; margin:0 0 40px;}
-
-  .flow{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 48px;
-    font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--pb-text);
-  }
-  .flow-step{
-    background:var(--surface); border:1px solid var(--pb-border); border-radius:8px;
-    padding:9px 13px; white-space:nowrap;
-  }
-  .flow-arrow{color:var(--pb-muted);}
-
-  h2{
-    font-family:'Fraunces', 'Source Serif 4', Georgia, serif; font-weight:600; font-size:24px;
-    margin:52px 0 6px; text-wrap:balance; color:var(--pb-text);
-    display:flex; align-items:baseline; gap:12px;
-  }
-  h2 .num{
-    font-family:'JetBrains Mono', monospace; font-size:14px; color:var(--accent); font-weight:600;
-  }
-  h2:first-of-type{margin-top:0;}
-  .section-note{color:var(--pb-muted); font-size:15px; margin:0 0 20px; max-width:62ch;}
-
-  p{max-width:65ch; margin:0 0 14px; font-size:16.5px;}
-  ul,ol{max-width:62ch; padding-left:22px; margin:0 0 16px;}
-  li{margin-bottom:8px; font-size:16px;}
-
-  code{
-    font-family:'JetBrains Mono', monospace; font-size:0.86em; background:var(--surface-2);
-    padding:1px 6px; border-radius:4px; color:var(--pb-text);
-  }
-
-  .card{
-    background:var(--surface); border:1px solid var(--pb-border); border-radius:12px;
-    padding:20px 22px; margin:18px 0;
-  }
-
-  .tag-table{width:100%; border-collapse:collapse; margin:14px 0 8px; font-size:14.5px;}
-  .tag-table th{
-    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em;
-    text-transform:uppercase; color:var(--pb-muted); font-weight:600; padding:0 12px 8px 0; border-bottom:1px solid var(--pb-border);
-  }
-  .tag-table td{
-    padding:11px 12px 11px 0; border-bottom:1px solid var(--pb-border); vertical-align:top; font-family:'Source Serif 4', Georgia, serif;
-  }
-  .tag-table tr:last-child td{border-bottom:none;}
-  .tag-table code{white-space:nowrap;}
-  .tag-table-wrap{overflow-x:auto;}
-
-  .warn{
-    background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-text);
-    border-radius:10px; padding:14px 18px; margin:18px 0; font-size:15px; max-width:62ch;
-  }
-  .warn strong{color:var(--warn-text);}
-
-  pre{
-    background:var(--code-bg); color:var(--code-text); border-radius:10px; padding:18px 20px;
-    font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6;
-    margin:0; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word;
-  }
-  .prompt-box{margin:14px 0 20px;}
-  .prompt-bar{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin-bottom:6px;
-  }
-  .pre-label{
-    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
-    color:var(--pb-muted);
-  }
-  .copy-btn{
-    font-family:'Outfit', sans-serif; font-weight:700; font-size:13px; color:var(--pb-bg);
-    background:var(--accent); border:none; border-radius:7px; padding:8px 16px; cursor:pointer;
-    white-space:nowrap; flex-shrink:0;
-  }
-  .copy-btn:hover{opacity:0.88;}
-  .copy-btn.copied{background:#3a7d5c;}
-
-  .field-list{list-style:none; padding:0; margin:14px 0;}
-  .field-list li{
-    display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--pb-border); font-size:15.5px;
-  }
-  .field-list li:last-child{border-bottom:none;}
-  .field-tag{
-    flex:0 0 auto; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em;
-    background:var(--accent-soft); color:var(--accent); padding:3px 9px; border-radius:6px; height:fit-content;
-    white-space:nowrap;
-  }
-
-  footer.playbook-footer{
-    margin-top:60px; padding-top:24px; border-top:1px solid var(--pb-border);
-    color:var(--pb-muted); font-size:13.5px;
-  }
-
-  @media (max-width:600px){
-    .wrap{padding:110px 18px 70px;}
-    .flow{font-size:11.5px;}
-  }
-</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page-hero { padding: 100px 5% 40px; text-align: center; position: relative; overflow: hidden; background: var(--bg); }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px); background-size: 60px 60px; pointer-events: none; }
+.section-badge { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 18px; opacity: 0.85; }
+.section-badge::before { content: ''; display: block; width: 18px; height: 1px; background: var(--green); }
+.section-badge a { color: inherit; text-decoration: none; }
+.section-badge a:hover { text-decoration: underline; }
+
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+.hero-sub { font-size: clamp(15px, 1.6vw, 17px); color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.65; }
+
+.content-section { padding: 44px 5% 60px; }
+.content-inner { max-width: 760px; margin: 0 auto; }
+
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: 0 0 52px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.flow-step { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); white-space: nowrap; }
+.flow-arrow { color: var(--muted); }
+
+.step { margin-bottom: 44px; }
+.step:last-child { margin-bottom: 0; }
+.step-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.step-num { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600; flex-shrink: 0; }
+.step-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 21px; color: var(--text); letter-spacing: -0.01em; }
+.step-note { font-size: 14.5px; color: var(--muted); line-height: 1.65; margin-bottom: 16px; }
+
+p.body-text { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 12px; }
+.step ul, .step ol { padding-left: 20px; margin-bottom: 12px; }
+.step li { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom: 6px; }
+
+a { color: var(--green); }
+a:visited { color: var(--green); }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; color: var(--text); }
+
+.field-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 4px 20px; margin: 14px 0; }
+.field-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 14.5px; color: var(--text); line-height: 1.6; }
+.field-row:last-child { border-bottom: none; }
+.field-tag { flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; background: rgba(0,212,170,0.14); color: var(--green); padding: 4px 9px; border-radius: 6px; height: fit-content; white-space: nowrap; }
+
+.prompt-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 16px 0 20px; }
+.prompt-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.prompt-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.copy-btn { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px; color: #03130f; background: var(--green); border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s; }
+.copy-btn:hover { opacity: 0.88; }
+.copy-btn.copied { background: var(--green2); }
+pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word; }
+
+.warn-card { background: rgba(251,191,36,0.09); border: 1px solid rgba(251,191,36,0.35); color: var(--text); border-radius: 12px; padding: 16px 18px; margin: 16px 0; font-size: 14.5px; line-height: 1.65; }
+.warn-card strong { color: var(--gold); }
+
+.table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin: 16px 0; }
+.tag-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.tag-table th { text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 14px 14px 10px; border-bottom: 1px solid var(--border); }
+.tag-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text); }
+.tag-table tr:last-child td { border-bottom: none; }
+.tag-table code { white-space: nowrap; }
+
+.help-item { margin-bottom: 14px; }
+.help-item strong { color: var(--text); }
+
+footer { border-top: 1px solid var(--border); padding: 48px 5%; }
+.footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-copy { font-size: 12px; color: rgba(136,146,176,0.5); }
+</style>
 </head>
 <body>
 
 <script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
 
-<div class="wrap">
-
-  <a class="back-link" href="/alpha/studio">← Back to Alpha Studio</a>
-
-  <div class="eyebrow">Growth Capital Group · Alpha Studio</div>
-  <h1>Posting to Alpha</h1>
-  <p class="sub">Everything you need to get a post from your notes into a published Alpha article — the AI formatting step, what Studio requires before it'll let you publish, and the fixes for the two things people usually get stuck on.</p>
-
-  <div class="flow">
-    <span class="flow-step">Write your notes</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-step">Format with the AI prompt</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-step">Paste into Studio</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-step">Add subtitle + image</span>
-    <span class="flow-arrow">→</span>
-    <span class="flow-step">Publish</span>
+<div class="page-hero">
+  <div class="hero-grid"></div>
+  <div style="position:relative;z-index:2;">
+    <div class="section-badge"><a href="/alpha/studio">← Back to Alpha Studio</a></div>
+    <h1 class="hero-title">Posting to Alpha</h1>
+    <p class="hero-sub">Everything you need to get a post from your notes into a published Alpha article — the AI formatting step, what Studio requires before it'll let you publish, and the fixes for the two things people usually get stuck on.</p>
   </div>
+</div>
 
-  <h2><span class="num">01</span> Format your notes with the AI prompt first</h2>
-  <p class="section-note">This is the step that gets skipped most often. Studio's own upload box does <strong>not</strong> automatically format your text — if you paste raw notes straight in, that's exactly what comes out: raw notes. The prompt below does the formatting, and it has to run in a separate AI chat before Studio ever sees your text.</p>
+<section class="content-section">
+  <div class="content-inner">
 
-  <ol>
-    <li>Open <a href="https://claude.ai">claude.ai</a> (or whichever AI chat you use) in another tab.</li>
-    <li>Tap the <strong>📋 Copy prompt</strong> button below, then paste it in as your message.</li>
-    <li>Where it says <code>[PASTE YOUR NOTES HERE]</code>, replace that line with your actual draft — bullet points, a rough paragraph, whatever you've got. Doesn't need to be tidy yet.</li>
-    <li>Send it, and copy the AI's reply in full.</li>
-  </ol>
+    <div class="flow">
+      <span class="flow-step">Write your notes</span><span class="flow-arrow">→</span>
+      <span class="flow-step">Format with the AI prompt</span><span class="flow-arrow">→</span>
+      <span class="flow-step">Paste into Studio</span><span class="flow-arrow">→</span>
+      <span class="flow-step">Add subtitle + image</span><span class="flow-arrow">→</span>
+      <span class="flow-step">Publish</span>
+    </div>
 
-  <div class="prompt-box">
-  <div class="prompt-bar">
-    <div class="pre-label">The prompt</div>
-    <button class="copy-btn" id="copyPromptBtn" type="button">📋 Copy prompt</button>
-  </div>
-  <pre id="promptText">You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
+    <div class="step">
+      <div class="step-head"><span class="step-num">01</span><span class="step-title">Format your notes with the AI prompt first</span></div>
+      <p class="step-note">This is the step that gets skipped most often. Studio's own upload box does <strong>not</strong> automatically format your text — if you paste raw notes straight in, that's exactly what comes out: raw notes. The prompt below does the formatting, and it has to run in a separate AI chat before Studio ever sees your text.</p>
+      <p class="step-note"><strong>Copy the AI's reply as raw/plain text, not the rendered chat bubble.</strong> Chat apps (Claude, Gemini, ChatGPT, all of them) render a line starting with <code>## </code> as an actual heading on screen — so if you select that rendered heading text and copy it, the <code>## </code> characters are gone, because they were never displayed, only used to draw the heading. Use the app's own <strong>copy</strong> button (usually a small clipboard icon under the reply, not manual text selection) — that copies the underlying raw text with the <code>## </code> markers intact.</p>
+      <ol>
+        <li>Open <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> (or whichever AI chat app you use) in another tab.</li>
+        <li>Tap the <strong>📋 Copy prompt</strong> button below, then paste it in as your message.</li>
+        <li>Where it says <code>[PASTE YOUR NOTES HERE]</code>, replace that line with your actual draft — bullet points, a rough paragraph, whatever you've got. Doesn't need to be tidy yet.</li>
+        <li>Send it, and copy the AI's reply in full — using the app's copy button, not manual selection (see below for why that matters).</li>
+      </ol>
+
+      <div class="prompt-card">
+        <div class="prompt-bar">
+          <span class="prompt-label">The prompt</span>
+          <button class="copy-btn" id="copyPromptBtn" type="button">📋 Copy prompt</button>
+        </div>
+        <pre id="promptText">You are helping me write an Alpha post for Growth Capital Group's investing education site. Take my notes/draft below and turn them into a clean, well-structured post using this exact plain-text format — no Markdown headers, no bold-as-headers, just these literal conventions:
 
 FORMAT RULES
 - Start every new section with a line that begins "## " (two hashes, one space).
@@ -214,59 +152,69 @@ CONTENT RULES
 Here's my draft/notes to turn into a post:
 
 [PASTE YOUR NOTES HERE]</pre>
+      </div>
+
+      <div class="warn-card"><strong>This is a manual step, every time.</strong> Studio can't run the prompt for you yet — you run it in your own AI chat, then bring the finished text over. If a post you've published still reads unformatted, this is almost always why: either the raw notes went straight into Studio without a trip through the prompt first, or the AI's reply was copied from the rendered chat bubble instead of via the app's copy button (see above).</div>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num">02</span><span class="step-title">Bring it into Alpha Studio</span></div>
+      <p class="step-note">Go to <a href="/alpha/studio">/alpha/studio</a> (the "Studio" link in the nav, visible once you're set up as a partner).</p>
+      <ul>
+        <li>Click the <strong>Paste Text</strong> tab in the upload panel (next to File and Link).</li>
+        <li>Paste in the AI's formatted reply — the whole thing, <code>## </code> lines included.</li>
+        <li>Click <strong>Upload &amp; Create Draft</strong>. It lands in your Drafts list below, ready to review.</li>
+      </ul>
+      <p class="body-text">You can also upload a Word doc, PDF, or Excel file directly, or paste a link — same Paste Text step still applies once you've got AI-formatted text ready to go, regardless of where the source material came from.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num">03</span><span class="step-title">Fill in what Studio requires before it'll publish</span></div>
+      <p class="step-note">A draft can sit incomplete indefinitely — nothing goes live until you hit Publish, and Publish stays disabled until these three exist:</p>
+      <div class="field-card">
+        <div class="field-row"><span class="field-tag">Title</span><span>The headline — pulled from your formatted text, editable in Studio. Always double-check this before publishing.</span></div>
+        <div class="field-row"><span class="field-tag">Subtitle</span><span>The one-line hook shown under the headline. If your AI-formatted text included a <code>## [SUBTITLE]</code> line, it's already filled in — otherwise add it in the Sub-title field.</span></div>
+        <div class="field-row"><span class="field-tag">Main image</span><span>Upload a file or paste an external image URL. One or the other, not both.</span></div>
+      </div>
+      <p class="body-text">Need a heading partway through the body that wasn't in your original AI output? Use the <strong>+ Sub-heading</strong> button in the editor — it drops a marker at your cursor and renders as a proper heading on the live page.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num">04</span><span class="step-title">Publish</span></div>
+      <p class="body-text">Once the three fields above are filled in, the Publish button lights up. Published posts appear on your public Alpha page immediately and stay editable — edits to a published post don't need re-publishing, they go live on Save.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num">05</span><span class="step-title">Formatting tag reference</span></div>
+      <p class="step-note">What each <code>## </code> tag does, if you're editing formatted text by hand instead of re-running the prompt.</p>
+      <div class="table-wrap">
+        <table class="tag-table">
+          <tr><th>Tag</th><th>What it does</th></tr>
+          <tr><td><code>## Heading text</code></td><td>Plain section heading — no tag needed for an ordinary section.</td></tr>
+          <tr><td><code>## [TIP] Heading</code></td><td>Highlighted tip callout box.</td></tr>
+          <tr><td><code>## [QUOTE] Heading</code></td><td>Pull-quote block.</td></tr>
+          <tr><td><code>## [TABLE] Heading</code></td><td>Followed by a pipe-delimited markdown table (header row, <code>---</code> separator, data rows).</td></tr>
+          <tr><td><code>## [IMAGE] Heading</code></td><td>Image placeholder, left-aligned layout.</td></tr>
+          <tr><td><code>## [IMAGE RIGHT] Heading</code></td><td>Same, image on the right.</td></tr>
+          <tr><td><code>## [SUBTITLE] text</code></td><td>Sets the post subtitle — appears once, near the top, doesn't create a section.</td></tr>
+          <tr><td><code>## [SNIPPET] text</code></td><td>Sets the teaser/summary shown in post listings — also near the top, no section.</td></tr>
+        </table>
+      </div>
+      <p class="body-text">Inside a section's body text: <code>**bold**</code>, <code>_italic_</code>, <code>++underline++</code>, <code>- item</code> for bullets, <code>1. item</code> for numbered lists.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-head"><span class="step-num">06</span><span class="step-title">Stuck on something else?</span></div>
+      <div class="help-item"><strong>"My post looks like a wall of plain text."</strong> — almost always a copy problem, not a formatting problem: the <code>## </code> markers were rendered as real headings in the AI chat, and copying that rendered text drops them. Go back to the AI's reply and use its <strong>copy</strong> button (clipboard icon) instead of selecting the text by hand, then paste that into a fresh draft.</div>
+      <div class="help-item"><strong>"Publish button won't light up."</strong> — you're missing the subtitle or the main image. Check both are filled in (Section 3).</div>
+      <div class="help-item"><strong>"My table isn't rendering as a table."</strong> — it needs a header row, then a <code>---</code> separator row, then data rows, all pipe (<code>|</code>) delimited. A <code>## [TABLE]</code> heading directly above it helps but a well-formed table is usually detected either way.</div>
+      <div class="help-item"><strong>Anything not covered here</strong> — ask Gary directly rather than guessing; Studio is still evolving and this guide will get updated as it does.</div>
+    </div>
+
+    <div class="warn-card"><strong>One rule that applies to every post, always:</strong> educational and historical framing only. Describe what a strategy or indicator would have done historically — never advice, predictions, or a personal recommendation. The AI prompt already enforces this in its output, but it's worth keeping in mind if you're editing by hand.</div>
+
   </div>
-
-  <div class="warn"><strong>This is a manual step, every time.</strong> Studio can't run the prompt for you yet — you run it in your own AI chat, then bring the finished text over. If a post you've published still reads unformatted, this is almost always why: the raw notes went straight into Studio without a trip through the prompt first.</div>
-
-  <h2><span class="num">02</span> Bring it into Alpha Studio</h2>
-  <p class="section-note">Go to <a href="/alpha/studio">/alpha/studio</a> (the "Studio" link in the nav, visible once you're set up as a partner).</p>
-  <ul>
-    <li>Click the <strong>Paste Text</strong> tab in the upload panel (next to File and Link).</li>
-    <li>Paste in the AI's formatted reply — the whole thing, <code>## </code> lines included.</li>
-    <li>Click <strong>Upload &amp; Create Draft</strong>. It lands in your Drafts list below, ready to review.</li>
-  </ul>
-  <p>You can also upload a Word doc, PDF, or Excel file directly, or paste a link — same Paste Text step still applies once you've got AI-formatted text ready to go, regardless of where the source material came from.</p>
-
-  <h2><span class="num">03</span> Fill in what Studio requires before it'll publish</h2>
-  <p class="section-note">A draft can sit incomplete indefinitely — nothing goes live until you hit Publish, and Publish stays disabled until these three exist:</p>
-  <ul class="field-list">
-    <li><span class="field-tag">Title</span> The headline — pulled from your formatted text, editable in Studio.</li>
-    <li><span class="field-tag">Subtitle</span> The one-line hook shown under the headline. If your AI-formatted text included a <code>## [SUBTITLE]</code> line, it's already filled in — otherwise add it in the Sub-title field.</li>
-    <li><span class="field-tag">Main image</span> Upload a file or paste an external image URL. One or the other, not both.</li>
-  </ul>
-  <p>Need a heading partway through the body that wasn't in your original AI output? Use the <strong>+ Sub-heading</strong> button in the editor — it drops a marker at your cursor and renders as a proper heading on the live page.</p>
-
-  <h2><span class="num">04</span> Publish</h2>
-  <p>Once the three fields above are filled in, the Publish button lights up. Published posts appear on your public Alpha page immediately and stay editable — edits to a published post don't need re-publishing, they go live on Save.</p>
-
-  <h2><span class="num">05</span> Formatting tag reference</h2>
-  <p class="section-note">What each <code>## </code> tag does, if you're editing formatted text by hand instead of re-running the prompt.</p>
-  <div class="card tag-table-wrap">
-    <table class="tag-table">
-      <tr><th>Tag</th><th>What it does</th></tr>
-      <tr><td><code>## Heading text</code></td><td>Plain section heading — no tag needed for an ordinary section.</td></tr>
-      <tr><td><code>## [TIP] Heading</code></td><td>Highlighted tip callout box.</td></tr>
-      <tr><td><code>## [QUOTE] Heading</code></td><td>Pull-quote block.</td></tr>
-      <tr><td><code>## [TABLE] Heading</code></td><td>Followed by a pipe-delimited markdown table (header row, <code>---</code> separator, data rows).</td></tr>
-      <tr><td><code>## [IMAGE] Heading</code></td><td>Image placeholder, left-aligned layout.</td></tr>
-      <tr><td><code>## [IMAGE RIGHT] Heading</code></td><td>Same, image on the right.</td></tr>
-      <tr><td><code>## [SUBTITLE] text</code></td><td>Sets the post subtitle — appears once, near the top, doesn't create a section.</td></tr>
-      <tr><td><code>## [SNIPPET] text</code></td><td>Sets the teaser/summary shown in post listings — also near the top, no section.</td></tr>
-    </table>
-  </div>
-  <p>Inside a section's body text: <code>**bold**</code>, <code>_italic_</code>, <code>++underline++</code>, <code>- item</code> for bullets, <code>1. item</code> for numbered lists.</p>
-
-  <h2><span class="num">06</span> Stuck on something else?</h2>
-  <p><strong>"My post looks like a wall of plain text."</strong> — it skipped the AI prompt step. Take the original notes, run them through the prompt in Section 1, and paste the new result into a fresh draft.</p>
-  <p><strong>"Publish button won't light up."</strong> — you're missing the subtitle or the main image. Check both are filled in (Section 3).</p>
-  <p><strong>"My table isn't rendering as a table."</strong> — it needs a header row, then a <code>---</code> separator row, then data rows, all pipe (<code>|</code>) delimited. A <code>## [TABLE]</code> heading directly above it helps but a well-formed table is usually detected either way.</p>
-  <p><strong>Anything not covered here</strong> — ask Gary directly rather than guessing; Studio is still evolving and this guide will get updated as it does.</p>
-
-  <div class="warn"><strong>One rule that applies to every post, always:</strong> educational and historical framing only. Describe what a strategy or indicator would have done historically — never advice, predictions, or a personal recommendation. The AI prompt already enforces this in its output, but it's worth keeping in mind if you're editing by hand.</div>
-
-  <footer class="playbook-footer">Alpha Studio Playbook · Growth Capital Group — update this doc whenever the Studio workflow changes.</footer>
-
-</div>
+</section>
 
 <script src="/static/js/footer.js" data-logo="GCE Square.png"></script>
 
@@ -288,8 +236,6 @@ Here's my draft/notes to turn into a post:
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
     } else {
-      // Fallback for non-HTTPS/older browsers — select the text via a hidden
-      // textarea and use the legacy execCommand copy path.
       var ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
