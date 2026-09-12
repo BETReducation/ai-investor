@@ -21,13 +21,19 @@
     'height:620px;max-height:82vh;min-width:300px;min-height:320px;background:var(--lb-bg,#0b0f1a);' +
     'color:var(--lb-fg,#e8ecf4);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,0.35);' +
     'display:none;flex-direction:column;overflow:hidden;font:14px/1.4 system-ui,sans-serif;' +
-    'border:1px solid rgba(255,255,255,0.08);resize:both;}' +
+    'border:1px solid rgba(255,255,255,0.08);}' +
     '#lb-panel.lb-open{display:flex;}' +
     '#lb-panel.lb-full{position:fixed;top:5vh;left:5vw;right:5vw;bottom:5vh;width:auto!important;' +
-    'height:auto!important;max-width:none;max-height:none;resize:none;}' +
-    '#lb-head{padding:12px 14px;background:rgba(0,212,170,0.12);font-weight:600;' +
+    'height:auto!important;max-width:none;max-height:none;}' +
+    '#lb-panel.lb-full #lb-resize{display:none;}' +
+    '#lb-resize{position:absolute;top:0;left:0;width:26px;height:26px;cursor:nwse-resize;' +
+    'z-index:2;background:linear-gradient(135deg,#00d4aa 0 40%,transparent 40%);' +
+    'border-top-left-radius:14px;}' +
+    '#lb-resize::after{content:"";position:absolute;top:7px;left:7px;width:8px;height:8px;' +
+    'border-top:3px solid #04120e;border-left:3px solid #04120e;}' +
+    '#lb-head{padding:12px 14px 12px 30px;background:rgba(0,212,170,0.12);font-weight:600;' +
     'border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;' +
-    'justify-content:space-between;flex-shrink:0;}' +
+    'justify-content:space-between;flex-shrink:0;position:relative;}' +
     '#lb-expand{border:none;background:none;color:inherit;opacity:0.7;cursor:pointer;' +
     'font-size:16px;padding:2px 6px;line-height:1;}' +
     '#lb-expand:hover{opacity:1;}' +
@@ -55,6 +61,7 @@
   var panel = document.createElement('div');
   panel.id = 'lb-panel';
   panel.innerHTML =
+    '<div id="lb-resize" title="Drag to resize"></div>' +
     '<div id="lb-head"><span>Ask about this lesson</span>' +
     '<button id="lb-expand" type="button" title="Toggle fullscreen">⤢</button></div>' +
     '<div id="lb-msgs"></div>' +
@@ -68,6 +75,7 @@
   var chipsEl = panel.querySelector('#lb-chips');
   var inputEl = panel.querySelector('#lb-input');
   var expandBtn = panel.querySelector('#lb-expand');
+  var resizeHandle = panel.querySelector('#lb-resize');
   var suggestionsLoaded = false;
 
   // Remember a manually drag-resized size across visits (per browser, this
@@ -81,12 +89,36 @@
     }
   } catch (e) {}
 
-  new ResizeObserver(function () {
-    if (panel.classList.contains('lb-full')) return; // don't persist the fullscreen size
+  function persistSize() {
     try {
-      localStorage.setItem('lb-size', JSON.stringify({ w: panel.style.width || panel.offsetWidth + 'px', h: panel.style.height || panel.offsetHeight + 'px' }));
+      localStorage.setItem('lb-size', JSON.stringify({ w: panel.offsetWidth + 'px', h: panel.offsetHeight + 'px' }));
     } catch (e) {}
-  }).observe(panel);
+  }
+
+  // Custom drag handle at the top-left corner — the panel is anchored to the
+  // screen's bottom-right (fixed bottom/right), so growing it from the
+  // opposite corner is what makes it visibly expand up and to the left.
+  resizeHandle.addEventListener('pointerdown', function (e) {
+    if (panel.classList.contains('lb-full')) return;
+    e.preventDefault();
+    var startX = e.clientX, startY = e.clientY;
+    var startW = panel.offsetWidth, startH = panel.offsetHeight;
+    resizeHandle.setPointerCapture(e.pointerId);
+
+    function onMove(ev) {
+      var w = startW + (startX - ev.clientX);
+      var h = startH + (startY - ev.clientY);
+      panel.style.width = w + 'px';
+      panel.style.height = h + 'px';
+    }
+    function onUp() {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      persistSize();
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
 
   expandBtn.addEventListener('click', function () {
     panel.classList.toggle('lb-full');
