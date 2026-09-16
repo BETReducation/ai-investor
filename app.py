@@ -4949,6 +4949,19 @@ def signals():
 # runs per job even when several jobs share one indicator computation, so
 # per-user threshold customization is never lost to the sharing.
 _ENGINE_THROTTLE_SECONDS = 3
+# Daily-or-coarser bars only change once per session, so refetching full history and
+# recalculating every indicator every 3s (same as intraday) was pure waste — it was the
+# single biggest driver of both RAM (uncapped per-job DataFrames) and Yahoo egress
+# (full period history redownloaded on every tick) on Railway. Only genuinely intraday
+# jobs need the tight 3s cadence.
+_ENGINE_THROTTLE_SECONDS_COARSE = 300
+_ENGINE_COARSE_INTERVALS = {"1d", "5d", "1wk", "1mo", "3mo"}
+
+
+def _engine_throttle_seconds(interval: str) -> int:
+    return _ENGINE_THROTTLE_SECONDS_COARSE if interval in _ENGINE_COARSE_INTERVALS else _ENGINE_THROTTLE_SECONDS
+
+
 _engine_lock = threading.Lock()
 _engine_last_computed: dict[str, float] = {}   # indicator cache key -> monotonic time
 _engine_indicator_cache: dict[str, dict] = {}  # indicator cache key -> calculate_all() output
@@ -5027,7 +5040,7 @@ def _engine_worker_tick() -> None:
 
             cache_key = _engine_indicator_cache_key(symbol, period, interval, calc_params)
             with _engine_lock:
-                stale = (now - _engine_last_computed.get(cache_key, 0)) >= _ENGINE_THROTTLE_SECONDS
+                stale = (now - _engine_last_computed.get(cache_key, 0)) >= _engine_throttle_seconds(interval)
             if stale:
                 df = _fetch_ohlcv(symbol, period, interval)
                 indicator_data = calculate_all(df, **calc_params)
