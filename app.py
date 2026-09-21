@@ -3175,9 +3175,20 @@ _PB_TICKERS = {
 }
 
 
+_PB_PRICES_CACHE_TTL_SECONDS = 300
+_pb_prices_cache: dict = {"at": 0.0, "body": None}
+_pb_prices_lock = threading.Lock()
+
+
 @app.route("/api/portfolio-prices")
 def portfolio_prices():
-    """Return current prices for all 25 portfolio balancer assets."""
+    """Return current prices for all 25 portfolio balancer assets. Cached: each miss
+    is a 25-ticker yf.download, and this route is public, so uncached it let any
+    caller (or bot) trigger that on every request."""
+    now = time.monotonic()
+    with _pb_prices_lock:
+        if _pb_prices_cache["body"] is not None and now - _pb_prices_cache["at"] < _PB_PRICES_CACHE_TTL_SECONDS:
+            return jsonify(_pb_prices_cache["body"])
     unique = list(set(_PB_TICKERS.values()))
     price_map = {}
     try:
@@ -3202,7 +3213,12 @@ def portfolio_prices():
             'price':  round(price, 6) if price is not None else None,
             'live':   price is not None,
         }
-    return jsonify({'prices': result, 'ts': pd.Timestamp.now().isoformat()})
+    body = {'prices': result, 'ts': pd.Timestamp.now().isoformat()}
+    if price_map:
+        with _pb_prices_lock:
+            _pb_prices_cache["at"] = now
+            _pb_prices_cache["body"] = body
+    return jsonify(body)
 
 
 @app.route("/profile")
