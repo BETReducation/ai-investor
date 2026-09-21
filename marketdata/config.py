@@ -8,7 +8,10 @@ import os
 OANDA_API_TOKEN = os.environ.get("OANDA_API_TOKEN", "")
 OANDA_ACCOUNT_ID = os.environ.get("OANDA_ACCOUNT_ID", "")
 OANDA_ENVIRONMENT = os.environ.get("OANDA_ENVIRONMENT", "practice")  # "practice" | "live"
-OANDA_ENABLED = bool(OANDA_API_TOKEN and OANDA_ACCOUNT_ID)
+# Kill-switch that keeps the credentials in place: set DISABLE_LIVE_STREAMS=1 to stop both
+# streamers (and their reconnect churn) without deleting keys.
+STREAMS_DISABLED = os.environ.get("DISABLE_LIVE_STREAMS", "") not in ("", "0", "false")
+OANDA_ENABLED = bool(OANDA_API_TOKEN and OANDA_ACCOUNT_ID) and not STREAMS_DISABLED
 
 OANDA_STREAM_HOSTS = {
     "practice": "stream-fxpractice.oanda.com",
@@ -22,7 +25,7 @@ OANDA_REST_HOSTS = {
 ALPACA_API_KEY = os.environ.get("ALPACA_API_KEY", "")
 ALPACA_API_SECRET = os.environ.get("ALPACA_API_SECRET", "")
 ALPACA_FEED = os.environ.get("ALPACA_FEED", "iex")  # free/paper tier; "sip" needs a paid plan
-ALPACA_ENABLED = bool(ALPACA_API_KEY and ALPACA_API_SECRET)
+ALPACA_ENABLED = bool(ALPACA_API_KEY and ALPACA_API_SECRET) and not STREAMS_DISABLED
 
 # Optional fan-out bridge for the realtime/ scaling spike (see
 # docs/scaling-plan.md) — absent, this is a pure no-op and every existing
