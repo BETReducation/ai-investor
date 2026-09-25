@@ -72,6 +72,9 @@ details.deeper .row { margin-top: 8px; }
 .q-tag.Bullish { color: #00d4aa; border-color: #00d4aa; background: rgba(0,212,170,0.1); }
 .q-tag.Bearish { color: #ff4757; border-color: #ff4757; background: rgba(255,71,87,0.1); }
 .q-tag.Neutral { color: var(--muted); border-color: var(--border2); }
+.q-tag.Wide { color: #ff9f43; border-color: #ff9f43; }
+.q-tag.Narrow { color: #4da3ff; border-color: #4da3ff; }
+.q-tag.Standard { color: var(--muted); border-color: var(--border2); }
 .q-tag.Stretched { color: #ff9f43; border-color: #ff9f43; background: rgba(255,159,67,0.1); }
 .q-text { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 .q-sum { background: rgba(168,85,247,0.08); border: 1px solid #a855f7; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }
@@ -484,7 +487,7 @@ function renderPatternQuick(d) {
   const P = d.patterns;
   const tag = b => b === 'bullish' ? 'Bullish' : b === 'bearish' ? 'Bearish' : 'Neutral';
   const when = n => n === 0 ? 'this bar' : `${n} bar${n > 1 ? 's' : ''} ago`;
-  const card = (name, tg, meta, text) => `<div class="q-row"><div class="q-head"><span class="q-name">${esc(name)}</span><span class="q-tag ${tg}">${tg}</span></div><div class="q-val">${esc(meta)}</div><div class="q-text" style="margin-top:4px;">${esc(text)}</div></div>`;
+  const card = (name, tg, meta, text, w) => `<div class="q-row"><div class="q-head"><span class="q-name">${esc(name)}</span><span style="display:flex;gap:6px;">${w ? `<span class="q-tag ${w.label}" title="${esc(w.note)}">${w.label}</span>` : ''}<span class="q-tag ${tg}">${tg}</span></span></div><div class="q-val">${esc(meta)}</div><div class="q-text" style="margin-top:4px;">${esc(text)}</div></div>`;
 
   let html = `<div class="out-label">Pattern read · ${esc(current.name)} · ${esc(tfLabel(d.interval))}</div>`;
 
@@ -518,7 +521,9 @@ function renderPatternQuick(d) {
         const st = cp.status === 'confirmed' ? 'confirmed ' + cp.break_time.slice(0, 10) : 'forming, not yet confirmed';
         meta = `${cp.clarity} · ${st} · points ${cp.points.map(p => fmt(p[1])).join(' / ')} · neckline ${fmt(cp.neckline)}`;
       }
-      return card(cp.label, tag(cp.bias), meta, `${cp.what} ${cp.suggests}`);
+      const w = cp.width;
+      const size = `${w.label} pattern: covers ${w.duration || w.bars + ' bars'} (${w.bars} bars) and a ${w.height_pct}% price swing. ${w.note}`;
+      return card(cp.label, tag(cp.bias), meta, `${cp.what} ${cp.suggests} ${size}`, w);
     }).join('');
   }
 

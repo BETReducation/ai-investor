@@ -220,5 +220,31 @@ class ShapeTests(unittest.TestCase):
         self.assertIsNone(cp)
 
 
+class WidthTests(unittest.TestCase):
+    def _c(self, n=100):
+        return bars(path([100 + 0.01 * i for i in range(n)]))
+
+    def test_narrow_standard_wide_by_time(self):
+        c = self._c()
+        self.assertEqual(patterns._width(c, 0, 10, 1, 100)["label"], "Narrow")
+        self.assertEqual(patterns._width(c, 0, 25, 1, 100)["label"], "Standard")
+        self.assertEqual(patterns._width(c, 0, 50, 1, 100)["label"], "Wide")
+
+    def test_wide_by_price_swing(self):
+        c = self._c()
+        self.assertEqual(patterns._width(c, 0, 10, 20, 100)["label"], "Wide")
+        self.assertEqual(patterns._width(c, 0, 10, 8, 100)["label"], "Standard")
+
+    def test_duration_text(self):
+        c = self._c()
+        c[0][0], c[35][0] = "2026-08-01 00:00", "2026-09-05 00:00"
+        self.assertEqual(patterns._width(c, 0, 35, 1, 100)["duration"], "about 5 weeks")
+
+    def test_every_chart_pattern_carries_a_width(self):
+        candles = bars(path(RANGE))
+        for cp in patterns.analyze(candles)["chart_patterns"]:
+            self.assertIn(cp["width"]["label"], ("Narrow", "Standard", "Wide"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -241,6 +241,44 @@ def detect_events(candles: list, levels: list, a: float, forming: bool = False, 
     return events[:4]
 
 
+_WIDTH_NOTES = {
+    "Narrow": "Compact in time and price, so its levels are fairly precise, though small moves can trigger or break it.",
+    "Standard": "A typical size for this kind of pattern.",
+    "Wide": "Covers a lot of time and/or price, so it plays out slowly and its levels are better treated as rough zones than exact lines. Larger patterns are often read as more significant but less precise.",
+}
+
+
+def _human_duration(t1: str, t2: str) -> str:
+    from datetime import datetime
+    try:
+        fmt = "%Y-%m-%d %H:%M"
+        hours = (datetime.strptime(t2[:16], fmt) - datetime.strptime(t1[:16], fmt)).total_seconds() / 3600
+    except ValueError:
+        return ""
+    if hours < 48:
+        return f"about {max(1, round(hours))} hours"
+    days = hours / 24
+    if days < 21:
+        return f"about {round(days)} days"
+    if days < 90:
+        return f"about {round(days / 7)} weeks"
+    return f"about {round(days / 30)} months"
+
+
+def _width(candles: list, start: int, end: int, height: float, ref_price: float) -> dict:
+    """How wide or narrow a pattern is, by time covered and size of the price swing."""
+    bars = max(1, end - start)
+    pct = abs(height) / ref_price * 100 if ref_price else 0.0
+    time_grade = 0 if bars < 15 else 1 if bars <= 35 else 2
+    price_grade = 0 if pct < 5 else 1 if pct <= 15 else 2
+    label = ("Narrow", "Standard", "Wide")[max(time_grade, price_grade)]
+    span = _human_duration(candles[start][_T], candles[end][_T])
+    return {
+        "label": label, "bars": bars, "height_pct": round(pct, 1), "duration": span,
+        "note": _WIDTH_NOTES[label],
+    }
+
+
 def detect_double_tops_bottoms(candles: list, a: float, forming: bool = False, max_age: int = 30) -> list:
     """Most recent valid double top and double bottom (at most one of each)."""
     n = len(candles)
@@ -294,9 +332,9 @@ def detect_double_tops_bottoms(candles: list, a: float, forming: bool = False, m
                     continue
                 cand = (i2, -abs(p1 - p2))
                 if best is None or cand > best[0]:
-                    best = (cand, i1, i2, neck, brk)
+                    best = (cand, i1, i2, neck, brk, depth)
         if best:
-            _, i1, i2, neck, brk = best
+            _, i1, i2, neck, brk, depth = best
             key = "double_top" if top else "double_bottom"
             kb = CHART_PATTERNS[key]
             confirmed = brk is not None
@@ -306,6 +344,7 @@ def detect_double_tops_bottoms(candles: list, a: float, forming: bool = False, m
                 "clarity": "Clear" if confirmed else "Tentative",
                 "points": [[candles[i1][_T], vals[i1]], [candles[i2][_T], vals[i2]]],
                 "neckline": neck,
+                "width": _width(candles, i1, i2, depth, (vals[i1] + vals[i2]) / 2),
                 "break_time": candles[brk][_T] if confirmed else None,
                 "provisional": forming and (brk == n - 1 or i2 == n - 1),
                 "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
@@ -346,6 +385,7 @@ def detect_range(candles: list, a: float, forming: bool = False) -> list:
                 "top": hi, "bottom": lo, "bars": window,
                 "top_touches": top_touches, "bottom_touches": bottom_touches,
                 "start_time": w[0][_T],
+                "width": _width(candles, n - window, n - 1, height, w[-1][_C]),
                 "position_pct": round((w[-1][_C] - lo) / height * 100, 1),
                 "provisional": False,
                 "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
@@ -410,9 +450,9 @@ def detect_head_and_shoulders(candles: list, a: float, forming: bool = False, ma
                         continue
                     cand = (ir, -abs(ls - rs))
                     if best is None or cand > best[0]:
-                        best = (cand, il, ih, ir, t1, t2, neck(n - 1), brk)
+                        best = (cand, il, ih, ir, t1, t2, neck(n - 1), brk, depth)
         if best:
-            _, il, ih, ir, t1, t2, neck_now, brk = best
+            _, il, ih, ir, t1, t2, neck_now, brk, depth = best
             key = "head_and_shoulders" if top else "inverse_head_and_shoulders"
             kb = CHART_PATTERNS[key]
             confirmed = brk is not None
@@ -423,6 +463,7 @@ def detect_head_and_shoulders(candles: list, a: float, forming: bool = False, ma
                 "points": [[candles[i][_T], vals[i]] for i in (il, ih, ir)],
                 "neckline": neck_now,
                 "neckline_points": [[candles[t1][_T], opp[t1]], [candles[t2][_T], opp[t2]]],
+                "width": _width(candles, il, ir, depth, vals[ih]),
                 "break_time": candles[brk][_T] if confirmed else None,
                 "provisional": forming and (brk == n - 1 or ir == n - 1),
                 "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
@@ -511,6 +552,7 @@ def detect_triangles(candles: list, a: float, forming: bool = False) -> list:
             "clarity": "Clear" if status != "forming" and len(hs) + len(ls) >= 5 else "Tentative",
             "upper_line": [[candles[x0][_T], up_line(x0)], [candles[n - 1][_T], up_line(n - 1)]],
             "lower_line": [[candles[x0][_T], lo_line(x0)], [candles[n - 1][_T], lo_line(n - 1)]],
+            "width": _width(candles, x0, n - 1, gap_start, closes[-1]),
             "high_touches": len(hs), "low_touches": len(ls), "bars": n - x0,
             "break_time": candles[broke_at][_T] if broke_at is not None else None,
             "break_direction": direction,
@@ -584,6 +626,10 @@ def summarize(result: dict, close: float) -> str:
                 parts.append(f"A possible {name} is forming at {pts}; it would only be confirmed by a close through {_fmt(cp['neckline'])}.")
             else:
                 parts.append(f"A possible {name} ({pts}) is forming; it would only be confirmed by a close through the neckline, now near {_fmt(cp['neckline'])}.")
+
+    wide = [cp["label"].lower() for cp in result.get("chart_patterns", []) if cp["width"]["label"] == "Wide"]
+    if wide:
+        parts.append(f"The {' and '.join(wide)} {'is a wide pattern' if len(wide) == 1 else 'are wide patterns'}, so treat {'its' if len(wide) == 1 else 'their'} levels as rough zones rather than exact lines.")
 
     score = len(bull) + len(ev_bull) - len(bear) - len(ev_bear)
     if bull or ev_bull or bear or ev_bear:
