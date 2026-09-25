@@ -828,6 +828,14 @@ const intervalMap = {
 // the chart's SSE stream rather than re-polling /api/signals — a bigger change, see
 // syncChartStream()), but a straightforward win over the old 30s for now.
 const SCAN_POLL_MS = 10000;
+// Per-strategy scan cadence: a new candle can't appear faster than its timeframe, so
+// slower timeframes are checked less often (fewer /api/signals calls). The poll timer
+// still ticks every SCAN_POLL_MS; a strategy is skipped until its own interval is due.
+function scanIntervalMs(tf) {
+  if (['1m', '2m', '5m'].includes(tf)) return 10000;
+  if (['10m', '15m', '30m', '45m', '60m', '90m', '1h'].includes(tf)) return 30000;
+  return 60000;
+}
 
 // --- STATE ---
 let currentUser = null;
@@ -2517,7 +2525,9 @@ async function startEngine() {
     timeframe: document.getElementById('timeframe').value,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
     cache: {},
+    lastScan: 0,
   };
+  runner.scanMs = scanIntervalMs(runner.timeframe);
   runners.push(runner);
   engineRunning = true;
   document.getElementById('emptyAlerts').style.display = 'none';
@@ -2577,7 +2587,7 @@ function renderRunners() {
   box.style.display = 'block';
   box.innerHTML = runners.map(r => `
     <div class="price-alert-row" style="margin-top:4px;">
-      <span>● ${r.name.replace(/</g, '&lt;')} <span style="color:var(--text-muted);">· ${r.conditions.length} cond · ${r.timeframe}</span></span>
+      <span>● ${r.name.replace(/</g, '&lt;')} <span style="color:var(--text-muted);">· ${r.conditions.length} cond · ${r.timeframe} · every ${r.scanMs / 1000}s</span></span>
       <button class="pa-remove" title="Stop" onclick="stopRunner('${r.id}')">■ STOP</button>
     </div>`).join('') +
     (runners.length > 1 ? '<button class="pa-remove" style="margin-top:4px;" onclick="stopEngine()">■ STOP ALL</button>' : '');
@@ -2715,6 +2725,8 @@ async function scanSignals(only) {
   if (!engineRunning) return;
   const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
   for (const runner of (only ? [only] : runners.slice())) {
+    if (!only && Date.now() - runner.lastScan < runner.scanMs - 500) continue;
+    runner.lastScan = Date.now();
     addLog('info', 'SCAN', `"${runner.name}": scanning ${active.length} assets...`);
     for (const sym of active) {
       if (!runners.includes(runner)) break; // stopped mid-scan
