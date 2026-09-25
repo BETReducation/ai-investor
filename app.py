@@ -3464,6 +3464,30 @@ def _swing_points(values: list, k: int = 3, high: bool = True) -> list:
     return out
 
 
+def _ema_series(values: list, span: int) -> list:
+    k = 2 / (span + 1)
+    out = [values[0]]
+    for v in values[1:]:
+        out.append(v * k + out[-1] * (1 - k))
+    return out
+
+
+def _rsi_series(closes: list, length: int = 14) -> list:
+    """Wilder RSI; None until enough bars."""
+    out = [None] * len(closes)
+    if len(closes) <= length:
+        return out
+    gains = [max(closes[i] - closes[i - 1], 0) for i in range(1, len(closes))]
+    losses = [max(closes[i - 1] - closes[i], 0) for i in range(1, len(closes))]
+    ag, al = sum(gains[:length]) / length, sum(losses[:length]) / length
+    for i in range(length, len(closes)):
+        if i > length:
+            ag = (ag * (length - 1) + gains[i - 1]) / length
+            al = (al * (length - 1) + losses[i - 1]) / length
+        out[i] = 100.0 if al == 0 else 100 - 100 / (1 + ag / al)
+    return out
+
+
 def _trend_structure(swing_highs: list, swing_lows: list) -> str:
     def direction(pts):
         if len(pts) < 2:
@@ -3539,6 +3563,24 @@ def ai_chart_data():
         if len(obv_series) > 20:
             obv_dir = "rising" if obv_series[-1] > obv_series[-21] else "falling" if obv_series[-1] < obv_series[-21] else "flat"
 
+        # Per-bar recent history so the model can look for price/indicator divergences
+        # (the snapshot alone is a single point in time).
+        rsi_s = _rsi_series(closes)
+        ema_f, ema_s = _ema_series(closes, 12), _ema_series(closes, 26)
+        macd_l = [a - b for a, b in zip(ema_f, ema_s)]
+        macd_sig = _ema_series(macd_l, 9)
+        obv_full = [0.0] + obv_series
+        obv_scale = avg20 or 1.0
+        n_hist = 40
+        history_rows = []
+        for i in range(len(candles) - n_hist, len(candles)):
+            history_rows.append([
+                candles[i][0], closes[i],
+                round(rsi_s[i], 1) if rsi_s[i] is not None else None,
+                round(macd_l[i], 4), round(macd_sig[i], 4), round(macd_l[i] - macd_sig[i], 4),
+                round((obv_full[i] - obv_full[len(candles) - n_hist]) / obv_scale, 2),
+            ])
+
         indicators = {k: ind.get(k) for k in _AI_CHART_INDICATOR_KEYS if k in ind and k not in ("cci", "volume", "price")}
         indicators["cci_20"] = cci
         indicators["price"] = {"open": candles[-1][1], "high": candles[-1][2], "low": candles[-1][3], "close": candles[-1][4]}
@@ -3558,6 +3600,8 @@ def ai_chart_data():
             "candle_columns": ["time", "open", "high", "low", "close", "volume"],
             "candles": candles,
             "indicators": indicators,
+            "history_columns": ["time", "close", "rsi14", "macd", "macd_signal", "macd_hist", "obv_rel"],
+            "history": history_rows,
             "structure": {
                 "recent_swing_highs": [round(x, 6) for x in sh],
                 "recent_swing_lows": [round(x, 6) for x in sl],

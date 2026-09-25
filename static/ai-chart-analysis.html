@@ -261,8 +261,9 @@ Using the indicator snapshot below, write a General Chart Scan covering:
 2. Momentum: RSI, MACD (line vs signal, histogram), Stochastic, CCI, ROC — and whether they agree or diverge.
 3. Volatility: Bollinger Bands (position, %B, bandwidth squeeze/expansion), ATR.
 4. Volume: current vs average, OBV/MFI, whether volume confirms the move.
-5. Range context: where price sits in the recent range.
-6. A short overall read: which signals align, which conflict, and what would change the picture.
+5. Divergences: using the RECENT HISTORY table, compare the last two swing highs and swing lows in price against RSI, MACD histogram and OBV over the same bars. Report any bullish or bearish divergence, or say none is present.
+6. Range context: where price sits in the recent range.
+7. A short overall read: which signals align, which conflict, and what would change the picture.
 
 Keep it structured with short headings and plain language.
 
@@ -270,7 +271,12 @@ INDICATOR SNAPSHOT (JSON):
 ${JSON.stringify(d.indicators)}
 
 SWING STRUCTURE (JSON):
-${JSON.stringify(d.structure)}`;
+${JSON.stringify(d.structure)}
+
+RECENT HISTORY, last ${d.history.length} bars, oldest first (${d.history_columns.join(',')}). obv_rel is OBV change since the first row, in units of average bar volume:
+${d.history.map(r => r.join(',')).join('\n')}
+
+Note: the "crossovers" block gives bars since each crossover and a direction flag (1 = fast above slow, -1 = below). Volume fields marked in-progress refer to an unfinished bar; use the last complete bar instead.`;
 }
 
 function patternPrompt(d) {
