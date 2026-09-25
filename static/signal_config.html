@@ -586,6 +586,7 @@ window.addEventListener('resize', () => {
     <div class="engine-control">
       <button class="btn-engine start" id="engineBtn" onclick="toggleEngine()">▶ RUN STRATEGY</button>
     </div>
+    <div id="runnerList" style="display:none;padding:0 12px 8px;"></div>
     <div class="save-btn-wrap">
       <button class="btn-engine" id="saveBtn" onclick="savePreferences()" title="Save your capital, risk, watchlist and timeframe as your defaults" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE MY DEFAULTS</button>
     </div>
@@ -832,6 +833,11 @@ const SCAN_POLL_MS = 10000;
 let currentUser = null;
 let dashboardInitialized = false;
 let engineRunning = false;
+// Strategy "slots": each running strategy is a snapshot of the editor taken when RUN
+// was pressed (conditions, match rule, confidence, timeframe) plus its own signal cache,
+// so several can scan side by side and later edits to the editor don't touch them.
+const MAX_RUNNERS = 3; // each runner multiplies /api/signals load (symbols x runners per tick)
+let runners = [];
 let pollTimer = null;
 // Workstream 5 (docs/scaling-plan.md) — see checkTier() and startEngine().
 let realtimeBaseUrl = '';
@@ -2430,15 +2436,16 @@ function _evaluateDirectionGroup(results, direction, match, minConfidence) {
   return { fired: meetsMatch && confidence >= minConfidence, matchedCount: matched.length, matchedConditions: matched, confidence, total: group.length };
 }
 
-function evaluateStrategy(sym) {
-  const cache = liveCache[sym];
-  if (!cache || strategyConditions.length === 0) {
+function evaluateStrategy(sym, runner) {
+  const conds = runner ? runner.conditions : strategyConditions;
+  const cache = runner ? runner.cache[sym] : liveCache[sym];
+  if (!cache || conds.length === 0) {
     const empty = { fired: false, matchedCount: 0, matchedConditions: [], confidence: 0, total: 0 };
     return { buy: empty, sell: { ...empty }, results: [] };
   }
-  const match = document.getElementById('stratMatch')?.value || strategyMatch;
-  const minConfidence = parseFloat(document.getElementById('minConfidence')?.value) || 50;
-  const results = strategyConditions.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
+  const match = runner ? runner.match : (document.getElementById('stratMatch')?.value || strategyMatch);
+  const minConfidence = runner ? runner.minConfidence : (parseFloat(document.getElementById('minConfidence')?.value) || 50);
+  const results = conds.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
   return {
     buy:  _evaluateDirectionGroup(results, 'buy',  match, minConfidence),
     sell: _evaluateDirectionGroup(results, 'sell', match, minConfidence),
@@ -2476,8 +2483,7 @@ function updateStrategyStatus() {
 
 // --- ENGINE ---
 function toggleEngine() {
-  if (!engineRunning) startEngine();
-  else stopEngine();
+  startEngine();
 }
 
 async function startEngine() {
@@ -2495,18 +2501,35 @@ async function startEngine() {
     return;
   }
 
+  const name = (document.getElementById('strategyName').value || '').trim() || `Strategy ${runners.length + 1}`;
+  const existing = runners.find(r => r.name === name);
+  if (!existing && runners.length >= MAX_RUNNERS) {
+    showEngineWarning('SLOTS FULL', `You can run up to ${MAX_RUNNERS} strategies at once. Stop one first, or re-run a strategy with the same name to update it.`);
+    return;
+  }
+  if (existing) stopRunner(existing.id, true);
+
+  const runner = {
+    id: 'r_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    name,
+    match: document.getElementById('stratMatch').value,
+    minConfidence: parseFloat(document.getElementById('minConfidence')?.value) || 50,
+    timeframe: document.getElementById('timeframe').value,
+    conditions: JSON.parse(JSON.stringify(strategyConditions)),
+    cache: {},
+  };
+  runners.push(runner);
   engineRunning = true;
-  document.getElementById('engineBtn').textContent = '■ STOP STRATEGY';
-  document.getElementById('engineBtn').className = 'btn-engine stop';
   document.getElementById('emptyAlerts').style.display = 'none';
+  renderRunners();
 
   const cfg = getConfig();
-  addLog('signal', 'ENGINE', `Strategy scan started — ${Object.keys(assets).length} assets | Live API`);
-  addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${document.getElementById('timeframe').value}`);
-  addLog('info', 'ENGINE', `Conditions: ${strategyConditions.length} | Match: ${document.getElementById('stratMatch').value.toUpperCase()}`);
+  addLog('signal', 'ENGINE', `"${name}" started — ${Object.keys(assets).length} assets | ${runners.length} running | Live API`);
+  addLog('info', 'ENGINE', `Target: ${cfg.targetGain}% | SL: ${cfg.stopLoss}% | TF: ${runner.timeframe}`);
+  addLog('info', 'ENGINE', `Conditions: ${runner.conditions.length} | Match: ${runner.match.toUpperCase()}`);
 
   await fetchAllAssets(); // fresh prices right away, don't wait for the next livePriceTimer tick
-  await scanSignals(); // one scan immediately either way, so the UI has data before the stream/poll loop kicks in
+  await scanSignals(runner); // one scan immediately either way, so the UI has data before the stream/poll loop kicks in
 
   // Prices are already kept live by the always-on livePriceTimer (started from
   // init(), runs regardless of engine state) — this only needs to re-run the
@@ -2515,27 +2538,54 @@ async function startEngine() {
   // startEnginePolling() above).
   if (realtimeBaseUrl) {
     addLog('info', 'ENGINE', 'Signal stream: live push');
-    const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
-    active.forEach(startEngineStream);
+    Object.keys(assets).filter(sym => watchlistEnabled[sym]).forEach(sym => startEngineStream(sym, runner));
   } else {
     startEnginePolling();
   }
 }
 
-function stopEngine() {
+function stopRunner(id, silent) {
+  const r = runners.find(x => x.id === id);
+  if (!r) return;
+  Object.keys(engineStreams).filter(k => k.startsWith(id + '|')).forEach(k => { engineStreams[k].close(); delete engineStreams[k]; });
+  runners = runners.filter(x => x.id !== id);
+  if (!silent) addLog('warn', 'ENGINE', `"${r.name}" stopped`);
+  if (runners.length === 0) stopEngine(true);
+  else renderRunners();
+}
+
+function stopEngine(quiet) {
+  runners = [];
   engineRunning = false;
   clearInterval(pollTimer);
   pollTimer = null;
   stopEngineStreams();
-  document.getElementById('engineBtn').textContent = '▶ RUN STRATEGY';
-  document.getElementById('engineBtn').className = 'btn-engine start';
+  renderRunners();
   setDataStatus('offline');
-  addLog('warn', 'ENGINE', 'Strategy scan stopped');
+  if (!quiet) addLog('warn', 'ENGINE', 'All strategy scans stopped');
+}
+
+function renderRunners() {
+  const box = document.getElementById('runnerList');
+  const btn = document.getElementById('engineBtn');
+  if (btn) {
+    btn.textContent = runners.length ? `▶ RUN STRATEGY (${runners.length}/${MAX_RUNNERS} RUNNING)` : '▶ RUN STRATEGY';
+    btn.className = 'btn-engine start';
+  }
+  if (!box) return;
+  if (runners.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = runners.map(r => `
+    <div class="price-alert-row" style="margin-top:4px;">
+      <span>● ${r.name.replace(/</g, '&lt;')} <span style="color:var(--text-muted);">· ${r.conditions.length} cond · ${r.timeframe}</span></span>
+      <button class="pa-remove" title="Stop" onclick="stopRunner('${r.id}')">■ STOP</button>
+    </div>`).join('') +
+    (runners.length > 1 ? '<button class="pa-remove" style="margin-top:4px;" onclick="stopEngine()">■ STOP ALL</button>' : '');
 }
 
 // --- API HELPERS ---
-function getApiInterval() {
-  const tf = document.getElementById('timeframe').value;
+function getApiInterval(timeframe) {
+  const tf = timeframe || document.getElementById('timeframe').value;
   return intervalMap[tf] || { period: '3mo', interval: '1d' };
 }
 
@@ -2579,18 +2629,19 @@ async function fetchPrices(sym) {
 // push, see startEngineStream()) — both need to agree exactly on what params
 // mean "this symbol under the current strategy", so there's one place that
 // builds them rather than two that could drift apart.
-function buildSignalsParams(sym) {
+function buildSignalsParams(sym, runner) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return null;
   const cfg = getConfig();
-  const { period, interval } = getApiInterval();
+  const { period, interval } = getApiInterval(runner && runner.timeframe);
+  const conditions = runner ? runner.conditions : strategyConditions;
 
   // Indicator params come ONLY from the conditions in the strategy — each
   // condition carries its own params, so only the indicators the user actually
   // selected are configured for the request. Any indicator not referenced by a
   // condition falls back to the server's defaults. (last condition wins per apiKey)
   const condOverrides = {};
-  strategyConditions.forEach(cond => {
+  conditions.forEach(cond => {
     const def = CONDITION_DEFS[cond.type] || {};
     const paramDefs = INDICATOR_PARAMS[def.group] || [];
     paramDefs.forEach(p => {
@@ -2612,11 +2663,11 @@ function buildSignalsParams(sym) {
   return params;
 }
 
-async function fetchSignals(sym) {
-  const params = buildSignalsParams(sym);
+async function fetchSignals(sym, runner) {
+  const params = buildSignalsParams(sym, runner);
   if (!params) return null;
   const data = await apiFetch(`/api/signals?${params}`);
-  liveCache[sym] = data;
+  if (runner) runner.cache[sym] = data; else liveCache[sym] = data;
   return data;
 }
 
@@ -2652,33 +2703,27 @@ async function fetchAllAssets() {
 // Fires a Buy and/or Sell alert for whichever direction(s) evaluateStrategy()
 // says are currently satisfied — shared by the polling path (scanSignals) and
 // the SSE push path (handleEngineSignalMessage) below.
-function _fireDirectionalAlerts(sym, result) {
+function _fireDirectionalAlerts(sym, result, runner) {
   [['BUY', result.buy], ['SELL', result.sell]].forEach(([type, d]) => {
     if (!d.fired) return;
     const reasons = d.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
-    fireAlert(sym, { type, score: d.matchedCount, confidence: d.confidence / 100, reasons });
+    fireAlert(sym, { type, score: d.matchedCount, confidence: d.confidence / 100, reasons, strategy: runner ? runner.name : '' });
   });
 }
 
-async function scanSignals() {
+async function scanSignals(only) {
   if (!engineRunning) return;
   const active = Object.keys(assets).filter(sym => watchlistEnabled[sym]);
-  addLog('info', 'SCAN', `Scanning ${active.length} assets...`);
-
-  if (strategyConditions.length === 0) {
-    addLog('warn', 'STRAT', 'No conditions set — add conditions to your strategy and restart');
-    updateStrategyStatus();
-    updateStats();
-    return;
-  }
-
-  for (const sym of active) {
-    try {
-      await fetchSignals(sym);
-      const result = evaluateStrategy(sym);
-      _fireDirectionalAlerts(sym, result);
-    } catch (e) {
-      addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
+  for (const runner of (only ? [only] : runners.slice())) {
+    addLog('info', 'SCAN', `"${runner.name}": scanning ${active.length} assets...`);
+    for (const sym of active) {
+      if (!runners.includes(runner)) break; // stopped mid-scan
+      try {
+        await fetchSignals(sym, runner);
+        _fireDirectionalAlerts(sym, evaluateStrategy(sym, runner), runner);
+      } catch (e) {
+        addLog('err', 'API', `Scan failed ${sym}: ${e.message}`);
+      }
     }
   }
   updateStrategyStatus();
@@ -2696,23 +2741,23 @@ async function scanSignals() {
 // watchlist mid-run doesn't add/drop streams the way the polling path's
 // active-symbol re-check every tick does. Falls back to polling automatically
 // on any stream error.
-function buildSignalsStreamUrl(sym) {
-  const params = buildSignalsParams(sym);
+function buildSignalsStreamUrl(sym, runner) {
+  const params = buildSignalsParams(sym, runner);
   if (!params) return null;
   return `${realtimeBaseUrl}/stream/signals?${params}`;
 }
 
-function handleEngineSignalMessage(sym, evt) {
+function handleEngineSignalMessage(sym, evt, runner) {
   let data;
   try {
     data = JSON.parse(evt.data);
   } catch (_) {
     return; // heartbeat/comment frame, or a malformed payload — next message recovers
   }
-  liveCache[sym] = data;
+  runner.cache[sym] = data;
   try {
-    const result = evaluateStrategy(sym);
-    _fireDirectionalAlerts(sym, result);
+    const result = evaluateStrategy(sym, runner);
+    _fireDirectionalAlerts(sym, result, runner);
   } catch (e) {
     addLog('err', 'STREAM', `Signal evaluation failed for ${sym}: ${e.message}`);
   }
@@ -2720,13 +2765,14 @@ function handleEngineSignalMessage(sym, evt) {
   updateStats();
 }
 
-function startEngineStream(sym) {
-  if (engineStreams[sym]) return;
-  const url = buildSignalsStreamUrl(sym);
+function startEngineStream(sym, runner) {
+  const key = runner.id + '|' + sym;
+  if (engineStreams[key]) return;
+  const url = buildSignalsStreamUrl(sym, runner);
   if (!url) return;
   try {
     const es = new EventSource(url, { withCredentials: true });
-    es.onmessage = (evt) => handleEngineSignalMessage(sym, evt);
+    es.onmessage = (evt) => handleEngineSignalMessage(sym, evt, runner);
     es.onerror = () => {
       // EventSource retries transient drops on its own; a persistent failure
       // (service unreachable, misconfigured REALTIME_BASE_URL, etc.) should
@@ -2735,7 +2781,7 @@ function startEngineStream(sym) {
       stopEngineStreams();
       startEnginePolling();
     };
-    engineStreams[sym] = es;
+    engineStreams[key] = es;
   } catch (e) {
     addLog('err', 'STREAM', `Failed to open signal stream for ${sym}: ${e.message}`);
   }
@@ -2889,7 +2935,7 @@ function syncChartStream() {
 
 // --- FIRE ALERT ---
 function fireAlert(sym, sig) {
-  if (alerts.find(a => a.sym === sym && a.type === sig.type && !a.dismissed)) return;
+  if (alerts.find(a => a.sym === sym && a.type === sig.type && (a.strategy || '') === (sig.strategy || '') && !a.dismissed)) return;
 
   signalsToday++;
   const price = assets[sym].price;
@@ -2902,7 +2948,7 @@ function fireAlert(sym, sig) {
 
   const alert = {
     id: Date.now() + Math.random(),
-    sym, type: sig.type, price, target, sl, qty, conf,
+    sym, type: sig.type, price, target, sl, qty, conf, strategy: sig.strategy || '',
     reasons: sig.reasons, time: new Date().toTimeString().split(' ')[0],
     dismissed: false
   };
@@ -2920,10 +2966,10 @@ function fireAlert(sym, sig) {
   if (notificationSettings.popup_enabled) showSignalToast(alert);
 
   const emailBox = document.getElementById('emailSignalAlerts');
-  const key = sym + ':' + sig.type;
+  const key = (sig.strategy || '') + ':' + sym + ':' + sig.type;
   if (emailBox && emailBox.checked && Date.now() - (_lastSignalEmail[key] || 0) > 15 * 60 * 1000) {
     _lastSignalEmail[key] = Date.now();
-    sendAlertEmail('signal', sym, `${sig.type} conditions met at ${getCurrencySymbol()}${price.toFixed(2)} (${conf}% confidence): ${sig.reasons.join(', ')}`);
+    sendAlertEmail('signal', sym, `${sig.strategy ? '[' + sig.strategy + '] ' : ''}${sig.type} conditions met at ${getCurrencySymbol()}${price.toFixed(2)} (${conf}% confidence): ${sig.reasons.join(', ')}`);
   }
 }
 const _lastSignalEmail = {};
@@ -3247,7 +3293,7 @@ function renderAlerts() {
     <div class="alert-card ${a.type.toLowerCase()} new" id="alert-${a.id}">
       <div class="alert-card-header">
         <span class="alert-type ${a.type.toLowerCase()}">${a.type}</span>
-        <span class="alert-asset">${a.sym}</span>
+        <span class="alert-asset">${a.sym}</span>${a.strategy ? `<span style="font-size:8px;color:var(--text-muted);">${a.strategy.replace(/</g, '&lt;')}</span>` : ''}
         <span class="alert-time">${a.time}</span>
       </div>
       <div class="alert-body">
