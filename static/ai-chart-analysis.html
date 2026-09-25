@@ -49,7 +49,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
 .scan-btn span { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
 .out { display: none; flex-direction: column; gap: 8px; }
-.out.show { display: flex; }
+.out.show { display: block; }
+details.deeper .row { margin-top: 8px; }
 .out-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 #promptBox { width: 100%; height: 190px; resize: vertical; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 10px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.5; outline: none; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -60,6 +61,24 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
 .status { font-size: 12px; color: var(--muted); min-height: 16px; }
 .status.err { color: #ff4757; }
 .disclaimer { font-size: 11px; color: var(--muted); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; }
+
+.quick { display: none; flex-direction: column; gap: 8px; }
+.quick.show { display: flex; }
+.q-row { background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
+.q-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.q-name { font-weight: 600; font-size: 13.5px; }
+.q-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+.q-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+.q-tag.Bullish { color: #00d4aa; border-color: #00d4aa; background: rgba(0,212,170,0.1); }
+.q-tag.Bearish { color: #ff4757; border-color: #ff4757; background: rgba(255,71,87,0.1); }
+.q-tag.Neutral { color: var(--muted); border-color: var(--border2); }
+.q-tag.Stretched { color: #ff9f43; border-color: #ff9f43; background: rgba(255,159,67,0.1); }
+.q-text { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.q-sum { background: rgba(168,85,247,0.08); border: 1px solid #a855f7; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+.q-sum b { display: block; font-family: 'Outfit', sans-serif; font-size: 14px; margin-bottom: 4px; }
+details.deeper { border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
+details.deeper summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+details.deeper[open] summary { margin-bottom: 10px; }
 
 /* Locked preview */
 .locked-wrap { position: relative; }
@@ -109,15 +128,16 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
     <div class="chart-card"><div id="tvChart"></div></div>
     <aside class="panel">
       <div class="panel-title">🤖 AI Chart Analysis</div>
-      <div class="panel-sub">Pick a scan. We build a prompt from this chart's live data — copy it into your own AI assistant (ChatGPT, Claude, Gemini, etc.). Nothing is sent to us or billed to you.</div>
+      <div class="panel-sub">Pick a scan. The General scan gives you an instant plain-English read of the chart. For a fuller write-up, every scan also builds a prompt you can copy into your own AI assistant (ChatGPT, Claude, Gemini, etc.) — nothing is billed to you.</div>
 
       <button class="scan-btn" data-scan="general"><b>General chart scan</b><span>Market conditions from Bollinger Bands, volume, moving averages, RSI, MACD, swing highs/lows and more.</span></button>
       <button class="scan-btn" data-scan="market"><b>Market information scan</b><span>What the asset is, recent news and upcoming events. Needs an AI with web search.</span></button>
       <button class="scan-btn" data-scan="pattern"><b>Pattern scan</b><span>Advanced technical analysis: chart patterns, support/resistance, trendlines and structure.</span></button>
 
       <div class="status" id="status"></div>
-      <div class="out" id="out">
-        <div class="out-label" id="outLabel">Prompt</div>
+      <div class="quick" id="quick"></div>
+      <details class="deeper out" id="out">
+        <summary id="outLabel">Copy prompt for a deeper AI write-up</summary>
         <textarea id="promptBox" readonly></textarea>
         <div class="row">
           <button class="btn" id="copyBtn">Copy prompt</button>
@@ -125,7 +145,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', 
           <a class="btn ghost" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
           <a class="btn ghost" href="https://gemini.google.com/app" target="_blank" rel="noopener">Open Gemini</a>
         </div>
-      </div>
+      </details>
       <div class="disclaimer">Educational and historical analysis only — not personal advice or a recommendation. AI output can be wrong; always check it against the chart yourself.</div>
     </aside>
   </div>
@@ -334,6 +354,118 @@ Write a Market Information Scan covering:
 Cite every news item with its source and date. Don't invent stories — if little is found, say so.`;
 }
 
+// ── Instant plain-English read (rule-based, no AI) ───────────────────────────────────
+function fmt(n, dp) {
+  if (n == null || isNaN(n)) return 'n/a';
+  const a = Math.abs(n);
+  return Number(n).toFixed(dp != null ? dp : a >= 100 ? 0 : a >= 1 ? 2 : a >= 0.01 ? 4 : 6);
+}
+
+function quickRead(d) {
+  const i = d.indicators, ma = i.moving_averages || {}, cx = i.crossovers || {};
+  const close = i.price.close;
+  const rows = [];
+
+  const avgs = [['20', ma.ma_20], ['50', ma.ma_50], ['200', ma.ma_200]].filter(a => a[1] != null);
+  const above = avgs.filter(a => close > a[1]).length;
+  rows.push({ name: 'Moving averages', value: `above ${above} of ${avgs.length}`,
+    tag: above === avgs.length ? 'Bullish' : above === 0 ? 'Bearish' : 'Neutral',
+    text: 'A moving average is the average price over a set number of past bars, smoothing out the noise. ' +
+      (above === avgs.length ? 'Price is above all of them, which has historically gone with an uptrend.'
+        : above === 0 ? 'Price is below all of them, which has historically gone with a downtrend.'
+        : 'Price is above some and below others, which points to a mixed or changing trend.') });
+
+  const adx = i.adx || {};
+  if (adx.adx != null) {
+    const trending = adx.adx >= 25;
+    rows.push({ name: 'Trend strength (ADX)', value: fmt(adx.adx, 1),
+      tag: trending ? (adx.dmp > adx.dmn ? 'Bullish' : 'Bearish') : 'Neutral',
+      text: 'ADX measures how strong a trend is, not which way it points. ' +
+        (trending ? `At this level the trend is strong, and buyers are ${adx.dmp > adx.dmn ? 'currently' : 'not'} stronger than sellers.`
+          : 'At this level there is no strong trend, so price is more likely to be drifting sideways.') });
+  }
+
+  if (i.rsi != null) {
+    const r = i.rsi;
+    rows.push({ name: 'RSI', value: fmt(r, 1),
+      tag: r > 70 || r < 30 ? 'Stretched' : r >= 50 ? 'Bullish' : 'Bearish',
+      text: 'RSI (0–100) measures how fast price has recently risen or fallen. ' +
+        (r > 70 ? 'Above 70 is "overbought": the rise has been fast, and pauses have often followed.'
+          : r < 30 ? 'Below 30 is "oversold": the fall has been fast, and bounces have often followed.'
+          : r >= 50 ? 'Above 50 with room below 70 shows healthy upward momentum.'
+          : 'Below 50 shows momentum leaning down.') });
+  }
+
+  const m = i.macd || {};
+  if (m.macd != null && m.signal != null) {
+    const up = m.macd > m.signal;
+    rows.push({ name: 'MACD', value: up ? 'above signal line' : 'below signal line', tag: up ? 'Bullish' : 'Bearish',
+      text: 'MACD compares a fast and a slow average to show momentum shifts. ' +
+        (up ? 'The MACD line is above its signal line, meaning upward momentum is in control' : 'The MACD line is below its signal line, meaning downward momentum is in control') +
+        (cx.macd_bars_since_cross != null && cx.macd_bars_since_cross < 900 ? ` (the lines crossed ${cx.macd_bars_since_cross} bars ago).` : '.') });
+  }
+
+  const bb = i.bollinger_bands || {};
+  if (bb.percent_b != null) {
+    const pb = bb.percent_b;
+    rows.push({ name: 'Bollinger Bands', value: `${Math.round(pb * 100)}% of the way up the bands`,
+      tag: pb > 0.95 || pb < 0.05 ? 'Stretched' : pb >= 0.5 ? 'Bullish' : 'Bearish',
+      text: 'Bollinger Bands draw a channel around the average price; touching the edges means price is unusually far from normal. ' +
+        (pb > 0.95 ? 'Price is at or above the upper band, which is stretched to the upside.'
+          : pb < 0.05 ? 'Price is at or below the lower band, which is stretched to the downside.'
+          : pb >= 0.5 ? 'Price is in the upper half of the channel, which fits a stronger-than-average move.'
+          : 'Price is in the lower half of the channel, which fits a weaker-than-average move.') });
+  }
+
+  const st = i.stochastic || {};
+  if (st.k != null && st.d != null) {
+    const stretched = st.k > 80 || st.k < 20;
+    rows.push({ name: 'Stochastic', value: `${fmt(st.k, 0)} / ${fmt(st.d, 0)}`,
+      tag: stretched ? 'Stretched' : st.k > st.d ? 'Bullish' : 'Bearish',
+      text: 'The Stochastic shows where price closed within its recent range, and its two lines crossing can hint at short-term turns. ' +
+        (st.k > 80 ? 'It is above 80, near the top of the range, so a short-term cooling-off is common.'
+          : st.k < 20 ? 'It is below 20, near the bottom of the range, so a short-term bounce is common.'
+          : st.k > st.d ? 'The fast line is above the slow line, a short-term positive sign.'
+          : 'The fast line is below the slow line, a short-term negative sign.') });
+  }
+
+  const v = i.volume || {};
+  if (v.obv_direction_last_20_bars) {
+    const dir = v.obv_direction_last_20_bars;
+    const ratio = v.last_complete_vs_avg_ratio;
+    rows.push({ name: 'Volume', value: `buying pressure ${dir}`, tag: dir === 'rising' ? 'Bullish' : dir === 'falling' ? 'Bearish' : 'Neutral',
+      text: 'Volume is how much trading is happening, and OBV adds up volume on up days and subtracts it on down days. ' +
+        (dir === 'rising' ? 'OBV has been rising, so more volume is going into up days than down days' : dir === 'falling' ? 'OBV has been falling, so more volume is going into down days than up days' : 'OBV is flat, so volume is not clearly favouring either side') +
+        (ratio ? `; the last complete bar traded ${ratio}× its 20-bar average.` : '.') });
+  }
+
+  const sr = d.structure.swing_read || '';
+  rows.push({ name: 'Swing highs & lows', value: sr,
+    tag: sr.startsWith('higher highs and higher lows') ? 'Bullish' : sr.startsWith('lower highs and lower lows') ? 'Bearish' : 'Neutral',
+    text: 'Swings are the recent peaks and dips. Rising peaks and dips mark an uptrend; falling ones mark a downtrend. ' +
+      (sr.startsWith('higher highs and higher lows') ? 'Both are rising here.' : sr.startsWith('lower highs and lower lows') ? 'Both are falling here.' : 'They point in different directions here, so the structure is mixed.') });
+
+  // Combined read
+  const n = t => rows.filter(r => r.tag === t).length;
+  const bull = n('Bullish'), bear = n('Bearish'), str = n('Stretched'), neu = n('Neutral');
+  const names = t => rows.filter(r => r.tag === t).map(r => r.name).join(', ');
+  let lean = bull > bear + 2 ? 'leans clearly bullish' : bear > bull + 2 ? 'leans clearly bearish' : bull > bear ? 'leans mildly bullish' : bear > bull ? 'leans mildly bearish' : 'is mixed';
+  let sum = `Of ${rows.length} readings, ${bull} are bullish, ${bear} bearish, ${neu} neutral and ${str} stretched. Taken together the chart ${lean}.`;
+  if (bull && bear) sum += ` The disagreement is in ${bear <= bull ? names('Bearish') : names('Bullish')}, which is worth weighing against the rest.`;
+  if (str) sum += ` ${names('Stretched')} ${str > 1 ? 'are' : 'is'} stretched, and historically that has often meant a pause or pullback within the wider move rather than a change in it.`;
+  if (v.last_bar_still_forming_or_missing_volume) sum += ' The newest bar is still forming, so its readings may change.';
+  return { rows, sum };
+}
+
+function renderQuick(d) {
+  const q = quickRead(d);
+  const box = document.getElementById('quick');
+  box.innerHTML = `<div class="out-label">Quick read · ${esc(current.name)} · ${esc(tfLabel(d.interval))}</div>` +
+    q.rows.map(r => `<div class="q-row"><div class="q-head"><span class="q-name">${esc(r.name)}</span><span class="q-tag ${r.tag}">${r.tag}</span></div><div class="q-val">${esc(r.value)}</div><div class="q-text" style="margin-top:4px;">${esc(r.text)}</div></div>`).join('') +
+    `<div class="q-sum"><b>What it means together</b>${esc(q.sum)}</div>`;
+  box.classList.add('show');
+}
+
 // ── Scan handling ─────────────────────────────────────────────────────────────────────
 const statusEl = document.getElementById('status');
 const out = document.getElementById('out');
@@ -341,6 +473,7 @@ const promptBox = document.getElementById('promptBox');
 
 function resetOutput() {
   out.classList.remove('show');
+  document.getElementById('quick').classList.remove('show');
   statusEl.textContent = '';
   statusEl.className = 'status';
   document.querySelectorAll('.scan-btn[data-scan]').forEach(b => b.classList.remove('active'));
@@ -359,7 +492,9 @@ async function runScan(kind, btn) {
   const labels = { general: 'General chart scan prompt', market: 'Market information scan prompt', pattern: 'Pattern scan prompt' };
 
   try {
-    let text;
+    let text, quickData = null;
+    document.getElementById('quick').classList.remove('show');
+    out.open = kind !== 'general';
     if (kind === 'market') {
       text = marketPrompt();
     } else {
@@ -369,12 +504,14 @@ async function runScan(kind, btn) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Could not load data for this symbol');
       text = kind === 'general' ? generalPrompt(d) : patternPrompt(d);
+      if (kind === 'general') quickData = d;
     }
     if (activeScan !== kind) return; // user switched scans mid-load
     promptBox.value = text;
-    document.getElementById('outLabel').textContent = labels[kind];
+    document.getElementById('outLabel').textContent = kind === 'general' ? 'Copy prompt for a deeper AI write-up' : labels[kind];
     out.classList.add('show');
-    statusEl.textContent = 'Ready — copy it into your AI assistant.';
+    if (quickData) renderQuick(quickData);
+    statusEl.textContent = quickData ? '' : 'Ready — copy it into your AI assistant.';
   } catch (e) {
     statusEl.textContent = e.message;
     statusEl.className = 'status err';
