@@ -13,6 +13,7 @@ import yfinance as yf
 import pandas as pd
 import bcrypt
 import json
+import math
 import os
 import secrets
 import hashlib
@@ -3492,22 +3493,71 @@ def ai_chart_data():
         df = _fetch_ohlcv(symbol, period, interval)
         ind = calculate_all(df)
         rows = df.tail(120)
-        highs = [float(x) for x in rows["High"].tolist()]
-        lows = [float(x) for x in rows["Low"].tolist()]
+
+        def _num(x):
+            try:
+                x = float(x)
+                return None if math.isnan(x) else x
+            except (TypeError, ValueError):
+                return None
+
+        # The last bar can be a live-stitched/in-progress one whose close has moved
+        # outside its own high/low (or whose volume is missing), so clamp H/L to the
+        # bar's own O/C and recompute the volume/CCI/OBV readings here rather than
+        # passing the model values it can't trust.
+        candles, vols = [], []
+        for ts, r in zip(rows.index, rows.itertuples()):
+            o, h, l, c = _num(r.Open), _num(r.High), _num(r.Low), _num(r.Close)
+            if None in (o, h, l, c):
+                continue
+            v = _num(r.Volume) or 0.0
+            h, l = max(o, h, l, c), min(o, h, l, c)
+            candles.append([str(ts)[:16], round(o, 6), round(h, 6), round(l, 6), round(c, 6), int(v)])
+            vols.append(v)
+        if len(candles) < 30:
+            raise ValueError("Not enough clean price data for this symbol/timeframe")
+        highs = [c[2] for c in candles]
+        lows = [c[3] for c in candles]
+        closes = [c[4] for c in candles]
         sh = [highs[i] for i in _swing_points(highs, 3, True)][-4:]
         sl = [lows[i] for i in _swing_points(lows, 3, False)][-4:]
-        candles = [
-            [str(ts)[:16], round(float(r.Open), 6), round(float(r.High), 6),
-             round(float(r.Low), 6), round(float(r.Close), 6), int(r.Volume or 0)]
-            for ts, r in zip(rows.index, rows.itertuples())
-        ]
+
+        tp = [(h + l + c) / 3 for h, l, c in zip(highs, lows, closes)][-20:]
+        tp_ma = sum(tp) / len(tp)
+        mad = sum(abs(x - tp_ma) for x in tp) / len(tp)
+        cci = round((tp[-1] - tp_ma) / (0.015 * mad), 1) if mad else None
+
+        in_progress = vols[-1] <= 0
+        last_i = -2 if in_progress else -1
+        prior = [v for v in vols[:last_i] if v > 0][-20:]
+        avg20 = sum(prior) / len(prior) if prior else None
+        obv, obv_series = 0.0, []
+        for i in range(1, len(closes)):
+            obv += vols[i] if closes[i] > closes[i - 1] else -vols[i] if closes[i] < closes[i - 1] else 0
+            obv_series.append(obv)
+        obv_dir = None
+        if len(obv_series) > 20:
+            obv_dir = "rising" if obv_series[-1] > obv_series[-21] else "falling" if obv_series[-1] < obv_series[-21] else "flat"
+
+        indicators = {k: ind.get(k) for k in _AI_CHART_INDICATOR_KEYS if k in ind and k not in ("cci", "volume", "price")}
+        indicators["cci_20"] = cci
+        indicators["price"] = {"open": candles[-1][1], "high": candles[-1][2], "low": candles[-1][3], "close": candles[-1][4]}
+        indicators["volume"] = {
+            "last_bar_volume": vols[-1],
+            "last_bar_in_progress_or_missing_volume": in_progress,
+            "last_complete_bar_volume": vols[last_i],
+            "avg_volume_prior_20_bars": avg20,
+            "last_complete_vs_avg_ratio": round(vols[last_i] / avg20, 2) if avg20 else None,
+            "obv_direction_last_20_bars": obv_dir,
+            "mfi": ind.get("mfi"),
+        }
         close = candles[-1][4]
         return jsonify({
             "symbol": symbol.upper(),
             "interval": tf,
             "candle_columns": ["time", "open", "high", "low", "close", "volume"],
             "candles": candles,
-            "indicators": {k: ind.get(k) for k in _AI_CHART_INDICATOR_KEYS if k in ind},
+            "indicators": indicators,
             "structure": {
                 "recent_swing_highs": [round(x, 6) for x in sh],
                 "recent_swing_lows": [round(x, 6) for x in sl],
