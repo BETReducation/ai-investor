@@ -316,42 +316,65 @@ Notes: in "crossovers", the *_bars_since_cross fields give bars since each cross
 
 function patternPrompt(d) {
   const csv = d.candles.map(c => c.join(',')).join('\n');
-  return `You are a technical analyst writing an educational chart-pattern review.
+  return `You are explaining chart patterns to a beginner. Write a short, plain-English Pattern Scan. No jargon without a one-line explanation, and no long paragraphs.
 
 Asset: ${current.name} (${d.symbol}) — ${tfLabel(d.interval)} chart, last ${d.candles.length} candles.
 
 ${RULES}
 
-From the OHLCV candles below, write a Pattern Scan covering:
-1. Candlestick patterns in the most recent bars (engulfing, doji, hammer/shooting star, inside bars, etc.).
-2. Larger chart patterns forming or completed: head and shoulders (and inverse), double/triple tops and bottoms, triangles, wedges, flags/pennants, channels, cup and handle, ranges.
-3. Key support and resistance levels (give the actual prices from the data) and any trendlines.
-4. Breakouts, retests or failed breakouts visible in the data.
-5. For each pattern: how clear it is (clear / tentative / not present), what the pattern has historically tended to suggest, and what would invalidate it.
+FORMAT — follow this exactly:
 
-Only report patterns you can actually see in the data. Say "none clearly present" where that's the case.
+**${d.symbol} pattern scan (${tfLabel(d.interval)})**
 
-Swing structure computed from the data (JSON): ${JSON.stringify(d.structure)}
+**Key findings**
+List the 4–6 most important things you can actually see in the candles below, most significant first. Cover these where present: recent candlestick patterns (last ~5 bars), larger chart patterns (head and shoulders, double tops/bottoms, triangles, wedges, flags, channels, ranges), key support and resistance prices, and any breakout, retest or failed breakout.
+For each one use one line in the form:
+"Name — price level or dates — Clear / Tentative" and then 1–2 plain sentences saying what the pattern or level is and what it has historically tended to suggest.
+Use actual prices and dates from the data. If a category isn't present, leave it out. Don't invent patterns to fill the list.
 
-CANDLES (${d.candle_columns.join(',')}), oldest first:
+**Key levels**
+One line with the nearest support prices below the latest close and the nearest resistance prices above it, taken from the data.
+
+**What it means together**
+One short paragraph (about 80 words): do the findings agree or conflict, and what is the overall picture in everyday language?
+
+**What would change the picture**
+Two short bullets: what would confirm the main pattern, and what would invalidate it (give a price).
+
+Keep the whole answer under 350 words.
+
+Swing structure computed from the data (JSON, swings oldest to newest, "provisional" = newest extreme not yet confirmed): ${JSON.stringify(d.structure)}
+
+CANDLES (${d.candle_columns.join(',')}), oldest first. If the last bar is still forming, treat it as provisional:
 ${csv}`;
 }
 
 function marketPrompt() {
-  return `You are a market researcher writing an educational briefing. Use web search / browsing if you have it; if you can't browse, say so clearly at the top and only use what you reliably know.
+  return `You are explaining the background on an asset to a beginner. Write a short, plain-English Market Information Scan. No jargon without a one-line explanation. Use web search / browsing if you have it; if you can't browse, say so in one line at the top and only use what you reliably know.
 
 Asset: ${current.name} (${current.symbol})
 
 ${RULES}
 
-Write a Market Information Scan covering:
-1. What it is: a short plain-English overview (company/coin/currency/commodity/index — what drives its price, sector or category, key facts).
-2. Recent news: the most relevant stories from roughly the last 30 days, each with a one-line summary, the date, and the source. Group them as positive / negative / neutral for the asset.
-3. Upcoming scheduled events that could move it: earnings dates, economic data releases, central bank meetings, token unlocks, index changes, regulatory decisions — whichever apply.
-4. Broader context: sector or macro backdrop currently affecting it.
-5. Overall sentiment in the coverage, and what is uncertain or contested.
+FORMAT — follow this exactly:
 
-Cite every news item with its source and date. Don't invent stories — if little is found, say so.`;
+**${current.symbol} market information**
+
+**Key facts**
+Give these 5, in this order. For each one use one line in the form "Topic — headline — Positive / Negative / Neutral / Unclear" and then 1–2 plain sentences explaining it.
+1. What it is (what the asset is and what drives its price)
+2. Recent news (the one or two most relevant stories from about the last 30 days, each with its source and date)
+3. Upcoming events (earnings, data releases, central bank meetings, token unlocks, regulatory decisions, whichever apply, with dates)
+4. Broader backdrop (sector or macro conditions affecting it right now)
+5. Overall coverage tone (how the news and commentary lean, and what is contested)
+
+**What it means together**
+One short paragraph (about 80 words): how the news and events fit together, and what is uncertain, in everyday language.
+
+**What to watch**
+Two short bullets: one thing that could strengthen the story, one that could weaken it.
+
+Keep the whole answer under 350 words. Cite the source and date for every news item. Don't invent stories: if you find little, say so.`;
 }
 
 // ── Instant plain-English read (rule-based, no AI) ───────────────────────────────────
