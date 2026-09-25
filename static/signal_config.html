@@ -686,6 +686,9 @@ window.addEventListener('resize', () => {
       <div class="panel-title">STRATEGY OUTPUT</div>
       <div class="panel-badge" id="alertBadge">0 PENDING</div>
     </div>
+    <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:9px;color:var(--text-muted);cursor:pointer;">
+      <input type="checkbox" id="emailSignalAlerts" onchange="try{localStorage.setItem('gcgEmailSignalAlerts',this.checked?'1':'0')}catch(e){}"> Email me when a signal fires
+    </label>
 
     <!-- RISK METER -->
     <div class="risk-meter">
@@ -771,6 +774,9 @@ window.addEventListener('resize', () => {
         </div>
         <button class="btn-confirm" style="flex-shrink:0;" onclick="addPriceAlert()">ADD</button>
       </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:9px;color:var(--text-muted);cursor:pointer;">
+        <input type="checkbox" id="paEmail"> Email me when this alert fires
+      </label>
     </div>
   </div>
 </div>
@@ -2912,7 +2918,16 @@ function fireAlert(sym, sig) {
 
   if (notificationSettings.sound_enabled) playAlertTone(sig.type);
   if (notificationSettings.popup_enabled) showSignalToast(alert);
+
+  const emailBox = document.getElementById('emailSignalAlerts');
+  const key = sym + ':' + sig.type;
+  if (emailBox && emailBox.checked && Date.now() - (_lastSignalEmail[key] || 0) > 15 * 60 * 1000) {
+    _lastSignalEmail[key] = Date.now();
+    sendAlertEmail('signal', sym, `${sig.type} conditions met at ${getCurrencySymbol()}${price.toFixed(2)} (${conf}% confidence): ${sig.reasons.join(', ')}`);
+  }
 }
+const _lastSignalEmail = {};
+try { document.addEventListener('DOMContentLoaded', () => { const b = document.getElementById('emailSignalAlerts'); if (b) b.checked = localStorage.getItem('gcgEmailSignalAlerts') === '1'; }); } catch (e) {}
 
 // ── NOTIFICATIONS: sound + popup (see profile Preferences card) ─────────────
 function playAlertTone(type) {
@@ -3046,6 +3061,21 @@ function showSignalToast(a) {
   }, 6000);
 }
 
+// Server sends to the account's registered address and enforces a daily cap.
+async function sendAlertEmail(kind, symbol, detail) {
+  if (!currentUser) return;
+  try {
+    await fetch(API_BASE + '/api/notify-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ kind, symbol, detail }),
+    });
+  } catch (e) {
+    addLog('err', 'ALERT', 'Email notification failed: ' + e.message);
+  }
+}
+
 // --- PRICE ALERTS ---
 // Independent of the strategy engine's condition-based alerts above (`alerts`/
 // `fireAlert`) — these are simple per-symbol price-target triggers, customisable per
@@ -3073,7 +3103,7 @@ function renderPriceAlertsList() {
   } else {
     list.innerHTML = symAlerts.map(a => `
       <div class="price-alert-row">
-        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${getCurrencySymbol()}${formatPrice(a.price, currentAsset)}</span>
+        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${getCurrencySymbol()}${formatPrice(a.price, currentAsset)}${a.email ? ' ✉' : ''}</span>
         <button class="pa-remove" title="Remove" onclick="removePriceAlert('${currentAsset}', '${a.id}')">✕</button>
       </div>`).join('');
   }
@@ -3086,7 +3116,7 @@ function addPriceAlert() {
   const direction = document.getElementById('paDirection').value;
   if (!isFinite(price) || price <= 0) { addLog('warn', 'ALERT', 'Enter a valid price for the alert.'); return; }
   if (!priceAlerts[currentAsset]) priceAlerts[currentAsset] = [];
-  priceAlerts[currentAsset].push({ id: 'pa_' + Date.now() + '_' + Math.floor(Math.random() * 1000), price, direction, active: true, createdAt: Date.now() });
+  priceAlerts[currentAsset].push({ id: 'pa_' + Date.now() + '_' + Math.floor(Math.random() * 1000), price, direction, active: true, createdAt: Date.now(), email: document.getElementById('paEmail').checked });
   document.getElementById('paPrice').value = '';
   renderPriceAlertsList();
   startPriceAlertPolling();
@@ -3158,6 +3188,7 @@ async function evaluatePriceAlerts() {
       a.active = false;
       anyFired = true;
       showPriceAlertToast(sym, a, price);
+      if (a.email) sendAlertEmail('price', sym, `price crossed ${a.direction} ${a.price} (now ${formatPrice(price, sym)})`);
       addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${getCurrencySymbol()}${a.price} (now ${getCurrencySymbol()}${formatPrice(price, sym)})`);
     }
   }

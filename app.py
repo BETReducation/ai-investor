@@ -3395,6 +3395,49 @@ def api_logout():
     return jsonify({"success": True})
 
 
+# Per-user cap on alert emails (in-memory, resets daily/on restart) keeps a runaway
+# client from burning the Resend quota; the client also dedupes per alert.
+_ALERT_EMAIL_DAILY_CAP = 10
+_alert_email_counts: dict[str, tuple[str, int]] = {}
+_alert_email_lock = threading.Lock()
+
+
+@app.route("/api/notify-email", methods=["POST"])
+@login_required
+def notify_email():
+    data = request.get_json(silent=True) or {}
+    kind = "Price alert" if data.get("kind") == "price" else "Signal alert"
+    symbol = re.sub(r"[^A-Za-z0-9=.\-^/ ]", "", str(data.get("symbol", "")))[:20]
+    detail = re.sub(r"[\r\n]+", " ", str(data.get("detail", "")))[:300]
+    if not symbol or not detail:
+        return jsonify({"error": "symbol and detail required"}), 400
+
+    today = _dt.date.today().isoformat()
+    with _alert_email_lock:
+        day, n = _alert_email_counts.get(current_user.id, (today, 0))
+        if day != today:
+            n = 0
+        if n >= _ALERT_EMAIL_DAILY_CAP:
+            return jsonify({"sent": False, "reason": "daily limit reached"}), 429
+        _alert_email_counts[current_user.id] = (today, n + 1)
+
+    users = _load_users()
+    profile = (users.get(current_user.id, {}).get("profile") or {})
+    to_addr = profile.get("email") or (current_user.id if "@" in current_user.id else "")
+    if not to_addr:
+        return jsonify({"sent": False, "reason": "no email on account"}), 400
+
+    when = _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    _send_email(
+        to_addr,
+        f"{kind}: {symbol}",
+        f"{kind} for {symbol}\n\nAt {when}, the condition you set was met: {detail}\n\n"
+        f"This is a historical notification of a condition you configured, not advice "
+        f"or a recommendation.\n\nManage alerts: {request.host_url.rstrip('/')}/tools/signals",
+    )
+    return jsonify({"sent": True})
+
+
 @app.route("/api/me", methods=["GET"])
 def api_me():
     if not current_user.is_authenticated:
