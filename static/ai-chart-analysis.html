@@ -250,33 +250,48 @@ const RULES = `Rules: this is educational and historical analysis only. Do not g
 function tfLabel(tf) { return { '5m': '5-minute', '15m': '15-minute', '1h': '1-hour', '4h': '4-hour', '1d': 'daily', '1wk': 'weekly' }[tf] || tf; }
 
 function generalPrompt(d) {
-  return `You are a technical analyst writing an educational market-conditions summary.
+  return `You are explaining a chart to a beginner. Write a short, plain-English General Chart Scan. No jargon without a one-line explanation, and no long paragraphs.
 
 Asset: ${current.name} (${d.symbol}) — ${tfLabel(d.interval)} chart, latest bar ${d.candles[d.candles.length - 1][0]}.
 
 ${RULES}
 
-Using the indicator snapshot below, write a General Chart Scan covering:
-1. Trend: moving averages (position of price vs each, any recent crossovers), swing structure (higher highs/lower lows), ADX strength, Supertrend/PSAR/Ichimoku where present.
-2. Momentum: RSI, MACD (line vs signal, histogram), Stochastic, CCI, ROC — and whether they agree or diverge.
-3. Volatility: Bollinger Bands (position, %B, bandwidth squeeze/expansion), ATR.
-4. Volume: current vs average, OBV/MFI, whether volume confirms the move.
-5. Divergences: using the RECENT HISTORY table, compare the last two swing highs and swing lows in price against RSI, MACD histogram and OBV over the same bars. Report any bullish or bearish divergence, or say none is present.
-6. Range context: where price sits in the recent range.
-7. A short overall read: which signals align, which conflict, and what would change the picture.
+FORMAT — follow this exactly:
 
-Keep it structured with short headings and plain language.
+**${d.symbol} chart scan (${tfLabel(d.interval)})**
+
+**Key readings**
+Give these 8, in this order. For each one use one line in the form:
+"Name — value — Bullish / Bearish / Neutral" and then 1–2 plain sentences saying what the indicator measures and what this reading means right now.
+1. Moving averages (price vs the short, medium and long averages)
+2. Trend strength (ADX)
+3. RSI
+4. MACD
+5. Bollinger Bands
+6. Stochastic
+7. Volume (use OBV direction and the last complete bar's volume vs average)
+8. Swing highs and lows (are recent peaks and dips rising, falling or mixed?)
+
+**What it means together**
+One short paragraph (about 100 words): which readings agree, which disagree, and the overall picture in everyday language. If you spot a divergence between price and RSI/MACD/OBV in the history table, mention it here in one sentence; otherwise don't mention divergences.
+
+**What would change the picture**
+Two short bullets: one thing that would strengthen it, one that would weaken it.
+
+Keep the whole answer under 400 words. Don't list every number in the data; pick what matters. Only mention data problems in a single line at the very end, and only if something looks wrong.
+
+DATA (use it, don't repeat it back):
 
 INDICATOR SNAPSHOT (JSON):
 ${JSON.stringify(d.indicators)}
 
-SWING STRUCTURE (JSON):
+SWING STRUCTURE (JSON, swings listed oldest to newest, "provisional" = newest extreme not yet confirmed):
 ${JSON.stringify(d.structure)}
 
 RECENT HISTORY, last ${d.history.length} bars, oldest first (${d.history_columns.join(',')}). obv_rel is OBV change since the first row, in units of average bar volume:
 ${d.history.map(r => r.join(',')).join('\n')}
 
-Note: the "crossovers" block gives bars since each crossover and a direction flag (1 = fast above slow, -1 = below). Volume fields marked in-progress refer to an unfinished bar; use the last complete bar instead.`;
+Notes: in "crossovers", the *_bars_since_cross fields give bars since each crossover and *_direction of 1 means the fast line is above the slow one (-1 below). Volume fields marked in-progress refer to an unfinished bar; use the last complete bar instead.`;
 }
 
 function patternPrompt(d) {

@@ -3543,8 +3543,23 @@ def ai_chart_data():
         highs = [c[2] for c in candles]
         lows = [c[3] for c in candles]
         closes = [c[4] for c in candles]
-        sh = [highs[i] for i in _swing_points(highs, 3, True)][-4:]
-        sl = [lows[i] for i in _swing_points(lows, 3, False)][-4:]
+        # Swings need k bars after them to confirm, so the newest extremes would be
+        # missed (making the label lag the chart). Confirmed swings use k=2; if the last
+        # k bars already exceed the latest confirmed swing, that's added as a provisional one.
+        k = 2
+        times = [c[0] for c in candles]
+        hi_idx = _swing_points(highs, k, True)[-4:]
+        lo_idx = _swing_points(lows, k, False)[-4:]
+        sh_pts = [[times[i], highs[i]] for i in hi_idx]
+        sl_pts = [[times[i], lows[i]] for i in lo_idx]
+        recent_hi = max(range(len(highs) - k, len(highs)), key=lambda i: highs[i])
+        recent_lo = min(range(len(lows) - k, len(lows)), key=lambda i: lows[i])
+        if sh_pts and highs[recent_hi] > sh_pts[-1][1] and recent_hi > hi_idx[-1]:
+            sh_pts.append([times[recent_hi], highs[recent_hi], "provisional"])
+        if sl_pts and lows[recent_lo] < sl_pts[-1][1] and recent_lo > lo_idx[-1]:
+            sl_pts.append([times[recent_lo], lows[recent_lo], "provisional"])
+        sh = [p_[1] for p_ in sh_pts]
+        sl = [p_[1] for p_ in sl_pts]
 
         tp = [(h + l + c) / 3 for h, l, c in zip(highs, lows, closes)][-20:]
         tp_ma = sum(tp) / len(tp)
@@ -3603,8 +3618,9 @@ def ai_chart_data():
             "history_columns": ["time", "close", "rsi14", "macd", "macd_signal", "macd_hist", "obv_rel"],
             "history": history_rows,
             "structure": {
-                "recent_swing_highs": [round(x, 6) for x in sh],
-                "recent_swing_lows": [round(x, 6) for x in sl],
+                "swing_order": "oldest to newest",
+                "recent_swing_highs": sh_pts,
+                "recent_swing_lows": sl_pts,
                 "swing_read": _trend_structure(sh, sl),
                 "range_high": round(max(highs), 6),
                 "range_low": round(min(lows), 6),
