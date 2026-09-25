@@ -480,6 +480,39 @@ function quickRead(d) {
   return { rows, sum };
 }
 
+function renderPatternQuick(d) {
+  const P = d.patterns;
+  const tag = b => b === 'bullish' ? 'Bullish' : b === 'bearish' ? 'Bearish' : 'Neutral';
+  const when = n => n === 0 ? 'this bar' : `${n} bar${n > 1 ? 's' : ''} ago`;
+  const card = (name, tg, meta, text) => `<div class="q-row"><div class="q-head"><span class="q-name">${esc(name)}</span><span class="q-tag ${tg}">${tg}</span></div><div class="q-val">${esc(meta)}</div><div class="q-text" style="margin-top:4px;">${esc(text)}</div></div>`;
+
+  let html = `<div class="out-label">Pattern read · ${esc(current.name)} · ${esc(tfLabel(d.interval))}</div>`;
+
+  html += '<div class="out-label" style="margin-top:6px;">Recent candlestick patterns</div>';
+  html += P.candlesticks.length
+    ? P.candlesticks.map(c => card(c.label, tag(c.bias), `${c.time.slice(0, 10)} · ${when(c.bars_ago)}${c.provisional ? ' · still forming' : ''}`, `${c.what} ${c.suggests}`)).join('')
+    : '<div class="q-text">No notable candlestick patterns in the last few bars.</div>';
+
+  const lvRow = (l, kind) => `<div class="q-row"><div class="q-head"><span class="q-name">${kind} ${fmt(l.price)}</span><span class="q-val">${Math.abs(l.distance_pct).toFixed(1)}% ${l.distance_pct >= 0 ? 'above' : 'below'} price</span></div><div class="q-val">tested ${l.touches} times · last ${esc(l.last_touch.slice(0, 10))}</div></div>`;
+  html += '<div class="out-label" style="margin-top:6px;">Key levels</div>';
+  html += P.levels.resistance.slice().reverse().map(l => lvRow(l, 'Resistance')).join('') +
+          P.levels.support.map(l => lvRow(l, 'Support')).join('') ||
+          '<div class="q-text">No repeatedly-tested levels found in this window.</div>';
+  html += `<div class="q-text">${esc(P.levels.kb.what)} ${esc(P.levels.kb.suggests)}</div>`;
+
+  if (P.events.length) {
+    html += '<div class="out-label" style="margin-top:6px;">Breakouts &amp; retests</div>';
+    html += P.events.map(e => card(e.label, tag(e.bias), `level ${fmt(e.level)} · ${e.time.slice(0, 10)}${e.provisional ? ' · still forming' : ''}`, `${e.what} ${e.suggests}`)).join('');
+  }
+
+  html += `<div class="q-sum"><b>What it means together</b>${esc(P.summary)}</div>`;
+  html += '<div class="q-text">Larger chart patterns (double tops and bottoms, head and shoulders, triangles, wedges) are not covered by this instant read yet — use the prompt below if you want an AI to look for those.</div>';
+
+  const box = document.getElementById('quick');
+  box.innerHTML = html;
+  box.classList.add('show');
+}
+
 function renderQuick(d) {
   const q = quickRead(d);
   const box = document.getElementById('quick');
@@ -517,7 +550,7 @@ async function runScan(kind, btn) {
   try {
     let text, quickData = null;
     document.getElementById('quick').classList.remove('show');
-    out.open = kind !== 'general';
+    out.open = kind === 'market';
     if (kind === 'market') {
       text = marketPrompt();
     } else {
@@ -527,13 +560,13 @@ async function runScan(kind, btn) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Could not load data for this symbol');
       text = kind === 'general' ? generalPrompt(d) : patternPrompt(d);
-      if (kind === 'general') quickData = d;
+      if (kind === 'general' || kind === 'pattern') quickData = d;
     }
     if (activeScan !== kind) return; // user switched scans mid-load
     promptBox.value = text;
-    document.getElementById('outLabel').textContent = kind === 'general' ? 'Copy prompt for a deeper AI write-up' : labels[kind];
+    document.getElementById('outLabel').textContent = kind === 'market' ? labels[kind] : 'Copy prompt for a deeper AI write-up';
     out.classList.add('show');
-    if (quickData) renderQuick(quickData);
+    if (quickData) (kind === 'pattern' ? renderPatternQuick : renderQuick)(quickData);
     statusEl.textContent = quickData ? '' : 'Ready — copy it into your AI assistant.';
   } catch (e) {
     statusEl.textContent = e.message;

@@ -40,6 +40,7 @@ from api.indicators import calculate_all
 from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
+from api import patterns as pattern_engine
 from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
@@ -3620,6 +3621,7 @@ def ai_chart_data():
             "candle_columns": ["time", "open", "high", "low", "close", "volume"],
             "candles": candles,
             "indicators": indicators,
+            "patterns": pattern_engine.analyze(candles, forming=in_progress),
             "history_columns": ["time", "close", "rsi14", "macd", "macd_signal", "macd_hist", "obv_rel"],
             "history": history_rows,
             "structure": {
