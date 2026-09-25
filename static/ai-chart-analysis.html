@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Chart Analysis — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://s3.tradingview.com/tv.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+
+.page { padding: 84px 20px 40px; max-width: 1600px; margin: 0 auto; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #a855f7; margin-bottom: 6px; }
+.title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.02em; }
+.title .accent { color: #a855f7; }
+
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sym-wrap { position: relative; }
+.ctl { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 10px; padding: 9px 12px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; outline: none; }
+.ctl:focus { border-color: #a855f7; }
+#symInput { width: 230px; }
+.sym-results { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; z-index: 30; max-height: 260px; overflow-y: auto; display: none; }
+.sym-item { padding: 8px 12px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; gap: 10px; }
+.sym-item:hover { background: rgba(168,85,247,0.1); }
+.sym-item small { color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 16px; align-items: start; }
+.chart-card, .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.chart-card { height: calc(100vh - 210px); min-height: 460px; }
+#tvChart { width: 100%; height: 100%; }
+.panel { padding: 18px; display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 210px); min-height: 460px; overflow-y: auto; }
+.panel-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.panel-sub { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+.scan-btn { text-align: left; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 12px; padding: 12px 14px; cursor: pointer; font-family: inherit; transition: border-color 0.2s, background 0.2s; }
+.scan-btn:hover { border-color: #a855f7; }
+.scan-btn.active { border-color: #a855f7; background: rgba(168,85,247,0.08); }
+.scan-btn b { display: block; font-size: 14px; margin-bottom: 3px; }
+.scan-btn span { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+.out { display: none; flex-direction: column; gap: 8px; }
+.out.show { display: flex; }
+.out-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#promptBox { width: 100%; height: 190px; resize: vertical; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 10px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.5; outline: none; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid #a855f7; background: rgba(168,85,247,0.12); color: var(--text); border-radius: 10px; padding: 9px 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+.btn:hover { background: rgba(168,85,247,0.22); }
+.btn.ghost { border-color: var(--border2); background: transparent; color: var(--muted); font-weight: 500; }
+.btn.ghost:hover { color: var(--text); border-color: #a855f7; }
+.status { font-size: 12px; color: var(--muted); min-height: 16px; }
+.status.err { color: #ff4757; }
+.disclaimer { font-size: 11px; color: var(--muted); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto; }
+
+/* Locked preview */
+.locked-wrap { position: relative; }
+.locked-wrap .blur { filter: blur(3px); pointer-events: none; user-select: none; opacity: 0.85; }
+.lock-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5; padding: 20px; }
+.lock-card { background: var(--bg2); border: 1px solid #a855f7; border-radius: 16px; padding: 28px 30px; max-width: 420px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+.lock-card h2 { font-family: 'Outfit', sans-serif; font-size: 22px; margin: 6px 0 8px; }
+.lock-card p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+.mock-line { height: 9px; border-radius: 5px; background: var(--border2); margin: 7px 0; }
+
+@media (max-width: 1000px) {
+  .layout { grid-template-columns: 1fr; }
+  .chart-card { height: 420px; min-height: 0; }
+  .panel { max-height: none; }
+  #symInput { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js" data-logo="GCT Square.png"></script>
+
+<div class="page">
+  <div class="page-head">
+    <div>
+      <div class="badge">Tools · Pro &amp; Founder</div>
+      <h1 class="title">AI <span class="accent">Chart Analysis</span></h1>
+    </div>
+    <div class="controls" id="controls" style="display:none;">
+      <div class="sym-wrap">
+        <input class="ctl" id="symInput" placeholder="Search symbol, e.g. AAPL, BTC-USD" autocomplete="off">
+        <div class="sym-results" id="symResults"></div>
+      </div>
+      <select class="ctl" id="tfSelect">
+        <option value="5m">5m</option>
+        <option value="15m">15m</option>
+        <option value="1h">1h</option>
+        <option value="4h">4h</option>
+        <option value="1d" selected>1D</option>
+        <option value="1wk">1W</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Full experience -->
+  <div class="layout" id="fullView" style="display:none;">
+    <div class="chart-card"><div id="tvChart"></div></div>
+    <aside class="panel">
+      <div class="panel-title">🤖 AI Chart Analysis</div>
+      <div class="panel-sub">Pick a scan. We build a prompt from this chart's live data — copy it into your own AI assistant (ChatGPT, Claude, Gemini, etc.). Nothing is sent to us or billed to you.</div>
+
+      <button class="scan-btn" data-scan="general"><b>General chart scan</b><span>Market conditions from Bollinger Bands, volume, moving averages, RSI, MACD, swing highs/lows and more.</span></button>
+      <button class="scan-btn" data-scan="market"><b>Market information scan</b><span>What the asset is, recent news and upcoming events. Needs an AI with web search.</span></button>
+      <button class="scan-btn" data-scan="pattern"><b>Pattern scan</b><span>Advanced technical analysis: chart patterns, support/resistance, trendlines and structure.</span></button>
+
+      <div class="status" id="status"></div>
+      <div class="out" id="out">
+        <div class="out-label" id="outLabel">Prompt</div>
+        <textarea id="promptBox" readonly></textarea>
+        <div class="row">
+          <button class="btn" id="copyBtn">Copy prompt</button>
+          <a class="btn ghost" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a>
+          <a class="btn ghost" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a>
+          <a class="btn ghost" href="https://gemini.google.com/app" target="_blank" rel="noopener">Open Gemini</a>
+        </div>
+      </div>
+      <div class="disclaimer">Educational and historical analysis only — not personal advice or a recommendation. AI output can be wrong; always check it against the chart yourself.</div>
+    </aside>
+  </div>
+
+  <!-- Locked preview for free / signed-out visitors -->
+  <div class="locked-wrap" id="lockedView" style="display:none;">
+    <div class="layout blur" aria-hidden="true">
+      <div class="chart-card"><svg id="mockChart" viewBox="0 0 800 420" preserveAspectRatio="none" style="width:100%;height:100%;display:block;"></svg></div>
+      <aside class="panel">
+        <div class="panel-title">🤖 AI Chart Analysis</div>
+        <button class="scan-btn active"><b>General chart scan</b><span>Market conditions from Bollinger Bands, volume, moving averages, RSI…</span></button>
+        <button class="scan-btn"><b>Market information scan</b><span>Asset overview, news and upcoming events.</span></button>
+        <button class="scan-btn"><b>Pattern scan</b><span>Chart patterns, support/resistance and structure.</span></button>
+        <div class="mock-line" style="width:92%"></div><div class="mock-line" style="width:78%"></div><div class="mock-line" style="width:85%"></div><div class="mock-line" style="width:60%"></div>
+      </aside>
+    </div>
+    <div class="lock-overlay">
+      <div class="lock-card">
+        <div style="font-size:30px;">🔒</div>
+        <h2>Pro &amp; Founder feature</h2>
+        <p>AI Chart Analysis gives you a live chart plus ready-made AI scans for indicators, market information and chart patterns.</p>
+        <div class="row" style="justify-content:center;" id="lockCtas"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/footer.js"></script>
+<script>
+// ── Symbol → TradingView symbol (best effort; unknown tickers pass through) ─────────
+const TV_FUTURES = { 'GC=F': 'COMEX:GC1!', 'SI=F': 'COMEX:SI1!', 'CL=F': 'NYMEX:CL1!', 'NG=F': 'NYMEX:NG1!', 'HG=F': 'COMEX:HG1!', 'ES=F': 'CME_MINI:ES1!', 'NQ=F': 'CME_MINI:NQ1!' };
+const TV_INDICES = { '^GSPC': 'SP:SPX', '^IXIC': 'NASDAQ:IXIC', '^DJI': 'DJ:DJI', '^FTSE': 'FTSE:UKX', '^N225': 'TVC:NI225', '^GDAXI': 'XETR:DAX', '^VIX': 'TVC:VIX' };
+const TV_INTERVALS = { '5m': '5', '15m': '15', '1h': '60', '4h': '240', '1d': 'D', '1wk': 'W' };
+
+function toTvSymbol(sym) {
+  sym = sym.toUpperCase();
+  if (TV_FUTURES[sym]) return TV_FUTURES[sym];
+  if (TV_INDICES[sym]) return TV_INDICES[sym];
+  if (sym.endsWith('=X')) {
+    const p = sym.slice(0, -2);
+    return 'FX:' + (p.length === 3 ? 'USD' + p : p);
+  }
+  if (/-USD$/.test(sym)) return 'BINANCE:' + sym.replace('-USD', '') + 'USDT';
+  if (sym.endsWith('.L')) return 'LSE:' + sym.slice(0, -2);
+  return sym;
+}
+
+let current = { symbol: 'AAPL', name: 'Apple Inc.' };
+let activeScan = null;
+
+// ── Chart ─────────────────────────────────────────────────────────────────────────────
+function loadChart() {
+  const box = document.getElementById('tvChart');
+  box.innerHTML = '';
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  new TradingView.widget({
+    autosize: true,
+    symbol: toTvSymbol(current.symbol),
+    interval: TV_INTERVALS[document.getElementById('tfSelect').value] || 'D',
+    timezone: 'Etc/UTC',
+    theme: dark ? 'dark' : 'light',
+    style: '1',
+    locale: 'en',
+    enable_publishing: false,
+    // Symbol changes go through our own search box so the scan always matches the chart.
+    allow_symbol_change: false,
+    container_id: 'tvChart',
+    studies: ['Volume@tv-basicstudies'],
+    save_image: false,
+    withdateranges: window.innerWidth > 768,
+    hide_side_toolbar: window.innerWidth <= 768,
+  });
+}
+document.addEventListener('gcg-theme-change', () => { if (fullOn) loadChart(); });
+
+// ── Symbol search ─────────────────────────────────────────────────────────────────────
+const symInput = document.getElementById('symInput');
+const symResults = document.getElementById('symResults');
+let searchTimer = null;
+
+symInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  const q = symInput.value.trim();
+  if (!q) { symResults.style.display = 'none'; return; }
+  searchTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/symbol-search?q=' + encodeURIComponent(q));
+      const data = await res.json();
+      symResults.innerHTML = (data.results || []).map(r =>
+        `<div class="sym-item" data-sym="${esc(r.symbol)}" data-name="${esc(r.name)}"><span>${esc(r.symbol)}</span><small>${esc(r.name)} · ${esc(r.exchange)}</small></div>`).join('')
+        || '<div class="sym-item"><small>No matches</small></div>';
+      symResults.style.display = 'block';
+    } catch (e) { symResults.style.display = 'none'; }
+  }, 250);
+});
+symInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = symInput.value.trim();
+    if (q) chooseSymbol(q.toUpperCase(), q.toUpperCase());
+  }
+});
+symResults.addEventListener('click', e => {
+  const it = e.target.closest('.sym-item[data-sym]');
+  if (it) chooseSymbol(it.dataset.sym, it.dataset.name);
+});
+document.addEventListener('click', e => { if (!e.target.closest('.sym-wrap')) symResults.style.display = 'none'; });
+
+function chooseSymbol(sym, name) {
+  current = { symbol: sym, name: name || sym };
+  symInput.value = sym;
+  symResults.style.display = 'none';
+  resetOutput();
+  loadChart();
+}
+document.getElementById('tfSelect').addEventListener('change', () => { resetOutput(); loadChart(); });
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// ── Prompts ───────────────────────────────────────────────────────────────────────────
+const RULES = `Rules: this is educational and historical analysis only. Do not give personal financial advice, price targets, or buy/sell/hold recommendations. Describe what the data shows and what it has historically tended to indicate. Base everything on the data below; if something isn't in the data, say so rather than guessing.`;
+
+function tfLabel(tf) { return { '5m': '5-minute', '15m': '15-minute', '1h': '1-hour', '4h': '4-hour', '1d': 'daily', '1wk': 'weekly' }[tf] || tf; }
+
+function generalPrompt(d) {
+  return `You are a technical analyst writing an educational market-conditions summary.
+
+Asset: ${current.name} (${d.symbol}) — ${tfLabel(d.interval)} chart, latest bar ${d.candles[d.candles.length - 1][0]}.
+
+${RULES}
+
+Using the indicator snapshot below, write a General Chart Scan covering:
+1. Trend: moving averages (position of price vs each, any recent crossovers), swing structure (higher highs/lower lows), ADX strength, Supertrend/PSAR/Ichimoku where present.
+2. Momentum: RSI, MACD (line vs signal, histogram), Stochastic, CCI, ROC — and whether they agree or diverge.
+3. Volatility: Bollinger Bands (position, %B, bandwidth squeeze/expansion), ATR.
+4. Volume: current vs average, OBV/MFI, whether volume confirms the move.
+5. Range context: where price sits in the recent range.
+6. A short overall read: which signals align, which conflict, and what would change the picture.
+
+Keep it structured with short headings and plain language.
+
+INDICATOR SNAPSHOT (JSON):
+${JSON.stringify(d.indicators)}
+
+SWING STRUCTURE (JSON):
+${JSON.stringify(d.structure)}`;
+}
+
+function patternPrompt(d) {
+  const csv = d.candles.map(c => c.join(',')).join('\n');
+  return `You are a technical analyst writing an educational chart-pattern review.
+
+Asset: ${current.name} (${d.symbol}) — ${tfLabel(d.interval)} chart, last ${d.candles.length} candles.
+
+${RULES}
+
+From the OHLCV candles below, write a Pattern Scan covering:
+1. Candlestick patterns in the most recent bars (engulfing, doji, hammer/shooting star, inside bars, etc.).
+2. Larger chart patterns forming or completed: head and shoulders (and inverse), double/triple tops and bottoms, triangles, wedges, flags/pennants, channels, cup and handle, ranges.
+3. Key support and resistance levels (give the actual prices from the data) and any trendlines.
+4. Breakouts, retests or failed breakouts visible in the data.
+5. For each pattern: how clear it is (clear / tentative / not present), what the pattern has historically tended to suggest, and what would invalidate it.
+
+Only report patterns you can actually see in the data. Say "none clearly present" where that's the case.
+
+Swing structure computed from the data (JSON): ${JSON.stringify(d.structure)}
+
+CANDLES (${d.candle_columns.join(',')}), oldest first:
+${csv}`;
+}
+
+function marketPrompt() {
+  return `You are a market researcher writing an educational briefing. Use web search / browsing if you have it; if you can't browse, say so clearly at the top and only use what you reliably know.
+
+Asset: ${current.name} (${current.symbol})
+
+${RULES}
+
+Write a Market Information Scan covering:
+1. What it is: a short plain-English overview (company/coin/currency/commodity/index — what drives its price, sector or category, key facts).
+2. Recent news: the most relevant stories from roughly the last 30 days, each with a one-line summary, the date, and the source. Group them as positive / negative / neutral for the asset.
+3. Upcoming scheduled events that could move it: earnings dates, economic data releases, central bank meetings, token unlocks, index changes, regulatory decisions — whichever apply.
+4. Broader context: sector or macro backdrop currently affecting it.
+5. Overall sentiment in the coverage, and what is uncertain or contested.
+
+Cite every news item with its source and date. Don't invent stories — if little is found, say so.`;
+}
+
+// ── Scan handling ─────────────────────────────────────────────────────────────────────
+const statusEl = document.getElementById('status');
+const out = document.getElementById('out');
+const promptBox = document.getElementById('promptBox');
+
+function resetOutput() {
+  out.classList.remove('show');
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+  document.querySelectorAll('.scan-btn[data-scan]').forEach(b => b.classList.remove('active'));
+  activeScan = null;
+}
+
+document.querySelectorAll('.scan-btn[data-scan]').forEach(btn => {
+  btn.addEventListener('click', () => runScan(btn.dataset.scan, btn));
+});
+
+async function runScan(kind, btn) {
+  document.querySelectorAll('.scan-btn[data-scan]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeScan = kind;
+  statusEl.className = 'status';
+  const labels = { general: 'General chart scan prompt', market: 'Market information scan prompt', pattern: 'Pattern scan prompt' };
+
+  try {
+    let text;
+    if (kind === 'market') {
+      text = marketPrompt();
+    } else {
+      statusEl.textContent = 'Loading chart data…';
+      const tf = document.getElementById('tfSelect').value;
+      const res = await fetch(`/api/ai-chart-data?symbol=${encodeURIComponent(current.symbol)}&interval=${tf}`, { credentials: 'include' });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Could not load data for this symbol');
+      text = kind === 'general' ? generalPrompt(d) : patternPrompt(d);
+    }
+    if (activeScan !== kind) return; // user switched scans mid-load
+    promptBox.value = text;
+    document.getElementById('outLabel').textContent = labels[kind];
+    out.classList.add('show');
+    statusEl.textContent = 'Ready — copy it into your AI assistant.';
+  } catch (e) {
+    statusEl.textContent = e.message;
+    statusEl.className = 'status err';
+    out.classList.remove('show');
+  }
+}
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('copyBtn');
+  try { await navigator.clipboard.writeText(promptBox.value); }
+  catch (e) { promptBox.select(); document.execCommand('copy'); }
+  btn.textContent = 'Copied ✓';
+  setTimeout(() => btn.textContent = 'Copy prompt', 1800);
+});
+
+// ── Access gate ───────────────────────────────────────────────────────────────────────
+let fullOn = false;
+
+function drawMockChart() {
+  const svg = document.getElementById('mockChart');
+  let y = 250, html = '';
+  const bars = 60;
+  for (let i = 0; i < bars; i++) {
+    const seed = Math.sin(i * 12.9898) * 43758.5453;
+    const r = seed - Math.floor(seed);
+    const open = y, close = y + (r - 0.47) * 26;
+    const hi = Math.min(open, close) - r * 9 - 3, lo = Math.max(open, close) + (1 - r) * 9 + 3;
+    const x = 20 + i * 12.5, up = close < open;
+    const col = up ? '#00d4aa' : '#ff4757';
+    html += `<line x1="${x}" x2="${x}" y1="${hi}" y2="${lo}" stroke="${col}" stroke-width="1.2"/><rect x="${x - 3.5}" y="${Math.min(open, close)}" width="7" height="${Math.max(2, Math.abs(open - close))}" fill="${col}"/>`;
+    y = Math.max(90, Math.min(330, close));
+  }
+  svg.innerHTML = html;
+}
+
+(async function init() {
+  let allowed = false, authed = false;
+  try {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    const me = await res.json();
+    authed = !!me.authenticated;
+    allowed = authed && ['pro', 'founder'].includes(me.tier);
+  } catch (e) {}
+
+  if (allowed) {
+    fullOn = true;
+    document.getElementById('controls').style.display = 'flex';
+    document.getElementById('fullView').style.display = 'grid';
+    symInput.value = current.symbol;
+    loadChart();
+  } else {
+    drawMockChart();
+    document.getElementById('lockedView').style.display = 'block';
+    document.getElementById('lockCtas').innerHTML = authed
+      ? '<a class="btn" href="/profile">Upgrade to Pro</a>'
+      : '<a class="btn" href="/profile">Sign in</a><a class="btn ghost" href="/profile">Create account</a>';
+  }
+})();
+</script>
+</body>
+</html>

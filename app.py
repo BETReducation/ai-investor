@@ -3438,6 +3438,97 @@ def notify_email():
     return jsonify({"sent": True})
 
 
+# ── AI Chart Analysis (pro/founder) ─────────────────────────────────────────
+# No model call happens server-side: this only assembles the chart's computed
+# indicators + recent candles so the page can build a prompt the user pastes into
+# their own AI assistant (keeps the feature free to run for us).
+_AI_CHART_INTERVALS = {
+    "5m": ("5d", "5m"), "15m": ("1mo", "15m"), "1h": ("3mo", "1h"),
+    "4h": ("3mo", "4h"), "1d": ("1y", "1d"), "1wk": ("2y", "1wk"),
+}
+_AI_CHART_INDICATOR_KEYS = (
+    "rsi", "macd", "bollinger_bands", "moving_averages", "volume", "price", "crossovers",
+    "stochastic", "adx", "atr", "mfi", "vwap", "psar", "supertrend", "aroon", "cci", "roc",
+    "ichimoku",
+)
+
+
+def _swing_points(values: list, k: int = 3, high: bool = True) -> list:
+    """Indices of local extremes that beat the k bars either side (fractal swings)."""
+    out = []
+    for i in range(k, len(values) - k):
+        window = values[i - k:i + k + 1]
+        if values[i] == (max(window) if high else min(window)) and window.count(values[i]) == 1:
+            out.append(i)
+    return out
+
+
+def _trend_structure(swing_highs: list, swing_lows: list) -> str:
+    def direction(pts):
+        if len(pts) < 2:
+            return None
+        return "rising" if pts[-1] > pts[-2] else "falling" if pts[-1] < pts[-2] else "flat"
+    hi, lo = direction(swing_highs), direction(swing_lows)
+    if hi == "rising" and lo == "rising":
+        return "higher highs and higher lows"
+    if hi == "falling" and lo == "falling":
+        return "lower highs and lower lows"
+    if hi == "rising" and lo == "falling":
+        return "higher highs but lower lows (expanding range)"
+    if hi == "falling" and lo == "rising":
+        return "lower highs but higher lows (contracting range)"
+    return "no clear swing structure"
+
+
+@app.route("/api/ai-chart-data", methods=["GET"])
+@tier_required("pro")
+def ai_chart_data():
+    symbol = (request.args.get("symbol") or "").strip()
+    tf = request.args.get("interval", "1d")
+    if not symbol or tf not in _AI_CHART_INTERVALS:
+        return jsonify({"error": "symbol and a valid interval are required"}), 400
+    period, interval = _AI_CHART_INTERVALS[tf]
+    try:
+        df = _fetch_ohlcv(symbol, period, interval)
+        ind = calculate_all(df)
+        rows = df.tail(120)
+        highs = [float(x) for x in rows["High"].tolist()]
+        lows = [float(x) for x in rows["Low"].tolist()]
+        sh = [highs[i] for i in _swing_points(highs, 3, True)][-4:]
+        sl = [lows[i] for i in _swing_points(lows, 3, False)][-4:]
+        candles = [
+            [str(ts)[:16], round(float(r.Open), 6), round(float(r.High), 6),
+             round(float(r.Low), 6), round(float(r.Close), 6), int(r.Volume or 0)]
+            for ts, r in zip(rows.index, rows.itertuples())
+        ]
+        close = candles[-1][4]
+        return jsonify({
+            "symbol": symbol.upper(),
+            "interval": tf,
+            "candle_columns": ["time", "open", "high", "low", "close", "volume"],
+            "candles": candles,
+            "indicators": {k: ind.get(k) for k in _AI_CHART_INDICATOR_KEYS if k in ind},
+            "structure": {
+                "recent_swing_highs": [round(x, 6) for x in sh],
+                "recent_swing_lows": [round(x, 6) for x in sl],
+                "swing_read": _trend_structure(sh, sl),
+                "range_high": round(max(highs), 6),
+                "range_low": round(min(lows), 6),
+                "close_vs_range_pct": round((close - min(lows)) / (max(highs) - min(lows)) * 100, 1)
+                                      if max(highs) > min(lows) else None,
+                "bars_in_range": len(candles),
+            },
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Failed to load chart data: {e}"}), 500
+
+
+@app.route("/tools/ai-chart-analysis")
+def tools_ai_chart_analysis(): return send_from_directory("static", "ai-chart-analysis.html")
+
+
 @app.route("/api/me", methods=["GET"])
 def api_me():
     if not current_user.is_authenticated:
@@ -3586,7 +3677,7 @@ def load_preferences():
 LANDING_PAGE_CHOICES = {
     "/",
     "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/guest-lessons", "/learn/tools",
-    "/tools", "/tools/signals", "/backtester", "/tools/portfolio", "/tools/calculator",
+    "/tools", "/tools/signals", "/backtester", "/tools/ai-chart-analysis", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
     "/partners", "/profile",
@@ -4361,6 +4452,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
     {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},
     {"title": "Backtester", "url": "/backtester", "sub": "Tool"},
+    {"title": "AI Chart Analysis", "url": "/tools/ai-chart-analysis", "sub": "Tool"},
     {"title": "Portfolio Balancer", "url": "/tools/portfolio", "sub": "Tool"},
     {"title": "Calculator", "url": "/tools/calculator", "sub": "Tool"},
     {"title": "Data Visualisation", "url": "/tools/data-visualisation", "sub": "Tool"},

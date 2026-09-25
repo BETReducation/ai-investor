@@ -54,6 +54,7 @@
 '      <ul class="nav-dropdown">' +
 '        <li><a href="/tools/signals">Signals</a></li>' +
 '        <li><a href="/backtester">Backtester</a></li>' +
+'        <li><a href="/tools/ai-chart-analysis">AI Chart Analysis</a></li>' +
 '        <li><a href="/tools/portfolio">Portfolio Manager</a></li>' +
 '        <li><a href="/tools/calculator">Calculator</a></li>' +
 '        <li><a href="/tools/data-visualisation">Data Visualisation</a></li>' +
