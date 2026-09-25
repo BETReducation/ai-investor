@@ -3566,7 +3566,12 @@ def ai_chart_data():
         mad = sum(abs(x - tp_ma) for x in tp) / len(tp)
         cci = round((tp[-1] - tp_ma) / (0.015 * mad), 1) if mad else None
 
-        in_progress = vols[-1] <= 0
+        # A bar is still forming if "now" falls inside its own window, not just when
+        # its volume is missing — a daily bar dated today has real but partial volume.
+        bar_len = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400, "1wk": 604800}[tf]
+        last_ts = pd.Timestamp(df.index[-1])
+        last_ts = last_ts.tz_localize("UTC") if last_ts.tzinfo is None else last_ts.tz_convert("UTC")
+        in_progress = vols[-1] <= 0 or (pd.Timestamp.now(tz="UTC") - last_ts).total_seconds() < bar_len
         last_i = -2 if in_progress else -1
         prior = [v for v in vols[:last_i] if v > 0][-20:]
         avg20 = sum(prior) / len(prior) if prior else None
@@ -3601,7 +3606,7 @@ def ai_chart_data():
         indicators["price"] = {"open": candles[-1][1], "high": candles[-1][2], "low": candles[-1][3], "close": candles[-1][4]}
         indicators["volume"] = {
             "last_bar_volume": vols[-1],
-            "last_bar_in_progress_or_missing_volume": in_progress,
+            "last_bar_still_forming_or_missing_volume": in_progress,
             "last_complete_bar_volume": vols[last_i],
             "avg_volume_prior_20_bars": avg20,
             "last_complete_vs_avg_ratio": round(vols[last_i] / avg20, 2) if avg20 else None,

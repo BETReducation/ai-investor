@@ -291,7 +291,7 @@ ${JSON.stringify(d.structure)}
 RECENT HISTORY, last ${d.history.length} bars, oldest first (${d.history_columns.join(',')}). obv_rel is OBV change since the first row, in units of average bar volume:
 ${d.history.map(r => r.join(',')).join('\n')}
 
-Notes: in "crossovers", the *_bars_since_cross fields give bars since each crossover and *_direction of 1 means the fast line is above the slow one (-1 below). Volume fields marked in-progress refer to an unfinished bar; use the last complete bar instead.`;
+Notes: in "crossovers", the *_bars_since_cross fields give bars since each crossover and *_direction of 1 means the fast line is above the slow one (-1 below). If last_bar_still_forming_or_missing_volume is true, the newest bar is unfinished: its volume is partial, so use the last complete bar's volume instead and treat the newest bar's price readings as provisional.`;
 }
 
 function patternPrompt(d) {
