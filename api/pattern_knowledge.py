@@ -147,3 +147,24 @@ LEVELS = {
     "what": "Support is a price where the market has repeatedly stopped falling; resistance is one where it has repeatedly stopped rising. The more times a level has been touched, the more attention it tends to draw.",
     "suggests": "Historically, price often reacts near these levels, and a decisive close through one is treated as meaningful.",
 }
+
+CHART_PATTERNS = {
+    "double_top": {
+        "label": "Double top",
+        "what": "Price rose to a high, pulled back, then rose to about the same high again and was turned back a second time.",
+        "suggests": "Two failures at the same level have historically been read as a sign buyers are running out of strength. The pattern is only considered confirmed once price closes below the low between the two peaks (the neckline).",
+        "invalidation": "A close above both peaks.",
+    },
+    "double_bottom": {
+        "label": "Double bottom",
+        "what": "Price fell to a low, bounced, then fell to about the same low again and held a second time.",
+        "suggests": "Two holds at the same level have historically been read as a sign sellers are running out of strength. The pattern is only considered confirmed once price closes above the high between the two lows (the neckline).",
+        "invalidation": "A close below both lows.",
+    },
+    "range": {
+        "label": "Sideways range",
+        "what": "Price has bounced between a floor and a ceiling several times without making progress in either direction.",
+        "suggests": "A range shows buyers and sellers in balance. Moves inside it tend to be choppy, and the direction of the eventual break has historically often set the next larger move.",
+        "invalidation": "A close beyond either boundary ends the range.",
+    },
+}

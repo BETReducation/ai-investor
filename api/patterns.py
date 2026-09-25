@@ -5,7 +5,7 @@ Everything here is deliberately conservative and explainable: each pattern is an
 explicit rule, and descriptions live in pattern_knowledge.py. Geometry-heavy chart
 patterns (double tops, head and shoulders, triangles...) are not covered yet.
 """
-from .pattern_knowledge import CANDLESTICKS, EVENTS, LEVELS
+from .pattern_knowledge import CANDLESTICKS, CHART_PATTERNS, EVENTS, LEVELS
 
 _T, _O, _H, _L, _C = 0, 1, 2, 3, 4
 
@@ -241,6 +241,118 @@ def detect_events(candles: list, levels: list, a: float, forming: bool = False, 
     return events[:4]
 
 
+def detect_double_tops_bottoms(candles: list, a: float, forming: bool = False, max_age: int = 30) -> list:
+    """Most recent valid double top and double bottom (at most one of each)."""
+    n = len(candles)
+    highs = [c[_H] for c in candles]
+    lows = [c[_L] for c in candles]
+    closes = [c[_C] for c in candles]
+    band = 0.25 * a
+    tol = 0.6 * a
+    out = []
+    for top in (True, False):
+        vals = highs if top else lows
+        swings = swing_points(vals, 2, top)
+        best = None
+        for x in range(len(swings)):
+            for y in range(x + 1, len(swings)):
+                i1, i2 = swings[x], swings[y]
+                if not 5 <= i2 - i1 <= 60 or n - 1 - i2 > max_age:
+                    continue
+                p1, p2 = vals[i1], vals[i2]
+                if abs(p1 - p2) > tol:
+                    continue
+                if top:
+                    neck, extreme = min(lows[i1:i2 + 1]), max(p1, p2)
+                    if max(highs[i1 + 1:i2]) > extreme + tol:
+                        continue
+                    depth = min(p1, p2) - neck
+                    lead = p1 - min(lows[max(0, i1 - 15):i1])
+                else:
+                    neck, extreme = max(highs[i1:i2 + 1]), min(p1, p2)
+                    if min(lows[i1 + 1:i2]) < extreme - tol:
+                        continue
+                    depth = neck - max(p1, p2)
+                    lead = max(highs[max(0, i1 - 15):i1]) - p1
+                if depth < 1.5 * a or lead < 2.5 * a:
+                    continue
+
+                def _beyond_peaks(k):      # price closed past both peaks: pattern is void
+                    return closes[k] > extreme + band if top else closes[k] < extreme - band
+
+                def _through_neckline(k):  # the confirming move
+                    return closes[k] < neck - band if top else closes[k] > neck + band
+
+                def _back_over_neckline(k):
+                    return closes[k] > neck + band if top else closes[k] < neck - band
+
+                after = range(i2 + 1, n)
+                if any(_beyond_peaks(k) for k in after):
+                    continue
+                brk = next((k for k in after if _through_neckline(k)), None)
+                if brk is not None and any(_back_over_neckline(k) for k in range(brk + 1, n)):
+                    continue
+                cand = (i2, -abs(p1 - p2))
+                if best is None or cand > best[0]:
+                    best = (cand, i1, i2, neck, brk)
+        if best:
+            _, i1, i2, neck, brk = best
+            key = "double_top" if top else "double_bottom"
+            kb = CHART_PATTERNS[key]
+            confirmed = brk is not None
+            out.append({
+                "key": key, "label": kb["label"], "bias": "bearish" if top else "bullish",
+                "status": "confirmed" if confirmed else "forming",
+                "clarity": "Clear" if confirmed else "Tentative",
+                "points": [[candles[i1][_T], vals[i1]], [candles[i2][_T], vals[i2]]],
+                "neckline": neck,
+                "break_time": candles[brk][_T] if confirmed else None,
+                "provisional": forming and (brk == n - 1 or i2 == n - 1),
+                "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
+            })
+    return out
+
+
+def detect_range(candles: list, a: float, forming: bool = False) -> list:
+    """Sideways range: two or more touches of both a ceiling and a floor with little net drift."""
+    n = len(candles)
+    for window in (60, 45, 30, 20):
+        if n < window:
+            continue
+        w = candles[-window:]
+        hi, lo = max(c[_H] for c in w), min(c[_L] for c in w)
+        height = hi - lo
+        if height < 2 * a or height > 10 * a:
+            continue
+
+        def _touches(hit) -> int:
+            count, last = 0, -10
+            for i, c in enumerate(w):
+                if hit(c) and i - last >= 3:
+                    count += 1
+                if hit(c):
+                    last = i
+            return count
+
+        top_touches = _touches(lambda c: c[_H] >= hi - 0.2 * height)
+        bottom_touches = _touches(lambda c: c[_L] <= lo + 0.2 * height)
+        drift = abs(w[-1][_C] - w[0][_C])
+        if top_touches >= 2 and bottom_touches >= 2 and drift <= 0.4 * height:
+            kb = CHART_PATTERNS["range"]
+            return [{
+                "key": "range", "label": kb["label"], "bias": "neutral",
+                "status": "active",
+                "clarity": "Clear" if min(top_touches, bottom_touches) >= 3 else "Tentative",
+                "top": hi, "bottom": lo, "bars": window,
+                "top_touches": top_touches, "bottom_touches": bottom_touches,
+                "start_time": w[0][_T],
+                "position_pct": round((w[-1][_C] - lo) / height * 100, 1),
+                "provisional": False,
+                "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
+            }]
+    return []
+
+
 def _fmt(x: float) -> str:
     a = abs(x)
     return f"{x:.0f}" if a >= 100 else f"{x:.2f}" if a >= 1 else f"{x:.4f}" if a >= 0.01 else f"{x:.6f}"
@@ -285,6 +397,19 @@ def summarize(result: dict, close: float) -> str:
     for e in result["events"][:2]:
         parts.append(phrases[e["key"]].format(lv=_fmt(e["level"]), d=e["time"][:10]))
 
+    for cp in result.get("chart_patterns", []):
+        if cp["key"] == "range":
+            where = "near the top of" if cp["position_pct"] >= 75 else "near the bottom of" if cp["position_pct"] <= 25 else "in the middle of"
+            parts.append(f"Price has been moving sideways between {_fmt(cp['bottom'])} and {_fmt(cp['top'])} for about {cp['bars']} bars and is {where} that range.")
+        else:
+            name = cp["label"].lower()
+            pts = " and ".join(f"{_fmt(p)} ({t[:10]})" for t, p in cp["points"])
+            if cp["status"] == "confirmed":
+                parts.append(f"A {name} at {pts} has been confirmed by a close through the neckline at {_fmt(cp['neckline'])} on {cp['break_time'][:10]}.")
+                (ev_bull if cp["bias"] == "bullish" else ev_bear).append(cp)
+            else:
+                parts.append(f"A possible {name} is forming at {pts}; it would only be confirmed by a close through {_fmt(cp['neckline'])}.")
+
     score = len(bull) + len(ev_bull) - len(bear) - len(ev_bear)
     if bull or ev_bull or bear or ev_bear:
         if (bull or ev_bull) and (bear or ev_bear):
@@ -304,6 +429,7 @@ def analyze(candles: list, forming: bool = False) -> dict:
         "candlesticks": detect_candlesticks(candles, 5, forming),
         "levels": {"support": sr["support"], "resistance": sr["resistance"], "kb": LEVELS},
         "events": detect_events(candles, sr["all"], sr["atr"], forming),
+        "chart_patterns": detect_double_tops_bottoms(candles, sr["atr"], forming) + detect_range(candles, sr["atr"], forming),
     }
     result["summary"] = summarize(result, candles[-1][_C])
     return result

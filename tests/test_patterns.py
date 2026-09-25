@@ -107,5 +107,56 @@ class LevelTests(unittest.TestCase):
         self.assertIn("summary", result)
 
 
+def ramp(a, b, steps):
+    return [a + (b - a) * (k + 1) / steps for k in range(steps)]
+
+
+class ChartPatternTests(unittest.TestCase):
+    def _double_top(self, tail):
+        closes = [100.0] * 3 + ramp(100, 110, 8) + ramp(110, 104, 6) + ramp(104, 110, 6) + tail
+        return bars(path(closes))
+
+    def _double_bottom(self, tail):
+        closes = [110.0] * 3 + ramp(110, 100, 8) + ramp(100, 106, 6) + ramp(106, 100, 6) + tail
+        return bars(path(closes))
+
+    def _find(self, candles, key):
+        result = patterns.analyze(candles)
+        return next((c for c in result["chart_patterns"] if c["key"] == key), None)
+
+    def test_double_top_forming(self):
+        cp = self._find(self._double_top(ramp(110, 107, 3)), "double_top")
+        self.assertIsNotNone(cp)
+        self.assertEqual((cp["status"], cp["clarity"], cp["bias"]), ("forming", "Tentative", "bearish"))
+
+    def test_double_top_confirmed_on_neckline_break(self):
+        cp = self._find(self._double_top(ramp(110, 102, 6)), "double_top")
+        self.assertIsNotNone(cp)
+        self.assertEqual(cp["status"], "confirmed")
+        self.assertIsNotNone(cp["break_time"])
+
+    def test_double_top_voided_by_close_above_peaks(self):
+        candles = self._double_top(ramp(110, 108, 2) + ramp(108, 113, 3))
+        self.assertIsNone(self._find(candles, "double_top"))
+
+    def test_double_bottom_confirmed(self):
+        cp = self._find(self._double_bottom(ramp(100, 108, 6)), "double_bottom")
+        self.assertIsNotNone(cp)
+        self.assertEqual((cp["status"], cp["bias"]), ("confirmed", "bullish"))
+
+    def test_unequal_peaks_are_not_a_double_top(self):
+        closes = [100.0] * 3 + ramp(100, 110, 8) + ramp(110, 104, 6) + ramp(104, 116, 6) + ramp(116, 113, 3)
+        self.assertIsNone(self._find(bars(path(closes)), "double_top"))
+
+    def test_range_detected(self):
+        cp = self._find(bars(path(RANGE)), "range")
+        self.assertIsNotNone(cp)
+        self.assertTrue(cp["bottom"] < 101 and cp["top"] > 109)
+
+    def test_steady_trend_is_not_a_range(self):
+        closes = ramp(100, 130, 40)
+        self.assertIsNone(self._find(bars(path(closes)), "range"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -505,8 +505,18 @@ function renderPatternQuick(d) {
     html += P.events.map(e => card(e.label, tag(e.bias), `level ${fmt(e.level)} · ${e.time.slice(0, 10)}${e.provisional ? ' · still forming' : ''}`, `${e.what} ${e.suggests}`)).join('');
   }
 
+  if (P.chart_patterns.length) {
+    html += '<div class="out-label" style="margin-top:6px;">Chart patterns</div>';
+    html += P.chart_patterns.map(cp => {
+      const meta = cp.key === 'range'
+        ? `${cp.clarity} · ${fmt(cp.bottom)} to ${fmt(cp.top)} · ${cp.bars} bars · price ${cp.position_pct}% of the way up`
+        : `${cp.clarity} · ${cp.status === 'confirmed' ? 'confirmed ' + cp.break_time.slice(0, 10) : 'forming, not yet confirmed'} · points ${cp.points.map(p => fmt(p[1])).join(' & ')} · neckline ${fmt(cp.neckline)}`;
+      return card(cp.label, tag(cp.bias), meta, `${cp.what} ${cp.suggests}`);
+    }).join('');
+  }
+
   html += `<div class="q-sum"><b>What it means together</b>${esc(P.summary)}</div>`;
-  html += '<div class="q-text">Larger chart patterns (double tops and bottoms, head and shoulders, triangles, wedges) are not covered by this instant read yet — use the prompt below if you want an AI to look for those.</div>';
+  html += '<div class="q-text">Other chart patterns (head and shoulders, triangles, wedges, flags) are not covered by this instant read yet — use the prompt below if you want an AI to look for those.</div>';
 
   const box = document.getElementById('quick');
   box.innerHTML = html;
