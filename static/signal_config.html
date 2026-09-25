@@ -2585,12 +2585,16 @@ function renderRunners() {
   if (!box) return;
   if (runners.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
   box.style.display = 'block';
-  box.innerHTML = runners.map(r => `
-    <div class="price-alert-row" style="margin-top:4px;">
-      <span>● ${r.name.replace(/</g, '&lt;')} <span style="color:var(--text-muted);">· ${r.conditions.length} cond · ${r.timeframe} · every ${r.scanMs / 1000}s</span></span>
+  box.innerHTML = '<div class="section-label" style="margin:4px 0 6px;">RUNNING STRATEGIES</div>' + runners.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--accent-green);border-radius:3px;padding:7px 9px;margin-bottom:6px;">
+      <span class="status-dot" style="flex-shrink:0;"></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name.replace(/</g, '&lt;')}</div>
+        <div style="font-size:8px;letter-spacing:1px;color:var(--text-muted);margin-top:2px;">${r.conditions.length} COND · ${r.timeframe.toUpperCase()} · EVERY ${r.scanMs / 1000}S</div>
+      </div>
       <button class="btn-engine stop" style="width:auto;padding:3px 8px;font-size:8px;letter-spacing:1px;flex-shrink:0;" title="Stop" onclick="stopRunner('${r.id}')">■ STOP</button>
     </div>`).join('') +
-    (runners.length > 1 ? '<button class="btn-engine stop" style="margin-top:6px;padding:6px;font-size:9px;letter-spacing:2px;" onclick="stopEngine()">■ STOP ALL</button>' : '');
+    (runners.length > 1 ? '<button class="btn-engine stop" style="padding:6px;font-size:9px;letter-spacing:2px;" onclick="stopEngine()">■ STOP ALL</button>' : '');
 }
 
 // --- API HELPERS ---
