@@ -508,15 +508,22 @@ function renderPatternQuick(d) {
   if (P.chart_patterns.length) {
     html += '<div class="out-label" style="margin-top:6px;">Chart patterns</div>';
     html += P.chart_patterns.map(cp => {
-      const meta = cp.key === 'range'
-        ? `${cp.clarity} · ${fmt(cp.bottom)} to ${fmt(cp.top)} · ${cp.bars} bars · price ${cp.position_pct}% of the way up`
-        : `${cp.clarity} · ${cp.status === 'confirmed' ? 'confirmed ' + cp.break_time.slice(0, 10) : 'forming, not yet confirmed'} · points ${cp.points.map(p => fmt(p[1])).join(' & ')} · neckline ${fmt(cp.neckline)}`;
+      let meta;
+      if (cp.key === 'range') {
+        meta = `${cp.clarity} · ${fmt(cp.bottom)} to ${fmt(cp.top)} · ${cp.bars} bars · price ${cp.position_pct}% of the way up`;
+      } else if (cp.key.endsWith('triangle')) {
+        const st = cp.status === 'forming' ? 'forming, no break yet' : `broke ${cp.break_direction} ${cp.break_time.slice(0, 10)}`;
+        meta = `${cp.clarity} · ${st} · ${cp.bars} bars · ${cp.high_touches} highs / ${cp.low_touches} lows`;
+      } else {
+        const st = cp.status === 'confirmed' ? 'confirmed ' + cp.break_time.slice(0, 10) : 'forming, not yet confirmed';
+        meta = `${cp.clarity} · ${st} · points ${cp.points.map(p => fmt(p[1])).join(' / ')} · neckline ${fmt(cp.neckline)}`;
+      }
       return card(cp.label, tag(cp.bias), meta, `${cp.what} ${cp.suggests}`);
     }).join('');
   }
 
   html += `<div class="q-sum"><b>What it means together</b>${esc(P.summary)}</div>`;
-  html += '<div class="q-text">Other chart patterns (head and shoulders, triangles, wedges, flags) are not covered by this instant read yet — use the prompt below if you want an AI to look for those.</div>';
+  html += '<div class="q-text">Other chart patterns (wedges, flags, channels, cup and handle) are not covered by this instant read yet — use the prompt below if you want an AI to look for those.</div>';
 
   const box = document.getElementById('quick');
   box.innerHTML = html;

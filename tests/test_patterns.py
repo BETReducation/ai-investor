@@ -158,5 +158,67 @@ class ChartPatternTests(unittest.TestCase):
         self.assertIsNone(self._find(bars(path(closes)), "range"))
 
 
+def zigzag(turns, steps=5, tail=()):
+    closes = [turns[0]]
+    for a, b in zip(turns, turns[1:]):
+        closes += ramp(a, b, steps)
+    return closes + list(tail)
+
+
+class ShapeTests(unittest.TestCase):
+    def _find(self, closes, key):
+        result = patterns.analyze(bars(path(closes)))
+        return next((c for c in result["chart_patterns"] if c["key"] == key), None)
+
+    def _hs(self, tail, head=110):
+        return [100.0] * 3 + ramp(100, 106, 5) + ramp(106, 102, 4) + ramp(102, head, 6) \
+            + ramp(head, 102, 6) + ramp(102, 106, 4) + tail
+
+    def test_head_and_shoulders_forming(self):
+        cp = self._find(self._hs(ramp(106, 104.5, 3)), "head_and_shoulders")
+        self.assertIsNotNone(cp)
+        self.assertEqual((cp["status"], cp["bias"]), ("forming", "bearish"))
+
+    def test_head_and_shoulders_confirmed(self):
+        cp = self._find(self._hs(ramp(106, 99, 5)), "head_and_shoulders")
+        self.assertIsNotNone(cp)
+        self.assertEqual(cp["status"], "confirmed")
+
+    def test_head_barely_above_shoulders_is_not_a_pattern(self):
+        self.assertIsNone(self._find(self._hs(ramp(106, 104.5, 3), head=106.5), "head_and_shoulders"))
+
+    def test_inverse_head_and_shoulders_confirmed(self):
+        closes = [110.0] * 3 + ramp(110, 104, 5) + ramp(104, 108, 4) + ramp(108, 100, 6) \
+            + ramp(100, 108, 6) + ramp(108, 104, 4) + ramp(104, 111, 5)
+        cp = self._find(closes, "inverse_head_and_shoulders")
+        self.assertIsNotNone(cp)
+        self.assertEqual((cp["status"], cp["bias"]), ("confirmed", "bullish"))
+
+    def test_ascending_triangle(self):
+        closes = zigzag([100, 110, 102, 110, 104, 110, 106, 110, 107.5], tail=ramp(107.5, 108.5, 2))
+        cp = self._find(closes, "ascending_triangle")
+        self.assertIsNotNone(cp)
+        self.assertEqual(cp["status"], "forming")
+
+    def test_ascending_triangle_breakout(self):
+        closes = zigzag([100, 110, 102, 110, 104, 110, 106, 110, 107.5, 113], tail=[])
+        cp = self._find(closes, "ascending_triangle")
+        self.assertIsNotNone(cp)
+        self.assertEqual((cp["status"], cp["bias"]), ("broke_up", "bullish"))
+
+    def test_descending_triangle(self):
+        closes = zigzag([110, 100, 108, 100, 106, 100, 104, 100, 102.5], tail=ramp(102.5, 101.5, 2))
+        self.assertIsNotNone(self._find(closes, "descending_triangle"))
+
+    def test_symmetrical_triangle(self):
+        closes = zigzag([100, 110, 101, 109, 102, 108, 103, 107, 104], tail=ramp(104, 105, 2))
+        self.assertIsNotNone(self._find(closes, "symmetrical_triangle"))
+
+    def test_plain_range_is_not_a_triangle(self):
+        cp = self._find(RANGE, "ascending_triangle") or self._find(RANGE, "descending_triangle") \
+            or self._find(RANGE, "symmetrical_triangle")
+        self.assertIsNone(cp)
+
+
 if __name__ == "__main__":
     unittest.main()

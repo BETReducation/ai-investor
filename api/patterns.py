@@ -353,6 +353,173 @@ def detect_range(candles: list, a: float, forming: bool = False) -> list:
     return []
 
 
+def detect_head_and_shoulders(candles: list, a: float, forming: bool = False, max_age: int = 30) -> list:
+    """Most recent head-and-shoulders top and inverse (at most one of each)."""
+    n = len(candles)
+    highs = [c[_H] for c in candles]
+    lows = [c[_L] for c in candles]
+    closes = [c[_C] for c in candles]
+    band = 0.25 * a
+    out = []
+    for top in (True, False):
+        vals = highs if top else lows
+        opp = lows if top else highs
+        swings = swing_points(vals, 2, top)[-12:]
+        best = None
+        for x in range(len(swings)):
+            for y in range(x + 1, len(swings)):
+                for z in range(y + 1, len(swings)):
+                    il, ih, ir = swings[x], swings[y], swings[z]
+                    if n - 1 - ir > max_age or not (3 <= ih - il <= 40 and 3 <= ir - ih <= 40):
+                        continue
+                    ls, hd, rs = vals[il], vals[ih], vals[ir]
+                    over = (hd - max(ls, rs)) if top else (min(ls, rs) - hd)  # head's margin over shoulders
+                    if over < 1.5 * a or abs(ls - rs) > 1.0 * a:
+                        continue
+                    span = vals[il:ir + 1]
+                    if (max(span) if top else min(span)) != hd:
+                        continue
+                    t1 = min(range(il, ih + 1), key=lambda i: opp[i]) if top else max(range(il, ih + 1), key=lambda i: opp[i])
+                    t2 = min(range(ih, ir + 1), key=lambda i: opp[i]) if top else max(range(ih, ir + 1), key=lambda i: opp[i])
+                    if t2 == t1:
+                        continue
+                    tv1, tv2 = opp[t1], opp[t2]
+                    depth = (hd - max(tv1, tv2)) if top else (min(tv1, tv2) - hd)
+                    lead = (ls - min(lows[max(0, il - 20):il])) if top else (max(highs[max(0, il - 20):il]) - ls)
+                    if depth < 2 * a or lead < 2 * a:
+                        continue
+                    slope = (tv2 - tv1) / (t2 - t1)
+
+                    def neck(k, tv1=tv1, t1=t1, slope=slope):
+                        return tv1 + slope * (k - t1)
+
+                    def _above_head(k, hd=hd):
+                        return closes[k] > hd + band if top else closes[k] < hd - band
+
+                    def _through(k, neck=neck):
+                        return closes[k] < neck(k) - band if top else closes[k] > neck(k) + band
+
+                    def _back(k, neck=neck):
+                        return closes[k] > neck(k) + band if top else closes[k] < neck(k) - band
+
+                    after = range(ir + 1, n)
+                    if any(_above_head(k) for k in after):
+                        continue
+                    brk = next((k for k in after if _through(k)), None)
+                    if brk is not None and any(_back(k) for k in range(brk + 1, n)):
+                        continue
+                    cand = (ir, -abs(ls - rs))
+                    if best is None or cand > best[0]:
+                        best = (cand, il, ih, ir, t1, t2, neck(n - 1), brk)
+        if best:
+            _, il, ih, ir, t1, t2, neck_now, brk = best
+            key = "head_and_shoulders" if top else "inverse_head_and_shoulders"
+            kb = CHART_PATTERNS[key]
+            confirmed = brk is not None
+            out.append({
+                "key": key, "label": kb["label"], "bias": "bearish" if top else "bullish",
+                "status": "confirmed" if confirmed else "forming",
+                "clarity": "Clear" if confirmed else "Tentative",
+                "points": [[candles[i][_T], vals[i]] for i in (il, ih, ir)],
+                "neckline": neck_now,
+                "neckline_points": [[candles[t1][_T], opp[t1]], [candles[t2][_T], opp[t2]]],
+                "break_time": candles[brk][_T] if confirmed else None,
+                "provisional": forming and (brk == n - 1 or ir == n - 1),
+                "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
+            })
+    return out
+
+
+def _fit(points: list) -> tuple:
+    """Least-squares line through (index, price) points -> (slope, intercept)."""
+    m = len(points)
+    mx = sum(p[0] for p in points) / m
+    my = sum(p[1] for p in points) / m
+    den = sum((p[0] - mx) ** 2 for p in points)
+    slope = sum((p[0] - mx) * (p[1] - my) for p in points) / den if den else 0.0
+    return slope, my - slope * mx
+
+
+def detect_triangles(candles: list, a: float, forming: bool = False) -> list:
+    """Ascending, descending or symmetrical triangle from converging swing highs/lows."""
+    n = len(candles)
+    highs = [c[_H] for c in candles]
+    lows = [c[_L] for c in candles]
+    closes = [c[_C] for c in candles]
+    band = 0.25 * a
+    cutoff = n - 6  # keep breakout bars out of the fit
+    sh = [i for i in swing_points(highs, 2, True) if i <= cutoff]
+    sl = [i for i in swing_points(lows, 2, False) if i <= cutoff]
+    for window in (30, 45, 60):
+        hs = [(i, highs[i]) for i in sh if i >= n - window]
+        ls = [(i, lows[i]) for i in sl if i >= n - window]
+        if len(hs) < 2 or len(ls) < 2 or len(hs) + len(ls) < 5:
+            continue
+        x0 = min(hs[0][0], ls[0][0])
+        span = cutoff - x0
+        if span < 12:
+            continue
+        sh_s, sh_i = _fit(hs)
+        sl_s, sl_i = _fit(ls)
+        if max(abs(p - (sh_s * i + sh_i)) for i, p in hs) > 0.75 * a or \
+           max(abs(p - (sl_s * i + sl_i)) for i, p in ls) > 0.75 * a:
+            continue
+
+        def up_line(k):
+            return sh_s * k + sh_i
+
+        def lo_line(k):
+            return sl_s * k + sl_i
+
+        dh, dl = sh_s * span, sl_s * span
+        gap_start, gap_now = up_line(x0) - lo_line(x0), up_line(n - 1) - lo_line(n - 1)
+        if gap_start < 2 * a or gap_now < 0.3 * a or gap_now > 0.75 * gap_start:
+            continue
+        flat_h, flat_l = abs(dh) <= 0.75 * a, abs(dl) <= 0.75 * a
+        if flat_h and dl >= 1.0 * a:
+            key = "ascending_triangle"
+        elif flat_l and dh <= -1.0 * a:
+            key = "descending_triangle"
+        elif dh <= -1.0 * a and dl >= 1.0 * a:
+            key = "symmetrical_triangle"
+        else:
+            continue
+
+        def outside(k):
+            if closes[k] > up_line(k) + band:
+                return "up"
+            if closes[k] < lo_line(k) - band:
+                return "down"
+            return None
+
+        status, broke_at, direction = "forming", None, None
+        for k in range(cutoff + 1, n):
+            if outside(k):
+                broke_at, direction = k, outside(k)
+                break
+        if broke_at is not None:
+            if outside(n - 1) != direction:
+                broke_at, direction = None, None  # poked out and came back in
+            else:
+                status = "broke_" + direction
+        elif outside(n - 1):
+            continue
+        kb = CHART_PATTERNS[key]
+        bias = "neutral" if status == "forming" else ("bullish" if direction == "up" else "bearish")
+        return [{
+            "key": key, "label": kb["label"], "bias": bias, "status": status,
+            "clarity": "Clear" if status != "forming" and len(hs) + len(ls) >= 5 else "Tentative",
+            "upper_line": [[candles[x0][_T], up_line(x0)], [candles[n - 1][_T], up_line(n - 1)]],
+            "lower_line": [[candles[x0][_T], lo_line(x0)], [candles[n - 1][_T], lo_line(n - 1)]],
+            "high_touches": len(hs), "low_touches": len(ls), "bars": n - x0,
+            "break_time": candles[broke_at][_T] if broke_at is not None else None,
+            "break_direction": direction,
+            "provisional": forming and broke_at == n - 1,
+            "what": kb["what"], "suggests": kb["suggests"], "invalidation": kb["invalidation"],
+        }]
+    return []
+
+
 def _fmt(x: float) -> str:
     a = abs(x)
     return f"{x:.0f}" if a >= 100 else f"{x:.2f}" if a >= 1 else f"{x:.4f}" if a >= 0.01 else f"{x:.6f}"
@@ -398,17 +565,25 @@ def summarize(result: dict, close: float) -> str:
         parts.append(phrases[e["key"]].format(lv=_fmt(e["level"]), d=e["time"][:10]))
 
     for cp in result.get("chart_patterns", []):
+        name = cp["label"].lower()
         if cp["key"] == "range":
             where = "near the top of" if cp["position_pct"] >= 75 else "near the bottom of" if cp["position_pct"] <= 25 else "in the middle of"
             parts.append(f"Price has been moving sideways between {_fmt(cp['bottom'])} and {_fmt(cp['top'])} for about {cp['bars']} bars and is {where} that range.")
-        else:
-            name = cp["label"].lower()
-            pts = " and ".join(f"{_fmt(p)} ({t[:10]})" for t, p in cp["points"])
-            if cp["status"] == "confirmed":
-                parts.append(f"A {name} at {pts} has been confirmed by a close through the neckline at {_fmt(cp['neckline'])} on {cp['break_time'][:10]}.")
-                (ev_bull if cp["bias"] == "bullish" else ev_bear).append(cp)
+        elif cp["key"].endswith("triangle"):
+            if cp["status"] == "forming":
+                parts.append(f"Price is squeezing into a possible {name} ({cp['bars']} bars); a close outside either line would resolve it.")
             else:
+                parts.append(f"Price broke {cp['break_direction']}ward out of a {name} on {cp['break_time'][:10]}.")
+                (ev_bull if cp["bias"] == "bullish" else ev_bear).append(cp)
+        else:
+            pts = " / ".join(_fmt(p) for _, p in cp["points"])
+            if cp["status"] == "confirmed":
+                parts.append(f"A {name} ({pts}) has been confirmed by a close through the neckline on {cp['break_time'][:10]}.")
+                (ev_bull if cp["bias"] == "bullish" else ev_bear).append(cp)
+            elif cp["key"] in ("double_top", "double_bottom"):
                 parts.append(f"A possible {name} is forming at {pts}; it would only be confirmed by a close through {_fmt(cp['neckline'])}.")
+            else:
+                parts.append(f"A possible {name} ({pts}) is forming; it would only be confirmed by a close through the neckline, now near {_fmt(cp['neckline'])}.")
 
     score = len(bull) + len(ev_bull) - len(bear) - len(ev_bear)
     if bull or ev_bull or bear or ev_bear:
@@ -429,7 +604,10 @@ def analyze(candles: list, forming: bool = False) -> dict:
         "candlesticks": detect_candlesticks(candles, 5, forming),
         "levels": {"support": sr["support"], "resistance": sr["resistance"], "kb": LEVELS},
         "events": detect_events(candles, sr["all"], sr["atr"], forming),
-        "chart_patterns": detect_double_tops_bottoms(candles, sr["atr"], forming) + detect_range(candles, sr["atr"], forming),
+        "chart_patterns": (detect_double_tops_bottoms(candles, sr["atr"], forming)
+                           + detect_head_and_shoulders(candles, sr["atr"], forming)
+                           + detect_triangles(candles, sr["atr"], forming)
+                           + detect_range(candles, sr["atr"], forming)),
     }
     result["summary"] = summarize(result, candles[-1][_C])
     return result

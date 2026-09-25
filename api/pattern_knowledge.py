@@ -168,3 +168,36 @@ CHART_PATTERNS = {
         "invalidation": "A close beyond either boundary ends the range.",
     },
 }
+
+CHART_PATTERNS.update({
+    "head_and_shoulders": {
+        "label": "Head and shoulders",
+        "what": "Three peaks, with the middle one (the head) higher than the two either side (the shoulders). A line through the two dips between them is the neckline.",
+        "suggests": "Historically read as a sign an uptrend is losing strength. It is only considered confirmed once price closes below the neckline.",
+        "invalidation": "A close above the head.",
+    },
+    "inverse_head_and_shoulders": {
+        "label": "Inverse head and shoulders",
+        "what": "Three troughs, with the middle one (the head) lower than the two either side (the shoulders). A line through the two bounces between them is the neckline.",
+        "suggests": "Historically read as a sign a downtrend is losing strength. It is only considered confirmed once price closes above the neckline.",
+        "invalidation": "A close below the head.",
+    },
+    "ascending_triangle": {
+        "label": "Ascending triangle",
+        "what": "Highs stall at a flat ceiling while the lows keep rising, squeezing price into a tightening wedge shape.",
+        "suggests": "Buyers are pressing on a fixed level. Historically the break has more often been upward, though it can fail; the break is what counts, not the shape.",
+        "invalidation": "A close below the rising lower line.",
+    },
+    "descending_triangle": {
+        "label": "Descending triangle",
+        "what": "Lows hold at a flat floor while the highs keep falling, squeezing price into a tightening wedge shape.",
+        "suggests": "Sellers are pressing on a fixed level. Historically the break has more often been downward, though it can fail; the break is what counts, not the shape.",
+        "invalidation": "A close above the falling upper line.",
+    },
+    "symmetrical_triangle": {
+        "label": "Symmetrical triangle",
+        "what": "Highs are falling and lows are rising at the same time, so price is squeezed into a narrowing point.",
+        "suggests": "Volatility is compressing. It has no built-in direction; historically the eventual break, in either direction, has often set the next move.",
+        "invalidation": "Not applicable until price closes outside either line.",
+    },
+})
