@@ -161,11 +161,11 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
         rows = (f'<p style="margin:0 0 6px;font-size:14px;color:{MUTED};line-height:1.6;">'
                 f'What our partners are following at the moment. See how each has behaved historically with the tools below.</p>')
         for author, grp in by_author.items():
-            rows += (f'<div style="font-size:13px;color:{INK};font-weight:700;padding:12px 0 4px;">{escape(author)} '
-                     f'<span style="font-weight:400;color:{MUTED};">&middot; {escape(grp["label"])}</span></div>'
-                     f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">')
+            rows += (f'<div style="padding:14px 0 6px;"><span style="display:inline-block;background:#ede9fe;color:#6d28d9;font-size:14px;font-weight:800;padding:5px 12px;border-radius:999px;">{escape(author)}</span>'
+                     f'<span style="font-size:13px;font-weight:400;color:{MUTED};">&nbsp;&middot; {escape(grp["label"])}</span></div>'
+                     f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;">')
             for i in grp["items"]:
-                rows += (f'<tr><td style="padding:8px 12px 8px 0;border-top:1px solid {BORDER};width:38%;font-size:14px;font-weight:700;color:{INK};" valign="top">'
+                rows += (f'<tr><td style="padding:8px 12px 8px 0;border-top:1px solid {BORDER};width:44%;font-size:14px;font-weight:700;color:{INK};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" valign="top">'
                          f'{escape(i.get("asset", ""))}</td>'
                          f'<td style="padding:8px 0;border-top:1px solid {BORDER};font-size:13px;line-height:1.5;color:{MUTED};" valign="top">'
                          f'{escape(i.get("note", ""))}</td></tr>')
