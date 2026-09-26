@@ -12,7 +12,13 @@ WHAT TO LOOK AT
 4. https://growthcapitalgroup.co/learn and the level pages (/learn/beginner, /learn/intermediate, /learn/pro) to choose the thought of the week.
 
 MY NOTES FOR THIS WEEK (may be empty; treat as the source of truth over anything else)
-[paste your notes here: progress, partnerships, new features, Arena news]
+- Lesson progress: Mark Complete button, and Education Progress bars on the profile with per-level reset.
+- New AI Chart Analysis tool (Pro/Founder): TradingView chart plus copy-and-paste AI scan prompts, with an instant plain-English pattern read.
+- Rule-based pattern engine: candlesticks, support/resistance, breakouts, double tops/bottoms, head and shoulders, triangles.
+- Signal tester: run up to 3 strategies side by side.
+- Opt-in email notifications for price and signal alerts.
+- Weekly newsletter launching, opt-in only, with one-click unsubscribe.
+- Arena news: none this week.
 
 PRODUCE EXACTLY THESE SECTIONS, in this order, with these headings:
 
