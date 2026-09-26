@@ -166,11 +166,6 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <button type="button" class="topic-pill topic-c" data-topic="ETFs">ETFs</button>
       </div>
       <div class="alpha-meta-row">
-        <div class="alpha-socials">
-          <a href="#" class="social-icon" title="X / Twitter">𝕏</a>
-          <a href="#" class="social-icon" title="LinkedIn">in</a>
-          <a href="#" class="social-icon" title="Substack">S</a>
-        </div>
         <span class="alpha-updated" id="alphaUpdated">Updated 2 days ago</span>
       </div>
     </div>
@@ -440,7 +435,7 @@ function showEmptyState(containerId, message) {
 function renderWatchlist(items, emptyMessage) {
   const container = document.getElementById('watchlistItems');
   if (!container) return;
-  if (!items.length) { if (emptyMessage) showEmptyState('watchlistItems', emptyMessage); return; }
+  if (!items.length) { showEmptyState('watchlistItems', emptyMessage || 'Coming soon.'); return; }
   container.innerHTML = '';
   items.forEach(item => {
     const div = document.createElement('div');
@@ -470,7 +465,7 @@ function renderWatchlist(items, emptyMessage) {
 function renderVideos(items, emptyMessage) {
   const container = document.getElementById('videoGrid');
   if (!container) return;
-  if (!items.length) { if (emptyMessage) showEmptyState('videoGrid', emptyMessage); return; }
+  if (!items.length) { showEmptyState('videoGrid', emptyMessage || 'Coming soon.'); return; }
   container.innerHTML = '';
   items.forEach(item => {
     const card = document.createElement('div');
@@ -545,7 +540,7 @@ function renderPinnedPosts(items) {
 function renderPosts(items, emptyMessage) {
   const container = document.getElementById('postGrid');
   if (!container) return;
-  if (!items.length) { if (emptyMessage) showEmptyState('postGrid', emptyMessage); return; }
+  if (!items.length) { showEmptyState('postGrid', emptyMessage || 'Coming soon.'); return; }
   container.innerHTML = '';
   items.forEach(item => {
     const card = document.createElement('a');
@@ -582,7 +577,7 @@ function renderPosts(items, emptyMessage) {
 function renderLinks(items, emptyMessage) {
   const container = document.getElementById('linksList');
   if (!container) return;
-  if (!items.length) { if (emptyMessage) showEmptyState('linksList', emptyMessage); return; }
+  if (!items.length) { showEmptyState('linksList', emptyMessage || 'Coming soon.'); return; }
   container.innerHTML = '';
   items.forEach(item => {
     const a = document.createElement('a');
