@@ -21,6 +21,7 @@
 '    <a href="/arena">Arena</a>' +
 '    <a href="/alpha/studio" id="footerStudioLink" style="display:none;">Studio</a>' +
 '    <a href="/company">Group</a>' +
+'    <a href="mailto:support@growthcapitalgroup.co">Contact us</a>' +
 '  </div>' +
 '  <div class="tool-footer-copy">© 2026 Growth Capital Group</div>' +
 '</footer>'
@@ -35,6 +36,7 @@
 '      <a href="/arena">Arena</a>' +
 '      <a href="/alpha/studio" id="footerStudioLink" style="display:none;">Studio</a>' +
 '      <a href="/company">Group</a>' +
+'      <a href="mailto:support@growthcapitalgroup.co">Contact us</a>' +
 '    </div>' +
 '    <div class="footer-copy">© 2026 Growth Capital Group. All rights reserved.</div>' +
 '  </div>' +
