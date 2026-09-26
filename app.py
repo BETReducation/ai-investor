@@ -2668,7 +2668,7 @@ def _serialize_structured_sections(sections, upload_image) -> str:
     return ("\n\n" + _SECTION_JOIN + "\n\n").join(parts)
 
 
-def _send_email(to_addr: str, subject: str, body: str) -> None:
+def _send_email(to_addr: str, subject: str, body: str, sender: str = "") -> None:
     # Resend's HTTP API is a plain HTTPS POST (port 443), so it works from hosts
     # like Railway that block outbound SMTP (ports 25/465/587) at the network
     # level — raw SMTP there fails immediately with "Network is unreachable"
@@ -2676,7 +2676,7 @@ def _send_email(to_addr: str, subject: str, body: str) -> None:
     # is kept as a fallback for anyone not on a host that blocks it.
     resend_api_key = os.environ.get("RESEND_API_KEY", "")
     if resend_api_key:
-        from_addr = os.environ.get("RESEND_FROM", "onboarding@resend.dev")
+        from_addr = sender or os.environ.get("RESEND_FROM", "onboarding@resend.dev")
         try:
             resp = requests.post(
                 "https://api.resend.com/emails",
@@ -3345,6 +3345,7 @@ def api_forgot_password():
             f"Someone requested a password reset for the account \"{match_username}\".\n\n"
             f"Reset your password here (valid for 1 hour):\n{reset_link}\n\n"
             f"If you didn't request this, you can safely ignore this email.",
+            sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
         )
 
     return jsonify(generic)
@@ -3436,6 +3437,7 @@ def notify_email():
         f"{kind} for {symbol}\n\nAt {when}, the condition you set was met: {detail}\n\n"
         f"This is a historical notification of a condition you configured, not advice "
         f"or a recommendation.\n\nManage alerts: {request.host_url.rstrip('/')}/tools/signals",
+        sender=os.environ.get("RESEND_FROM_ALERTS", "Growth Capital Group <alerts@growthcapitalgroup.co>"),
     )
     return jsonify({"sent": True})
 
