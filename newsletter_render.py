@@ -7,7 +7,7 @@ because Outlook/Gmail ignore most modern CSS.
 import re
 from html import escape
 
-BASE_URL_DEFAULT = "https://growthcapitalgroup.co"
+BASE_URL_DEFAULT = "https://www.growthcapitalgroup.co"
 
 # Arm colours match the site nav (Education blue, Tools purple, Arena gold, GCG green).
 GREEN, BLUE, PURPLE, GOLD = "#00b894", "#3b82f6", "#a855f7", "#f59e0b"

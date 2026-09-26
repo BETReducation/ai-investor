@@ -6309,7 +6309,7 @@ from zoneinfo import ZoneInfo
 
 UK_TZ = ZoneInfo("Europe/London")
 NEWSLETTER_FILE = os.path.join(os.path.dirname(__file__), "newsletter_issues.json")
-PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://growthcapitalgroup.co")
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://www.growthcapitalgroup.co")
 NEWSLETTER_FROM = os.environ.get("RESEND_FROM", "Growth Capital Group <newsletter@growthcapitalgroup.co>")
 ALPHA_DISPLAY = {"tom": "Tom", "dave": "Dave", "gary": "Gary", "connor": "Connor"}
 NEWSLETTER_STATUSES = ("draft", "approved", "sending", "sent")
