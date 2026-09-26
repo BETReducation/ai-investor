@@ -6299,6 +6299,422 @@ def lesson_qa():
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 
+# ── Weekly newsletter ───────────────────────────────────────────────────────
+# One issue per Sunday send date. Saturday: content is auto-drafted (Alpha
+# posts, partner watchlists, economic calendar) and Gary fills in the manual
+# sections in /admin/newsletter. Sunday 12:00 UK: an approved issue goes out.
+import newsletter_render
+from zoneinfo import ZoneInfo
+
+UK_TZ = ZoneInfo("Europe/London")
+NEWSLETTER_FILE = os.path.join(os.path.dirname(__file__), "newsletter_issues.json")
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://growthcapitalgroup.co")
+NEWSLETTER_FROM = os.environ.get("RESEND_FROM", "Growth Capital Group <newsletter@growthcapitalgroup.co>")
+ALPHA_DISPLAY = {"tom": "Tom", "dave": "Dave", "gary": "Gary", "connor": "Connor"}
+NEWSLETTER_STATUSES = ("draft", "approved", "sending", "sent")
+
+
+def _newsletter_ensure_table() -> None:
+    if not DATABASE_URL:
+        return
+    with _db_conn() as conn, conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS newsletter_issues (
+                send_date  DATE PRIMARY KEY,
+                status     TEXT NOT NULL DEFAULT 'draft',
+                content    JSONB NOT NULL DEFAULT '{}'::jsonb,
+                sent_count INT NOT NULL DEFAULT 0,
+                sent_at    TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
+
+
+def _next_send_date(now=None) -> _dt.date:
+    """The coming Sunday (today, if it's Sunday) in UK time."""
+    now = now or _dt.datetime.now(UK_TZ)
+    return now.date() + _dt.timedelta(days=(6 - now.weekday()) % 7)
+
+
+def _issue_load(send_date: _dt.date) -> dict | None:
+    key = send_date.isoformat()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT send_date, status, content, sent_count, sent_at FROM newsletter_issues WHERE send_date = %s", (key,))
+            row = cur.fetchone()
+        if not row:
+            return None
+        return {"send_date": key, "status": row["status"], "content": row["content"] or {},
+                "sent_count": row["sent_count"], "sent_at": row["sent_at"].isoformat() if row["sent_at"] else None}
+    if os.path.exists(NEWSLETTER_FILE):
+        with open(NEWSLETTER_FILE) as f:
+            return json.load(f).get(key)
+    return None
+
+
+def _issue_save(send_date: _dt.date, content: dict | None = None, status: str | None = None,
+                sent_count: int | None = None) -> dict:
+    """Upsert; only the fields passed are changed."""
+    key = send_date.isoformat()
+    cur_issue = _issue_load(send_date) or {"send_date": key, "status": "draft", "content": {}, "sent_count": 0, "sent_at": None}
+    if content is not None:
+        cur_issue["content"] = content
+    if status is not None:
+        cur_issue["status"] = status
+        if status == "sent":
+            cur_issue["sent_at"] = _dt.datetime.now(_dt.timezone.utc).isoformat()
+    if sent_count is not None:
+        cur_issue["sent_count"] = sent_count
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO newsletter_issues (send_date, status, content, sent_count, sent_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, now())
+                ON CONFLICT (send_date) DO UPDATE SET status = EXCLUDED.status, content = EXCLUDED.content,
+                    sent_count = EXCLUDED.sent_count, sent_at = EXCLUDED.sent_at, updated_at = now()
+            """, (key, cur_issue["status"], json.dumps(cur_issue["content"]), cur_issue["sent_count"], cur_issue["sent_at"]))
+    else:
+        data = {}
+        if os.path.exists(NEWSLETTER_FILE):
+            with open(NEWSLETTER_FILE) as f:
+                data = json.load(f)
+        data[key] = cur_issue
+        with open(NEWSLETTER_FILE, "w") as f:
+            json.dump(data, f, indent=1)
+    return cur_issue
+
+
+def _issue_claim_for_sending(send_date: _dt.date) -> bool:
+    """Atomically flips approved -> sending so a restart or second worker can't double-send."""
+    key = send_date.isoformat()
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("UPDATE newsletter_issues SET status = 'sending' WHERE send_date = %s AND status = 'approved'", (key,))
+            return cur.rowcount == 1
+    issue = _issue_load(send_date)
+    if issue and issue["status"] == "approved":
+        _issue_save(send_date, status="sending")
+        return True
+    return False
+
+
+def _newsletter_alpha_section(days: int = 7) -> list:
+    cutoff = _dt.datetime.utcnow() - _dt.timedelta(days=days)
+    items = []
+    for slug in sorted(ALPHA_ROLES):
+        for i in alpha_content_list(author=slug, status="published"):
+            if i.get("kind") != "post":
+                continue
+            when = i.get("published_at") or i.get("created_at")
+            if isinstance(when, str):
+                try:
+                    when = _dt.datetime.fromisoformat(when.replace("Z", "+00:00")).replace(tzinfo=None)
+                except ValueError:
+                    when = None
+            if when and when >= cutoff:
+                items.append((when, {
+                    "author": slug, "author_name": ALPHA_DISPLAY.get(slug, slug.title()),
+                    "title": i.get("title") or "", "snippet": (i.get("snippet") or "")[:220],
+                    "url": f"/alpha/{slug}/post/{i['id']}", "include": True,
+                }))
+    return [x for _, x in sorted(items, key=lambda t: t[0], reverse=True)]
+
+
+def _newsletter_assets_section() -> list:
+    out = []
+    for slug in ("tom", "dave", "gary", "connor"):
+        label = " · ".join(ALPHA_TOPICS.get(slug, []))
+        for i in alpha_content_list(author=slug, status="published"):
+            if i.get("kind") == "watchlist" and (i.get("title") or "").strip():
+                out.append({"author": slug, "author_name": ALPHA_DISPLAY.get(slug, slug.title()),
+                            "label": label, "asset": i["title"].strip(), "include": True})
+    return out
+
+
+def _newsletter_events_section(send_date: _dt.date) -> list:
+    """This week's economic calendar (unofficial free feed; failures just leave the section empty)."""
+    try:
+        resp = requests.get("https://nfs.faireconomy.media/ff_calendar_thisweek.json", timeout=10,
+                            headers={"User-Agent": "GCG-newsletter/1.0"})
+        rows = resp.json() if resp.status_code == 200 else []
+    except Exception as e:
+        print(f"[newsletter events failed] {e}")
+        return []
+    events = []
+    for r in rows:
+        impact = (r.get("impact") or "").lower()
+        if impact not in ("high", "medium"):
+            continue
+        try:
+            when = _dt.datetime.fromisoformat(r["date"]).astimezone(UK_TZ)
+        except (KeyError, ValueError):
+            continue
+        events.append({"when": when.strftime("%a %d %b, %H:%M"), "sort": when.isoformat(),
+                       "country": r.get("country", ""), "title": r.get("title", ""),
+                       "impact": impact, "include": impact == "high"})
+    events.sort(key=lambda e: e["sort"])
+    return events[:25]
+
+
+def _newsletter_auto_content(send_date: _dt.date) -> dict:
+    return {
+        "alpha": _newsletter_alpha_section(),
+        "assets": _newsletter_assets_section(),
+        "events": _newsletter_events_section(send_date),
+    }
+
+
+NEWSLETTER_MANUAL_FIELDS = ("subject", "preheader", "intro", "business", "business_link", "arena", "arena_link",
+                            "artifact_url", "thought", "thought_link", "thought_cta")
+NEWSLETTER_LIST_FIELDS = ("alpha", "assets", "events")
+
+
+def _issue_get_or_create(send_date: _dt.date) -> dict:
+    issue = _issue_load(send_date)
+    if issue:
+        return issue
+    return _issue_save(send_date, content=_newsletter_auto_content(send_date), status="draft")
+
+
+def _newsletter_recipients() -> list:
+    out = []
+    for username, data in _load_users().items():
+        profile = data.get("profile", {}) or {}
+        email = (profile.get("email") or (username if "@" in username else "")).strip()
+        if email and newsletter_opted_in(profile):
+            out.append({"username": username, "email": email, "name": profile.get("display_name") or username})
+    return out
+
+
+def _render_for_user(content: dict, username: str, name: str) -> tuple[str, str, str]:
+    unsub = newsletter_unsub_url(username, PUBLIC_BASE_URL)
+    progress = _lesson_progress_payload((_load_users().get(username, {}) or {}).get("profile", {}))
+    total = sum(l["total"] for l in progress["levels"].values())
+    done = sum(l["done"] for l in progress["levels"].values())
+    html, text = newsletter_render.render_newsletter(
+        content, name=name, activity=weekly_activity(username), progress={"done": done, "total": total},
+        unsubscribe_url=unsub, base_url=PUBLIC_BASE_URL)
+    return html, text, unsub
+
+
+def _resend_send_batch(messages: list) -> tuple[int, str]:
+    """Resend's batch endpoint takes up to 100 messages per call (and sidesteps the 2 req/s single-send limit)."""
+    key = os.environ.get("RESEND_API_KEY", "")
+    if not key:
+        return 0, "RESEND_API_KEY is not set"
+    sent, err = 0, ""
+    for i in range(0, len(messages), 100):
+        chunk = messages[i:i + 100]
+        try:
+            resp = requests.post("https://api.resend.com/emails/batch",
+                                 headers={"Authorization": f"Bearer {key}"}, json=chunk, timeout=30)
+            if resp.status_code < 300:
+                sent += len(chunk)
+            else:
+                err = f"{resp.status_code}: {resp.text[:300]}"
+                print(f"[newsletter batch failed] {err}")
+        except Exception as e:
+            err = str(e)
+            print(f"[newsletter batch failed] {e}")
+    return sent, err
+
+
+def _newsletter_message(to_addr: str, subject: str, html: str, text: str, unsub: str) -> dict:
+    return {
+        "from": NEWSLETTER_FROM, "to": [to_addr], "subject": subject, "html": html, "text": text,
+        "headers": {"List-Unsubscribe": f"<{unsub}>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"},
+    }
+
+
+def send_newsletter(send_date: _dt.date) -> int:
+    issue = _issue_load(send_date)
+    if not issue:
+        return 0
+    content = issue["content"]
+    subject = content.get("subject") or "Your weekly Growth Capital Group briefing"
+    messages = []
+    for r in _newsletter_recipients():
+        html, text, unsub = _render_for_user(content, r["username"], r["name"])
+        messages.append(_newsletter_message(r["email"], subject, html, text, unsub))
+    sent, _ = _resend_send_batch(messages)
+    _issue_save(send_date, status="sent", sent_count=sent)
+    return sent
+
+
+def _newsletter_scheduler_loop() -> None:
+    """Checks once a minute; from Sunday 12:00 UK, sends that day's issue if it has been approved."""
+    while True:
+        try:
+            now = _dt.datetime.now(UK_TZ)
+            if now.weekday() == 6 and now.hour >= 12:
+                today = now.date()
+                if _issue_claim_for_sending(today):
+                    print(f"[newsletter] sending {today}")
+                    n = send_newsletter(today)
+                    print(f"[newsletter] sent {n}")
+        except Exception as e:
+            print(f"[newsletter scheduler error] {e}")
+        time.sleep(60)
+
+
+def _admin_only():
+    if not is_admin_user(current_user):
+        return jsonify({"error": "Admin only"}), 403
+    return None
+
+
+def _parse_send_date(raw: str) -> _dt.date:
+    try:
+        return _dt.date.fromisoformat(raw)
+    except (TypeError, ValueError):
+        return _next_send_date()
+
+
+@app.route("/admin/newsletter")
+def admin_newsletter_page():
+    return send_from_directory("static", "admin-newsletter.html")
+
+
+@app.route("/api/admin/newsletter", methods=["GET"])
+@login_required
+def api_newsletter_get():
+    denied = _admin_only()
+    if denied:
+        return denied
+    send_date = _parse_send_date(request.args.get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    return jsonify({**issue, "recipients": len(_newsletter_recipients())})
+
+
+@app.route("/api/admin/newsletter", methods=["POST"])
+@login_required
+def api_newsletter_save():
+    denied = _admin_only()
+    if denied:
+        return denied
+    data = request.get_json(silent=True) or {}
+    send_date = _parse_send_date(data.get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    if issue["status"] in ("sending", "sent"):
+        return jsonify({"error": "This issue has already gone out"}), 409
+    content = dict(issue["content"])
+    incoming = data.get("content", {}) or {}
+    for f in NEWSLETTER_MANUAL_FIELDS:
+        if f in incoming:
+            content[f] = str(incoming[f])
+    for f in NEWSLETTER_LIST_FIELDS:
+        if isinstance(incoming.get(f), list):
+            content[f] = incoming[f]
+    # Editing an approved issue drops it back to draft so it can't send something unreviewed.
+    saved = _issue_save(send_date, content=content, status="draft" if issue["status"] == "approved" else None)
+    return jsonify(saved)
+
+
+@app.route("/api/admin/newsletter/rebuild", methods=["POST"])
+@login_required
+def api_newsletter_rebuild():
+    denied = _admin_only()
+    if denied:
+        return denied
+    send_date = _parse_send_date((request.get_json(silent=True) or {}).get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    if issue["status"] in ("sending", "sent"):
+        return jsonify({"error": "This issue has already gone out"}), 409
+    content = {**issue["content"], **_newsletter_auto_content(send_date)}
+    return jsonify(_issue_save(send_date, content=content, status="draft"))
+
+
+@app.route("/api/admin/newsletter/import", methods=["POST"])
+@login_required
+def api_newsletter_import():
+    """Parses the weekly Claude output: '## Heading' sections of plain text -> fields."""
+    denied = _admin_only()
+    if denied:
+        return denied
+    data = request.get_json(silent=True) or {}
+    send_date = _parse_send_date(data.get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    if issue["status"] in ("sending", "sent"):
+        return jsonify({"error": "This issue has already gone out"}), 409
+    heading_map = {
+        "subject": "subject", "preheader": "preheader", "intro": "intro",
+        "business": "business", "business link": "business_link",
+        "arena": "arena", "arena link": "arena_link", "explainer": "artifact_url", "explainer link": "artifact_url",
+        "artifact": "artifact_url", "artifact url": "artifact_url",
+        "thought": "thought", "thought link": "thought_link", "thought button": "thought_cta",
+    }
+    fields, current, buf = {}, None, []
+    for line in (data.get("text") or "").splitlines():
+        m = re.match(r"^#{1,3}\s*(.+?)\s*$", line)
+        if m:
+            if current:
+                fields[current] = "\n".join(buf).strip()
+            current, buf = heading_map.get(m.group(1).strip().lower().rstrip(":")), []
+        elif current is not None:
+            buf.append(line)
+    if current:
+        fields[current] = "\n".join(buf).strip()
+    if not fields:
+        return jsonify({"error": "No recognised '## Heading' sections found"}), 400
+    content = {**issue["content"], **fields}
+    saved = _issue_save(send_date, content=content, status="draft" if issue["status"] == "approved" else None)
+    return jsonify({**saved, "imported": sorted(fields)})
+
+
+@app.route("/api/admin/newsletter/preview", methods=["GET"])
+@login_required
+def api_newsletter_preview():
+    denied = _admin_only()
+    if denied:
+        return denied
+    send_date = _parse_send_date(request.args.get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    html, _, _ = _render_for_user(issue["content"], current_user.id, profile.get("display_name") or current_user.id)
+    return html
+
+
+@app.route("/api/admin/newsletter/test-send", methods=["POST"])
+@login_required
+def api_newsletter_test_send():
+    denied = _admin_only()
+    if denied:
+        return denied
+    send_date = _parse_send_date((request.get_json(silent=True) or {}).get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    to_addr = (profile.get("email") or "").strip()
+    if not to_addr:
+        return jsonify({"error": "Add an email address to your profile first"}), 400
+    html, text, unsub = _render_for_user(issue["content"], current_user.id, profile.get("display_name") or current_user.id)
+    subject = "[TEST] " + (issue["content"].get("subject") or "Your weekly Growth Capital Group briefing")
+    sent, err = _resend_send_batch([_newsletter_message(to_addr, subject, html, text, unsub)])
+    if not sent:
+        return jsonify({"error": f"Send failed: {err}"}), 502
+    return jsonify({"sent_to": to_addr})
+
+
+@app.route("/api/admin/newsletter/approve", methods=["POST"])
+@login_required
+def api_newsletter_approve():
+    denied = _admin_only()
+    if denied:
+        return denied
+    data = request.get_json(silent=True) or {}
+    send_date = _parse_send_date(data.get("date", ""))
+    issue = _issue_get_or_create(send_date)
+    if issue["status"] in ("sending", "sent"):
+        return jsonify({"error": "This issue has already gone out"}), 409
+    if data.get("approved", True) and not (issue["content"].get("subject") or "").strip():
+        return jsonify({"error": "Add a subject line before approving"}), 400
+    return jsonify(_issue_save(send_date, status="approved" if data.get("approved", True) else "draft"))
+
+
+_newsletter_ensure_table()
+if _is_production:
+    threading.Thread(target=_newsletter_scheduler_loop, name="newsletter-scheduler", daemon=True).start()
+
+
 _ensure_table()
 _ensure_default_user()
 

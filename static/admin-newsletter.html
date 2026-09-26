@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newsletter — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.page-hero { padding: 100px 5% 24px; text-align: center; }
+.page-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 28px; }
+.page-sub { color: var(--muted); font-size: 14px; margin-top: 8px; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 5% 80px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start; }
+@media (max-width: 960px) { .wrap { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+.card h2 { font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.card .hint { color: var(--muted); font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; }
+input[type=text], textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 9px 11px; border-radius: 8px; font-size: 14px; font-family: inherit; }
+textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 13px; }
+.row:first-of-type { border-top: none; }
+.row input[type=checkbox] { margin-top: 3px; }
+.row .who { color: var(--muted); font-size: 12px; }
+.btn { border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; background: var(--green); color: #03130f; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.side { position: sticky; top: 84px; }
+.status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; border: 1px solid var(--border2); }
+.status.approved { color: var(--green); border-color: var(--green); }
+.status.sent { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+#msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+#msg.err { color: #ef4444; } #msg.ok { color: var(--green); }
+iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+#gate { text-align: center; padding: 60px 5%; color: var(--muted); }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+<div class="page-hero">
+  <div class="page-title">Weekly Newsletter</div>
+  <div class="page-sub" id="sendInfo">Loading…</div>
+</div>
+<div id="gate" style="display:none;">Admin only. <a href="/login" style="color:var(--green);">Sign in</a></div>
+
+<div class="wrap" id="app" style="display:none;">
+  <div>
+    <div class="card">
+      <h2>Paste from Claude</h2>
+      <div class="hint">Paste the weekly prompt's output (sections headed <code>## Subject</code>, <code>## Intro</code>, <code>## Business</code>, <code>## Arena</code>, <code>## Explainer</code>, <code>## Thought</code>, and link headings). It fills the fields below so you can edit.</div>
+      <textarea id="importText" placeholder="## Subject&#10;…"></textarea>
+      <div class="btns"><button class="btn" onclick="doImport()">Import into fields</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Header</h2>
+      <label>Subject</label><input type="text" id="subject">
+      <label>Preview text (shown after the subject in inboxes)</label><input type="text" id="preheader">
+      <label>Opening note (professional, a little light-hearted)</label><textarea id="intro"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>2 · Alpha roundup</h2>
+      <div class="hint">Auto-pulled from posts published in the last 7 days. Untick to leave one out.</div>
+      <div id="alphaList"></div>
+    </div>
+
+    <div class="card">
+      <h2>3 · Assets in focus</h2>
+      <div class="hint">From each partner's published watchlist. Label is their nominated topics.</div>
+      <div id="assetList"></div>
+    </div>
+
+    <div class="card">
+      <h2>4 · Economic calendar</h2>
+      <div class="hint">High and medium impact events this week (free public feed). High is ticked by default.</div>
+      <div id="eventList"></div>
+    </div>
+
+    <div class="card">
+      <h2>5 · Business update</h2>
+      <textarea id="business"></textarea>
+      <label>Button link</label><input type="text" id="business_link" placeholder="/roadmap">
+    </div>
+
+    <div class="card">
+      <h2>6 · Arena</h2>
+      <textarea id="arena"></textarea>
+      <label>Arena link</label><input type="text" id="arena_link" placeholder="/arena">
+      <label>Weekly explainer (Claude artifact URL, optional)</label><input type="text" id="artifact_url">
+    </div>
+
+    <div class="card">
+      <h2>7 · Thought of the week</h2>
+      <textarea id="thought"></textarea>
+      <label>Lesson link</label><input type="text" id="thought_link" placeholder="/learn/beginner/diversify">
+      <label>Button text</label><input type="text" id="thought_cta" placeholder="Take the lesson">
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="card">
+      <h2>Status <span class="status" id="status">draft</span></h2>
+      <div class="hint" id="recipInfo"></div>
+      <div class="btns">
+        <button class="btn" onclick="save()">Save draft</button>
+        <button class="btn ghost" onclick="preview()">Refresh preview</button>
+        <button class="btn ghost" onclick="testSend()">Send me a test</button>
+        <button class="btn ghost" onclick="rebuild()">Re-pull auto sections</button>
+      </div>
+      <div class="btns"><button class="btn" id="approveBtn" onclick="toggleApprove()">Approve for Sunday</button></div>
+      <div id="msg"></div>
+    </div>
+    <iframe id="preview" title="Preview"></iframe>
+  </div>
+</div>
+
+<script>
+let issue = null;
+const TEXT_FIELDS = ['subject','preheader','intro','business','business_link','arena','arena_link','artifact_url','thought','thought_link','thought_cta'];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function flash(text, ok) { const m = $('msg'); m.textContent = text; m.className = ok ? 'ok' : 'err'; }
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? { credentials: 'include' } : {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function renderLists() {
+  const c = issue.content;
+  $('alphaList').innerHTML = (c.alpha || []).map((a, i) => `<label class="row" style="margin:0;color:var(--text);font-weight:400;">
+    <input type="checkbox" data-list="alpha" data-i="${i}" ${a.include !== false ? 'checked' : ''}>
+    <span><b>${esc(a.title)}</b> <span class="who">${esc(a.author_name)}</span><br><span class="who">${esc(a.snippet)}</span></span></label>`).join('')
+    || '<div class="hint">No Alpha posts published this week.</div>';
+  $('assetList').innerHTML = (c.assets || []).map((a, i) => `<label class="row" style="margin:0;color:var(--text);font-weight:400;">
+    <input type="checkbox" data-list="assets" data-i="${i}" ${a.include !== false ? 'checked' : ''}>
+    <span><b>${esc(a.asset)}</b> <span class="who">${esc(a.author_name)} · ${esc(a.label)}</span></span></label>`).join('')
+    || '<div class="hint">No published watchlist items.</div>';
+  $('eventList').innerHTML = (c.events || []).map((e, i) => `<label class="row" style="margin:0;color:var(--text);font-weight:400;">
+    <input type="checkbox" data-list="events" data-i="${i}" ${e.include !== false ? 'checked' : ''}>
+    <span>${esc(e.when)} <b>${esc(e.country)}</b> ${esc(e.title)} <span class="who">${esc(e.impact)}</span></span></label>`).join('')
+    || '<div class="hint">No calendar events loaded. Try "Re-pull auto sections".</div>';
+}
+
+function fill() {
+  TEXT_FIELDS.forEach(f => { $(f).value = issue.content[f] || ''; });
+  renderLists();
+  $('status').textContent = issue.status;
+  $('status').className = 'status ' + issue.status;
+  const locked = issue.status === 'sent' || issue.status === 'sending';
+  $('approveBtn').textContent = issue.status === 'approved' ? 'Withdraw approval' : 'Approve for Sunday';
+  $('approveBtn').disabled = locked;
+  $('sendInfo').textContent = `Sends Sunday ${issue.send_date} at 12:00 UK time` + (issue.sent_at ? ` · sent to ${issue.sent_count}` : '');
+  $('recipInfo').textContent = `${issue.recipients} opted-in members will receive this once approved. Editing an approved issue returns it to draft.`;
+}
+
+function collect() {
+  const content = {};
+  TEXT_FIELDS.forEach(f => { content[f] = $(f).value; });
+  ['alpha','assets','events'].forEach(l => {
+    content[l] = (issue.content[l] || []).map((item, i) => {
+      const box = document.querySelector(`input[data-list="${l}"][data-i="${i}"]`);
+      return { ...item, include: box ? box.checked : true };
+    });
+  });
+  return content;
+}
+
+async function save(quiet) {
+  try {
+    const wasApproved = issue.status === 'approved';
+    const saved = await api('/api/admin/newsletter', { date: issue.send_date, content: collect() });
+    issue = { ...issue, ...saved };
+    fill();
+    if (!quiet) flash(wasApproved ? 'Saved. Approval was withdrawn, approve again to send.' : 'Saved.', true);
+    preview();
+  } catch (e) { flash(e.message, false); }
+}
+
+function preview() {
+  fetch('/api/admin/newsletter/preview?date=' + issue.send_date, { credentials: 'include' })
+    .then(r => r.text()).then(h => { $('preview').srcdoc = h; });
+}
+
+async function doImport() {
+  try {
+    await save(true);
+    const r = await api('/api/admin/newsletter/import', { date: issue.send_date, text: $('importText').value });
+    issue = { ...issue, ...r }; fill(); preview();
+    flash('Imported: ' + r.imported.join(', '), true);
+  } catch (e) { flash(e.message, false); }
+}
+
+async function rebuild() {
+  if (!confirm('Re-pull Alpha, assets and events? Your ticks on those lists will reset.')) return;
+  try { issue = { ...issue, ...(await api('/api/admin/newsletter/rebuild', { date: issue.send_date })) }; fill(); preview(); flash('Auto sections refreshed.', true); }
+  catch (e) { flash(e.message, false); }
+}
+
+async function testSend() {
+  try { await save(true); const r = await api('/api/admin/newsletter/test-send', { date: issue.send_date }); flash('Test sent to ' + r.sent_to, true); }
+  catch (e) { flash(e.message, false); }
+}
+
+async function toggleApprove() {
+  try {
+    await save(true);
+    const approving = issue.status !== 'approved';
+    if (approving && !confirm(`Approve this issue? It will send to ${issue.recipients} members on Sunday at 12:00 UK.`)) return;
+    issue = { ...issue, ...(await api('/api/admin/newsletter/approve', { date: issue.send_date, approved: approving })) };
+    fill(); flash(approving ? 'Approved. It will send Sunday at 12:00.' : 'Approval withdrawn.', true);
+  } catch (e) { flash(e.message, false); }
+}
+
+(async function init() {
+  try {
+    issue = await api('/api/admin/newsletter' + location.search);
+  } catch (e) { $('gate').style.display = 'block'; $('sendInfo').textContent = ''; return; }
+  $('app').style.display = 'grid';
+  fill(); preview();
+})();
+</script>
+</body>
+</html>
