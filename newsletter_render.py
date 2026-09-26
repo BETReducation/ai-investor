@@ -243,8 +243,11 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{escape(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
-<tr><td style="background:{NAVY};border-radius:0 0 16px 16px;overflow:hidden;" align="center">
-  <a href="{escape(u("/", "header"), quote=True)}"><img src="{header_img}" alt="Growth Capital Group - The Sunday briefing" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:0 0 16px 16px;"></a>
+<tr><td bgcolor="{NAVY}" background="{header_img}" style="background:{NAVY} url('{header_img}') right center/cover no-repeat;border-radius:0 0 16px 16px;padding:44px 28px 40px;font-family:{FONT};" align="left">
+  <a href="{escape(u("/", "header"), quote=True)}" style="text-decoration:none;">
+  <div style="font-size:12px;letter-spacing:.14em;font-weight:700;color:{GREEN};">THE SUNDAY BRIEFING</div>
+  <div style="font-size:34px;line-height:1.1;font-weight:800;color:#ffffff;margin:8px 0 10px;">Growth Capital<br>Group</div>
+  <div style="font-size:14px;color:#aab3c7;">Investing education, explained.</div></a>
 </td></tr>
 <tr><td style="padding:26px 24px 18px;font-family:{FONT};">
   <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:{GREEN};">The Sunday briefing</div>
