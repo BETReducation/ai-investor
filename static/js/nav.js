@@ -350,3 +350,31 @@
     });
   });
 })();
+
+// Activity beacons for the weekly newsletter stats. Anonymous visitors get a 401 and nothing is stored.
+(function () {
+  function track(kind, detail) {
+    try {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        keepalive: true,
+        body: JSON.stringify({ kind: kind, detail: detail || '' })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  var m = location.pathname.match(/^\/learn\/(beginner|intermediate|pro)\/([^\/]+)\/?$/);
+  if (m) {
+    var key = 'gcg-lesson-tracked-' + m[2];
+    try { if (!sessionStorage.getItem(key)) { sessionStorage.setItem(key, '1'); track('lesson_view', m[2]); } }
+    catch (e) { track('lesson_view', m[2]); }
+  }
+  var seen = {};
+  document.addEventListener('play', function (e) {
+    var src = (e.target && (e.target.currentSrc || e.target.src)) || 'video';
+    if (seen[src]) return;
+    seen[src] = true;
+    track('video_play', src.split('?')[0].slice(-120));
+  }, true);
+})();

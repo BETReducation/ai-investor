@@ -211,6 +211,16 @@ def _ensure_table() -> None:
                 WHERE tier = %s AND entitlements = %s
             """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER[tier]), tier, json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"])))
         cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_events (
+                id         BIGSERIAL PRIMARY KEY,
+                username   TEXT NOT NULL,
+                kind       TEXT NOT NULL,
+                detail     TEXT NOT NULL DEFAULT '',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS user_events_user_time ON user_events (username, created_at)")
+        cur.execute("""
             CREATE TABLE IF NOT EXISTS anon_backtest_usage (
                 ip    TEXT PRIMARY KEY,
                 count INT NOT NULL DEFAULT 0
@@ -3233,6 +3243,75 @@ def admin_page():
     return send_from_directory("static", "admin.html")
 
 
+# ── Per-user activity log (feeds the weekly newsletter's stats strip) ────────
+EVENT_KINDS = {"login", "signal", "backtest", "ai_request", "lesson_view", "video_play"}
+# Kinds the browser may report itself; the rest are logged server-side only so
+# they can't be inflated from the client.
+CLIENT_EVENT_KINDS = {"lesson_view", "video_play"}
+EVENTS_FILE = os.path.join(os.path.dirname(__file__), "user_events.jsonl")
+
+
+def log_event(username: str, kind: str, detail: str = "") -> None:
+    """Best-effort: an activity-log failure must never break the request it rides on."""
+    if not username or kind not in EVENT_KINDS:
+        return
+    detail = (detail or "")[:200]
+    try:
+        if DATABASE_URL:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("INSERT INTO user_events (username, kind, detail) VALUES (%s, %s, %s)",
+                            (username, kind, detail))
+        else:
+            with open(EVENTS_FILE, "a") as f:
+                f.write(json.dumps({"u": username, "k": kind, "d": detail, "t": time.time()}) + "\n")
+    except Exception as e:
+        print(f"[log_event failed] {kind} {username}: {e}")
+
+
+def weekly_activity(username: str, days: int = 7) -> dict:
+    """Counts per event kind for one user over the last `days` days."""
+    counts = {k: 0 for k in EVENT_KINDS}
+    counts["lessons_distinct"] = 0
+    try:
+        if DATABASE_URL:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("SELECT kind, COUNT(*), COUNT(DISTINCT detail) FROM user_events "
+                            "WHERE username = %s AND created_at > now() - make_interval(days => %s) GROUP BY kind",
+                            (username, days))
+                for kind, n, distinct in cur.fetchall():
+                    counts[kind] = n
+                    if kind == "lesson_view":
+                        counts["lessons_distinct"] = distinct
+        elif os.path.exists(EVENTS_FILE):
+            cutoff = time.time() - days * 86400
+            lessons = set()
+            with open(EVENTS_FILE) as f:
+                for line in f:
+                    try:
+                        e = json.loads(line)
+                    except ValueError:
+                        continue
+                    if e.get("u") == username and e.get("t", 0) >= cutoff and e.get("k") in counts:
+                        counts[e["k"]] += 1
+                        if e["k"] == "lesson_view":
+                            lessons.add(e.get("d"))
+            counts["lessons_distinct"] = len(lessons)
+    except Exception as e:
+        print(f"[weekly_activity failed] {username}: {e}")
+    return counts
+
+
+@app.route("/api/track", methods=["POST"])
+@login_required
+def api_track():
+    data = request.get_json(silent=True) or {}
+    kind = data.get("kind", "")
+    if kind not in CLIENT_EVENT_KINDS:
+        return jsonify({"error": "unknown event"}), 400
+    log_event(current_user.id, kind, str(data.get("detail", "")))
+    return "", 204
+
+
 # ── Newsletter opt-in / unsubscribe ──────────────────────────────────────────
 # Members who registered before the toggle existed have no flag and count as
 # opted in (partners); new signups store an explicit value from the unticked box.
@@ -3350,6 +3429,7 @@ def api_login():
     stay_signed_in = user_data.get("preferences", {}).get("stay_signed_in", True)
     session.permanent = bool(stay_signed_in)
     login_user(User(username, user_data.get("tier", "basic")), remember=bool(stay_signed_in))
+    log_event(username, "login")
     return jsonify({
         "success": True,
         "username": username,
@@ -3561,6 +3641,8 @@ def _trend_structure(swing_highs: list, swing_lows: list) -> str:
 @tier_required("pro")
 def ai_chart_data():
     symbol = (request.args.get("symbol") or "").strip()
+    if symbol:
+        log_event(current_user.id, "ai_request", f"chart:{symbol}")
     tf = request.args.get("interval", "1d")
     if not symbol or tf not in _AI_CHART_INTERVALS:
         return jsonify({"error": "symbol and a valid interval are required"}), 400
@@ -5210,6 +5292,8 @@ def signals():
     symbol = request.args.get("symbol", "").strip()
     period = request.args.get("period", "6mo")
     interval = request.args.get("interval", "1d")
+    if symbol:
+        log_event(current_user.id, "signal", symbol)
 
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
@@ -5456,6 +5540,8 @@ def backtest_quota():
 @app.route("/api/backtest", methods=["GET"])
 def backtest():
     symbol     = request.args.get("symbol", "").strip()
+    if symbol and current_user.is_authenticated:
+        log_event(current_user.id, "backtest", symbol)
     period     = request.args.get("period", "2y")
     interval   = request.args.get("interval", "1d")
     start_date = request.args.get("start_date", "").strip() or None
@@ -6084,6 +6170,7 @@ def lesson_qa():
 
     data = request.get_json(silent=True) or {}
     slug = (data.get("slug") or "").strip()
+    log_event(current_user.id, "ai_request", f"lesson-qa:{slug}")
     question = (data.get("question") or "").strip()[:1000]
     if not question:
         return jsonify({"error": "Ask a question first."}), 400
