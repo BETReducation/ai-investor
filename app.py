@@ -3864,6 +3864,7 @@ def admin_list_users():
             "tier": data.get("tier", "free"),
             "entitlements": data.get("entitlements") or default_entitlements(data.get("tier", "free")),
             "email": (data.get("profile") or {}).get("email"),
+            "newsletter": newsletter_opted_in(data.get("profile")),
         }
         for u, data in sorted(users.items())
     ], "feature_levels": FEATURE_LEVELS, "tiers": list(TIER_RANKS.keys())})
