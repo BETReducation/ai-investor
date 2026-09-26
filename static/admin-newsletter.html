@@ -57,6 +57,7 @@ iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-rad
   <div>
     <div class="card">
       <h2>Paste from Claude</h2>
+      <div class="btns" style="margin:0 0 10px;"><button class="btn ghost" onclick="copyPrompt()">Copy this week's prompt for Claude</button></div>
       <div class="hint">Paste the weekly prompt's output (sections headed <code>## Subject</code>, <code>## Intro</code>, <code>## Business</code>, <code>## Arena</code>, <code>## Explainer</code>, <code>## Thought</code>, and link headings). It fills the fields below so you can edit.</div>
       <textarea id="importText" placeholder="## Subject&#10;…"></textarea>
       <div class="btns"><button class="btn" onclick="doImport()">Import into fields</button></div>
@@ -196,6 +197,14 @@ async function save(quiet) {
 function preview() {
   fetch('/api/admin/newsletter/preview?date=' + issue.send_date, { credentials: 'include' })
     .then(r => r.text()).then(h => { $('preview').srcdoc = h; });
+}
+
+async function copyPrompt() {
+  try {
+    const r = await fetch('/api/admin/newsletter/prompt', { credentials: 'include' });
+    await navigator.clipboard.writeText(await r.text());
+    flash('Prompt copied. Paste it into Claude (Code or Chat) with web access.', true);
+  } catch (e) { flash('Could not copy: ' + e.message, false); }
 }
 
 async function doImport() {

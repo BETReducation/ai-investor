@@ -6484,7 +6484,8 @@ def _lesson_two_sentence_summary(slug: str) -> str:
     """Two-sentence blurb of a lesson. Uses Claude when a key is configured, otherwise the lesson's opening lines."""
     text = _lesson_plain_text(slug) or ""
     title = _LESSON_BY_SLUG[slug]["title"]
-    if os.environ.get("ANTHROPIC_API_KEY") and text:
+    # Off by default to keep costs at zero; set NEWSLETTER_AI_SUMMARY=1 to have Claude write it.
+    if os.environ.get("NEWSLETTER_AI_SUMMARY") == "1" and os.environ.get("ANTHROPIC_API_KEY") and text:
         try:
             import anthropic
             resp = anthropic.Anthropic().messages.create(
@@ -6695,6 +6696,7 @@ def api_newsletter_import():
         "arena": "arena", "arena link": "arena_link", "explainer": "artifact_url", "explainer link": "artifact_url",
         "artifact": "artifact_url", "artifact url": "artifact_url",
         "thought": "thought", "thought link": "thought_link", "thought button": "thought_cta",
+        "thought summary": "thought_summary", "lesson summary": "thought_summary",
     }
     fields, current, buf = {}, None, []
     for line in (data.get("text") or "").splitlines():
@@ -6703,15 +6705,35 @@ def api_newsletter_import():
             if current:
                 fields[current] = "\n".join(buf).strip()
             current, buf = heading_map.get(m.group(1).strip().lower().rstrip(":")), []
+        elif re.match(r"^\s*Missing:", line):
+            if current:
+                fields[current] = "\n".join(buf).strip()
+            current, buf = None, []
         elif current is not None:
             buf.append(line)
     if current:
         fields[current] = "\n".join(buf).strip()
+    if "artifact_url" in fields:
+        m = re.search(r"https?://\S+", fields["artifact_url"])
+        if m:
+            fields["artifact_url"] = m.group(0)
+        else:
+            del fields["artifact_url"]
     if not fields:
         return jsonify({"error": "No recognised '## Heading' sections found"}), 400
     content = _newsletter_fill_thought_summary({**issue["content"], **fields})
     saved = _issue_save(send_date, content=content, status="draft" if issue["status"] == "approved" else None)
     return jsonify({**saved, "imported": sorted(fields)})
+
+
+@app.route("/api/admin/newsletter/prompt", methods=["GET"])
+@login_required
+def api_newsletter_prompt():
+    denied = _admin_only()
+    if denied:
+        return denied
+    with open(os.path.join(os.path.dirname(__file__), "docs", "newsletter-weekly-prompt.md"), encoding="utf-8") as f:
+        return f.read(), 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 
 @app.route("/api/admin/newsletter/preview", methods=["GET"])
