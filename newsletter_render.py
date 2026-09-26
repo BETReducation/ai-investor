@@ -192,10 +192,10 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
         body = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">{rows}</table>'
                 f'<p style="margin:10px 0 12px;font-size:12px;color:{MUTED};">Red = high impact, amber = medium. Times are UK time.</p>')
         parts.append(_section("04", "Education", "On the calendar this week", BLUE, body,
-                              _button("Learn how markets react", u("/learn/intermediate/central-bank-policy", "events"), BLUE)))
+                              _button("Learn how markets react", u("/learn/pro/central-bank-policy", "events"), BLUE)))
         text += ["4. ON THE CALENDAR THIS WEEK"]
         text += [f"  {e.get('when', '')}  {e.get('country', '')} {e.get('title', '')}" for e in events]
-        text += [f"  {base}/learn/intermediate/central-bank-policy", ""]
+        text += [f"  {base}/learn/pro/central-bank-policy", ""]
 
     # 5. Business update
     if (content.get("business") or "").strip():
