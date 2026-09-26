@@ -3244,7 +3244,7 @@ def admin_page():
 
 
 # ── Per-user activity log (feeds the weekly newsletter's stats strip) ────────
-EVENT_KINDS = {"login", "signal", "backtest", "ai_request", "lesson_view", "video_play"}
+EVENT_KINDS = {"login", "signal", "backtest", "ai_request", "lesson_view", "lesson_complete", "video_play"}
 # Kinds the browser may report itself; the rest are logged server-side only so
 # they can't be inflated from the client.
 CLIENT_EVENT_KINDS = {"lesson_view", "video_play"}
@@ -4575,6 +4575,73 @@ def _alpha_public_image_url(item: dict) -> str | None:
 _ALPHA_PUBLIC_FIELDS = ["id", "kind", "topic", "level", "title", "subtitle", "snippet", "body", "stance", "url", "published_at", "pinned"]
 
 _LESSON_BY_SLUG = {l["slug"]: l for l in LESSON_PAGES}
+
+# ── Lesson progress ("Mark Complete") ────────────────────────────────────────
+# Stored on the profile as {slug: completed-at ISO timestamp}, so it survives
+# alongside the rest of the profile without a schema change.
+LESSON_LEVELS = ("beginner", "intermediate", "pro")
+
+
+def _lesson_progress_payload(profile: dict) -> dict:
+    done = (profile or {}).get("lessons_completed", {}) or {}
+    levels = {}
+    for level in LESSON_LEVELS:
+        items = [{"slug": l["slug"], "title": l["title"], "done": l["slug"] in done}
+                 for l in LESSON_PAGES if l["level"] == level]
+        levels[level] = {"total": len(items), "done": sum(i["done"] for i in items), "items": items}
+    return {"completed": sorted(done), "levels": levels}
+
+
+@app.route("/api/lesson-progress", methods=["GET"])
+@login_required
+def api_lesson_progress():
+    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    return jsonify(_lesson_progress_payload(profile))
+
+
+@app.route("/api/lesson-progress", methods=["POST"])
+@login_required
+def api_lesson_progress_set():
+    data = request.get_json(silent=True) or {}
+    slug = str(data.get("slug", ""))
+    if slug not in _LESSON_BY_SLUG:
+        return jsonify({"error": "Unknown lesson"}), 400
+    users = _load_users()
+    profile = users[current_user.id].get("profile", {}) or {}
+    done = dict(profile.get("lessons_completed", {}) or {})
+    if data.get("done", True):
+        if slug not in done:
+            done[slug] = _dt.datetime.utcnow().isoformat(timespec="seconds")
+            log_event(current_user.id, "lesson_complete", slug)
+    else:
+        done.pop(slug, None)
+    profile["lessons_completed"] = done
+    users[current_user.id]["profile"] = profile
+    _save_users(users)
+    return jsonify(_lesson_progress_payload(profile))
+
+
+@app.route("/api/lesson-progress/reset", methods=["POST"])
+@login_required
+def api_lesson_progress_reset():
+    level = str((request.get_json(silent=True) or {}).get("level", ""))
+    if level != "all" and level not in LESSON_LEVELS:
+        return jsonify({"error": "Invalid level"}), 400
+    users = _load_users()
+    profile = users[current_user.id].get("profile", {}) or {}
+    done = dict(profile.get("lessons_completed", {}) or {})
+    if level == "all":
+        done = {}
+    else:
+        for l in LESSON_PAGES:
+            if l["level"] == level:
+                done.pop(l["slug"], None)
+    profile["lessons_completed"] = done
+    users[current_user.id]["profile"] = profile
+    _save_users(users)
+    return jsonify(_lesson_progress_payload(profile))
+
+
 
 
 def _alpha_public_related_lesson(item: dict) -> dict | None:

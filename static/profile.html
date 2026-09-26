@@ -101,6 +101,15 @@
 .saved-strat-delete { background: transparent; color: #ff4757; border: 1px solid rgba(255,71,87,0.35) !important; }
 .saved-strat-delete:hover { background: rgba(255,71,87,0.1); }
 
+/* Education progress */
+.edu-level { margin: 22px 0 6px; }
+.edu-level-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 14px; font-weight: 700; color: var(--text); }
+.edu-level-head span { font-size: 12px; font-weight: 500; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.edu-bar { display: flex; gap: 3px; }
+.edu-seg { flex: 1; height: 12px; border-radius: 3px; background: var(--border2); display: block; transition: background 0.2s; }
+.edu-seg.done { background: var(--lvl); }
+.edu-reset-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
+
 /* Toggle switch */
 .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .toggle-row:last-child { border-bottom: none; }
@@ -422,6 +431,21 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <span class="form-hint" id="prefsSaveHint"></span>
       </div>
 
+      <!-- EDUCATION PROGRESS -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title"><span class="icon">🎓</span>Education Progress</div>
+        </div>
+        <div class="card-header-sub" style="margin-top:-8px;">Each lesson you mark complete fills in one segment of its level's bar.</div>
+        <div id="eduProgress"></div>
+        <div class="edu-reset-row">
+          <button class="btn-danger" onclick="resetEdu('beginner')">Reset Beginner</button>
+          <button class="btn-danger" onclick="resetEdu('intermediate')">Reset Intermediate</button>
+          <button class="btn-danger" onclick="resetEdu('pro')">Reset Pro</button>
+          <button class="btn-danger" onclick="resetEdu('all')">Reset all progress</button>
+        </div>
+      </div>
+
       <!-- SAVED STRATEGIES -->
       <div class="profile-card">
         <div class="card-header-row">
@@ -605,6 +629,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
+const EDU_LEVELS = [
+  { key: 'beginner',     label: 'Beginner',     color: 'var(--green)' },
+  { key: 'intermediate', label: 'Intermediate', color: 'var(--gold)' },
+  { key: 'pro',          label: 'Pro',          color: 'var(--purple2)' },
+];
+
+function renderEdu(d) {
+  document.getElementById('eduProgress').innerHTML = EDU_LEVELS.map(l => {
+    const lv = d.levels[l.key];
+    const segs = lv.items.map(i =>
+      `<a class="edu-seg${i.done ? ' done' : ''}" href="/learn/${l.key}/${i.slug}" title="${i.title.replace(/"/g, '&quot;')}${i.done ? ' ✓' : ''}"></a>`
+    ).join('');
+    return `<div class="edu-level" style="--lvl:${l.color}">
+      <div class="edu-level-head">${l.label}<span>${lv.done} / ${lv.total} lessons</span></div>
+      <div class="edu-bar">${segs}</div></div>`;
+  }).join('');
+}
+
+async function loadEdu() {
+  try {
+    const res = await fetch('/api/lesson-progress', { credentials: 'include' });
+    if (res.ok) renderEdu(await res.json());
+  } catch {}
+}
+
+async function resetEdu(level) {
+  const label = level === 'all' ? 'ALL your lesson progress' : `your ${level} lesson progress`;
+  if (!confirm(`Reset ${label}? This can't be undone.`)) return;
+  const res = await fetch('/api/lesson-progress/reset', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ level }),
+  });
+  if (res.ok) renderEdu(await res.json());
+}
+
 async function boot() {
   try {
     const res = await fetch('/api/profile', { credentials: 'include' });
@@ -616,6 +676,7 @@ async function boot() {
     profileUsername = data.username;
     profileTier = data.tier || 'free';
     populateProfile(data);
+    loadEdu();
     document.getElementById('profilePage').style.display = 'block';
     if (data.username === 'admin') {
       document.getElementById('adminToolsCard').style.display = 'block';
