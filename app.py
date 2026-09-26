@@ -6700,7 +6700,10 @@ def api_newsletter_import():
     }
     fields, current, buf = {}, None, []
     for line in (data.get("text") or "").splitlines():
-        m = re.match(r"^#{1,3}\s*(.+?)\s*$", line)
+        # Copying rendered Claude output drops the '##', so also accept a bare known heading line.
+        m = re.match(r"^(?:#{1,3}\s*|\**)(.+?)\**:?\s*$", line)
+        if m and not (line.lstrip().startswith("#") or m.group(1).strip().lower() in heading_map):
+            m = None
         if m:
             if current:
                 fields[current] = "\n".join(buf).strip()
