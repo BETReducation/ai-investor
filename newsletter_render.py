@@ -235,7 +235,7 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
 
     text += ["--", DISCLAIMER, "", f"Manage your preferences: {profile_url}", f"Unsubscribe: {unsubscribe_url}"]
 
-    logo = f"{base}/static/logos/Green%20Full.png"
+    header_img = f"{base}/static/newsletter/header.png"
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><title>{escape(subject)}</title></head>
@@ -243,8 +243,8 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{escape(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};"><tr><td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
-<tr><td style="background:{NAVY};padding:22px 24px;border-radius:0 0 16px 16px;" align="left">
-  <a href="{escape(u("/", "header"), quote=True)}"><img src="{logo}" alt="Growth Capital Group" height="34" style="display:block;height:34px;border:0;"></a>
+<tr><td style="background:{NAVY};border-radius:0 0 16px 16px;overflow:hidden;" align="center">
+  <a href="{escape(u("/", "header"), quote=True)}"><img src="{header_img}" alt="Growth Capital Group - The Sunday briefing" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;border-radius:0 0 16px 16px;"></a>
 </td></tr>
 <tr><td style="padding:26px 24px 18px;font-family:{FONT};">
   <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:{GREEN};">The Sunday briefing</div>
