@@ -185,7 +185,7 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
         rows = ""
         for e in events:
             dot = {"high": "#ef4444", "medium": GOLD}.get((e.get("impact") or "").lower(), "#94a3b8")
-            rows += (f'<tr><td style="padding:8px 0;border-top:1px solid {BORDER};font-size:13px;color:{MUTED};width:150px;white-space:nowrap;padding-right:12px;" valign="top">'
+            rows += (f'<tr><td style="padding:8px 0;border-top:1px solid {BORDER};font-size:13px;color:{MUTED};width:150px;white-space:nowrap;padding-right:14px;text-align:right;" align="right" valign="top">'
                      f'{escape(e.get("when", ""))}</td>'
                      f'<td style="padding:8px 0;border-top:1px solid {BORDER};font-size:14px;color:{INK};" valign="top">'
                      f'<span style="color:{dot};">&#9679;</span> <b>{escape(e.get("country", ""))}</b> {escape(e.get("title", ""))}</td></tr>')
