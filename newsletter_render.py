@@ -4,6 +4,7 @@ Pure functions only — no Flask or database access — so app.py owns data
 loading and this file owns layout. Table-based markup with inline styles
 because Outlook/Gmail ignore most modern CSS.
 """
+import re
 from html import escape
 
 BASE_URL_DEFAULT = "https://growthcapitalgroup.co"
@@ -43,6 +44,13 @@ def _paras(text: str) -> str:
             out.append(f'<p style="margin:0 0 12px;font-size:15px;line-height:1.65;color:{INK};">'
                        f'{escape(block).replace(chr(10), "<br>")}</p>')
     return "".join(out)
+
+
+def _bullets(text: str) -> str:
+    """One bullet per non-empty line; leading -, * or • markers are stripped."""
+    items = [re.sub(r"^\s*[-*•]\s*", "", ln).strip() for ln in (text or "").splitlines()]
+    lis = "".join(f'<li style="margin:0 0 8px;">{escape(i)}</li>' for i in items if i)
+    return (f'<ul style="margin:0 0 14px;padding-left:20px;font-size:15px;line-height:1.6;color:{INK};">{lis}</ul>')
 
 
 def _button(label: str, url: str, colour: str, outline: bool = False) -> str:
@@ -150,23 +158,25 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
         by_author = {}
         for a in assets:
             by_author.setdefault(a.get("author_name", ""), {"label": a.get("label", ""), "items": []})["items"].append(a)
-        rows = (f'<p style="margin:0 0 10px;font-size:14px;color:{MUTED};line-height:1.6;">'
+        rows = (f'<p style="margin:0 0 6px;font-size:14px;color:{MUTED};line-height:1.6;">'
                 f'What our partners are following at the moment. See how each has behaved historically with the tools below.</p>')
         for author, grp in by_author.items():
-            chips = "".join(
-                f'<span style="display:inline-block;background:{BG};border:1px solid {BORDER};border-radius:999px;'
-                f'padding:5px 12px;margin:0 6px 6px 0;font-size:13px;font-weight:600;color:{INK};">{escape(i.get("asset", ""))}</span>'
-                for i in grp["items"])
-            rows += (f'<div style="padding:10px 0;border-top:1px solid {BORDER};">'
-                     f'<div style="font-size:13px;color:{INK};font-weight:700;">{escape(author)} '
+            rows += (f'<div style="font-size:13px;color:{INK};font-weight:700;padding:12px 0 4px;">{escape(author)} '
                      f'<span style="font-weight:400;color:{MUTED};">&middot; {escape(grp["label"])}</span></div>'
-                     f'<div style="margin-top:8px;">{chips}</div></div>')
+                     f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">')
+            for i in grp["items"]:
+                rows += (f'<tr><td style="padding:8px 12px 8px 0;border-top:1px solid {BORDER};width:38%;font-size:14px;font-weight:700;color:{INK};" valign="top">'
+                         f'{escape(i.get("asset", ""))}</td>'
+                         f'<td style="padding:8px 0;border-top:1px solid {BORDER};font-size:13px;line-height:1.5;color:{MUTED};" valign="top">'
+                         f'{escape(i.get("note", ""))}</td></tr>')
+            rows += '</table>'
         cta = (_button("Backtest an asset", u("/backtester", "assets"), PURPLE) +
                _button("Check signals", u("/tools/signals", "assets"), PURPLE, outline=True))
         parts.append(_section("03", "Tools", "Assets in focus", PURPLE, rows, cta))
         text += ["3. ASSETS IN FOCUS"]
         for author, grp in by_author.items():
-            text.append(f"  {author} ({grp['label']}): " + ", ".join(i.get("asset", "") for i in grp["items"]))
+            text.append(f"  {author} ({grp['label']})")
+            text += [f"    - {i.get('asset', '')}" + (f": {i['note']}" if i.get("note") else "") for i in grp["items"]]
         text += [f"  Backtester: {base}/backtester", f"  Signals: {base}/tools/signals", ""]
 
     # 4. Events
@@ -190,9 +200,10 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
     # 5. Business update
     if (content.get("business") or "").strip():
         link = content.get("business_link") or "/roadmap"
-        parts.append(_section("05", "Growth Capital Group", "What we've been building", GREEN, _paras(content["business"]),
+        parts.append(_section("05", "Growth Capital Group", "What we've been building", GREEN, _bullets(content["business"]),
                               _button("See the roadmap", u(link, "business"), GREEN)))
-        text += ["5. WHAT WE'VE BEEN BUILDING", content["business"].strip(), f"  {_abs(link, base)}", ""]
+        bullet_lines = [re.sub(r"^\s*[-*•]\s*", "", ln).strip() for ln in content["business"].splitlines()]
+        text += ["5. WHAT WE'VE BEEN BUILDING"] + [f"  - {b}" for b in bullet_lines if b] + [f"  {_abs(link, base)}", ""]
 
     # 6. Arena
     if (content.get("arena") or "").strip():
@@ -210,10 +221,17 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
     # 7. Thought of the week
     if (content.get("thought") or "").strip():
         link = content.get("thought_link") or "/learn"
+        summary = (content.get("thought_summary") or "").strip()
         body = f'<div style="border-left:3px solid {BLUE};padding:2px 0 2px 14px;margin-bottom:14px;">{_paras(content["thought"])}</div>'
+        if summary:
+            body += (f'<p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:{MUTED};">'
+                     f'<b style="color:{INK};">In the lesson:</b> {escape(summary)}</p>')
         parts.append(_section("07", "Education", "Thought of the week", BLUE, body,
                               _button(content.get("thought_cta") or "Take the lesson", u(link, "thought"), BLUE)))
-        text += ["7. THOUGHT OF THE WEEK", content["thought"].strip(), f"  {_abs(link, base)}", ""]
+        text += ["7. THOUGHT OF THE WEEK", content["thought"].strip()]
+        if (content.get("thought_summary") or "").strip():
+            text.append(f"  In the lesson: {content['thought_summary'].strip()}")
+        text += [f"  {_abs(link, base)}", ""]
 
     text += ["--", DISCLAIMER, "", f"Manage your preferences: {profile_url}", f"Unsubscribe: {unsubscribe_url}"]
 

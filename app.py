@@ -6402,7 +6402,10 @@ def _newsletter_alpha_section(days: int = 7) -> list:
     cutoff = _dt.datetime.utcnow() - _dt.timedelta(days=days)
     items = []
     for slug in sorted(ALPHA_ROLES):
-        for i in alpha_content_list(author=slug, status="published"):
+        taken = 0
+        for i in alpha_content_list(author=slug, status="published"):  # newest first
+            if taken >= 3:
+                break
             if i.get("kind") != "post":
                 continue
             when = i.get("published_at") or i.get("created_at")
@@ -6412,6 +6415,7 @@ def _newsletter_alpha_section(days: int = 7) -> list:
                 except ValueError:
                     when = None
             if when and when >= cutoff:
+                taken += 1
                 items.append((when, {
                     "author": slug, "author_name": ALPHA_DISPLAY.get(slug, slug.title()),
                     "title": i.get("title") or "", "snippet": (i.get("snippet") or "")[:220],
@@ -6426,8 +6430,11 @@ def _newsletter_assets_section() -> list:
         label = " · ".join(ALPHA_TOPICS.get(slug, []))
         for i in alpha_content_list(author=slug, status="published"):
             if i.get("kind") == "watchlist" and (i.get("title") or "").strip():
+                note = (i.get("snippet") or "").strip()
+                if len(note) > 110:
+                    note = note[:107].rsplit(" ", 1)[0].rstrip(",.;: ") + "…"
                 out.append({"author": slug, "author_name": ALPHA_DISPLAY.get(slug, slug.title()),
-                            "label": label, "asset": i["title"].strip(), "include": True})
+                            "label": label, "asset": i["title"].strip(), "note": note, "include": True})
     return out
 
 
@@ -6465,7 +6472,52 @@ def _newsletter_auto_content(send_date: _dt.date) -> dict:
 
 
 NEWSLETTER_MANUAL_FIELDS = ("subject", "preheader", "intro", "business", "business_link", "arena", "arena_link",
-                            "artifact_url", "thought", "thought_link", "thought_cta")
+                            "artifact_url", "thought", "thought_link", "thought_cta", "thought_summary")
+
+
+def _lesson_slug_from_link(link: str) -> str | None:
+    m = re.match(r"^(?:https?://[^/]+)?/learn/(?:beginner|intermediate|pro)/([^/?#]+)", (link or "").strip())
+    return m.group(1) if m and m.group(1) in _LESSON_BY_SLUG else None
+
+
+def _lesson_two_sentence_summary(slug: str) -> str:
+    """Two-sentence blurb of a lesson. Uses Claude when a key is configured, otherwise the lesson's opening lines."""
+    text = _lesson_plain_text(slug) or ""
+    title = _LESSON_BY_SLUG[slug]["title"]
+    if os.environ.get("ANTHROPIC_API_KEY") and text:
+        try:
+            import anthropic
+            resp = anthropic.Anthropic().messages.create(
+                model="claude-haiku-4-5-20251001", max_tokens=200,
+                system="You write for a UK investing education platform. Educational and historical framing only; never advice or recommendations.",
+                messages=[{"role": "user", "content":
+                           f"Summarise this lesson, '{title}', in exactly two plain, friendly sentences for a newsletter. "
+                           f"No preamble, no bullet points.\n\n{text[:12000]}"}],
+            )
+            out = next((b.text for b in resp.content if b.type == "text"), "").strip()
+            if out:
+                return out
+        except Exception as e:
+            print(f"[newsletter summary failed] {e}")
+    # No API key: take the opening prose from the page's paragraphs (not the nav/title text).
+    try:
+        with open(os.path.join(app.static_folder, _LESSON_BY_SLUG[slug]["file"]), encoding="utf-8") as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+        paras = [re.sub(r"\s+", " ", p.get_text(" ")).strip() for p in soup.find_all("p")]
+        sentences = re.split(r"(?<=[.!?])\s+", " ".join(p for p in paras if len(p) > 80)[:1500])
+        return " ".join([x for x in sentences if len(x) > 40][:2]) or f"A short lesson on {title}."
+    except OSError:
+        return f"A short lesson on {title}."
+
+
+def _newsletter_fill_thought_summary(content: dict, force: bool = False) -> dict:
+    slug = _lesson_slug_from_link(content.get("thought_link", ""))
+    if slug and (force or not (content.get("thought_summary") or "").strip()
+                 or content.get("_thought_summary_for") != slug):
+        if force or not (content.get("thought_summary") or "").strip() or content.get("_thought_summary_for") not in (None, slug):
+            content["thought_summary"] = _lesson_two_sentence_summary(slug)
+        content["_thought_summary_for"] = slug
+    return content
 NEWSLETTER_LIST_FIELDS = ("alpha", "assets", "events")
 
 
@@ -6605,6 +6657,7 @@ def api_newsletter_save():
     for f in NEWSLETTER_LIST_FIELDS:
         if isinstance(incoming.get(f), list):
             content[f] = incoming[f]
+    content = _newsletter_fill_thought_summary(content)
     # Editing an approved issue drops it back to draft so it can't send something unreviewed.
     saved = _issue_save(send_date, content=content, status="draft" if issue["status"] == "approved" else None)
     return jsonify(saved)
@@ -6620,7 +6673,7 @@ def api_newsletter_rebuild():
     issue = _issue_get_or_create(send_date)
     if issue["status"] in ("sending", "sent"):
         return jsonify({"error": "This issue has already gone out"}), 409
-    content = {**issue["content"], **_newsletter_auto_content(send_date)}
+    content = _newsletter_fill_thought_summary({**issue["content"], **_newsletter_auto_content(send_date)}, force=True)
     return jsonify(_issue_save(send_date, content=content, status="draft"))
 
 
@@ -6656,7 +6709,7 @@ def api_newsletter_import():
         fields[current] = "\n".join(buf).strip()
     if not fields:
         return jsonify({"error": "No recognised '## Heading' sections found"}), 400
-    content = {**issue["content"], **fields}
+    content = _newsletter_fill_thought_summary({**issue["content"], **fields})
     saved = _issue_save(send_date, content=content, status="draft" if issue["status"] == "approved" else None)
     return jsonify({**saved, "imported": sorted(fields)})
 
