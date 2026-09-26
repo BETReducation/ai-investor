@@ -334,11 +334,15 @@ body::after {
         <label class="field-label" for="regPassword">Password</label>
         <input type="password" id="regPassword" placeholder="At least 6 characters" autocomplete="new-password">
       </div>
-      <div class="field" style="margin-bottom:22px;">
+      <div class="field">
         <label class="field-label" for="regConfirm">Confirm Password</label>
         <input type="password" id="regConfirm" placeholder="Repeat password" autocomplete="new-password"
                onkeydown="if(event.key==='Enter') doRegister()">
       </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:22px;font-size:13px;color:var(--muted);line-height:1.5;cursor:pointer;">
+        <input type="checkbox" id="regNewsletter" style="margin-top:3px;">
+        <span>Send me the weekly Growth Capital Group newsletter (Sundays). Unsubscribe any time.</span>
+      </label>
       <button class="submit-btn" id="registerBtn" onclick="doRegister()"
               style="background:rgba(124,58,237,0.85);color:#fff;box-shadow:0 0 30px rgba(124,58,237,0.20);">
         Create Account
@@ -475,7 +479,7 @@ async function doRegister() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, newsletter_opt_in: document.getElementById('regNewsletter').checked }),
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Registration failed.'); return; }

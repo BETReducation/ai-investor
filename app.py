@@ -3233,6 +3233,53 @@ def admin_page():
     return send_from_directory("static", "admin.html")
 
 
+# ── Newsletter opt-in / unsubscribe ──────────────────────────────────────────
+# Members who registered before the toggle existed have no flag and count as
+# opted in (partners); new signups store an explicit value from the unticked box.
+
+def newsletter_opted_in(profile: dict) -> bool:
+    return bool((profile or {}).get("newsletter_opt_in", True))
+
+
+def newsletter_unsub_token(username: str) -> str:
+    import hmac, hashlib
+    return hmac.new(app.secret_key.encode(), f"newsletter:{username}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def newsletter_unsub_url(username: str, base_url: str) -> str:
+    from urllib.parse import quote
+    return f"{base_url.rstrip('/')}/newsletter/unsubscribe?u={quote(username)}&t={newsletter_unsub_token(username)}"
+
+
+def _newsletter_unsub_page(msg: str) -> str:
+    return (f'<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>Newsletter</title><body style="font-family:-apple-system,Segoe UI,sans-serif;'
+            f'background:#f5f6f8;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0">'
+            f'<div style="background:#fff;padding:36px 32px;border-radius:12px;max-width:420px;text-align:center;'
+            f'box-shadow:0 2px 12px rgba(0,0,0,.08)"><h2 style="margin-top:0">Growth Capital Group</h2>'
+            f'<p style="line-height:1.6;color:#444">{msg}</p><a href="/" style="color:#7c3aed">Back to the site</a></div>')
+
+
+@app.route("/newsletter/unsubscribe", methods=["GET", "POST"])
+def newsletter_unsubscribe():
+    import hmac
+    username = request.args.get("u", "")
+    token = request.args.get("t", "")
+    if not username or not hmac.compare_digest(token, newsletter_unsub_token(username)):
+        return _newsletter_unsub_page("This unsubscribe link isn't valid. You can change your preference any time in your profile."), 400
+    users = _load_users()
+    if username not in users:
+        return _newsletter_unsub_page("Account not found."), 404
+    profile = users[username].get("profile", {}) or {}
+    profile["newsletter_opt_in"] = False
+    users[username]["profile"] = profile
+    _save_users(users)
+    # POST is the RFC 8058 one-click path mail clients use; GET is the visible link.
+    if request.method == "POST":
+        return "", 200
+    return _newsletter_unsub_page("You're unsubscribed from the weekly newsletter. You can opt back in any time from your profile.")
+
+
 # ── Auth endpoints ───────────────────────────────────────────────────────────
 
 @app.route("/api/register", methods=["POST"])
@@ -3241,6 +3288,7 @@ def api_register():
     username = data.get("username", "").strip()
     password = data.get("password", "")
     email    = data.get("email", "").strip()
+    newsletter_opt_in = bool(data.get("newsletter_opt_in", False))
 
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
@@ -3265,6 +3313,7 @@ def api_register():
             "bio": "",
             "investor_type": "beginner",
             "profile_picture": "",
+            "newsletter_opt_in": newsletter_opt_in,
         },
     }
     _save_users(users)
@@ -3820,6 +3869,7 @@ def api_get_profile():
         "preferred_region":   profile.get("preferred_region", ""),
         "profile_picture": profile.get("profile_picture", ""),
         "landing_page":   profile.get("landing_page", "/"),
+        "newsletter_opt_in": newsletter_opted_in(profile),
         "preferences":    user_data.get("preferences", {}),
     })
 
@@ -3840,6 +3890,8 @@ def api_update_profile():
     for field in ("email", "display_name", "bio", "investor_type"):
         if field in data:
             profile[field] = str(data[field]).strip()
+    if "newsletter_opt_in" in data:
+        profile["newsletter_opt_in"] = bool(data["newsletter_opt_in"])
     if "profile_picture" in data:
         value = str(data["profile_picture"]).strip()
         if value not in PRESET_AVATARS:

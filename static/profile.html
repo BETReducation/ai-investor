@@ -304,6 +304,12 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             </select>
           </div>
           <div class="form-group span2">
+            <label style="display:flex;gap:10px;align-items:center;cursor:pointer;">
+              <input type="checkbox" id="fieldNewsletter">
+              <span>Weekly newsletter (Sundays, 12:00 UK)</span>
+            </label>
+          </div>
+          <div class="form-group span2">
             <div class="form-label">Sign-In Destination</div>
             <select id="fieldLandingPage" class="form-input">
               <option value="/">Home</option>
@@ -638,6 +644,7 @@ function populateProfile(data) {
   document.getElementById('fieldInvestorType').value = data.investor_type || 'beginner';
   document.getElementById('fieldPreferredCurrency').value = data.preferred_currency || 'GBP';
   document.getElementById('fieldPreferredRegion').value = data.preferred_region || '';
+  document.getElementById('fieldNewsletter').checked = data.newsletter_opt_in !== false;
   document.getElementById('fieldLandingPage').value = data.landing_page || '/';
 
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
@@ -863,6 +870,7 @@ async function saveProfile() {
     preferred_currency: document.getElementById('fieldPreferredCurrency').value,
     preferred_region:   document.getElementById('fieldPreferredRegion').value,
     landing_page:  document.getElementById('fieldLandingPage').value,
+    newsletter_opt_in: document.getElementById('fieldNewsletter').checked,
   };
 
   try {
