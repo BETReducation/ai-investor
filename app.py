@@ -342,13 +342,18 @@ def _ensure_table() -> None:
         # naturally no-ops once this has already put "global-heat-map" in place.
         cur.execute("DELETE FROM dataviz_content WHERE page = 'market-pulse'")
         cur.execute("UPDATE dataviz_pages SET slug = 'global-heat-map', label = 'Global Heat Map' WHERE slug = 'market-pulse'")
-        # Seed the 3 pages that existed before pages became self-service, so
-        # any content already tagged with these slugs keeps working.
-        # "global-heat-map" is the live global heat map (see MARKET_PULSE_INDICES
-        # below) — seeded here too so it appears on the hub like any other
-        # data-viz page, with the live map rendered above it.
-        for slug, label in (("viz-1", "Visualisation 01"), ("viz-2", "Visualisation 02"), ("viz-3", "Visualisation 03"),
-                             ("global-heat-map", "Global Heat Map"),
+        # viz-1/viz-2/viz-3 were placeholder pages seeded before pages became
+        # self-service — never given content, so they sat on the public hub
+        # as empty "NO IMAGE YET" tiles. Dropped for launch (2026-09-27); any
+        # dataviz_content rows still tagged with these slugs go with them.
+        cur.execute("DELETE FROM dataviz_content WHERE page IN ('viz-1', 'viz-2', 'viz-3')")
+        cur.execute("DELETE FROM dataviz_pages WHERE slug IN ('viz-1', 'viz-2', 'viz-3')")
+        # Seed the pages that should exist, so any content already tagged with
+        # these slugs keeps working. "global-heat-map" is the live global heat
+        # map (see MARKET_PULSE_INDICES below) — seeded here too so it appears
+        # on the hub like any other data-viz page, with the live map rendered
+        # above it.
+        for slug, label in (("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
@@ -1300,9 +1305,6 @@ def alpha_content_delete(item_id: int) -> bool:
 # original 3 pages available.
 
 _SEED_DATAVIZ_PAGES = [
-    {"slug": "viz-1", "label": "Visualisation 01", "author": None, "has_live_widget": False},
-    {"slug": "viz-2", "label": "Visualisation 02", "author": None, "has_live_widget": False},
-    {"slug": "viz-3", "label": "Visualisation 03", "author": None, "has_live_widget": False},
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
 ]
