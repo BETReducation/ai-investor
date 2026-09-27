@@ -6571,13 +6571,23 @@ def _issue_get_or_create(send_date: _dt.date) -> dict:
     return _issue_save(send_date, content=_newsletter_auto_content(send_date), status="draft")
 
 
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 def _newsletter_recipients() -> list:
+    """Resend's batch endpoint validates every 'to' address in one go and rejects
+    the whole batch — and so the whole send, to everyone — if even one is malformed.
+    Filter those out here rather than let one bad profile email block the week."""
     out = []
     for username, data in _load_users().items():
         profile = data.get("profile", {}) or {}
         email = (profile.get("email") or (username if "@" in username else "")).strip()
-        if email and newsletter_opted_in(profile):
-            out.append({"username": username, "email": email, "name": profile.get("display_name") or username})
+        if not email or not newsletter_opted_in(profile):
+            continue
+        if not _EMAIL_RE.match(email):
+            print(f"[newsletter] skipping {username}: invalid email {email!r}")
+            continue
+        out.append({"username": username, "email": email, "name": profile.get("display_name") or username})
     return out
 
 
