@@ -84,6 +84,7 @@
 '        <li><a href="/alpha/studio">Alpha Studio</a></li>' +
 '        <li><a href="/social-post-studio">Social Post Studio</a></li>' +
 '        <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>' +
+'        <li id="navNewsletterStudioLi" style="display:none;"><a href="/admin/newsletter">Newsletter</a></li>' +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
@@ -149,6 +150,10 @@
             if (adminLink) adminLink.style.display = '';
             const adminMobileLi = document.getElementById('navAdminMobileLi');
             if (adminMobileLi) adminMobileLi.style.display = 'list-item';
+            const studioLinkAdmin = document.getElementById('navStudioLi');
+            if (studioLinkAdmin) studioLinkAdmin.style.display = '';
+            const newsletterStudioLi = document.getElementById('navNewsletterStudioLi');
+            if (newsletterStudioLi) newsletterStudioLi.style.display = 'list-item';
           }
           if (data.alpha_role) {
             const studioLink = document.getElementById('navStudioLi');
