@@ -3386,6 +3386,8 @@ def api_register():
         return jsonify({"error": "Username and password required"}), 400
     if not email:
         return jsonify({"error": "Email address required"}), 400
+    if not _EMAIL_RE.match(email):
+        return jsonify({"error": "That doesn't look like a valid email address"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
