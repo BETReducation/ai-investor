@@ -42,6 +42,13 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
 #msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
 #msg.err { color: #ef4444; } #msg.ok { color: var(--green); }
 iframe { width: 100%; height: 900px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.preview-panes { display: flex; gap: 20px; align-items: flex-start; }
+.preview-pane { flex: 1 1 0; min-width: 0; }
+.preview-pane.mobile { flex: 0 0 390px; }
+.preview-pane h3 { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.preview-pane iframe { height: 780px; }
+.preview-pane.mobile iframe { width: 375px; }
+@media (max-width: 820px) { .preview-panes { flex-direction: column; } .preview-pane.mobile { flex-basis: auto; } }
 #gate { text-align: center; padding: 60px 5%; color: var(--muted); }
 .tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
 .tab { background: none; border: none; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--muted); padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
@@ -122,7 +129,16 @@ iframe { width: 100%; height: 900px; border: 1px solid var(--border); border-rad
     </div>
 
     <div id="tabPreview" style="display:none;">
-      <iframe id="preview" title="Preview"></iframe>
+      <div class="preview-panes">
+        <div class="preview-pane mobile">
+          <h3>Mobile</h3>
+          <iframe id="previewMobile" title="Preview — mobile"></iframe>
+        </div>
+        <div class="preview-pane">
+          <h3>Desktop</h3>
+          <iframe id="preview" title="Preview — desktop"></iframe>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -216,7 +232,7 @@ async function save(quiet) {
 
 function preview() {
   fetch('/api/admin/newsletter/preview?date=' + issue.send_date, { credentials: 'include' })
-    .then(r => r.text()).then(h => { $('preview').srcdoc = h; });
+    .then(r => r.text()).then(h => { $('preview').srcdoc = h; $('previewMobile').srcdoc = h; });
 }
 
 async function copyPrompt() {
