@@ -114,11 +114,11 @@
 .tv-loading-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--bg-secondary); }
 
 /* PRICE CHART — own chart toolbar (timeframe + chart type) and side drawing toolbar */
-/* Right-anchored (not left/space-between) — klinecharts draws its own OHLC
-   readout ("Time: ... Open: ... High: ...") across the top-left of the
-   canvas itself, which a left-anchored button would sit on top of/collide
-   with; the top-right corner is clear of that. */
-.chart-topbar { position: absolute; top: 8px; right: 8px; z-index: 6; display: flex; align-items: center; justify-content: flex-end; gap: 8px; pointer-events: none; }
+/* Sits below klinecharts' own OHLC readout row ("Time: ... Open: ...") at
+   the very top of the canvas, and above the drawing-tool sidebar — neither
+   the top-left legend nor the top-right last-price tag/y-axis scale reach
+   this band. */
+.chart-topbar { position: absolute; top: 38px; left: 8px; z-index: 6; display: flex; align-items: center; gap: 8px; pointer-events: none; }
 .chart-topbar > * { pointer-events: auto; }
 .chart-tf-toggle, .chart-type-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; min-width: 30px; height: 26px; padding: 0 5px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: all 0.15s; }
 .chart-type-toggle:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
@@ -149,7 +149,7 @@
 .chart-type-opt.active { color: var(--accent-blue); background: rgba(0,136,255,0.16); font-weight: 700; }
 .chart-type-opt:disabled { color: var(--text-muted); cursor: not-allowed; }
 .chart-type-opt:disabled:hover { background: transparent; }
-.chart-sidebar { position: absolute; top: 44px; left: 8px; bottom: 8px; z-index: 6; display: flex; flex-direction: column; gap: 3px; }
+.chart-sidebar { position: absolute; top: 76px; left: 8px; bottom: 8px; z-index: 6; display: flex; flex-direction: column; gap: 3px; }
 .chart-tool-btn { width: 26px; height: 26px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; border-radius: 3px; transition: all 0.15s; }
 .chart-tool-btn:hover { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.08); }
 .chart-tool-sep { height: 1px; background: var(--border); margin: 3px 2px; }
