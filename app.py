@@ -25,6 +25,7 @@ import smtplib
 import requests
 from bs4 import BeautifulSoup
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 try:
     import psycopg2
     import psycopg2.extras
@@ -41,6 +42,7 @@ from api.signals import score_signals
 from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 from api import patterns as pattern_engine
+from newsletter_render import render_alert_email
 from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
@@ -2680,7 +2682,7 @@ def _serialize_structured_sections(sections, upload_image) -> str:
     return ("\n\n" + _SECTION_JOIN + "\n\n").join(parts)
 
 
-def _send_email(to_addr: str, subject: str, body: str, sender: str = "") -> None:
+def _send_email(to_addr: str, subject: str, body: str, sender: str = "", html: str = "") -> None:
     # Resend's HTTP API is a plain HTTPS POST (port 443), so it works from hosts
     # like Railway that block outbound SMTP (ports 25/465/587) at the network
     # level — raw SMTP there fails immediately with "Network is unreachable"
@@ -2693,7 +2695,7 @@ def _send_email(to_addr: str, subject: str, body: str, sender: str = "") -> None
             resp = requests.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {resend_api_key}"},
-                json={"from": from_addr, "to": [to_addr], "subject": subject, "text": body},
+                json={"from": from_addr, "to": [to_addr], "subject": subject, "text": body, **({"html": html} if html else {})},
                 timeout=10,
             )
             if resp.status_code >= 300:
@@ -2712,7 +2714,12 @@ def _send_email(to_addr: str, subject: str, body: str, sender: str = "") -> None
     smtp_user = os.environ.get("SMTP_USER", "")
     smtp_pass = os.environ.get("SMTP_PASS", "")
     from_addr = os.environ.get("SMTP_FROM", smtp_user)
-    msg = MIMEText(body)
+    if html:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(body, "plain"))
+        msg.attach(MIMEText(html, "html"))
+    else:
+        msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = from_addr
     msg["To"] = to_addr
@@ -3566,13 +3573,17 @@ def notify_email():
         return jsonify({"sent": False, "reason": "no email on account"}), 400
 
     when = _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    html, text = render_alert_email(
+        kind=kind, symbol=symbol, detail=detail, when=when,
+        manage_url=f"{request.host_url.rstrip('/')}/tools/signals",
+        base_url=request.host_url.rstrip("/"),
+    )
     _send_email(
         to_addr,
         f"{kind}: {symbol}",
-        f"{kind} for {symbol}\n\nAt {when}, the condition you set was met: {detail}\n\n"
-        f"This is a historical notification of a condition you configured, not advice "
-        f"or a recommendation.\n\nManage alerts: {request.host_url.rstrip('/')}/tools/signals",
+        text,
         sender=os.environ.get("RESEND_FROM_ALERTS", "Growth Capital Group <alerts@growthcapitalgroup.co>"),
+        html=html,
     )
     return jsonify({"sent": True})
 

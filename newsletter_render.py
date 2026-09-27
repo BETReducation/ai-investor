@@ -263,3 +263,52 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
 </td></tr>
 </table></td></tr></table></body></html>'''
     return html, "\n".join(text)
+
+
+# ── Signal/price alert emails ────────────────────────────────────────────────
+# Same palette/header pattern as the weekly newsletter, but a single short card —
+# these fire per-alert in real time rather than being a weekly digest.
+
+def render_alert_email(*, kind: str, symbol: str, detail: str, when: str,
+                       manage_url: str, base_url: str = BASE_URL_DEFAULT) -> tuple[str, str]:
+    """kind: 'Price alert' or 'Signal alert'. Returns (html, plain_text)."""
+    base = base_url.rstrip("/")
+    colour = PURPLE if kind == "Price alert" else GREEN
+    subject = f"{kind}: {symbol}"
+    header_img = f"{base}/static/newsletter/header.png"
+
+    html = f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>{escape(subject)}</title></head>
+<body style="margin:0;padding:0;background:{BG};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{BG};"><tr><td align="center">
+<table role="presentation" width="480" cellpadding="0" cellspacing="0" style="width:100%;max-width:480px;">
+<tr><td bgcolor="{NAVY}" background="{header_img}" style="background:{NAVY} url('{header_img}') right center/cover no-repeat;border-radius:0 0 16px 16px;padding:30px 26px 26px;font-family:{FONT};" align="left">
+  <div style="font-size:12px;letter-spacing:.14em;font-weight:700;color:{colour};">GCG SIGNALS</div>
+  <div style="font-size:24px;line-height:1.15;font-weight:800;color:#ffffff;margin:6px 0 0;">Growth Capital Group</div>
+</td></tr>
+<tr><td style="padding:26px 24px 6px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+  style="background:{CARD};border:1px solid {BORDER};border-top:4px solid {colour};border-radius:12px;">
+<tr><td style="padding:24px 24px 20px;font-family:{FONT};">
+  <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:{colour};margin-bottom:8px;">{escape(kind.upper())}</div>
+  <div style="font-size:24px;font-weight:800;color:{INK};letter-spacing:-.01em;margin-bottom:14px;">{escape(symbol)}</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:16px;"><tr>
+    <td style="font-size:12px;color:{MUTED};padding-right:8px;white-space:nowrap;" valign="top">{escape(when)}</td>
+    <td style="font-size:15px;line-height:1.55;color:{INK};" valign="top">{escape(detail)}</td>
+  </tr></table>
+  <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:{colour};border-radius:8px;">
+    <a href="{escape(manage_url, quote=True)}" style="display:inline-block;padding:11px 20px;font-family:{FONT};font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Manage alerts</a>
+  </td></tr></table>
+</td></tr></table>
+</td></tr>
+<tr><td style="padding:16px 24px 30px;font-family:{FONT};font-size:12px;line-height:1.7;color:{MUTED};" align="center">
+  <p style="margin:0;">This is a historical notification of a condition you configured — not advice or a recommendation.</p>
+</td></tr>
+</table></td></tr></table></body></html>'''
+
+    text = (f"{kind} for {symbol}\n\n"
+            f"At {when}, the condition you set was met: {detail}\n\n"
+            f"This is a historical notification of a condition you configured, not advice or a recommendation.\n\n"
+            f"Manage alerts: {manage_url}")
+    return html, text
