@@ -984,6 +984,17 @@ def _save_users(users: dict) -> None:
         json.dump({"users": users}, f, indent=2)
 
 
+def _delete_user(username: str) -> None:
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM users WHERE username = %s", (username,))
+        return
+    users = _load_users()
+    users.pop(username, None)
+    with open(USERS_FILE, "w") as f:
+        json.dump({"users": users}, f, indent=2)
+
+
 def get_user_avatar(username: str):
     """Returns (filename, bytes) or (None, None). Kept out of _load_users()'s
     Postgres SELECT so that hot path (hit on every authenticated request)
@@ -3908,9 +3919,30 @@ def admin_list_users():
             "entitlements": data.get("entitlements") or default_entitlements(data.get("tier", "free")),
             "email": (data.get("profile") or {}).get("email"),
             "newsletter": newsletter_opted_in(data.get("profile")),
+            "deletable": u not in ADMIN_USERNAMES,
         }
         for u, data in sorted(users.items())
     ], "feature_levels": FEATURE_LEVELS, "tiers": list(TIER_RANKS.keys())})
+
+
+@app.route("/api/admin/delete-user", methods=["POST"])
+@login_required
+def admin_delete_user():
+    if not is_admin_user(current_user):
+        return jsonify({"error": "Admin only"}), 403
+    data = request.get_json() or {}
+    username = (data.get("username") or "").strip()
+    if not username:
+        return jsonify({"error": "username required"}), 400
+    if username == current_user.id:
+        return jsonify({"error": "You can't delete your own account while signed in as it"}), 400
+    if username in ADMIN_USERNAMES:
+        return jsonify({"error": "Can't delete a built-in admin account"}), 400
+    users = _load_users()
+    if username not in users:
+        return jsonify({"error": "User not found"}), 404
+    _delete_user(username)
+    return jsonify({"success": True, "username": username})
 
 
 @app.route("/api/admin/set-alpha-role", methods=["POST"])
