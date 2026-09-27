@@ -56,6 +56,12 @@ iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-rad
 <div class="wrap" id="app" style="display:none;">
   <div>
     <div class="card">
+      <h2>Past issues</h2>
+      <div class="hint">Every issue ever saved, most recent first. Click one to open it.</div>
+      <div id="pastIssues" class="hint">Loading…</div>
+    </div>
+
+    <div class="card">
       <h2>Paste from Claude</h2>
       <div class="btns" style="margin:0 0 10px;"><button class="btn ghost" onclick="copyPrompt()">Copy this week's prompt for Claude</button></div>
       <div class="hint">Paste the weekly prompt's output (sections headed <code>## Subject</code>, <code>## Intro</code>, <code>## Business</code>, <code>## Arena</code>, <code>## Explainer</code>, <code>## Thought</code>, and link headings). It fills the fields below so you can edit.</div>
@@ -237,12 +243,27 @@ async function toggleApprove() {
   } catch (e) { flash(e.message, false); }
 }
 
+async function loadPastIssues() {
+  try {
+    const r = await api('/api/admin/newsletter/list');
+    const params = new URLSearchParams(location.search);
+    const current = params.get('date') || issue.send_date;
+    $('pastIssues').innerHTML = r.issues.length ? r.issues.map(i => `
+      <div class="row" style="${i.send_date === current ? 'font-weight:700;color:var(--text);' : ''}">
+        <a href="?date=${i.send_date}" style="color:inherit;text-decoration:none;flex:1;">
+          ${i.send_date} — ${esc(i.subject) || '(no subject)'}
+          <span class="who status ${i.status}" style="margin-left:6px;">${i.status}</span>
+        </a>
+      </div>`).join('') : '<div class="hint">No issues yet.</div>';
+  } catch (e) { $('pastIssues').textContent = 'Could not load: ' + e.message; }
+}
+
 (async function init() {
   try {
     issue = await api('/api/admin/newsletter' + location.search);
   } catch (e) { $('gate').style.display = 'block'; $('sendInfo').textContent = ''; return; }
   $('app').style.display = 'grid';
-  fill(); preview();
+  fill(); preview(); loadPastIssues();
 })();
 </script>
 </body>

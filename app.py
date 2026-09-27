@@ -6639,6 +6639,34 @@ def admin_newsletter_page():
     return send_from_directory("static", "admin-newsletter.html")
 
 
+@app.route("/api/admin/newsletter/list", methods=["GET"])
+@login_required
+def api_newsletter_list():
+    denied = _admin_only()
+    if denied:
+        return denied
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT send_date, status, content->>'subject' AS subject, sent_count, sent_at
+                FROM newsletter_issues ORDER BY send_date DESC LIMIT 104
+            """)
+            rows = cur.fetchall()
+        issues = [{"send_date": r["send_date"].isoformat(), "status": r["status"], "subject": r["subject"] or "",
+                   "sent_count": r["sent_count"], "sent_at": r["sent_at"].isoformat() if r["sent_at"] else None} for r in rows]
+    else:
+        data = {}
+        if os.path.exists(NEWSLETTER_FILE):
+            with open(NEWSLETTER_FILE) as f:
+                data = json.load(f)
+        issues = sorted((
+            {"send_date": k, "status": v.get("status"), "subject": (v.get("content") or {}).get("subject", ""),
+             "sent_count": v.get("sent_count", 0), "sent_at": v.get("sent_at")}
+            for k, v in data.items()
+        ), key=lambda i: i["send_date"], reverse=True)
+    return jsonify({"issues": issues})
+
+
 @app.route("/api/admin/newsletter", methods=["GET"])
 @login_required
 def api_newsletter_get():
