@@ -212,6 +212,20 @@
   .bt-asset-item .bt-sr-sym { min-width: 66px; }
   .bt-asset-item.active .bt-sr-sym, .bt-asset-item.active .bt-sr-name { color: #000; }
 
+  /* Advanced indicator list — collapses to a single coloured header row so
+     the ~16 indicators don't dominate the sidebar; click to expand. */
+  .ind-section { border: 1px solid var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+  .ind-section-header {
+    list-style: none; cursor: pointer; user-select: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 10px; font-size: 9px; letter-spacing: 2px; font-weight: 700;
+    color: #000; background: var(--accent-blue);
+  }
+  .ind-section-header::-webkit-details-marker { display: none; }
+  .ind-section-header::after { content: '▸'; font-size: 10px; transition: transform 0.2s; }
+  .ind-section[open] > .ind-section-header::after { transform: rotate(90deg); }
+  .ind-section-body { padding: 10px 10px 6px; }
+
   /* Indicator toggle rows */
   .ind-row {
     display: flex;
@@ -970,7 +984,9 @@
 
     <!-- Indicators with expandable params -->
     <div class="ctrl-section" id="detailedIndicators" style="display:none;">
-      <div class="ctrl-label">INDICATORS — click name to configure</div>
+      <details class="ind-section">
+      <summary class="ind-section-header">INDICATORS — click name to configure</summary>
+      <div class="ind-section-body">
 
       <!-- RSI -->
       <div class="ind-row">
@@ -1900,6 +1916,9 @@
                  oninput="document.getElementById('volLabel').textContent='Volume (surge ×'+parseFloat(this.value).toFixed(1)+')'">
         </div>
       </div>
+
+      </div>
+      </details>
     </div>
 
     <!-- Save / Load strategy -->
