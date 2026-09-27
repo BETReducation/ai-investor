@@ -287,6 +287,7 @@
         <li><a href="/alpha/studio">Alpha Studio</a></li>
         <li><a href="/social-post-studio">Social Post Studio</a></li>
         <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>
+        <li id="navNewsletterStudioLi" style="display:none;"><a href="/admin/newsletter">Newsletter</a></li>
       </ul>
     </li>
     <li class="has-drop">
@@ -1393,6 +1394,12 @@ async function checkTier() {
     if (data.authenticated && data.username) {
       const signIn = document.getElementById('navSignIn');
       if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
+      if (data.is_admin) {
+        const studioLinkAdmin = document.getElementById('navStudioLi');
+        if (studioLinkAdmin) studioLinkAdmin.style.display = '';
+        const newsletterStudioLi = document.getElementById('navNewsletterStudioLi');
+        if (newsletterStudioLi) newsletterStudioLi.style.display = 'list-item';
+      }
       if (data.alpha_role) {
         const studioLink = document.getElementById('navStudioLi');
         if (studioLink) studioLink.style.display = '';
