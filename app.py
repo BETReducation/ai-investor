@@ -5,7 +5,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, request, send_from_directory, Response, session
+from flask import Flask, jsonify, request, send_from_directory, Response, session, redirect, abort
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from functools import wraps
@@ -3242,6 +3242,10 @@ def profile_page():
 
 @app.route("/admin")
 def admin_page():
+    if not current_user.is_authenticated:
+        return redirect("/login")
+    if not is_admin_user(current_user):
+        abort(403)
     return send_from_directory("static", "admin.html")
 
 
@@ -6628,6 +6632,10 @@ def _parse_send_date(raw: str) -> _dt.date:
 
 @app.route("/admin/newsletter")
 def admin_newsletter_page():
+    if not current_user.is_authenticated:
+        return redirect("/login")
+    if not is_admin_user(current_user):
+        abort(403)
     return send_from_directory("static", "admin-newsletter.html")
 
 
