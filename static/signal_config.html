@@ -7,85 +7,17 @@
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/gcg.css">
+<link rel="stylesheet" href="/static/css/site-nav.css">
 <style>
-  .site-nav {
-    position: sticky; top: 0; z-index: 200;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 5%; height: 68px;
-    background: var(--bg-secondary);
-    border-bottom: 2px solid rgba(168,85,247,0.5) !important;
-    background: linear-gradient(rgba(168,85,247,0.08),rgba(168,85,247,0.08)), var(--bg-secondary);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
+  /* Shared nav.js/site-nav.css use --bg/--text/--muted/etc; this page's own
+     styling still runs on gcg.css's --bg-primary/--text-primary/etc, so alias
+     one onto the other rather than rewriting the whole page's variable set. */
+  :root {
+    --bg: var(--bg-secondary); --bg2: var(--bg-panel); --card: var(--bg-card);
+    --text: var(--text-primary); --muted: var(--text-secondary);
+    --border2: var(--border-bright); --green: var(--accent-green); --green2: var(--accent-green-dim);
+    --gold: var(--accent-amber);
   }
-  .site-nav-logo img { height: 48px; width: auto; border-radius: 6px; display: block; }
-  .site-nav-left { display: flex; align-items: center; gap: 48px; }
-  .site-nav-links {
-    display: flex; align-items: center; gap: 36px; list-style: none;
-  }
-  .site-nav-links > li { position: relative; }
-  .site-nav-links > li > a {
-    display: flex; align-items: center; gap: 3px;
-    color: var(--text-secondary); text-decoration: none;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px; font-weight: 500;
-    transition: color 0.2s; white-space: nowrap;
-  }
-  .site-nav-links > li > a:hover { color: var(--text-primary); }
-  .nav-chev { font-size: 9px; opacity: 0.5; }
-  .site-dropdown {
-    display: none; position: absolute;
-    top: 100%; left: 50%; transform: translateX(-50%);
-    background: var(--bg-panel); border: 1px solid var(--border-bright);
-    border-radius: 10px; padding: 10px 0 6px; min-width: 175px;
-    list-style: none; z-index: 300;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-  }
-  .has-drop:hover .site-dropdown { display: block; }
-  .site-dropdown li a {
-    display: block; padding: 9px 18px;
-    color: var(--text-secondary); font-size: 13px; font-weight: 500;
-    font-family: 'Space Grotesk', sans-serif;
-    white-space: nowrap; text-decoration: none;
-    transition: color 0.15s, background 0.15s;
-  }
-  .site-dropdown li a:hover { color: var(--accent-green); background: rgba(0,255,136,0.05); }
-  .site-nav-cta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .theme-toggle { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
-  .theme-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .site-btn-ghost {
-    background: transparent; border: 1px solid var(--border-bright);
-    color: var(--text-secondary); padding: 9px 20px; border-radius: 8px;
-    font-size: 14px; font-family: 'Space Grotesk', sans-serif; font-weight: 500;
-    cursor: pointer; text-decoration: none; transition: border-color 0.2s;
-    white-space: nowrap;
-  }
-  .site-btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
-  .site-btn-primary {
-    background: var(--accent-green); color: #000; padding: 6px 16px;
-    border-radius: 6px; font-size: 12px; font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
-    cursor: pointer; border: none; text-decoration: none;
-    transition: background 0.2s; white-space: nowrap;
-  }
-  .site-btn-primary:hover { background: var(--accent-green-dim); }
-  .nav-hamburger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 36px; height: 36px; background: none; border: none; cursor: pointer; padding: 0; flex-shrink: 0; }
-.nav-hamburger span { display: block; width: 100%; height: 2px; background: var(--text-primary); border-radius: 2px; transition: transform 0.25s, opacity 0.25s; }
-.nav-hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.nav-hamburger.active span:nth-child(2) { opacity: 0; }
-.nav-hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-@media (max-width: 900px) {
-  .nav-hamburger { display: flex; }
-  .site-nav-links { display: none; position: fixed; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--bg-panel); border-bottom: 1px solid var(--border); max-height: calc(100vh - 68px); overflow-y: auto; padding: 8px 0; box-shadow: 0 16px 40px rgba(0,0,0,0.5); z-index: 299; }
-  .site-nav-links.open { display: flex; }
-  .site-nav-links > li { width: 100%; }
-  .site-nav-links > li > a { padding: 14px 24px; width: 100%; }
-  .nav-chev { padding: 8px 10px; margin: -8px -10px -8px 0; font-size: 17px; opacity: 0.9; }
-  .has-drop:hover .site-dropdown { display: none; }
-  .has-drop.open .site-dropdown { display: block; }
-  .has-drop.open .nav-chev { transform: rotate(180deg); }
-  .site-dropdown { position: static; transform: none; background: none; border: none; box-shadow: none; border-radius: 0; padding: 0 0 6px 36px; min-width: 0; }
-}
 @media (max-width: 768px) {
   body { overflow: auto; }
 }
@@ -249,6 +181,7 @@
         <li><a href="/learn/beginner">Beginner</a></li>
         <li><a href="/learn/intermediate">Intermediate</a></li>
         <li><a href="/learn/pro">Pro</a></li>
+        <li><a href="/learn/guest-lessons">Guest Lessons</a></li>
         <li><a href="/learn/tools">Tools</a></li>
       </ul>
     </li>
@@ -298,9 +231,11 @@
         <li><a href="/partners">Partners</a></li>
       </ul>
     </li>
+    <li id="navAdminMobileLi" class="nav-admin-mobile-li" style="display:none;"><a href="/admin">Admin</a></li>
   </ul>
   </div>
   <div class="site-nav-cta">
+    <a href="/admin" class="nav-admin-link" id="navAdminLink" style="display:none;" title="Admin panel">Admin</a>
     <button class="theme-toggle" id="themeToggle" onclick="toggleGCGTheme()" title="Toggle light/dark mode">🌙</button>
     <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;display:none;"></span>
     <button class="site-btn-ghost" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">Sign In</button>
@@ -1391,23 +1326,11 @@ async function checkTier() {
     // is actually deployed; startEngine() falls back to the existing poll
     // loop whenever this is empty, so nothing changes until it's set.
     realtimeBaseUrl = data.realtime_base_url || '';
-    if (data.authenticated && data.username) {
-      const signIn = document.getElementById('navSignIn');
-      if (signIn) { signIn.textContent = data.username; signIn.href = '/profile'; signIn.style.color = 'var(--green)'; signIn.style.borderColor = 'var(--green)'; }
-      if (data.is_admin) {
-        const studioLinkAdmin = document.getElementById('navStudioLi');
-        if (studioLinkAdmin) studioLinkAdmin.style.display = '';
-        const newsletterStudioLi = document.getElementById('navNewsletterStudioLi');
-        if (newsletterStudioLi) newsletterStudioLi.style.display = 'list-item';
-      }
-      if (data.alpha_role) {
-        const studioLink = document.getElementById('navStudioLi');
-        if (studioLink) studioLink.style.display = '';
-      if (['tom', 'gary'].includes(data.alpha_role)) {
-        const datavizStudioLi = document.getElementById('navDatavizStudioLi');
-        if (datavizStudioLi) datavizStudioLi.style.display = '';
-      }
-      }
+    if (data.is_admin) {
+      const adminLink = document.getElementById('navAdminLink');
+      if (adminLink) adminLink.style.display = '';
+      const adminMobileLi = document.getElementById('navAdminMobileLi');
+      if (adminMobileLi) adminMobileLi.style.display = 'list-item';
     }
   } catch (_) {
     userTier = 'free';
