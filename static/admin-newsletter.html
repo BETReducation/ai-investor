@@ -41,8 +41,13 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
 .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 #msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
 #msg.err { color: #ef4444; } #msg.ok { color: var(--green); }
-iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+iframe { width: 100%; height: 900px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
 #gate { text-align: center; padding: 60px 5%; color: var(--muted); }
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+.tab { background: none; border: none; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--muted); padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: var(--text); border-bottom-color: var(--green); }
+.pastList { max-height: 320px; overflow-y: auto; }
+.pastList .row { flex-direction: column; align-items: stretch; gap: 2px; }
 </style>
 </head>
 <body>
@@ -55,12 +60,12 @@ iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-rad
 
 <div class="wrap" id="app" style="display:none;">
   <div>
-    <div class="card">
-      <h2>Past issues</h2>
-      <div class="hint">Every issue ever saved, most recent first. Click one to open it.</div>
-      <div id="pastIssues" class="hint">Loading…</div>
+    <div class="tabs">
+      <button class="tab active" id="tabBtnNewsletter" onclick="showTab('newsletter')">Newsletter</button>
+      <button class="tab" id="tabBtnPreview" onclick="showTab('preview')">Issue Preview</button>
     </div>
 
+    <div id="tabNewsletter">
     <div class="card">
       <h2>Paste from Claude</h2>
       <div class="btns" style="margin:0 0 10px;"><button class="btn ghost" onclick="copyPrompt()">Copy this week's prompt for Claude</button></div>
@@ -114,6 +119,11 @@ iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-rad
       <label>Two-sentence lesson summary (auto-written when the link is a lesson; edit freely)</label><textarea id="thought_summary" style="min-height:70px;"></textarea>
       <label>Button text</label><input type="text" id="thought_cta" placeholder="Take the lesson">
     </div>
+    </div>
+
+    <div id="tabPreview" style="display:none;">
+      <iframe id="preview" title="Preview"></iframe>
+    </div>
   </div>
 
   <div class="side">
@@ -129,7 +139,11 @@ iframe { width: 100%; height: 640px; border: 1px solid var(--border); border-rad
       <div class="btns"><button class="btn" id="approveBtn" onclick="toggleApprove()">Approve for Sunday</button></div>
       <div id="msg"></div>
     </div>
-    <iframe id="preview" title="Preview"></iframe>
+    <div class="card">
+      <h2>Past issues</h2>
+      <div class="hint">Every issue ever saved, most recent first. Click one to open it.</div>
+      <div id="pastIssues" class="pastList hint">Loading…</div>
+    </div>
   </div>
 </div>
 
@@ -241,6 +255,13 @@ async function toggleApprove() {
     issue = { ...issue, ...(await api('/api/admin/newsletter/approve', { date: issue.send_date, approved: approving })) };
     fill(); flash(approving ? 'Approved. It will send Sunday at 12:00.' : 'Approval withdrawn.', true);
   } catch (e) { flash(e.message, false); }
+}
+
+function showTab(name) {
+  $('tabNewsletter').style.display = name === 'newsletter' ? '' : 'none';
+  $('tabPreview').style.display = name === 'preview' ? '' : 'none';
+  $('tabBtnNewsletter').classList.toggle('active', name === 'newsletter');
+  $('tabBtnPreview').classList.toggle('active', name === 'preview');
 }
 
 async function loadPastIssues() {
