@@ -6897,6 +6897,22 @@ def api_newsletter_test_send():
     return jsonify({"sent_to": to_addr})
 
 
+@app.route("/api/admin/newsletter/resend", methods=["POST"])
+@login_required
+def api_newsletter_resend():
+    """Bypasses the 'already gone out' lock — for a genuine Resend failure (a bad
+    recipient address, an outage) where the issue is stuck marked sent/failed but
+    nobody actually got it. Sends immediately to today's opted-in list."""
+    denied = _admin_only()
+    if denied:
+        return denied
+    send_date = _parse_send_date((request.get_json(silent=True) or {}).get("date", ""))
+    if not _issue_load(send_date):
+        return jsonify({"error": "No issue saved for that date"}), 404
+    n = send_newsletter(send_date)
+    return jsonify(_issue_load(send_date) | {"sent_now": n})
+
+
 @app.route("/api/admin/newsletter/approve", methods=["POST"])
 @login_required
 def api_newsletter_approve():

@@ -146,6 +146,7 @@ iframe { width: 100%; height: 900px; border: 1px solid var(--border); border-rad
         <button class="btn ghost" onclick="rebuild()">Re-pull auto sections</button>
       </div>
       <div class="btns"><button class="btn" id="approveBtn" onclick="toggleApprove()">Approve for Sunday</button></div>
+      <div class="btns"><button class="btn ghost" id="resendBtn" style="display:none;color:#ef4444;border-color:#ef4444;" onclick="resendNow()">Resend now (bypass lock)</button></div>
       <div id="msg"></div>
     </div>
     <div class="card">
@@ -196,6 +197,7 @@ function fill() {
   const locked = issue.status === 'sent' || issue.status === 'sending';
   $('approveBtn').textContent = issue.status === 'approved' ? 'Withdraw approval' : 'Approve for Sunday';
   $('approveBtn').disabled = locked;
+  $('resendBtn').style.display = (issue.status === 'sent' || issue.status === 'failed') ? '' : 'none';
   $('sendInfo').textContent = `Sends Sunday ${issue.send_date} at 12:00 UK time` + (issue.sent_at ? ` · sent to ${issue.sent_count}` : '') + (issue.status === 'failed' ? ' · send failed, check Railway logs' : '');
   $('recipInfo').textContent = `${issue.recipients} opted-in members will receive this once approved. Editing an approved issue returns it to draft.`;
 }
@@ -254,6 +256,17 @@ async function rebuild() {
 async function testSend() {
   try { await save(true); const r = await api('/api/admin/newsletter/test-send', { date: issue.send_date }); flash('Test sent to ' + r.sent_to, true); }
   catch (e) { flash(e.message, false); }
+}
+
+async function resendNow() {
+  if (!confirm(`This bypasses the lock and sends this issue right now to all opted-in members (${issue.recipients}), even though it's already marked "${issue.status}". Only do this if the earlier send genuinely failed. Continue?`)) return;
+  const btn = $('resendBtn'); btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const r = await api('/api/admin/newsletter/resend', { date: issue.send_date });
+    issue = { ...issue, ...r }; fill();
+    flash(`Resent — ${r.sent_now} sent.`, r.sent_now > 0);
+  } catch (e) { flash(e.message, false); }
+  finally { btn.disabled = false; btn.textContent = 'Resend now (bypass lock)'; }
 }
 
 async function toggleApprove() {
