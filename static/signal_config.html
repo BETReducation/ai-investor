@@ -2986,7 +2986,7 @@ function fireAlert(sym, sig) {
   const key = (sig.strategy || '') + ':' + sym + ':' + sig.type;
   if (emailBox && emailBox.checked && Date.now() - (_lastSignalEmail[key] || 0) > 15 * 60 * 1000) {
     _lastSignalEmail[key] = Date.now();
-    sendAlertEmail('signal', sym, `${sig.strategy ? '[' + sig.strategy + '] ' : ''}${sig.type} conditions met at ${getCurrencySymbol()}${price.toFixed(2)} (${conf}% confidence): ${sig.reasons.join(', ')}`);
+    sendAlertEmail('signal', sym, { strategyName: sig.strategy || sig.type + ' strategy', triggers: sig.reasons, direction: sig.type, price: getCurrencySymbol() + price.toFixed(2), confidence: conf });
   }
 }
 const _lastSignalEmail = {};
@@ -3125,14 +3125,14 @@ function showSignalToast(a) {
 }
 
 // Server sends to the account's registered address and enforces a daily cap.
-async function sendAlertEmail(kind, symbol, detail) {
+async function sendAlertEmail(kind, symbol, fields) {
   if (!currentUser) return;
   try {
     await fetch(API_BASE + '/api/notify-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ kind, symbol, detail }),
+      body: JSON.stringify({ kind, symbol, ...fields }),
     });
   } catch (e) {
     addLog('err', 'ALERT', 'Email notification failed: ' + e.message);
@@ -3251,7 +3251,7 @@ async function evaluatePriceAlerts() {
       a.active = false;
       anyFired = true;
       showPriceAlertToast(sym, a, price);
-      if (a.email) sendAlertEmail('price', sym, `price crossed ${a.direction} ${a.price} (now ${formatPrice(price, sym)})`);
+      if (a.email) sendAlertEmail('price', sym, { direction: a.direction, targetPrice: getCurrencySymbol() + formatPrice(a.price, sym), currentPrice: getCurrencySymbol() + formatPrice(price, sym) });
       addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${getCurrencySymbol()}${a.price} (now ${getCurrencySymbol()}${formatPrice(price, sym)})`);
     }
   }

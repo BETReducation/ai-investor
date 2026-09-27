@@ -269,13 +269,37 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
 # Same palette/header pattern as the weekly newsletter, but a single short card —
 # these fire per-alert in real time rather than being a weekly digest.
 
-def render_alert_email(*, kind: str, symbol: str, detail: str, when: str,
-                       manage_url: str, base_url: str = BASE_URL_DEFAULT) -> tuple[str, str]:
-    """kind: 'Price alert' or 'Signal alert'. Returns (html, plain_text)."""
+def _alert_value_html(value) -> str:
+    if isinstance(value, (list, tuple)):
+        if len(value) <= 1:
+            return escape(str(value[0])) if value else "—"
+        return "".join(f'<div style="margin:0 0 3px;">&bull;&nbsp;{escape(str(v))}</div>' for v in value)
+    return escape(str(value))
+
+
+def _alert_value_text(value) -> str:
+    if isinstance(value, (list, tuple)):
+        return "; ".join(str(v) for v in value) if value else "—"
+    return str(value)
+
+
+def render_alert_email(*, kind: str, symbol: str, rows: list, manage_url: str,
+                       base_url: str = BASE_URL_DEFAULT) -> tuple[str, str]:
+    """kind: 'Price alert' or 'Signal alert'. `rows` is a list of (label, value) pairs,
+    where value is a string or a list of strings (rendered as bullet lines)."""
     base = base_url.rstrip("/")
     colour = PURPLE if kind == "Price alert" else GREEN
     subject = f"{kind}: {symbol}"
     header_img = f"{base}/static/newsletter/header.png"
+
+    row_html = "".join(
+        f'<tr><td style="padding:10px 14px 10px 0;border-top:1px solid {BORDER};font-size:11px;'
+        f'letter-spacing:.04em;text-transform:uppercase;font-weight:700;color:{MUTED};white-space:nowrap;width:1%;" valign="top">'
+        f'{escape(label)}</td>'
+        f'<td style="padding:10px 0;border-top:1px solid {BORDER};font-size:14.5px;line-height:1.5;color:{INK};" valign="top">'
+        f'{_alert_value_html(value)}</td></tr>'
+        for label, value in rows
+    )
 
     html = f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -292,11 +316,8 @@ def render_alert_email(*, kind: str, symbol: str, detail: str, when: str,
   style="background:{CARD};border:1px solid {BORDER};border-top:4px solid {colour};border-radius:12px;">
 <tr><td style="padding:24px 24px 20px;font-family:{FONT};">
   <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:{colour};margin-bottom:8px;">{escape(kind.upper())}</div>
-  <div style="font-size:24px;font-weight:800;color:{INK};letter-spacing:-.01em;margin-bottom:14px;">{escape(symbol)}</div>
-  <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:16px;"><tr>
-    <td style="font-size:12px;color:{MUTED};padding-right:8px;white-space:nowrap;" valign="top">{escape(when)}</td>
-    <td style="font-size:15px;line-height:1.55;color:{INK};" valign="top">{escape(detail)}</td>
-  </tr></table>
+  <div style="font-size:24px;font-weight:800;color:{INK};letter-spacing:-.01em;margin-bottom:6px;">{escape(symbol)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">{row_html}</table>
   <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:{colour};border-radius:8px;">
     <a href="{escape(manage_url, quote=True)}" style="display:inline-block;padding:11px 20px;font-family:{FONT};font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">Manage alerts</a>
   </td></tr></table>
@@ -308,7 +329,7 @@ def render_alert_email(*, kind: str, symbol: str, detail: str, when: str,
 </table></td></tr></table></body></html>'''
 
     text = (f"{kind} for {symbol}\n\n"
-            f"At {when}, the condition you set was met: {detail}\n\n"
-            f"This is a historical notification of a condition you configured, not advice or a recommendation.\n\n"
+            + "\n".join(f"{label}: {_alert_value_text(value)}" for label, value in rows)
+            + "\n\nThis is a historical notification of a condition you configured, not advice or a recommendation.\n\n"
             f"Manage alerts: {manage_url}")
     return html, text

@@ -3551,11 +3551,34 @@ _alert_email_lock = threading.Lock()
 @login_required
 def notify_email():
     data = request.get_json(silent=True) or {}
-    kind = "Price alert" if data.get("kind") == "price" else "Signal alert"
+    is_price = data.get("kind") == "price"
+    kind = "Price alert" if is_price else "Signal alert"
     symbol = re.sub(r"[^A-Za-z0-9=.\-^/ ]", "", str(data.get("symbol", "")))[:20]
-    detail = re.sub(r"[\r\n]+", " ", str(data.get("detail", "")))[:300]
-    if not symbol or not detail:
-        return jsonify({"error": "symbol and detail required"}), 400
+    if not symbol:
+        return jsonify({"error": "symbol required"}), 400
+
+    def clean(x, limit=120):
+        return re.sub(r"[\r\n]+", " ", str(x or "")).strip()[:limit]
+
+    if is_price:
+        direction = "risen above" if data.get("direction") == "above" else "fallen below"
+        rows = [
+            ("Price Alert", f"For {symbol}"),
+            ("Condition", f"Price has {direction} {clean(data.get('targetPrice'), 30)}"),
+            ("Price Now", clean(data.get("currentPrice"), 30)),
+        ]
+    else:
+        triggers = [clean(t, 80) for t in (data.get("triggers") or []) if clean(t, 80)][:8]
+        rows = [
+            ("Signal Alert", f"For {symbol}"),
+            ("Signal Name", clean(data.get("strategyName"), 80) or "Unnamed strategy"),
+            ("Direction", clean(data.get("direction"), 20)),
+            ("Signal Triggers", triggers or ["—"]),
+        ]
+        if data.get("price"):
+            rows.append(("Price", clean(data.get("price"), 30)))
+        if data.get("confidence") is not None:
+            rows.append(("Confidence", f"{clean(data.get('confidence'), 10)}%"))
 
     today = _dt.date.today().isoformat()
     with _alert_email_lock:
@@ -3572,9 +3595,10 @@ def notify_email():
     if not to_addr:
         return jsonify({"sent": False, "reason": "no email on account"}), 400
 
-    when = _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    when = _dt.datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
+    rows.append(("Date & Time", when))
     html, text = render_alert_email(
-        kind=kind, symbol=symbol, detail=detail, when=when,
+        kind=kind, symbol=symbol, rows=rows,
         manage_url=f"{request.host_url.rstrip('/')}/tools/signals",
         base_url=request.host_url.rstrip("/"),
     )
