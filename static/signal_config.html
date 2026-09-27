@@ -117,7 +117,13 @@
 .chart-topbar { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
 .chart-topbar > * { pointer-events: auto; }
 .chart-tf-toggle, .chart-type-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; min-width: 30px; height: 26px; padding: 0 5px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; color: var(--text-secondary); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: all 0.15s; }
-.chart-tf-toggle:hover, .chart-type-toggle:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+.chart-type-toggle:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+/* Timeframe toggle gets its own tinted look (rather than blending into the
+   toolbar like the plain grey buttons) since it's the one control most users
+   reach for first when a chart opens. Purple keeps it distinct from the
+   green/red used for signal direction elsewhere on this page. */
+.chart-tf-toggle { background: rgba(170,85,255,0.12); border-color: var(--accent-purple); color: var(--accent-purple); }
+.chart-tf-toggle:hover { background: rgba(170,85,255,0.22); border-color: var(--accent-purple); color: var(--accent-purple); }
 /* Live-tick badge — only shown when a symbol has a genuine OANDA/Alpaca stream behind
    it (never for delayed yfinance data, so this can't misleadingly claim "live"). The
    dot pulses continuously so liveness reads at a glance even when the price itself
@@ -3491,7 +3497,7 @@ function updateRiskBar() {
 // had just computed on (different vendor, different adjustments), which was confusing,
 // and the iframe itself was a frequent casualty of ad/privacy browser extensions.
 let priceChart = null;
-let chartTf = '5m';
+let chartTf = '1d';
 let lastChartSym = null;
 let chartLoadSeq = 0;
 let currentChartBars = []; // rows of the currently-loaded chart, {timestamp,open,high,low,close,volume} — used by the volume-profile/VWAP tools to compute values beyond the chart's own click points
@@ -3554,17 +3560,13 @@ function initChart() {
   // engine's own polling interval, a fully separate, user-controlled concern (the
   // topbar buttons) from the chart's own default.
   //
-  // '5m' rather than '1d': on a daily view, a live tick moving the price by $1-3 is
-  // a fraction of a pixel against a chart spanning months of history — genuinely
-  // imperceptible even though the data really is live (confirmed directly against a
-  // real OANDA stream). '5m' still pulls a generous lookback (CHART_HISTORY_PERIOD's
-  // '60d', ~4600 bars — this does NOT reintroduce the sparse-view problem the old
-  // comment above guarded against, which was specifically about accidentally reusing
-  // the *trading* timeframe dropdown's own conservative period, not about '5m' being
-  // a bad interval choice) while making tick-scale moves an actually-visible fraction
-  // of the bar's own range. Users can still switch to 1D (or anything else) manually
-  // via the existing timeframe toggle.
-  chartTf = '5m';
+  // Was '5m' rather than '1d' — a live tick moving the price by $1-3 is a fraction of
+  // a pixel against a chart spanning months of history, genuinely imperceptible on a
+  // daily view even though the data really is live. Changed to '1d' at Gary's request
+  // (most users expect the chart to open on a daily view); live ticks on 1D just won't
+  // read as visibly as they did on 5m. Users can still switch timeframe manually via
+  // the existing timeframe toggle.
+  chartTf = '1d';
   renderChartToolbars();
   if (currentAsset) loadPriceChart(currentAsset);
   else showChartPlaceholder();
