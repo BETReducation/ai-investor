@@ -6353,7 +6353,7 @@ NEWSLETTER_FILE = os.path.join(os.path.dirname(__file__), "newsletter_issues.jso
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "https://www.growthcapitalgroup.co")
 NEWSLETTER_FROM = os.environ.get("RESEND_FROM", "Growth Capital Group <newsletter@growthcapitalgroup.co>")
 ALPHA_DISPLAY = {"tom": "Tom", "dave": "Dave", "gary": "Gary", "connor": "Connor"}
-NEWSLETTER_STATUSES = ("draft", "approved", "sending", "sent")
+NEWSLETTER_STATUSES = ("draft", "approved", "sending", "sent", "failed")
 
 
 def _newsletter_ensure_table() -> None:
@@ -6627,12 +6627,19 @@ def send_newsletter(send_date: _dt.date) -> int:
         return 0
     content = issue["content"]
     subject = content.get("subject") or "Your weekly Growth Capital Group briefing"
+    recipients = _newsletter_recipients()
     messages = []
-    for r in _newsletter_recipients():
+    for r in recipients:
         html, text, unsub = _render_for_user(content, r["username"], r["name"])
         messages.append(_newsletter_message(r["email"], subject, html, text, unsub))
-    sent, _ = _resend_send_batch(messages)
-    _issue_save(send_date, status="sent", sent_count=sent)
+    sent, err = _resend_send_batch(messages)
+    # Only mark "sent" once at least one message actually went out — a total
+    # Resend failure (bad/missing key, rejected domain) leaves it "failed" so
+    # it's obvious from the status badge alone, not just the recipient count.
+    status = "sent" if sent > 0 or not recipients else "failed"
+    _issue_save(send_date, status=status, sent_count=sent)
+    if status == "failed":
+        print(f"[newsletter] send failed for {send_date}: {err}")
     return sent
 
 

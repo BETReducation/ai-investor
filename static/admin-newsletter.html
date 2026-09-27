@@ -38,6 +38,7 @@ textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
 .status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; border: 1px solid var(--border2); }
 .status.approved { color: var(--green); border-color: var(--green); }
 .status.sent { color: var(--muted); }
+.status.failed { color: #ef4444; border-color: #ef4444; }
 .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 #msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
 #msg.err { color: #ef4444; } #msg.ok { color: var(--green); }
@@ -195,7 +196,7 @@ function fill() {
   const locked = issue.status === 'sent' || issue.status === 'sending';
   $('approveBtn').textContent = issue.status === 'approved' ? 'Withdraw approval' : 'Approve for Sunday';
   $('approveBtn').disabled = locked;
-  $('sendInfo').textContent = `Sends Sunday ${issue.send_date} at 12:00 UK time` + (issue.sent_at ? ` · sent to ${issue.sent_count}` : '');
+  $('sendInfo').textContent = `Sends Sunday ${issue.send_date} at 12:00 UK time` + (issue.sent_at ? ` · sent to ${issue.sent_count}` : '') + (issue.status === 'failed' ? ' · send failed, check Railway logs' : '');
   $('recipInfo').textContent = `${issue.recipients} opted-in members will receive this once approved. Editing an approved issue returns it to draft.`;
 }
 
