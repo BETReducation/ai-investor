@@ -532,9 +532,12 @@ function buildTableOfContents(bodyEl) {
     a.textContent = h.textContent;
     a.addEventListener('click', (e) => {
       e.preventDefault();
-      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState(null, '', '#' + id);
+      // Close first: collapsing the list shifts the page up, which would
+      // otherwise leave the heading under the fixed navbar after scrolling.
       toc.open = false;
+      const top = h.getBoundingClientRect().top + window.scrollY - 110;
+      window.scrollTo({ top, behavior: 'smooth' });
+      history.replaceState(null, '', '#' + id);
     });
     li.appendChild(a);
     list.appendChild(li);

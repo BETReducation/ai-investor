@@ -74,6 +74,9 @@
 .topic-pill.active-filter.topic-b { background: var(--gold); color: #03130f; }
 .topic-pill.active-filter.topic-c { background: var(--purple2); color: #fff; }
 .topic-pill.active-filter.topic-all { background: var(--text); border-color: var(--text); color: var(--bg); }
+.topic-pill.active-filter.level-beginner { background: #34d399; color: #03130f; }
+.topic-pill.active-filter.level-intermediate { background: #fb923c; color: #03130f; }
+.topic-pill.active-filter.level-pro { background: #f87171; color: #03130f; }
 .topic-empty-msg { font-size: 13px; color: var(--muted); text-align: center; padding: 24px; grid-column: 1 / -1; }
 .level-pill { color: var(--muted); border-color: var(--border2); background: rgba(148,163,184,0.08); }
 .level-beginner { color: #34d399; border-color: rgba(52,211,153,0.32); background: rgba(52,211,153,0.08); }
@@ -164,6 +167,12 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <button type="button" class="topic-pill topic-a" data-topic="Long-Term Investing">Long-Term Investing</button>
         <button type="button" class="topic-pill topic-b" data-topic="Technical Analysis">Technical Analysis</button>
         <button type="button" class="topic-pill topic-c" data-topic="Impact of AI">Impact of AI</button>
+      </div>
+      <div class="alpha-topics" id="levelFilters">
+        <button type="button" class="topic-pill topic-all" data-level="">All levels</button>
+        <button type="button" class="topic-pill level-beginner" data-level="beginner">Beginner</button>
+        <button type="button" class="topic-pill level-intermediate" data-level="intermediate">Intermediate</button>
+        <button type="button" class="topic-pill level-pro" data-level="pro">Pro</button>
       </div>
       <div class="alpha-meta-row">
         <span class="alpha-updated" id="alphaUpdated">Updated 4 days ago</span>
@@ -610,19 +619,46 @@ function renderLinks(items, emptyMessage) {
   });
 }
 
+let activeLevel = new URLSearchParams(window.location.search).get('level');
+if (!['beginner', 'intermediate', 'pro'].includes(activeLevel)) activeLevel = null;
+let lastTopic = null;
+
 async function loadAlphaContent(topic) {
+  lastTopic = topic;
   try {
     const url = '/api/alpha/' + ALPHA_SLUG + '/content' + (topic ? '?topic=' + encodeURIComponent(topic) : '');
     const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
+    const filtered = !!(topic || activeLevel);
+    // Items with no level set count as beginner, matching the studio default.
+    const byLevel = arr => activeLevel ? (arr || []).filter(i => (i.level || 'beginner') === activeLevel) : (arr || []);
+    const msg = what => filtered ? 'No ' + what + ' yet under this filter.' : null;
     renderWatchlist(data.watchlist || [], topic ? 'No watchlist items yet under this topic.' : null);
-    renderVideos(data.video || [], topic ? 'No videos yet under this topic.' : null);
-    renderPinnedPosts(data.pinned_posts || []);
-    renderPosts(data.post || [], topic ? 'No posts yet under this topic.' : null);
-    renderLinks(data.link || [], topic ? 'No links yet under this topic.' : null);
+    renderVideos(byLevel(data.video), msg('videos'));
+    renderPinnedPosts(byLevel(data.pinned_posts));
+    renderPosts(byLevel(data.post), msg('posts'));
+    renderLinks(byLevel(data.link), msg('links'));
   } catch {}
 }
+
+function setActiveLevelPill() {
+  document.querySelectorAll('#levelFilters .topic-pill').forEach(btn => {
+    btn.classList.toggle('active-filter', (btn.dataset.level || '') === (activeLevel || ''));
+  });
+}
+
+document.querySelectorAll('#levelFilters .topic-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeLevel = btn.dataset.level || null;
+    const url = new URL(window.location.href);
+    if (activeLevel) url.searchParams.set('level', activeLevel); else url.searchParams.delete('level');
+    history.pushState({}, '', url);
+    setActiveLevelPill();
+    loadAlphaContent(lastTopic);
+  });
+});
+setActiveLevelPill();
 
 function setActiveTopicPill(topic) {
   document.querySelectorAll('#topicFilters .topic-pill').forEach(btn => {
