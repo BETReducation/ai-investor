@@ -1540,6 +1540,9 @@ function pickBasicAsset(symbol, category) {
 
 // --- INIT ---
 function init() {
+  // Saved currentAsset is dropped if assets hadn't loaded yet when prefs applied,
+  // which left the chart on its placeholder until a symbol was clicked.
+  if (!currentAsset) currentAsset = Object.keys(assets).find(s => watchlistEnabled[s]) || Object.keys(assets)[0] || null;
   renderWatchlist();
   initChart();
   updateTicker();
