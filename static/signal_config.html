@@ -3600,6 +3600,7 @@ function ensurePriceChart() {
   // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
   // needs to swap at runtime, so it doesn't need its own refresh function).
   priceChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { height: 80, id: 'rsi_pane' });
+  applyBollingerOverlay();
   return priceChart;
 }
 
@@ -3646,6 +3647,23 @@ const CHART_TYPE_OPTIONS = [
 ];
 const INTRADAY_TIMEFRAMES = ['1m', '2m', '5m', '10m', '15m', '30m', '45m', '60m', '90m', '1h', '2h', '4h'];
 
+// Bollinger Bands drawn on the candle pane itself (isStack=true), 20/2 to match the
+// condition builder's defaults. Preference persists per browser.
+let chartBbOn = (() => { try { return localStorage.getItem('gcgChartBb') !== '0'; } catch (e) { return true; } })();
+
+function applyBollingerOverlay() {
+  if (!priceChart) return;
+  priceChart.removeIndicator({ paneId: 'candle_pane', name: 'BOLL' });
+  if (chartBbOn) priceChart.createIndicator({ name: 'BOLL', calcParams: [20, 2] }, true, { id: 'candle_pane' });
+}
+
+function toggleChartBollinger() {
+  chartBbOn = !chartBbOn;
+  try { localStorage.setItem('gcgChartBb', chartBbOn ? '1' : '0'); } catch (e) {}
+  applyBollingerOverlay();
+  renderChartToolbars();
+}
+
 function renderChartToolbars() {
   const topbar = document.getElementById('chartTopbar');
   const sidebar = document.getElementById('chartSidebar');
@@ -3658,7 +3676,8 @@ function renderChartToolbars() {
       </div>
       <button class="chart-type-toggle" id="chartTypeToggle"
         title="Chart type — Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data."
-        onclick="toggleChartTypeFlyout(this)"></button>`;
+        onclick="toggleChartTypeFlyout(this)"></button>
+      <button class="chart-type-toggle" id="chartBbToggle" title="Bollinger Bands (20, 2) overlay" onclick="toggleChartBollinger()">BB</button>`;
   }
   if (sidebar && !sidebar.dataset.built) {
     sidebar.dataset.built = '1';
@@ -3667,6 +3686,8 @@ function renderChartToolbars() {
       + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`
       + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" title="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">🗑</button>`;
   }
+  const bbToggle = document.getElementById('chartBbToggle');
+  if (bbToggle) bbToggle.style.opacity = chartBbOn ? '1' : '0.45';
   const tfToggle = document.getElementById('chartTfToggle');
   if (tfToggle) tfToggle.textContent = CHART_TF_LABELS[chartTf] || chartTf;
   const typeToggle = document.getElementById('chartTypeToggle');
