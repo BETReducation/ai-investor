@@ -2496,7 +2496,12 @@ function updateStrategyStatus() {
     if (d.total === 0) return '';
     const state = d.fired ? `▶ ${label} FIRING` : (d.matchedCount > 0 ? '◐ partial' : '⏸ no match');
     const lineColor = d.fired ? color : (d.matchedCount > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
-    return `<div style="display:flex;justify-content:space-between;"><span style="color:${color};font-weight:700;">${label}</span><span style="color:${lineColor};">${state} · ${d.matchedCount}/${d.total}</span></div>`;
+    const dirKey = label.toLowerCase();
+    const items = result.results.filter(r => (r.direction === 'sell' ? 'sell' : 'buy') === dirKey).map(r => {
+      const name = (CONDITION_DEFS[r.type] || {}).label || r.type;
+      return `<div style="display:flex;gap:6px;color:${r.met ? 'var(--accent-green)' : 'var(--text-muted)'};"><span>${r.met ? '✓' : '✗'}</span><span style="flex:1;">${name}</span><span>${r.met ? 'firing' : 'not firing'}</span></div>`;
+    }).join('');
+    return `<div style="display:flex;justify-content:space-between;"><span style="color:${color};font-weight:700;">${label}</span><span style="color:${lineColor};">${state} · ${d.matchedCount}/${d.total}</span></div><div style="margin:3px 0 6px;font-size:8px;line-height:1.6;">${items}</div>`;
   };
   statusEl.innerHTML = `
     <div style="letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">LIVE · ${currentAsset}</div>
