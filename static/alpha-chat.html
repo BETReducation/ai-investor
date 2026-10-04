@@ -139,8 +139,7 @@ async function load() {
   try {
     S = await api('GET', '/api/chat');
   } catch (e) {
-    const guest = /Login/.test(e.message);
-    $app.innerHTML = `<div class="notice">${guest ? 'Sign in with a partner account to see GCG Chat.' : esc(e.message)}</div>`;
+    $app.innerHTML = `<div class="notice">${esc(e.message)}</div>`;
     return;
   }
   render();
@@ -154,9 +153,9 @@ const isQuiet = t => !t.closed && (Date.now() - new Date(t.last_activity)) > S.q
 function render() {
   const list = topics();
   let h = `<div class="toolbar"><span class="count">${list.length} topic${list.length === 1 ? '' : 's'}, newest first</span>
-    <button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button></div>`;
+    ${S.me ? `<button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button>` : '<span class="hint">Read-only. Posting is open to partners.</span>'}</div>`;
   if (composing) h += newTopicForm();
-  h += list.length ? list.map(topicHtml).join('') : '<div class="notice">No topics yet. Start the first one.</div>';
+  h += list.length ? list.map(topicHtml).join('') : '<div class="notice">No topics yet.</div>';
   $app.innerHTML = h;
 }
 
@@ -188,9 +187,9 @@ function topicBody(topic, br) {
     <div class="thread-sub">${cur.id === topic.id ? 'Topic' : 'Branch'} by <span style="text-transform:capitalize">${esc(cur.author)}</span> · last activity ${fmt(cur.last_activity)}${quietNote}</div></div>
     <div class="actions">
       ${mine ? `<button class="mini" onclick="renameThread(${cur.id})">Edit</button>` : ''}
-      <button class="mini" onclick="transferThread(${cur.id}, 'copy')">Copy</button>
+      ${S.me ? `<button class="mini" onclick="transferThread(${cur.id}, 'copy')">Copy</button>` : ''}
       ${mine ? `<button class="mini" onclick="transferThread(${cur.id}, 'move')">Move</button>` : ''}
-      <button class="mini" onclick="closeThread(${cur.id}, ${!cur.closed})">${cur.closed ? 'Reopen' : 'Close'}</button>
+      ${S.me ? `<button class="mini" onclick="closeThread(${cur.id}, ${!cur.closed})">${cur.closed ? 'Reopen' : 'Close'}</button>` : ''}
       ${mine ? `<button class="mini danger" onclick="deleteThread(${cur.id})">Delete</button>` : ''}
     </div></div>`;
 
@@ -199,6 +198,7 @@ function topicBody(topic, br) {
   if (cur.id === topic.id) br.forEach(b => items.push({ at: b.forked_at, html: `<div class="fork" onclick="pick(${topic.id}, ${b.id})">↳ <span>Branch: <b>${esc(b.title)}</b> · ${msgs(b.id).length} message${msgs(b.id).length === 1 ? '' : 's'}</span></div>` }));
   h += items.sort((a, b) => a.at.localeCompare(b.at)).map(i => i.html).join('');
 
+  if (!S.me) return h;
   h += cur.closed ? '<div class="closed-note">This thread is closed. Reopen it to add to it.</div>' : composerHtml(cur);
   return h;
 }
@@ -215,7 +215,7 @@ function msgHtml(m) {
   }
   const acts = editing === m.id ? '' : `<span class="msg-actions">
       ${mine ? `<button class="mini" onclick="editing=${m.id};render()">Edit</button>` : ''}
-      ${m.opening ? '' : `<button class="mini" onclick="transferMsg(${m.id}, 'copy')">Copy</button>${mine ? `<button class="mini" onclick="transferMsg(${m.id}, 'move')">Move</button><button class="mini danger" onclick="deleteMsg(${m.id})">Delete</button>` : ''}`}
+      ${m.opening || !S.me ? '' : `<button class="mini" onclick="transferMsg(${m.id}, 'copy')">Copy</button>${mine ? `<button class="mini" onclick="transferMsg(${m.id}, 'move')">Move</button><button class="mini danger" onclick="deleteMsg(${m.id})">Delete</button>` : ''}`}
     </span>`;
   return `<div class="msg ${m.kind === 'question' ? 'q' : ''}"><div class="msg-top"><span class="who">${esc(m.author)}</span><span class="kind">${label}</span><span>${fmt(m.created_at)}${m.edited_at ? ' · edited' : ''}</span>${acts}</div>${body}</div>`;
 }

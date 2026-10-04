@@ -64,4 +64,5 @@ def test_branching_move_copy_permissions(clients):
 
 def test_partners_only(clients):
     app_client = clients("gary").application.test_client()
-    assert app_client.get("/api/chat").status_code == 401
+    assert app_client.get("/api/chat").get_json()["me"] is None
+    assert app_client.post("/api/chat/topic", json={"title": "t", "body": "b"}).status_code == 401

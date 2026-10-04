@@ -184,10 +184,13 @@ def _api(fn):
 
 
 @bp.route("/api/chat", methods=["GET"])
-@_api
 def chat_state():
+    """Public read. Posting and every other endpoint stay partner-only."""
     state = _read()
-    return jsonify({"me": current_user.alpha_role, "quiet_days": QUIET_DAYS,
+    me = None
+    if current_user.is_authenticated and current_user.tier == "founder":
+        me = current_user.alpha_role
+    return jsonify({"me": me, "quiet_days": QUIET_DAYS,
                     "threads": state["threads"], "messages": state["messages"]})
 
 
