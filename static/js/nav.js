@@ -111,6 +111,10 @@
 '        <div class="nav-search-results" id="navSearchResults"></div>' +
 '      </div>' +
 '    </div>' +
+'    <div class="nav-bell" id="navBell" style="display:none;">' +
+'      <button class="nav-bell-toggle" id="navBellToggle" title="Notifications" aria-label="Notifications">🔔<span class="nav-bell-badge" id="navBellBadge" style="display:none;"></span></button>' +
+'      <div class="nav-bell-box"><div class="nav-bell-head">Notifications</div><div class="nav-bell-list" id="navBellList"></div></div>' +
+'    </div>' +
 '    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" onclick="toggleTheme()">🌙</button>' +
 '    <a href="/login" class="btn-ghost" id="navSignIn">Sign Up / Sign In</a>' +
 '    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">' +
@@ -236,6 +240,60 @@
     if (!navEl) return;
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     navEl.style.background = navBackground(isDark, window.scrollY > 40);
+  });
+
+  // ── Notification bell (partners and admins; the API says who gets one) ──
+  document.addEventListener('DOMContentLoaded', function () {
+    const wrap = document.getElementById('navBell');
+    if (!wrap) return;
+    const badge = document.getElementById('navBellBadge');
+    const list = document.getElementById('navBellList');
+    const esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
+    const ago = function (iso) {
+      const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+      if (m < 1) return 'just now';
+      if (m < 60) return m + 'm ago';
+      if (m < 1440) return Math.round(m / 60) + 'h ago';
+      return Math.round(m / 1440) + 'd ago';
+    };
+    const icons = { chat_topic: '💬', chat_reply: '↩️', chat_branch: '🌿', alpha_published: '📰', member_joined: '👋', login: '🔑' };
+    let events = [];
+
+    function draw() {
+      list.innerHTML = events.length ? events.map(function (e) {
+        return '<a class="nav-bell-item' + (e.unread ? ' unread' : '') + '" href="' + esc(e.url || '#') + '"><span class="nav-bell-icon">' + (icons[e.kind] || '•') + '</span><span><span class="nav-bell-text">' + esc(e.summary) + '</span><span class="nav-bell-time">' + ago(e.at) + '</span></span></a>';
+      }).join('') : '<div class="nav-bell-empty">Nothing new yet.</div>';
+    }
+    async function poll() {
+      try {
+        const res = await fetch('/api/notifications', { credentials: 'include' });
+        const data = await res.json();
+        if (!data.enabled) return;
+        wrap.style.display = '';
+        events = data.events;
+        badge.textContent = data.unread > 9 ? '9+' : data.unread;
+        badge.style.display = data.unread ? '' : 'none';
+        if (wrap.classList.contains('open')) draw();
+      } catch (e) { /* offline or logged out */ }
+    }
+    document.getElementById('navBellToggle').addEventListener('click', function () {
+      const opening = !wrap.classList.contains('open');
+      wrap.classList.toggle('open', opening);
+      if (opening) {
+        draw();
+        if (badge.style.display !== 'none') {
+          badge.style.display = 'none';
+          fetch('/api/notifications/read', { method: 'POST', credentials: 'include' });
+        }
+      } else {
+        events.forEach(function (e) { e.unread = false; });
+      }
+    });
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) { wrap.classList.remove('open'); events.forEach(function (x) { x.unread = false; }); }
+    });
+    poll();
+    setInterval(poll, 60000);
   });
 
   // ── Site search ─────────────────────────────────────────────────────────

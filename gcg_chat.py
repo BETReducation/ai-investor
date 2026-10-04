@@ -10,78 +10,29 @@ DATABASE_URL). Volume is a handful of partners writing text, so whole-document
 read-modify-write under a row lock is simpler than several relational tables.
 """
 import datetime as _dt
-import json
-import os
-import threading
-from contextlib import contextmanager
 
-import psycopg2
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
 
+import gcg_notify
+from docstore import DocStore
+
 bp = Blueprint("gcg_chat", __name__)
 
-CHAT_FILE = os.path.join(os.path.dirname(__file__), "gcg_chat.json")
 QUIET_DAYS = 14
 MAX_TITLE, MAX_BODY, MAX_EXCERPT = 160, 4000, 1200
-
-_db_conn = None
-_database_url = ""
-_file_lock = threading.Lock()
-
-
-def init(db_conn, database_url: str) -> None:
-    global _db_conn, _database_url
-    _db_conn, _database_url = db_conn, database_url
-    if database_url:
-        with _db_conn() as conn, conn.cursor() as cur:
-            cur.execute("CREATE TABLE IF NOT EXISTS gcg_chat (id INT PRIMARY KEY, doc JSONB NOT NULL)")
-            cur.execute("INSERT INTO gcg_chat (id, doc) VALUES (1, %s) ON CONFLICT (id) DO NOTHING", (json.dumps(_empty()),))
 
 
 def _empty() -> dict:
     return {"next_id": 1, "threads": [], "messages": []}
 
 
+store = DocStore("gcg_chat", _empty)
+_txn, _read, init = store.txn, store.read, store.init
+
+
 def _now() -> str:
     return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-@contextmanager
-def _txn():
-    """Yields the state dict; persists it on clean exit, discards on exception."""
-    if _database_url:
-        conn = _db_conn()
-        try:
-            with conn, conn.cursor() as cur:
-                cur.execute("SELECT doc FROM gcg_chat WHERE id = 1 FOR UPDATE")
-                raw = cur.fetchone()[0]
-                state = raw if isinstance(raw, dict) else json.loads(raw)
-                yield state
-                cur.execute("UPDATE gcg_chat SET doc = %s WHERE id = 1", (json.dumps(state),))
-        finally:
-            conn.close()
-        return
-    with _file_lock:
-        state = _empty()
-        if os.path.exists(CHAT_FILE):
-            with open(CHAT_FILE) as f:
-                state = json.load(f)
-        yield state
-        with open(CHAT_FILE, "w") as f:
-            json.dump(state, f, indent=2)
-
-
-def _read() -> dict:
-    if _database_url:
-        with _db_conn() as conn, conn.cursor() as cur:
-            cur.execute("SELECT doc FROM gcg_chat WHERE id = 1")
-            raw = cur.fetchone()[0]
-            return raw if isinstance(raw, dict) else json.loads(raw)
-    if os.path.exists(CHAT_FILE):
-        with open(CHAT_FILE) as f:
-            return json.load(f)
-    return _empty()
 
 
 class ChatError(Exception):
@@ -169,6 +120,10 @@ def _topic_target(state, tid):
     return t
 
 
+def _notify(kind, summary):
+    gcg_notify.record(kind, current_user.id, summary, "/alpha/chat")
+
+
 def _api(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
@@ -206,6 +161,7 @@ def chat_new_topic():
              "created_at": ts, "forked_at": None, "last_activity": ts, "closed": False}
         state["threads"].append(t)
         _add_message(state, t, "post", current_user.alpha_role, fields, opening=True, ts=ts)
+    _notify("chat_topic", f"{current_user.alpha_role} started a topic: {title}")
     return jsonify({"thread_id": t["id"]})
 
 
@@ -220,8 +176,11 @@ def chat_reply(tid):
         thread = _thread(state, tid)
         _open_thread(thread)
         fields = _fields_for(kind, data)
+        topic_title = _thread(state, thread["root_id"] or tid)["title"]
         if kind != "question":
             msg = _add_message(state, thread, kind, current_user.alpha_role, fields)
+            verb = "shared a link in" if kind == "link" else "replied in"
+            _notify("chat_reply", f"{current_user.alpha_role} {verb} {topic_title}")
             return jsonify({"thread_id": tid, "message_id": msg["id"]})
         heading = _clean(data.get("heading"), MAX_TITLE, "Sub-heading")
         root = thread["root_id"] or thread["id"]
@@ -231,6 +190,7 @@ def chat_reply(tid):
         state["threads"].append(branch)
         _add_message(state, branch, "question", current_user.alpha_role, fields, opening=True, ts=ts)
         _touch(_thread(state, root), ts)
+    _notify("chat_branch", f"{current_user.alpha_role} opened a branch \"{heading}\" in {topic_title}")
     return jsonify({"thread_id": branch["id"]})
 
 

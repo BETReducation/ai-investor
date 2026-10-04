@@ -3425,6 +3425,7 @@ def api_register():
         },
     }
     _save_users(users)
+    gcg_notify.record("member_joined", username, f"{username} joined", "/admin")
 
     session.permanent = True
     login_user(User(username, "free"), remember=True)
@@ -3459,6 +3460,7 @@ def api_login():
     session.permanent = bool(stay_signed_in)
     login_user(User(username, user_data.get("tier", "basic")), remember=bool(stay_signed_in))
     log_event(username, "login")
+    gcg_notify.record("login", username, f"{username} logged in", "/admin")
     return jsonify({
         "success": True,
         "username": username,
@@ -4546,6 +4548,10 @@ def api_alpha_content_item(item_id):
             updates["staged_edits"] = None
 
     item = alpha_content_update(item_id, updates)
+    if updates.get("status") == "published" and existing.get("status") != "published":
+        gcg_notify.record("alpha_published", current_user.id,
+                          f"{existing['author']} published: {item.get('title') or 'a new post'}",
+                          f"/alpha/{existing['author']}/post/{item_id}")
     return jsonify({"success": True, "item": item})
 
 
@@ -6940,8 +6946,11 @@ if _is_production:
 
 _ensure_table()
 import gcg_chat
+import gcg_notify
+gcg_notify.init(_db_conn, DATABASE_URL, is_admin_user)
 gcg_chat.init(_db_conn, DATABASE_URL)
 app.register_blueprint(gcg_chat.bp)
+app.register_blueprint(gcg_notify.bp)
 _ensure_default_user()
 
 

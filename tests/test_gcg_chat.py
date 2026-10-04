@@ -3,6 +3,7 @@ from flask import Flask
 from flask_login import LoginManager, UserMixin, login_user
 
 import gcg_chat
+import gcg_notify
 
 
 class U(UserMixin):
@@ -12,13 +13,16 @@ class U(UserMixin):
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
-    monkeypatch.setattr(gcg_chat, "CHAT_FILE", str(tmp_path / "chat.json"))
+    monkeypatch.setattr(gcg_chat.store, "file", str(tmp_path / "chat.json"))
+    monkeypatch.setattr(gcg_notify.store, "file", str(tmp_path / "notify.json"))
     gcg_chat.init(None, "")
+    gcg_notify.init(None, "", lambda u: False)
     app = Flask(__name__)
     app.secret_key = "x"
     lm = LoginManager(app)
     lm.user_loader(lambda uid: U(uid))
     app.register_blueprint(gcg_chat.bp)
+    app.register_blueprint(gcg_notify.bp)
 
     @app.route("/_login/<role>")
     def _login(role):
@@ -66,3 +70,17 @@ def test_partners_only(clients):
     app_client = clients("gary").application.test_client()
     assert app_client.get("/api/chat").get_json()["me"] is None
     assert app_client.post("/api/chat/topic", json={"title": "t", "body": "b"}).status_code == 401
+
+
+def test_notifications(clients):
+    gary, tom = clients("gary"), clients("tom")
+    tid = gary.post("/api/chat/topic", json={"title": "Japan carry", "body": "x"}).get_json()["thread_id"]
+    tom.post(f"/api/chat/thread/{tid}/reply", json={"kind": "text", "body": "hi"})
+    gcg_notify.record("login", "tom", "tom logged in")
+    n = gary.get("/api/notifications").get_json()
+    assert n["unread"] == 1 and "tom replied" in n["events"][0]["summary"]  # own topic and admin-only login hidden
+    gary.post("/api/notifications/read")
+    assert gary.get("/api/notifications").get_json()["unread"] == 0
+    assert tom.get("/api/notifications").get_json()["events"][0]["summary"].startswith("gary started")
+    guest = gary.application.test_client()
+    assert guest.get("/api/notifications").get_json()["enabled"] is False
