@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCG Chat — Alpha — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+.page-hero { padding: 96px 5% 28px; text-align: center; background: var(--bg); }
+.section-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 14px; }
+.hero-title { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 12px; }
+.hero-title .accent { color: var(--green); }
+.hero-sub { font-size: 15px; color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.6; }
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 24px 5% 80px; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar .count { font-size: 13px; color: var(--muted); }
+.notice { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 36px 24px; text-align: center; color: var(--muted); }
+
+button { font-family: inherit; cursor: pointer; }
+.btn { background: var(--green); color: #03130f; border: none; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; }
+.btn:hover { opacity: .88; }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border2); font-weight: 500; }
+.btn.ghost:hover { color: var(--text); border-color: var(--muted); }
+.mini { background: none; border: none; color: var(--muted); font-size: 12px; padding: 2px 6px; border-radius: 5px; }
+.mini:hover { color: var(--text); background: var(--card); }
+.mini.danger:hover { color: #ef4444; }
+
+input[type=text], textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 14px; font-family: inherit; outline: none; }
+input:focus, textarea:focus { border-color: var(--green); }
+textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+.field { margin-bottom: 10px; }
+.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.hint { font-size: 12px; color: var(--muted); }
+.err { color: #ef4444; font-size: 13px; min-height: 18px; }
+
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+
+.topic { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+.topic.open { border-color: var(--border2); }
+.topic-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+.caret { color: var(--muted); font-size: 11px; transition: transform .15s; width: 10px; }
+.topic.open .caret { transform: rotate(90deg); }
+.topic-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 17px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.topic-meta { font-size: 12px; color: var(--muted); white-space: nowrap; text-align: right; }
+.tag { display: inline-block; font-size: 10px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--border2); color: var(--muted); margin-left: 8px; vertical-align: middle; }
+.tag.quiet { color: var(--gold); border-color: var(--gold); }
+.topic-body { border-top: 1px solid var(--border); padding: 14px 16px 18px; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.pill { background: transparent; border: 1px solid var(--border2); color: var(--muted); border-radius: 99px; padding: 5px 13px; font-size: 13px; text-align: left; }
+.pill:hover { color: var(--text); }
+.pill.active { background: var(--green); border-color: var(--green); color: #03130f; font-weight: 600; }
+
+.thread-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.thread-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
+.thread-sub { font-size: 12px; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 2px; }
+
+.msg { border-top: 1px solid var(--border); padding: 11px 0; }
+.msg-top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 4px; flex-wrap: wrap; }
+.who { font-weight: 700; color: var(--text); text-transform: capitalize; }
+.kind { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--green); }
+.msg-actions { margin-left: auto; display: flex; gap: 2px; opacity: .55; }
+.msg:hover .msg-actions { opacity: 1; }
+.msg-text { font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg-link { display: block; font-size: 13.5px; margin-bottom: 4px; overflow-wrap: anywhere; }
+.msg.q .msg-text { font-weight: 500; }
+.fork { display: flex; align-items: center; gap: 8px; margin: 6px 0; padding: 8px 12px; border: 1px dashed var(--border2); border-radius: 10px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.fork:hover { border-color: var(--green); color: var(--text); }
+.fork b { color: var(--green); font-weight: 600; }
+a { color: var(--green); }
+a:hover { color: var(--green2); }
+.closed-note { font-size: 13px; color: var(--muted); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; margin-top: 12px; }
+
+.composer { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+.tabs { display: flex; flex-wrap: wrap; margin-bottom: 10px; }
+.tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); padding: 4px 2px; margin-right: 16px; font-size: 13px; font-weight: 600; }
+.tab.active { color: var(--text); border-bottom-color: var(--green); }
+.composer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 14px; width: 100%; max-width: 520px; max-height: 80vh; display: flex; flex-direction: column; }
+.modal h3 { font-family: 'Outfit', sans-serif; padding: 18px 20px 4px; font-size: 18px; overflow-wrap: anywhere; }
+.modal .sub { padding: 0 20px 10px; font-size: 13px; color: var(--muted); }
+.tree { overflow-y: auto; padding: 4px 12px 12px; }
+.tree-topic { font-weight: 600; font-size: 14px; padding: 8px; border-radius: 8px; overflow-wrap: anywhere; }
+.tree-branch { font-size: 13.5px; padding: 6px 8px 6px 26px; border-radius: 8px; overflow-wrap: anywhere; }
+.tree .pick[data-id]:not([data-id=""]) { cursor: pointer; }
+.tree .pick[data-id]:not([data-id=""]):hover { background: var(--card); }
+.tree .pick.sel { background: var(--green); color: #03130f; }
+.tree .off { opacity: .4; }
+.modal-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--border); }
+@media (max-width: 600px) { .topic-head { flex-wrap: wrap; } .topic-meta { text-align: left; width: 100%; padding-left: 22px; } }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+
+<div class="page-hero">
+  <div class="section-badge">Alpha / GCG Chat</div>
+  <h1 class="hero-title">GCG <span class="accent">Chat</span></h1>
+  <p class="hero-sub">The partners' own thread. Post a topic, reply with a link, a line or a question, and let questions branch into their own threads.</p>
+</div>
+
+<div class="wrap" id="app"><div class="notice">Loading…</div></div>
+
+<script>
+const $app = document.getElementById('app');
+let S = null;                 // {me, quiet_days, threads, messages}
+let openTopic = null;         // topic id currently expanded
+let activeThread = {};        // topic id -> thread id being viewed
+let composing = false;
+let replyKind = 'text';
+let editing = null;           // message id being edited
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const linkify = s => esc(s).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+const fmt = iso => { const d = new Date(iso); return d.toLocaleDateString('en-GB', {day:'numeric', month:'short'}) + ' ' + d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}); };
+const day = iso => new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+const val = id => (document.getElementById(id) || {}).value || '';
+
+async function api(method, url, body) {
+  const res = await fetch(url, { method, credentials: 'include', headers: body ? {'Content-Type': 'application/json'} : {}, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  return data;
+}
+
+async function load() {
+  try {
+    S = await api('GET', '/api/chat');
+  } catch (e) {
+    const guest = /Login/.test(e.message);
+    $app.innerHTML = `<div class="notice">${guest ? 'Sign in with a partner account to see GCG Chat.' : esc(e.message)}</div>`;
+    return;
+  }
+  render();
+}
+
+const topics = () => S.threads.filter(t => t.root_id === null).sort((a, b) => b.created_at.localeCompare(a.created_at));
+const branches = tid => S.threads.filter(t => t.root_id === tid).sort((a, b) => a.forked_at.localeCompare(b.forked_at));
+const msgs = tid => S.messages.filter(m => m.thread_id === tid).sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
+const isQuiet = t => !t.closed && (Date.now() - new Date(t.last_activity)) > S.quiet_days * 864e5;
+
+function render() {
+  const list = topics();
+  let h = `<div class="toolbar"><span class="count">${list.length} topic${list.length === 1 ? '' : 's'}, newest first</span>
+    <button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button></div>`;
+  if (composing) h += newTopicForm();
+  h += list.length ? list.map(topicHtml).join('') : '<div class="notice">No topics yet. Start the first one.</div>';
+  $app.innerHTML = h;
+}
+
+function newTopicForm() {
+  return `<div class="panel">
+    <div class="field"><label>Topic heading</label><input type="text" id="nt-title" maxlength="160" placeholder="e.g. The Japan carry trade"></div>
+    <div class="field"><label>Opening post</label><textarea id="nt-body" maxlength="4000" placeholder="Set out the idea for the other partners."></textarea></div>
+    <div class="composer-foot"><span class="err" id="nt-err"></span><button class="btn" onclick="postTopic()">Post topic</button></div></div>`;
+}
+
+function topicHtml(t) {
+  const open = openTopic === t.id, br = branches(t.id);
+  const replies = [t, ...br].reduce((n, x) => n + Math.max(msgs(x.id).length - 1, 0), 0);
+  let h = `<div class="topic ${open ? 'open' : ''}"><div class="topic-head" onclick="toggleTopic(${t.id})">
+    <span class="caret">▶</span>
+    <span class="topic-title">${esc(t.title)}${t.closed ? '<span class="tag">closed</span>' : ''}${isQuiet(t) ? '<span class="tag quiet">quiet</span>' : ''}</span>
+    <span class="topic-meta"><b style="text-transform:capitalize">${esc(t.author)}</b> · ${day(t.created_at)}<br>${replies} repl${replies === 1 ? 'y' : 'ies'} · ${br.length} branch${br.length === 1 ? '' : 'es'}</span></div>`;
+  if (open) h += `<div class="topic-body">${topicBody(t, br)}</div>`;
+  return h + '</div>';
+}
+
+function topicBody(topic, br) {
+  const cur = S.threads.find(x => x.id === (activeThread[topic.id] ?? topic.id)) || topic;
+  let h = `<div class="pills"><button class="pill ${cur.id === topic.id ? 'active' : ''}" onclick="pick(${topic.id}, ${topic.id})">Main thread</button>` +
+    br.map(b => `<button class="pill ${cur.id === b.id ? 'active' : ''}" onclick="pick(${topic.id}, ${b.id})">${esc(b.title)}</button>`).join('') + '</div>';
+  const mine = cur.author === S.me;
+  const quietNote = isQuiet(cur) ? ` · <span style="color:var(--gold)">no activity for ${S.quiet_days}+ days, consider closing</span>` : '';
+  h += `<div class="thread-head"><div><div class="thread-title">${esc(cur.title)}</div>
+    <div class="thread-sub">${cur.id === topic.id ? 'Topic' : 'Branch'} by <span style="text-transform:capitalize">${esc(cur.author)}</span> · last activity ${fmt(cur.last_activity)}${quietNote}</div></div>
+    <div class="actions">
+      ${mine ? `<button class="mini" onclick="renameThread(${cur.id})">Edit</button>` : ''}
+      <button class="mini" onclick="transferThread(${cur.id}, 'copy')">Copy</button>
+      ${mine ? `<button class="mini" onclick="transferThread(${cur.id}, 'move')">Move</button>` : ''}
+      <button class="mini" onclick="closeThread(${cur.id}, ${!cur.closed})">${cur.closed ? 'Reopen' : 'Close'}</button>
+      ${mine ? `<button class="mini danger" onclick="deleteThread(${cur.id})">Delete</button>` : ''}
+    </div></div>`;
+
+  // the main thread shows a marker where each branch forked off
+  const items = msgs(cur.id).map(m => ({ at: m.created_at, html: msgHtml(m) }));
+  if (cur.id === topic.id) br.forEach(b => items.push({ at: b.forked_at, html: `<div class="fork" onclick="pick(${topic.id}, ${b.id})">↳ <span>Branch: <b>${esc(b.title)}</b> · ${msgs(b.id).length} message${msgs(b.id).length === 1 ? '' : 's'}</span></div>` }));
+  h += items.sort((a, b) => a.at.localeCompare(b.at)).map(i => i.html).join('');
+
+  h += cur.closed ? '<div class="closed-note">This thread is closed. Reopen it to add to it.</div>' : composerHtml(cur);
+  return h;
+}
+
+function msgHtml(m) {
+  const mine = m.author === S.me;
+  const label = {post: 'Opening post', text: 'Message', link: 'Link', question: 'Question'}[m.kind];
+  let body;
+  if (editing === m.id) {
+    body = (m.kind === 'link' ? `<div class="field"><label>Link</label><input type="text" id="ed-url" value="${esc(m.url)}"></div><div class="field"><label>Excerpt</label>` : '<div class="field">') +
+      `<textarea id="ed-body">${esc(m.body)}</textarea></div><div class="composer-foot"><span class="err" id="ed-err"></span><span><button class="btn ghost" onclick="editing=null;render()">Cancel</button> <button class="btn" onclick="saveEdit(${m.id})">Save</button></span></div>`;
+  } else {
+    body = (m.kind === 'link' ? `<a class="msg-link" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">${esc(m.url)}</a>` : '') + `<div class="msg-text">${linkify(m.body)}</div>`;
+  }
+  const acts = editing === m.id ? '' : `<span class="msg-actions">
+      ${mine ? `<button class="mini" onclick="editing=${m.id};render()">Edit</button>` : ''}
+      ${m.opening ? '' : `<button class="mini" onclick="transferMsg(${m.id}, 'copy')">Copy</button>${mine ? `<button class="mini" onclick="transferMsg(${m.id}, 'move')">Move</button><button class="mini danger" onclick="deleteMsg(${m.id})">Delete</button>` : ''}`}
+    </span>`;
+  return `<div class="msg ${m.kind === 'question' ? 'q' : ''}"><div class="msg-top"><span class="who">${esc(m.author)}</span><span class="kind">${label}</span><span>${fmt(m.created_at)}${m.edited_at ? ' · edited' : ''}</span>${acts}</div>${body}</div>`;
+}
+
+function composerHtml(cur) {
+  const tabs = [['text', 'Message'], ['link', 'Link + excerpt'], ['question', 'Question (new branch)']];
+  let f;
+  if (replyKind === 'link') f = `<div class="field"><label>Link (website or social post)</label><input type="text" id="rp-url" placeholder="https://"></div>
+    <div class="field"><label>Excerpt, in your own words</label><textarea id="rp-body" maxlength="1200" placeholder="What is at this link and why it matters."></textarea></div>`;
+  else if (replyKind === 'question') f = `<div class="field"><label>Sub-heading for the new branch</label><input type="text" id="rp-heading" maxlength="160" placeholder="e.g. The likely impact of Japanese finance firms selling off bonds in France"></div>
+    <div class="field"><label>Your question</label><textarea id="rp-body" maxlength="4000"></textarea></div>
+    <div class="hint" style="margin-bottom:10px">This opens a separate branch under this topic. It starts from your question and runs independently of this thread.</div>`;
+  else f = `<div class="field"><textarea id="rp-body" maxlength="4000" placeholder="A short reply"></textarea></div>`;
+  return `<div class="composer"><div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${replyKind === k ? 'active' : ''}" onclick="setKind('${k}')">${l}</button>`).join('')}</div>${f}
+    <div class="composer-foot"><span class="err" id="rp-err"></span><button class="btn" onclick="postReply(${cur.id})">${replyKind === 'question' ? 'Start branch' : 'Post'}</button></div></div>`;
+}
+
+function toggleCompose() { composing = !composing; render(); }
+function toggleTopic(id) { openTopic = openTopic === id ? null : id; editing = null; render(); }
+function pick(topicId, tid) { activeThread[topicId] = tid; editing = null; render(); }
+function setKind(k) { replyKind = k; render(); }
+function fail(id, e) { const el = document.getElementById(id); if (el) el.textContent = e.message; else alert(e.message); }
+
+async function postTopic() {
+  try {
+    const r = await api('POST', '/api/chat/topic', { title: val('nt-title'), body: val('nt-body') });
+    composing = false; openTopic = r.thread_id; await load();
+  } catch (e) { fail('nt-err', e); }
+}
+
+async function postReply(tid) {
+  try {
+    const r = await api('POST', `/api/chat/thread/${tid}/reply`, { kind: replyKind, body: val('rp-body'), url: val('rp-url'), heading: val('rp-heading') });
+    if (replyKind === 'question') activeThread[openTopic] = r.thread_id;
+    replyKind = 'text'; await load();
+  } catch (e) { fail('rp-err', e); }
+}
+
+async function saveEdit(id) {
+  try { await api('PATCH', `/api/chat/message/${id}`, { body: val('ed-body'), url: val('ed-url') }); editing = null; await load(); }
+  catch (e) { fail('ed-err', e); }
+}
+async function deleteMsg(id) {
+  if (!confirm('Delete this message?')) return;
+  try { await api('DELETE', `/api/chat/message/${id}`); await load(); } catch (e) { alert(e.message); }
+}
+async function renameThread(id) {
+  const t = S.threads.find(x => x.id === id), title = prompt('New heading:', t.title);
+  if (title === null) return;
+  try { await api('PATCH', `/api/chat/thread/${id}`, { title }); await load(); } catch (e) { alert(e.message); }
+}
+async function closeThread(id, closed) {
+  try { await api('POST', `/api/chat/thread/${id}/close`, { closed }); await load(); } catch (e) { alert(e.message); }
+}
+async function deleteThread(id) {
+  const t = S.threads.find(x => x.id === id), n = t.root_id === null ? branches(id).length : 0;
+  if (!confirm(`Delete "${t.title}" and all its messages${n ? ` and its ${n} branch${n === 1 ? '' : 'es'}` : ''}?`)) return;
+  try {
+    await api('DELETE', `/api/chat/thread/${id}`);
+    if (t.root_id === null) openTopic = null; else delete activeThread[t.root_id];
+    await load();
+  } catch (e) { alert(e.message); }
+}
+
+function transferMsg(id, action) {
+  const m = S.messages.find(x => x.id === id);
+  openPicker({ title: `${action === 'copy' ? 'Copy' : 'Move'} message to…`, sub: 'Pick a topic (its main thread) or one of its branches.', allowBranches: true, exclude: m.thread_id,
+    go: dest => api('POST', `/api/chat/message/${id}/${action}`, { to_thread: dest }),
+    after: dest => { const t = S.threads.find(x => x.id === dest); openTopic = t.root_id ?? t.id; activeThread[openTopic] = dest; } });
+}
+function transferThread(id, action) {
+  const t = S.threads.find(x => x.id === id);
+  openPicker({ title: `${action === 'copy' ? 'Copy' : 'Move'} "${t.title}" to…`, sub: 'It becomes a branch under the topic you pick.', allowBranches: false, exclude: t.root_id ?? id,
+    go: dest => api('POST', `/api/chat/thread/${id}/${action}`, { to_topic: dest }),
+    after: dest => { openTopic = dest; activeThread[dest] = action === 'copy' ? null : id; } });
+}
+
+function openPicker(o) {
+  let sel = null;
+  const ov = document.createElement('div'); ov.className = 'overlay';
+  const draw = () => {
+    const rows = topics().map(t => {
+      const off = t.closed || o.exclude === t.id;
+      let r = `<div class="tree-topic pick ${sel === t.id ? 'sel' : ''} ${off ? 'off' : ''}" data-id="${off ? '' : t.id}">${esc(t.title)}${t.closed ? ' (closed)' : ''}</div>`;
+      branches(t.id).forEach(b => {
+        const boff = !o.allowBranches || b.closed || o.exclude === b.id;
+        r += `<div class="tree-branch pick ${sel === b.id ? 'sel' : ''} ${boff ? 'off' : ''}" data-id="${boff ? '' : b.id}">↳ ${esc(b.title)}</div>`;
+      });
+      return r;
+    }).join('');
+    ov.innerHTML = `<div class="modal"><h3>${esc(o.title)}</h3><div class="sub">${esc(o.sub)}</div><div class="tree">${rows}</div>
+      <div class="modal-foot"><span class="err" id="pk-err" style="margin-right:auto"></span><button class="btn ghost" id="pk-cancel">Cancel</button><button class="btn" id="pk-go">Confirm</button></div></div>`;
+    ov.querySelectorAll('.pick').forEach(el => el.onclick = () => { if (el.dataset.id) { sel = +el.dataset.id; draw(); } });
+    ov.querySelector('#pk-cancel').onclick = () => ov.remove();
+    ov.querySelector('#pk-go').onclick = async () => {
+      if (!sel) { ov.querySelector('#pk-err').textContent = 'Pick a destination'; return; }
+      try { await o.go(sel); o.after(sel); ov.remove(); await load(); } catch (e) { ov.querySelector('#pk-err').textContent = e.message; }
+    };
+  };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov); draw();
+}
+
+load();
+</script>
+<script src="/static/js/footer.js"></script>
+</body>
+</html>

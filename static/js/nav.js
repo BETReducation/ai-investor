@@ -76,6 +76,7 @@
 '        <li><a href="/alpha/gary">Gary</a></li>' +
 '        <li><a href="/alpha/tom">Tom</a></li>' +
 '        <li><a href="/alpha/podcast">Podcast</a></li>' +
+'        <li><a href="/alpha/chat">GCG Chat</a></li>' +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown" id="navStudioLi" style="display:none;">' +

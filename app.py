@@ -3164,6 +3164,9 @@ def alpha_tom(): return send_from_directory("static", "alpha-tom.html")
 @app.route("/alpha/podcast")
 def alpha_podcast(): return send_from_directory("static", "alpha-podcast.html")
 
+@app.route("/alpha/chat")
+def alpha_chat(): return send_from_directory("static", "alpha-chat.html")
+
 @app.route("/partners")
 def partners(): return send_from_directory("static", "partners.html")
 
@@ -4862,6 +4865,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Gary", "url": "/alpha/gary", "sub": "Alpha partner"},
     {"title": "Tom", "url": "/alpha/tom", "sub": "Alpha partner"},
     {"title": "Alpha Podcast", "url": "/alpha/podcast", "sub": "Alpha"},
+    {"title": "GCG Chat", "url": "/alpha/chat", "sub": "Alpha — partner discussion"},
     {"title": "Partners", "url": "/partners", "sub": "Growth Capital Group"},
 ]
 
@@ -6935,6 +6939,9 @@ if _is_production:
 
 
 _ensure_table()
+import gcg_chat
+gcg_chat.init(_db_conn, DATABASE_URL)
+app.register_blueprint(gcg_chat.bp)
 _ensure_default_user()
 
 
