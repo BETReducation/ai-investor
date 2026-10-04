@@ -1,6 +1,7 @@
 """Notification panel: a shared activity feed with a per-user read marker.
 
-Partners see chat and Alpha activity; admins also see member joins and logins.
+Partners see chat, Alpha and Data Viz activity; admins also see member joins,
+logins and newsletter status.
 Nobody is notified of their own actions. Recording is best-effort so a feed
 failure can never break the request it rides on.
 """
@@ -15,7 +16,7 @@ bp = Blueprint("gcg_notify", __name__)
 store = DocStore("gcg_notifications", lambda: {"next_id": 1, "events": [], "seen": {}})
 
 MAX_EVENTS = 400
-ADMIN_ONLY = {"member_joined", "login"}
+ADMIN_ONLY = {"member_joined", "login", "newsletter_approved", "newsletter_sent", "newsletter_failed"}
 _is_admin = lambda user: False
 
 

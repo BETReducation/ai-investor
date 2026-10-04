@@ -256,7 +256,7 @@
       if (m < 1440) return Math.round(m / 60) + 'h ago';
       return Math.round(m / 1440) + 'd ago';
     };
-    const icons = { chat_topic: '💬', chat_reply: '↩️', chat_branch: '🌿', alpha_published: '📰', member_joined: '👋', login: '🔑' };
+    const icons = { chat_topic: '💬', chat_reply: '↩️', chat_branch: '🌿', alpha_published: '📰', member_joined: '👋', login: '🔑', dataviz_page: '📊', dataviz_published: '📈', newsletter_approved: '✅', newsletter_sent: '✉️', newsletter_failed: '⚠️' };
     let events = [];
 
     function draw() {

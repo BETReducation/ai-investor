@@ -5013,6 +5013,10 @@ def api_dataviz_content_item(item_id):
         updates["status"] = data["status"]
         updates["published_at"] = _dt.datetime.utcnow() if data["status"] == "published" else None
     item = dataviz_content_update(item_id, updates)
+    if updates.get("status") == "published" and existing.get("status") != "published":
+        gcg_notify.record("dataviz_published", current_user.id,
+                          f"{existing['author']} published a Data Viz: {item.get('title') or 'untitled'}",
+                          f"/tools/data-visualisation/{item.get('page')}" if item.get("page") else "/tools/data-visualisation")
     return jsonify({"success": True, "item": item})
 
 
@@ -5100,6 +5104,8 @@ def api_dataviz_pages():
     if len(label) > 80:
         return jsonify({"error": "Title must be 80 characters or fewer"}), 400
     page = dataviz_page_create(label, current_user.alpha_role, description=description)
+    gcg_notify.record("dataviz_page", current_user.id, f"{current_user.alpha_role} created a Data Viz page: {label}",
+                      f"/tools/data-visualisation/{page['slug']}")
     image_file = request.files.get("image")
     if image_file and image_file.filename:
         ext = image_file.filename.rsplit(".", 1)[-1].lower() if "." in image_file.filename else ""
@@ -6694,6 +6700,9 @@ def send_newsletter(send_date: _dt.date) -> int:
     _issue_save(send_date, status=status, sent_count=sent)
     if status == "failed":
         print(f"[newsletter] send failed for {send_date}: {err}")
+        gcg_notify.record("newsletter_failed", "newsletter", f"Newsletter for {send_date} failed to send", "/admin/newsletter")
+    else:
+        gcg_notify.record("newsletter_sent", "newsletter", f"Newsletter for {send_date} sent to {sent} recipients", "/admin/newsletter")
     return sent
 
 
@@ -6936,7 +6945,12 @@ def api_newsletter_approve():
         return jsonify({"error": "This issue has already gone out"}), 409
     if data.get("approved", True) and not (issue["content"].get("subject") or "").strip():
         return jsonify({"error": "Add a subject line before approving"}), 400
-    return jsonify(_issue_save(send_date, status="approved" if data.get("approved", True) else "draft"))
+    approved = data.get("approved", True)
+    saved = _issue_save(send_date, status="approved" if approved else "draft")
+    gcg_notify.record("newsletter_approved", current_user.id,
+                      f"Newsletter for {send_date} {'approved' if approved else 'moved back to draft'} by {current_user.id}",
+                      "/admin/newsletter")
+    return jsonify(saved)
 
 
 _newsletter_ensure_table()
