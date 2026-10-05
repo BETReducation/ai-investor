@@ -35,6 +35,7 @@ from datetime import timedelta
 import datetime as _dt
 import base64
 from werkzeug.utils import secure_filename
+from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from api.indicators import calculate_all
@@ -55,6 +56,27 @@ app.secret_key = os.environ.get("SECRET_KEY", "gcg-dev-key-change-in-production"
 # over plain HTTP, so without this Flask sees every request as insecure — which
 # breaks Secure-cookie handling (session + remember-me) behind the proxy.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# Egress is billed per GB and nothing was compressing responses; gzip cuts HTML/JSON/JS/CSS/SVG
+# roughly 70-80%. Doesn't touch SSE (text/event-stream isn't in its default mimetype list).
+Compress(app)
+
+
+@app.after_request
+def _static_egress_tuning(resp):
+    # Runs before Compress's own hook (after_request hooks run in reverse order). send_from_directory
+    # responses are direct_passthrough, which Compress skips, so un-flag the text ones to get them gzipped.
+    if resp.direct_passthrough and resp.status_code == 200 and (
+        resp.mimetype.startswith("text/") or resp.mimetype in ("application/javascript", "image/svg+xml", "application/json")
+    ):
+        resp.direct_passthrough = False
+        resp.make_sequence()
+    # Images change rarely and are the heaviest assets; letting browsers reuse them stops every
+    # page view re-downloading them. CSS/JS are left alone so deploys show up immediately.
+    if request.path.startswith(("/static/img/", "/static/logos/")) and resp.status_code == 200:
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
 
 # Railway's own HTTP logs only keep a few minutes, so egress spikes can't be traced
 # after the fact. Log any response over 100KB (or of unknown/streamed size) with path,
