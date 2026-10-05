@@ -56,6 +56,25 @@ app.secret_key = os.environ.get("SECRET_KEY", "gcg-dev-key-change-in-production"
 # breaks Secure-cookie handling (session + remember-me) behind the proxy.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
+# Railway's own HTTP logs only keep a few minutes, so egress spikes can't be traced
+# after the fact. Log any response over 100KB (or of unknown/streamed size) with path,
+# size and client IP so a jump on the usage graph can be matched to a route.
+_BIG_RESPONSE_LOG_BYTES = 100_000
+
+
+@app.after_request
+def _log_big_responses(resp):
+    try:
+        size = resp.content_length
+        if size is None or size >= _BIG_RESPONSE_LOG_BYTES:
+            ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+            app.logger.warning("EGRESS %s %s %s bytes=%s ip=%s ua=%s", request.method, request.path,
+                               resp.status_code, size if size is not None else "stream", ip,
+                               (request.user_agent.string or "")[:80])
+    except Exception:
+        pass
+    return resp
+
 # Base URL of the realtime/ async streaming service (docs/scaling-plan.md),
 # e.g. "https://ai-investor-realtime.up.railway.app" — no trailing slash.
 # Blank until that service is actually deployed; every consumer of this
