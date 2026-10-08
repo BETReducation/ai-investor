@@ -2971,6 +2971,29 @@ def _fetch_synthetic_metal_ohlcv(
     return converted
 
 
+def _fill_crypto_daily_gaps(df: pd.DataFrame, ticker: "yf.Ticker") -> pd.DataFrame:
+    """Yahoo's daily crypto series sometimes omits a whole day (e.g. ADA-USD skipped
+    2026-10-07) even though its hourly feed has it. Crypto trades 24/7, so any missing
+    calendar day is a data hole — rebuild those days from hourly bars. Never raises."""
+    try:
+        if len(df) < 2:
+            return df
+        full = pd.date_range(df.index[0].normalize(), df.index[-1].normalize(), freq="D")
+        missing = full.difference(df.index.normalize())
+        if missing.empty or (full[-1] - missing[0]).days > 28:
+            return df
+        hourly = _yf_history_with_retry(ticker, period="1mo", interval="1h")
+        if hourly.empty:
+            return df
+        daily = _resample_ohlcv(hourly.tz_convert(df.index.tz), "1D")
+        fill = daily[daily.index.normalize().isin(missing)]
+        if fill.empty:
+            return df
+        return pd.concat([df, fill[[c for c in df.columns if c in fill.columns]]]).sort_index()
+    except Exception:
+        return df
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -3017,6 +3040,8 @@ def _fetch_ohlcv(
             df = _fetch_yf_history_cached(ticker, symbol, period, fetch_interval)
         if df.empty:
             raise ValueError(f"No data returned for symbol: {symbol} — check the ticker is correct")
+        if interval == "1d" and symbol.upper().endswith("-USD"):
+            df = _fill_crypto_daily_gaps(df, ticker)
         if interval in _RESAMPLE_INTERVALS:
             df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
             if df.empty:
