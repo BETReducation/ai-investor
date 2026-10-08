@@ -109,7 +109,9 @@ _allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "")
 _allowed_origins = (
     [o.strip() for o in _allowed_origins_env.split(",") if o.strip()]
     if _allowed_origins_env
-    else ["http://localhost:5000", "http://127.0.0.1:5000"]
+    # The site calls its own API same-origin, so production needs no cross-origin access
+    # unless ALLOWED_ORIGINS is set; the localhost defaults are for local dev only.
+    else ([] if _is_production else ["http://localhost:5000", "http://127.0.0.1:5000"])
 )
 
 app.config.update(
