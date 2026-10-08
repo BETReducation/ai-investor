@@ -218,3 +218,51 @@ class AlpacaStreamer:
                 backoff = min(backoff * 2, _MAX_BACKOFF)
         finally:
             watcher_logger.removeHandler(conn_limit_watcher)
+
+
+_ALPACA_TIMEFRAME = {"1m": "1Min", "5m": "5Min", "15m": "15Min", "30m": "30Min",
+                     "60m": "1Hour", "1h": "1Hour", "1d": "1Day", "1wk": "1Week", "1mo": "1Month"}
+
+
+def fetch_bars(symbol: str, interval: str, days: int) -> "pd.DataFrame | None":
+    """REST history for a US stock/ETF, so the same provider owns both the history and
+    the live tail. Split-adjusted only (matches the yfinance auto_adjust=False path).
+    UTC-indexed OHLCV frame, or None on any failure/non-coverage so the caller falls
+    back to yfinance. Note the free 'iex' feed carries IEX-venue volume only."""
+    import pandas as pd
+    tf = _ALPACA_TIMEFRAME.get(interval)
+    if tf is None or not (config.ALPACA_API_KEY and config.ALPACA_API_SECRET):
+        return None
+    headers = {"APCA-API-KEY-ID": config.ALPACA_API_KEY, "APCA-API-SECRET-KEY": config.ALPACA_API_SECRET}
+    params = {
+        "timeframe": tf, "feed": config.ALPACA_FEED, "adjustment": "split", "limit": 10000,
+        "start": (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    url = f"https://data.alpaca.markets/v2/stocks/{yfinance_to_alpaca_symbol(symbol)}/bars"
+    rows = []
+    try:
+        for _ in range(10):  # page cap
+            resp = requests.get(url, headers=headers, params=params, timeout=10)
+            resp.raise_for_status()
+            body = resp.json()
+            rows.extend(body.get("bars") or [])
+            token = body.get("next_page_token")
+            if not token:
+                break
+            params["page_token"] = token
+    except Exception:
+        log.exception("Alpaca bars fetch failed for %s/%s", symbol, interval)
+        return None
+    if not rows:
+        return None
+    df = pd.DataFrame(
+        {"Open": [r["o"] for r in rows], "High": [r["h"] for r in rows], "Low": [r["l"] for r in rows],
+         "Close": [r["c"] for r in rows], "Volume": [float(r["v"]) for r in rows]},
+        index=pd.DatetimeIndex(pd.to_datetime([r["t"] for r in rows], utc=True)),
+    )
+    # Match yfinance's stock convention (America/New_York; daily bars stamped at local
+    # midnight) so _stitch_live_tail's per-tz day buckets line up with these rows.
+    df.index = df.index.tz_convert("America/New_York")
+    if interval in ("1d", "1wk", "1mo"):
+        df.index = df.index.normalize()
+    return df

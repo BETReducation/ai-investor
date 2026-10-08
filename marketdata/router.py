@@ -91,7 +91,11 @@ def get_historical_candles(symbol: str, interval: str, period: str) -> "pd.DataF
     whenever it's available sidesteps that premium entirely instead of only
     patching the most-recent bar the way get_live_tail's stitch does."""
     try:
-        if classify_symbol(symbol) not in ("forex", "metal-fx"):
+        category = classify_symbol(symbol)
+        if category == "stock":
+            from .alpaca_client import fetch_bars
+            return fetch_bars(symbol, interval, _PERIOD_DAYS.get(period, 90))
+        if category not in ("forex", "metal-fx"):
             return None
         granularity = _OANDA_GRANULARITY.get(interval)
         if granularity is None:

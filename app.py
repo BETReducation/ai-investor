@@ -47,6 +47,7 @@ from newsletter_render import render_alert_email
 from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
+from marketdata.symbols import classify_symbol as marketdata_classify
 from marketdata import bus as marketdata_bus
 from marketdata import config as marketdata_config
 
@@ -3047,6 +3048,8 @@ def _fetch_ohlcv(
         df = _fetch_oanda_metal_history(symbol, period, interval) if not start_date else None
         if df is None:
             df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
+    elif not start_date and marketdata_classify(symbol) in ("forex", "stock") and (df := _fetch_oanda_metal_history(symbol, period, interval)) is not None:
+        pass  # OANDA (forex) / Alpaca (stocks) own both history and live tail
     elif not start_date and symbol.upper().endswith("-USD") and (df := _fetch_coinbase_history(symbol, period, interval)) is not None:
         pass
     else:
