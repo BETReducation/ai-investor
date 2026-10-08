@@ -159,6 +159,33 @@
 .chart-tool-flyout { position: fixed; z-index: 50; display: flex; flex-direction: column; gap: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-tool-btn[data-cat] { color: var(--text-secondary); }
 .chart-tool-btn[data-cat]:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+/* Left drawing toolbar: icon buttons with a hover label, flyout menus of labelled rows */
+.chart-sidebar { gap: 4px; }
+.chart-sidebar .chart-tool-btn { width: 34px; height: 34px; position: relative; }
+.chart-sidebar .chart-tool-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.chart-sidebar .chart-tool-btn[data-tip]:hover::after { content: attr(data-tip); position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); white-space: nowrap; z-index: 60; padding: 4px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 3px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); pointer-events: none; }
+.chart-sidebar .chart-tool-btn.active { color: var(--accent-blue); border-color: var(--accent-blue); background: rgba(0,136,255,0.16); }
+.chart-sidebar .chart-tool-btn.on::before { content: ''; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); }
+.chart-tool-menu { min-width: 230px; padding: 6px; gap: 2px; }
+.chart-tool-menu-title { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1px; color: var(--text-muted); padding: 6px 8px 3px; text-transform: uppercase; }
+.chart-tool-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 6px 8px; background: transparent; border: none; border-radius: 3px; color: var(--text-secondary); cursor: pointer; font-family: 'IBM Plex Mono', monospace; }
+.chart-tool-row:hover { background: rgba(0,136,255,0.1); color: var(--accent-blue); }
+.chart-tool-row.active { background: rgba(0,136,255,0.16); color: var(--accent-blue); }
+.chart-tool-row svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.chart-tool-row .row-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.chart-tool-row .row-label { font-size: 11px; font-weight: 600; }
+.chart-tool-row .row-hint { font-size: 9px; color: var(--text-muted); }
+.chart-ma-swatch { width: 14px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+.chart-ma-check { width: 14px; height: 14px; border: 1px solid var(--border); border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1; }
+.chart-tool-row.active .chart-ma-check { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+.chart-ma-custom { display: flex; gap: 4px; padding: 6px 8px 4px; align-items: center; border-top: 1px solid var(--border); margin-top: 4px; }
+.chart-ma-custom select, .chart-ma-custom input { font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 3px; padding: 4px; }
+.chart-ma-custom input { width: 52px; }
+.chart-ma-custom button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 8px; background: rgba(0,136,255,0.16); color: var(--accent-blue); border: 1px solid var(--accent-blue); border-radius: 3px; cursor: pointer; }
+.chart-freehand-canvas { position: absolute; z-index: 5; cursor: crosshair; touch-action: none; }
+.chart-text-editor { position: absolute; z-index: 20; display: flex; gap: 4px; padding: 4px; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
+.chart-text-editor input { width: 220px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--text-primary); border: none; outline: none; padding: 3px 4px; }
+.chart-text-editor button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--accent-blue); color: #fff; border: none; border-radius: 3px; cursor: pointer; }
 /* Price-alert bell — scoped here (not gcg.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
 .stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
 .stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
@@ -3601,6 +3628,7 @@ function ensurePriceChart() {
   // needs to swap at runtime, so it doesn't need its own refresh function).
   priceChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { height: 80, id: 'rsi_pane' });
   applyBollingerOverlay();
+  applyMovingAverages();
   return priceChart;
 }
 
@@ -3653,7 +3681,7 @@ let chartBbOn = (() => { try { return localStorage.getItem('gcgChartBb') !== '0'
 
 function applyBollingerOverlay() {
   if (!priceChart) return;
-  priceChart.removeIndicator({ paneId: 'candle_pane', name: 'BOLL' });
+  priceChart.removeIndicator('candle_pane', 'BOLL'); // (paneId, name) — an options object is a silent no-op
   if (chartBbOn) priceChart.createIndicator({ name: 'BOLL', calcParams: [20, 2] }, true, { id: 'candle_pane' });
 }
 
@@ -3681,10 +3709,18 @@ function renderChartToolbars() {
   }
   if (sidebar && !sidebar.dataset.built) {
     sidebar.dataset.built = '1';
-    sidebar.innerHTML = CHART_TOOL_CATEGORIES.map(c => `<button class="chart-tool-btn" data-cat="${c.key}" title="${c.label}" onclick="toggleToolCategory('${c.key}', this)">${c.icon}</button>`).join('')
+    const btn = (group, tip, icon, onclick, extra = '') =>
+      `<button class="chart-tool-btn" data-group="${group}" data-tip="${tip}" aria-label="${tip}" onclick="${onclick}" ${extra}>${icon}</button>`;
+    sidebar.innerHTML =
+      btn('cursor', 'Cursor — stop drawing (Esc)', TOOL_ICONS.cursor, 'cancelActiveTool()')
+      + btn('lines', 'Lines — straight, freehand, horizontal', TOOL_ICONS.line, 'toggleLinesMenu(this)')
+      + btn('text', 'Text box — click the chart to add a note', TOOL_ICONS.text, "activateDrawTool('textLabel')")
+      + btn('ma', 'Moving averages', TOOL_ICONS.ma, 'toggleMaMenu(this)')
+      + btn('more', 'More tools — channels, Fibonacci, trade boxes', TOOL_ICONS.more, 'toggleMoreMenu(this)')
       + `<div class="chart-tool-sep"></div>`
-      + `<button class="chart-tool-btn chart-tool-clear" title="Clear all drawings" onclick="clearDrawings()">✕</button>`
-      + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" title="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">🗑</button>`;
+      + `<button class="chart-tool-btn chart-tool-bin" id="chartBinBtn" data-tip="Delete selected drawing" style="display:none;" onclick="deleteSelectedDrawing()">${TOOL_ICONS.bin}</button>`
+      + `<button class="chart-tool-btn chart-tool-clear" data-tip="Clear all drawings" aria-label="Clear all drawings" onclick="clearDrawings()">${TOOL_ICONS.clear}</button>`;
+    highlightActiveTool();
   }
   const bbToggle = document.getElementById('chartBbToggle');
   if (bbToggle) bbToggle.style.opacity = chartBbOn ? '1' : '0.45';
@@ -3739,25 +3775,71 @@ function refreshVolumePaneMode() {
   }
 }
 
-// --- CATEGORIZED TOOL FLYOUT ---
-let openToolFlyout = null;
-function toggleToolCategory(key, btn) {
-  if (openToolFlyout && openToolFlyout.dataset.cat === key) { closeToolFlyout(); return; }
+// --- LEFT TOOLBAR: icons, flyout menus, active-tool state ---
+let openToolFlyout = null; // the single open flyout (drawing menus, timeframe, chart type)
+const TOOL_ICONS = {
+  cursor: '<svg viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z"/></svg>',
+  line: '<svg viewBox="0 0 24 24"><path d="M5 19L19 5"/><circle cx="5" cy="19" r="1.8"/><circle cx="19" cy="5" r="1.8"/></svg>',
+  freehand: '<svg viewBox="0 0 24 24"><path d="M3 16c2-6 4-7 6-3s4 3 6-3 4-2 6 2"/></svg>',
+  hline: '<svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M12 9v6" opacity=".4"/></svg>',
+  vline: '<svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M9 12h6" opacity=".4"/></svg>',
+  ray: '<svg viewBox="0 0 24 24"><path d="M4 18L21 6"/><circle cx="4" cy="18" r="1.8"/><path d="M17 5l4 1-1 4"/></svg>',
+  text: '<svg viewBox="0 0 24 24"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg>',
+  ma: '<svg viewBox="0 0 24 24"><path d="M3 17c3-1 4-9 8-9s5 7 10 3"/><path d="M3 20h18" opacity=".35"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg>',
+  bin: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>',
+  clear: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  tool: '<svg viewBox="0 0 24 24"><path d="M4 18l6-8 4 4 6-8"/></svg>',
+};
+const LINE_TOOL_ROWS = [
+  { name: 'segment',                label: 'Straight line',   hint: 'Click two points',               icon: 'line' },
+  { name: 'freehand',               label: 'Freehand',        hint: 'Click and drag to draw',         icon: 'freehand' },
+  { name: 'horizontalStraightLine', label: 'Horizontal line', hint: 'One click — a price level',      icon: 'hline' },
+  { name: 'verticalStraightLine',   label: 'Vertical line',   hint: 'One click — marks a date/time',  icon: 'vline' },
+  { name: 'rayLine',                label: 'Ray',             hint: 'Two points, runs on forward',    icon: 'ray' },
+];
+const MORE_TOOL_HINTS = {
+  horizontalRayLine: 'One click, extends right', parallelStraightLine: 'Three clicks', priceChannelLine: 'Three clicks',
+  fibonacciLine: 'Two clicks — retracement levels', priceLine: 'Marks a price level', longPosition: 'Entry, target, stop (3 clicks)',
+  shortPosition: 'Entry, target, stop (3 clicks)', anchoredVwap: 'One click — VWAP from that bar',
+  anchoredVwapProfile: 'One click — VWAP plus volume profile', measureTool: 'Two clicks — % move, price move, time',
+};
+const LINE_GROUP_TOOLS = new Set(LINE_TOOL_ROWS.map(r => r.name));
+
+function toolRow(icon, label, hint, onclick, active) {
+  return `<button class="chart-tool-row${active ? ' active' : ''}" onclick="${onclick}">${TOOL_ICONS[icon] || TOOL_ICONS.tool}<span class="row-text"><span class="row-label">${label}</span><span class="row-hint">${hint}</span></span></button>`;
+}
+function openToolMenu(btn, kind, html) {
+  if (openToolFlyout && openToolFlyout.dataset.kind === kind) { closeToolFlyout(); return; }
   closeToolFlyout();
-  const tools = CHART_DRAW_TOOLS.filter(t => t.category === key);
   const flyout = document.createElement('div');
-  flyout.className = 'chart-tool-flyout';
-  flyout.dataset.cat = key;
-  flyout.innerHTML = tools.map(t => `<button class="chart-tool-btn" title="${t.label}" onclick="activateDrawTool('${t.name}'); closeToolFlyout();">${t.icon}</button>`).join('');
+  flyout.className = 'chart-tool-flyout chart-tool-menu';
+  flyout.dataset.kind = kind;
+  flyout.innerHTML = html;
   document.body.appendChild(flyout);
   const rect = btn.getBoundingClientRect();
-  flyout.style.left = (rect.right + 4) + 'px';
-  flyout.style.top = rect.top + 'px';
+  flyout.style.left = (rect.right + 8) + 'px';
+  flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - flyout.offsetHeight - 8)) + 'px';
   openToolFlyout = flyout;
   setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
 }
+function toggleLinesMenu(btn) {
+  openToolMenu(btn, 'lines',
+    `<div class="chart-tool-menu-title">Lines</div>` +
+    LINE_TOOL_ROWS.map(r => toolRow(r.icon, r.label, r.hint, `activateDrawTool('${r.name}'); closeToolFlyout();`, activeDrawTool === r.name)).join(''));
+}
+function toggleMoreMenu(btn) {
+  const groups = CHART_TOOL_CATEGORIES.filter(c => c.key !== 'lines');
+  const html = groups.map(c => {
+    const tools = CHART_DRAW_TOOLS.filter(t => t.category === c.key && !LINE_GROUP_TOOLS.has(t.name) && t.name !== 'simpleAnnotation');
+    if (!tools.length) return '';
+    return `<div class="chart-tool-menu-title">${c.label}</div>` +
+      tools.map(t => toolRow('tool', t.label, MORE_TOOL_HINTS[t.name] || '', `activateDrawTool('${t.name}'); closeToolFlyout();`, activeDrawTool === t.name)).join('');
+  }).join('');
+  openToolMenu(btn, 'more', html);
+}
 function onDocClickCloseFlyout(e) {
-  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('[data-cat], #chartTfToggle, #chartTypeToggle')) closeToolFlyout();
+  if (openToolFlyout && !openToolFlyout.contains(e.target) && !e.target.closest('.chart-sidebar, #chartTfToggle, #chartTypeToggle')) closeToolFlyout();
 }
 function closeToolFlyout() {
   if (openToolFlyout) { openToolFlyout.remove(); openToolFlyout = null; }
@@ -3804,16 +3886,200 @@ function positionFlyoutBelow(flyout, btn, alignRight) {
 
 // --- DRAWING TOOLS: activate / delete-selected / clear-all ---
 let selectedOverlayId = null;
-function activateDrawTool(name) {
-  const chart = ensurePriceChart();
-  if (!chart) return;
-  ensureAdvancedOverlayTypes();
-  chart.createOverlay({
-    name,
+let activeDrawTool = null;      // name of the tool currently armed on the chart, or null
+let activeDrawOverlayId = null; // id of its in-progress overlay (not used for freehand)
+
+function overlayHandlers() {
+  return {
     onSelected: (e) => { selectedOverlayId = (e.overlay || e).id; showBinButton(); },
     onDeselected: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
     onRemoved: (e) => { const id = (e.overlay || e).id; if (selectedOverlayId === id) { selectedOverlayId = null; hideBinButton(); } },
+  };
+}
+function highlightActiveTool() {
+  const group = !activeDrawTool ? 'cursor'
+    : LINE_GROUP_TOOLS.has(activeDrawTool) ? 'lines'
+    : activeDrawTool === 'textLabel' ? 'text' : 'more';
+  document.querySelectorAll('#chartSidebar [data-group]').forEach(b => {
+    b.classList.toggle('active', b.dataset.group === group);
+    if (b.dataset.group === 'ma') b.classList.toggle('on', chartMAs.length > 0);
   });
+}
+function activateDrawTool(name) {
+  const chart = ensurePriceChart();
+  if (!chart) return;
+  cancelActiveTool();
+  ensureAdvancedOverlayTypes();
+  activeDrawTool = name;
+  if (name === 'freehand') { startFreehand(); highlightActiveTool(); return; }
+  activeDrawOverlayId = chart.createOverlay({
+    name,
+    ...overlayHandlers(),
+    onDrawEnd: (e) => {
+      activeDrawTool = null; activeDrawOverlayId = null; highlightActiveTool();
+      if (name === 'textLabel') openTextEditor((e.overlay || e).id, true);
+    },
+  });
+  highlightActiveTool();
+}
+// Drops a half-drawn shape / freehand mode and returns to the plain cursor.
+function cancelActiveTool() {
+  stopFreehand();
+  if (priceChart && activeDrawOverlayId) priceChart.removeOverlay({ id: activeDrawOverlayId });
+  activeDrawTool = null; activeDrawOverlayId = null;
+  closeTextEditor();
+  highlightActiveTool();
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeDrawTool) cancelActiveTool(); });
+
+// Freehand: klinecharts has no brush, so a transparent canvas sits over the chart while
+// the tool is armed, records the stroke in pixels, and on release converts it to
+// (timestamp, price) points so the line stays pinned to the chart when it scrolls/zooms.
+let freehandState = null;
+function startFreehand() {
+  const tv = document.getElementById('tvChart');
+  if (!tv || !priceChart) return;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'chart-freehand-canvas';
+  canvas.style.left = tv.offsetLeft + 'px';
+  canvas.style.top = tv.offsetTop + 'px';
+  canvas.width = tv.clientWidth; canvas.height = tv.clientHeight;
+  canvas.style.width = tv.clientWidth + 'px'; canvas.style.height = tv.clientHeight + 'px';
+  tv.parentElement.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const color = cssVar('--accent-amber', '#f59e0b');
+  let pts = null;
+  // clientX/Y minus the canvas rect rather than offsetX/Y, which can be relative to a different box.
+  const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic/untracked pointer */ }
+    pts = [at(e)];
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pts) return;
+    const last = pts[pts.length - 1], cur = at(e);
+    if (Math.hypot(cur.x - last.x, cur.y - last.y) < 3) return;
+    pts.push(cur);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+  });
+  const finish = () => {
+    const stroke = pts; pts = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!stroke || stroke.length < 3 || !priceChart) return;
+    const points = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.timestamp) && Number.isFinite(p.value));
+    if (points.length < 3) return;
+    priceChart.createOverlay({ name: 'freehand', points, lock: false, ...overlayHandlers() });
+  };
+  canvas.addEventListener('pointerup', finish);
+  canvas.addEventListener('pointercancel', () => { pts = null; ctx.clearRect(0, 0, canvas.width, canvas.height); });
+  freehandState = { canvas };
+}
+function stopFreehand() {
+  if (freehandState) { freehandState.canvas.remove(); freehandState = null; }
+}
+
+// Text box: small inline editor next to the point you clicked. Enter saves, Esc cancels
+// (and discards a brand-new empty box). Double-click an existing box to edit it.
+let textEditorEl = null;
+function closeTextEditor() { if (textEditorEl) { textEditorEl.remove(); textEditorEl = null; } }
+function openTextEditor(overlayId, isNew) {
+  closeTextEditor();
+  const ov = priceChart && priceChart.getOverlayById(overlayId);
+  if (!ov || !ov.points || !ov.points[0]) return;
+  const px = priceChart.convertToPixel(ov.points[0], { paneId: 'candle_pane' });
+  const tv = document.getElementById('tvChart');
+  const pop = document.createElement('div');
+  pop.className = 'chart-text-editor';
+  pop.style.left = Math.max(4, tv.offsetLeft + px.x) + 'px';
+  pop.style.top = Math.max(4, tv.offsetTop + px.y - 40) + 'px';
+  pop.innerHTML = '<input type="text" maxlength="120" placeholder="Type a note, press Enter"><button type="button">OK</button>';
+  tv.parentElement.appendChild(pop);
+  textEditorEl = pop;
+  const input = pop.querySelector('input');
+  input.value = ov.extendData || '';
+  const commit = () => {
+    const text = input.value.trim();
+    if (text) priceChart.overrideOverlay({ id: overlayId, extendData: text });
+    else if (isNew) priceChart.removeOverlay({ id: overlayId });
+    closeTextEditor();
+  };
+  pop.querySelector('button').addEventListener('click', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    else if (e.key === 'Escape') { e.stopPropagation(); if (isNew) priceChart.removeOverlay({ id: overlayId }); closeTextEditor(); }
+  });
+  setTimeout(() => input.focus(), 0);
+}
+
+// Moving averages: SMA/EMA lines on the price pane. The picked set persists per browser.
+const MA_PRESETS = [
+  { type: 'SMA', period: 20,  color: '#f5c542', hint: 'Short-term trend' },
+  { type: 'SMA', period: 50,  color: '#3fb7f5', hint: 'Medium-term trend' },
+  { type: 'SMA', period: 200, color: '#c46bf5', hint: 'Long-term trend' },
+  { type: 'EMA', period: 9,   color: '#f59a42', hint: 'Fast, reacts quickly' },
+  { type: 'EMA', period: 21,  color: '#7ed957', hint: 'Fast, smoother' },
+];
+const MA_EXTRA_COLORS = ['#ff6b9d', '#4dd4c6', '#b0b8c4', '#e2d04b'];
+let chartMAs = (() => { try { return JSON.parse(localStorage.getItem('gcgChartMAs') || '[]'); } catch (e) { return []; } })();
+function saveMAs() { try { localStorage.setItem('gcgChartMAs', JSON.stringify(chartMAs)); } catch (e) {} }
+function maKey(m) { return `${m.type}${m.period}`; }
+function applyMovingAverages() {
+  if (!priceChart) return;
+  // klinecharts' signature is removeIndicator(paneId, name) — an options object is silently a no-op.
+  priceChart.removeIndicator('candle_pane', 'MA');
+  priceChart.removeIndicator('candle_pane', 'EMA');
+  [['SMA', 'MA'], ['EMA', 'EMA']].forEach(([type, name]) => {
+    const list = chartMAs.filter(m => m.type === type).sort((a, b) => a.period - b.period);
+    if (!list.length) return;
+    priceChart.createIndicator({
+      name,
+      calcParams: list.map(m => m.period),
+      styles: { lines: list.map(m => ({ color: m.color, size: 1.5 })) },
+    }, true, { id: 'candle_pane' });
+  });
+  highlightActiveTool();
+}
+function toggleMa(type, period) {
+  const i = chartMAs.findIndex(m => m.type === type && m.period === period);
+  if (i >= 0) chartMAs.splice(i, 1);
+  else {
+    const preset = MA_PRESETS.find(m => m.type === type && m.period === period);
+    chartMAs.push({ type, period, color: preset ? preset.color : MA_EXTRA_COLORS[chartMAs.length % MA_EXTRA_COLORS.length] });
+  }
+  saveMAs(); applyMovingAverages(); refreshMaMenu();
+}
+function addCustomMa() {
+  const f = openToolFlyout; if (!f) return;
+  const type = f.querySelector('#maCustomType').value;
+  const period = parseInt(f.querySelector('#maCustomPeriod').value, 10);
+  if (!Number.isFinite(period) || period < 2 || period > 500) { f.querySelector('#maCustomPeriod').focus(); return; }
+  if (!chartMAs.some(m => m.type === type && m.period === period)) toggleMa(type, period);
+}
+function maMenuHtml() {
+  const custom = chartMAs.filter(m => !MA_PRESETS.some(p => p.type === m.type && p.period === m.period));
+  const row = (m, hint) => {
+    const on = chartMAs.some(x => x.type === m.type && x.period === m.period);
+    const color = (chartMAs.find(x => x.type === m.type && x.period === m.period) || m).color;
+    return `<button class="chart-tool-row${on ? ' active' : ''}" onclick="toggleMa('${m.type}', ${m.period})"><span class="chart-ma-check">${on ? '✓' : ''}</span><span class="chart-ma-swatch" style="background:${color}"></span><span class="row-text"><span class="row-label">${m.type} ${m.period}</span><span class="row-hint">${hint}</span></span></button>`;
+  };
+  return `<div class="chart-tool-menu-title">Simple (SMA)</div>`
+    + MA_PRESETS.filter(m => m.type === 'SMA').map(m => row(m, m.hint)).join('')
+    + `<div class="chart-tool-menu-title">Exponential (EMA)</div>`
+    + MA_PRESETS.filter(m => m.type === 'EMA').map(m => row(m, m.hint)).join('')
+    + (custom.length ? `<div class="chart-tool-menu-title">Your averages</div>` + custom.map(m => row(m, 'Custom — click to remove')).join('') : '')
+    + `<div class="chart-ma-custom"><select id="maCustomType"><option>SMA</option><option>EMA</option></select><input id="maCustomPeriod" type="number" min="2" max="500" placeholder="Period"><button type="button" onclick="addCustomMa()">Add</button></div>`;
+}
+function toggleMaMenu(btn) { openToolMenu(btn, 'ma', maMenuHtml()); }
+function refreshMaMenu() {
+  if (!openToolFlyout || openToolFlyout.dataset.kind !== 'ma') return;
+  const keepType = openToolFlyout.querySelector('#maCustomType')?.value;
+  openToolFlyout.innerHTML = maMenuHtml();
+  if (keepType) openToolFlyout.querySelector('#maCustomType').value = keepType;
 }
 
 function showBinButton() { const btn = document.getElementById('chartBinBtn'); if (btn) btn.style.display = 'flex'; }
@@ -4044,6 +4310,36 @@ let advancedOverlaysRegistered = false;
 function ensureAdvancedOverlayTypes() {
   if (advancedOverlaysRegistered) return;
   advancedOverlaysRegistered = true;
+
+  klinecharts.registerOverlay({
+    name: 'freehand',
+    totalStep: 2,
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createPointFigures: ({ coordinates }) => (coordinates && coordinates.length > 1
+      ? [{ type: 'line', attrs: { coordinates }, styles: { color: cssVar('--accent-amber', '#f59e0b'), size: 2 } }]
+      : []),
+  });
+
+  klinecharts.registerOverlay({
+    name: 'textLabel',
+    totalStep: 2, // 1 click
+    needDefaultPointFigure: true,
+    onDoubleClick: (e) => { openTextEditor((e.overlay || e).id, false); return true; },
+    createPointFigures: ({ overlay, coordinates }) => (coordinates && coordinates.length
+      ? [{
+          type: 'text',
+          attrs: { x: coordinates[0].x, y: coordinates[0].y, text: overlay.extendData || 'Text', baseline: 'bottom' },
+          styles: {
+            style: 'stroke_fill', color: cssVar('--text-primary', '#e8eaf0'), size: 12,
+            family: "'IBM Plex Mono', monospace", backgroundColor: cssVar('--bg-card', '#1b1f2a'),
+            borderColor: cssVar('--accent-blue', '#0088ff'), borderSize: 1, borderRadius: 3,
+            paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4,
+          },
+        }]
+      : []),
+  });
 
   klinecharts.registerOverlay({
     name: 'measureTool',
