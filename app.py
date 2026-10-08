@@ -3023,6 +3023,27 @@ def _fill_crypto_daily_gaps(df: pd.DataFrame, ticker: "yf.Ticker") -> pd.DataFra
         return df
 
 
+def _apply_yahoo_volume(df: pd.DataFrame, symbol: str, period: str, interval: str) -> pd.DataFrame:
+    """Alpaca's free IEX feed only reports IEX-venue volume (a small slice of the real
+    total), so stock prices come from Alpaca but volume is overlaid from Yahoo's
+    consolidated figures wherever a bar timestamp matches. Never raises."""
+    try:
+        fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
+        yf_df = _fetch_yf_history_cached(yf.Ticker(symbol.upper()), symbol, period, fetch_interval)
+        if interval in _RESAMPLE_INTERVALS:
+            yf_df = _resample_ohlcv(yf_df, _RESAMPLE_RULES[interval])
+        if yf_df.empty or "Volume" not in yf_df.columns:
+            return df
+        vol = yf_df["Volume"]
+        if df.index.tz is not None and vol.index.tz is not None:
+            vol.index = vol.index.tz_convert(df.index.tz)
+        df = df.copy()
+        df["Volume"] = vol.reindex(df.index).fillna(df["Volume"])
+        return df
+    except Exception:
+        return df
+
+
 def _fetch_ohlcv(
     symbol: str,
     period: str = "3mo",
@@ -3039,6 +3060,7 @@ def _fetch_ohlcv(
     if not start_date and period not in VALID_PERIODS:
         raise ValueError(f"Invalid period: {period}")
     metal_ccy = _parse_metal_currency_symbol(symbol)
+    provider_stock = False
     if metal_ccy:
         # Used to return directly here, which meant the metal-currency pair itself
         # (e.g. 'XAUGBP=X') never reached _stitch_live_tail below — only the two
@@ -3049,7 +3071,7 @@ def _fetch_ohlcv(
         if df is None:
             df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
     elif not start_date and marketdata_classify(symbol) in ("forex", "stock") and (df := _fetch_oanda_metal_history(symbol, period, interval)) is not None:
-        pass  # OANDA (forex) / Alpaca (stocks) own both history and live tail
+        provider_stock = marketdata_classify(symbol) == "stock"  # OANDA (forex) / Alpaca (stocks) own history + live tail
     elif not start_date and symbol.upper().endswith("-USD") and (df := _fetch_coinbase_history(symbol, period, interval)) is not None:
         pass
     else:
@@ -3081,6 +3103,8 @@ def _fetch_ohlcv(
                 raise ValueError(f"No data returned for symbol: {symbol}")
     if not start_date:
         df = _stitch_live_tail(df, symbol, interval)
+        if provider_stock:
+            df = _apply_yahoo_volume(df, symbol, period, interval)
     return df
 
 
