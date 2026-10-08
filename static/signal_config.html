@@ -4194,6 +4194,10 @@ async function loadPriceChart(sym) {
       currentChartBars = rows;
       _volProfileCache.clear();
       _vwapCache.clear();
+      // Dragging/rescaling the price axis freezes klinecharts' y-range, so the previous symbol's
+      // range survived the data swap and the new candles drew off-screen. setStyles with a
+      // yAxis type re-enables auto-ranging (the library's own reset path).
+      chart.setStyles({ yAxis: { type: 'normal' } });
       chart.applyNewData(rows);
       refreshVolumePaneMode();
       syncChartStream();
