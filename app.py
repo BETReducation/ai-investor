@@ -2971,6 +2971,34 @@ def _fetch_synthetic_metal_ohlcv(
     return converted
 
 
+def _fetch_coinbase_history(symbol: str, period: str, interval: str) -> pd.DataFrame | None:
+    """Crypto candles straight from Coinbase (public, keyless) so one provider owns the
+    whole series — Yahoo drops whole days for crypto. None on any non-coverage/failure,
+    so _fetch_ohlcv falls back to yfinance. Shares _ohlcv_cache, tagged 'coinbase'."""
+    key = ("coinbase", symbol.upper(), period, interval)
+    now = time.monotonic()
+    with _ohlcv_cache_lock:
+        cached = _ohlcv_cache.get(key)
+    if cached is not None and now - cached[0] < _OHLCV_CACHE_TTL_SECONDS:
+        return cached[1].copy()
+    from marketdata import coinbase_client
+    fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
+    gran = coinbase_client.GRANULARITY.get(fetch_interval)
+    if gran is None:
+        return None
+    count = max(2, min(5000, marketdata_router._PERIOD_DAYS.get(period, 90) * 86400 // gran + 2))
+    df = coinbase_client.fetch_candles(symbol, fetch_interval, count)
+    if df is None or df.empty:
+        return None
+    if interval in _RESAMPLE_INTERVALS:
+        df = _resample_ohlcv(df, _RESAMPLE_RULES[interval])
+        if df.empty:
+            return None
+    with _ohlcv_cache_lock:
+        _ohlcv_cache[key] = (now, df)
+    return df.copy()
+
+
 def _fill_crypto_daily_gaps(df: pd.DataFrame, ticker: "yf.Ticker") -> pd.DataFrame:
     """Yahoo's daily crypto series sometimes omits a whole day (e.g. ADA-USD skipped
     2026-10-07) even though its hourly feed has it. Crypto trades 24/7, so any missing
@@ -3019,6 +3047,8 @@ def _fetch_ohlcv(
         df = _fetch_oanda_metal_history(symbol, period, interval) if not start_date else None
         if df is None:
             df = _fetch_synthetic_metal_ohlcv(*metal_ccy, period, interval, start_date, end_date)
+    elif not start_date and symbol.upper().endswith("-USD") and (df := _fetch_coinbase_history(symbol, period, interval)) is not None:
+        pass
     else:
         fetch_interval = _RESAMPLE_INTERVALS.get(interval, interval)
         ticker = yf.Ticker(symbol.upper())
@@ -7037,6 +7067,11 @@ _ensure_default_user()
 def _should_start_background_streams() -> bool:
     if _is_production:
         return True  # gunicorn / non-debug run: no reloader involved, start once
+    # Local runs stay off the provider streams unless explicitly opted in: Alpaca's free
+    # tier allows one websocket per key and OANDA limits streams too, so a dev machine
+    # sharing production's keys kicks production off its own stream.
+    if os.environ.get("ENABLE_LIVE_STREAMS_LOCAL", "") in ("", "0", "false"):
+        return False
     # Local `python app.py` with debug=True: Werkzeug's reloader re-execs the process
     # with WERKZEUG_RUN_MAIN=true once it's the real serving process — app.debug isn't
     # usable for this check here, since app.run(debug=...) below hasn't executed yet
