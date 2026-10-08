@@ -1245,6 +1245,7 @@ section.alt-bg { background: var(--bg2); }
     loadSlide(1);
     let idx = 0;
     setInterval(() => {
+      if (document.hidden) return; // background tabs shouldn't keep downloading photos
       slides[idx].classList.remove('active');
       idx = (idx + 1) % slides.length;
       loadSlide(idx);

@@ -75,7 +75,7 @@ def _static_egress_tuning(resp):
     # Images change rarely and are the heaviest assets; letting browsers reuse them stops every
     # page view re-downloading them. CSS/JS are left alone so deploys show up immediately.
     if request.path.startswith(("/static/img/", "/static/logos/")) and resp.status_code == 200:
-        resp.headers["Cache-Control"] = "public, max-age=86400"
+        resp.headers["Cache-Control"] = "public, max-age=604800"
     return resp
 
 
