@@ -2642,7 +2642,7 @@ async function fetchPrices(sym) {
   const yfSym = symbolMap[sym];
   if (!yfSym) return;
   const { period, interval } = getApiInterval();
-  const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+  const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}&tail=30`);
   if (!data.data || data.data.length === 0) return;
 
   priceHistory[sym] = data.data.map((row, i) => ({ t: i, p: row.Close, v: row.Volume || 1 }));
@@ -2912,7 +2912,7 @@ async function refreshLiveChartBar() {
   if (!yfSym) return;
   const { period, interval } = intervalMap[chartTf] || { period: '5d', interval: '1d' };
   try {
-    const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}`);
+    const data = await apiFetch(`/api/prices?symbol=${encodeURIComponent(yfSym)}&period=${period}&interval=${interval}&tail=2`);
     updateLiveBadge(!!data.is_live);
     const rows = data.data || [];
     if (!rows.length) return;

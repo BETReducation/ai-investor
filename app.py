@@ -5365,6 +5365,11 @@ def prices():
         # Volume has no meaningful prior value, so it's zeroed instead.
         df[["Open", "High", "Low", "Close"]] = df[["Open", "High", "Low", "Close"]].ffill()
         df["Volume"] = df["Volume"].fillna(0)
+        # Pollers only need the newest bars (watchlist sparkline = last 30, live-bar
+        # refresh = last 2) — `tail` stops them re-downloading the full history every 5s.
+        tail = request.args.get("tail", type=int)
+        if tail and tail > 0:
+            df = df.tail(tail)
         records = df[["Open", "High", "Low", "Close", "Volume"]].reset_index()
         records.rename(columns={"Date": "date", "Datetime": "date"}, inplace=True)
         if "date" not in records.columns:
