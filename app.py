@@ -5364,7 +5364,7 @@ def prices():
         # ffill carries the last real close forward (a flat "no trades yet" bar);
         # Volume has no meaningful prior value, so it's zeroed instead.
         df[["Open", "High", "Low", "Close"]] = df[["Open", "High", "Low", "Close"]].ffill()
-        df["Volume"] = df["Volume"].fillna(0)
+        df["Volume"] = df["Volume"].fillna(0).round(2)
         # Pollers only need the newest bars (watchlist sparkline = last 30, live-bar
         # refresh = last 2) — `tail` stops them re-downloading the full history every 5s.
         tail = request.args.get("tail", type=int)
