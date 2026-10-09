@@ -90,7 +90,8 @@ def _log_big_responses(resp):
     try:
         size = resp.content_length
         if size is None or size >= _BIG_RESPONSE_LOG_BYTES:
-            ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip()
+            ip = (request.headers.get("CF-Connecting-IP")
+                  or request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip())
             app.logger.warning("EGRESS %s %s %s bytes=%s ip=%s ua=%s", request.method, request.path,
                                resp.status_code, size if size is not None else "stream", ip,
                                (request.user_agent.string or "")[:80])
@@ -4711,8 +4712,14 @@ def api_alpha_content_image(item_id):
         return jsonify({"error": "No image attached"}), 404
     import mimetypes
     mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
-    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
-    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    published = item.get("status") == "published"
+    # Day-long cache + ETag: repeat visitors revalidate with a 304 instead of re-downloading.
+    cache = "public, max-age=86400, stale-while-revalidate=604800" if published else "private, no-store"
+    resp = Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    if published:
+        resp.add_etag()
+        resp.make_conditional(request)
+    return resp
 
 
 @app.route("/api/alpha/content/<int:item_id>/image", methods=["POST"])
@@ -4772,8 +4779,14 @@ def api_alpha_content_attachment_get(item_id, attachment_id):
         return jsonify({"error": "Not found"}), 404
     import mimetypes
     mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
-    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
-    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    published = item.get("status") == "published"
+    # Day-long cache + ETag: repeat visitors revalidate with a 304 instead of re-downloading.
+    cache = "public, max-age=86400, stale-while-revalidate=604800" if published else "private, no-store"
+    resp = Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    if published:
+        resp.add_etag()
+        resp.make_conditional(request)
+    return resp
 
 
 def _alpha_public_image_url(item: dict) -> str | None:
@@ -5158,8 +5171,14 @@ def api_dataviz_content_image(item_id):
         return jsonify({"error": "No image attached"}), 404
     import mimetypes
     mimetype = mimetypes.guess_type(filename or "")[0] or "image/jpeg"
-    cache = "public, max-age=3600" if item.get("status") == "published" else "private, no-store"
-    return Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    published = item.get("status") == "published"
+    # Day-long cache + ETag: repeat visitors revalidate with a 304 instead of re-downloading.
+    cache = "public, max-age=86400, stale-while-revalidate=604800" if published else "private, no-store"
+    resp = Response(file_bytes, mimetype=mimetype, headers={"Cache-Control": cache})
+    if published:
+        resp.add_etag()
+        resp.make_conditional(request)
+    return resp
 
 
 @app.route("/api/dataviz/content/<int:item_id>/image", methods=["POST"])
