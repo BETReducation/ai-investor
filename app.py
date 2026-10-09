@@ -136,6 +136,34 @@ DAILY_BACKTEST_FILE = os.path.join(os.path.dirname(__file__), "backtest_daily_us
 DAILY_LEARN_QA_FILE = os.path.join(os.path.dirname(__file__), "learn_qa_daily_usage.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+IMAGE_MAX_DIMENSION = 1600
+
+
+def optimize_image(filename: str, data: bytes) -> bytes:
+    """Downscale and recompress uploads in their original format (keeps the stored
+    filename/mimetype valid). GIFs are left alone to preserve animation; falls back to
+    the original bytes on any failure or if the result isn't smaller."""
+    ext = filename.rsplit(".", 1)[-1].lower() if filename and "." in filename else ""
+    if ext not in ("png", "jpg", "jpeg", "webp") or not data:
+        return data
+    try:
+        import io
+        from PIL import Image, ImageOps
+        img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img)
+        if max(img.size) > IMAGE_MAX_DIMENSION:
+            img.thumbnail((IMAGE_MAX_DIMENSION, IMAGE_MAX_DIMENSION), Image.LANCZOS)
+        out = io.BytesIO()
+        if ext in ("jpg", "jpeg"):
+            img.convert("RGB").save(out, "JPEG", quality=82, optimize=True, progressive=True)
+        elif ext == "webp":
+            img.save(out, "WEBP", quality=82)
+        else:
+            img.save(out, "PNG", optimize=True)
+        result = out.getvalue()
+        return result if len(result) < len(data) else data
+    except Exception:
+        return data
 
 # ── Alpha content ────────────────────────────────────────────────────────────
 ALPHA_ROLES = {"tom", "dave", "gary", "connor"}
@@ -1195,6 +1223,7 @@ def alpha_content_get_image(item_id: int):
 
 def alpha_content_set_image(item_id: int, filename: str, file_bytes: bytes) -> dict | None:
     """Sets the uploaded image file, clearing image_url to enforce file-vs-URL exclusivity."""
+    file_bytes = optimize_image(filename, file_bytes)
     now = _dt.datetime.utcnow()
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -1237,6 +1266,7 @@ def _save_alpha_attachments_json(data: dict) -> None:
 
 def alpha_attachment_create(content_id: int, filename: str, file_bytes: bytes) -> int:
     """Returns the new attachment's id."""
+    file_bytes = optimize_image(filename, file_bytes)
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor() as cur:
             cur.execute(
@@ -1425,6 +1455,7 @@ def dataviz_page_get_header_image(slug: str):
 
 def dataviz_page_set_header_image(slug: str, filename: str | None, file_bytes: bytes | None) -> bool:
     """Pass filename=None to clear the header image."""
+    file_bytes = optimize_image(filename, file_bytes)
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor() as cur:
             cur.execute(
@@ -1955,6 +1986,7 @@ def dataviz_content_get_image(item_id: int):
 
 
 def dataviz_content_set_image(item_id: int, filename: str, file_bytes: bytes) -> dict | None:
+    file_bytes = optimize_image(filename, file_bytes)
     now = _dt.datetime.utcnow()
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
