@@ -4163,10 +4163,8 @@ def admin_partner_activity():
             continue
         n_login, n_posts, n_chat = logins.get(username, 0), posts.get(role, 0), chat.get(role, 0)
         n_active = active.get(username, 0)
-        pct = lambda n, d: round(n / d * 100, 1) if d else None
         rows.append({"username": username, "alpha_role": role, "logins": n_login, "active_days": n_active,
-                     "alpha_posts": n_posts, "alpha_pct": pct(n_posts, n_login), "alpha_pct_active": pct(n_posts, n_active),
-                     "chat_contributions": n_chat, "chat_pct": pct(n_chat, n_login), "chat_pct_active": pct(n_chat, n_active)})
+                     "alpha_posts": n_posts, "chat_contributions": n_chat})
     return jsonify({"partners": rows})
 
 
