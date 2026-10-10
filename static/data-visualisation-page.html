@@ -166,6 +166,7 @@ body.pulse-map-lock { overflow: hidden; }
 #tideWrap { position: relative; }
 .tide-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 .tide-pool { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 12px 8px; }
+.tide-pool-desc { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11.5px; color: var(--muted); margin-left: 8px; }
 .tide-pool-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af6a; margin-bottom: 6px; display: flex; justify-content: space-between; }
 :root[data-theme="light"] .tide-pool-title { color: #96650f; }
 .tide-pool canvas { width: 100%; height: 300px; display: block; border-radius: 10px; cursor: pointer; }
@@ -720,6 +721,12 @@ function initTidePools() {
 }
 
 let _tideTab = 'countries';
+const TIDE_POOL_DESC = {
+  Crypto: '20 largest by market cap, excl. stablecoins',
+  Stocks: '20 largest US stocks by market cap',
+  Currencies: '20 most traded currencies',
+  Metals: 'Main metals with reliable price data'
+};
 const TIDE_NOTES = {
   countries: "<b>Where this comes from.</b> Each bubble is the main benchmark stock index of one country (for example the S&amp;P 500 for the US, the FTSE 100 for the UK, the Nikkei 225 for Japan), grouped by region. Around 40 markets in all. The move shown is the latest close against the previous close.",
   assets: "<b>Where this comes from.</b> <b>Crypto:</b> the 20 largest coins by market cap, priced in US dollars; stablecoins are left out because they are designed not to move. <b>Stocks:</b> the 20 largest US-listed companies by market cap (NYSE and Nasdaq, including TSMC through its US-listed shares). <b>Currencies:</b> currencies have no market cap, so these are the 20 most traded currencies in the Bank for International Settlements survey, shown as their move against the US dollar. <b>Metals:</b> gold, silver, platinum, palladium, copper and aluminium futures, the main metals with reliable public price data. The lists are reviewed by hand, so they can lag the live rankings. Prices come from Yahoo Finance and refresh every 5 minutes."
@@ -778,7 +785,7 @@ function renderTidePools(data) {
     const avg = ms.reduce((a, m) => a + m.pct_change, 0) / ms.length;
     const card = document.createElement('div');
     card.className = 'tide-pool';
-    card.innerHTML = `<div class="tide-pool-title"><span>${esc(name)}</span><span style="color:${avg >= 0 ? '#4ade80' : '#f87171'}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}% avg</span></div><canvas></canvas>`;
+    card.innerHTML = `<div class="tide-pool-title"><span>${esc(name)}<span class="tide-pool-desc">${esc(TIDE_POOL_DESC[name] || '')}</span></span><span style="color:${avg >= 0 ? '#4ade80' : '#f87171'}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}% avg</span></div><canvas></canvas>`;
     grid.appendChild(card);
     const canvas = card.querySelector('canvas');
     const pool = { canvas, ctx: canvas.getContext('2d'), w: 0, h: 0, maxAbs, bubbles: ms.map((m, i) => ({
