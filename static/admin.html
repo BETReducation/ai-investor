@@ -59,11 +59,11 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
     <div id="panel" style="display:none;">
       <div class="err-banner" id="errBanner"></div>
       <div class="section-head">Partner activity</div>
-      <div class="section-note">Logins are counted from when activity logging began. Percentages are posts or chat contributions divided by times logged in.</div>
+      <div class="section-note">Logins count from 26 Sept 2026; active days count from the day this table shipped (days the partner was signed in and loaded the site). Posts and chat include earlier history, so percentages can exceed 100% until the counts catch up.</div>
       <div class="table-wrap" style="margin-bottom:36px;">
-        <table style="min-width:640px;">
+        <table style="min-width:900px;">
           <thead>
-            <tr><th>Partner</th><th>Times logged in</th><th>Alpha posts</th><th>Alpha post %</th><th>GCG chat contributions</th><th>GCG chat %</th></tr>
+            <tr><th>Partner</th><th>Times logged in</th><th>Active days</th><th>Alpha posts</th><th>% of logins</th><th>% of active days</th><th>GCG chat</th><th>% of logins</th><th>% of active days</th></tr>
           </thead>
           <tbody id="activityRows"></tbody>
         </table>
@@ -211,9 +211,9 @@ async function loadActivity() {
   const rows = (await res.json()).partners;
   document.getElementById('activityRows').innerHTML = rows.length ? rows.map(p => `
     <tr><td><div class="uname">${p.username}</div><div class="uemail">${p.alpha_role}</div></td>
-    <td>${p.logins}</td><td>${p.alpha_posts}</td><td>${fmt(p.alpha_pct)}</td>
-    <td>${p.chat_contributions}</td><td>${fmt(p.chat_pct)}</td></tr>`).join('')
-    : '<tr><td colspan="6">No partners yet.</td></tr>';
+    <td>${p.logins}</td><td>${p.active_days}</td><td>${p.alpha_posts}</td><td>${fmt(p.alpha_pct)}</td><td>${fmt(p.alpha_pct_active)}</td>
+    <td>${p.chat_contributions}</td><td>${fmt(p.chat_pct)}</td><td>${fmt(p.chat_pct_active)}</td></tr>`).join('')
+    : '<tr><td colspan="9">No partners yet.</td></tr>';
 }
 
 loadUsers();

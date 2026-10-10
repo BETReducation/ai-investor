@@ -3429,7 +3429,7 @@ def admin_page():
 
 
 # ── Per-user activity log (feeds the weekly newsletter's stats strip) ────────
-EVENT_KINDS = {"login", "signal", "backtest", "ai_request", "lesson_view", "lesson_complete", "video_play"}
+EVENT_KINDS = {"login", "active_day", "signal", "backtest", "ai_request", "lesson_view", "lesson_complete", "video_play"}
 # Kinds the browser may report itself; the rest are logged server-side only so
 # they can't be inflated from the client.
 CLIENT_EVENT_KINDS = {"lesson_view", "video_play"}
@@ -3451,6 +3451,28 @@ def log_event(username: str, kind: str, detail: str = "") -> None:
                 f.write(json.dumps({"u": username, "k": kind, "d": detail, "t": time.time()}) + "\n")
     except Exception as e:
         print(f"[log_event failed] {kind} {username}: {e}")
+
+
+_active_days_seen: set = set()
+
+
+@app.before_request
+def _note_active_day():
+    """One 'active_day' event per signed-in user per UTC day, so partners on a long-lived
+    session (who rarely re-login) still show up. Reads the session cookie directly to
+    avoid the full user load; the in-memory set only saves DB writes — the report counts
+    distinct dates, so a duplicate after a restart is harmless."""
+    if request.path.startswith("/static/"):
+        return
+    username = session.get("_user_id")
+    if not username:
+        return
+    today = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d")
+    key = (username, today)
+    if key in _active_days_seen:
+        return
+    _active_days_seen.add(key)
+    log_event(username, "active_day", today)
 
 
 def weekly_activity(username: str, days: int = 7) -> dict:
@@ -4088,13 +4110,14 @@ def admin_list_users():
     ], "feature_levels": FEATURE_LEVELS, "tiers": list(TIER_RANKS.keys())})
 
 
-def _login_counts() -> dict:
-    """Total login events per username since the activity log started."""
-    counts = {}
+def _event_counts(kind: str, distinct_detail: bool = False) -> dict:
+    """Event totals per username since the activity log started; optionally distinct dates."""
+    counts, dates = {}, {}
     try:
         if DATABASE_URL:
             with _db_conn() as conn, conn.cursor() as cur:
-                cur.execute("SELECT username, COUNT(*) FROM user_events WHERE kind = 'login' GROUP BY username")
+                cur.execute(f"SELECT username, COUNT({'DISTINCT detail' if distinct_detail else '*'}) "
+                            "FROM user_events WHERE kind = %s GROUP BY username", (kind,))
                 counts = {u: n for u, n in cur.fetchall()}
         elif os.path.exists(EVENTS_FILE):
             with open(EVENTS_FILE) as f:
@@ -4103,10 +4126,15 @@ def _login_counts() -> dict:
                         e = json.loads(line)
                     except ValueError:
                         continue
-                    if e.get("k") == "login":
-                        counts[e["u"]] = counts.get(e["u"], 0) + 1
+                    if e.get("k") == kind:
+                        if distinct_detail:
+                            dates.setdefault(e["u"], set()).add(e.get("d"))
+                        else:
+                            counts[e["u"]] = counts.get(e["u"], 0) + 1
+            if distinct_detail:
+                counts = {u: len(d) for u, d in dates.items()}
     except Exception as e:
-        print(f"[_login_counts failed] {e}")
+        print(f"[_event_counts failed] {kind}: {e}")
     return counts
 
 
@@ -4115,7 +4143,8 @@ def _login_counts() -> dict:
 def admin_partner_activity():
     if not is_admin_user(current_user):
         return jsonify({"error": "Admin only"}), 403
-    logins = _login_counts()
+    logins = _event_counts("login")
+    active = _event_counts("active_day", distinct_detail=True)
     posts = {}
     for item in alpha_content_list(status="published"):
         if item.get("kind") == "post":
@@ -4133,10 +4162,11 @@ def admin_partner_activity():
         if not role:
             continue
         n_login, n_posts, n_chat = logins.get(username, 0), posts.get(role, 0), chat.get(role, 0)
-        pct = lambda n: round(n / n_login * 100, 1) if n_login else None
-        rows.append({"username": username, "alpha_role": role, "logins": n_login,
-                     "alpha_posts": n_posts, "alpha_pct": pct(n_posts),
-                     "chat_contributions": n_chat, "chat_pct": pct(n_chat)})
+        n_active = active.get(username, 0)
+        pct = lambda n, d: round(n / d * 100, 1) if d else None
+        rows.append({"username": username, "alpha_role": role, "logins": n_login, "active_days": n_active,
+                     "alpha_posts": n_posts, "alpha_pct": pct(n_posts, n_login), "alpha_pct_active": pct(n_posts, n_active),
+                     "chat_contributions": n_chat, "chat_pct": pct(n_chat, n_login), "chat_pct_active": pct(n_chat, n_active)})
     return jsonify({"partners": rows})
 
 
