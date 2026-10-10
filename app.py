@@ -20,6 +20,8 @@ import hashlib
 import hmac
 import time
 import threading
+import contextlib
+import sys
 import re
 import smtplib
 import requests
@@ -98,6 +100,81 @@ def _log_big_responses(resp):
     except Exception:
         pass
     return resp
+
+# Railway's memory graph shows spikes (3-4GB) but not what caused them, and its logs
+# only keep a few minutes. Sample RSS every second and, when it climbs 500MB above its
+# recent floor, log what was in flight: active requests, named background jobs, and each
+# thread's current frame. Cheap enough to leave on permanently.
+_MEM_JUMP_MB = 500
+_mem_active_requests: dict = {}
+_mem_active_jobs: dict = {}
+
+
+@app.before_request
+def _mem_track_request_start():
+    _mem_active_requests[id(request._get_current_object())] = (request.method, request.path, time.time())
+
+
+@app.teardown_request
+def _mem_track_request_end(exc=None):
+    _mem_active_requests.pop(id(request._get_current_object()), None)
+
+
+@contextlib.contextmanager
+def mem_tracked_job(name: str):
+    key = (name, threading.get_ident())
+    _mem_active_jobs[key] = time.time()
+    try:
+        yield
+    finally:
+        _mem_active_jobs.pop(key, None)
+
+
+def _rss_mb() -> float | None:
+    try:
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    return int(line.split()[1]) / 1024
+    except OSError:
+        pass
+    return None
+
+
+def _mem_context() -> str:
+    now = time.time()
+    reqs = [f"{m} {p} ({now - t:.0f}s)" for m, p, t in list(_mem_active_requests.values())[:10]]
+    jobs = [f"{n} ({now - t:.0f}s)" for (n, _), t in list(_mem_active_jobs.items())[:10]]
+    me = threading.get_ident()
+    names = {t.ident: t.name for t in threading.enumerate()}
+    frames = []
+    for tid, fr in sys._current_frames().items():
+        if tid == me:
+            continue
+        frames.append(f"{names.get(tid, tid)}@{os.path.basename(fr.f_code.co_filename)}:{fr.f_code.co_name}:{fr.f_lineno}")
+    return f"requests={reqs} jobs={jobs} threads={frames[:15]}"
+
+
+def _memory_monitor_loop() -> None:
+    from collections import deque
+    recent = deque(maxlen=30)
+    armed_above = None  # RSS level at/after which we've already logged this climb
+    while True:
+        try:
+            rss = _rss_mb()
+            if rss is not None:
+                floor = min(recent) if recent else rss
+                if rss - floor >= _MEM_JUMP_MB and (armed_above is None or rss - armed_above >= _MEM_JUMP_MB):
+                    armed_above = rss
+                    app.logger.warning("MEMJUMP rss=%.0fMB floor=%.0fMB %s", rss, floor, _mem_context())
+                elif armed_above is not None and rss - floor < _MEM_JUMP_MB / 2:
+                    app.logger.warning("MEMJUMP over: rss=%.0fMB floor=%.0fMB", rss, floor)
+                    armed_above = None
+                recent.append(rss)
+        except Exception:
+            pass
+        time.sleep(1)
+
 
 # Base URL of the realtime/ async streaming service (docs/scaling-plan.md),
 # e.g. "https://ai-investor-realtime.up.railway.app" — no trailing slash.
@@ -5438,7 +5515,8 @@ def _fetch_tide_pools_live() -> dict:
 def _refresh_tide_pools() -> dict:
     global _tide_refreshing
     try:
-        return _build_tide_pools()
+        with mem_tracked_job("tide-pools"):
+            return _build_tide_pools()
     finally:
         _tide_refreshing = False
 
@@ -7388,6 +7466,7 @@ def api_newsletter_approve():
 _newsletter_ensure_table()
 if _is_production:
     threading.Thread(target=_newsletter_scheduler_loop, name="newsletter-scheduler", daemon=True).start()
+    threading.Thread(target=_memory_monitor_loop, name="memory-monitor", daemon=True).start()
 
 
 _ensure_table()
