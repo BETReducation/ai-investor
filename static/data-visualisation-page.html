@@ -163,7 +163,7 @@ body.pulse-map-lock { overflow: hidden; }
 .pulse-tab-btn.active { background: #d4af6a; color: #1a1206; }
 .pulse-tab-panel { display: none; }
 /* Tide Pools tab */
-#pulseTabTide { position: relative; }
+#tideWrap { position: relative; }
 .tide-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
 .tide-pool { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 12px 8px; }
 .tide-pool-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af6a; margin-bottom: 6px; display: flex; justify-content: space-between; }
@@ -375,6 +375,10 @@ async function loadPage() {
       setHeroSub(data.description || "Every major index worldwide, colored by today's move — refreshes automatically.");
       document.body.classList.add('pulse-page');
       initMarketPulse();
+    } else if (slug === 'tide-pools') {
+      setHeroSub(data.description || "Every major index worldwide as a bubble in its regional pool: gainers float, decliners sink, bigger moves swim faster.");
+      document.body.classList.add('pulse-page');
+      initTidePools();
     } else if (slug === 'gold-silver-ratio') {
       setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');
@@ -432,7 +436,6 @@ function initMarketPulse() {
       <div class="pulse-tabs">
         <button class="pulse-tab-btn" id="pulseTabBtnSimple" onclick="switchPulseTab('simple')">Simple</button>
         <button class="pulse-tab-btn" id="pulseTabBtnDetailed" onclick="switchPulseTab('detailed')">Detailed</button>
-        <button class="pulse-tab-btn" id="pulseTabBtnTide" onclick="switchPulseTab('tide')">Tide Pools</button>
         <button class="pulse-tab-btn" id="pulseTabBtnList" onclick="switchPulseTab('list')">List</button>
       </div>
 
@@ -466,12 +469,6 @@ function initMarketPulse() {
         <div class="pulse-map-credit">Map: <a href="https://commons.wikimedia.org/wiki/File:BlankMap-World-Compact.svg" target="_blank" rel="noopener">Wikimedia Commons</a> (public domain)</div>
       </div>
 
-      <div class="pulse-tab-panel" id="pulseTabTide">
-        <div class="tide-grid" id="tideGrid"></div>
-        <div class="pulse-tooltip" id="tideTooltip"></div>
-        <div class="tide-note">Each bubble is a market. Bubbles near the surface are up today, those sinking toward the floor are down. Size = size of today's move; bigger moves swim faster.</div>
-      </div>
-
       <div class="pulse-tab-panel" id="pulseTabList">
         <div id="pulseListBody"><div class="list-empty">Loading…</div></div>
       </div>
@@ -503,8 +500,6 @@ async function switchPulseTab(tab) {
   document.getElementById('pulseTabBtnSimple').classList.toggle('active', tab === 'simple');
   document.getElementById('pulseTabBtnDetailed').classList.toggle('active', tab === 'detailed');
   document.getElementById('pulseTabBtnList').classList.toggle('active', tab === 'list');
-  document.getElementById('pulseTabBtnTide').classList.toggle('active', tab === 'tide');
-  document.getElementById('pulseTabTide').classList.toggle('active', tab === 'tide');
   document.getElementById('pulseTabSimple').classList.toggle('active', tab === 'simple');
   document.getElementById('pulseTabDetailed').classList.toggle('active', tab === 'detailed');
   document.getElementById('pulseTabList').classList.toggle('active', tab === 'list');
@@ -513,7 +508,6 @@ async function switchPulseTab(tab) {
   if (tab === 'detailed' && _pulseLatestData) {
     await renderPulseDetail(_pulseLatestData);
   }
-  if (tab === 'tide') { if (_pulseLatestData) renderTidePools(_pulseLatestData); } else stopTide();
   if (tab === 'list' && _pulseLatestData) {
     renderPulseList(_pulseLatestData);
   }
@@ -699,13 +693,48 @@ async function renderPulse(data) {
   // otherwise it just picks up _pulseLatestData next time someone opens it.
   if (pulseActiveTab === 'detailed') await renderPulseDetail(data);
   if (pulseActiveTab === 'list') renderPulseList(data);
-  if (pulseActiveTab === 'tide') renderTidePools(data);
 }
 
 // ── Tide Pools tab — one canvas "pool" per continent, markets as drifting bubbles ──
 // Vertical position = direction and size of the move (surface = biggest gain,
 // floor = biggest loss); radius = |move|; motion speed scales with |move|.
-let _tidePools = [], _tideRaf = 0, _tideHover = null;
+let _tidePools = [], _tideRaf = 0, _tideTimer = null;
+
+function initTidePools() {
+  document.getElementById('pulseContainer').innerHTML = `
+    <div class="pulse-wrap" id="tideWrap">
+      <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
+      <div class="pulse-stats" id="pulseStats"></div>
+      <div class="tide-grid" id="tideGrid"></div>
+      <div class="pulse-tooltip" id="tideTooltip"></div>
+      <div class="tide-note">Each bubble is a market. Bubbles near the surface are up today, those sinking toward the floor are down. Size = size of today's move; bigger moves swim faster.</div>
+    </div>
+    <hr class="pulse-divider">
+  `;
+  fetchTide();
+  _tideTimer = setInterval(fetchTide, PULSE_REFRESH_MS);
+}
+
+async function fetchTide() {
+  try {
+    const res = await fetch('/api/dataviz/global-heat-map/live');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const { summary = {}, updated_at } = data;
+    const u = document.getElementById('pulseUpdated');
+    if (u && updated_at) u.textContent = `Live · updated ${new Date(updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    document.getElementById('pulseStats').innerHTML = `
+      <div class="pulse-stat"><div class="pulse-stat-value">${summary.tracked ?? 0}</div><div class="pulse-stat-label">Markets tracked</div></div>
+      <div class="pulse-stat"><div class="pulse-stat-value up">${summary.up ?? 0}</div><div class="pulse-stat-label">Up today</div></div>
+      <div class="pulse-stat"><div class="pulse-stat-value down">${summary.down ?? 0}</div><div class="pulse-stat-label">Down today</div></div>
+      <div class="pulse-stat"><div class="pulse-stat-value ${(summary.avg_move||0) >= 0 ? 'up' : 'down'}">${(summary.avg_move||0) >= 0 ? '+' : ''}${(summary.avg_move ?? 0).toFixed(2)}%</div><div class="pulse-stat-label">Avg move</div></div>
+    `;
+    renderTidePools(data);
+  } catch {
+    const el = document.getElementById('pulseUpdated');
+    if (el) el.textContent = 'Live prices are temporarily unavailable — showing the last known snapshot.';
+  }
+}
 function stopTide() { cancelAnimationFrame(_tideRaf); _tideRaf = 0; }
 
 function renderTidePools(data) {
