@@ -4120,6 +4120,47 @@ def api_me():
     })
 
 
+@app.route("/api/admin/backfill-images", methods=["POST"])
+@login_required
+def admin_backfill_images():
+    """One-off: shrink images uploaded before optimize_image existed. Dry run by default
+    (reports savings only); pass {"apply": true} to overwrite. Overwrites are lossy."""
+    if not is_admin_user(current_user):
+        return jsonify({"error": "Admin only"}), 403
+    if not DATABASE_URL:
+        return jsonify({"error": "Postgres only"}), 400
+    apply_changes = bool((request.get_json(silent=True) or {}).get("apply"))
+    targets = [
+        ("alpha_content", "id", "image_filename", "image_file"),
+        ("alpha_content_attachment", "id", "filename", "file"),
+        ("dataviz_content", "id", "image_filename", "image_file"),
+        ("dataviz_pages", "slug", "header_image_filename", "header_image_file"),
+    ]
+    report = {}
+    for table, key, name_col, data_col in targets:
+        before = after = changed = 0
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(f"SELECT {key} FROM {table} WHERE {data_col} IS NOT NULL AND octet_length({data_col}) > 150000")
+            keys = [r[0] for r in cur.fetchall()]
+        for k in keys:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute(f"SELECT {name_col}, {data_col} FROM {table} WHERE {key} = %s", (k,))
+                row = cur.fetchone()
+                if not row or row[1] is None:
+                    continue
+                fname, raw = row[0], bytes(row[1])
+                new = optimize_image(fname, raw)
+                before += len(raw)
+                after += len(new)
+                if len(new) < len(raw):
+                    changed += 1
+                    if apply_changes:
+                        cur.execute(f"UPDATE {table} SET {data_col} = %s WHERE {key} = %s", (psycopg2.Binary(new), k))
+        report[table] = {"checked": len(keys), "shrunk": changed,
+                         "mb_before": round(before / 1e6, 1), "mb_after": round(after / 1e6, 1)}
+    return jsonify({"applied": apply_changes, "report": report})
+
+
 @app.route("/api/admin/set-tier", methods=["POST"])
 @login_required
 def admin_set_tier():
