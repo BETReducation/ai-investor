@@ -258,14 +258,14 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 
       <!-- Upload a post -->
       <div class="studio-panel">
-        <h2><span>Add a Post</span><a class="user-guide-link" href="/alpha/studio/guide" target="_blank" rel="noopener">📘 User Guide</a></h2>
+        <h2><span>Add a Post</span><a class="user-guide-link" href="/alpha/studio/guide" target="_blank" rel="noopener">User Guide</a></h2>
         <p class="panel-desc">Upload a Word doc, PDF or Excel file, paste a link, or paste raw text. It'll come back as a draft below for you to review before publishing.</p>
         <div class="ai-prompt-row">
           <span class="ai-prompt-label">Format your notes first — copy the prompt into:</span>
           <div class="ai-prompt-buttons">
-            <button class="ai-prompt-btn" type="button" id="copyPromptClaude">📋 Claude</button>
-            <button class="ai-prompt-btn" type="button" id="copyPromptGemini">📋 Gemini</button>
-            <button class="ai-prompt-btn" type="button" id="copyPromptChatGPT">📋 ChatGPT</button>
+            <button class="ai-prompt-btn" type="button" id="copyPromptClaude">Claude</button>
+            <button class="ai-prompt-btn" type="button" id="copyPromptGemini">Gemini</button>
+            <button class="ai-prompt-btn" type="button" id="copyPromptChatGPT">ChatGPT</button>
           </div>
         </div>
         <div class="upload-tabs">
@@ -308,7 +308,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
                Current Watchlist, then Videos, then (further down, past the
                posts grid) Alpha Links. -->
           <div class="quick-add-card">
-            <h3>📊 Watchlist Item</h3>
+            <h3>Watchlist Item</h3>
             <div class="form-field"><input class="form-input" id="watchlistTitle" placeholder="Asset / ticker"></div>
             <div class="form-field">
               <select class="form-select" id="watchlistStance">
@@ -323,7 +323,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <div class="form-msg" id="watchlistMsg"></div>
           </div>
           <div class="quick-add-card">
-            <h3>🎬 Video</h3>
+            <h3>Video</h3>
             <div class="form-field"><input class="form-input" id="videoTitle" placeholder="Video title"></div>
             <div class="form-field"><input class="form-input" id="videoUrl" placeholder="YouTube URL or video ID"></div>
             <div class="form-field"><select class="form-select topic-select" id="videoTopic"></select></div>
@@ -331,7 +331,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <div class="form-msg" id="videoMsg"></div>
           </div>
           <div class="quick-add-card">
-            <h3>🔗 Link</h3>
+            <h3>Link</h3>
             <div class="form-field"><input class="form-input" id="linkTitle" placeholder="Link title"></div>
             <div class="form-field"><input class="form-input" id="linkUrl" placeholder="https://…"></div>
             <div class="form-field"><textarea class="form-textarea" id="linkDesc" rows="2" placeholder="Why you like it (short)"></textarea></div>
@@ -451,7 +451,7 @@ function wireAiPromptButton(id, modelKey, label) {
     btn.textContent = ok ? '✅ Copied!' : 'Copy failed';
     btn.classList.toggle('copied', ok);
     setTimeout(() => {
-      btn.textContent = '📋 ' + label;
+      btn.textContent = '' + label;
       btn.classList.remove('copied');
     }, 2000);
   });
@@ -1262,11 +1262,11 @@ function buildCard(item, skipHead) {
       const lead = before.length && !before.endsWith('\n') ? '\n\n' : '';
       insertAtActive(lead, '\n\n', '---', 3, 0);
     });
-    const imageBtn = mkToolBtn('🖼 Image', 'Insert an image', () => {
+    const imageBtn = mkToolBtn('Image', 'Insert an image', () => {
       linkPanel.style.display = 'none';
       imagePanel.style.display = imagePanel.style.display === 'none' ? 'flex' : 'none';
     });
-    const linkBtn = mkToolBtn('🔗 Link', 'Insert a link', () => {
+    const linkBtn = mkToolBtn('Link', 'Insert a link', () => {
       imagePanel.style.display = 'none';
       linkPanel.style.display = linkPanel.style.display === 'none' ? 'flex' : 'none';
     });
@@ -1470,8 +1470,8 @@ function buildCard(item, skipHead) {
     // differently — see the CSS for [data-type="tip"/"quote"]).
     const TEXT_SECTION_META = {
       normal: { label: 'Normal', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
-      tip: { label: '💡 Top Tip', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
-      quote: { label: '❝ Quote', headingPlaceholder: 'Attribution (optional) — e.g. "Warren Buffett"', bodyPlaceholder: 'The quote text…' },
+      tip: { label: 'Top Tip', headingPlaceholder: 'Section heading (optional)', bodyPlaceholder: 'Write this section — use the toolbar above for bold, lists, links…' },
+      quote: { label: 'Quote', headingPlaceholder: 'Attribution (optional) — e.g. "Warren Buffett"', bodyPlaceholder: 'The quote text…' },
     };
 
     function buildTextSection(sec) {
@@ -1506,7 +1506,7 @@ function buildCard(item, skipHead) {
       const previewBtn = document.createElement('button');
       previewBtn.type = 'button';
       previewBtn.className = 'btn-ghost-sm edit-chrome';
-      previewBtn.textContent = '👁 Preview';
+      previewBtn.textContent = 'Preview';
       const preview = document.createElement('div');
       preview.className = 'section-preview';
       preview.style.display = 'none';
@@ -1519,7 +1519,7 @@ function buildCard(item, skipHead) {
         if (showing) refreshPreview();
         preview.style.display = showing ? 'block' : 'none';
         ta.style.display = showing ? 'none' : 'block';
-        previewBtn.textContent = showing ? '✏️ Edit' : '👁 Preview';
+        previewBtn.textContent = showing ? '✏️ Edit' : 'Preview';
       };
       ta.addEventListener('input', () => { autoGrowTextarea(ta, 600); if (preview.style.display !== 'none') refreshPreview(); });
       ta.addEventListener('focus', () => { activeTextarea = ta; });
@@ -1883,7 +1883,7 @@ function buildCard(item, skipHead) {
       const dl = document.createElement('a');
       dl.href = '/api/alpha/content/' + item.id + '/file';
       dl.className = 'card-file-link';
-      dl.textContent = '📎 ' + item.source_filename;
+      dl.textContent = '' + item.source_filename;
       card.appendChild(dl);
     }
 
