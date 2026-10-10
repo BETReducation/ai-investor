@@ -5334,7 +5334,7 @@ def api_dataviz_public_content(slug):
 
 
 # ── Tide Pools: top assets per category ────────────────────────────────────
-# Hand-curated lists (market-cap order, reviewed Oct 2026) rather than a live
+# Hand-curated lists (approximate market-cap order, reviewed Oct 2026) rather than a live
 # ranking — caps move slowly and Yahoo has no screener we can rely on. More
 # candidates than the 20 shown for crypto/stocks so a delisted or missing ticker
 # doesn't leave a hole. Stablecoins are left out (a flat bubble says nothing).
@@ -5351,13 +5351,9 @@ TIDE_POOLS = [
         ("SUI20947-USD", "SUI", "Sui"), ("LTC-USD", "LTC", "Litecoin"), ("DOT-USD", "DOT", "Polkadot"),
         ("XMR-USD", "XMR", "Monero"), ("UNI7083-USD", "UNI", "Uniswap"), ("NEAR-USD", "NEAR", "NEAR Protocol"),
         ("ICP-USD", "ICP", "Internet Computer")]),
-    ("Stocks", 20, [("NVDA", "NVDA", "Nvidia"), ("MSFT", "MSFT", "Microsoft"), ("AAPL", "AAPL", "Apple"),
-        ("GOOGL", "GOOGL", "Alphabet"), ("AMZN", "AMZN", "Amazon"), ("META", "META", "Meta Platforms"),
-        ("AVGO", "AVGO", "Broadcom"), ("TSLA", "TSLA", "Tesla"), ("BRK-B", "BRK.B", "Berkshire Hathaway"),
-        ("TSM", "TSM", "TSMC"), ("LLY", "LLY", "Eli Lilly"), ("WMT", "WMT", "Walmart"), ("JPM", "JPM", "JPMorgan Chase"),
-        ("V", "V", "Visa"), ("ORCL", "ORCL", "Oracle"), ("MA", "MA", "Mastercard"), ("XOM", "XOM", "Exxon Mobil"),
-        ("NFLX", "NFLX", "Netflix"), ("COST", "COST", "Costco"), ("JNJ", "JNJ", "Johnson & Johnson"),
-        ("PLTR", "PLTR", "Palantir"), ("HD", "HD", "Home Depot")]),
+    ("Metals", 20, [("GC=F", "Gold", "Gold futures"), ("SI=F", "Silver", "Silver futures"),
+        ("PL=F", "Platinum", "Platinum futures"), ("PA=F", "Palladium", "Palladium futures"),
+        ("HG=F", "Copper", "Copper futures"), ("ALI=F", "Aluminium", "Aluminium futures")]),
     ("Currencies", 20, [("EURUSD=X", "EUR", "Euro", False), ("JPY=X", "JPY", "Japanese Yen", True),
         ("GBPUSD=X", "GBP", "British Pound", False), ("CNY=X", "CNY", "Chinese Yuan", True),
         ("AUDUSD=X", "AUD", "Australian Dollar", False), ("CAD=X", "CAD", "Canadian Dollar", True),
@@ -5368,19 +5364,89 @@ TIDE_POOLS = [
         ("MXN=X", "MXN", "Mexican Peso", True), ("TWD=X", "TWD", "Taiwan Dollar", True),
         ("ZAR=X", "ZAR", "South African Rand", True), ("BRL=X", "BRL", "Brazilian Real", True),
         ("DKK=X", "DKK", "Danish Krone", True), ("PLN=X", "PLN", "Polish Zloty", True)]),
-    ("Metals", 20, [("GC=F", "Gold", "Gold futures"), ("SI=F", "Silver", "Silver futures"),
-        ("PL=F", "Platinum", "Platinum futures"), ("PA=F", "Palladium", "Palladium futures"),
-        ("HG=F", "Copper", "Copper futures"), ("ALI=F", "Aluminium", "Aluminium futures")]),
+    ("North American Stocks", 20, [("NVDA", "NVDA", "Nvidia"), ("MSFT", "MSFT", "Microsoft"), ("AAPL", "AAPL", "Apple"),
+        ("GOOGL", "GOOGL", "Alphabet"), ("AMZN", "AMZN", "Amazon"), ("META", "META", "Meta Platforms"),
+        ("AVGO", "AVGO", "Broadcom"), ("TSLA", "TSLA", "Tesla"), ("BRK-B", "BRK.B", "Berkshire Hathaway"),
+        ("TSM", "TSM", "TSMC"), ("LLY", "LLY", "Eli Lilly"), ("WMT", "WMT", "Walmart"), ("JPM", "JPM", "JPMorgan Chase"),
+        ("V", "V", "Visa"), ("ORCL", "ORCL", "Oracle"), ("MA", "MA", "Mastercard"), ("XOM", "XOM", "Exxon Mobil"),
+        ("NFLX", "NFLX", "Netflix"), ("COST", "COST", "Costco"), ("JNJ", "JNJ", "Johnson & Johnson"),
+        ("PLTR", "PLTR", "Palantir"), ("HD", "HD", "Home Depot")]),
+    ("UK Stocks", 20, [("SHEL.L", "SHEL", "Shell"), ("AZN.L", "AZN", "AstraZeneca"), ("HSBA.L", "HSBA", "HSBC"),
+        ("ULVR.L", "ULVR", "Unilever"), ("BP.L", "BP", "BP"), ("RIO.L", "RIO", "Rio Tinto"),
+        ("GSK.L", "GSK", "GSK"), ("BATS.L", "BATS", "British American Tobacco"), ("DGE.L", "DGE", "Diageo"),
+        ("LSEG.L", "LSEG", "London Stock Exchange Group"), ("REL.L", "REL", "RELX"), ("GLEN.L", "GLEN", "Glencore"),
+        ("BARC.L", "BARC", "Barclays"), ("LLOY.L", "LLOY", "Lloyds Banking Group"), ("NG.L", "NG", "National Grid"),
+        ("CPG.L", "CPG", "Compass Group"), ("RR.L", "RR", "Rolls-Royce"), ("BA.L", "BA", "BAE Systems"),
+        ("STAN.L", "STAN", "Standard Chartered"), ("AAL.L", "AAL", "Anglo American"), ("VOD.L", "VOD", "Vodafone"),
+        ("TSCO.L", "TSCO", "Tesco"), ("NWG.L", "NWG", "NatWest"), ("PRU.L", "PRU", "Prudential")]),
+    ("European Stocks", 20, [("ASML.AS", "ASML", "ASML"), ("SAP.DE", "SAP", "SAP"), ("MC.PA", "MC", "LVMH"),
+        ("NESN.SW", "NESN", "Nestlé"), ("ROG.SW", "ROG", "Roche"), ("NOVN.SW", "NOVN", "Novartis"),
+        ("NOVO-B.CO", "NOVO", "Novo Nordisk"), ("SIE.DE", "SIE", "Siemens"), ("TTE.PA", "TTE", "TotalEnergies"),
+        ("OR.PA", "OR", "L'Oréal"), ("RMS.PA", "RMS", "Hermès"), ("SAN.PA", "SAN", "Sanofi"),
+        ("AIR.PA", "AIR", "Airbus"), ("ALV.DE", "ALV", "Allianz"), ("DTE.DE", "DTE", "Deutsche Telekom"),
+        ("IBE.MC", "IBE", "Iberdrola"), ("ITX.MC", "ITX", "Inditex"), ("UCG.MI", "UCG", "UniCredit"),
+        ("ABI.BR", "ABI", "AB InBev"), ("UBSG.SW", "UBSG", "UBS"), ("BNP.PA", "BNP", "BNP Paribas"),
+        ("SU.PA", "SU", "Schneider Electric"), ("ENEL.MI", "ENEL", "Enel"), ("CS.PA", "CS", "AXA"),
+        ("ZURN.SW", "ZURN", "Zurich Insurance")]),
+    ("Asian Stocks", 20, [("2330.TW", "TSMC", "TSMC"), ("2222.SR", "ARAMCO", "Saudi Aramco"), ("0700.HK", "TENCENT", "Tencent"),
+        ("005930.KS", "SAMSUNG", "Samsung Electronics"), ("RELIANCE.NS", "RELIANCE", "Reliance Industries"), ("9988.HK", "ALIBABA", "Alibaba"),
+        ("1398.HK", "ICBC", "ICBC"), ("HDFCBANK.NS", "HDFC", "HDFC Bank"), ("7203.T", "TOYOTA", "Toyota"),
+        ("300750.SZ", "CATL", "CATL"), ("600519.SS", "MOUTAI", "Kweichow Moutai"), ("0939.HK", "CCB", "China Construction Bank"),
+        ("8306.T", "MUFG", "Mitsubishi UFJ"), ("1299.HK", "AIA", "AIA Group"), ("BHARTIARTL.NS", "BHARTI", "Bharti Airtel"),
+        ("6758.T", "SONY", "Sony"), ("000660.KS", "HYNIX", "SK Hynix"), ("TCS.NS", "TCS", "Tata Consultancy"),
+        ("1810.HK", "XIAOMI", "Xiaomi"), ("D05.SI", "DBS", "DBS Group"), ("ICICIBANK.NS", "ICICI", "ICICI Bank"),
+        ("9984.T", "SBG", "SoftBank Group"), ("3690.HK", "MEITUAN", "Meituan"), ("0941.HK", "CHMOBILE", "China Mobile")]),
+    ("African Stocks", 20, [("NPN.JO", "NPN", "Naspers"), ("PRX.JO", "PRX", "Prosus"), ("FSR.JO", "FSR", "FirstRand"),
+        ("SBK.JO", "SBK", "Standard Bank"), ("GFI.JO", "GFI", "Gold Fields"), ("ABG.JO", "ABG", "Absa Group"),
+        ("MTN.JO", "MTN", "MTN Group"), ("AMS.JO", "AMS", "Anglo American Platinum"), ("ANG.JO", "ANG", "AngloGold Ashanti"),
+        ("SOL.JO", "SOL", "Sasol"), ("SHP.JO", "SHP", "Shoprite"), ("COMI.CA", "COMI", "Commercial Intl Bank (Egypt)"),
+        ("HAR.JO", "HAR", "Harmony Gold"), ("IMP.JO", "IMP", "Impala Platinum"), ("CPI.JO", "CPI", "Capitec"),
+        ("NED.JO", "NED", "Nedbank"), ("SLM.JO", "SLM", "Sanlam"), ("BID.JO", "BID", "Bid Corporation"),
+        ("DSY.JO", "DSY", "Discovery"), ("SSW.JO", "SSW", "Sibanye-Stillwater"), ("REM.JO", "REM", "Remgro"),
+        ("EXX.JO", "EXX", "Exxaro"), ("MRP.JO", "MRP", "Mr Price"), ("WHL.JO", "WHL", "Woolworths")]),
+    ("South American Stocks", 20, [("VALE", "VALE", "Vale"), ("PBR", "PBR", "Petrobras"), ("NU", "NU", "Nu Holdings"),
+        ("ITUB", "ITUB", "Itaú Unibanco"), ("MELI", "MELI", "MercadoLibre"), ("BBD", "BBD", "Bradesco"),
+        ("ABEV", "ABEV", "Ambev"), ("BAP", "BAP", "Credicorp"), ("SQM", "SQM", "SQM"),
+        ("SBS", "SBS", "Sabesp"), ("PBR-A", "PBRA", "Petrobras (pref)"), ("BSAC", "BSAC", "Banco Santander Chile"),
+        ("GGB", "GGB", "Gerdau"), ("SUZ", "SUZ", "Suzano"), ("YPF", "YPF", "YPF"),
+        ("CIG", "CIG", "Cemig"), ("EC", "EC", "Ecopetrol"), ("TEO", "TEO", "Telecom Argentina"),
+        ("ERJ", "ERJ", "Embraer"), ("CCU", "CCU", "CCU"), ("LTM", "LTM", "LATAM Airlines"),
+        ("PAM", "PAM", "Pampa Energía"), ("BBDO", "BBDO", "Bradesco (ord)"), ("ENIC", "ENIC", "Enel Chile")]),
 ]
 _tide_cache = {"at": 0.0, "data": None}
 _tide_lock = threading.Lock()
 
 
+_tide_refreshing = False
+
+
 def _fetch_tide_pools_live() -> dict:
+    # ~170 symbols take ~15-20s to download, so once there is any cached result an
+    # expired one is served immediately while a background thread refreshes it.
+    global _tide_refreshing
     now = time.monotonic()
     with _tide_lock:
-        if _tide_cache["data"] is not None and now - _tide_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
-            return _tide_cache["data"]
+        cached = _tide_cache["data"]
+        if cached is not None:
+            if now - _tide_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+                return cached
+            if not _tide_refreshing:
+                _tide_refreshing = True
+                threading.Thread(target=_refresh_tide_pools, daemon=True).start()
+            return cached
+    return _refresh_tide_pools()
+
+
+def _refresh_tide_pools() -> dict:
+    global _tide_refreshing
+    try:
+        return _build_tide_pools()
+    finally:
+        _tide_refreshing = False
+
+
+def _build_tide_pools() -> dict:
+    now = time.monotonic()
     symbols = [a[0] for _, _, assets in TIDE_POOLS for a in assets]
     try:
         raw = yf.download(tickers=symbols, period="1mo", interval="1d", group_by="ticker",
@@ -5425,6 +5491,9 @@ def _fetch_tide_pools_live() -> dict:
         else:
             result = _tide_cache["data"]
     return result
+
+
+threading.Thread(target=lambda: _refresh_tide_pools(), daemon=True).start()  # warm the cache at startup
 
 
 @app.route("/api/dataviz/tide-pools/live", methods=["GET"])
