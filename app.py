@@ -5331,6 +5331,105 @@ def api_dataviz_public_content(slug):
     return jsonify({"page": slug, "label": page["label"], "description": page.get("description"), "header_image_url": header_image_url})
 
 
+# ── Tide Pools: top assets per category ────────────────────────────────────
+# Hand-curated lists (market-cap order, reviewed Oct 2026) rather than a live
+# ranking — caps move slowly and Yahoo has no screener we can rely on. More
+# candidates than the 20 shown for crypto/stocks so a delisted or missing ticker
+# doesn't leave a hole. Stablecoins are left out (a flat bubble says nothing).
+# Currencies have no market cap, so they're the 20 most-traded (BIS survey);
+# "inv" marks pairs Yahoo quotes as USD/xxx, so the move is flipped to read as
+# the currency's strength vs USD. Metals are only the ones Yahoo carries futures
+# for, so that pool is short.
+TIDE_POOLS = [
+    ("Crypto", 20, [("BTC-USD", "BTC", "Bitcoin"), ("ETH-USD", "ETH", "Ethereum"), ("XRP-USD", "XRP", "XRP"),
+        ("BNB-USD", "BNB", "BNB"), ("SOL-USD", "SOL", "Solana"), ("DOGE-USD", "DOGE", "Dogecoin"),
+        ("TRX-USD", "TRX", "TRON"), ("ADA-USD", "ADA", "Cardano"), ("HYPE32196-USD", "HYPE", "Hyperliquid"),
+        ("LINK-USD", "LINK", "Chainlink"), ("AVAX-USD", "AVAX", "Avalanche"), ("XLM-USD", "XLM", "Stellar"),
+        ("BCH-USD", "BCH", "Bitcoin Cash"), ("SHIB-USD", "SHIB", "Shiba Inu"), ("HBAR-USD", "HBAR", "Hedera"),
+        ("SUI20947-USD", "SUI", "Sui"), ("LTC-USD", "LTC", "Litecoin"), ("DOT-USD", "DOT", "Polkadot"),
+        ("XMR-USD", "XMR", "Monero"), ("UNI7083-USD", "UNI", "Uniswap"), ("NEAR-USD", "NEAR", "NEAR Protocol"),
+        ("ICP-USD", "ICP", "Internet Computer")]),
+    ("Stocks", 20, [("NVDA", "NVDA", "Nvidia"), ("MSFT", "MSFT", "Microsoft"), ("AAPL", "AAPL", "Apple"),
+        ("GOOGL", "GOOGL", "Alphabet"), ("AMZN", "AMZN", "Amazon"), ("META", "META", "Meta Platforms"),
+        ("AVGO", "AVGO", "Broadcom"), ("TSLA", "TSLA", "Tesla"), ("BRK-B", "BRK.B", "Berkshire Hathaway"),
+        ("TSM", "TSM", "TSMC"), ("LLY", "LLY", "Eli Lilly"), ("WMT", "WMT", "Walmart"), ("JPM", "JPM", "JPMorgan Chase"),
+        ("V", "V", "Visa"), ("ORCL", "ORCL", "Oracle"), ("MA", "MA", "Mastercard"), ("XOM", "XOM", "Exxon Mobil"),
+        ("NFLX", "NFLX", "Netflix"), ("COST", "COST", "Costco"), ("JNJ", "JNJ", "Johnson & Johnson"),
+        ("PLTR", "PLTR", "Palantir"), ("HD", "HD", "Home Depot")]),
+    ("Currencies", 20, [("EURUSD=X", "EUR", "Euro", False), ("JPY=X", "JPY", "Japanese Yen", True),
+        ("GBPUSD=X", "GBP", "British Pound", False), ("CNY=X", "CNY", "Chinese Yuan", True),
+        ("AUDUSD=X", "AUD", "Australian Dollar", False), ("CAD=X", "CAD", "Canadian Dollar", True),
+        ("CHF=X", "CHF", "Swiss Franc", True), ("HKD=X", "HKD", "Hong Kong Dollar", True),
+        ("SGD=X", "SGD", "Singapore Dollar", True), ("SEK=X", "SEK", "Swedish Krona", True),
+        ("KRW=X", "KRW", "South Korean Won", True), ("NOK=X", "NOK", "Norwegian Krone", True),
+        ("NZDUSD=X", "NZD", "New Zealand Dollar", False), ("INR=X", "INR", "Indian Rupee", True),
+        ("MXN=X", "MXN", "Mexican Peso", True), ("TWD=X", "TWD", "Taiwan Dollar", True),
+        ("ZAR=X", "ZAR", "South African Rand", True), ("BRL=X", "BRL", "Brazilian Real", True),
+        ("DKK=X", "DKK", "Danish Krone", True), ("PLN=X", "PLN", "Polish Zloty", True)]),
+    ("Metals", 20, [("GC=F", "Gold", "Gold futures"), ("SI=F", "Silver", "Silver futures"),
+        ("PL=F", "Platinum", "Platinum futures"), ("PA=F", "Palladium", "Palladium futures"),
+        ("HG=F", "Copper", "Copper futures"), ("ALI=F", "Aluminium", "Aluminium futures")]),
+]
+_tide_cache = {"at": 0.0, "data": None}
+_tide_lock = threading.Lock()
+
+
+def _fetch_tide_pools_live() -> dict:
+    now = time.monotonic()
+    with _tide_lock:
+        if _tide_cache["data"] is not None and now - _tide_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+            return _tide_cache["data"]
+    symbols = [a[0] for _, _, assets in TIDE_POOLS for a in assets]
+    try:
+        raw = yf.download(tickers=symbols, period="1mo", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    pools = []
+    for name, limit, assets in TIDE_POOLS:
+        rows = []
+        for a in assets:
+            sym, label, full = a[0], a[1], a[2]
+            inv = len(a) > 3 and a[3]
+            try:
+                closes = raw[sym]["Close"].dropna()
+                if len(closes) < 2 or (closes.index[-1] - closes.index[-2]).days > 5:
+                    continue
+                last, prev = float(closes.iloc[-1]), float(closes.iloc[-2])
+                if not prev:
+                    continue
+                pct = (last - prev) / prev * 100
+                if inv:
+                    pct = -pct
+                rows.append({"symbol": sym, "label": label, "name": full,
+                             "price": round(last, 4 if last < 10 else 2), "pct_change": round(pct, 2)})
+            except Exception:
+                continue
+            if len(rows) >= limit:
+                break
+        pools.append({"name": name, "assets": rows})
+    allrows = [r for p in pools for r in p["assets"]]
+    up = sum(1 for r in allrows if r["pct_change"] > 0)
+    down = sum(1 for r in allrows if r["pct_change"] < 0)
+    result = {
+        "updated_at": _dt.datetime.utcnow().isoformat() + "Z", "pools": pools,
+        "summary": {"tracked": len(allrows), "up": up, "down": down,
+                    "avg_move": round(sum(r["pct_change"] for r in allrows) / len(allrows), 2) if allrows else 0.0},
+    }
+    with _tide_lock:
+        _tide_cache["at"] = now
+        if allrows or _tide_cache["data"] is None:
+            _tide_cache["data"] = result
+        else:
+            result = _tide_cache["data"]
+    return result
+
+
+@app.route("/api/dataviz/tide-pools/live", methods=["GET"])
+def api_tide_pools_live():
+    return jsonify(_fetch_tide_pools_live())
+
+
 @app.route("/api/dataviz/global-heat-map/live", methods=["GET"])
 def api_market_pulse_live():
     return jsonify(_fetch_market_pulse_live())

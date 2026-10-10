@@ -376,7 +376,7 @@ async function loadPage() {
       document.body.classList.add('pulse-page');
       initMarketPulse();
     } else if (slug === 'tide-pools') {
-      setHeroSub(data.description || "Every major index worldwide as a bubble in its regional pool: gainers float, decliners sink, bigger moves swim faster.");
+      setHeroSub(data.description || "Markets and assets as bubbles in their own pools: gainers float, decliners sink, bigger moves swim faster.");
       document.body.classList.add('pulse-page');
       initTidePools();
     } else if (slug === 'gold-silver-ratio') {
@@ -705,26 +705,53 @@ function initTidePools() {
     <div class="pulse-wrap" id="tideWrap">
       <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
       <div class="pulse-stats" id="pulseStats"></div>
+      <div class="pulse-tabs">
+        <button class="pulse-tab-btn" id="tideBtnCountries" onclick="switchTideTab('countries')">Countries</button>
+        <button class="pulse-tab-btn" id="tideBtnAssets" onclick="switchTideTab('assets')">Assets</button>
+      </div>
       <div class="tide-grid" id="tideGrid"></div>
       <div class="pulse-tooltip" id="tideTooltip"></div>
-      <div class="tide-note">Each bubble is a market. Bubbles near the surface are up today, those sinking toward the floor are down. Size = size of today's move; bigger moves swim faster.</div>
+      <div class="tide-note" id="tideNote"></div>
     </div>
     <hr class="pulse-divider">
   `;
-  fetchTide();
+  switchTideTab('countries');
   _tideTimer = setInterval(fetchTide, PULSE_REFRESH_MS);
+}
+
+let _tideTab = 'countries';
+const TIDE_NOTES = {
+  countries: "Each bubble is a country's main stock index, grouped by region.",
+  assets: "Each bubble is an asset: crypto and stocks are the largest by market cap, currencies the most traded against the US dollar, metals the main futures contracts."
+};
+function switchTideTab(tab) {
+  _tideTab = tab;
+  document.getElementById('tideBtnCountries').classList.toggle('active', tab === 'countries');
+  document.getElementById('tideBtnAssets').classList.toggle('active', tab === 'assets');
+  document.getElementById('tideNote').textContent = TIDE_NOTES[tab] + " Bubbles near the surface are up today, those sinking are down. Each pool is scaled to its own biggest mover. Size = size of today's move.";
+  stopTide();
+  document.getElementById('tideGrid').innerHTML = '<div class="list-empty">Loading…</div>';
+  fetchTide();
 }
 
 async function fetchTide() {
   try {
-    const res = await fetch('/api/dataviz/global-heat-map/live');
+    const tab = _tideTab;
+    const res = await fetch(tab === 'assets' ? '/api/dataviz/tide-pools/live' : '/api/dataviz/global-heat-map/live');
     if (!res.ok) throw new Error();
-    const data = await res.json();
+    let data = await res.json();
+    if (tab !== _tideTab) return; // user switched tabs mid-request
+    if (tab === 'countries') {
+      const groups = {};
+      (data.markets || []).forEach(m => (groups[continentFromLonLat(m.lon, m.lat)] ||= []).push({
+        label: m.country, name: m.index, price: m.price, pct_change: m.pct_change }));
+      data = { ...data, pools: PULSE_CONTINENT_ORDER.filter(c => groups[c]).map(c => ({ name: c, assets: groups[c] })) };
+    }
     const { summary = {}, updated_at } = data;
     const u = document.getElementById('pulseUpdated');
     if (u && updated_at) u.textContent = `Live · updated ${new Date(updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
     document.getElementById('pulseStats').innerHTML = `
-      <div class="pulse-stat"><div class="pulse-stat-value">${summary.tracked ?? 0}</div><div class="pulse-stat-label">Markets tracked</div></div>
+      <div class="pulse-stat"><div class="pulse-stat-value">${summary.tracked ?? 0}</div><div class="pulse-stat-label">${tab === 'assets' ? 'Assets' : 'Markets'} tracked</div></div>
       <div class="pulse-stat"><div class="pulse-stat-value up">${summary.up ?? 0}</div><div class="pulse-stat-label">Up today</div></div>
       <div class="pulse-stat"><div class="pulse-stat-value down">${summary.down ?? 0}</div><div class="pulse-stat-label">Down today</div></div>
       <div class="pulse-stat"><div class="pulse-stat-value ${(summary.avg_move||0) >= 0 ? 'up' : 'down'}">${(summary.avg_move||0) >= 0 ? '+' : ''}${(summary.avg_move ?? 0).toFixed(2)}%</div><div class="pulse-stat-label">Avg move</div></div>
@@ -741,15 +768,13 @@ function renderTidePools(data) {
   const grid = document.getElementById('tideGrid');
   if (!grid) return;
   stopTide();
-  const markets = data.markets || [];
-  if (!markets.length) { grid.innerHTML = '<div class="list-empty">No market data right now.</div>'; return; }
-  const maxAbs = Math.max(0.5, ...markets.map(m => Math.abs(m.pct_change)));
-  const groups = {};
-  markets.forEach(m => (groups[continentFromLonLat(m.lon, m.lat)] ||= []).push(m));
+  const pls = (data.pools || []).filter(p => p.assets.length);
+  if (!pls.length) { grid.innerHTML = '<div class="list-empty">No data right now.</div>'; return; }
 
   grid.innerHTML = '';
-  _tidePools = PULSE_CONTINENT_ORDER.filter(c => groups[c]).map(name => {
-    const ms = groups[name];
+  _tidePools = pls.map(({ name, assets: ms }) => {
+    // each category scales to its own biggest mover — a 0.3% FX day and a 6% crypto day would otherwise never share a pool
+    const maxAbs = Math.max(0.1, ...ms.map(m => Math.abs(m.pct_change)));
     const avg = ms.reduce((a, m) => a + m.pct_change, 0) / ms.length;
     const card = document.createElement('div');
     card.className = 'tide-pool';
@@ -803,7 +828,7 @@ function tideTip(pool, e, hoverOnly) {
   const tip = document.getElementById('tideTooltip');
   if (!hit) { tip.classList.remove('show'); return; }
   const m = hit.m, pct = m.pct_change;
-  tip.innerHTML = `<b>${esc(m.country)}</b> · ${esc(m.index)}<br>${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% · ${esc(String(m.price))}`;
+  tip.innerHTML = `<b>${esc(m.label)}</b> · ${esc(m.name)}<br>${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% · ${esc(String(m.price))}`;
   const wr = tip.parentElement.getBoundingClientRect();
   tip.style.left = Math.min(wr.width - 170, Math.max(0, e.clientX - wr.left + 12)) + 'px';
   tip.style.top = (e.clientY - wr.top - 48) + 'px';
@@ -852,7 +877,7 @@ function stepTidePool(p, dt, t, still) {
     if (b.r >= 17) {
       ctx.fillStyle = light ? '#111' : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.font = `600 ${Math.min(11, b.r / 2.6)}px "JetBrains Mono", monospace`;
-      const label = b.m.country.length > b.r / 3.2 ? (b.m.country.slice(0, Math.max(3, Math.floor(b.r / 3.6))) + '…') : b.m.country;
+      const label = b.m.label.length > b.r / 3.2 ? (b.m.label.slice(0, Math.max(3, Math.floor(b.r / 3.6))) + '…') : b.m.label;
       ctx.fillText(label, b.x, b.y - 4);
       ctx.fillText((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', b.x, b.y + 7);
     }
