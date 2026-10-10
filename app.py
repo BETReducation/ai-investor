@@ -430,7 +430,7 @@ def _ensure_table() -> None:
         # above it.
         for slug, label in (("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio"),
-                             ("tide-pools", "Tide Pools")):
+                             ("tide-pools", "GCG Tide Pools")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -439,6 +439,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'global-heat-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'gold-silver-ratio'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'tide-pools'")
+        # Renamed after first seed; only touch it while it still has the old default label.
+        cur.execute("UPDATE dataviz_pages SET label = 'GCG Tide Pools' WHERE slug = 'tide-pools' AND label = 'Tide Pools'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1397,7 +1399,7 @@ def alpha_content_delete(item_id: int) -> bool:
 _SEED_DATAVIZ_PAGES = [
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
-    {"slug": "tide-pools", "label": "Tide Pools", "author": None, "has_live_widget": True},
+    {"slug": "tide-pools", "label": "GCG Tide Pools", "author": None, "has_live_widget": True},
 ]
 
 

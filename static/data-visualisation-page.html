@@ -169,7 +169,7 @@ body.pulse-map-lock { overflow: hidden; }
 .tide-pool-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af6a; margin-bottom: 6px; display: flex; justify-content: space-between; }
 :root[data-theme="light"] .tide-pool-title { color: #96650f; }
 .tide-pool canvas { width: 100%; height: 300px; display: block; border-radius: 10px; cursor: pointer; }
-.tide-note { font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center; }
+.tide-note { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 18px auto 0; max-width: 820px; text-align: left; }
 .pulse-tab-panel.active { display: block; }
 
 /* Detailed tab — real per-country choropleth (see world-map-countries.svg) plus
@@ -721,14 +721,14 @@ function initTidePools() {
 
 let _tideTab = 'countries';
 const TIDE_NOTES = {
-  countries: "Each bubble is a country's main stock index, grouped by region.",
-  assets: "Each bubble is an asset: crypto and stocks are the largest by market cap, currencies the most traded against the US dollar, metals the main futures contracts."
+  countries: "<b>Where this comes from.</b> Each bubble is the main benchmark stock index of one country (for example the S&amp;P 500 for the US, the FTSE 100 for the UK, the Nikkei 225 for Japan), grouped by region. Around 40 markets in all. The move shown is the latest close against the previous close.",
+  assets: "<b>Where this comes from.</b> <b>Crypto:</b> the 20 largest coins by market cap, priced in US dollars; stablecoins are left out because they are designed not to move. <b>Stocks:</b> the 20 largest US-listed companies by market cap (NYSE and Nasdaq, including TSMC through its US-listed shares). <b>Currencies:</b> currencies have no market cap, so these are the 20 most traded currencies in the Bank for International Settlements survey, shown as their move against the US dollar. <b>Metals:</b> gold, silver, platinum, palladium, copper and aluminium futures, the main metals with reliable public price data. The lists are reviewed by hand, so they can lag the live rankings. Prices come from Yahoo Finance and refresh every 5 minutes."
 };
 function switchTideTab(tab) {
   _tideTab = tab;
   document.getElementById('tideBtnCountries').classList.toggle('active', tab === 'countries');
   document.getElementById('tideBtnAssets').classList.toggle('active', tab === 'assets');
-  document.getElementById('tideNote').textContent = TIDE_NOTES[tab] + " Bubbles near the surface are up today, those sinking are down. Each pool is scaled to its own biggest mover. Size = size of today's move.";
+  document.getElementById('tideNote').innerHTML = TIDE_NOTES[tab] + "<br><br>Bubbles near the surface are up today, those sinking are down. Each pool is scaled to its own biggest mover, and bubble size reflects the size of the move. Moves are the latest price against the previous close, shown for information only.";
   stopTide();
   document.getElementById('tideGrid').innerHTML = '<div class="list-empty">Loading…</div>';
   fetchTide();
@@ -792,7 +792,7 @@ function renderTidePools(data) {
       const area = pool.w * pool.h * 0.32, tot = pool.bubbles.reduce((a, b) => a + Math.sqrt(Math.abs(b.m.pct_change) + 0.15), 0);
       pool.bubbles.forEach((b, i) => {
         const rel = Math.sqrt(Math.abs(b.m.pct_change) + 0.15) / tot;
-        b.r = Math.max(9, Math.min(34, Math.sqrt(area * rel / Math.PI) * 0.95));
+        b.r = Math.max(17, Math.min(36, Math.sqrt(area * rel / Math.PI) * 1.0));
         if (!b.x) b.x = pool.w * (0.1 + 0.8 * ((i * 0.618) % 1));
         b.x = Math.min(pool.w - b.r, Math.max(b.r, b.x));
         b.y = pool.h / 2;
@@ -927,17 +927,22 @@ function stepTidePool(p, dt, t, still) {
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.beginPath(); ctx.arc(b.x + r * 0.45, b.y + r * 0.4, Math.max(1.2, r * 0.07), 0, 6.2832); ctx.fill();
 
-    if (r >= 17) {
+    if (pop > 0.7) {
       ctx.save();
       ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 3;
-      let fs = Math.min(12, r / 2.5);
-      ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
-      const tw = ctx.measureText(b.m.label).width;
-      if (tw > r * 1.7) { fs *= r * 1.7 / tw; ctx.font = `700 ${fs}px "JetBrains Mono", monospace`; }
-      ctx.fillText(b.m.label, b.x, b.y - 3);
-      ctx.font = `600 ${Math.min(11, r / 2.8)}px "JetBrains Mono", monospace`;
-      ctx.fillText((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', b.x, b.y + 8);
+      // every bubble is labelled: font shrinks per line until the text fits inside the circle
+      const fit = (txt, wt, base) => {
+        let fs = Math.min(base, r / 2.5);
+        ctx.font = `${wt} ${fs}px "JetBrains Mono", monospace`;
+        const tw = ctx.measureText(txt).width;
+        if (tw > r * 1.6) { fs *= r * 1.6 / tw; ctx.font = `${wt} ${fs}px "JetBrains Mono", monospace`; }
+        return fs;
+      };
+      const f1 = fit(b.m.label, 700, 12);
+      ctx.fillText(b.m.label, b.x, b.y - f1 * 0.2);
+      const f2 = fit((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', 600, 11);
+      ctx.fillText((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', b.x, b.y + f1 * 0.2 + f2 * 0.75);
       ctx.restore();
     }
   });
