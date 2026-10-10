@@ -800,7 +800,7 @@ function renderTidePools(data) {
     };
     canvas.addEventListener('click', e => tideTip(pool, e));
     canvas.addEventListener('mousemove', e => tideTip(pool, e, true));
-    canvas.addEventListener('mouseleave', () => document.getElementById('tideTooltip').classList.remove('show'));
+    canvas.addEventListener('mouseleave', () => { pool.hover = null; document.getElementById('tideTooltip').classList.remove('show'); });
     pool.layout();
     return pool;
   });
@@ -825,6 +825,7 @@ function tideTip(pool, e, hoverOnly) {
   const r = pool.canvas.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
   const hit = pool.bubbles.find(b => Math.hypot(b.x - x, b.y - y) <= b.r);
+  pool.hover = hit || null;
   const tip = document.getElementById('tideTooltip');
   if (!hit) { tip.classList.remove('show'); return; }
   const m = hit.m, pct = m.pct_change;
@@ -855,31 +856,87 @@ function stepTidePool(p, dt, t, still) {
   }
   bubbles.forEach(b => { b.x = Math.min(w - b.r, Math.max(b.r, b.x)); });
 
-  const css = getComputedStyle(document.body);
   const light = document.documentElement.getAttribute('data-theme') === 'light';
   ctx.clearRect(0, 0, w, h);
   const bg = ctx.createLinearGradient(0, 0, 0, h);
-  bg.addColorStop(0, light ? 'rgba(74,222,128,0.14)' : 'rgba(74,222,128,0.10)');
+  bg.addColorStop(0, light ? 'rgba(74,222,128,0.18)' : 'rgba(74,222,128,0.13)');
   bg.addColorStop(0.5, 'rgba(0,0,0,0)');
-  bg.addColorStop(1, light ? 'rgba(248,113,113,0.14)' : 'rgba(248,113,113,0.10)');
+  bg.addColorStop(1, light ? 'rgba(248,113,113,0.18)' : 'rgba(248,113,113,0.13)');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(212,175,106,0.35)'; ctx.setLineDash([4, 5]);
-  ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke(); ctx.setLineDash([]);
+
+  // slow light rays from the surface
+  ctx.save();
+  for (let i = 0; i < 3; i++) {
+    const rx = w * (0.2 + i * 0.3) + Math.sin(t * 0.25 + i * 2) * 24;
+    const ray = ctx.createLinearGradient(rx, 0, rx + 40, h * 0.55);
+    ray.addColorStop(0, light ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.07)'); ray.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = ray; ctx.beginPath();
+    ctx.moveTo(rx - 14, 0); ctx.lineTo(rx + 22, 0); ctx.lineTo(rx + 70, h * 0.55); ctx.lineTo(rx + 10, h * 0.55); ctx.fill();
+  }
+  ctx.restore();
+
+  // waterline at the zero mark — a gentle wave rather than a dashed rule
+  ctx.strokeStyle = 'rgba(212,175,106,0.5)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let x = 0; x <= w; x += 6) {
+    const y = h / 2 + Math.sin(x * 0.04 + t * 1.4) * 2.2;
+    x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+
+  // drifting particles: winners shed tiny bubbles upward, losers shed sinking specks
+  if (!still) {
+    p.parts = p.parts || [];
+    bubbles.forEach(b => {
+      const k = Math.abs(b.m.pct_change) / maxAbs;
+      if (Math.random() < dt * (1.2 + k * 5) && p.parts.length < 90)
+        p.parts.push({ x: b.x + (Math.random() - 0.5) * b.r, y: b.y + (b.m.pct_change >= 0 ? -b.r * 0.6 : b.r * 0.6),
+                       vy: (b.m.pct_change >= 0 ? -1 : 1) * (14 + Math.random() * 22), r: 1 + Math.random() * 2.2, life: 1, up: b.m.pct_change >= 0 });
+    });
+    p.parts = p.parts.filter(q => (q.life -= dt * 0.55) > 0 && q.y > -5 && q.y < h + 5);
+    p.parts.forEach(q => {
+      q.y += q.vy * dt; q.x += Math.sin(q.y * 0.08 + q.r) * 0.3;
+      ctx.strokeStyle = q.up ? `rgba(134,239,172,${q.life * 0.7})` : `rgba(252,165,165,${q.life * 0.7})`;
+      ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.2832); ctx.stroke();
+    });
+  }
 
   bubbles.forEach(b => {
     const up = b.m.pct_change >= 0, rgb = up ? '74,222,128' : '248,113,113';
-    const g = ctx.createRadialGradient(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1, b.x, b.y, b.r);
-    g.addColorStop(0, `rgba(${rgb},0.95)`); g.addColorStop(0.7, `rgba(${rgb},0.55)`); g.addColorStop(1, `rgba(${rgb},0.18)`);
-    ctx.shadowColor = `rgba(${rgb},0.7)`; ctx.shadowBlur = 6 + Math.abs(b.m.pct_change) / maxAbs * 18;
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.2832); ctx.fill();
+    const k = Math.abs(b.m.pct_change) / maxAbs;
+    const hov = p.hover === b;
+    b.born = b.born ?? t; const pop = still ? 1 : Math.min(1, (t - b.born) * 2.5);
+    const eased = 1 - Math.pow(1 - pop, 3) * (1 + 0.4 * Math.sin(pop * 9));
+    const r = b.r * eased * (hov ? 1.12 : 1);
+    if (r < 1) return;
+
+    // sonar ring off the big movers
+    if (!still && k > 0.55) {
+      const ph = ((t * 0.5 + b.ph) % 1);
+      ctx.strokeStyle = `rgba(${rgb},${(1 - ph) * 0.4})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(b.x, b.y, r + ph * 16, 0, 6.2832); ctx.stroke();
+    }
+    // glass body: dark-ish core to bright rim, so it reads as a sphere
+    const g = ctx.createRadialGradient(b.x - r * 0.25, b.y - r * 0.3, r * 0.05, b.x, b.y, r);
+    g.addColorStop(0, `rgba(${rgb},0.55)`); g.addColorStop(0.65, `rgba(${rgb},0.4)`); g.addColorStop(0.92, `rgba(${rgb},0.8)`); g.addColorStop(1, `rgba(${rgb},0.95)`);
+    ctx.shadowColor = `rgba(${rgb},${hov ? 0.95 : 0.7})`; ctx.shadowBlur = (hov ? 22 : 8) + k * 20;
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, 6.2832); ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = `rgba(${rgb},0.9)`; ctx.lineWidth = 1; ctx.stroke();
-    if (b.r >= 17) {
-      ctx.fillStyle = light ? '#111' : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = `600 ${Math.min(11, b.r / 2.6)}px "JetBrains Mono", monospace`;
-      const label = b.m.label.length > b.r / 3.2 ? (b.m.label.slice(0, Math.max(3, Math.floor(b.r / 3.6))) + '…') : b.m.label;
-      ctx.fillText(label, b.x, b.y - 4);
-      ctx.fillText((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', b.x, b.y + 7);
+    // specular highlight + small secondary glint
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(b.x - r * 0.35, b.y - r * 0.45, r * 0.3, r * 0.16, -0.6, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.arc(b.x + r * 0.45, b.y + r * 0.4, Math.max(1.2, r * 0.07), 0, 6.2832); ctx.fill();
+
+    if (r >= 17) {
+      ctx.save();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 3;
+      ctx.font = `700 ${Math.min(12, r / 2.5)}px "JetBrains Mono", monospace`;
+      const label = b.m.label.length > r / 3.2 ? (b.m.label.slice(0, Math.max(3, Math.floor(r / 3.6))) + '…') : b.m.label;
+      ctx.fillText(label, b.x, b.y - 3);
+      ctx.font = `600 ${Math.min(11, r / 2.8)}px "JetBrains Mono", monospace`;
+      ctx.fillText((b.m.pct_change >= 0 ? '+' : '') + b.m.pct_change.toFixed(1) + '%', b.x, b.y + 8);
+      ctx.restore();
     }
   });
 }
