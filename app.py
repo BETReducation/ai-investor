@@ -4088,6 +4088,58 @@ def admin_list_users():
     ], "feature_levels": FEATURE_LEVELS, "tiers": list(TIER_RANKS.keys())})
 
 
+def _login_counts() -> dict:
+    """Total login events per username since the activity log started."""
+    counts = {}
+    try:
+        if DATABASE_URL:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("SELECT username, COUNT(*) FROM user_events WHERE kind = 'login' GROUP BY username")
+                counts = {u: n for u, n in cur.fetchall()}
+        elif os.path.exists(EVENTS_FILE):
+            with open(EVENTS_FILE) as f:
+                for line in f:
+                    try:
+                        e = json.loads(line)
+                    except ValueError:
+                        continue
+                    if e.get("k") == "login":
+                        counts[e["u"]] = counts.get(e["u"], 0) + 1
+    except Exception as e:
+        print(f"[_login_counts failed] {e}")
+    return counts
+
+
+@app.route("/api/admin/partner-activity", methods=["GET"])
+@login_required
+def admin_partner_activity():
+    if not is_admin_user(current_user):
+        return jsonify({"error": "Admin only"}), 403
+    logins = _login_counts()
+    posts = {}
+    for item in alpha_content_list(status="published"):
+        if item.get("kind") == "post":
+            posts[item.get("author")] = posts.get(item.get("author"), 0) + 1
+    # Copying a message/thread duplicates it in the store, so count unique content only.
+    seen, chat = set(), {}
+    for m in gcg_chat.store.read()["messages"]:
+        key = (m["author"], m["kind"], m.get("url"), m.get("body"))
+        if key not in seen:
+            seen.add(key)
+            chat[m["author"]] = chat.get(m["author"], 0) + 1
+    rows = []
+    for username, data in sorted(_load_users().items()):
+        role = data.get("alpha_role")
+        if not role:
+            continue
+        n_login, n_posts, n_chat = logins.get(username, 0), posts.get(role, 0), chat.get(role, 0)
+        pct = lambda n: round(n / n_login * 100, 1) if n_login else None
+        rows.append({"username": username, "alpha_role": role, "logins": n_login,
+                     "alpha_posts": n_posts, "alpha_pct": pct(n_posts),
+                     "chat_contributions": n_chat, "chat_pct": pct(n_chat)})
+    return jsonify({"partners": rows})
+
+
 @app.route("/api/admin/delete-user", methods=["POST"])
 @login_required
 def admin_delete_user():
