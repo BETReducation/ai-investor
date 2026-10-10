@@ -1577,7 +1577,6 @@ MARKET_PULSE_INDICES = [
     {"country": "Sweden",        "index": "OMXS30",            "symbol": "^OMX",     "lat": 60.1,  "lon": 18.6,   "iso2": "se"},
     {"country": "Poland",        "index": "WIG20",             "symbol": "WIG20.WA", "lat": 52.0,  "lon": 19.1,   "iso2": "pl"},
     {"country": "Turkey",        "index": "BIST 100",          "symbol": "XU100.IS", "lat": 38.9,  "lon": 35.2,   "iso2": "tr"},
-    {"country": "Russia",        "index": "MOEX",              "symbol": "IMOEX.ME", "lat": 61.5,  "lon": 105.3,  "iso2": "ru"},
     {"country": "South Africa",  "index": "JSE Top 40",        "symbol": "^J203.JO", "lat": -29.0, "lon": 24.0,   "iso2": "za"},
     {"country": "Saudi Arabia",  "index": "TASI",              "symbol": "^TASI.SR", "lat": 24.0,  "lon": 45.0,   "iso2": "sa"},
     # 1306.T (Nomura's TOPIX-tracking ETF) stands in for TOPIX itself — no native
@@ -1604,10 +1603,9 @@ MARKET_PULSE_INDICES = [
     # Nigeria, Kenya, Ghana, Mauritius, Morocco, most of the Balkans) simply have
     # no reliable free Yahoo Finance symbol — every symbol/suffix variant tried
     # came back empty — so they're left out rather than added as an entry that
-    # would silently never show data. Russia (IMOEX.ME, below) is in the same
-    # position in practice — the symbol exists but Yahoo has carried no usable
-    # data for it since Western sanctions-era delistings — kept in the list on
-    # the chance that changes, rather than removed.
+    # would silently never show data. Russia (IMOEX.ME) is in the same
+    # position — Yahoo has carried no usable data for it since the sanctions-era
+    # delistings — and was removed because every refresh logged a failed download.
     {"country": "Denmark",       "index": "OMX Copenhagen 25", "symbol": "^OMXC25",  "lat": 56.0,  "lon": 10.0,   "iso2": "dk"},
     {"country": "Norway",        "index": "Oslo Børs",         "symbol": "OSEBX.OL", "lat": 60.5,  "lon": 8.5,    "iso2": "no"},
     {"country": "Finland",       "index": "OMX Helsinki 25",   "symbol": "^OMXH25",  "lat": 61.9,  "lon": 25.7,   "iso2": "fi"},
@@ -5380,7 +5378,7 @@ TIDE_POOLS = [
         ("STAN.L", "STAN", "Standard Chartered"), ("AAL.L", "AAL", "Anglo American"), ("VOD.L", "VOD", "Vodafone"),
         ("TSCO.L", "TSCO", "Tesco"), ("NWG.L", "NWG", "NatWest"), ("PRU.L", "PRU", "Prudential")]),
     ("European Stocks", 20, [("ASML.AS", "ASML", "ASML"), ("SAP.DE", "SAP", "SAP"), ("MC.PA", "MC", "LVMH"),
-        ("NESN.SW", "NESN", "Nestlé"), ("ROG.SW", "ROG", "Roche"), ("NOVN.SW", "NOVN", "Novartis"),
+        ("NESN.SW", "NESN", "Nestlé"), ("RO.SW", "ROG", "Roche"), ("NOVN.SW", "NOVN", "Novartis"),
         ("NOVO-B.CO", "NOVO", "Novo Nordisk"), ("SIE.DE", "SIE", "Siemens"), ("TTE.PA", "TTE", "TotalEnergies"),
         ("OR.PA", "OR", "L'Oréal"), ("RMS.PA", "RMS", "Hermès"), ("SAN.PA", "SAN", "Sanofi"),
         ("AIR.PA", "AIR", "Airbus"), ("ALV.DE", "ALV", "Allianz"), ("DTE.DE", "DTE", "Deutsche Telekom"),
@@ -5398,7 +5396,7 @@ TIDE_POOLS = [
         ("9984.T", "SBG", "SoftBank Group"), ("3690.HK", "MEITUAN", "Meituan"), ("0941.HK", "CHMOBILE", "China Mobile")]),
     ("African Stocks", 20, [("NPN.JO", "NPN", "Naspers"), ("PRX.JO", "PRX", "Prosus"), ("FSR.JO", "FSR", "FirstRand"),
         ("SBK.JO", "SBK", "Standard Bank"), ("GFI.JO", "GFI", "Gold Fields"), ("ABG.JO", "ABG", "Absa Group"),
-        ("MTN.JO", "MTN", "MTN Group"), ("AMS.JO", "AMS", "Anglo American Platinum"), ("ANG.JO", "ANG", "AngloGold Ashanti"),
+        ("MTN.JO", "MTN", "MTN Group"), ("VAL.JO", "VAL", "Valterra Platinum"), ("ANG.JO", "ANG", "AngloGold Ashanti"),
         ("SOL.JO", "SOL", "Sasol"), ("SHP.JO", "SHP", "Shoprite"), ("COMI.CA", "COMI", "Commercial Intl Bank (Egypt)"),
         ("HAR.JO", "HAR", "Harmony Gold"), ("IMP.JO", "IMP", "Impala Platinum"), ("CPI.JO", "CPI", "Capitec"),
         ("NED.JO", "NED", "Nedbank"), ("SLM.JO", "SLM", "Sanlam"), ("BID.JO", "BID", "Bid Corporation"),
@@ -5410,7 +5408,7 @@ TIDE_POOLS = [
         ("SBS", "SBS", "Sabesp"), ("PBR-A", "PBRA", "Petrobras (pref)"), ("BSAC", "BSAC", "Banco Santander Chile"),
         ("GGB", "GGB", "Gerdau"), ("SUZ", "SUZ", "Suzano"), ("YPF", "YPF", "YPF"),
         ("CIG", "CIG", "Cemig"), ("EC", "EC", "Ecopetrol"), ("TEO", "TEO", "Telecom Argentina"),
-        ("ERJ", "ERJ", "Embraer"), ("CCU", "CCU", "CCU"), ("LTM", "LTM", "LATAM Airlines"),
+        ("EMBJ", "EMBJ", "Embraer"), ("CCU", "CCU", "CCU"), ("LTM", "LTM", "LATAM Airlines"),
         ("PAM", "PAM", "Pampa Energía"), ("BBDO", "BBDO", "Bradesco (ord)"), ("ENIC", "ENIC", "Enel Chile")]),
 ]
 _tide_cache = {"at": 0.0, "data": None}
