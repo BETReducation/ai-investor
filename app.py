@@ -5720,10 +5720,15 @@ def api_fx_rates():
     return jsonify(_fetch_fx_rates_live())
 
 
-# Latest USD/GBP/EUR prices for the four coins on the Crypto Unit Calculator page.
+# Latest USD/GBP/EUR prices for the coins on the Crypto Unit Calculator page.
 # GBP and EUR are derived from the USD price and the spot FX rate, since Yahoo's
 # direct coin-GBP/EUR pairs are missing or thin for some of these coins.
-_CRYPTO_UNIT_COINS = {"BTC": "BTC-USD", "ETH": "ETH-USD", "ADA": "ADA-USD", "ZEC": "ZEC-USD"}
+_CRYPTO_UNIT_COINS = {
+    "BTC": "BTC-USD", "ETH": "ETH-USD", "XRP": "XRP-USD", "BNB": "BNB-USD", "SOL": "SOL-USD", "DOGE": "DOGE-USD",
+    "TRX": "TRX-USD", "ADA": "ADA-USD", "HYPE": "HYPE32196-USD", "LINK": "LINK-USD", "AVAX": "AVAX-USD",
+    "XLM": "XLM-USD", "BCH": "BCH-USD", "SHIB": "SHIB-USD", "HBAR": "HBAR-USD", "SUI": "SUI20947-USD",
+    "LTC": "LTC-USD", "DOT": "DOT-USD", "XMR": "XMR-USD", "UNI": "UNI7083-USD", "ZEC": "ZEC-USD",
+}
 _crypto_units_cache = {"at": 0.0, "data": None}
 _crypto_units_lock = threading.Lock()
 

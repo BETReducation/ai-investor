@@ -166,7 +166,7 @@ body.pulse-map-lock { overflow: hidden; }
 .cu-card { --cu-accent: #38bdf8; max-width: 560px; margin: 0 auto 40px; padding: 26px 22px 22px; border-radius: 22px; color: #e8eefc; text-align: center;
   background: radial-gradient(ellipse at 50% 0%, rgba(56,189,248,0.12), transparent 60%), linear-gradient(180deg, #0b1424, #070c18); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(5,10,25,0.35); }
 .cu-pills, .cu-fiat-pills { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.cu-pills button, .cu-fiat-pills button { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; color: #b9c4dd; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 10px 20px; cursor: pointer; transition: all .15s; }
+.cu-pills button, .cu-fiat-pills button { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; letter-spacing: 0.04em; color: #b9c4dd; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 8px 14px; cursor: pointer; transition: all .15s; }
 .cu-pills button.active { background: var(--cu-accent); border-color: var(--cu-accent); color: #04101c; box-shadow: 0 0 18px var(--cu-accent); }
 .cu-fiat-pills button { font-size: 11px; padding: 5px 12px; }
 .cu-fiat-pills button.active { background: rgba(255,255,255,0.16); color: #fff; }
@@ -428,18 +428,38 @@ function setHeroSub(text) {
 // ── Crypto Unit Calculator — how a coin divides into its smallest units ──
 // Amounts are BigInt unit counts (1 wei = 1 / 10^18 ETH is far below float
 // precision), converted to decimal strings only for display.
-const CU_COINS = {
-  BTC: { name: 'Bitcoin', unit: 'satoshi', units: 'satoshis', dec: 8, color: '#f7931a', start: 10000000n,
-         ladder: [['Bitcoin (BTC)', 0], ['Milli-bitcoin (mBTC)', 3], ['Micro-bitcoin (µBTC)', 6], ['Satoshi', 8]] },
-  ETH: { name: 'Ether', unit: 'wei', units: 'wei', dec: 18, color: '#8c9eff', start: 100000000000000000n,
-         ladder: [['Ether (ETH)', 0], ['Finney', 3], ['Gwei', 9], ['Wei', 18]] },
-  ADA: { name: 'Cardano', unit: 'lovelace', units: 'lovelace', dec: 6, color: '#38bdf8', start: 100000n,
-         ladder: [['Cardano (ADA)', 0], ['Lovelace', 6]] },
-  ZEC: { name: 'Zcash', unit: 'zatoshi', units: 'zatoshis', dec: 8, color: '#f4b728', start: 10000000n,
-         ladder: [['Zcash (ZEC)', 0], ['Zatoshi', 8]] },
-};
+// The top 20 non-stablecoin assets by market cap (same list as Market Orbs), plus Zcash. Each
+// entry: name, smallest unit (singular, plural), decimal places, accent colour,
+// and optionally a ladder of well-known named sub-units.
+const CU_LIST = [
+  ['BTC', 'Bitcoin', 'satoshi', 'satoshis', 8, '#f7931a', [['Bitcoin (BTC)', 0], ['Milli-bitcoin (mBTC)', 3], ['Micro-bitcoin (µBTC)', 6], ['Satoshi', 8]]],
+  ['ETH', 'Ether', 'wei', 'wei', 18, '#8c9eff', [['Ether (ETH)', 0], ['Finney', 3], ['Gwei', 9], ['Wei', 18]]],
+  ['XRP', 'XRP', 'drop', 'drops', 6, '#4aa3df'],
+  ['BNB', 'BNB', 'wei', 'wei', 18, '#f3ba2f', [['BNB', 0], ['Gwei', 9], ['Wei', 18]]],
+  ['SOL', 'Solana', 'lamport', 'lamports', 9, '#9945ff'],
+  ['DOGE', 'Dogecoin', 'koinu', 'koinu', 8, '#c2a633'],
+  ['TRX', 'TRON', 'sun', 'sun', 6, '#ff4d4d'],
+  ['ADA', 'Cardano', 'lovelace', 'lovelace', 6, '#38bdf8'],
+  ['HYPE', 'Hyperliquid', 'wei', 'wei', 8, '#5eead4'],
+  ['LINK', 'Chainlink', 'juel', 'juels', 18, '#4f7cff'],
+  ['AVAX', 'Avalanche', 'nAVAX', 'nAVAX', 9, '#e84142'],
+  ['XLM', 'Stellar', 'stroop', 'stroops', 7, '#8ab4ff'],
+  ['BCH', 'Bitcoin Cash', 'satoshi', 'satoshis', 8, '#4cc947'],
+  ['SHIB', 'Shiba Inu', 'wei', 'wei', 18, '#fb7185'],
+  ['HBAR', 'Hedera', 'tinybar', 'tinybars', 8, '#c4b5fd'],
+  ['SUI', 'Sui', 'MIST', 'MIST', 9, '#60a5fa'],
+  ['LTC', 'Litecoin', 'litoshi', 'litoshis', 8, '#a9b8d4'],
+  ['DOT', 'Polkadot', 'planck', 'planck', 10, '#e6007a'],
+  ['XMR', 'Monero', 'piconero', 'piconero', 12, '#ff6600'],
+  ['UNI', 'Uniswap', 'wei', 'wei', 18, '#ff5fb2'],
+  ['ZEC', 'Zcash', 'zatoshi', 'zatoshis', 8, '#f4b728'], // not top 20 by cap; kept from the original four
+];
+const CU_COINS = {};
+CU_LIST.forEach(([t, name, unit, units, dec, color, ladder]) => {
+  CU_COINS[t] = { name, unit, units, dec, color, ladder: ladder || [[`${name} (${t})`, 0], [unit.charAt(0).toUpperCase() + unit.slice(1), dec]] };
+});
 const CU_SYMBOL = { GBP: '£', USD: '$', EUR: '€' };
-const cu = { coin: 'ADA', fiat: 'GBP', units: CU_COINS.ADA.start, prices: null, shown: 0, target: 0, raf: 0, ticks: [] };
+const cu = { coin: 'ADA', fiat: 'GBP', units: 0n, prices: null, shown: 0, target: 0, raf: 0, ticks: [] };
 
 const cuScale = d => 10n ** BigInt(d);
 function cuCoinStr(u, d) {
@@ -533,7 +553,7 @@ async function loadCryptoUnitPrices() {
 }
 
 function cuSetCoin(c) {
-  cu.coin = c; cu.units = CU_COINS[c].start;
+  cu.coin = c; cu.units = cuScale(CU_COINS[c].dec) / 10n;
   document.querySelector('.cu-card').style.setProperty('--cu-accent', CU_COINS[c].color);
   document.querySelectorAll('#cuPills button').forEach(b => b.classList.toggle('active', b.dataset.coin === c));
   cuRender();
