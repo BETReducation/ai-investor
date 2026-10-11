@@ -789,9 +789,12 @@ async function fetchOrb() {
     if (tab !== _orbTab) return; // user switched tabs mid-request
     if (tab === 'countries') {
       const groups = {};
-      (data.markets || []).forEach(m => (groups[continentFromLonLat(m.lon, m.lat)] ||= []).push({
+      // six continents folded into three pools so each has enough bubbles to fill it
+      const ORB_REGION_GROUP = { 'North America': 'Americas & Africa', 'South America': 'Americas & Africa', 'Africa': 'Americas & Africa',
+        'Europe': 'Europe', 'Asia & Middle East': 'Asia & Oceania', 'Oceania': 'Asia & Oceania' };
+      (data.markets || []).forEach(m => (groups[ORB_REGION_GROUP[continentFromLonLat(m.lon, m.lat)]] ||= []).push({
         label: m.country, name: m.country, sub: m.index, symbol: m.symbol, price: m.price, pct_change: m.pct_change }));
-      data = { ...data, pools: PULSE_CONTINENT_ORDER.filter(c => groups[c]).map(c => ({ name: c, assets: groups[c] })) };
+      data = { ...data, pools: ['Americas & Africa', 'Europe', 'Asia & Oceania'].filter(c => groups[c]).map(c => ({ name: c, assets: groups[c] })) };
     }
     const { summary = {}, updated_at } = data;
     const u = document.getElementById('pulseUpdated');
