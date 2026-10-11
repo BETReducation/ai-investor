@@ -173,6 +173,14 @@ async function refreshPages() {
   renderPageManageList();
 }
 
+// Edits here save and go live immediately (no draft step), so every action
+// reports its state in the card's message line.
+function pageMsg(slug, text, kind) {
+  const el = document.getElementById(`pageMsg-${slug}`);
+  if (el) { el.textContent = text; el.className = 'form-msg' + (kind ? ' ' + kind : ''); }
+}
+function savedStamp() { return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
 function renderPageManageList() {
   const el = document.getElementById('pageManageList');
   if (!el) return;
@@ -180,8 +188,10 @@ function renderPageManageList() {
     el.innerHTML = '<div class="list-empty">No visualisations yet — add one above.</div>';
     return;
   }
+  // re-rendering rebuilds every card, which would snap open ones shut mid-edit
+  const openSlugs = new Set([...el.querySelectorAll('details[open]')].map(d => d.dataset.slug));
   el.innerHTML = DATAVIZ_PAGE_LIST.map(p => `
-    <details class="studio-card">
+    <details class="studio-card" data-slug="${esc(p.slug)}"${openSlugs.has(p.slug) ? ' open' : ''}>
       <summary class="studio-card-summary">
         <span class="page-name">${esc(p.label)}</span>
         ${p.has_live_widget ? '<span class="status-badge published" title="Has a live widget built into the page">live widget</span>' : ''}
@@ -199,13 +209,16 @@ function renderPageManageList() {
       <div class="studio-card-actions">
         <button class="btn-danger-sm" onclick="deletePage('${esc(p.slug)}')">Delete</button>
       </div>
-      <div class="form-msg" id="pageMsg-${esc(p.slug)}"></div>
+      <div class="form-msg" id="pageMsg-${esc(p.slug)}">Changes save automatically and go live straight away.</div>
     </details>
   `).join('');
 }
 
 async function updatePageField(slug, field, value) {
   const el = document.getElementById(`pageMsg-${slug}`);
+  const current = DATAVIZ_PAGE_LIST.find(p => p.slug === slug);
+  if (current && (current[field] || '') === value) return; // untouched field, nothing to save
+  pageMsg(slug, 'Saving…');
   try {
     const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}`, {
       method: 'PATCH',
@@ -217,6 +230,7 @@ async function updatePageField(slug, field, value) {
     if (!res.ok) throw new Error(data.error || "Couldn't save — try again.");
     const page = DATAVIZ_PAGE_LIST.find(p => p.slug === slug);
     if (page) page[field] = value;
+    pageMsg(slug, `✓ Saved and live at ${savedStamp()}`, 'success');
   } catch (e) {
     if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   }
@@ -228,11 +242,13 @@ async function uploadHeaderImage(slug, input) {
   const fd = new FormData();
   fd.append('image', file);
   const el = document.getElementById(`pageMsg-${slug}`);
+  pageMsg(slug, 'Uploading image…');
   try {
     const res = await fetch(`/api/dataviz/pages/${encodeURIComponent(slug)}/header-image`, { method: 'POST', credentials: 'include', body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Couldn't upload — try again.");
     await refreshPages();
+    pageMsg(slug, `✓ Image saved and live at ${savedStamp()}`, 'success');
   } catch (e) {
     if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
   } finally {
@@ -247,6 +263,7 @@ async function removeHeaderImage(slug) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Couldn't remove — try again.");
     await refreshPages();
+    pageMsg(slug, `✓ Image removed at ${savedStamp()}`, 'success');
   } catch (e) {
     const el = document.getElementById(`pageMsg-${slug}`);
     if (el) { el.textContent = e.message; el.className = 'form-msg error'; }
