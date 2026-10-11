@@ -163,47 +163,47 @@ body.pulse-map-lock { overflow: hidden; }
 .pulse-tab-btn.active { background: #d4af6a; color: #1a1206; }
 .pulse-tab-panel { display: none; }
 /* Market Orbs page */
-#tideWrap { position: relative; }
-.tide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-@media (max-width: 1000px) { .tide-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { .tide-grid { grid-template-columns: 1fr; } }
-.tide-pool { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 12px 8px; }
-.tide-pool-desc { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11.5px; color: var(--muted); margin-left: 8px; }
-.tide-pool-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af6a; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 10px; }
+#orbWrap { position: relative; }
+.orb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 1000px) { .orb-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .orb-grid { grid-template-columns: 1fr; } }
+.orb-pool { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 12px 8px; }
+.orb-pool-desc { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 11.5px; color: var(--muted); margin-left: 8px; }
+.orb-pool-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #d4af6a; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 10px; }
 /* fixed two-line heading block so every card's canvas starts at the same height */
-.tide-pool-title { align-items: flex-start; }
-.tide-pool-title > span:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.45; height: 2.9em; }
-.tide-avg { white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
-.tide-avg.up { color: #4ade80; background: rgba(74,222,128,0.16); border: 1px solid rgba(74,222,128,0.4); }
-.tide-avg.down { color: #f87171; background: rgba(248,113,113,0.16); border: 1px solid rgba(248,113,113,0.4); }
-:root[data-theme="light"] .tide-avg.up { color: #0f6b34; background: rgba(34,197,94,0.18); border-color: rgba(21,128,61,0.5); }
-:root[data-theme="light"] .tide-avg.down { color: #a01c1c; background: rgba(239,68,68,0.15); border-color: rgba(185,28,28,0.45); }
-:root[data-theme="light"] .tide-pool-title { color: #96650f; }
-.tide-pool canvas { width: 100%; height: 300px; display: block; border-radius: 10px; cursor: pointer; }
-#tideModal { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(8,12,24,0.62); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
-#tideModal.open { display: flex; }
-.tide-modal-card { position: relative; width: min(440px, 100%); background: var(--bg, #fff); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.45); max-height: 92vh; overflow-y: auto; }
-:root:not([data-theme="light"]) .tide-modal-card { background: #121829; }
-:root[data-theme="light"] .tide-modal-card { background: #fff; }
-.tide-modal-close { position: absolute; top: 10px; right: 12px; background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 6px; }
-.tide-modal-bubble { width: 170px; height: 170px; margin: 0 auto 16px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); position: relative; animation: tideBob 3.2s ease-in-out infinite; }
-.tide-modal-bubble span { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tide-modal-bubble b { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; }
-.tide-modal-bubble::before { content: ''; position: absolute; top: 14%; left: 20%; width: 34%; height: 18%; border-radius: 50%; background: rgba(255,255,255,0.5); transform: rotate(-30deg); }
-.tide-modal-bubble.up { background: radial-gradient(circle at 35% 30%, rgba(74,222,128,0.7), rgba(34,160,86,0.75) 62%, rgba(22,163,74,0.98)); box-shadow: 0 0 36px rgba(74,222,128,0.65), inset 0 0 18px rgba(255,255,255,0.15); }
-.tide-modal-bubble.down { background: radial-gradient(circle at 35% 30%, rgba(248,113,113,0.7), rgba(200,60,60,0.75) 62%, rgba(220,38,38,0.98)); box-shadow: 0 0 36px rgba(248,113,113,0.65), inset 0 0 18px rgba(255,255,255,0.15); }
-@keyframes tideBob { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(5px); } }
-@media (prefers-reduced-motion: reduce) { .tide-modal-bubble { animation: none; } }
-.tide-modal-name { font-size: 22px; font-weight: 700; line-height: 1.25; }
-.tide-modal-sub { font-size: 13px; color: var(--muted); margin: 4px 0 18px; }
-.tide-modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
-.tide-modal-stats > div { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
-.tide-modal-k { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
-.tide-modal-v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; }
-.tide-modal-v.up { color: #22a85a; } .tide-modal-v.down { color: #e04848; }
-.tide-modal-diff { font-size: 11px; font-weight: 400; color: var(--muted); }
-.tide-modal-foot { font-size: 11px; color: var(--muted); margin-top: 14px; }
-.tide-note { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 18px auto 0; max-width: 820px; text-align: left; }
+.orb-pool-title { align-items: flex-start; }
+.orb-pool-title > span:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.45; height: 2.9em; }
+.orb-avg { white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.orb-avg.up { color: #4ade80; background: rgba(74,222,128,0.16); border: 1px solid rgba(74,222,128,0.4); }
+.orb-avg.down { color: #f87171; background: rgba(248,113,113,0.16); border: 1px solid rgba(248,113,113,0.4); }
+:root[data-theme="light"] .orb-avg.up { color: #0f6b34; background: rgba(34,197,94,0.18); border-color: rgba(21,128,61,0.5); }
+:root[data-theme="light"] .orb-avg.down { color: #a01c1c; background: rgba(239,68,68,0.15); border-color: rgba(185,28,28,0.45); }
+:root[data-theme="light"] .orb-pool-title { color: #96650f; }
+.orb-pool canvas { width: 100%; height: 300px; display: block; border-radius: 10px; cursor: pointer; }
+#orbModal { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(8,12,24,0.62); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 16px; }
+#orbModal.open { display: flex; }
+.orb-modal-card { position: relative; width: min(440px, 100%); background: var(--bg, #fff); color: var(--text); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.45); max-height: 92vh; overflow-y: auto; }
+:root:not([data-theme="light"]) .orb-modal-card { background: #121829; }
+:root[data-theme="light"] .orb-modal-card { background: #fff; }
+.orb-modal-close { position: absolute; top: 10px; right: 12px; background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 6px; }
+.orb-modal-bubble { width: 170px; height: 170px; margin: 0 auto 16px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); position: relative; animation: orbBob 3.2s ease-in-out infinite; }
+.orb-modal-bubble span { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.orb-modal-bubble b { font-family: 'JetBrains Mono', monospace; font-size: 18px; margin-top: 4px; }
+.orb-modal-bubble::before { content: ''; position: absolute; top: 14%; left: 20%; width: 34%; height: 18%; border-radius: 50%; background: rgba(255,255,255,0.5); transform: rotate(-30deg); }
+.orb-modal-bubble.up { background: radial-gradient(circle at 35% 30%, rgba(74,222,128,0.7), rgba(34,160,86,0.75) 62%, rgba(22,163,74,0.98)); box-shadow: 0 0 36px rgba(74,222,128,0.65), inset 0 0 18px rgba(255,255,255,0.15); }
+.orb-modal-bubble.down { background: radial-gradient(circle at 35% 30%, rgba(248,113,113,0.7), rgba(200,60,60,0.75) 62%, rgba(220,38,38,0.98)); box-shadow: 0 0 36px rgba(248,113,113,0.65), inset 0 0 18px rgba(255,255,255,0.15); }
+@keyframes orbBob { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(5px); } }
+@media (prefers-reduced-motion: reduce) { .orb-modal-bubble { animation: none; } }
+.orb-modal-name { font-size: 22px; font-weight: 700; line-height: 1.25; }
+.orb-modal-sub { font-size: 13px; color: var(--muted); margin: 4px 0 18px; }
+.orb-modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; }
+.orb-modal-stats > div { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.orb-modal-k { font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.orb-modal-v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; }
+.orb-modal-v.up { color: #22a85a; } .orb-modal-v.down { color: #e04848; }
+.orb-modal-diff { font-size: 11px; font-weight: 400; color: var(--muted); }
+.orb-modal-foot { font-size: 11px; color: var(--muted); margin-top: 14px; }
+.orb-note { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 18px auto 0; max-width: 820px; text-align: left; }
 .pulse-tab-panel.active { display: block; }
 
 /* Detailed tab — real per-country choropleth (see world-map-countries.svg) plus
@@ -412,7 +412,7 @@ async function loadPage() {
     } else if (slug === 'market-orbs') {
       setHeroSub(data.description || "Markets and assets as bubbles in their own pools: gainers float, decliners sink, bigger moves swim faster.");
       document.body.classList.add('pulse-page');
-      initTidePools();
+      initOrbPools();
     } else if (slug === 'gold-silver-ratio') {
       setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');
@@ -732,30 +732,30 @@ async function renderPulse(data) {
 // ── Market Orbs — one canvas "pool" per continent, markets as drifting bubbles ──
 // Vertical position = direction and size of the move (surface = biggest gain,
 // floor = biggest loss); radius = |move|; motion speed scales with |move|.
-let _tidePools = [], _tideRaf = 0, _tideTimer = null;
+let _orbPools = [], _orbRaf = 0, _orbTimer = null;
 
-function initTidePools() {
+function initOrbPools() {
   document.getElementById('pulseContainer').innerHTML = `
-    <div class="pulse-wrap" id="tideWrap">
+    <div class="pulse-wrap" id="orbWrap">
       <div class="pulse-note"><span class="pulse-dot-live"></span><span id="pulseUpdated">Loading live prices…</span></div>
       <div class="pulse-stats" id="pulseStats"></div>
       <div class="pulse-tabs">
-        <button class="pulse-tab-btn" id="tideBtnCountries" onclick="switchTideTab('countries')">Countries</button>
-        <button class="pulse-tab-btn" id="tideBtnAssets" onclick="switchTideTab('assets')">Assets</button>
+        <button class="pulse-tab-btn" id="orbBtnCountries" onclick="switchOrbTab('countries')">Countries</button>
+        <button class="pulse-tab-btn" id="orbBtnAssets" onclick="switchOrbTab('assets')">Assets</button>
       </div>
-      <div class="tide-grid" id="tideGrid"></div>
-      <div class="pulse-tooltip" id="tideTooltip"></div>
-      <div class="tide-modal" id="tideModal"></div>
-      <div class="tide-note" id="tideNote"></div>
+      <div class="orb-grid" id="orbGrid"></div>
+      <div class="pulse-tooltip" id="orbTooltip"></div>
+      <div class="orb-modal" id="orbModal"></div>
+      <div class="orb-note" id="orbNote"></div>
     </div>
     <hr class="pulse-divider">
   `;
-  switchTideTab('countries');
-  _tideTimer = setInterval(fetchTide, PULSE_REFRESH_MS);
+  switchOrbTab('countries');
+  _orbTimer = setInterval(fetchOrb, PULSE_REFRESH_MS);
 }
 
-let _tideTab = 'countries';
-const TIDE_POOL_DESC = {
+let _orbTab = 'countries';
+const ORB_POOL_DESC = {
   Crypto: '20 largest by Mcap, non-stablecoin',
   Metals: 'Reliable price data',
   Currencies: '20 most traded',
@@ -766,27 +766,27 @@ const TIDE_POOL_DESC = {
   'African Stocks': '20 largest by Mcap',
   'South American Stocks': '20 largest by Mcap'
 };
-const TIDE_NOTES = {
+const ORB_NOTES = {
   countries: "<b>Where this comes from.</b> Each bubble is the main benchmark stock index of one country (for example the S&amp;P 500 for the US, the FTSE 100 for the UK, the Nikkei 225 for Japan), grouped by region. Around 40 markets in all. The move shown is the latest close against the previous close.",
   assets: "<b>Where this comes from.</b> <b>Crypto:</b> the 20 largest coins by market cap, priced in US dollars; stablecoins are left out because they are designed not to move. <b>Metals:</b> gold, silver, platinum, palladium, copper and aluminium futures, the main metals with reliable public price data. <b>Currencies:</b> currencies have no market cap, so these are the 20 most traded currencies in the Bank for International Settlements survey, shown as their move against the US dollar. <b>Stocks:</b> the 20 largest listed companies by market cap in each region, in the local currency and on their home exchange where Yahoo Finance carries it. North America is the US exchanges (NYSE and Nasdaq), where the 20 largest are all US companies; Europe excludes the UK; Asia includes the Middle East (Saudi Aramco); Africa is mostly the Johannesburg exchange plus Egypt, since few other African exchanges have public price data; South America is mostly US-listed shares of Brazilian, Chilean, Argentine, Peruvian and Colombian companies. The lists are compiled by hand and approximately ordered, so they can lag the live rankings. Prices come from Yahoo Finance and refresh every 5 minutes."
 };
-function switchTideTab(tab) {
-  _tideTab = tab;
-  document.getElementById('tideBtnCountries').classList.toggle('active', tab === 'countries');
-  document.getElementById('tideBtnAssets').classList.toggle('active', tab === 'assets');
-  document.getElementById('tideNote').innerHTML = TIDE_NOTES[tab] + "<br><br>Bubbles near the surface are up today, those sinking are down. Each pool is scaled to its own biggest mover, and bubble size reflects the size of the move. Moves are the latest price against the previous close, shown for information only.";
-  stopTide();
-  document.getElementById('tideGrid').innerHTML = '<div class="list-empty">Loading…</div>';
-  fetchTide();
+function switchOrbTab(tab) {
+  _orbTab = tab;
+  document.getElementById('orbBtnCountries').classList.toggle('active', tab === 'countries');
+  document.getElementById('orbBtnAssets').classList.toggle('active', tab === 'assets');
+  document.getElementById('orbNote').innerHTML = ORB_NOTES[tab] + "<br><br>Bubbles near the surface are up today, those sinking are down. Each pool is scaled to its own biggest mover, and bubble size reflects the size of the move. Moves are the latest price against the previous close, shown for information only.";
+  stopOrb();
+  document.getElementById('orbGrid').innerHTML = '<div class="list-empty">Loading…</div>';
+  fetchOrb();
 }
 
-async function fetchTide() {
+async function fetchOrb() {
   try {
-    const tab = _tideTab;
+    const tab = _orbTab;
     const res = await fetch(tab === 'assets' ? '/api/dataviz/market-orbs/live' : '/api/dataviz/global-heat-map/live');
     if (!res.ok) throw new Error();
     let data = await res.json();
-    if (tab !== _tideTab) return; // user switched tabs mid-request
+    if (tab !== _orbTab) return; // user switched tabs mid-request
     if (tab === 'countries') {
       const groups = {};
       (data.markets || []).forEach(m => (groups[continentFromLonLat(m.lon, m.lat)] ||= []).push({
@@ -802,29 +802,29 @@ async function fetchTide() {
       <div class="pulse-stat"><div class="pulse-stat-value down">${summary.down ?? 0}</div><div class="pulse-stat-label">Down today</div></div>
       <div class="pulse-stat"><div class="pulse-stat-value ${(summary.avg_move||0) >= 0 ? 'up' : 'down'}">${(summary.avg_move||0) >= 0 ? '+' : ''}${(summary.avg_move ?? 0).toFixed(2)}%</div><div class="pulse-stat-label">Avg move</div></div>
     `;
-    renderTidePools(data);
+    renderOrbPools(data);
   } catch {
     const el = document.getElementById('pulseUpdated');
     if (el) el.textContent = 'Live prices are temporarily unavailable — showing the last known snapshot.';
   }
 }
-function stopTide() { cancelAnimationFrame(_tideRaf); _tideRaf = 0; }
+function stopOrb() { cancelAnimationFrame(_orbRaf); _orbRaf = 0; }
 
-function renderTidePools(data) {
-  const grid = document.getElementById('tideGrid');
+function renderOrbPools(data) {
+  const grid = document.getElementById('orbGrid');
   if (!grid) return;
-  stopTide();
+  stopOrb();
   const pls = (data.pools || []).filter(p => p.assets.length);
   if (!pls.length) { grid.innerHTML = '<div class="list-empty">No data right now.</div>'; return; }
 
   grid.innerHTML = '';
-  _tidePools = pls.map(({ name, assets: ms }) => {
+  _orbPools = pls.map(({ name, assets: ms }) => {
     // each category scales to its own biggest mover — a 0.3% FX day and a 6% crypto day would otherwise never share a pool
     const maxAbs = Math.max(0.1, ...ms.map(m => Math.abs(m.pct_change)));
     const avg = ms.reduce((a, m) => a + m.pct_change, 0) / ms.length;
     const card = document.createElement('div');
-    card.className = 'tide-pool';
-    card.innerHTML = `<div class="tide-pool-title"><span>${esc(name)}<span class="tide-pool-desc">${esc(TIDE_POOL_DESC[name] || '')}</span></span><span class="tide-avg ${avg >= 0 ? 'up' : 'down'}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}% avg</span></div><canvas></canvas>`;
+    card.className = 'orb-pool';
+    card.innerHTML = `<div class="orb-pool-title"><span>${esc(name)}<span class="orb-pool-desc">${esc(ORB_POOL_DESC[name] || '')}</span></span><span class="orb-avg ${avg >= 0 ? 'up' : 'down'}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}% avg</span></div><canvas></canvas>`;
     grid.appendChild(card);
     const canvas = card.querySelector('canvas');
     const pool = { title: name, canvas, ctx: canvas.getContext('2d'), w: 0, h: 0, maxAbs, bubbles: ms.map((m, i) => ({
@@ -844,35 +844,35 @@ function renderTidePools(data) {
         b.y = pool.h / 2;
       });
     };
-    canvas.addEventListener('click', e => openTideModal(pool, e));
-    canvas.addEventListener('mousemove', e => tideTip(pool, e, true));
-    canvas.addEventListener('mouseleave', () => { pool.hover = null; document.getElementById('tideTooltip').classList.remove('show'); });
+    canvas.addEventListener('click', e => openOrbModal(pool, e));
+    canvas.addEventListener('mousemove', e => orbTip(pool, e, true));
+    canvas.addEventListener('mouseleave', () => { pool.hover = null; document.getElementById('orbTooltip').classList.remove('show'); });
     pool.layout();
     return pool;
   });
   if (window.ResizeObserver) {
-    _tideRO?.disconnect();
-    _tideRO = new ResizeObserver(() => _tidePools.forEach(p => p.layout()));
-    _tidePools.forEach(p => _tideRO.observe(p.canvas));
+    _orbRO?.disconnect();
+    _orbRO = new ResizeObserver(() => _orbPools.forEach(p => p.layout()));
+    _orbPools.forEach(p => _orbRO.observe(p.canvas));
   }
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let last = performance.now();
   const frame = now => {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    _tidePools.forEach(p => stepTidePool(p, dt, now / 1000, reduce));
-    if (!reduce) _tideRaf = requestAnimationFrame(frame);
+    _orbPools.forEach(p => stepOrbPool(p, dt, now / 1000, reduce));
+    if (!reduce) _orbRaf = requestAnimationFrame(frame);
   };
-  if (reduce) { for (let i = 0; i < 120; i++) _tidePools.forEach(p => stepTidePool(p, 0.05, 0, true)); }
-  else _tideRaf = requestAnimationFrame(frame);
+  if (reduce) { for (let i = 0; i < 120; i++) _orbPools.forEach(p => stepOrbPool(p, 0.05, 0, true)); }
+  else _orbRaf = requestAnimationFrame(frame);
 }
-let _tideRO = null;
+let _orbRO = null;
 
-function openTideModal(pool, e) {
+function openOrbModal(pool, e) {
   const r = pool.canvas.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
   const b = pool.bubbles.find(b => Math.hypot(b.x - x, b.y - y) <= b.r);
   if (!b) return;
-  document.getElementById('tideTooltip').classList.remove('show');
+  document.getElementById('orbTooltip').classList.remove('show');
   const m = b.m, pct = m.pct_change, up = pct >= 0;
   const sorted = [...pool.bubbles].sort((a, c) => c.m.pct_change - a.m.pct_change);
   const rank = sorted.indexOf(b) + 1;
@@ -880,34 +880,34 @@ function openTideModal(pool, e) {
   const diff = pct - avg;
   const sign = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   const sub = m.sub || (m.label !== m.name ? m.label : '');
-  const modal = document.getElementById('tideModal');
+  const modal = document.getElementById('orbModal');
   modal.innerHTML = `
-    <div class="tide-modal-card" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
-      <button class="tide-modal-close" type="button" aria-label="Close" onclick="closeTideModal()">✕</button>
-      <div class="tide-modal-bubble ${up ? 'up' : 'down'}"><span>${esc(m.label)}</span><b>${sign(pct)}</b></div>
-      <div class="tide-modal-name">${esc(m.name)}</div>
-      <div class="tide-modal-sub">${esc([sub, m.symbol && m.symbol !== m.label ? m.symbol : ''].filter(Boolean).join(' · '))}${sub || (m.symbol && m.symbol !== m.label) ? ' · ' : ''}${esc(pool.title)}</div>
-      <div class="tide-modal-stats">
-        <div><div class="tide-modal-k">Latest price</div><div class="tide-modal-v">${esc(Number(m.price).toLocaleString(undefined, { maximumFractionDigits: 4 }))}</div></div>
-        <div><div class="tide-modal-k">Move vs previous close</div><div class="tide-modal-v ${up ? 'up' : 'down'}">${sign(pct)}</div></div>
-        <div><div class="tide-modal-k">Rank in pool today</div><div class="tide-modal-v">${rank} of ${pool.bubbles.length}</div></div>
-        <div><div class="tide-modal-k">Pool average</div><div class="tide-modal-v">${sign(avg)} <span class="tide-modal-diff">(${diff >= 0 ? '+' : ''}${diff.toFixed(2)} pts ${diff >= 0 ? 'above' : 'below'})</span></div></div>
+    <div class="orb-modal-card" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
+      <button class="orb-modal-close" type="button" aria-label="Close" onclick="closeOrbModal()">✕</button>
+      <div class="orb-modal-bubble ${up ? 'up' : 'down'}"><span>${esc(m.label)}</span><b>${sign(pct)}</b></div>
+      <div class="orb-modal-name">${esc(m.name)}</div>
+      <div class="orb-modal-sub">${esc([sub, m.symbol && m.symbol !== m.label ? m.symbol : ''].filter(Boolean).join(' · '))}${sub || (m.symbol && m.symbol !== m.label) ? ' · ' : ''}${esc(pool.title)}</div>
+      <div class="orb-modal-stats">
+        <div><div class="orb-modal-k">Latest price</div><div class="orb-modal-v">${esc(Number(m.price).toLocaleString(undefined, { maximumFractionDigits: 4 }))}</div></div>
+        <div><div class="orb-modal-k">Move vs previous close</div><div class="orb-modal-v ${up ? 'up' : 'down'}">${sign(pct)}</div></div>
+        <div><div class="orb-modal-k">Rank in pool today</div><div class="orb-modal-v">${rank} of ${pool.bubbles.length}</div></div>
+        <div><div class="orb-modal-k">Pool average</div><div class="orb-modal-v">${sign(avg)} <span class="orb-modal-diff">(${diff >= 0 ? '+' : ''}${diff.toFixed(2)} pts ${diff >= 0 ? 'above' : 'below'})</span></div></div>
       </div>
-      <div class="tide-modal-foot">Rank is by today's % move, not by size or value. Shown as historical data for information only.</div>
+      <div class="orb-modal-foot">Rank is by today's % move, not by size or value. Shown as historical data for information only.</div>
     </div>`;
   modal.classList.add('open');
-  modal.onclick = ev => { if (ev.target === modal) closeTideModal(); };
-  document.querySelector('.tide-modal-close').focus();
+  modal.onclick = ev => { if (ev.target === modal) closeOrbModal(); };
+  document.querySelector('.orb-modal-close').focus();
 }
-function closeTideModal() { document.getElementById('tideModal')?.classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTideModal(); });
+function closeOrbModal() { document.getElementById('orbModal')?.classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOrbModal(); });
 
-function tideTip(pool, e, hoverOnly) {
+function orbTip(pool, e, hoverOnly) {
   const r = pool.canvas.getBoundingClientRect();
   const x = e.clientX - r.left, y = e.clientY - r.top;
   const hit = pool.bubbles.find(b => Math.hypot(b.x - x, b.y - y) <= b.r);
   pool.hover = hit || null;
-  const tip = document.getElementById('tideTooltip');
+  const tip = document.getElementById('orbTooltip');
   if (!hit) { tip.classList.remove('show'); return; }
   const m = hit.m, pct = m.pct_change;
   tip.innerHTML = `<b>${esc(m.label)}</b> · ${esc(m.name)}<br>${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% · ${esc(String(m.price))}`;
@@ -918,7 +918,7 @@ function tideTip(pool, e, hoverOnly) {
   if (!hoverOnly) e.stopPropagation();
 }
 
-function stepTidePool(p, dt, t, still) {
+function stepOrbPool(p, dt, t, still) {
   const { w, h, ctx, bubbles, maxAbs } = p;
   const pad = 14;
   bubbles.forEach(b => {

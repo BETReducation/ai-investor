@@ -5464,7 +5464,7 @@ def api_dataviz_public_content(slug):
 # "inv" marks pairs Yahoo quotes as USD/xxx, so the move is flipped to read as
 # the currency's strength vs USD. Metals are only the ones Yahoo carries futures
 # for, so that pool is short.
-TIDE_POOLS = [
+ORB_POOLS = [
     ("Crypto", 20, [("BTC-USD", "BTC", "Bitcoin"), ("ETH-USD", "ETH", "Ethereum"), ("XRP-USD", "XRP", "XRP"),
         ("BNB-USD", "BNB", "BNB"), ("SOL-USD", "SOL", "Solana"), ("DOGE-USD", "DOGE", "Dogecoin"),
         ("TRX-USD", "TRX", "TRON"), ("ADA-USD", "ADA", "Cardano"), ("HYPE32196-USD", "HYPE", "Hyperliquid"),
@@ -5535,49 +5535,49 @@ TIDE_POOLS = [
         ("EMBJ", "EMBJ", "Embraer"), ("CCU", "CCU", "CCU"), ("LTM", "LTM", "LATAM Airlines"),
         ("PAM", "PAM", "Pampa Energía"), ("BBDO", "BBDO", "Bradesco (ord)"), ("ENIC", "ENIC", "Enel Chile")]),
 ]
-_tide_cache = {"at": 0.0, "data": None}
-_tide_lock = threading.Lock()
+_orb_cache = {"at": 0.0, "data": None}
+_orb_lock = threading.Lock()
 
 
-_tide_refreshing = False
+_orb_refreshing = False
 
 
-def _fetch_tide_pools_live() -> dict:
+def _fetch_orb_pools_live() -> dict:
     # ~170 symbols take ~15-20s to download, so once there is any cached result an
     # expired one is served immediately while a background thread refreshes it.
-    global _tide_refreshing
+    global _orb_refreshing
     now = time.monotonic()
-    with _tide_lock:
-        cached = _tide_cache["data"]
+    with _orb_lock:
+        cached = _orb_cache["data"]
         if cached is not None:
-            if now - _tide_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+            if now - _orb_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
                 return cached
-            if not _tide_refreshing:
-                _tide_refreshing = True
-                threading.Thread(target=_refresh_tide_pools, daemon=True).start()
+            if not _orb_refreshing:
+                _orb_refreshing = True
+                threading.Thread(target=_refresh_orb_pools, daemon=True).start()
             return cached
-    return _refresh_tide_pools()
+    return _refresh_orb_pools()
 
 
-def _refresh_tide_pools() -> dict:
-    global _tide_refreshing
+def _refresh_orb_pools() -> dict:
+    global _orb_refreshing
     try:
         with mem_tracked_job("market-orbs"):
-            return _build_tide_pools()
+            return _build_orb_pools()
     finally:
-        _tide_refreshing = False
+        _orb_refreshing = False
 
 
-def _build_tide_pools() -> dict:
+def _build_orb_pools() -> dict:
     now = time.monotonic()
-    symbols = [a[0] for _, _, assets in TIDE_POOLS for a in assets]
+    symbols = [a[0] for _, _, assets in ORB_POOLS for a in assets]
     try:
         raw = yf.download(tickers=symbols, period="1mo", interval="1d", group_by="ticker",
                           threads=True, auto_adjust=False, progress=False)
     except Exception:
         raw = None
     pools = []
-    for name, limit, assets in TIDE_POOLS:
+    for name, limit, assets in ORB_POOLS:
         rows = []
         for a in assets:
             sym, label, full = a[0], a[1], a[2]
@@ -5607,21 +5607,21 @@ def _build_tide_pools() -> dict:
         "summary": {"tracked": len(allrows), "up": up, "down": down,
                     "avg_move": round(sum(r["pct_change"] for r in allrows) / len(allrows), 2) if allrows else 0.0},
     }
-    with _tide_lock:
-        _tide_cache["at"] = now
-        if allrows or _tide_cache["data"] is None:
-            _tide_cache["data"] = result
+    with _orb_lock:
+        _orb_cache["at"] = now
+        if allrows or _orb_cache["data"] is None:
+            _orb_cache["data"] = result
         else:
-            result = _tide_cache["data"]
+            result = _orb_cache["data"]
     return result
 
 
-threading.Thread(target=lambda: _refresh_tide_pools(), daemon=True).start()  # warm the cache at startup
+threading.Thread(target=lambda: _refresh_orb_pools(), daemon=True).start()  # warm the cache at startup
 
 
 @app.route("/api/dataviz/market-orbs/live", methods=["GET"])
-def api_tide_pools_live():
-    return jsonify(_fetch_tide_pools_live())
+def api_orb_pools_live():
+    return jsonify(_fetch_orb_pools_live())
 
 
 @app.route("/api/dataviz/global-heat-map/live", methods=["GET"])
