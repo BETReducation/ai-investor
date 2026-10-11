@@ -515,7 +515,8 @@ def _ensure_table() -> None:
         # above it.
         for slug, label in (("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio"),
-                             ("market-orbs", "GCG Market Orbs")):
+                             ("market-orbs", "GCG Market Orbs"),
+                             ("crypto-unit-calculator", "Crypto Unit Calculator")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -524,6 +525,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'global-heat-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'gold-silver-ratio'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-orbs'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-unit-calculator'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1483,6 +1485,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
     {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True},
+    {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True},
 ]
 
 
@@ -5715,6 +5718,55 @@ def api_market_pulse_live():
 @app.route("/api/fx-rates", methods=["GET"])
 def api_fx_rates():
     return jsonify(_fetch_fx_rates_live())
+
+
+# Latest USD/GBP/EUR prices for the four coins on the Crypto Unit Calculator page.
+# GBP and EUR are derived from the USD price and the spot FX rate, since Yahoo's
+# direct coin-GBP/EUR pairs are missing or thin for some of these coins.
+_CRYPTO_UNIT_COINS = {"BTC": "BTC-USD", "ETH": "ETH-USD", "ADA": "ADA-USD", "ZEC": "ZEC-USD"}
+_crypto_units_cache = {"at": 0.0, "data": None}
+_crypto_units_lock = threading.Lock()
+
+
+def _fetch_crypto_unit_prices() -> dict:
+    now = time.monotonic()
+    with _crypto_units_lock:
+        if _crypto_units_cache["data"] is not None and now - _crypto_units_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+            return _crypto_units_cache["data"]
+    symbols = list(_CRYPTO_UNIT_COINS.values()) + ["GBPUSD=X", "EURUSD=X"]
+    last = {}
+    try:
+        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+        for sym in symbols:
+            try:
+                closes = raw[sym]["Close"].dropna()
+                if len(closes):
+                    last[sym] = float(closes.iloc[-1])
+            except Exception:
+                continue
+    except Exception:
+        pass
+    gbp, eur = last.get("GBPUSD=X"), last.get("EURUSD=X")
+    prices = {}
+    for coin, sym in _CRYPTO_UNIT_COINS.items():
+        usd = last.get(sym)
+        if not usd:
+            continue
+        prices[coin] = {"USD": usd, **({"GBP": usd / gbp} if gbp else {}), **({"EUR": usd / eur} if eur else {})}
+    result = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "prices": prices}
+    with _crypto_units_lock:
+        _crypto_units_cache["at"] = now
+        if prices or _crypto_units_cache["data"] is None:
+            _crypto_units_cache["data"] = result
+        else:
+            result = _crypto_units_cache["data"]
+    return result
+
+
+@app.route("/api/dataviz/crypto-unit-calculator/live", methods=["GET"])
+def api_crypto_unit_prices():
+    return jsonify(_fetch_crypto_unit_prices())
 
 
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])

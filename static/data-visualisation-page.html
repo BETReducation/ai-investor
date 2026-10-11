@@ -162,6 +162,40 @@ body.pulse-map-lock { overflow: hidden; }
 }
 .pulse-tab-btn.active { background: #d4af6a; color: #1a1206; }
 .pulse-tab-panel { display: none; }
+/* Crypto Unit Calculator */
+.cu-card { --cu-accent: #38bdf8; max-width: 560px; margin: 0 auto 40px; padding: 26px 22px 22px; border-radius: 22px; color: #e8eefc; text-align: center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(56,189,248,0.12), transparent 60%), linear-gradient(180deg, #0b1424, #070c18); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(5,10,25,0.35); }
+.cu-pills, .cu-fiat-pills { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.cu-pills button, .cu-fiat-pills button { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; letter-spacing: 0.05em; color: #b9c4dd; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 10px 20px; cursor: pointer; transition: all .15s; }
+.cu-pills button.active { background: var(--cu-accent); border-color: var(--cu-accent); color: #04101c; box-shadow: 0 0 18px var(--cu-accent); }
+.cu-fiat-pills button { font-size: 11px; padding: 5px 12px; }
+.cu-fiat-pills button.active { background: rgba(255,255,255,0.16); color: #fff; }
+.cu-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(26px, 6vw, 36px); margin: 22px 0 6px; letter-spacing: -0.02em; }
+.cu-title span { font-weight: 500; opacity: .8; } .cu-title em { font-style: normal; color: var(--cu-accent); text-shadow: 0 0 20px var(--cu-accent); }
+.cu-sub { font-size: 14px; color: #9fb0d0; margin-bottom: 8px; }
+.cu-ring-wrap { position: relative; width: min(100%, 380px); margin: 6px auto 0; aspect-ratio: 1; }
+.cu-ring { width: 100%; height: 100%; display: block; }
+.cu-tick { fill: rgba(255,255,255,0.13); transition: fill .2s; }
+.cu-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 22%; pointer-events: none; }
+.cu-center-num { font-family: 'Outfit', sans-serif; font-weight: 800; line-height: 1.1; word-break: break-all; }
+.cu-center-coin { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.25em; color: #9fb0d0; margin-top: 6px; }
+.cu-center-pct { font-size: 12.5px; color: var(--cu-accent); margin-top: 6px; word-break: break-all; }
+.cu-slider { width: 86%; margin: 6px auto 0; accent-color: var(--cu-accent); }
+.cu-hint { font-size: 12px; color: #7f90b3; margin: 6px 0 18px; }
+.cu-panel { text-align: left; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; }
+.cu-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9fb0d0; margin: 4px 0 6px; }
+.cu-label-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.cu-field { display: flex; align-items: center; gap: 12px; background: #050a14; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px 14px; margin-bottom: 8px; }
+.cu-field:focus-within { border-color: var(--cu-accent); }
+.cu-tag { color: var(--cu-accent); font-size: 13px; font-weight: 600; min-width: 44px; }
+.cu-field input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: #f4f7ff; font-family: 'Outfit', sans-serif; font-size: 22px; padding: 10px 0; }
+.cu-price { font-size: 12px; color: #8ea0c4; margin-top: 2px; }
+.cu-ladder-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #9fb0d0; text-align: left; margin: 18px 0 8px; }
+.cu-ladder { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.cu-ladder th { font-weight: 600; color: #7f90b3; font-size: 11px; padding: 4px 6px; }
+.cu-ladder td { padding: 8px 6px; border-top: 1px solid rgba(255,255,255,0.07); color: #dfe7fa; font-family: 'JetBrains Mono', monospace; font-size: 12px; word-break: break-all; }
+.cu-ladder td:first-child { font-family: inherit; font-size: 13px; }
+.cu-foot { font-size: 11px; color: #6f81a6; margin-top: 16px; line-height: 1.5; text-align: left; }
 /* Market Orbs page */
 #orbWrap { position: relative; }
 .orb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -391,6 +425,179 @@ function setHeroSub(text) {
   }
 }
 
+// ── Crypto Unit Calculator — how a coin divides into its smallest units ──
+// Amounts are BigInt unit counts (1 wei = 1 / 10^18 ETH is far below float
+// precision), converted to decimal strings only for display.
+const CU_COINS = {
+  BTC: { name: 'Bitcoin', unit: 'satoshi', units: 'satoshis', dec: 8, color: '#f7931a', start: 10000000n,
+         ladder: [['Bitcoin (BTC)', 0], ['Milli-bitcoin (mBTC)', 3], ['Micro-bitcoin (µBTC)', 6], ['Satoshi', 8]] },
+  ETH: { name: 'Ether', unit: 'wei', units: 'wei', dec: 18, color: '#8c9eff', start: 100000000000000000n,
+         ladder: [['Ether (ETH)', 0], ['Finney', 3], ['Gwei', 9], ['Wei', 18]] },
+  ADA: { name: 'Cardano', unit: 'lovelace', units: 'lovelace', dec: 6, color: '#38bdf8', start: 100000n,
+         ladder: [['Cardano (ADA)', 0], ['Lovelace', 6]] },
+  ZEC: { name: 'Zcash', unit: 'zatoshi', units: 'zatoshis', dec: 8, color: '#f4b728', start: 10000000n,
+         ladder: [['Zcash (ZEC)', 0], ['Zatoshi', 8]] },
+};
+const CU_SYMBOL = { GBP: '£', USD: '$', EUR: '€' };
+const cu = { coin: 'ADA', fiat: 'GBP', units: CU_COINS.ADA.start, prices: null, shown: 0, target: 0, raf: 0, ticks: [] };
+
+const cuScale = d => 10n ** BigInt(d);
+function cuCoinStr(u, d) {
+  const s = u.toString().padStart(d + 1, '0');
+  const whole = s.slice(0, s.length - d), frac = d ? s.slice(-d).replace(/0+$/, '') : '';
+  return frac ? `${whole}.${frac}` : whole;
+}
+function cuCommas(whole) { return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function cuCoinDisplay(u, d) { const [w, f] = cuCoinStr(u, d).split('.'); return cuCommas(w) + (f ? '.' + f : ''); }
+function cuParseCoin(str, d) {
+  const m = String(str).replace(/[,\s]/g, '').match(/^(\d*)\.?(\d*)$/);
+  if (!m) return null;
+  return BigInt(m[1] || '0') * cuScale(d) + BigInt((m[2] || '').padEnd(d, '0').slice(0, d) || '0');
+}
+function cuFiatFmt(v) {
+  if (!isFinite(v)) return '—';
+  if (v === 0) return '0.00';
+  if (v >= 0.01) return v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return v.toFixed(Math.min(24, -Math.floor(Math.log10(v)) + 1)); // 2 significant figures for tiny values
+}
+function cuPrice() { return cu.prices?.[cu.coin]?.[cu.fiat] ?? null; }
+
+function initCryptoUnits() {
+  document.getElementById('pulseContainer').innerHTML = `
+    <div class="cu-card">
+      <div class="cu-pills" id="cuPills">${Object.keys(CU_COINS).map(c => `<button type="button" data-coin="${c}">${c}</button>`).join('')}</div>
+      <h2 class="cu-title" id="cuTitle"></h2>
+      <p class="cu-sub" id="cuSub"></p>
+      <div class="cu-ring-wrap">
+        <svg class="cu-ring" viewBox="0 0 400 400" id="cuRing" aria-hidden="true"></svg>
+        <div class="cu-center"><div class="cu-center-num" id="cuCenterNum"></div><div class="cu-center-coin" id="cuCenterCoin"></div><div class="cu-center-pct" id="cuCenterPct"></div></div>
+      </div>
+      <input type="range" class="cu-slider" id="cuSlider" min="0" max="1000" step="1" aria-label="Share of one coin">
+      <div class="cu-hint">Each of the 100 segments is 1% of one whole coin. Drag the slider or type an amount.</div>
+      <div class="cu-panel">
+        <label class="cu-label" for="cuUnits" id="cuUnitsLabel"></label>
+        <div class="cu-field"><span class="cu-tag" id="cuUnitsTag"></span><input id="cuUnits" inputmode="numeric" autocomplete="off"></div>
+        <label class="cu-label" for="cuCoin" id="cuCoinLabel"></label>
+        <div class="cu-field"><span class="cu-tag" id="cuCoinTag"></span><input id="cuCoin" inputmode="decimal" autocomplete="off"></div>
+        <div class="cu-label-row"><label class="cu-label" for="cuFiat">Value</label>
+          <div class="cu-fiat-pills" id="cuFiatPills">${Object.keys(CU_SYMBOL).map(f => `<button type="button" data-fiat="${f}">${f}</button>`).join('')}</div></div>
+        <div class="cu-field"><span class="cu-tag" id="cuFiatTag"></span><input id="cuFiat" inputmode="decimal" autocomplete="off"></div>
+        <div class="cu-price" id="cuPriceNote">Loading live price…</div>
+      </div>
+      <div class="cu-ladder-title">Unit ladder</div>
+      <div id="cuLadder"></div>
+      <div class="cu-foot">Educational tool showing how each coin divides. Values use the latest market price and are for information only. Wei, satoshi and lovelace are the smallest indivisible amounts, set by each network's design.</div>
+    </div>
+    <hr class="pulse-divider">`;
+  // ring: 100 ticks starting at 12 o'clock, plus an inner arc and leading dot
+  const svg = document.getElementById('cuRing');
+  let h = `<circle cx="200" cy="200" r="128" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/>
+    <circle id="cuArc" cx="200" cy="200" r="128" fill="none" stroke="var(--cu-accent)" stroke-width="5" stroke-linecap="round" transform="rotate(-90 200 200)" stroke-dasharray="0 804"/>
+    <circle id="cuDot" r="7" fill="#fff" style="filter:drop-shadow(0 0 6px var(--cu-accent))"/>`;
+  for (let i = 0; i < 100; i++) h += `<rect class="cu-tick" x="198" y="14" width="4" height="${i % 10 === 0 ? 42 : 32}" rx="2" transform="rotate(${i * 3.6} 200 200)"/>`;
+  svg.innerHTML = h;
+  cu.ticks = [...svg.querySelectorAll('.cu-tick')];
+
+  document.getElementById('cuPills').onclick = e => { const c = e.target.dataset?.coin; if (c) cuSetCoin(c); };
+  document.getElementById('cuFiatPills').onclick = e => { const f = e.target.dataset?.fiat; if (f) { cu.fiat = f; cuRender(); } };
+  document.getElementById('cuUnits').oninput = e => {
+    const digits = e.target.value.replace(/\D/g, '');
+    cu.units = BigInt(digits || '0'); cuRender('units');
+  };
+  document.getElementById('cuCoin').oninput = e => {
+    const u = cuParseCoin(e.target.value, CU_COINS[cu.coin].dec);
+    if (u !== null) { cu.units = u; cuRender('coin'); }
+  };
+  document.getElementById('cuFiat').oninput = e => {
+    const p = cuPrice(), v = parseFloat(e.target.value.replace(/,/g, ''));
+    if (!p || !isFinite(v) || v < 0) return;
+    const d = CU_COINS[cu.coin].dec;
+    cu.units = cuParseCoin((v / p).toFixed(Math.min(d, 18)), d) ?? cu.units; cuRender('fiat');
+  };
+  ['cuUnits', 'cuCoin', 'cuFiat'].forEach(id => document.getElementById(id).onblur = () => cuRender());
+  document.getElementById('cuSlider').oninput = e => {
+    cu.units = cuScale(CU_COINS[cu.coin].dec) * BigInt(e.target.value) / 1000n; cuRender('slider');
+  };
+  cuSetCoin('ADA');
+  loadCryptoUnitPrices();
+  setInterval(loadCryptoUnitPrices, PULSE_REFRESH_MS);
+}
+
+async function loadCryptoUnitPrices() {
+  try {
+    const res = await fetch('/api/dataviz/crypto-unit-calculator/live');
+    if (!res.ok) throw new Error();
+    cu.prices = (await res.json()).prices;
+  } catch { /* keep the last prices */ }
+  cuRender();
+}
+
+function cuSetCoin(c) {
+  cu.coin = c; cu.units = CU_COINS[c].start;
+  document.querySelector('.cu-card').style.setProperty('--cu-accent', CU_COINS[c].color);
+  document.querySelectorAll('#cuPills button').forEach(b => b.classList.toggle('active', b.dataset.coin === c));
+  cuRender();
+}
+
+function cuRender(skip) {
+  const C = CU_COINS[cu.coin], d = C.dec, scale = cuScale(d), p = cuPrice(), sym = CU_SYMBOL[cu.fiat];
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  document.getElementById('cuTitle').innerHTML = `${cap(C.unit)} <span>to</span> <em>${C.name}</em>`;
+  document.getElementById('cuSub').textContent = `${cuCommas(scale.toString())} ${C.units} = 1 ${cu.coin}. Watch the ring fill.`;
+  document.getElementById('cuUnitsLabel').textContent = cap(C.units);
+  document.getElementById('cuUnitsTag').textContent = C.unit.length > 8 ? C.units : C.unit;
+  document.getElementById('cuCoinLabel').textContent = C.name;
+  document.getElementById('cuCoinTag').textContent = cu.coin;
+  document.getElementById('cuFiatTag').textContent = sym;
+  document.querySelectorAll('#cuFiatPills button').forEach(b => b.classList.toggle('active', b.dataset.fiat === cu.fiat));
+
+  const coinNum = Number(cuCoinStr(cu.units, d));
+  if (skip !== 'units') document.getElementById('cuUnits').value = cuCommas(cu.units.toString());
+  if (skip !== 'coin') document.getElementById('cuCoin').value = cuCoinDisplay(cu.units, d);
+  const fiatEl = document.getElementById('cuFiat');
+  fiatEl.disabled = !p;
+  if (skip !== 'fiat') fiatEl.value = p ? cuFiatFmt(coinNum * p) : '';
+  document.getElementById('cuPriceNote').textContent = p ? `1 ${cu.coin} = ${sym}${p.toLocaleString(undefined, { maximumFractionDigits: p < 10 ? 4 : 2 })} · 1 ${C.unit} = ${sym}${cuFiatFmt(p / Number(scale))}`
+    : (cu.prices ? 'Price unavailable for this coin right now.' : 'Loading live price…');
+  if (skip !== 'slider') document.getElementById('cuSlider').value = String(Math.min(1000, Number(cu.units * 1000n / scale)));
+
+  const big = cu.units >= scale;
+  document.getElementById('cuCenterNum').textContent = cuCoinDisplay(cu.units, d);
+  document.getElementById('cuCenterNum').style.fontSize = Math.max(14, Math.min(44, 300 / Math.max(4, cuCoinDisplay(cu.units, d).length))) + 'px';
+  document.getElementById('cuCenterCoin').textContent = C.name.toUpperCase();
+  document.getElementById('cuCenterPct').textContent = big ? `${cuCoinDisplay(cu.units, d)} whole coins` : `${cuCoinDisplay(cu.units * 100n, d)}% of a coin`;
+  cuAnimate(big ? 100 : Number(cu.units * 10000n / scale) / 100);
+
+  document.getElementById('cuLadder').innerHTML = `<table class="cu-ladder"><tr><th>Unit</th><th>Per coin</th><th>Value</th></tr>${C.ladder.map(([n, k]) => `
+    <tr><td>${esc(n)}</td><td>${k ? '1 / ' + cuCommas((10n ** BigInt(k)).toString()) : '1'}</td><td>${p ? sym + cuFiatFmt(p / Math.pow(10, k)) : '—'}</td></tr>`).join('')}</table>`;
+}
+
+function cuAnimate(target) {
+  cu.target = target;
+  cancelAnimationFrame(cu.raf);
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const step = () => {
+    cu.shown += (cu.target - cu.shown) * (reduce ? 1 : 0.18);
+    if (Math.abs(cu.target - cu.shown) < 0.02) cu.shown = cu.target;
+    cuDraw(cu.shown);
+    if (cu.shown !== cu.target) cu.raf = requestAnimationFrame(step);
+  };
+  step();
+}
+function cuDraw(p) {
+  cu.ticks.forEach((t, i) => {
+    const f = Math.max(0, Math.min(1, p - i));
+    t.style.fill = f > 0 ? 'var(--cu-accent)' : '';
+    t.style.opacity = f > 0 ? String(0.35 + 0.65 * f) : '';
+  });
+  const C = 2 * Math.PI * 128, arc = document.getElementById('cuArc'), dot = document.getElementById('cuDot');
+  if (!arc) return;
+  arc.setAttribute('stroke-dasharray', `${C * p / 100} ${C}`);
+  const a = (p / 100) * 2 * Math.PI - Math.PI / 2;
+  dot.setAttribute('cx', 200 + 128 * Math.cos(a)); dot.setAttribute('cy', 200 + 128 * Math.sin(a));
+  dot.style.display = p > 0 ? '' : 'none';
+}
+
 async function loadPage() {
   try {
     const res = await fetch(`/api/dataviz/${encodeURIComponent(slug)}/content`);
@@ -413,6 +620,10 @@ async function loadPage() {
       setHeroSub(data.description || "Markets and assets as bubbles in their own pools: gainers float, decliners sink, bigger moves swim faster.");
       document.body.classList.add('pulse-page');
       initOrbPools();
+    } else if (slug === 'crypto-unit-calculator') {
+      setHeroSub(data.description || "Every coin divides into smaller units. See how much of a whole coin any amount of its smallest unit really is.");
+      document.body.classList.add('pulse-page');
+      initCryptoUnits();
     } else if (slug === 'gold-silver-ratio') {
       setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');
