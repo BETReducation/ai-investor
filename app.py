@@ -5618,6 +5618,89 @@ def _build_orb_pools() -> dict:
 
 threading.Thread(target=lambda: _refresh_orb_pools(), daemon=True).start()  # warm the cache at startup
 
+# ── All-time highs for every Market Orbs symbol ───────────────────────────
+# One monthly-bar download of each symbol's full Yahoo history; the max monthly
+# High is the all-time high (intraday). History only goes back as far as Yahoo's
+# data does (crypto ~2014+, metals futures ~2000+, currencies ~2003+). For
+# currencies quoted as USD/xxx the "high" for the currency is the *lowest* USD/xxx
+# rate, so those use the min Low and are flagged inv. Refreshed daily: an ATH
+# only changes when a new peak is set.
+_ORB_ATH_TTL_SECONDS = 24 * 3600
+_orb_ath_cache = {"at": 0.0, "data": None}
+_orb_ath_lock = threading.Lock()
+_orb_ath_refreshing = False
+
+
+def _build_orb_ath() -> dict:
+    inv_syms = {a[0] for _, _, assets in ORB_POOLS for a in assets if len(a) > 3 and a[3]}
+    symbols = [a[0] for _, _, assets in ORB_POOLS for a in assets] + [m["symbol"] for m in MARKET_PULSE_INDICES]
+    out = {}
+    for i in range(0, len(symbols), 40):
+        chunk = symbols[i:i + 40]
+        try:
+            raw = yf.download(tickers=chunk, period="max", interval="1mo", group_by="ticker",
+                              threads=True, auto_adjust=False, progress=False)
+        except Exception:
+            continue
+        for sym in chunk:
+            try:
+                df = raw[sym] if len(chunk) > 1 else raw
+                inv = sym in inv_syms
+                col = df["Low"].dropna() if inv else df["High"].dropna()
+                col = col[col > 0]
+                if col.empty:
+                    continue
+                idx = col.idxmin() if inv else col.idxmax()
+                out[sym] = {"ath": round(float(col.loc[idx]), 4 if float(col.loc[idx]) < 10 else 2),
+                            "date": idx.date().isoformat(), "since": col.index[0].date().isoformat(), "inv": inv}
+            except Exception:
+                continue
+    return {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "ath": out}
+
+
+def _refresh_orb_ath() -> dict | None:
+    global _orb_ath_refreshing
+    try:
+        with mem_tracked_job("market-orbs-ath"):
+            data = _build_orb_ath()
+        with _orb_ath_lock:
+            _orb_ath_cache["at"] = time.monotonic()
+            if data["ath"] or _orb_ath_cache["data"] is None:
+                _orb_ath_cache["data"] = data
+            return _orb_ath_cache["data"]
+    finally:
+        _orb_ath_refreshing = False
+
+
+def _fetch_orb_ath() -> dict:
+    global _orb_ath_refreshing
+    with _orb_ath_lock:
+        cached = _orb_ath_cache["data"]
+        if cached is not None:
+            if time.monotonic() - _orb_ath_cache["at"] >= _ORB_ATH_TTL_SECONDS and not _orb_ath_refreshing:
+                _orb_ath_refreshing = True
+                threading.Thread(target=_refresh_orb_ath, daemon=True).start()
+            return cached
+        if _orb_ath_refreshing:
+            return {"updated_at": None, "ath": {}}  # first build still running; client retries
+        _orb_ath_refreshing = True
+    return _refresh_orb_ath() or {"updated_at": None, "ath": {}}
+
+
+def _warm_orb_ath():
+    global _orb_ath_refreshing
+    with _orb_ath_lock:
+        _orb_ath_refreshing = True
+    _refresh_orb_ath()
+
+
+threading.Thread(target=_warm_orb_ath, daemon=True).start()  # warm at startup
+
+
+@app.route("/api/dataviz/market-orbs/ath", methods=["GET"])
+def api_orb_ath():
+    return jsonify(_fetch_orb_ath())
+
 
 @app.route("/api/dataviz/market-orbs/live", methods=["GET"])
 def api_orb_pools_live():

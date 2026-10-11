@@ -750,11 +750,23 @@ function initOrbPools() {
     </div>
     <hr class="pulse-divider">
   `;
+  loadOrbAth();
   switchOrbTab('countries');
   _orbTimer = setInterval(fetchOrb, PULSE_REFRESH_MS);
 }
 
 let _orbTab = 'countries';
+// All-time highs, fetched once per visit (server caches for a day). The first
+// server build can take a while after a deploy, so an empty reply is retried.
+let _orbAth = null, _orbAthTries = 0;
+async function loadOrbAth() {
+  try {
+    const res = await fetch('/api/dataviz/market-orbs/ath');
+    const data = await res.json();
+    if (data.ath && Object.keys(data.ath).length) { _orbAth = data.ath; return; }
+  } catch {}
+  if (++_orbAthTries < 8) setTimeout(loadOrbAth, 10000);
+}
 const ORB_POOL_DESC = {
   Crypto: '20 largest by Mcap, non-stablecoin',
   Metals: 'Reliable price data',
@@ -882,6 +894,18 @@ function openOrbModal(pool, e) {
   const avg = pool.bubbles.reduce((a, c) => a + c.m.pct_change, 0) / pool.bubbles.length;
   const diff = pct - avg;
   const sign = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const h = m.symbol && _orbAth ? _orbAth[m.symbol] : null;
+  let athVal = 'Loading…', athDate = '', athGap = '—', athCls = '';
+  if (h) {
+    const price = Number(m.price);
+    const below = h.inv ? 1 - h.ath / price : 1 - price / h.ath; // inverted USD/xxx pairs: currency strength is 1/rate
+    const [yy, mm] = h.date.split('-');
+    athVal = Number(h.ath).toLocaleString(undefined, { maximumFractionDigits: 4 });
+    athDate = `${MONTHS[+mm - 1]} ${yy}`;
+    athGap = below <= 0.0005 ? 'At all-time high' : `−${(below * 100).toFixed(1)}%`;
+    athCls = below <= 0.0005 ? 'up' : 'down';
+  } else if (_orbAth) { athVal = 'Not available'; athGap = '—'; }
   const sub = m.sub || (m.label !== m.name ? m.label : '');
   const modal = document.getElementById('orbModal');
   modal.innerHTML = `
@@ -894,9 +918,11 @@ function openOrbModal(pool, e) {
         <div><div class="orb-modal-k">Latest price</div><div class="orb-modal-v">${esc(Number(m.price).toLocaleString(undefined, { maximumFractionDigits: 4 }))}</div></div>
         <div><div class="orb-modal-k">Move vs previous close</div><div class="orb-modal-v ${up ? 'up' : 'down'}">${sign(pct)}</div></div>
         <div><div class="orb-modal-k">Rank in pool today</div><div class="orb-modal-v">${rank} of ${pool.bubbles.length}</div></div>
+        <div><div class="orb-modal-k">All-time high</div><div class="orb-modal-v">${esc(athVal)} <span class="orb-modal-diff">${esc(athDate)}</span></div></div>
+        <div><div class="orb-modal-k">Latest vs all-time high</div><div class="orb-modal-v ${athCls}">${esc(athGap)}</div></div>
         <div><div class="orb-modal-k">Pool average</div><div class="orb-modal-v">${sign(avg)} <span class="orb-modal-diff">(${diff >= 0 ? '+' : ''}${diff.toFixed(2)} pts ${diff >= 0 ? 'above' : 'below'})</span></div></div>
       </div>
-      <div class="orb-modal-foot">Rank is by today's % move, not by size or value. Shown as historical data for information only.</div>
+      <div class="orb-modal-foot">All-time high is the highest price in Yahoo Finance's history for this symbol${h ? ` (data from ${h.since.slice(0, 4)})` : ''}, in the same units as the latest price; for currencies it is the currency's strongest level against the US dollar. Rank is by today's % move, not by size or value. Shown as historical data for information only.</div>
     </div>`;
   modal.classList.add('open');
   modal.onclick = ev => { if (ev.target === modal) closeOrbModal(); };
