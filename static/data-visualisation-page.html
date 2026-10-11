@@ -162,7 +162,7 @@ body.pulse-map-lock { overflow: hidden; }
 }
 .pulse-tab-btn.active { background: #d4af6a; color: #1a1206; }
 .pulse-tab-panel { display: none; }
-/* Tide Pools tab */
+/* Market Orbs page */
 #tideWrap { position: relative; }
 .tide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 @media (max-width: 1000px) { .tide-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -409,7 +409,7 @@ async function loadPage() {
       setHeroSub(data.description || "Every major index worldwide, colored by today's move — refreshes automatically.");
       document.body.classList.add('pulse-page');
       initMarketPulse();
-    } else if (slug === 'tide-pools') {
+    } else if (slug === 'market-orbs') {
       setHeroSub(data.description || "Markets and assets as bubbles in their own pools: gainers float, decliners sink, bigger moves swim faster.");
       document.body.classList.add('pulse-page');
       initTidePools();
@@ -729,7 +729,7 @@ async function renderPulse(data) {
   if (pulseActiveTab === 'list') renderPulseList(data);
 }
 
-// ── Tide Pools tab — one canvas "pool" per continent, markets as drifting bubbles ──
+// ── Market Orbs — one canvas "pool" per continent, markets as drifting bubbles ──
 // Vertical position = direction and size of the move (surface = biggest gain,
 // floor = biggest loss); radius = |move|; motion speed scales with |move|.
 let _tidePools = [], _tideRaf = 0, _tideTimer = null;
@@ -783,7 +783,7 @@ function switchTideTab(tab) {
 async function fetchTide() {
   try {
     const tab = _tideTab;
-    const res = await fetch(tab === 'assets' ? '/api/dataviz/tide-pools/live' : '/api/dataviz/global-heat-map/live');
+    const res = await fetch(tab === 'assets' ? '/api/dataviz/market-orbs/live' : '/api/dataviz/global-heat-map/live');
     if (!res.ok) throw new Error();
     let data = await res.json();
     if (tab !== _tideTab) return; // user switched tabs mid-request

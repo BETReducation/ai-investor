@@ -494,6 +494,14 @@ def _ensure_table() -> None:
         # naturally no-ops once this has already put "global-heat-map" in place.
         cur.execute("DELETE FROM dataviz_content WHERE page = 'market-pulse'")
         cur.execute("UPDATE dataviz_pages SET slug = 'global-heat-map', label = 'Global Heat Map' WHERE slug = 'market-pulse'")
+        # One-time rename: "tide-pools" -> "market-orbs" (no redirect kept, by
+        # design — internal links point at the new slug). Keeps any custom label
+        # Gary has since set; only the old defaults are replaced. Runs before the
+        # seed insert so its ON CONFLICT DO NOTHING no-ops afterwards.
+        cur.execute("UPDATE dataviz_content SET page = 'market-orbs' WHERE page = 'tide-pools'")
+        cur.execute("UPDATE dataviz_pages SET slug = 'market-orbs', "
+                    "label = CASE WHEN label IN ('Tide Pools', 'GCG Tide Pools') THEN 'GCG Market Orbs' ELSE label END "
+                    "WHERE slug = 'tide-pools' AND NOT EXISTS (SELECT 1 FROM dataviz_pages WHERE slug = 'market-orbs')")
         # viz-1/viz-2/viz-3 were placeholder pages seeded before pages became
         # self-service — never given content, so they sat on the public hub
         # as empty "NO IMAGE YET" tiles. Dropped for launch (2026-09-27); any
@@ -507,7 +515,7 @@ def _ensure_table() -> None:
         # above it.
         for slug, label in (("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio"),
-                             ("tide-pools", "GCG Tide Pools")):
+                             ("market-orbs", "GCG Market Orbs")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -515,9 +523,7 @@ def _ensure_table() -> None:
         # existing deployments pick up the new behavior.
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'global-heat-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'gold-silver-ratio'")
-        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'tide-pools'")
-        # Renamed after first seed; only touch it while it still has the old default label.
-        cur.execute("UPDATE dataviz_pages SET label = 'GCG Tide Pools' WHERE slug = 'tide-pools' AND label = 'Tide Pools'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-orbs'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1476,7 +1482,7 @@ def alpha_content_delete(item_id: int) -> bool:
 _SEED_DATAVIZ_PAGES = [
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
-    {"slug": "tide-pools", "label": "GCG Tide Pools", "author": None, "has_live_widget": True},
+    {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True},
 ]
 
 
@@ -5449,7 +5455,7 @@ def api_dataviz_public_content(slug):
     return jsonify({"page": slug, "label": page["label"], "description": page.get("description"), "header_image_url": header_image_url})
 
 
-# ── Tide Pools: top assets per category ────────────────────────────────────
+# ── Market Orbs: top assets per category ────────────────────────────────────
 # Hand-curated lists (approximate market-cap order, reviewed Oct 2026) rather than a live
 # ranking — caps move slowly and Yahoo has no screener we can rely on. More
 # candidates than the 20 shown for crypto/stocks so a delisted or missing ticker
@@ -5556,7 +5562,7 @@ def _fetch_tide_pools_live() -> dict:
 def _refresh_tide_pools() -> dict:
     global _tide_refreshing
     try:
-        with mem_tracked_job("tide-pools"):
+        with mem_tracked_job("market-orbs"):
             return _build_tide_pools()
     finally:
         _tide_refreshing = False
@@ -5613,7 +5619,7 @@ def _build_tide_pools() -> dict:
 threading.Thread(target=lambda: _refresh_tide_pools(), daemon=True).start()  # warm the cache at startup
 
 
-@app.route("/api/dataviz/tide-pools/live", methods=["GET"])
+@app.route("/api/dataviz/market-orbs/live", methods=["GET"])
 def api_tide_pools_live():
     return jsonify(_fetch_tide_pools_live())
 
