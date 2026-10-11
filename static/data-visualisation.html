@@ -34,7 +34,7 @@
 
 /* VISUALISATION ROWS */
 .list-loading { font-size: 14px; color: var(--muted); text-align: center; padding: 60px 20px; }
-.viz-row { display: flex; gap: 40px; align-items: center; padding: 48px 0; border-bottom: 1px solid var(--border); }
+.viz-row { display: flex; gap: 40px; align-items: center; justify-content: center; padding: 48px 0; border-bottom: 1px solid var(--border); }
 .viz-row:last-child { border-bottom: none; }
 .viz-row.reverse { flex-direction: row-reverse; }
 .viz-image { flex: 0 0 33%; max-width: 33%; }
@@ -46,7 +46,7 @@
 .viz-image .placeholder-box img { width: 100%; height: 100%; object-fit: cover; }
 .placeholder-icon { font-size: 32px; opacity: 0.6; }
 .placeholder-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7; }
-.viz-text { flex: 1 1 66%; }
+.viz-text { flex: 0 1 520px; } /* capped, not stretched, so image and text sit together in both row directions */
 .viz-kicker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #a855f7; margin-bottom: 10px; }
 .viz-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 30px); color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em; }
 .viz-desc { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
@@ -60,6 +60,7 @@
 @media (max-width: 800px) {
   .viz-row, .viz-row.reverse { flex-direction: column; }
   .viz-image, .viz-image { flex: 0 0 auto; max-width: 100%; }
+  .viz-text { flex: 0 0 auto; }
 }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
