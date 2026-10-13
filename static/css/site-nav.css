@@ -66,6 +66,20 @@ nav {
 }
 .nav-dropdown li a:hover { color: var(--green); background: rgba(0,212,170,0.06); }
 
+/* Flyout submenus inside the Tools dropdown (category -> pages) */
+.nav-divider { height: 1px; background: var(--border2); margin: 6px 12px; }
+.has-submenu { position: relative; }
+.has-submenu > a { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.nav-subchev { font-size: 10px; opacity: 0.55; }
+.nav-submenu {
+  display: none; position: absolute; top: -10px; left: 100%;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 0 6px; min-width: 190px;
+  list-style: none; z-index: 301; box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+.has-submenu:hover > .nav-submenu { display: block; }
+.has-submenu:hover > a { color: var(--green); background: rgba(0,212,170,0.06); }
+
 .nav-cta { display: flex; align-items: center; gap: 12px; }
 .btn-ghost {
   background: transparent; border: 1px solid var(--border2);
@@ -214,6 +228,11 @@ nav {
     position: static; transform: none; background: none; border: none;
     box-shadow: none; border-radius: 0; padding: 0 0 6px 36px; min-width: 0;
   }
+  .has-submenu:hover > .nav-submenu { display: none; }
+  .has-submenu.open > .nav-submenu { display: block; }
+  .has-submenu.open > a .nav-subchev { transform: rotate(90deg); }
+  .nav-submenu { position: static; background: none; border: none; box-shadow: none; border-radius: 0; padding: 0 0 4px 18px; min-width: 0; }
+  .nav-divider { margin: 6px 18px 6px 0; }
 }
 
 /* ── Shared footer ── */

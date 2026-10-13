@@ -31,6 +31,21 @@
     return 'linear-gradient(' + tint + ',' + tint + '), rgba(' + base + ')';
   }
 
+  // Tools categories shown as flyout submenus. A category with no pages is
+  // left out of the menu until it has some — add pages here as they're built.
+  var TOOL_CATEGORIES = [
+    { name: 'Charting tools', pages: [['Global Heat Map', '/tools/data-visualisation/global-heat-map'], ['GCG Market Orbs', '/tools/data-visualisation/market-orbs']] },
+    { name: 'Crypto tools', pages: [['Crypto Unit Calculator', '/tools/data-visualisation/crypto-unit-calculator']] },
+    { name: 'Metals tools', pages: [['Metal Calculator', '/tools/data-visualisation/metal-calculator'], ['Gold to Silver Ratio', '/tools/data-visualisation/gold-silver-ratio']] },
+    { name: 'Stocks tools', pages: [['Dividend Calculator', '/tools/data-visualisation/dividend-calculator']] },
+    { name: 'Forex tools', pages: [] },
+    { name: 'Other tools', pages: [['The Freedom Clock', '/tools/data-visualisation/freedom-clock']] }
+  ];
+  var TOOL_SUBMENUS_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
+    return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
+      '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
+  }).join('');
+
   var NAV_HTML = '' +
 '<nav>' +
 '  <div class="nav-left">' +
@@ -58,6 +73,8 @@
 '        <li><a href="/tools/portfolio">Portfolio Manager</a></li>' +
 '        <li><a href="/tools/calculator">Calculator</a></li>' +
 '        <li><a href="/tools/data-visualisation">Data Visualisation</a></li>' +
+'        <li class="nav-divider" role="separator"></li>' +
+TOOL_SUBMENUS_HTML +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
@@ -209,6 +226,13 @@
         }
       });
     });
+    // Tools category submenus: tap to expand on mobile (no hover there).
+    document.querySelectorAll('.has-submenu > a').forEach(function (trigger) {
+      trigger.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (window.innerWidth <= 900) trigger.parentNode.classList.toggle('open');
+      });
+    });
     // Studio's top-level link has nowhere of its own to go (href="#") — it's
     // only ever a dropdown trigger, opened via :hover on desktop. Mobile has
     // no hover, so without this, tapping "Studio" (anywhere but the tiny
@@ -230,7 +254,7 @@
       const hamburger = document.getElementById('navHamburger');
       if (links) links.classList.remove('open');
       if (hamburger) hamburger.classList.remove('active');
-      document.querySelectorAll('.has-dropdown.open').forEach(function (li) { li.classList.remove('open'); });
+      document.querySelectorAll('.has-dropdown.open, .has-submenu.open').forEach(function (li) { li.classList.remove('open'); });
     }
   });
 
