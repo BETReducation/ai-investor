@@ -891,6 +891,7 @@ async function fetchPulse() {
   } catch {
     const el = document.getElementById('pulseUpdated');
     if (el) el.textContent = 'Live prices are temporarily unavailable — showing the last known snapshot.';
+    if (el) el.style.color = '#ff9f43';
   }
 }
 
@@ -1041,7 +1042,15 @@ async function fetchOrb() {
     }
     const { summary = {}, updated_at } = data;
     const u = document.getElementById('pulseUpdated');
-    if (u && updated_at) u.textContent = `Live · updated ${new Date(updated_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+    if (u && updated_at) {
+      const when = new Date(updated_at);
+      const ageMin = (Date.now() - when.getTime()) / 60000;
+      const hhmm = when.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      // the server keeps serving its last good snapshot if Yahoo stops responding, so age is the only tell
+      const stale = ageMin > 15;
+      u.textContent = stale ? `Prices may be out of date · last updated ${hhmm} (${Math.round(ageMin)} min ago)` : `Live · updated ${hhmm}`;
+      u.style.color = stale ? '#ff9f43' : '';
+    }
     document.getElementById('pulseStats').innerHTML = `
       <div class="pulse-stat"><div class="pulse-stat-value">${summary.tracked ?? 0}</div><div class="pulse-stat-label">${tab === 'assets' ? 'Assets' : 'Markets'} tracked</div></div>
       <div class="pulse-stat"><div class="pulse-stat-value up">${summary.up ?? 0}</div><div class="pulse-stat-label">Up today</div></div>
@@ -1052,6 +1061,7 @@ async function fetchOrb() {
   } catch {
     const el = document.getElementById('pulseUpdated');
     if (el) el.textContent = 'Live prices are temporarily unavailable — showing the last known snapshot.';
+    if (el) el.style.color = '#ff9f43';
   }
 }
 function stopOrb() { cancelAnimationFrame(_orbRaf); _orbRaf = 0; }
