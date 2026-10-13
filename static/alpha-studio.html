@@ -177,7 +177,8 @@
 .sections-wrap { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
 .content-section-block { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .content-section-block .section-heading { font-family: 'Outfit', sans-serif; font-weight: 700; }
-.content-section-block .section-remove { align-self: flex-start; }
+.section-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.section-controls select { width: auto; padding: 4px 8px; font-size: 12px; }
 .section-type-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .section-type-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .content-section-block[data-type="tip"] { border-width: 1px; }
@@ -1452,17 +1453,51 @@ function buildCard(item, skipHead) {
     }
 
     function appendRemoveButton(block) {
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'btn-danger-sm section-remove';
-      removeBtn.textContent = 'Remove section';
-      removeBtn.onclick = () => {
+      const bar = document.createElement('div');
+      bar.className = 'section-controls edit-chrome';
+      const mk = (text, title, fn, cls) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = cls || 'btn-ghost-sm';
+        b.textContent = text;
+        b.title = title;
+        b.onclick = fn;
+        bar.appendChild(b);
+        return b;
+      };
+      mk('↑', 'Move section up', () => {
+        const prev = block.previousElementSibling;
+        if (prev) block.parentNode.insertBefore(block, prev);
+      });
+      mk('↓', 'Move section down', () => {
+        const next = block.nextElementSibling;
+        if (next) next.after(block);
+      });
+      const typeSel = document.createElement('select');
+      typeSel.className = 'form-select';
+      typeSel.title = 'Type of section to insert below this one';
+      [['normal', 'Normal'], ['tip', 'Top Tip'], ['quote', 'Quote'], ['table', 'Table'], ['image', 'Image']].forEach(([v, l]) => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = l;
+        typeSel.appendChild(o);
+      });
+      bar.appendChild(typeSel);
+      mk('+ Insert below', 'Insert a new section directly below this one', () => {
+        const nb = buildSection(emptySection(typeSel.value));
+        block.after(nb);
+        updateRemoveButtons();
+        nb.scrollIntoView({ block: 'center' });
+        const focusEl = nb.querySelector('.section-heading, .section-body, .table-grid input');
+        if (focusEl) focusEl.focus();
+      });
+      mk('Remove section', 'Remove this section', () => {
         if (sectionsWrap.querySelectorAll('.content-section-block').length <= 1) return;
         if (activeTextarea && block.contains(activeTextarea)) activeTextarea = null;
         block.remove();
         updateRemoveButtons();
-      };
-      block.appendChild(removeBtn);
+      }, 'btn-danger-sm section-remove');
+      block.appendChild(bar);
     }
 
     // Labelling/placeholders for the 3 plain-text-shaped section types (they
