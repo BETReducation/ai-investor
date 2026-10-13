@@ -618,13 +618,12 @@ function cuDraw(p) {
   dot.style.display = p > 0 ? '' : 'none';
 }
 
-// ── Dividend Calculator — isolated in an iframe so its own CSS can't leak ──
-function initDividendCalc() {
-  const wrap = document.getElementById('pulseContainer');
-  wrap.innerHTML = '<iframe id="divFrame" src="/static/dataviz/dividend-calculator.html" title="Dividend Calculator" style="display:block;width:100%;max-width:780px;height:900px;margin:0 auto 40px;border:0;background:transparent"></iframe>';
+// ── Iframe-isolated widgets (their own CSS can't leak into the site) ──
+function initIframeViz(name, maxWidth) {
+  document.getElementById('pulseContainer').innerHTML = `<iframe id="vizFrame" src="/static/dataviz/${name}.html" title="${name}" style="display:block;width:100%;max-width:${maxWidth}px;height:900px;margin:0 auto 40px;border:0;background:transparent"></iframe>`;
   window.addEventListener('message', e => {
-    if (e.origin !== location.origin || e.data?.src !== 'dividend-calculator') return;
-    document.getElementById('divFrame').style.height = e.data.gcgIframeHeight + 'px';
+    if (e.origin !== location.origin || e.data?.src !== name) return;
+    document.getElementById('vizFrame').style.height = e.data.gcgIframeHeight + 'px';
   });
 }
 
@@ -657,7 +656,11 @@ async function loadPage() {
     } else if (slug === 'dividend-calculator') {
       setHeroSub(data.description || "Enter a ticker and your shares. See the income, and how hot the yield is.");
       document.body.classList.add('pulse-page');
-      initDividendCalc();
+      initIframeViz('dividend-calculator', 780);
+    } else if (slug === 'freedom-clock') {
+      setHeroSub(data.description || "Pick what you invest, how often, and the return you expect. Watch the time do the heavy lifting.");
+      document.body.classList.add('pulse-page');
+      initIframeViz('freedom-clock', 1040);
     } else if (slug === 'gold-silver-ratio') {
       setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');

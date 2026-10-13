@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Freedom Clock</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF2EF;--panel:#FFFFFF;--ink:#12302B;--mute:#5B7570;--line:#D3DED9;--grow:#0A9E6B;--paid:#2F5BEA;--hand:#E9962B;--fill:rgba(47,91,234,.14);--gainfill:rgba(10,158,107,.38)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1F1C;--panel:#162B27;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--grow:#2EE6A0;--paid:#6B94FF;--hand:#F2AC4B;--fill:rgba(107,148,255,.18);--gainfill:rgba(46,230,160,.34)}}
+:root[data-theme="dark"]{--bg:#0F1F1C;--panel:#162B27;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--grow:#4FC3AD;--paid:#6B94FF;--hand:#F2AC4B;--fill:rgba(107,148,255,.18);--gainfill:rgba(46,230,160,.34)}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:4px 2px 12px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+label{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+.f{margin-bottom:16px}
+.row{display:flex;gap:8px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--hand);outline-offset:2px}
+input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);margin-top:8px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;font:700 18px "Bricolage Grotesque",system-ui,sans-serif;border:0;background:none;color:var(--mute);border-radius:8px;padding:8px;cursor:pointer}
+.seg button[aria-checked="true"]{background:var(--ink);color:var(--panel)}
+.hint{font-size:13px;color:var(--mute);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 11px;cursor:pointer}
+.chips button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:520px){.stats{grid-template-columns:1fr 1fr}.stats .big{grid-column:1/-1}}
+.stat small{display:block;color:var(--mute);font-size:13px}
+.stat b{font:700 22px/1.2 "Bricolage Grotesque",system-ui,sans-serif}
+.big b{font-size:clamp(34px,7vw,52px);color:var(--grow);letter-spacing:-.02em}
+#readout{font-size:14px;color:var(--mute);min-height:42px;margin-bottom:6px}
+#readout strong{color:var(--ink)}
+#chart{width:100%;height:340px;display:block;touch-action:pan-y;cursor:crosshair}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+#goalBox{margin-bottom:14px}
+.gt{display:flex;justify-content:space-between;gap:10px;font-size:14px;margin-bottom:6px;flex-wrap:wrap}
+.gbar{height:18px;border-radius:9px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+#gFill{display:block;height:100%;border-radius:9px;background-image:linear-gradient(90deg,#E5484D,#F2A33A,#F5D547,#2EB872);background-repeat:no-repeat;background-position:left;transition:width .5s ease,background-size .5s ease}
+.gnote{font-size:14px;margin-top:8px}
+.jump{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 11px;cursor:pointer;margin-left:6px}
+.note{font-size:12px;color:var(--mute);margin-top:14px;margin-bottom:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <div class="f"><label id="curL">Currency</label>
+        <input type="hidden" id="cur" value="£"><div class="seg" id="curSeg" role="radiogroup" aria-labelledby="curL"><button type="button" role="radio" aria-checked="true" data-v="£">£</button><button type="button" role="radio" aria-checked="false" data-v="$">$</button><button type="button" role="radio" aria-checked="false" data-v="€">€</button></div></div>
+      <div class="f"><label for="start">Amount invested today</label><input id="start" type="number" min="0" step="any" value="1000" inputmode="decimal"><input id="startR" type="range" min="0" max="100000" step="100" value="1000" aria-label="Amount invested today slider"></div>
+      <div class="f"><label for="add">Amount added regularly</label>
+        <div class="row"><input id="add" type="number" min="0" step="any" value="200" inputmode="decimal">
+        <select id="freq" aria-label="How often"><option value="1">every day</option><option value="7">every week</option><option value="30.4375" selected>every month</option><option value="365">every year</option></select></div>
+<input id="addR" type="range" min="0" max="5000" step="25" value="200" aria-label="Regular amount slider"></div>
+      <div class="f"><label for="rate">Yearly return: <span id="rateL">7</span>%</label>
+        <input id="rate" type="range" min="0" max="20" step="0.1" value="7">
+        <div class="hint">0% to 20% a year, compounded daily.</div></div>
+      <div class="f"><label for="time">Time: <span id="timeL"></span></label>
+        <input id="time" type="range" min="0" max="1000" step="1" value="800">
+        <div class="chips" id="chips"></div></div>
+      <div class="f"><label for="goal">Target amount (optional)</label><input id="goal" type="number" min="0" step="any" placeholder="e.g. 100000" inputmode="decimal"><div class="hint">See how long it takes to get there.</div></div>
+    </div>
+    <div class="card">
+      <div class="stats">
+        <div class="stat big"><small>Your money becomes</small><b id="sFinal"></b></div>
+        <div class="stat"><small>You put in</small><b id="sPaid" style="color:var(--paid)"></b></div>
+        <div class="stat"><small>Growth earned</small><b id="sGain"></b></div>
+      </div>
+      <div id="goalBox" style="display:none"><div class="gt"><span id="gLab"></span><b id="gPct"></b></div><div class="gbar"><i id="gFill"></i></div><div class="gnote" id="gNote"></div></div>
+      <div id="readout"></div>
+      <svg id="chart" role="img" aria-label="Line graph of investment value over time"></svg>
+      <div class="legend"><span><i style="background:var(--paid)"></i>Money you put in</span><span><i style="background:var(--grow)"></i>Total value</span><span><i style="background:var(--gainfill);height:10px;border:1px solid var(--grow)"></i>Growth earned</span></div>
+      <p class="note">Illustrative only. Ignores fees, tax and inflation, and real returns vary year to year. Educational tool, not financial advice.</p>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const MAXD=30*365.25, MIND=1;
+const PRESETS=[["1D",1],["1W",7],["1M",30.4375],["1Y",365.25],["5Y",5*365.25],["10Y",10*365.25],["20Y",20*365.25],["30Y",MAXD]];
+let days=0, pts=[], hover=null, exact=null;
+const sliderToDays=v=>Math.round(MIND*Math.pow(MAXD/MIND,v/1000));
+const daysToSlider=d=>Math.round(1000*Math.log(d/MIND)/Math.log(MAXD/MIND));
+const num=id=>Math.max(0,parseFloat($(id).value)||0);
+function money(x){const c=$("cur").value;const a=Math.abs(x);
+  if(a>=1e9)return c+(x/1e9).toFixed(2)+"bn";
+  if(a>=1e6)return c+(x/1e6).toFixed(2)+"m";
+  return c+Math.round(x).toLocaleString("en-GB");}
+function span(d){
+  if(d<14)return Math.round(d)+(Math.round(d)===1?" day":" days");
+  if(d<60)return Math.round(d/7)+" weeks";
+  if(d<730){const m=Math.round(d/30.4375);return m+(m===1?" month":" months");}
+  const y=d/365.25;return (y%1<.05||y>=10?Math.round(y):y.toFixed(1))+" years";}
+function calc(){
+  const start=num("start"),add=num("add"),per=parseFloat($("freq").value),r=num("rate")/100;
+  const dr=Math.pow(1+r,1/365)-1, n=Math.floor(days+1e-9);
+  let v=start,paid=start,out=[{d:0,v:start,p:start}],step=Math.max(1,Math.floor(n/320));
+  for(let d=1;d<=n;d++){
+    v*=1+dr;
+    if(Math.floor(d/per)>Math.floor((d-1)/per)){v+=add;paid+=add;}
+    if(d%step===0||d===n)out.push({d,v,p:paid});
+  }
+  if(n===0)out.push({d:0,v:start,p:start});
+  const frac=days-n;
+  if(frac>1e-6){v*=Math.pow(1+dr,frac);const extra=Math.floor(days/per+1e-9)-Math.floor(n/per);if(extra>0){v+=add*extra;paid+=add*extra;}out.push({d:days,v,p:paid});}
+  pts=out;
+}
+function niceMax(x){if(x<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(x))),f=x/p;
+  return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;}
+function draw(){
+  const svg=$("chart"),W=svg.clientWidth||600,H=340,m={l:58,r:12,t:12,b:30};
+  const last=pts[pts.length-1],maxX=Math.max(last.d,1),maxY=niceMax(last.v*1.02);
+  const X=d=>m.l+(d/maxX)*(W-m.l-m.r),Y=v=>H-m.b-(v/maxY)*(H-m.t-m.b);
+  let s="";
+  for(let i=0;i<=4;i++){const v=maxY*i/4,y=Y(v);
+    s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${m.l-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mute)">${money(v)}</text>`;}
+  for(let i=0;i<=4;i++){const d=maxX*i/4;
+    s+=`<text x="${X(d)}" y="${H-8}" text-anchor="${i===0?"start":i===4?"end":"middle"}" font-size="11" fill="var(--mute)">${i===0?"Today":span(d)}</text>`;}
+  const line=k=>pts.map((p,i)=>(i?"L":"M")+X(p.d).toFixed(1)+" "+Y(p[k]).toFixed(1)).join("");
+  const rev=pts.slice().reverse().map(p=>"L"+X(p.d).toFixed(1)+" "+Y(p.p).toFixed(1)).join("");
+  const band=line("v")+rev+"Z";
+  const base=line("p")+`L${X(last.d)} ${Y(0)}L${X(0)} ${Y(0)}Z`;
+  s+=`<path d="${base}" fill="var(--fill)"/><path d="${band}" fill="var(--gainfill)"/><path d="${line("p")}" fill="none" stroke="var(--paid)" stroke-width="3" stroke-linejoin="round"/><path d="${line("v")}" fill="none" stroke="var(--grow)" stroke-width="3.5" stroke-linejoin="round"/>`;
+  const gl=num("goal");if(gl>0&&gl<=maxY){s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(gl)}" y2="${Y(gl)}" stroke="var(--hand)" stroke-width="2" stroke-dasharray="6 4"/><text x="${W-m.r-4}" y="${Y(gl)-6}" text-anchor="end" font-size="11" font-weight="600" fill="var(--hand)">Target ${money(gl)}</text>`;}
+  const h=hover!==null?pts[hover]:last;
+  s+=`<line x1="${X(h.d)}" x2="${X(h.d)}" y1="${m.t}" y2="${H-m.b}" stroke="var(--hand)" stroke-width="2"/><circle cx="${X(h.d)}" cy="${Y(h.v)}" r="5" fill="var(--hand)"/>`;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=s;svg._x=X;
+  $("readout").innerHTML=`After <strong>${span(h.d)}</strong>: <strong>${money(h.v)}</strong> total, from <strong>${money(h.p)}</strong> put in, so <strong>${money(h.v-h.p)}</strong> growth.`;
+}
+function update(){
+  days=exact!==null?exact:sliderToDays(+$("time").value);
+  $("timeL").textContent=span(days);$("rateL").textContent=num("rate");
+  calc();hover=null;
+  const l=pts[pts.length-1];
+  $("sFinal").textContent=money(l.v);$("sPaid").textContent=money(l.p);$("sGain").textContent=money(l.v-l.p);
+  [...$("chips").children].forEach((b,i)=>b.classList.toggle("on",Math.abs(PRESETS[i][1]-days)<1));
+  goalUI();
+  draw();
+}
+function daysToGoal(g){
+  const start=num("start"),add=num("add"),per=parseFloat($("freq").value),dr=Math.pow(1+num("rate")/100,1/365)-1;
+  let v=start;if(v>=g)return 0;
+  for(let d=1;d<=10958;d++){v*=1+dr;if(Math.floor(d/per)>Math.floor((d-1)/per))v+=add;if(v>=g)return d;}
+  return null;
+}
+function goalUI(){
+  const g=num("goal"),box=$("goalBox");
+  if(!g){box.style.display="none";return;}
+  box.style.display="block";
+  const l=pts[pts.length-1],pct=Math.min(100,l.v/g*100);
+  const st=pct>=100?"Target reached":pct>=80?"Almost there":pct>=50?"Getting close":pct>=25?"Making progress":"Just getting started";
+  $("gLab").textContent=st+" after "+span(days);
+  $("gPct").textContent=pct>=100?money(g)+" reached":pct.toFixed(pct<10?1:0)+"% of "+money(g);
+  const f=$("gFill");f.style.width=pct+"%";f.style.backgroundSize=(10000/Math.max(pct,1))+"% 100%";
+  const dg=daysToGoal(g);let note;
+  if(dg===0)note="You're already there.";
+  else if(dg===null)note="At this rate it takes more than 30 years. A larger regular amount or a higher return would shorten it.";
+  else note="At this rate you reach "+money(g)+" in about <strong>"+span(dg)+"</strong>."+" <button class=\"jump\" type=\"button\" id=\"gJump\">Show on chart</button>";
+  $("gNote").innerHTML=note;
+  const j=$("gJump");if(j)j.onclick=()=>{exact=Math.min(dg,MAXD);$("time").value=daysToSlider(Math.max(exact,1));update();};
+}
+PRESETS.forEach(([t,d])=>{const b=document.createElement("button");b.type="button";b.textContent=t;
+  b.onclick=()=>{exact=d;$("time").value=daysToSlider(d);update();};$("chips").appendChild(b);});
+["cur","start","add","freq","rate","goal"].forEach(id=>$(id).addEventListener("input",update));
+$("time").addEventListener("input",()=>{exact=null;update();});
+$("chart").addEventListener("pointermove",e=>{
+  const r=$("chart").getBoundingClientRect(),x=(e.clientX-r.left)*(($("chart").viewBox.baseVal.width||r.width)/r.width);
+  let best=0,bd=1e18;pts.forEach((p,i)=>{const dx=Math.abs($("chart")._x(p.d)-x);if(dx<bd){bd=dx;best=i;}});
+  hover=best;draw();});
+$("chart").addEventListener("pointerleave",()=>{hover=null;draw();});
+window.addEventListener("resize",draw);
+const AM={"1":[200,1],"7":[1000,5],"30.4375":[5000,25],"365":[50000,250]};
+function setAddRange(){const a=AM[$("freq").value];$("addR").max=a[0];$("addR").step=a[1];$("addR").value=$("add").value;}
+$("startR").addEventListener("input",()=>{$("start").value=$("startR").value;update();});
+$("addR").addEventListener("input",()=>{$("add").value=$("addR").value;update();});
+$("start").addEventListener("input",()=>{$("startR").value=$("start").value;});
+$("add").addEventListener("input",()=>{$("addR").value=$("add").value;});
+$("freq").addEventListener("input",setAddRange);
+document.querySelectorAll("#curSeg button").forEach(b=>b.onclick=()=>{$("cur").value=b.dataset.v;document.querySelectorAll("#curSeg button").forEach(x=>x.setAttribute("aria-checked",x===b));update();});
+setAddRange();
+update();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"freedom-clock"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
