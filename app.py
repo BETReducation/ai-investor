@@ -518,7 +518,8 @@ def _ensure_table() -> None:
                              ("market-orbs", "GCG Market Orbs"),
                              ("crypto-unit-calculator", "Crypto Unit Calculator"),
                              ("dividend-calculator", "Dividend Calculator"),
-                             ("freedom-clock", "The Freedom Clock")):
+                             ("freedom-clock", "The Freedom Clock"),
+                             ("metal-calculator", "Metal Calculator")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -530,6 +531,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-unit-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'dividend-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'freedom-clock'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'metal-calculator'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1492,6 +1494,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True},
     {"slug": "dividend-calculator", "label": "Dividend Calculator", "author": None, "has_live_widget": True},
     {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True},
+    {"slug": "metal-calculator", "label": "Metal Calculator", "author": None, "has_live_widget": True},
 ]
 
 

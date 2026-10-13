@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Metal Calculator</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#0b1f3a;--mute:#5b6b80;--line:#dde3ea;--teal:#0f8b8d;--gold:#b8860b;--inbg:#f0f4f8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mute:#93a4bb;--line:#223a5e;--teal:#2dc4c6;--gold:#e0b341;--inbg:#0a1628}}
+:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mute:#93a4bb;--line:#223a5e;--teal:#2dc4c6;--gold:#e0b341;--inbg:#0a1628}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:4px 2px 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+input{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--inbg);color:var(--ink);font-size:16px}
+input:focus{outline:2px solid var(--teal);border-color:transparent}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+details summary{cursor:pointer;font-weight:600;color:var(--teal)}
+details .grid{margin-top:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:300px}
+th,td{padding:6px 4px;text-align:right;border-top:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;color:var(--mute)}
+th{color:var(--mute);font-weight:500;border-top:0}
+.tot{border-color:var(--gold)}
+.big{font:700 22px Georgia,serif;color:var(--gold)}
+.dw{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
+.dw svg{width:160px;height:160px;flex:none}
+.lg{display:flex;align-items:center;gap:8px;font-size:14px;margin:6px 0}.lg b{margin-left:auto;padding-left:16px}
+#legend{flex:1;min-width:160px}
+.note{font-size:12px;color:var(--mute);margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card"><details>
+<summary>Prices &amp; exchange rates (tap to edit)</summary>
+<div class="grid" id="rates"></div>
+<p class="note">Prices are editable estimates, not live. Update them to current spot prices for accurate results. 1 troy oz = 31.1035 g.</p>
+</details></div>
+
+<div id="metals"></div>
+
+<div class="card"><h2>Allocation</h2><div class="dw"><svg id="donut" viewBox="0 0 120 120"></svg><div id="legend"></div></div></div>
+
+<div class="card tot"><h2>Total value</h2>
+<div class="big" id="tot-usd">$0.00</div>
+<div class="tw"><table><tbody id="tot-rows"></tbody></table></div></div>
+
+<p class="note">Enter your weight in troy ounces or grams. The other fills in automatically. For education only, not financial advice.</p>
+</div>
+<script>
+var OZ=31.1034768;
+var M=[{k:'gold',n:'Gold',c:'#d4a017',p:4300},{k:'silver',n:'Silver',c:'#9aa5b1',p:65},{k:'platinum',n:'Platinum',c:'#6c8ea4',p:1750},{k:'palladium',n:'Palladium',c:'#8d7fb0',p:1250},{k:'copper',n:'Copper',c:'#b87333',p:0.4}];
+var FX=[{k:'gbp',n:'£1 in USD',v:1.33},{k:'eur',n:'€1 in USD',v:1.16},{k:'btc',n:'₿1 in USD',v:110000}];
+var P={},R={},Q={};
+function $(i){return document.getElementById(i)}
+function f(n,d){return n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function cur(u){return[['USD','$',1,2],['GBP','£',1/R.gbp,2],['EUR','€',1/R.eur,2],['BTC','₿',1/R.btc,6]]}
+function money(s,v,d){return s+f(v,d)}
+function build(){
+ var h='';
+ M.forEach(function(m){P[m.k]=m.p;h+='<div><label>'+m.n+' ($ per troy oz)</label><input type="number" inputmode="decimal" step="any" id="p-'+m.k+'" value="'+m.p+'"></div>'});
+ FX.forEach(function(x){R[x.k]=x.v;h+='<div><label>'+x.n+'</label><input type="number" inputmode="decimal" step="any" id="r-'+x.k+'" value="'+x.v+'"></div>'});
+ $('rates').innerHTML=h;
+ var c='';
+ M.forEach(function(m){Q[m.k]=0;c+='<div class="card"><h2><span class="dot" style="background:'+m.c+'"></span>'+m.n+'</h2>'+
+ '<div class="grid"><div><label>Troy oz</label><input type="number" inputmode="decimal" step="any" min="0" placeholder="0" id="q-'+m.k+'"></div>'+
+ '<div><label>Grams</label><input type="number" inputmode="decimal" step="any" min="0" placeholder="0" id="gi-'+m.k+'"></div></div><div style="height:10px"></div>'+
+ '<div class="tw"><table><thead><tr><th></th><th>Per gram</th><th>Value</th></tr></thead><tbody id="t-'+m.k+'"></tbody></table></div></div>'});
+ $('metals').innerHTML=c;
+ document.querySelectorAll('input').forEach(function(i){i.addEventListener('input',function(e){sync(e.target);upd()})});
+ upd();
+}
+function sync(t){
+ var id=t.id,k;
+ if(id.indexOf('q-')==0){k=id.slice(2);var o=parseFloat(t.value);$('gi-'+k).value=isFinite(o)&&o>=0?+(o*OZ).toFixed(4):''}
+ else if(id.indexOf('gi-')==0){k=id.slice(3);var g=parseFloat(t.value);$('q-'+k).value=isFinite(g)&&g>=0?+(g/OZ).toFixed(6):''}
+}
+function donut(V,tot){
+ var Cc=2*Math.PI*46,off=0,l='',s='<circle cx="60" cy="60" r="46" fill="none" stroke="var(--line)" stroke-width="22"/>';
+ M.forEach(function(m){
+  var v=V[m.k]||0;
+  if(tot>0&&v>0){var len=v/tot*Cc;s+='<circle cx="60" cy="60" r="46" fill="none" stroke="'+m.c+'" stroke-width="22" stroke-dasharray="'+len+' '+(Cc-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 60 60)"/>';off+=len}
+  l+='<div class="lg"><span class="dot" style="background:'+m.c+'"></span>'+m.n+'<b>'+(tot>0?f(v/tot*100,1):'0.0')+'%</b></div>';
+ });
+ s+='<text x="60" y="64" text-anchor="middle" style="fill:var(--mute);font-size:10px">'+(tot>0?'Your stack':'Add metal')+'</text>';
+ $('donut').innerHTML=s;$('legend').innerHTML=l;
+}
+function num(id){var v=parseFloat($(id).value);return isFinite(v)&&v>=0?v:0}
+function upd(){
+ M.forEach(function(m){P[m.k]=num('p-'+m.k)});
+ FX.forEach(function(x){R[x.k]=num('r-'+x.k)||x.v});
+ var tot=0,C=cur(),V={};
+ M.forEach(function(m){
+  var oz=num('q-'+m.k),g=oz*OZ,pg=P[m.k]/OZ,val=oz*P[m.k];tot+=val;V[m.k]=val;
+  var r='';
+  C.forEach(function(c){var d=c[3]==6?8:(m.k=='copper'?4:2);r+='<tr><td>'+c[0]+'</td><td>'+money(c[1],pg*c[2],d)+'</td><td>'+money(c[1],val*c[2],c[3])+'</td></tr>'});
+  $('t-'+m.k).innerHTML=r;
+ });
+ $('tot-usd').textContent=money('$',tot,2);donut(V,tot);
+ var t='';
+ C.forEach(function(c){t+='<tr><td>'+c[0]+'</td><td><b>'+money(c[1],tot*c[2],c[3])+'</b></td></tr>'});
+ $('tot-rows').innerHTML=t;
+}
+build();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"metal-calculator"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
