@@ -5783,6 +5783,63 @@ def api_crypto_unit_prices():
     return jsonify(_fetch_crypto_unit_prices())
 
 
+# Dividend Calculator lookup: trailing-12-month dividends and the latest price for
+# any Yahoo ticker. A bare ticker is tried as-is first, then with .L (LSE) appended.
+_DIV_CACHE_TTL_SECONDS = 3600
+_div_cache: dict = {}
+_div_lock = threading.Lock()
+_DIV_UNITS = {"GBp": "p", "GBX": "p", "GBP": "£", "USD": "$", "EUR": "€"}
+
+
+def _fetch_dividend_info(symbol: str) -> dict | None:
+    t = yf.Ticker(symbol)
+    divs = t.dividends
+    if divs is None or not len(divs):
+        return None
+    hist = t.history(period="5d", auto_adjust=False)["Close"].dropna()
+    if not len(hist):
+        return None
+    # Anchor on today so an old payment doesn't inflate the figure; if nothing
+    # fell in the last year (e.g. an annual payer running late), anchor on the last payment.
+    anchor = pd.Timestamp.now(tz=divs.index.tz)
+    recent = divs[divs.index > anchor - pd.DateOffset(years=1)]
+    if not len(recent):
+        recent = divs[divs.index > divs.index[-1] - pd.DateOffset(years=1)]
+    ccy = t.fast_info.get("currency") or "USD"
+    unit = _DIV_UNITS.get(ccy, ccy + " ")
+    try:
+        name = t.info.get("shortName") or t.info.get("longName") or symbol
+    except Exception:
+        name = symbol
+    price = float(hist.iloc[-1])
+    annual = float(recent.sum())
+    return {"symbol": symbol, "name": name, "unit": unit, "price": price, "annual": annual,
+            "yield": annual / price * 100 if price else None,
+            "payments": [{"date": ix.strftime("%d %b %Y"), "amount": float(v)} for ix, v in recent.items()]}
+
+
+@app.route("/api/dataviz/dividend-calculator/lookup", methods=["GET"])
+def api_dividend_lookup():
+    raw = (request.args.get("ticker") or "").strip().upper()
+    if not re.fullmatch(r"[A-Z0-9.\-]{1,12}", raw):
+        return jsonify({"error": "bad ticker"}), 400
+    with _div_lock:
+        hit = _div_cache.get(raw)
+        if hit and time.monotonic() - hit[0] < _DIV_CACHE_TTL_SECONDS:
+            return (jsonify(hit[1]), 200) if hit[1] else (jsonify({"error": "not found"}), 404)
+    result = None
+    for sym in ([raw] if "." in raw else [raw, raw + ".L"]):
+        try:
+            result = _fetch_dividend_info(sym)
+        except Exception:
+            result = None
+        if result:
+            break
+    with _div_lock:
+        _div_cache[raw] = (time.monotonic(), result)
+    return (jsonify(result), 200) if result else (jsonify({"error": "not found"}), 404)
+
+
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])
 def api_gold_silver_ratio_live():
     force = request.args.get("refresh") in ("1", "true", "yes")

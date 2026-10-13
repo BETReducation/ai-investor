@@ -88,10 +88,19 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--hand);outline-o
 </div>
 <script>
 const $=id=>document.getElementById(id);
-// Snapshot data: pence per share per payment, plus an estimated yield (%). Add more tickers here.
-const DB={
-  LGEN:{name:"Legal & General Group",asof:"Oct 2026",yield:7.5,pays:[["Interim dividend (announced Aug 2026)",6.24],["Final dividend (paid 4 Jun 2026)",15.67]]}
-};
+// Live lookup: the server returns the last 12 months of dividends and the latest price for a ticker.
+let live=null,pending=null,timer=null,status="";
+function lookup(){
+  const t=$("tk").value.trim().toUpperCase();
+  clearTimeout(timer);
+  if(!t){live=null;status="";render();return;}
+  status="Looking up "+t+"...";render();
+  timer=setTimeout(()=>{
+    fetch("/api/dataviz/dividend-calculator/lookup?ticker="+encodeURIComponent(t))
+      .then(r=>r.ok?r.json():null).catch(()=>null)
+      .then(d=>{if($("tk").value.trim().toUpperCase()!==t)return;live=d?{...d,query:t}:null;status=d?"":"No dividend data found for "+t+".";render();});
+  },450);
+}
 const MAXY=12,TOP=20,BOT=250;
 const ZONES=[[2,"Low","#5B9BF0","A small payout compared with the share price."],[4,"Modest","#2BB6A3","A steady, moderate income."],[6,"Healthy","#8BD450","A solid income yield."],[8,"High","#F2A33A","Strong income. Whether profits cover it matters."],[999,"Very high","#EF5B4C","Very high yields can mean the market doubts the payout will last."]];
 const ty=v=>BOT-(BOT-TOP)*Math.min(v,MAXY)/MAXY;
@@ -108,13 +117,14 @@ function thermo(y){
 }
 const fmt=(x,s)=>s+x.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
 function render(){
-  const t=$("tk").value.trim().toUpperCase().replace(/\.L$/,""),sh=Math.max(0,parseFloat($("sh").value)||0),d=DB[t],u=$("unit").value,pr=parseFloat($("px").value)||0;
-  $("manual").style.display=(!d&&t)?"block":"none";
-  $("avail").textContent="Built in: "+Object.keys(DB).join(", ")+". Any other ticker can be entered by hand. Price in "+(d||u==="p"?"pence":u)+".";
+  const t=$("tk").value.trim().toUpperCase(),sh=Math.max(0,parseFloat($("sh").value)||0),d=(live&&live.query===t)?live:null,u=$("unit").value,pr=parseFloat($("px").value)||0;
+  $("manual").style.display=(!d&&t&&!status.startsWith("Looking"))?"block":"none";
+  $("avail").textContent=status||(d?"Price in "+(d.unit==="p"?"pence":d.unit.trim())+". Data from Yahoo Finance; UK shares need .L (e.g. LGEN.L if the plain ticker is not found).":"Any listed ticker with dividends. For UK shares the .L is added automatically if needed.");
   const S=sh.toLocaleString("en-GB")+" shares";
   let sym="£",annual=0,total=0,lines=[],name=t;
-  if(d){annual=d.pays.reduce((a,p)=>a+p[1],0);total=annual*sh/100;name=d.name+" ("+t+")";
-    lines=d.pays.map(p=>[p[0],p[1].toFixed(2)+"p × "+S,p[1]*sh/100]);}
+  if(d){const pence=d.unit==="p";sym=pence?"£":d.unit;annual=d.annual;name=d.name+" ("+d.symbol+")";
+    lines=d.payments.map(p=>{const m=pence?p.amount/100:p.amount;return["Ex-dividend "+p.date,(pence?p.amount.toFixed(2)+"p":fmt(p.amount,sym))+" × "+S,m*sh];});
+    total=lines.reduce((a,l)=>a+l[2],0);}
   else if(t){const n=+$("n").value;annual=parseFloat($("dps").value)||0;sym=u==="p"?"£":u;
     const major=u==="p"?annual/100:annual;total=major*sh;
     lines=[[n+" payment"+(n>1?"s":"")+" a year, each",fmt(major/n,sym)+" × "+S,major/n*sh]];}
@@ -129,10 +139,11 @@ function render(){
   <div class="big">${fmt(total,sym)}</div>
   <div class="stats"><div><b>${fmt(total/12,sym)}</b><span>a month</span></div><div><b>${fmt(total/52,sym)}</b><span>a week</span></div><div><b>${fmt(total/365,sym)}</b><span>a day</span></div></div>`+
   lines.map(l=>`<div class="bl"><div class="bt"><span>${l[0]}<small>${l[1]}</small></span><b>${fmt(l[2],sym)}</b></div><div class="track"><i style="width:${Math.max(4,l[2]/mx*100)}%"></i></div></div>`).join("")+
-  (d?`<div class="lab">Figures as of ${d.asof}${pr>0?"":". Yield is an estimate"}.</div>`:"");
+  (d?`<div class="lab">Dividends with an ex-dividend date in the last 12 months. Latest price ${d.unit==="p"?d.price.toFixed(2)+"p":fmt(d.price,d.unit)}${pr>0?", replaced by yours for the yield":""}.</div>`:"");
 }
-["tk","sh","px","dps","unit","n"].forEach(id=>$(id).addEventListener("input",render));
-render();
+["sh","px","dps","unit","n"].forEach(id=>$(id).addEventListener("input",render));
+$("tk").addEventListener("input",lookup);
+lookup();
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"dividend-calculator"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
