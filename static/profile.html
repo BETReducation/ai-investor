@@ -28,6 +28,14 @@
 .content-section { padding: 0 5% 80px; }
 .content-inner { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
+.profile-tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.profile-tab { background: none; border: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; padding: 12px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.profile-tab:hover { color: var(--text, #fff); }
+.profile-tab.active { color: var(--purple2); border-bottom-color: var(--purple2); }
+.profile-tab.danger.active { color: #ff4757; border-bottom-color: #ff4757; }
+.tab-pane { display: none; flex-direction: column; gap: 20px; }
+.tab-pane.active { display: flex; }
+
 /* Profile hero card */
 .profile-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; position: relative; }
 .profile-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; flex-wrap: wrap; }
@@ -261,6 +269,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      <div class="profile-tabs" role="tablist">
+        <button class="profile-tab active" role="tab" data-tab="general" onclick="showProfileTab('general')">General Preferences</button>
+        <button class="profile-tab" role="tab" data-tab="education" onclick="showProfileTab('education')">Education Progress</button>
+        <button class="profile-tab" role="tab" data-tab="tools" onclick="showProfileTab('tools')">Tools Settings</button>
+        <button class="profile-tab" role="tab" data-tab="subscription" onclick="showProfileTab('subscription')">Subscription Info</button>
+        <button class="profile-tab danger" role="tab" data-tab="danger" onclick="showProfileTab('danger')">Danger Zone</button>
+      </div>
+
+      <div class="tab-pane active" id="tab-general">
       <!-- PERSONAL DETAILS -->
       <div class="profile-card">
         <div class="card-header-row">
@@ -405,6 +422,61 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <div class="toggle-thumb"></div>
           </label>
         </div>
+        <span class="form-hint prefs-save-hint"></span>
+      </div>
+
+      <!-- ADMIN TOOLS -->
+      <div class="profile-card" id="adminToolsCard" style="display:none;">
+        <div class="card-header-row">
+          <div class="card-header-title">Admin Tools</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <div class="form-label">Username</div>
+            <select id="adminRoleUsername" class="form-input">
+              <option value="">Loading users…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Alpha Role</div>
+            <select id="adminRoleSelect" class="form-input">
+              <option value="">None (remove access)</option>
+              <option value="tom">Tom</option>
+              <option value="dave">Dave</option>
+              <option value="gary">Gary</option>
+              <option value="connor">Connor</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-save" id="adminAssignRoleBtn" onclick="assignAlphaRole()">Assign Role</button>
+        <span class="form-hint" id="adminRoleHint"></span>
+      </div>
+
+      </div>
+
+      <div class="tab-pane" id="tab-education">
+      <!-- EDUCATION PROGRESS -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title">Education Progress</div>
+        </div>
+        <div class="card-header-sub" style="margin-top:-8px;">Each lesson you mark complete fills in one segment of its level's bar.</div>
+        <div id="eduProgress"></div>
+        <div class="edu-reset-row">
+          <button class="btn-danger" onclick="resetEdu('beginner')">Reset Beginner</button>
+          <button class="btn-danger" onclick="resetEdu('intermediate')">Reset Intermediate</button>
+          <button class="btn-danger" onclick="resetEdu('pro')">Reset Pro</button>
+          <button class="btn-danger" onclick="resetEdu('all')">Reset all progress</button>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="tab-pane" id="tab-tools">
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title">Signal Tracker Alerts</div>
+        </div>
         <div class="toggle-row">
           <div class="toggle-row-text">
             <div class="toggle-row-label">Signal Tracker — sound alerts</div>
@@ -427,22 +499,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <div class="toggle-thumb"></div>
           </label>
         </div>
-        <span class="form-hint" id="prefsSaveHint"></span>
-      </div>
-
-      <!-- EDUCATION PROGRESS -->
-      <div class="profile-card">
-        <div class="card-header-row">
-          <div class="card-header-title">Education Progress</div>
-        </div>
-        <div class="card-header-sub" style="margin-top:-8px;">Each lesson you mark complete fills in one segment of its level's bar.</div>
-        <div id="eduProgress"></div>
-        <div class="edu-reset-row">
-          <button class="btn-danger" onclick="resetEdu('beginner')">Reset Beginner</button>
-          <button class="btn-danger" onclick="resetEdu('intermediate')">Reset Intermediate</button>
-          <button class="btn-danger" onclick="resetEdu('pro')">Reset Pro</button>
-          <button class="btn-danger" onclick="resetEdu('all')">Reset all progress</button>
-        </div>
+        <span class="form-hint prefs-save-hint"></span>
       </div>
 
       <!-- SAVED STRATEGIES -->
@@ -462,6 +519,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      </div>
+
+      <div class="tab-pane" id="tab-subscription">
       <!-- SUBSCRIPTION -->
       <div class="profile-card">
         <div class="card-header-row">
@@ -536,33 +596,9 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </table>
       </div>
 
-      <!-- ADMIN TOOLS -->
-      <div class="profile-card" id="adminToolsCard" style="display:none;">
-        <div class="card-header-row">
-          <div class="card-header-title">Admin Tools</div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <div class="form-label">Username</div>
-            <select id="adminRoleUsername" class="form-input">
-              <option value="">Loading users…</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <div class="form-label">Alpha Role</div>
-            <select id="adminRoleSelect" class="form-input">
-              <option value="">None (remove access)</option>
-              <option value="tom">Tom</option>
-              <option value="dave">Dave</option>
-              <option value="gary">Gary</option>
-              <option value="connor">Connor</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn-save" id="adminAssignRoleBtn" onclick="assignAlphaRole()">Assign Role</button>
-        <span class="form-hint" id="adminRoleHint"></span>
       </div>
 
+      <div class="tab-pane" id="tab-danger">
       <!-- DANGER ZONE -->
       <div class="profile-card" style="border-color:rgba(255,71,87,0.25);">
         <div class="card-header-row">
@@ -580,6 +616,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
             <button class="btn-danger" id="deleteAccountBtn" onclick="confirmDeleteAccount()">Delete Account</button>
           </div>
         </div>
+      </div>
+
       </div>
 
     </div>
@@ -989,13 +1027,24 @@ async function changePassword() {
   }
 }
 
+function showProfileTab(id) {
+  document.querySelectorAll('.profile-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + id));
+  history.replaceState(null, '', '#' + id);
+}
+(function () {
+  const id = location.hash.slice(1);
+  if (document.getElementById('tab-' + id)) showProfileTab(id);
+})();
+
 // ── Preferences (sign-in + notifications) ──────────────────────────────────────
 
 let prefsSaveTimer = null;
 function savePrefsToggles() {
   clearTimeout(prefsSaveTimer);
-  const hint = document.getElementById('prefsSaveHint');
-  hint.textContent = 'Saving...';
+  const hints = document.querySelectorAll('.prefs-save-hint');
+  const setHint = t => hints.forEach(h => h.textContent = t);
+  setHint('Saving...');
   prefsSaveTimer = setTimeout(async () => {
     const payload = {
       stay_signed_in: document.getElementById('prefStaySignedIn').checked,
@@ -1011,10 +1060,10 @@ function savePrefsToggles() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error();
-      hint.textContent = 'Saved';
-      setTimeout(() => { hint.textContent = ''; }, 1500);
+      setHint('Saved');
+      setTimeout(() => { setHint(''); }, 1500);
     } catch (e) {
-      hint.textContent = 'Failed to save — try again';
+      setHint('Failed to save — try again');
     }
   }, 250);
 }
