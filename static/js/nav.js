@@ -31,20 +31,20 @@
     return 'linear-gradient(' + tint + ',' + tint + '), rgba(' + base + ')';
   }
 
-  // Tools categories shown as flyout submenus. A category with no pages is
-  // left out of the menu until it has some — add pages here as they're built.
+  // Tools menu: categories shown as flyout submenus. A category with no pages is
+  // left out until it has some — add pages here as they're built.
   var TOOL_CATEGORIES = [
-    { name: 'Charting tools', pages: [['Global Heat Map', '/tools/data-visualisation/global-heat-map'], ['GCG Market Orbs', '/tools/data-visualisation/market-orbs']] },
+    { name: 'Analysis tools', pages: [['Signals', '/tools/signals'], ['Backtester', '/backtester'], ['AI Chart Analysis', '/tools/ai-chart-analysis']] },
     { name: 'Crypto tools', pages: [['Crypto Unit Calculator', '/tools/data-visualisation/crypto-unit-calculator']] },
-    { name: 'Metals tools', pages: [['Metal Calculator', '/tools/data-visualisation/metal-calculator'], ['Gold to Silver Ratio', '/tools/data-visualisation/gold-silver-ratio']] },
+    { name: 'Metals tools', pages: [['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'], ['Metal Calculator', '/tools/data-visualisation/metal-calculator']] },
     { name: 'Stocks tools', pages: [['Dividend Calculator', '/tools/data-visualisation/dividend-calculator']] },
     { name: 'Forex tools', pages: [] },
-    { name: 'Other tools', pages: [['The Freedom Clock', '/tools/data-visualisation/freedom-clock']] }
+    { name: 'Other tools', pages: [['Freedom Clock', '/tools/data-visualisation/freedom-clock'], ['Portfolio Manager', '/tools/portfolio'], ['Position Size Calculator', '/tools/calculator']] }
   ];
-  var TOOL_SUBMENUS_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
+  var TOOL_MENU_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
     return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
       '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
-  }).join('');
+  }).join('') + '<li><a href="/tools/data-visualisation">Data Visualisation</a></li>';
 
   var NAV_HTML = '' +
 '<nav>' +
@@ -67,14 +67,7 @@
 '    <li class="has-dropdown">' +
 '      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
-'        <li><a href="/tools/signals">Signals</a></li>' +
-'        <li><a href="/backtester">Backtester</a></li>' +
-'        <li><a href="/tools/ai-chart-analysis">AI Chart Analysis</a></li>' +
-'        <li><a href="/tools/portfolio">Portfolio Manager</a></li>' +
-'        <li><a href="/tools/calculator">Calculator</a></li>' +
-'        <li><a href="/tools/data-visualisation">Data Visualisation</a></li>' +
-'        <li class="nav-divider" role="separator"></li>' +
-TOOL_SUBMENUS_HTML +
+TOOL_MENU_HTML +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
