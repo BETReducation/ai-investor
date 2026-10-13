@@ -43,7 +43,7 @@ th{color:var(--mute);font-weight:500;border-top:0}
 <div class="card"><details>
 <summary>Prices &amp; exchange rates (tap to edit)</summary>
 <div class="grid" id="rates"></div>
-<p class="note">Prices are editable estimates, not live. Update them to current spot prices for accurate results. 1 troy oz = 31.1035 g.</p>
+<p class="note" id="priceNote">Loading live prices...</p>
 </details></div>
 
 <div id="metals"></div>
@@ -111,6 +111,17 @@ function upd(){
  $('tot-rows').innerHTML=t;
 }
 build();
+// Fill in live prices, leaving alone any field the visitor has already typed in.
+document.querySelectorAll('#rates input').forEach(function(i){i.addEventListener('input',function(){i.dataset.dirty='1'})});
+fetch('/api/dataviz/metal-calculator/live').then(function(r){return r.json()}).then(function(d){
+ var n=0;
+ function put(id,v){var el=$(id);if(v>0&&el&&!el.dataset.dirty){el.value=+v.toPrecision(6);n++}}
+ M.forEach(function(m){put('p-'+m.k,(d.metals||{})[m.k])});
+ FX.forEach(function(x){put('r-'+x.k,(d.fx||{})[x.k])});
+ upd();
+ var t=d.updated_at?new Date(d.updated_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}):'';
+ $('priceNote').textContent=n?'Live prices (latest futures close, so slightly delayed), updated '+t+'. You can edit any of them. 1 troy oz = 31.1035 g.':'Live prices unavailable, showing editable estimates. 1 troy oz = 31.1035 g.';
+}).catch(function(){$('priceNote').textContent='Live prices unavailable, showing editable estimates. 1 troy oz = 31.1035 g.'});
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"metal-calculator"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);

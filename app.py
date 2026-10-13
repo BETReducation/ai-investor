@@ -5783,6 +5783,51 @@ def api_crypto_unit_prices():
     return jsonify(_fetch_crypto_unit_prices())
 
 
+# Latest metal prices (USD per troy oz) and FX/BTC rates for the Metal Calculator.
+# Futures closes stand in for spot; copper futures quote USD per pound, so it is converted.
+_METAL_SYMBOLS = {"gold": "GC=F", "silver": "SI=F", "platinum": "PL=F", "palladium": "PA=F", "copper": "HG=F"}
+_METAL_FX_SYMBOLS = {"gbp": "GBPUSD=X", "eur": "EURUSD=X", "btc": "BTC-USD"}
+_LB_PER_TROY_OZ = 14.5833
+_metal_cache = {"at": 0.0, "data": None}
+_metal_lock = threading.Lock()
+
+
+def _fetch_metal_prices() -> dict:
+    now = time.monotonic()
+    with _metal_lock:
+        if _metal_cache["data"] is not None and now - _metal_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+            return _metal_cache["data"]
+    symbols = list(_METAL_SYMBOLS.values()) + list(_METAL_FX_SYMBOLS.values())
+    last = {}
+    try:
+        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+        for sym in symbols:
+            try:
+                closes = raw[sym]["Close"].dropna()
+                if len(closes):
+                    last[sym] = float(closes.iloc[-1])
+            except Exception:
+                continue
+    except Exception:
+        pass
+    metals = {k: (last[v] / _LB_PER_TROY_OZ if k == "copper" else last[v]) for k, v in _METAL_SYMBOLS.items() if v in last}
+    fx = {k: last[v] for k, v in _METAL_FX_SYMBOLS.items() if v in last}
+    result = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "metals": metals, "fx": fx}
+    with _metal_lock:
+        _metal_cache["at"] = now
+        if metals or fx or _metal_cache["data"] is None:
+            _metal_cache["data"] = result
+        else:
+            result = _metal_cache["data"]
+    return result
+
+
+@app.route("/api/dataviz/metal-calculator/live", methods=["GET"])
+def api_metal_calculator_live():
+    return jsonify(_fetch_metal_prices())
+
+
 # Dividend Calculator lookup: trailing-12-month dividends and the latest price for
 # any Yahoo ticker. A bare ticker is tried as-is first, then with .L (LSE) appended.
 _DIV_CACHE_TTL_SECONDS = 3600
