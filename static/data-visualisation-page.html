@@ -618,6 +618,16 @@ function cuDraw(p) {
   dot.style.display = p > 0 ? '' : 'none';
 }
 
+// ── Dividend Calculator — isolated in an iframe so its own CSS can't leak ──
+function initDividendCalc() {
+  const wrap = document.getElementById('pulseContainer');
+  wrap.innerHTML = '<iframe id="divFrame" src="/static/dataviz/dividend-calculator.html" title="Dividend Calculator" style="display:block;width:100%;max-width:780px;height:900px;margin:0 auto 40px;border:0;background:transparent"></iframe>';
+  window.addEventListener('message', e => {
+    if (e.origin !== location.origin || e.data?.src !== 'dividend-calculator') return;
+    document.getElementById('divFrame').style.height = e.data.gcgIframeHeight + 'px';
+  });
+}
+
 async function loadPage() {
   try {
     const res = await fetch(`/api/dataviz/${encodeURIComponent(slug)}/content`);
@@ -644,6 +654,10 @@ async function loadPage() {
       setHeroSub(data.description || "Every coin divides into smaller units. See how much of a whole coin any amount of its smallest unit really is.");
       document.body.classList.add('pulse-page');
       initCryptoUnits();
+    } else if (slug === 'dividend-calculator') {
+      setHeroSub(data.description || "Enter a ticker and your shares. See the income, and how hot the yield is.");
+      document.body.classList.add('pulse-page');
+      initDividendCalc();
     } else if (slug === 'gold-silver-ratio') {
       setHeroSub(data.description || "How many ounces of silver it takes to match the value of one ounce of gold, right now — refreshes every 12 hours.");
       document.body.classList.add('gsr-page');

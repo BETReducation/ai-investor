@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dividend Calculator</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EDF2EF;--panel:#FFFFFF;--ink:#12302B;--mute:#5B7570;--line:#D3DED9;--hand:#E9962B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1816;--panel:#142925;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--hand:#F2AC4B}}
+:root[data-theme="dark"]{--bg:#0B1816;--panel:#142925;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--hand:#F2AC4B}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:4px 2px 12px}
+label{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1 1 140px;min-width:0}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
+#tk{text-transform:uppercase;font-weight:700;letter-spacing:.04em}
+input:focus-visible,select:focus-visible{outline:2px solid var(--hand);outline-offset:2px}
+.hint{font-size:13px;color:var(--mute);margin-top:6px}
+#manual{display:none}
+.hero{display:grid;grid-template-columns:1fr 230px;gap:8px;background:linear-gradient(145deg,#0C2622,#17463D);color:#EAF6F1;border-radius:18px;padding:24px;margin-bottom:14px;overflow:hidden;position:relative}
+.hero:before{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(242,172,75,.25),transparent 70%)}
+.hero>*{position:relative}
+@media(max-width:600px){.hero{grid-template-columns:1fr;padding:20px}}
+.co{font:700 18px "Bricolage Grotesque",system-ui,sans-serif}
+.lab{font-size:13px;color:rgba(234,246,241,.65)}
+.big{font:800 clamp(44px,11vw,68px)/1.05 "Bricolage Grotesque",system-ui,sans-serif;color:#F5B455;letter-spacing:-.03em;margin:4px 0 14px}
+.stats{display:flex;gap:10px;margin-bottom:18px}
+.stats div{flex:1;background:rgba(255,255,255,.09);border-radius:10px;padding:8px 10px}
+.stats b{display:block;font:700 17px "Bricolage Grotesque",system-ui,sans-serif}
+.stats span{font-size:12px;color:rgba(234,246,241,.65)}
+.bl{margin-bottom:12px}
+.bt{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.bt small{display:block;color:rgba(234,246,241,.6);font-size:12px}
+.track{height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#2EE6A0,#F5B455)}
+.msg{color:rgba(234,246,241,.75);padding:20px 0}
+.thermo{display:flex;flex-direction:column;align-items:center;text-align:center}
+.thermo svg{width:120px;height:300px;overflow:visible}
+#mer,#bulb{transition:y .7s ease,height .7s ease,fill .5s}
+.yv{font:800 34px/1 "Bricolage Grotesque",system-ui,sans-serif}
+.yz{font-weight:600;font-size:14px;margin:2px 0 6px}
+.yn{font-size:12.5px;color:rgba(234,246,241,.7);margin:0;max-width:210px}
+@media(max-width:600px){.thermo{flex-direction:row;gap:12px;text-align:left;align-items:center;margin-top:8px}.thermo svg{width:90px;height:225px;flex:none}}
+.note{font-size:12px;color:var(--mute);margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <div><label for="tk">Ticker</label><input id="tk" value="LGEN" maxlength="10" autocomplete="off" spellcheck="false" placeholder="e.g. LGEN"></div>
+      <div><label for="sh">Number of shares</label><input id="sh" type="number" min="0" step="1" value="1000" inputmode="numeric"></div>
+      <div><label for="px">Share price (optional)</label><input id="px" type="number" min="0" step="any" inputmode="decimal" placeholder="for exact yield"></div>
+    </div>
+    <div class="hint" id="avail"></div>
+  </div>
+  <div class="card" id="manual">
+    <div style="font-weight:700;margin-bottom:4px">We don't have that ticker yet</div>
+    <p class="hint" style="margin:0 0 12px">Enter its dividend yourself. Add a share price above to see the thermometer.</p>
+    <div class="row">
+      <div><label for="dps">Dividend per share, per year</label><input id="dps" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 21.91"></div>
+      <div><label for="unit">In</label><select id="unit"><option value="p">pence (p)</option><option value="£">pounds (£)</option><option value="$">dollars ($)</option><option value="€">euros (€)</option></select></div>
+      <div><label for="n">Paid</label><select id="n"><option value="1">yearly</option><option value="2" selected>twice a year</option><option value="4">quarterly</option><option value="12">monthly</option></select></div>
+    </div>
+  </div>
+  <div class="hero">
+    <div id="heroL"></div>
+    <div class="thermo">
+      <svg id="th" viewBox="0 0 120 300" aria-hidden="true">
+        <rect x="38" y="20" width="24" height="230" rx="12" fill="rgba(255,255,255,.12)"/>
+        <circle cx="50" cy="268" r="26" fill="rgba(255,255,255,.12)"/>
+        <rect id="mer" x="44" y="250" width="12" height="18" rx="6" fill="#6F8782"/>
+        <circle id="bulb" cx="50" cy="268" r="18" fill="#6F8782"/>
+        <g id="ticks"></g>
+      </svg>
+      <div><div class="lab">Dividend yield</div><div class="yv" id="yv">--</div><div class="yz" id="yz"></div><p class="yn" id="yn"></p></div>
+    </div>
+  </div>
+  <p class="note">Before tax. Based on the latest dividends declared, which companies can raise, cut or cancel. Yield moves with the share price. Educational tool, not financial advice.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+// Snapshot data: pence per share per payment, plus an estimated yield (%). Add more tickers here.
+const DB={
+  LGEN:{name:"Legal & General Group",asof:"Oct 2026",yield:7.5,pays:[["Interim dividend (announced Aug 2026)",6.24],["Final dividend (paid 4 Jun 2026)",15.67]]}
+};
+const MAXY=12,TOP=20,BOT=250;
+const ZONES=[[2,"Low","#5B9BF0","A small payout compared with the share price."],[4,"Modest","#2BB6A3","A steady, moderate income."],[6,"Healthy","#8BD450","A solid income yield."],[8,"High","#F2A33A","Strong income. Whether profits cover it matters."],[999,"Very high","#EF5B4C","Very high yields can mean the market doubts the payout will last."]];
+const ty=v=>BOT-(BOT-TOP)*Math.min(v,MAXY)/MAXY;
+$("ticks").innerHTML=[0,2,4,6,8,10,12].map(v=>`<line x1="66" x2="74" y1="${ty(v)}" y2="${ty(v)}" stroke="rgba(255,255,255,.5)"/><text x="80" y="${ty(v)+4}" font-size="11" fill="rgba(234,246,241,.7)">${v}%</text>`).join("");
+function thermo(y){
+  let col="#6F8782",z="",n="Add a share price to see the yield.";
+  if(y!==null){const zz=ZONES.find(a=>y<a[0]);col=zz[2];z=zz[1];n=zz[3];}
+  const top=y===null?BOT:ty(y);
+  const m=$("mer");
+  m.setAttribute("y",top);m.setAttribute("height",268-top);m.style.y=top+"px";m.style.height=(268-top)+"px";m.setAttribute("fill",col);
+  $("bulb").setAttribute("fill",col);
+  $("yv").textContent=y===null?"--":y.toFixed(1)+"%";
+  $("yz").textContent=z;$("yz").style.color=col;$("yn").textContent=n;
+}
+const fmt=(x,s)=>s+x.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+function render(){
+  const t=$("tk").value.trim().toUpperCase().replace(/\.L$/,""),sh=Math.max(0,parseFloat($("sh").value)||0),d=DB[t],u=$("unit").value,pr=parseFloat($("px").value)||0;
+  $("manual").style.display=(!d&&t)?"block":"none";
+  $("avail").textContent="Built in: "+Object.keys(DB).join(", ")+". Any other ticker can be entered by hand. Price in "+(d||u==="p"?"pence":u)+".";
+  const S=sh.toLocaleString("en-GB")+" shares";
+  let sym="£",annual=0,total=0,lines=[],name=t;
+  if(d){annual=d.pays.reduce((a,p)=>a+p[1],0);total=annual*sh/100;name=d.name+" ("+t+")";
+    lines=d.pays.map(p=>[p[0],p[1].toFixed(2)+"p × "+S,p[1]*sh/100]);}
+  else if(t){const n=+$("n").value;annual=parseFloat($("dps").value)||0;sym=u==="p"?"£":u;
+    const major=u==="p"?annual/100:annual;total=major*sh;
+    lines=[[n+" payment"+(n>1?"s":"")+" a year, each",fmt(major/n,sym)+" × "+S,major/n*sh]];}
+  const y=(pr>0&&annual>0)?annual/pr*100:(d&&d.yield?d.yield:null);
+  thermo(y);
+  const L=$("heroL");
+  if(!t){L.innerHTML='<div class="msg">Type a ticker to start.</div>';return;}
+  if(!annual){L.innerHTML='<div class="msg">Enter the dividend per share to see your income.</div>';return;}
+  if(!sh){L.innerHTML='<div class="msg">Enter how many shares you own.</div>';return;}
+  const mx=Math.max(...lines.map(l=>l[2]));
+  L.innerHTML=`<div class="co">${name}</div><div class="lab">Dividends a year on ${S}</div>
+  <div class="big">${fmt(total,sym)}</div>
+  <div class="stats"><div><b>${fmt(total/12,sym)}</b><span>a month</span></div><div><b>${fmt(total/52,sym)}</b><span>a week</span></div><div><b>${fmt(total/365,sym)}</b><span>a day</span></div></div>`+
+  lines.map(l=>`<div class="bl"><div class="bt"><span>${l[0]}<small>${l[1]}</small></span><b>${fmt(l[2],sym)}</b></div><div class="track"><i style="width:${Math.max(4,l[2]/mx*100)}%"></i></div></div>`).join("")+
+  (d?`<div class="lab">Figures as of ${d.asof}${pr>0?"":". Yield is an estimate"}.</div>`:"");
+}
+["tk","sh","px","dps","unit","n"].forEach(id=>$(id).addEventListener("input",render));
+render();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"dividend-calculator"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
