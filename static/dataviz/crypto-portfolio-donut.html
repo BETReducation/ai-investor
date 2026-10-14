@@ -45,7 +45,7 @@ input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--b
 <div class="seg" id="seg"></div>
 <div class="grid">
 <div class="card"><svg id="d" viewBox="0 0 300 300"></svg><div class="others" id="oth"></div><div class="leg" id="leg"></div></div>
-<div class="card"><div class="tools"><input id="q" placeholder="Search coins..."><button id="clr">Clear</button></div><div class="list" id="list"></div></div>
+<div class="card"><div class="tools"><input id="q" placeholder="Search coins..."><button id="clr">Clear all</button></div><div class="list" id="list"></div></div>
 </div>
 <div class="st" id="st"></div>
 <div class="st" id="sv"></div>
@@ -68,7 +68,7 @@ $("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;cur=c;[...$("seg").
 $("list").innerHTML=C.map(([id,s,n],i)=>`<div class="row" data-id="${id}" data-s="${(s+" "+n).toLowerCase()}"><i style="background:${col(i)}"></i><div><b>${s}</b><small>${n} · <span class="p"></span></small></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="0"><div class="v"></div></div>`).join("");
 $("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);amt[r.dataset.id]=v>0?v:0;update();save()};
 $("q").oninput=()=>{const t=$("q").value.trim().toLowerCase();document.querySelectorAll(".row").forEach(r=>r.style.display=r.dataset.s.includes(t)?"":"none")};
-$("clr").onclick=()=>{amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update();save()};
+$("clr").onclick=()=>{if(!Object.keys(amt).some(k=>amt[k]>0))return;if(!confirm("Clear all coins from your donut? This also removes the saved copy on your account."))return;amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update();save()};
 function arc(r,a0,a1){const p=a=>[150+r*Math.cos(a),150+r*Math.sin(a)];const[x0,y0]=p(a0),[x1,y1]=p(a1);return`M${x0} ${y0}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1} ${y1}`}
 function update(){
   const items=[];let tot=0;
