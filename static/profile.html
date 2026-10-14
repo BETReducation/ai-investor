@@ -519,6 +519,15 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      <!-- PRICE & VALUE TRACKER -->
+      <div class="profile-card">
+        <div class="card-header-row">
+          <div class="card-header-title">Price &amp; Value Tracker</div>
+        </div>
+        <div class="card-header-sub" style="margin-top:-8px;">A summary of the purchases and sales you've logged. Your own records, shown back to you.</div>
+        <div id="trackerSummary" class="saved-strat-list"></div>
+      </div>
+
       </div>
 
       <div class="tab-pane" id="tab-subscription">
@@ -755,6 +764,7 @@ function populateProfile(data) {
   document.getElementById('prefPopupAlerts').checked  = notif.popup_enabled !== false;
 
   renderSavedStrategies(prefs);
+  renderTrackerSummary(prefs.price_tracker);
 }
 
 // ── Saved strategies ─────────────────────────────────────────────────────────
@@ -775,6 +785,47 @@ function escapeHtml(str) {
 function escJsAttr(str) {
   const jsEscaped = String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   return jsEscaped.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Same average-cost maths as the Price & Value Tracker tool itself.
+function renderTrackerSummary(t) {
+  const el = document.getElementById('trackerSummary');
+  const tx = t && Array.isArray(t.tx) ? t.tx : [];
+  if (!tx.length) {
+    el.innerHTML = '<div class="saved-strat-empty">Nothing logged yet.</div><div class="saved-strat-actions" style="margin-top:10px;"><a class="saved-strat-open" href="/tools/data-visualisation/price-value-tracker">Open the tracker</a></div>';
+    return;
+  }
+  const A = {};
+  [...tx].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.id - b.id).forEach(x => {
+    const k = String(x.sym).toLowerCase();
+    const a = A[k] || (A[k] = { qty: 0, cost: 0, real: 0, put: 0, last: 0 });
+    a.last = x.price;
+    if (x.side === 'buy') { const c = x.qty * x.price + (x.fee || 0); a.qty += x.qty; a.cost += c; a.put += c; }
+    else {
+      const q = Math.min(x.qty, a.qty), avg = a.qty > 0 ? a.cost / a.qty : 0;
+      a.real += q * x.price - (x.fee || 0) - q * avg; a.cost -= q * avg; a.qty -= q;
+      if (a.qty < 1e-9) { a.qty = 0; a.cost = 0; }
+    }
+  });
+  let value = 0, cost = 0, real = 0, put = 0, open = 0;
+  Object.entries(A).forEach(([k, a]) => {
+    const p = t.prices && t.prices[k] && t.prices[k].p > 0 ? t.prices[k].p : a.last;
+    value += a.qty * p; cost += a.cost; real += a.real; put += a.put; if (a.qty > 0) open++;
+  });
+  const sym = { gbp: '£', usd: '$', eur: '€' }[t.cur] || '£';
+  const m = v => (v < 0 ? '-' : '') + sym + Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sg = v => (v > 0 ? '+' : '') + m(v);
+  const col = v => v > 0 ? 'var(--green)' : v < 0 ? '#ff4757' : 'var(--muted)';
+  const un = value - cost, tot = un + real;
+  const row = (l, v, c) => `<div class="saved-strat-row"><span style="font-size:13px;color:var(--muted)">${l}</span><strong style="color:${c || 'inherit'}">${v}</strong></div>`;
+  el.innerHTML =
+    row('Portfolio value now', m(value)) +
+    row('Cost of current holdings', m(cost)) +
+    row('Unrealised gain / loss', sg(un) + (cost > 0 ? ` (${(un / cost * 100).toFixed(2)}%)` : ''), col(un)) +
+    row('Realised gain / loss', sg(real), col(real)) +
+    row('Total gain / loss', sg(tot) + (put > 0 ? ` (${(tot / put * 100).toFixed(2)}%)` : ''), col(tot)) +
+    row('Holdings · transactions', `${open} · ${tx.length}`) +
+    '<div class="saved-strat-actions" style="margin-top:10px;"><a class="saved-strat-open" href="/tools/data-visualisation/price-value-tracker">Open the tracker</a></div>';
 }
 
 function renderSavedStrategies(prefs) {
