@@ -72,6 +72,10 @@ tr.closed td{color:var(--mut)}
 .leg{display:flex;gap:16px;font-size:12px;color:var(--mut);margin-bottom:6px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 svg{width:100%;display:block}
+#hist{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:nowrap;display:none;z-index:2}
+.tip b{display:block;margin-bottom:3px}.tip span{display:flex;justify-content:space-between;gap:14px}
+.hn{color:var(--mut);font-size:12px;margin-top:8px}
 .cl{font-size:12px;fill:var(--tx);font-weight:600}.vl{font-size:11px;fill:var(--mut)}
 .note{color:var(--mut);font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 .st{font-size:12px;color:var(--mut);text-align:center}
@@ -113,6 +117,8 @@ svg{width:100%;display:block}
   <div class="tw"><table><thead><tr><th>Asset</th><th>Held</th><th>Avg buy price</th><th>Price now</th><th>Cost</th><th>Value now</th><th>Gain / loss</th><th>Realised</th></tr></thead><tbody id="hold"></tbody></table></div>
 </div>
 
+<div class="card" id="hcard"><h3>Portfolio value over time</h3><div class="leg"><span><i style="background:var(--acc)"></i>Value</span><span><i style="background:var(--mut);opacity:.7"></i>Cost</span></div><div id="hist"><div class="tip" id="tip"></div></div><div class="hn">Value is marked at your own entries: the trade price on the day you traded, and any "Price now" you have typed in. It is not market history, so it moves between your entries rather than day by day.</div></div>
+
 <div class="card" id="chcard"><h3>Bought for vs worth now</h3><div class="leg"><span><i style="background:var(--mut);opacity:.55"></i>Cost</span><span><i style="background:var(--up)"></i>Value now</span></div><div id="chart"></div></div>
 
 <div class="card">
@@ -127,7 +133,7 @@ svg{width:100%;display:block}
 const $=id=>document.getElementById(id);
 const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
 const KEY="gcg-price-tracker";
-let S={tx:[],prices:{},cur:"gbp",nid:1},side="buy",editId=null,filter="",user=null,timer,K=null;
+let S={tx:[],prices:{},snaps:{},cur:"gbp",nid:1},side="buy",editId=null,filter="",user=null,timer,K=null,HG=null;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num=s=>{const v=parseFloat(String(s).replace(/,/g,""));return isFinite(v)?v:NaN};
@@ -203,6 +209,75 @@ function compute(list){
   return Object.values(A);
 }
 
+// Price entries over time: every "Price now" you type is kept with its date, so the
+// history can mark holdings at those prices as well as at trade prices.
+function setPrice(k,p,c){
+  const l=S.snaps[k]||(S.snaps[k]=[]),d=today(),i=l.findIndex(x=>x.d===d);
+  if(p>0){S.prices[k]={p,d,c};const e={d,p,c};if(i>=0)l[i]=e;else l.push(e)}
+  else{delete S.prices[k];if(i>=0)l.splice(i,1)}
+}
+function series(){
+  const txs=S.tx.map(conv).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id);
+  if(!txs.length)return[];
+  const ds=new Set([today()]);txs.forEach(t=>ds.add(t.date));
+  Object.values(S.snaps).forEach(l=>l.forEach(x=>ds.add(x.d)));
+  const st={},out=[];let i=0;
+  const get=k=>st[k]||(st[k]={qty:0,cost:0,lp:0,ld:""});
+  [...ds].sort().forEach(d=>{
+    while(i<txs.length&&txs[i].date<=d){
+      const t=txs[i++],a=get(t.sym.toLowerCase());
+      if(t.side==="buy"){a.qty+=t.qty;a.cost+=t.qty*t.price+t.fee}
+      else{const q=Math.min(t.qty,a.qty),avg=a.qty>0?a.cost/a.qty:0;a.cost-=q*avg;a.qty-=q;if(a.qty<1e-9){a.qty=0;a.cost=0}}
+      a.lp=t.price;a.ld=t.date;
+    }
+    Object.entries(S.snaps).forEach(([k,l])=>{
+      const x=l.filter(y=>y.d<=d).sort((p,q)=>p.d<q.d?-1:1).pop(),a=get(k);
+      if(x&&x.d>=a.ld){a.lp=toNow(x.p,x.c);a.ld=x.d}
+    });
+    let value=0,cost=0;Object.values(st).forEach(a=>{value+=a.qty*a.lp;cost+=a.cost});
+    out.push({d,value,cost});
+  });
+  const first=txs[0].date,pts=out.filter(p=>p.d>=first);
+  if(pts.length)Object.assign(pts[pts.length-1],{value:K.value,cost:K.cost});
+  return pts;
+}
+const nice=m=>{const e=Math.pow(10,Math.floor(Math.log10(m))),f=m/e;return(f<=1?1:f<=2?2:f<=5?5:10)*e};
+const short=v=>{const a=Math.abs(v),s=SYM[S.cur];if(S.cur==="btc")return s+(+a.toPrecision(3));return s+(a>=1e6?(a/1e6).toFixed(1)+"m":a>=1e4?Math.round(a/1e3)+"k":a>=1e3?(a/1e3).toFixed(1)+"k":a>=10?Math.round(a):a.toFixed(2))};
+function drawHist(pts){
+  const box=$("hist"),tip=$("tip");
+  [...box.querySelectorAll("svg,.empty")].forEach(e=>e.remove());
+  if(pts.length<2){HG=null;box.insertAdjacentHTML("afterbegin",'<div class="empty">The history needs entries on at least two different dates.</div>');return}
+  const cw=box.clientWidth,W=Math.max(300,cw),H=260,L=W<500?46:58,R=14,T=12,B=26;
+  const t0=Date.parse(pts[0].d),t1=Date.parse(pts[pts.length-1].d);
+  const X=d=>L+(Date.parse(d)-t0)/(t1-t0||1)*(W-L-R);
+  const mx=Math.max(1e-9,...pts.map(p=>Math.max(p.value,p.cost))),step=nice(mx/4),top=step*Math.ceil(mx/step);
+  const Y=v=>T+(1-v/top)*(H-T-B);
+  let g="";
+  for(let v=0;v<=top+step/1e6;v+=step)g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--bd)"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" class="vl">${short(v)}</text>`;
+  const span=(t1-t0)/864e5,fd=d=>new Date(d).toLocaleDateString(undefined,span>150?{month:"short",year:"numeric"}:{day:"numeric",month:"short"});
+  g+=`<text x="${L}" y="${H-6}" class="vl">${fd(t0)}</text><text x="${(L+W-R)/2}" y="${H-6}" text-anchor="middle" class="vl">${fd((t0+t1)/2)}</text><text x="${W-R}" y="${H-6}" text-anchor="end" class="vl">${fd(t1)}</text>`;
+  const line=pts.map((p,i)=>(i?"L":"M")+X(p.d).toFixed(1)+" "+Y(p.value).toFixed(1)).join("");
+  g+=`<path d="${line}L${X(pts[pts.length-1].d)} ${Y(0)}L${X(pts[0].d)} ${Y(0)}Z" fill="var(--acc)" opacity=".12"/>`;
+  g+=`<path d="${pts.map((p,i)=>i?`L${X(p.d).toFixed(1)} ${Y(pts[i-1].cost).toFixed(1)}L${X(p.d).toFixed(1)} ${Y(p.cost).toFixed(1)}`:`M${X(p.d).toFixed(1)} ${Y(p.cost).toFixed(1)}`).join("")}" fill="none" stroke="var(--mut)" stroke-width="2" stroke-dasharray="5 4" opacity=".8"/>`;
+  g+=`<path d="${line}" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if(pts.length<=40)g+=pts.map(p=>`<circle cx="${X(p.d)}" cy="${Y(p.value)}" r="3" fill="var(--acc)"/>`).join("");
+  g+=`<g id="hov" style="display:none"><line id="hg" y1="${T}" y2="${H-B}" stroke="var(--mut)" stroke-dasharray="3 3"/><circle id="hd" r="5" fill="var(--card)" stroke="var(--acc)" stroke-width="2.5"/></g>`;
+  box.insertAdjacentHTML("afterbegin",`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`);
+  HG={pts,X,Y,W,cw};
+  box.onpointermove=e=>{
+    if(!HG)return;
+    const x=e.clientX-box.getBoundingClientRect().left;
+    let best=HG.pts[0];HG.pts.forEach(p=>{if(Math.abs(HG.X(p.d)-x)<Math.abs(HG.X(best.d)-x))best=p});
+    const bx=HG.X(best.d),gain=best.value-best.cost;
+    $("hov").style.display="";$("hg").setAttribute("x1",bx);$("hg").setAttribute("x2",bx);$("hd").setAttribute("cx",bx);$("hd").setAttribute("cy",HG.Y(best.value));
+    tip.innerHTML=`<b>${fdate(best.d)}</b><span><em style="font-style:normal;color:var(--mut)">Value</em>${money(best.value)}</span><span><em style="font-style:normal;color:var(--mut)">Cost</em>${money(best.cost)}</span><span><em style="font-style:normal;color:var(--mut)">Gain</em><i style="font-style:normal" class="${cls(gain)}">${sgn(gain)}</i></span>`;
+    tip.style.display="block";
+    tip.style.left=Math.min(Math.max(bx+12,0),HG.W-tip.offsetWidth)+"px";tip.style.top="8px";
+  };
+  box.onpointerleave=()=>{tip.style.display="none";const h=$("hov");if(h)h.style.display="none"};
+}
+new ResizeObserver(()=>{if(HG&&Math.abs($("hist").clientWidth-HG.cw)>1)drawHist(HG.pts)}).observe($("hist"));
+
 function render(){
   const A=compute(S.tx),open=A.filter(a=>a.qty>0).sort((a,b)=>b.value-a.value),closed=A.filter(a=>a.qty===0);
   const value=open.reduce((s,a)=>s+a.value,0),cost=open.reduce((s,a)=>s+a.cost,0),un=value-cost;
@@ -217,6 +292,8 @@ function render(){
     kp("Realised gain / loss",sgn(real),"From sales you have made",cls(real))+
     kp("Total gain / loss",sgn(tot),put>0?pct(tot/put*100)+" of all money bought":"–",cls(tot));
 
+  $("hcard").style.display=S.tx.length?"":"none";
+  drawHist(series());
   const ae=document.activeElement,fk=ae&&ae.classList.contains("px")?ae.dataset.k:null,fv=fk?ae.value:null;
   const px=(a)=>`<input class="px" data-k="${esc(a.k)}" type="text" inputmode="decimal" value="${a.manual?+a.price.toPrecision(8):""}" placeholder="${n2(a.price)}"><small class="pd">${a.manual&&a.pdate?"set "+fdate(a.pdate):"last trade price"}</small>`;
   let h=open.map(a=>`<tr><td class="as"><button data-view="${esc(a.k)}" title="Show this asset's transactions">${esc(a.label)}</button>${a.warn?'<small class="dn">Sales exceed units held, check dates</small>':`<small>${value>0?(a.value/value*100).toFixed(1)+"% of portfolio":""}</small>`}<div class="wt"><span style="width:${value>0?a.value/value*100:0}%"></span></div></td>
@@ -289,7 +366,7 @@ $("flt").onchange=()=>{filter=$("flt").value;render()};
 $("hold").addEventListener("input",e=>{
   const el=e.target;if(!el.classList.contains("px"))return;
   const v=num(el.value);
-  if(v>0)S.prices[el.dataset.k]={p:v,d:today(),c:S.cur};else delete S.prices[el.dataset.k];
+  setPrice(el.dataset.k,v,S.cur);
   render();save();
 });
 $("hold").addEventListener("click",e=>{
@@ -302,14 +379,14 @@ $("led").addEventListener("click",e=>{
   if(ed)startEdit(+ed.dataset.edit);
   if(dl&&confirm("Delete this transaction?")){S.tx=S.tx.filter(t=>t.id!==+dl.dataset.del);if(editId===+dl.dataset.del)resetForm();render();save()}
 });
-$("clr").onclick=()=>{if(S.tx.length&&confirm("Delete every transaction and price? This cannot be undone.")){S.tx=[];S.prices={};S.nid=1;filter="";resetForm();render();save()}};
+$("clr").onclick=()=>{if(S.tx.length&&confirm("Delete every transaction and price? This cannot be undone.")){S.tx=[];S.prices={};S.snaps={};S.nid=1;filter="";resetForm();render();save()}};
 
 function demo(){
   const rows=[["Bitcoin","buy",.05,52000,5,420],["Bitcoin","buy",.03,68000,3,200],["Gold (oz)","buy",2,1850,10,700],["Apple shares","buy",15,142,2,500],["Apple shares","sell",5,198,2,90],["Ethereum","buy",1.2,2400,4,300],["Ethereum","sell",1.2,3100,4,60]];
   const cur={bitcoin:97000,"gold (oz)":2650,"apple shares":228,ethereum:3500};
   S.cur="usd";markCur();
   rows.forEach(([sym,s,qty,price,fee,d])=>S.tx.push({id:S.nid++,date:ago(d),sym,side:s,qty,price,fee,note:"Example",cur:"usd",r:null}));
-  Object.keys(cur).forEach(k=>S.prices[k]={p:cur[k],d:today(),c:"usd"});
+  Object.keys(cur).forEach(k=>setPrice(k,cur[k],"usd"));
   render();save();
 }
 
@@ -368,10 +445,13 @@ function apply(d){
   S.tx=tx;S.nid=id;S.prices={};
   Object.entries(d.prices||{}).forEach(([k,v])=>{if(v&&v.p>0)S.prices[k]={p:+v.p,d:String(v.d||today()),c:SYM[v.c]?v.c:(SYM[d.cur]?d.cur:"gbp")}});
   if(SYM[d.cur])S.cur=d.cur;
+  S.snaps={};
+  Object.entries(d.snaps||{}).forEach(([k,l])=>{if(Array.isArray(l))S.snaps[k]=l.filter(x=>x&&x.p>0&&/^\d{4}-\d{2}-\d{2}$/.test(x.d)).map(x=>({d:x.d,p:+x.p,c:SYM[x.c]?x.c:(SYM[d.cur]?d.cur:"gbp")}))});
+  Object.entries(S.prices).forEach(([k,v])=>{const l=S.snaps[k]||(S.snaps[k]=[]);if(!l.some(x=>x.d===v.d))l.push({d:v.d,p:v.p,c:v.c})});
   return true;
 }
 function save(){
-  const d={tx:S.tx,prices:S.prices,cur:S.cur,summary:K};
+  const d={tx:S.tx,prices:S.prices,snaps:S.snaps,cur:S.cur,summary:K};
   try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
   if(!user)return;
   clearTimeout(timer);

@@ -49,6 +49,14 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);ma
 #gFill{display:block;height:100%;border-radius:9px;background-image:linear-gradient(90deg,#E5484D,#F2A33A,#F5D547,#2EB872);background-repeat:no-repeat;background-position:left;transition:width .5s ease,background-size .5s ease}
 .gnote{font-size:14px;margin-top:8px}
 .jump{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 11px;cursor:pointer;margin-left:6px}
+#clockBox{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:center;justify-content:center;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+#clock{width:210px;height:210px;flex:none}
+.ck{flex:1 1 220px;min-width:0}
+.ck h3{font:700 18px "Bricolage Grotesque",system-ui,sans-serif;margin:0 0 4px}
+.ck p{margin:0 0 10px;font-size:14px;color:var(--mute)}
+.ms{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.ms li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:5px}
+.ms li.done b{color:var(--grow)}
 .note{font-size:12px;color:var(--mute);margin-top:14px;margin-bottom:0}
 </style>
 </head>
@@ -81,6 +89,8 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);ma
       <div id="readout"></div>
       <svg id="chart" role="img" aria-label="Line graph of investment value over time"></svg>
       <div class="legend"><span><i style="background:var(--paid)"></i>Money you put in</span><span><i style="background:var(--grow)"></i>Total value</span><span><i style="background:var(--gainfill);height:10px;border:1px solid var(--grow)"></i>Growth earned</span></div>
+      <div id="clockBox"><svg id="clock" viewBox="0 0 200 200" role="img" aria-label="Clock showing progress towards the target amount"></svg>
+        <div class="ck"><h3 id="ckT">The Freedom Clock</h3><p id="ckP"></p><ul class="ms" id="ms"></ul></div></div>
       <p class="note">Illustrative only. Ignores fees, tax and inflation, and real returns vary year to year. Educational tool, not financial advice.</p>
     </div>
   </div>
@@ -136,7 +146,22 @@ function draw(){
   const h=hover!==null?pts[hover]:last;
   s+=`<line x1="${X(h.d)}" x2="${X(h.d)}" y1="${m.t}" y2="${H-m.b}" stroke="var(--hand)" stroke-width="2"/><circle cx="${X(h.d)}" cy="${Y(h.v)}" r="5" fill="var(--hand)"/>`;
   svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.innerHTML=s;svg._x=X;
+  clockUI(h.v);
   $("readout").innerHTML=`After <strong>${span(h.d)}</strong>: <strong>${money(h.v)}</strong> total, from <strong>${money(h.p)}</strong> put in, so <strong>${money(h.v-h.p)}</strong> growth.`;
+}
+// One full turn = target hit. 3 o'clock is 25%, 6 o'clock half way, 9 o'clock 75%, back at 12 is done.
+function clockUI(v){
+  const g=num("goal"),pct=g>0?Math.min(1,v/g):0,C=2*Math.PI*70,cx=100,cy=100;
+  let s=`<circle cx="${cx}" cy="${cy}" r="92" fill="var(--bg)" stroke="var(--line)" stroke-width="3"/>`;
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,major=i%3===0;
+    s+=`<line x1="${cx+Math.sin(a)*(major?76:81)}" y1="${cy-Math.cos(a)*(major?76:81)}" x2="${cx+Math.sin(a)*86}" y2="${cy-Math.cos(a)*86}" stroke="${major?"var(--ink)":"var(--mute)"}" stroke-width="${major?3:1.5}" stroke-linecap="round"/>`;}
+  s+=`<circle cx="${cx}" cy="${cy}" r="62" fill="none" stroke="var(--line)" stroke-width="10"/>`;
+  if(pct>0)s+=`<circle cx="${cx}" cy="${cy}" r="62" fill="none" stroke="var(--grow)" stroke-width="10" stroke-linecap="${pct>=1?"butt":"round"}" stroke-dasharray="${(pct*2*Math.PI*62).toFixed(1)} ${(2*Math.PI*62).toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+  const a=pct*2*Math.PI;
+  s+=`<line x1="${cx}" y1="${cy}" x2="${(cx+Math.sin(a)*56).toFixed(1)}" y2="${(cy-Math.cos(a)*56).toFixed(1)}" stroke="var(--hand)" stroke-width="4" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="6" fill="var(--hand)"/>`;
+  s+=`<text x="${cx}" y="${cy+32}" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">${g>0?(pct>=1?"Target hit":Math.floor(pct*100)+"%"):"No target"}</text>`;
+  $("clock").innerHTML=s;
+  $("ckP").textContent=!g?"Add a target amount to start the clock. The hand sweeps round as your money grows, and reaches 12 again when the target is hit.":pct>=1?"The clock is full: "+money(g)+" reached by this point on the chart.":"The hand has covered "+Math.floor(pct*100)+"% of the way round to "+money(g)+".";
 }
 function update(){
   days=exact!==null?exact:sliderToDays(+$("time").value);
@@ -154,8 +179,14 @@ function daysToGoal(g){
   for(let d=1;d<=10958;d++){v*=1+dr;if(Math.floor(d/per)>Math.floor((d-1)/per))v+=add;if(v>=g)return d;}
   return null;
 }
+function milestonesUI(g){
+  $("ms").innerHTML=g?[[.25,"A quarter (3 o'clock)"],[.5,"Half way (6 o'clock)"],[.75,"Three quarters (9 o'clock)"],[1,"Full clock (12 o'clock)"]].map(([f,t])=>{
+    const d=daysToGoal(g*f),done=d!==null&&d<=days;
+    return `<li class="${done?"done":""}"><span>${done?"✓ ":""}${t}</span><b>${d===null?"30+ years":d===0?"Already there":span(d)}</b></li>`}).join(""):"";
+}
 function goalUI(){
   const g=num("goal"),box=$("goalBox");
+  milestonesUI(g);
   if(!g){box.style.display="none";return;}
   box.style.display="block";
   const l=pts[pts.length-1],pct=Math.min(100,l.v/g*100);
