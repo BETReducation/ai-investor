@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crypto Portfolio Donut</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--card:#fff;--tx:#0b1f3a;--mut:#5b6b82;--bd:#d9e1ec;--acc:#0fb5a6;--bg:#f1f5fa;--ring:#e3e9f2}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:#0f2038;--tx:#eef3fa;--mut:#8fa3bf;--bd:#1f3556;--bg:#081426;--ring:#1a2d4a}}
+:root[data-theme="dark"]{--card:#0f2038;--tx:#eef3fa;--mut:#8fa3bf;--bd:#1f3556;--bg:#081426;--ring:#1a2d4a}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--tx);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:4px 2px 12px}
+.seg{display:flex;gap:6px;margin-bottom:14px}
+.seg button{flex:1;padding:10px 0;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-weight:700;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--acc);border-color:var(--acc);color:#04201d}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;min-width:0}
+svg{width:100%;max-width:340px;display:block;margin:0 auto}
+.tot{font-size:12px;fill:var(--mut)}.tv{font-size:19px;font-weight:800;fill:var(--tx)}
+.others{text-align:center;color:var(--mut);font-size:12px;margin:6px 0 10px;overflow-wrap:anywhere}
+.leg{display:grid;gap:5px;max-height:240px;overflow-y:auto}
+.li{display:flex;align-items:center;gap:8px;font-size:13px}
+.li i,.row i{width:12px;height:12px;border-radius:4px;flex:none}
+.li b{width:48px}.li em{font-style:normal;font-weight:700;width:52px}.li span{color:var(--mut);margin-left:auto;text-align:right}
+.tools{display:flex;gap:8px;margin-bottom:10px}
+input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;min-width:0}
+.tools input{flex:1}
+.tools button{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:10px;padding:0 12px;cursor:pointer}
+.list{max-height:520px;overflow-y:auto;display:grid;gap:6px}
+.row{display:grid;grid-template-columns:12px 1fr 92px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd)}
+.row small{display:block;color:var(--mut);font-size:11px}
+.row .v{grid-column:2/4;font-size:12px;color:var(--acc);font-weight:700}
+.row .v:empty{display:none}
+.row input{width:92px;text-align:right}
+.st{font-size:12px;color:var(--mut);margin-top:10px;text-align:center}
+</style>
+</head>
+<body><div class="wrap">
+<div class="seg" id="seg"></div>
+<div class="grid">
+<div class="card"><svg id="d" viewBox="0 0 300 300"></svg><div class="others" id="oth"></div><div class="leg" id="leg"></div></div>
+<div class="card"><div class="tools"><input id="q" placeholder="Search coins..."><button id="clr">Clear</button></div><div class="list" id="list"></div></div>
+</div>
+<div class="st" id="st"></div>
+</div>
+<script>
+const C=[["bitcoin","BTC","Bitcoin",110000],["ethereum","ETH","Ethereum",3900],["tether","USDT","Tether",1],["ripple","XRP","XRP",2.5],["binancecoin","BNB","BNB",1000],["solana","SOL","Solana",190],["usd-coin","USDC","USD Coin",1],["dogecoin","DOGE","Dogecoin",.2],["tron","TRX","TRON",.3],["cardano","ADA","Cardano",.65],["hyperliquid","HYPE","Hyperliquid",40],["chainlink","LINK","Chainlink",18],["stellar","XLM","Stellar",.35],["bitcoin-cash","BCH","Bitcoin Cash",500],["sui","SUI","Sui",3],["avalanche-2","AVAX","Avalanche",25],["hedera-hashgraph","HBAR","Hedera",.2],["litecoin","LTC","Litecoin",100],["shiba-inu","SHIB","Shiba Inu",.000011],["the-open-network","TON","Toncoin",2.5],["polkadot","DOT","Polkadot",4],["uniswap","UNI","Uniswap",8],["monero","XMR","Monero",300],["dai","DAI","Dai",1],["aave","AAVE","Aave",250],["bittensor","TAO","Bittensor",350],["near","NEAR","NEAR",3],["pepe","PEPE","Pepe",.00001],["ethereum-classic","ETC","Eth Classic",18],["internet-computer","ICP","Internet Computer",5],["aptos","APT","Aptos",4],["arbitrum","ARB","Arbitrum",.35],["algorand","ALGO","Algorand",.2],["cosmos","ATOM","Cosmos",4],["vechain","VET","VeChain",.02],["filecoin","FIL","Filecoin",2.5],["render-token","RENDER","Render",3],["kaspa","KAS","Kaspa",.07],["polygon-ecosystem-token","POL","Polygon",.2],["bonk","BONK","Bonk",.00002],["sei-network","SEI","Sei",.3],["injective-protocol","INJ","Injective",12],["optimism","OP","Optimism",.7],["blockstack","STX","Stacks",.6],["celestia","TIA","Celestia",1.5],["the-graph","GRT","The Graph",.08],["maker","MKR","Maker",1500],["ondo-finance","ONDO","Ondo",.8],["worldcoin-wld","WLD","Worldcoin",1],["jupiter-exchange-solana","JUP","Jupiter",.4]];
+const PAL=["#00d4c4","#ffb400","#ff3d71","#7a5cff","#2dd36f","#ff7a1a","#18a0fb","#e0359e","#c6e600","#00a3a3","#ff5c5c","#9b8cff"];
+const col=i=>i<12?PAL[i]:`hsl(${(i*137.5)%360} 85% 55%)`;
+const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
+let cur="gbp",amt={},px={},isLive=false;
+const FX={gbp:.75,eur:.86};
+C.forEach(([id,,,u])=>px[id]={usd:u,gbp:u*FX.gbp,eur:u*FX.eur,btc:u/C[0][3]});
+const $=id=>document.getElementById(id);
+function money(v,c){
+  if(c==="btc"){const s=v>=1?v.toLocaleString(undefined,{maximumFractionDigits:4}):v.toFixed(v<1e-4?10:8).replace(/0+$/,"").replace(/\.$/,"");return "₿"+(s||"0")}
+  return SYM[c]+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:v<1?6:2});
+}
+$("seg").innerHTML=["gbp","usd","eur","btc"].map(c=>`<button data-c="${c}" class="${c===cur?"on":""}">${c.toUpperCase()}</button>`).join("");
+$("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update()};
+$("list").innerHTML=C.map(([id,s,n],i)=>`<div class="row" data-id="${id}" data-s="${(s+" "+n).toLowerCase()}"><i style="background:${col(i)}"></i><div><b>${s}</b><small>${n} · <span class="p"></span></small></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="0"><div class="v"></div></div>`).join("");
+$("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);amt[r.dataset.id]=v>0?v:0;update()};
+$("q").oninput=()=>{const t=$("q").value.trim().toLowerCase();document.querySelectorAll(".row").forEach(r=>r.style.display=r.dataset.s.includes(t)?"":"none")};
+$("clr").onclick=()=>{amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update()};
+function arc(r,a0,a1){const p=a=>[150+r*Math.cos(a),150+r*Math.sin(a)];const[x0,y0]=p(a0),[x1,y1]=p(a1);return`M${x0} ${y0}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1} ${y1}`}
+function update(){
+  const items=[];let tot=0;
+  C.forEach(([id,s],i)=>{const v=(amt[id]||0)*px[id][cur];if(v>0){items.push({id,s,i,v});tot+=v}});
+  items.sort((a,b)=>b.v-a.v);
+  document.querySelectorAll(".row").forEach(r=>{const id=r.dataset.id,p=px[id][cur];r.querySelector(".p").textContent=money(p,cur);r.querySelector(".v").textContent=amt[id]>0?"= "+money(amt[id]*p,cur):""});
+  let g="";
+  if(!items.length){g=`<circle cx="150" cy="150" r="104" fill="none" stroke="var(--ring)" stroke-width="52"/>`}
+  else if(items.length===1){g=`<circle cx="150" cy="150" r="104" fill="none" stroke="${col(items[0].i)}" stroke-width="52"/><text x="150" y="155" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="3" paint-order="stroke">100%</text>`}
+  else{let a=-Math.PI/2;items.forEach(t=>{const sw=t.v/tot*Math.PI*2,gap=Math.min(.014,sw/4),pct=t.v/tot*100;
+    g+=`<path d="${arc(104,a+gap,a+sw-gap)}" fill="none" stroke="${col(t.i)}" stroke-width="52"/>`;
+    if(pct>=4){const m=a+sw/2;g+=`<text x="${150+104*Math.cos(m)}" y="${150+104*Math.sin(m)+4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.5)" stroke-width="3" paint-order="stroke">${pct.toFixed(pct<10?1:0)}%</text>`}
+    a+=sw})}
+  const big=money(tot,cur).length>11;
+  g+=`<text class="tot" x="150" y="138" text-anchor="middle">Total value</text><text class="tv" x="150" y="164" text-anchor="middle" style="font-size:${big?15:19}px">${money(tot,cur)}</text><text class="tot" x="150" y="184" text-anchor="middle">${cur.toUpperCase()}</text>`;
+  $("d").innerHTML=g;
+  const oc=["gbp","usd","eur","btc"].filter(c=>c!==cur);
+  $("oth").textContent=tot?"≈ "+oc.map(c=>money(items.reduce((s,t)=>s+amt[t.id]*px[t.id][c],0),c)).join("  ·  "):"Add coins to build your donut";
+  $("leg").innerHTML=items.map(t=>`<div class="li"><i style="background:${col(t.i)}"></i><b>${t.s}</b><em>${(t.v/tot*100).toFixed(1)}%</em><span>${money(t.v,cur)}</span></div>`).join("");
+  $("st").textContent=isLive?"Live prices via CoinGecko. For illustration only, not advice.":"Approximate snapshot prices, not live. For illustration only, not advice.";
+}
+async function goLive(){
+  try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+C.map(c=>c[0]).join(",")+"&vs_currencies=usd,gbp,eur,btc");
+    if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});isLive=n>10}catch(e){}
+  update();
+}
+update();goLive();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"crypto-portfolio-donut"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script></body></html>
