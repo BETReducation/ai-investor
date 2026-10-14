@@ -76,7 +76,7 @@ function personality(items,tot){
 const PAL=["#00d4c4","#ffb400","#ff3d71","#7a5cff","#2dd36f","#ff7a1a","#18a0fb","#e0359e","#c6e600","#00a3a3","#ff5c5c","#9b8cff"];
 const col=i=>i<12?PAL[i]:`hsl(${(i*137.5)%360} 85% 55%)`;
 const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
-let cur="gbp",amt={},px={},isLive=false;
+let cur="gbp",amt={},px={},isLive=false,touched=false;
 const FX={gbp:.75,eur:.86};
 C.forEach(([id,,,u])=>px[id]={usd:u,gbp:u*FX.gbp,eur:u*FX.eur,btc:u/C[0][3]});
 const $=id=>document.getElementById(id);
@@ -85,13 +85,13 @@ function money(v,c){
   return SYM[c]+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:v<1?6:2});
 }
 $("seg").innerHTML=["gbp","usd","eur","btc"].map(c=>`<button data-c="${c}" class="${c===cur?"on":""}">${c.toUpperCase()}</button>`).join("");
-$("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update();save()};
+$("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;touched=true;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update();save()};
 $("list").innerHTML=C.map(([id,s,n],i)=>`<div class="row" data-id="${id}" data-s="${(s+" "+n).toLowerCase()}"><i style="background:${col(i)}"></i><div><b>${s}</b><small>${n} · <span class="p"></span></small></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="0"><div class="v"></div></div>`).join("");
-$("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);amt[r.dataset.id]=v>0?v:0;update();save()};
+$("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);touched=true;amt[r.dataset.id]=v>0?v:0;update();save()};
 document.addEventListener("click",e=>{const b=e.target.closest(".rm");if(!b)return;
-  const id=b.dataset.id;delete amt[id];const i=document.querySelector(`.row[data-id="${id}"] input`);if(i)i.value="";update();save()});
+  const id=b.dataset.id;touched=true;delete amt[id];const i=document.querySelector(`.row[data-id="${id}"] input`);if(i)i.value="";update();save()});
 $("q").oninput=()=>{const t=$("q").value.trim().toLowerCase();document.querySelectorAll(".row").forEach(r=>r.style.display=r.dataset.s.includes(t)?"":"none")};
-$("clr").onclick=()=>{if(!Object.keys(amt).some(k=>amt[k]>0))return;if(!confirm("Clear all coins from your donut? This also removes the saved copy on your account."))return;amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update();save()};
+$("clr").onclick=()=>{touched=true;if(!Object.keys(amt).some(k=>amt[k]>0))return;if(!confirm("Clear all coins from your donut? This also removes the saved copy on your account."))return;amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update();save()};
 function arc(r,a0,a1){const p=a=>[150+r*Math.cos(a),150+r*Math.sin(a)];const[x0,y0]=p(a0),[x1,y1]=p(a1);return`M${x0} ${y0}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1} ${y1}`}
 function update(){
   const items=[];let tot=0;
@@ -117,7 +117,7 @@ function update(){
 }
 async function goLive(){
   try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+C.map(c=>c[0]).join(",")+"&vs_currencies=usd,gbp,eur,btc");
-    if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});isLive=n>10}catch(e){}
+    if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});px.bitcoin.btc=1;isLive=n>10}catch(e){}
   update();
 }
 // Signed-in users: saved to the account (same /api/save-preferences every tool uses),
@@ -151,8 +151,8 @@ async function restore(){
     user=me.username;
     const r=await fetch("/api/load-preferences",{credentials:"include"});
     const remote=r.ok?(await r.json()).preferences?.crypto_donut:null;
-    if(remote&&apply(remote)){update();save();status("Saved to your account")}
-    else if(Object.keys(amt).length){save()}
+    if(remote&&!touched&&apply(remote)){update();save();status("Saved to your account")}
+    else if(touched||Object.keys(amt).length){save()}
     else status("Your donut saves to your account automatically");
   }catch(e){}
 }
