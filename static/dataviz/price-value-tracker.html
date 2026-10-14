@@ -34,8 +34,8 @@ h3{margin:0 0 12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
 .form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end}
 .form .f{display:grid;gap:4px;min-width:0}
 .form label{font-size:11px;color:var(--mut);font-weight:700}
-.f.w2{grid-column:span 2}
-@media(max-width:860px){.form{grid-template-columns:repeat(2,1fr)}.f.w2{grid-column:span 2}}
+.f.w2{grid-column:span 2}.f.w3{grid-column:span 3}
+@media(max-width:860px){.form{grid-template-columns:repeat(2,1fr)}.f.w2,.f.w3{grid-column:span 2}}
 input,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;min-width:0;width:100%}
 input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
 .side button{flex:1}
@@ -81,7 +81,7 @@ svg{width:100%;display:block}
 
 <div class="top">
   <div class="seg" id="cur"></div>
-  <span class="st" style="text-align:left">Enter everything in one currency. No conversion is applied.</span>
+  <span class="st" style="text-align:left">Each transaction keeps the currency it was made in. Everything is converted into the one you pick here.</span>
   <span class="sp"></span>
   <button class="btn" id="exp">Export CSV</button>
   <button class="btn" id="imp">Import CSV</button>
@@ -98,10 +98,13 @@ svg{width:100%;display:block}
     <div class="f"><label for="fd">Date</label><input id="fd" type="date"></div>
     <div class="f"><label for="fq">Quantity</label><input id="fq" type="text" inputmode="decimal" placeholder="0"></div>
     <div class="f"><label for="fp">Price per unit</label><input id="fp" type="text" inputmode="decimal" placeholder="0.00"></div>
+    <div class="f"><label for="fc">Currency</label><select id="fc"></select></div>
     <div class="f"><label for="ff">Fees (optional)</label><input id="ff" type="text" inputmode="decimal" placeholder="0.00"></div>
-    <div class="f w2"><label for="fn">Note (optional)</label><input id="fn" placeholder="Where, why, anything"></div>
+    <div class="f"><label for="fr" id="frl">Rate</label><input id="fr" type="text" inputmode="decimal"></div>
+    <div class="f w3"><label for="fn">Note (optional)</label><input id="fn" placeholder="Where, why, anything"></div>
     <div class="actions"><button class="btn pri" id="add">Add transaction</button><button class="btn ghost" id="cancel" hidden>Cancel</button></div>
   </div>
+  <div class="st" id="rt" style="text-align:left;margin-top:8px"></div>
   <div class="msg" id="msg"></div>
 </div>
 
@@ -124,12 +127,12 @@ svg{width:100%;display:block}
 const $=id=>document.getElementById(id);
 const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
 const KEY="gcg-price-tracker";
-let S={tx:[],prices:{},cur:"gbp",nid:1},side="buy",editId=null,filter="",user=null,timer;
+let S={tx:[],prices:{},cur:"gbp",nid:1},side="buy",editId=null,filter="",user=null,timer,K=null;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num=s=>{const v=parseFloat(String(s).replace(/,/g,""));return isFinite(v)?v:NaN};
-const n2=v=>v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:S.cur==="btc"?8:v!==0&&Math.abs(v)<1?6:2});
-const money=v=>(v<0?"-":"")+SYM[S.cur]+n2(Math.abs(v));
+const n2=(v,c=S.cur)=>v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:c==="btc"?8:v!==0&&Math.abs(v)<1?6:2});
+const money=(v,c=S.cur)=>(v<0?"-":"")+SYM[c]+n2(Math.abs(v),c);
 const sgn=v=>(v>0?"+":v<0?"-":"")+SYM[S.cur]+n2(Math.abs(v));
 const pct=v=>(v>0?"+":"")+v.toFixed(2)+"%";
 const qf=q=>(+q.toFixed(8)).toLocaleString(undefined,{maximumFractionDigits:8});
@@ -138,14 +141,52 @@ const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOStr
 const fdate=d=>new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
 const ago=n=>new Date(Date.now()-n*864e5-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 
+// Rates are USD per one unit of each currency. Each transaction stores the rates from
+// its own date, so cost stays what you really paid in the display currency; the value
+// of holdings today uses live rates.
+let LIVE={usd:1,gbp:1/.75,eur:1/.86,btc:110000},isLive=false;
+const fromBtc=(u,g,e)=>({usd:1,gbp:u/g,eur:u/e,btc:u});
+const liveP=(async()=>{try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,gbp,eur");if(!r.ok)throw 0;const b=(await r.json()).bitcoin;LIVE=fromBtc(b.usd,b.gbp,b.eur);isLive=true}catch(e){}})();
+const toNow=(p,c)=>c===S.cur?p:p*LIVE[c]/LIVE[S.cur];
+function conv(t){
+  const f=t.cur===S.cur?1:(t.r&&t.r[t.cur]>0&&t.r[S.cur]>0?t.r[t.cur]/t.r[S.cur]:LIVE[t.cur]/LIVE[S.cur]);
+  return {...t,price:t.price*f,fee:t.fee*f,f};
+}
+let formR=null,rateSeq=0,ratePending=Promise.resolve();
+const histCache={};
+async function ratesFor(date){
+  await liveP;
+  if(date>=today())return{r:{...LIVE},est:!isLive};
+  if(histCache[date])return histCache[date];
+  try{
+    const[y,m,d]=date.split("-");
+    const res=await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/history?date=${d}-${m}-${y}&localization=false`);
+    if(!res.ok)throw 0;
+    const p=(await res.json()).market_data.current_price;
+    return histCache[date]={r:fromBtc(p.usd,p.gbp,p.eur),est:false};
+  }catch(e){return{r:{...LIVE},est:true}}
+}
+const fmtRate=v=>String(+v.toPrecision(6));
+function rateLabel(c){$("fr").disabled=c==="usd";$("frl").textContent=c==="usd"?"Rate":`Rate ($ per ${SYM[c]}1)`}
+function refreshRate(){
+  const seq=++rateSeq,date=$("fd").value,c=$("fc").value;
+  rateLabel(c);if(!date)return;
+  $("rt").textContent="Fetching rates…";
+  ratePending=ratesFor(date).then(({r,est})=>{
+    if(seq!==rateSeq)return;
+    formR=r;$("fr").value=c==="usd"?"1":fmtRate(r[c]);
+    $("rt").textContent=est?"Couldn't fetch rates for that date, so today's are used. Edit the rate if you know it.":"Exchange rate for that date, fetched automatically. You can edit it.";
+  });
+}
+
 // Average-cost method: a sale removes units at the running average cost, and the
 // difference between sale proceeds and that cost is the realised gain.
 function compute(list){
   const A={};
-  [...list].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id).forEach(t=>{
+  list.map(conv).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id).forEach(t=>{
     const k=t.sym.toLowerCase();
     const a=A[k]||(A[k]={k,label:t.sym,qty:0,cost:0,realised:0,bought:0,boughtCost:0,sells:0,last:0,warn:false});
-    a.last=t.price;
+    a.last=toNow(t.price/t.f,t.cur);
     if(t.side==="buy"){const c=t.qty*t.price+t.fee;a.qty+=t.qty;a.cost+=c;a.bought+=t.qty;a.boughtCost+=c}
     else{
       let q=t.qty;if(q>a.qty+1e-9){a.warn=true;q=a.qty}
@@ -156,7 +197,7 @@ function compute(list){
   });
   Object.values(A).forEach(a=>{
     const p=S.prices[a.k];
-    a.manual=!!(p&&p.p>0);a.price=a.manual?p.p:a.last;a.pdate=p&&p.d||null;
+    a.manual=!!(p&&p.p>0);a.price=a.manual?toNow(p.p,p.c||S.cur):a.last;a.pdate=p&&p.d||null;
     a.avg=a.qty>0?a.cost/a.qty:0;a.value=a.qty*a.price;a.gain=a.value-a.cost;a.gp=a.cost>0?a.gain/a.cost*100:0;
   });
   return Object.values(A);
@@ -167,6 +208,8 @@ function render(){
   const value=open.reduce((s,a)=>s+a.value,0),cost=open.reduce((s,a)=>s+a.cost,0),un=value-cost;
   const real=A.reduce((s,a)=>s+a.realised,0),put=A.reduce((s,a)=>s+a.boughtCost,0),tot=un+real;
   const kp=(l,v,sub,c)=>`<div class="kpi"><small>${l}</small><b class="${c||""}">${v}</b><em>${sub}</em></div>`;
+  K={cur:S.cur,value,cost,un,real,put,tot,open:open.length,n:S.tx.length,at:today()};
+  $("st").textContent="Your own records, shown back to you. Prices you type in are not live data."+(isLive?" Currency rates via CoinGecko.":" Currency rates are approximate, live rates unavailable.")+" For illustration only, not advice.";
   $("kpis").innerHTML=
     kp("Portfolio value now",money(value),`${open.length} holding${open.length===1?"":"s"}`)+
     kp("Cost of current holdings",money(cost),"What you paid, fees included")+
@@ -175,7 +218,7 @@ function render(){
     kp("Total gain / loss",sgn(tot),put>0?pct(tot/put*100)+" of all money bought":"–",cls(tot));
 
   const ae=document.activeElement,fk=ae&&ae.classList.contains("px")?ae.dataset.k:null,fv=fk?ae.value:null;
-  const px=(a)=>`<input class="px" data-k="${esc(a.k)}" type="text" inputmode="decimal" value="${a.manual?a.price:""}" placeholder="${n2(a.price)}"><small class="pd">${a.manual&&a.pdate?"set "+fdate(a.pdate):"last trade price"}</small>`;
+  const px=(a)=>`<input class="px" data-k="${esc(a.k)}" type="text" inputmode="decimal" value="${a.manual?+a.price.toPrecision(8):""}" placeholder="${n2(a.price)}"><small class="pd">${a.manual&&a.pdate?"set "+fdate(a.pdate):"last trade price"}</small>`;
   let h=open.map(a=>`<tr><td class="as"><button data-view="${esc(a.k)}" title="Show this asset's transactions">${esc(a.label)}</button>${a.warn?'<small class="dn">Sales exceed units held, check dates</small>':`<small>${value>0?(a.value/value*100).toFixed(1)+"% of portfolio":""}</small>`}<div class="wt"><span style="width:${value>0?a.value/value*100:0}%"></span></div></td>
     <td>${qf(a.qty)}</td><td>${money(a.avg)}</td><td>${px(a)}</td><td>${money(a.cost)}</td><td><b>${money(a.value)}</b></td>
     <td class="${cls(a.gain)}"><b>${sgn(a.gain)}</b><br><span class="pill ${cls(a.gain)||"flat"}">${pct(a.gp)}</span></td>
@@ -197,13 +240,14 @@ function render(){
   $("al").innerHTML=A.map(a=>`<option value="${esc(a.label)}">`).join("");
   const rows=[...S.tx].filter(t=>!filter||t.sym.toLowerCase()===filter).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.id-a.id);
   $("led").innerHTML=rows.map(t=>{const tt=t.side==="buy"?t.qty*t.price+t.fee:t.qty*t.price-t.fee;
-    return `<tr><td>${fdate(t.date)}</td><td><b>${esc(t.sym)}</b></td><td style="text-align:center"><span class="tag ${t.side}">${t.side}</span></td><td>${qf(t.qty)}</td><td>${money(t.price)}</td><td>${t.fee?money(t.fee):"–"}</td><td><b>${money(tt)}</b></td><td style="text-align:left" class="note" title="${esc(t.note)}">${esc(t.note)}</td>
+    return `<tr><td>${fdate(t.date)}</td><td><b>${esc(t.sym)}</b></td><td style="text-align:center"><span class="tag ${t.side}">${t.side}</span></td><td>${qf(t.qty)}</td><td>${money(t.price,t.cur)}</td><td>${t.fee?money(t.fee,t.cur):"–"}</td><td><b>${money(tt,t.cur)}</b>${t.cur!==S.cur?`<small class="pd">≈ ${money(tt*conv(t).f)}</small>`:""}</td><td style="text-align:left" class="note" title="${esc(t.note)}">${esc(t.note)}</td>
     <td><button class="btn sm" data-edit="${t.id}">Edit</button> <button class="btn sm ghost" data-del="${t.id}">Delete</button></td></tr>`}).join("")||`<tr><td colspan="9"><div class="empty">No transactions.</div></td></tr>`;
 }
 
 function setSide(s){side=s;[...$("side").children].forEach(b=>b.classList.toggle("on",b.dataset.s===s))}
-function resetForm(){editId=null;["fa","fq","fp","ff","fn"].forEach(i=>$(i).value="");$("fd").value=today();$("msg").textContent="";$("add").textContent="Add transaction";$("cancel").hidden=true;$("ftitle").textContent="Add a purchase or sale"}
-function submit(){
+function resetForm(){editId=null;["fa","fq","fp","ff","fn"].forEach(i=>$(i).value="");$("fd").value=today();$("fc").value=S.cur;refreshRate();$("msg").textContent="";$("add").textContent="Add transaction";$("cancel").hidden=true;$("ftitle").textContent="Add a purchase or sale"}
+async function submit(){
+  await ratePending;
   const sym=$("fa").value.trim(),qty=num($("fq").value),price=num($("fp").value),fee=$("ff").value.trim()?num($("ff").value):0,date=$("fd").value;
   const err=m=>{$("msg").textContent=m};
   if(!sym)return err("Enter an asset name.");
@@ -211,7 +255,10 @@ function submit(){
   if(!(qty>0))return err("Quantity must be more than zero.");
   if(!(price>=0))return err("Enter a price per unit.");
   if(!(fee>=0))return err("Fees must be zero or more.");
-  const t={id:editId||S.nid,date,sym,side,qty,price,fee,note:$("fn").value.trim()};
+  const cc=$("fc").value,rate=cc==="usd"?1:num($("fr").value);
+  if(!(rate>0))return err("Enter the exchange rate.");
+  const r={...(formR||LIVE),usd:1};r[cc]=rate;
+  const t={id:editId||S.nid,date,sym,side,qty,price,fee,note:$("fn").value.trim(),cur:cc,r};
   const next=editId?S.tx.map(x=>x.id===editId?t:x):[...S.tx,t];
   const a=compute(next).find(x=>x.k===sym.toLowerCase());
   if(a&&a.warn)return err("That sale is larger than the units you held on that date.");
@@ -224,13 +271,16 @@ function submit(){
 function startEdit(id){
   const t=S.tx.find(x=>x.id===id);if(!t)return;
   editId=id;setSide(t.side);$("fa").value=t.sym;$("fd").value=t.date;$("fq").value=t.qty;$("fp").value=t.price;$("ff").value=t.fee||"";$("fn").value=t.note;
+  rateSeq++;$("fc").value=t.cur;formR=t.r;rateLabel(t.cur);$("fr").value=fmtRate((t.r||LIVE)[t.cur]);$("rt").textContent=t.r?"Rate saved with this transaction. Change the date or currency to fetch a new one.":"No rate saved with this one, so today's is shown. Edit it if you know it.";
   $("add").textContent="Save changes";$("cancel").hidden=false;$("ftitle").textContent="Edit transaction";$("msg").textContent="";
   $("ftitle").scrollIntoView({behavior:"smooth",block:"center"});
 }
 
 $("cur").innerHTML=Object.keys(SYM).map(c=>`<button data-c="${c}">${SYM[c]} ${c.toUpperCase()}</button>`).join("");
-function markCur(){[...$("cur").children].forEach(b=>b.classList.toggle("on",b.dataset.c===S.cur))}
+function markCur(){[...$("cur").children].forEach(b=>b.classList.toggle("on",b.dataset.c===S.cur));if(!editId){$("fc").value=S.cur;refreshRate()}}
 $("cur").onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.cur=c;markCur();render();save()};
+$("fc").innerHTML=Object.keys(SYM).map(c=>`<option value="${c}">${SYM[c]} ${c.toUpperCase()}</option>`).join("");
+$("fc").onchange=refreshRate;$("fd").onchange=refreshRate;
 $("side").onclick=e=>{const s=e.target.dataset.s;if(s)setSide(s)};
 $("add").onclick=submit;
 $("cancel").onclick=resetForm;
@@ -239,7 +289,7 @@ $("flt").onchange=()=>{filter=$("flt").value;render()};
 $("hold").addEventListener("input",e=>{
   const el=e.target;if(!el.classList.contains("px"))return;
   const v=num(el.value);
-  if(v>0)S.prices[el.dataset.k]={p:v,d:today()};else delete S.prices[el.dataset.k];
+  if(v>0)S.prices[el.dataset.k]={p:v,d:today(),c:S.cur};else delete S.prices[el.dataset.k];
   render();save();
 });
 $("hold").addEventListener("click",e=>{
@@ -258,8 +308,8 @@ function demo(){
   const rows=[["Bitcoin","buy",.05,52000,5,420],["Bitcoin","buy",.03,68000,3,200],["Gold (oz)","buy",2,1850,10,700],["Apple shares","buy",15,142,2,500],["Apple shares","sell",5,198,2,90],["Ethereum","buy",1.2,2400,4,300],["Ethereum","sell",1.2,3100,4,60]];
   const cur={bitcoin:97000,"gold (oz)":2650,"apple shares":228,ethereum:3500};
   S.cur="usd";markCur();
-  rows.forEach(([sym,s,qty,price,fee,d])=>S.tx.push({id:S.nid++,date:ago(d),sym,side:s,qty,price,fee,note:"Example"}));
-  Object.keys(cur).forEach(k=>S.prices[k]={p:cur[k],d:today()});
+  rows.forEach(([sym,s,qty,price,fee,d])=>S.tx.push({id:S.nid++,date:ago(d),sym,side:s,qty,price,fee,note:"Example",cur:"usd",r:null}));
+  Object.keys(cur).forEach(k=>S.prices[k]={p:cur[k],d:today(),c:"usd"});
   render();save();
 }
 
@@ -284,7 +334,7 @@ function isoDate(s){
 $("exp").onclick=()=>{
   if(!S.tx.length){alert("Nothing to export yet.");return}
   const q=v=>/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
-  const csv=["date,asset,side,quantity,price,fees,note",...[...S.tx].sort((a,b)=>a.date<b.date?-1:1).map(t=>[t.date,q(t.sym),t.side,t.qty,t.price,t.fee,q(t.note)].join(","))].join("\n");
+  const csv=["date,asset,side,quantity,price,fees,note,currency,rate",...[...S.tx].sort((a,b)=>a.date<b.date?-1:1).map(t=>[t.date,q(t.sym),t.side,t.qty,t.price,t.fee,q(t.note),t.cur,t.r?t.r[t.cur]:""].join(","))].join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="price-value-tracker.csv";a.click();URL.revokeObjectURL(a.href);
 };
 $("imp").onclick=()=>$("file").click();
@@ -292,13 +342,14 @@ $("file").onchange=async()=>{
   const f=$("file").files[0];$("file").value="";if(!f)return;
   const rows=parseCSV(await f.text());if(rows.length<2){alert("No rows found.");return}
   const head=rows[0].map(x=>x.trim().toLowerCase()),ix=n=>head.findIndex(h=>n.includes(h));
-  const c={date:ix(["date"]),sym:ix(["asset","name","symbol","ticker"]),side:ix(["side","type"]),qty:ix(["quantity","qty","units","amount"]),price:ix(["price"]),fee:ix(["fees","fee"]),note:ix(["note","notes"])};
+  const c={date:ix(["date"]),sym:ix(["asset","name","symbol","ticker"]),side:ix(["side","type"]),qty:ix(["quantity","qty","units","amount"]),price:ix(["price"]),fee:ix(["fees","fee"]),note:ix(["note","notes"]),cur:ix(["currency","ccy"]),rate:ix(["rate"])};
   if(c.date<0||c.sym<0||c.side<0||c.qty<0||c.price<0){alert("Columns needed: date, asset, side (buy/sell), quantity, price. Fees and note are optional.");return}
   const add=[];let bad=0;
   rows.slice(1).forEach(r=>{
     const side=(r[c.side]||"").trim().toLowerCase(),date=isoDate(r[c.date]||""),sym=(r[c.sym]||"").trim(),qty=num(r[c.qty]),price=num(r[c.price]),fee=c.fee>=0&&r[c.fee]?num(r[c.fee]):0;
-    if(!date||!sym||!(side==="buy"||side==="sell")||!(qty>0)||!(price>=0)||!(fee>=0)){bad++;return}
-    add.push({id:0,date,sym,side,qty,price,fee,note:c.note>=0?(r[c.note]||"").trim():""});
+    const cc=c.cur>=0&&(r[c.cur]||"").trim()?(r[c.cur]||"").trim().toLowerCase():S.cur,rt=c.rate>=0?num(r[c.rate]):NaN;
+    if(!SYM[cc]||!date||!sym||!(side==="buy"||side==="sell")||!(qty>0)||!(price>=0)||!(fee>=0)){bad++;return}
+    add.push({id:0,date,sym,side,qty,price,fee,note:c.note>=0?(r[c.note]||"").trim():"",cur:cc,r:cc==="usd"?null:rt>0?{...LIVE,usd:1,[cc]:rt}:null});
   });
   if(!add.length){alert("No valid rows. Dates should be YYYY-MM-DD or DD/MM/YYYY.");return}
   if(!confirm(`Add ${add.length} transaction${add.length===1?"":"s"} to your tracker?${bad?` (${bad} row${bad===1?"":"s"} skipped as invalid.)`:""}`))return;
@@ -312,15 +363,15 @@ function status(m){$("sv").textContent=m}
 function apply(d){
   if(!d||!Array.isArray(d.tx))return false;
   const tx=d.tx.filter(t=>t&&t.sym&&(t.side==="buy"||t.side==="sell")&&t.qty>0&&t.price>=0&&/^\d{4}-\d{2}-\d{2}$/.test(t.date))
-    .map(t=>({id:+t.id||0,date:t.date,sym:String(t.sym),side:t.side,qty:+t.qty,price:+t.price,fee:+t.fee||0,note:String(t.note||"")}));
+    .map(t=>({id:+t.id||0,date:t.date,sym:String(t.sym),side:t.side,qty:+t.qty,price:+t.price,fee:+t.fee||0,note:String(t.note||""),cur:SYM[t.cur]?t.cur:(SYM[d.cur]?d.cur:"gbp"),r:t.r&&["usd","gbp","eur","btc"].every(k=>t.r[k]>0)?{usd:1,gbp:+t.r.gbp,eur:+t.r.eur,btc:+t.r.btc}:null}));
   let id=1;tx.forEach(t=>{if(!t.id||t.id>=1e9)t.id=0;id=Math.max(id,t.id+1)});tx.forEach(t=>{if(!t.id)t.id=id++});
   S.tx=tx;S.nid=id;S.prices={};
-  Object.entries(d.prices||{}).forEach(([k,v])=>{if(v&&v.p>0)S.prices[k]={p:+v.p,d:String(v.d||today())}});
+  Object.entries(d.prices||{}).forEach(([k,v])=>{if(v&&v.p>0)S.prices[k]={p:+v.p,d:String(v.d||today()),c:SYM[v.c]?v.c:(SYM[d.cur]?d.cur:"gbp")}});
   if(SYM[d.cur])S.cur=d.cur;
   return true;
 }
 function save(){
-  const d={tx:S.tx,prices:S.prices,cur:S.cur};
+  const d={tx:S.tx,prices:S.prices,cur:S.cur,summary:K};
   try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
   if(!user)return;
   clearTimeout(timer);
@@ -344,6 +395,7 @@ async function restore(){
   }catch(e){}
 }
 setSide("buy");$("fd").value=today();markCur();render();restore();
+liveP.then(()=>{render();if(S.tx.length)save()});
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"price-value-tracker"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
