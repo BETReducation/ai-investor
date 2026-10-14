@@ -812,8 +812,8 @@ function renderTrackerSummary(t) {
     const p = t.prices && t.prices[k] && t.prices[k].p > 0 ? t.prices[k].p : a.last;
     value += a.qty * p; cost += a.cost; real += a.real; put += a.put; if (a.qty > 0) open++;
   });
-  const sym = { gbp: '£', usd: '$', eur: '€' }[t.cur] || '£';
-  const m = v => (v < 0 ? '-' : '') + sym + Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sym = { gbp: '£', usd: '$', eur: '€', btc: '₿' }[t.cur] || '£';
+  const m = v => (v < 0 ? '-' : '') + sym + Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: t.cur === 'btc' ? 8 : 2 });
   const sg = v => (v > 0 ? '+' : '') + m(v);
   const col = v => v > 0 ? 'var(--green)' : v < 0 ? '#ff4757' : 'var(--muted)';
   const un = value - cost, tot = un + real;
