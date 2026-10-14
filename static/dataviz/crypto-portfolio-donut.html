@@ -38,13 +38,15 @@ input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--b
 .row .v{grid-column:2/4;font-size:12px;color:var(--acc);font-weight:700}
 .row .v:empty{display:none}
 .row input{width:92px;text-align:right}
+.pers{text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--bd)}.pers[hidden]{display:none}
+.pers .lab{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em}.pers .em{font-size:44px;line-height:1.2}.pers h3{margin:2px 0 4px;font-size:20px}.pers p{margin:0;color:var(--mut);font-size:13px}
 .st{font-size:12px;color:var(--mut);margin-top:10px;text-align:center}
 </style>
 </head>
 <body><div class="wrap">
 <div class="seg" id="seg"></div>
 <div class="grid">
-<div class="card"><svg id="d" viewBox="0 0 300 300"></svg><div class="others" id="oth"></div><div class="leg" id="leg"></div></div>
+<div class="card"><svg id="d" viewBox="0 0 300 300"></svg><div class="others" id="oth"></div><div class="leg" id="leg"></div><div class="pers" id="pers" hidden></div></div>
 <div class="card"><div class="tools"><input id="q" placeholder="Search coins..."><button id="clr">Clear all</button></div><div class="list" id="list"></div></div>
 </div>
 <div class="st" id="st"></div>
@@ -52,6 +54,22 @@ input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--b
 </div>
 <script>
 const C=[["bitcoin","BTC","Bitcoin",110000],["ethereum","ETH","Ethereum",3900],["tether","USDT","Tether",1],["ripple","XRP","XRP",2.5],["binancecoin","BNB","BNB",1000],["solana","SOL","Solana",190],["usd-coin","USDC","USD Coin",1],["dogecoin","DOGE","Dogecoin",.2],["tron","TRX","TRON",.3],["cardano","ADA","Cardano",.65],["hyperliquid","HYPE","Hyperliquid",40],["chainlink","LINK","Chainlink",18],["stellar","XLM","Stellar",.35],["bitcoin-cash","BCH","Bitcoin Cash",500],["sui","SUI","Sui",3],["avalanche-2","AVAX","Avalanche",25],["hedera-hashgraph","HBAR","Hedera",.2],["litecoin","LTC","Litecoin",100],["shiba-inu","SHIB","Shiba Inu",.000011],["the-open-network","TON","Toncoin",2.5],["polkadot","DOT","Polkadot",4],["uniswap","UNI","Uniswap",8],["monero","XMR","Monero",300],["dai","DAI","Dai",1],["aave","AAVE","Aave",250],["bittensor","TAO","Bittensor",350],["near","NEAR","NEAR",3],["pepe","PEPE","Pepe",.00001],["ethereum-classic","ETC","Eth Classic",18],["internet-computer","ICP","Internet Computer",5],["aptos","APT","Aptos",4],["arbitrum","ARB","Arbitrum",.35],["algorand","ALGO","Algorand",.2],["cosmos","ATOM","Cosmos",4],["vechain","VET","VeChain",.02],["filecoin","FIL","Filecoin",2.5],["render-token","RENDER","Render",3],["kaspa","KAS","Kaspa",.07],["polygon-ecosystem-token","POL","Polygon",.2],["bonk","BONK","Bonk",.00002],["sei-network","SEI","Sei",.3],["injective-protocol","INJ","Injective",12],["optimism","OP","Optimism",.7],["blockstack","STX","Stacks",.6],["celestia","TIA","Celestia",1.5],["the-graph","GRT","The Graph",.08],["maker","MKR","Maker",1500],["ondo-finance","ONDO","Ondo",.8],["worldcoin-wld","WLD","Worldcoin",1],["jupiter-exchange-solana","JUP","Jupiter",.4]];
+// Coin groups for the portfolio personality; anything unlisted counts as a general altcoin.
+const GRP={stable:"tether usd-coin dai",meme:"dogecoin shiba-inu pepe bonk",defi:"uniswap aave maker chainlink ondo-finance the-graph injective-protocol",ai:"bittensor render-token worldcoin-wld filecoin",btc:"bitcoin bitcoin-cash litecoin monero ethereum-classic kaspa",eth:"ethereum"};
+const G_OF={};Object.entries(GRP).forEach(([g,l])=>l.split(" ").forEach(id=>G_OF[id]=g));
+function personality(items,tot){
+  const sh=g=>items.filter(t=>G_OF[t.id]===g).reduce((a,t)=>a+t.v,0)/tot,top=items[0].v/tot;
+  if(items.length===1)return["🎰","The All-In Rebel","One coin, full send. Bold, but a little spicy."];
+  if(sh("stable")>=.5)return["🏦","The Stablecoin Saver","Mostly parked in dollars. Crypto rails, without the swings."];
+  if(top>=.5&&items[0].id==="bitcoin")return["🟠","The Bitcoin Maximalist","Bitcoin is basically your whole personality."];
+  if(top>=.6)return["🎯","The One-Coin Wonder",items[0].s+" is carrying nearly the whole portfolio."];
+  if(sh("btc")+sh("eth")>=.75)return["🛡️","The Blue-Chip Believer","Bitcoin and Ethereum lead the way. The old guard."];
+  if(sh("meme")>=.25)return["🐸","The Meme Lord","You back the coins the internet made famous."];
+  if(sh("defi")>=.35)return["🌾","The DeFi Farmer","Lending, swapping and oracles: you like the plumbing."];
+  if(sh("ai")>=.25)return["🤖","The AI Prophet","Betting that compute and machine learning end up on-chain."];
+  if(items.length>=6&&top<.35)return["⚖️","The All-Rounder","Spread wide with no single coin in charge."];
+  return["🧭","The Explorer","A bit of everything, still finding your style."];
+}
 const PAL=["#00d4c4","#ffb400","#ff3d71","#7a5cff","#2dd36f","#ff7a1a","#18a0fb","#e0359e","#c6e600","#00a3a3","#ff5c5c","#9b8cff"];
 const col=i=>i<12?PAL[i]:`hsl(${(i*137.5)%360} 85% 55%)`;
 const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
@@ -87,6 +105,8 @@ function update(){
   $("d").innerHTML=g;
   const oc=["gbp","usd","eur","btc"].filter(c=>c!==cur);
   $("oth").textContent=tot?"≈ "+oc.map(c=>money(items.reduce((s,t)=>s+amt[t.id]*px[t.id][c],0),c)).join("  ·  "):"Add coins to build your donut";
+  const P=$("pers");P.hidden=!tot;
+  if(tot){const p=personality(items,tot);P.innerHTML=`<div class="lab">Your portfolio personality</div><div class="em">${p[0]}</div><h3>${p[1]}</h3><p>${p[2]}</p>`}
   $("leg").innerHTML=items.map(t=>`<div class="li"><i style="background:${col(t.i)}"></i><b>${t.s}</b><em>${(t.v/tot*100).toFixed(1)}%</em><span>${money(t.v,cur)}</span></div>`).join("");
   $("st").textContent=isLive?"Live prices via CoinGecko. For illustration only, not advice.":"Approximate snapshot prices, not live. For illustration only, not advice.";
 }
