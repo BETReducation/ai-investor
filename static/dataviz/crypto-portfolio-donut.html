@@ -76,7 +76,7 @@ function update(){
   document.querySelectorAll(".row").forEach(r=>{const id=r.dataset.id,p=px[id][cur];r.querySelector(".p").textContent=money(p,cur);r.querySelector(".v").textContent=amt[id]>0?"= "+money(amt[id]*p,cur):""});
   let g="";
   if(!items.length){g=`<circle cx="150" cy="150" r="104" fill="none" stroke="var(--ring)" stroke-width="52"/>`}
-  else if(items.length===1){g=`<circle cx="150" cy="150" r="104" fill="none" stroke="${col(items[0].i)}" stroke-width="52"/><text x="150" y="155" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="3" paint-order="stroke">100%</text>`}
+  else if(items.length===1){g=`<circle cx="150" cy="150" r="104" fill="none" stroke="${col(items[0].i)}" stroke-width="52"/><text x="150" y="50" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.45)" stroke-width="3" paint-order="stroke">100%</text>`}
   else{let a=-Math.PI/2;items.forEach(t=>{const sw=t.v/tot*Math.PI*2,gap=Math.min(.014,sw/4),pct=t.v/tot*100;
     g+=`<path d="${arc(104,a+gap,a+sw-gap)}" fill="none" stroke="${col(t.i)}" stroke-width="52"/>`;
     if(pct>=4){const m=a+sw/2;g+=`<text x="${150+104*Math.cos(m)}" y="${150+104*Math.sin(m)+4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" stroke="rgba(0,0,0,.5)" stroke-width="3" paint-order="stroke">${pct.toFixed(pct<10?1:0)}%</text>`}
