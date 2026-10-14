@@ -48,6 +48,7 @@ input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--b
 <div class="card"><div class="tools"><input id="q" placeholder="Search coins..."><button id="clr">Clear</button></div><div class="list" id="list"></div></div>
 </div>
 <div class="st" id="st"></div>
+<div class="st" id="sv"></div>
 </div>
 <script>
 const C=[["bitcoin","BTC","Bitcoin",110000],["ethereum","ETH","Ethereum",3900],["tether","USDT","Tether",1],["ripple","XRP","XRP",2.5],["binancecoin","BNB","BNB",1000],["solana","SOL","Solana",190],["usd-coin","USDC","USD Coin",1],["dogecoin","DOGE","Dogecoin",.2],["tron","TRX","TRON",.3],["cardano","ADA","Cardano",.65],["hyperliquid","HYPE","Hyperliquid",40],["chainlink","LINK","Chainlink",18],["stellar","XLM","Stellar",.35],["bitcoin-cash","BCH","Bitcoin Cash",500],["sui","SUI","Sui",3],["avalanche-2","AVAX","Avalanche",25],["hedera-hashgraph","HBAR","Hedera",.2],["litecoin","LTC","Litecoin",100],["shiba-inu","SHIB","Shiba Inu",.000011],["the-open-network","TON","Toncoin",2.5],["polkadot","DOT","Polkadot",4],["uniswap","UNI","Uniswap",8],["monero","XMR","Monero",300],["dai","DAI","Dai",1],["aave","AAVE","Aave",250],["bittensor","TAO","Bittensor",350],["near","NEAR","NEAR",3],["pepe","PEPE","Pepe",.00001],["ethereum-classic","ETC","Eth Classic",18],["internet-computer","ICP","Internet Computer",5],["aptos","APT","Aptos",4],["arbitrum","ARB","Arbitrum",.35],["algorand","ALGO","Algorand",.2],["cosmos","ATOM","Cosmos",4],["vechain","VET","VeChain",.02],["filecoin","FIL","Filecoin",2.5],["render-token","RENDER","Render",3],["kaspa","KAS","Kaspa",.07],["polygon-ecosystem-token","POL","Polygon",.2],["bonk","BONK","Bonk",.00002],["sei-network","SEI","Sei",.3],["injective-protocol","INJ","Injective",12],["optimism","OP","Optimism",.7],["blockstack","STX","Stacks",.6],["celestia","TIA","Celestia",1.5],["the-graph","GRT","The Graph",.08],["maker","MKR","Maker",1500],["ondo-finance","ONDO","Ondo",.8],["worldcoin-wld","WLD","Worldcoin",1],["jupiter-exchange-solana","JUP","Jupiter",.4]];
@@ -63,11 +64,11 @@ function money(v,c){
   return SYM[c]+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:v<1?6:2});
 }
 $("seg").innerHTML=["gbp","usd","eur","btc"].map(c=>`<button data-c="${c}" class="${c===cur?"on":""}">${c.toUpperCase()}</button>`).join("");
-$("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update()};
+$("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update();save()};
 $("list").innerHTML=C.map(([id,s,n],i)=>`<div class="row" data-id="${id}" data-s="${(s+" "+n).toLowerCase()}"><i style="background:${col(i)}"></i><div><b>${s}</b><small>${n} · <span class="p"></span></small></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="0"><div class="v"></div></div>`).join("");
-$("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);amt[r.dataset.id]=v>0?v:0;update()};
+$("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);amt[r.dataset.id]=v>0?v:0;update();save()};
 $("q").oninput=()=>{const t=$("q").value.trim().toLowerCase();document.querySelectorAll(".row").forEach(r=>r.style.display=r.dataset.s.includes(t)?"":"none")};
-$("clr").onclick=()=>{amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update()};
+$("clr").onclick=()=>{amt={};document.querySelectorAll(".row input").forEach(i=>i.value="");update();save()};
 function arc(r,a0,a1){const p=a=>[150+r*Math.cos(a),150+r*Math.sin(a)];const[x0,y0]=p(a0),[x1,y1]=p(a1);return`M${x0} ${y0}A${r} ${r} 0 ${a1-a0>Math.PI?1:0} 1 ${x1} ${y1}`}
 function update(){
   const items=[];let tot=0;
@@ -94,7 +95,43 @@ async function goLive(){
     if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});isLive=n>10}catch(e){}
   update();
 }
-update();goLive();
+// Signed-in users: saved to the account (same /api/save-preferences every tool uses),
+// so it follows them across devices. Everyone also gets a localStorage copy.
+const KEY="gcg-crypto-donut";let user=null,timer;
+function status(m){$("sv").textContent=m}
+function apply(d){
+  if(!d||typeof d.amt!=="object")return false;
+  amt={};Object.keys(d.amt).forEach(id=>{if(px[id]&&d.amt[id]>0)amt[id]=d.amt[id]});
+  if(px.bitcoin[d.cur])cur=d.cur;
+  [...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===cur));
+  document.querySelectorAll(".row").forEach(r=>{const v=amt[r.dataset.id];r.querySelector("input").value=v||""});
+  return true;
+}
+function save(){
+  const d={amt,cur};
+  try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
+  if(!user)return;
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{
+    try{const r=await fetch("/api/save-preferences",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({crypto_donut:d})});
+      status(r.ok?"Saved to your account":"Could not save to your account")}catch(e){status("Could not save to your account")}
+  },500);
+}
+async function restore(){
+  try{apply(JSON.parse(localStorage.getItem(KEY)))}catch(e){}
+  update();
+  try{
+    const me=await(await fetch("/api/me",{credentials:"include"})).json();
+    if(!me.authenticated){status("Log in to save your donut to your account");return}
+    user=me.username;
+    const r=await fetch("/api/load-preferences",{credentials:"include"});
+    const remote=r.ok?(await r.json()).preferences?.crypto_donut:null;
+    if(remote&&apply(remote)){update();save();status("Saved to your account")}
+    else if(Object.keys(amt).length){save()}
+    else status("Your donut saves to your account automatically");
+  }catch(e){}
+}
+update();goLive();restore();
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"crypto-portfolio-donut"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
