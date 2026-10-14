@@ -72,10 +72,10 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);ma
         <select id="freq" aria-label="How often"><option value="1">every day</option><option value="7">every week</option><option value="30.4375" selected>every month</option><option value="365">every year</option></select></div>
 <input id="addR" type="range" min="0" max="5000" step="25" value="200" aria-label="Regular amount slider"></div>
       <div class="f"><label for="rate">Yearly return: <span id="rateL">7</span>%</label>
-        <input id="rate" type="range" min="0" max="20" step="0.1" value="7">
-        <div class="hint">0% to 20% a year, compounded daily.</div></div>
+        <input id="rate" type="range" min="0" max="100" step="0.1" value="7">
+        <div class="hint" id="rateH">0% to 100% a year, compounded daily.</div></div>
       <div class="f"><label for="time">Time: <span id="timeL"></span></label>
-        <input id="time" type="range" min="0" max="1000" step="1" value="800">
+        <input id="time" type="range" min="0" max="1000" step="1" value="776">
         <div class="chips" id="chips"></div></div>
       <div class="f"><label for="goal">Target amount (optional)</label><input id="goal" type="number" min="0" step="any" placeholder="e.g. 100000" inputmode="decimal"><div class="hint">See how long it takes to get there.</div></div>
     </div>
@@ -97,13 +97,15 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);ma
 </div>
 <script>
 const $=id=>document.getElementById(id);
-const MAXD=30*365.25, MIND=1;
-const PRESETS=[["1D",1],["1W",7],["1M",30.4375],["1Y",365.25],["5Y",5*365.25],["10Y",10*365.25],["20Y",20*365.25],["30Y",MAXD]];
+const MAXD=40*365.25, MIND=1;
+const PRESETS=[["1D",1],["1W",7],["1M",30.4375],["1Y",365.25],["5Y",5*365.25],["10Y",10*365.25],["20Y",20*365.25],["30Y",30*365.25],["40Y",MAXD]];
 let days=0, pts=[], hover=null, exact=null;
 const sliderToDays=v=>Math.round(MIND*Math.pow(MAXD/MIND,v/1000));
 const daysToSlider=d=>Math.round(1000*Math.log(d/MIND)/Math.log(MAXD/MIND));
 const num=id=>Math.max(0,parseFloat($(id).value)||0);
 function money(x){const c=$("cur").value;const a=Math.abs(x);
+  if(a>=1e15)return c+(x/1e15).toFixed(2)+"qd";
+  if(a>=1e12)return c+(x/1e12).toFixed(2)+"tn";
   if(a>=1e9)return c+(x/1e9).toFixed(2)+"bn";
   if(a>=1e6)return c+(x/1e6).toFixed(2)+"m";
   return c+Math.round(x).toLocaleString("en-GB");}
@@ -165,7 +167,7 @@ function clockUI(v){
 }
 function update(){
   days=exact!==null?exact:sliderToDays(+$("time").value);
-  $("timeL").textContent=span(days);$("rateL").textContent=num("rate");
+  $("timeL").textContent=span(days);$("rateL").textContent=num("rate");$("rateH").textContent=num("rate")>20?"Returns this high are rarely sustained for long. Treat this end of the slider as a thought experiment.":"0% to 100% a year, compounded daily.";
   calc();hover=null;
   const l=pts[pts.length-1];
   $("sFinal").textContent=money(l.v);$("sPaid").textContent=money(l.p);$("sGain").textContent=money(l.v-l.p);
@@ -176,13 +178,13 @@ function update(){
 function daysToGoal(g){
   const start=num("start"),add=num("add"),per=parseFloat($("freq").value),dr=Math.pow(1+num("rate")/100,1/365)-1;
   let v=start;if(v>=g)return 0;
-  for(let d=1;d<=10958;d++){v*=1+dr;if(Math.floor(d/per)>Math.floor((d-1)/per))v+=add;if(v>=g)return d;}
+  for(let d=1;d<=14610;d++){v*=1+dr;if(Math.floor(d/per)>Math.floor((d-1)/per))v+=add;if(v>=g)return d;}
   return null;
 }
 function milestonesUI(g){
   $("ms").innerHTML=g?[[.25,"A quarter (3 o'clock)"],[.5,"Half way (6 o'clock)"],[.75,"Three quarters (9 o'clock)"],[1,"Full clock (12 o'clock)"]].map(([f,t])=>{
     const d=daysToGoal(g*f),done=d!==null&&d<=days;
-    return `<li class="${done?"done":""}"><span>${done?"✓ ":""}${t}</span><b>${d===null?"30+ years":d===0?"Already there":span(d)}</b></li>`}).join(""):"";
+    return `<li class="${done?"done":""}"><span>${done?"✓ ":""}${t}</span><b>${d===null?"40+ years":d===0?"Already there":span(d)}</b></li>`}).join(""):"";
 }
 function goalUI(){
   const g=num("goal"),box=$("goalBox");
@@ -196,7 +198,7 @@ function goalUI(){
   const f=$("gFill");f.style.width=pct+"%";f.style.backgroundSize=(10000/Math.max(pct,1))+"% 100%";
   const dg=daysToGoal(g);let note;
   if(dg===0)note="You're already there.";
-  else if(dg===null)note="At this rate it takes more than 30 years. A larger regular amount or a higher return would shorten it.";
+  else if(dg===null)note="At this rate it takes more than 40 years. A larger regular amount or a higher return would shorten it.";
   else note="At this rate you reach "+money(g)+" in about <strong>"+span(dg)+"</strong>."+" <button class=\"jump\" type=\"button\" id=\"gJump\">Show on chart</button>";
   $("gNote").innerHTML=note;
   const j=$("gJump");if(j)j.onclick=()=>{exact=Math.min(dg,MAXD);$("time").value=daysToSlider(Math.max(exact,1));update();};
