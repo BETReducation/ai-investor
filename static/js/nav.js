@@ -31,16 +31,34 @@
     return 'linear-gradient(' + tint + ',' + tint + '), rgba(' + base + ')';
   }
 
-  // Tools menu: categories shown as flyout submenus. A category with no pages is
-  // left out until it has some — add pages here as they're built.
+  // Tools menu: categories shown as flyout submenus, and the same list drives the
+  // /tools hub page (window.GCG_TOOL_CATEGORIES). A category with no pages is left
+  // out until it has some. Page entry: [label, url, description, tag].
+  var DV = '/tools/data-visualisation/';
   var TOOL_CATEGORIES = [
-    { name: 'Analysis tools', pages: [['Signals', '/tools/signals'], ['Backtester', '/backtester'], ['AI Chart Analysis', '/tools/ai-chart-analysis']] },
-    { name: 'Crypto tools', pages: [['Crypto Unit Calculator', '/tools/data-visualisation/crypto-unit-calculator']] },
-    { name: 'Metals tools', pages: [['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'], ['Metal Calculator', '/tools/data-visualisation/metal-calculator']] },
-    { name: 'Stocks tools', pages: [['Dividend Calculator', '/tools/data-visualisation/dividend-calculator']] },
-    { name: 'Forex tools', pages: [] },
-    { name: 'Other tools', pages: [['Freedom Clock', '/tools/data-visualisation/freedom-clock'], ['Portfolio Manager', '/tools/portfolio'], ['Position Size Calculator', '/tools/calculator']] }
+    { name: 'Analysis tools', rgb: '59,130,246', blurb: 'Find setups, test them against history and review charts.', pages: [
+      ['Signals', '/tools/signals', 'Configure multi-indicator signals across 30+ technical studies. Filter, score and surface only the setups that match your criteria.', 'Analysis'],
+      ['Backtester', '/backtester', 'Run any strategy against years of real market data. Inspect P&L curves, max drawdown, Sharpe ratio and more.', 'Backtest'],
+      ['AI Chart Analysis', '/tools/ai-chart-analysis', 'A live chart with ready-made AI prompts for an indicator scan, market information and chart-pattern review. Pro and Founder.', 'Pro & Founder']
+    ] },
+    { name: 'Crypto tools', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
+      ['Crypto Unit Calculator', DV + 'crypto-unit-calculator', 'See how a coin divides into its smallest units, from satoshi to whole coins, with live prices.', 'Live data']
+    ] },
+    { name: 'Metals tools', rgb: '212,160,23', blurb: 'Precious and industrial metals, priced and compared.', pages: [
+      ['Gold &amp; Silver', DV + 'gold-silver-ratio', 'How many ounces of silver match one ounce of gold, and how that ratio has moved.', 'Live data'],
+      ['Metal Calculator', DV + 'metal-calculator', 'Convert troy ounces and grams of gold, silver, platinum, palladium and copper into dollars, pounds, euros and bitcoin.', 'Live data']
+    ] },
+    { name: 'Stocks tools', rgb: '0,212,170', blurb: 'Dividends and income from listed companies.', pages: [
+      ['Dividend Calculator', DV + 'dividend-calculator', 'Enter a ticker and a share count to see a year of dividend income and where the yield sits on a thermometer.', 'Live data']
+    ] },
+    { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [] },
+    { name: 'Other tools', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
+      ['Freedom Clock', DV + 'freedom-clock', 'Pick what you invest, how often and the return you assume, then watch compounding play out over time.', 'Interactive'],
+      ['Portfolio Manager', '/tools/portfolio', 'Add every investment you hold, then track its value, top-ups and gain/loss over time in one place.', 'Tracker'],
+      ['Position Size Calculator', '/tools/calculator', 'Size positions with the Kelly Criterion and convert pip values across FX pairs and lot sizes.', 'Calculator']
+    ] }
   ];
+  window.GCG_TOOL_CATEGORIES = TOOL_CATEGORIES;
   var TOOL_MENU_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
     return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
       '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';

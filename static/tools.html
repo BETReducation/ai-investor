@@ -44,13 +44,34 @@
 .card-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 20px; color: var(--c); }
 .card-desc { font-size: 14px; color: var(--muted); line-height: 1.65; flex: 1; }
 .card-link { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: gap 0.2s; color: var(--c); }
-.hub-grid .hub-card:nth-child(1) { --c: #3b82f6; --c-rgb: 59,130,246; }
-.hub-grid .hub-card:nth-child(2) { --c: var(--purple2); --c-rgb: 124,58,237; }
-.hub-grid .hub-card:nth-child(3) { --c: var(--green); --c-rgb: 0,212,170; }
-.hub-grid .hub-card:nth-child(4) { --c: var(--gold2); --c-rgb: 249,115,22; }
-.hub-grid .hub-card:nth-child(5) { --c: var(--gold); --c-rgb: 251,191,36; }
-.hub-grid .hub-card:nth-child(6) { --c: #38bdf8; --c-rgb: 56,189,248; }
 .hub-card:hover .card-link { gap: 10px; }
+
+.jump-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 28px; }
+.jump-bar button { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: all 0.15s; }
+.jump-bar button:hover { color: var(--text); border-color: var(--border2); }
+.jump-bar button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.tool-section { margin-bottom: 52px; --c: #94a3b8; --c-rgb: 148,163,184; scroll-margin-top: 90px; }
+.tool-section-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.tool-section-head h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; color: var(--text); }
+.tool-section-head h2::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-right: 10px; }
+.tool-section-head p { font-size: 14px; color: var(--muted); }
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.tile-grid.feature { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 900px) { .tile-grid.feature { grid-template-columns: 1fr; } }
+.tile { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 22px 18px; text-decoration: none; display: flex; flex-direction: column; gap: 10px; position: relative; overflow: hidden; transition: border-color 0.25s, transform 0.25s; }
+.tile::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.4s; background: radial-gradient(ellipse at 30% 0%, rgba(var(--c-rgb), 0.14) 0%, transparent 60%); }
+.tile:hover { border-color: rgba(var(--c-rgb), 0.55); transform: translateY(-3px); }
+.tile:hover::before { opacity: 1; }
+.tile > * { position: relative; }
+.tile-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tile-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.tile-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c); border: 1px solid rgba(var(--c-rgb), 0.45); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.tile-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; flex: 1; }
+.tile-link { font-size: 13px; font-weight: 600; color: var(--c); transition: letter-spacing 0.2s; }
+.tile:hover .tile-link { letter-spacing: 0.02em; }
+.feature .tile { padding: 32px 28px 26px; border-radius: 20px; }
+.feature .tile-title { font-size: 21px; }
+.feature .tile-desc { font-size: 14px; }
 .notify-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 56px 40px; text-align: center; max-width: 560px; margin: 0 auto; }
 .notify-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 26px; color: var(--text); margin-bottom: 10px; }
 [data-theme="light"] .notify-title { color: #0d0f1c; }
@@ -81,49 +102,52 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
     <div class="section-badge">Platform Tools</div>
     <h1 class="hero-title">Your Trading <span class="accent">Toolkit</span></h1>
-    <p class="hero-sub">Five powerful tools — Signals, Backtester, AI Chart Analysis, Portfolio Balancer, and Calculator — built to give you an edge at every stage of your trading process.</p>
+    <p class="hero-sub">Analysis tools, calculators and interactive data visualisations for every stage of your investing process.</p>
+    <div class="jump-bar" id="jumpBar"></div>
   </div>
 </div>
 
 <section class="content-section">
   <div class="content-inner">
-    <div class="hub-grid reveal">
-      <a href="/tools/signals" class="hub-card">
-        <div class="card-title">Signals</div>
-        <div class="card-desc">Configure multi-indicator trading signals across 30+ technical studies. Filter, score and surface only the setups that match your criteria.</div>
-        <div class="card-link">Open Signals <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-      <a href="/backtester" class="hub-card">
-        <div class="card-title">Backtester</div>
-        <div class="card-desc">Validate any strategy against years of real market data. Inspect P&L curves, max drawdown, Sharpe ratio and more before risking a penny.</div>
-        <div class="card-link">Open Backtester <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-      <a href="/tools/ai-chart-analysis" class="hub-card">
-        <div class="card-title">AI Chart Analysis</div>
-        <div class="card-desc">A live chart with ready-made AI prompts for a general indicator scan, market information and chart-pattern review. Pro and Founder.</div>
-        <div class="card-link">Open AI Chart Analysis <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-      <a href="/tools/portfolio" class="hub-card">
-        <div class="card-title">Portfolio Balancer</div>
-        <div class="card-desc">Add every investment you hold — savings, stocks, crypto, property and more — then track its value, top-ups and gain/loss over time in one place.</div>
-        <div class="card-link">Open Portfolio Balancer <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-      <a href="/tools/calculator" class="hub-card">
-        <div class="card-title">Position Size Calculator</div>
-        <div class="card-desc">Size positions with the Kelly Criterion and convert pip values across FX pairs and lot sizes — work out exactly how much to risk before you trade.</div>
-        <div class="card-link">Open Position Size Calculator <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-      <a href="/tools/data-visualisation" class="hub-card">
-        <div class="card-title">Data Visualisation</div>
-        <div class="card-desc">Browse a growing library of interactive charts and dashboards that turn raw market data into clear, at-a-glance insight.</div>
-        <div class="card-link">Open Data Visualisation <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-    </div>
+    <div id="toolSections"></div>
   </div>
 </section>
 
 <script src="/static/js/footer.js"></script>
 
+<script>
+// Rendered from the same category list that drives the nav (window.GCG_TOOL_CATEGORIES, set in nav.js).
+(function () {
+  var cats = (window.GCG_TOOL_CATEGORIES || []).filter(function (c) { return c.pages.length; }).slice();
+  cats.push({ name: 'Data visualisation', rgb: '148,163,184', blurb: 'Interactive charts and dashboards that turn market data into at-a-glance insight.', pages: [
+    ['Data Visualisation hub', '/tools/data-visualisation', 'Browse the full library of live maps, orbs and dashboards.', 'Library'],
+    ['Global Heat Map', '/tools/data-visualisation/global-heat-map', 'Every major index worldwide, coloured by today\'s move.', 'Live data'],
+    ['GCG Market Orbs', '/tools/data-visualisation/market-orbs', 'Markets and assets as bubbles in their own pools: gainers float, decliners sink.', 'Live data']
+  ] });
+  var arrow = ' →';
+  function slug(n) { return n.toLowerCase().replace(/[^a-z]+/g, '-'); }
+  var host = document.getElementById('toolSections'), bar = document.getElementById('jumpBar');
+  host.innerHTML = cats.map(function (c, i) {
+    var feat = i === 0;
+    return '<section class="tool-section reveal" id="cat-' + slug(c.name) + '" style="--c:rgb(' + c.rgb + ');--c-rgb:' + c.rgb + '">' +
+      '<div class="tool-section-head"><h2>' + c.name + '</h2><p>' + c.blurb + '</p></div>' +
+      '<div class="tile-grid' + (feat ? ' feature' : '') + '">' + c.pages.map(function (p) {
+        return '<a class="tile" href="' + p[1] + '"><div class="tile-top"><div class="tile-title">' + p[0] + '</div><span class="tile-tag">' + p[3] + '</span></div>' +
+          '<div class="tile-desc">' + p[2] + '</div><div class="tile-link">Open' + arrow + '</div></a>';
+      }).join('') + '</div></section>';
+  }).join('');
+  bar.innerHTML = '<button type="button" class="active" data-cat="all">All</button>' + cats.map(function (c) {
+    return '<button type="button" data-cat="' + slug(c.name) + '">' + c.name.replace(/ tools$/, '') + '</button>';
+  }).join('');
+  bar.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    bar.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+    host.querySelectorAll('.tool-section').forEach(function (sec) {
+      sec.style.display = (b.dataset.cat === 'all' || sec.id === 'cat-' + b.dataset.cat) ? '' : 'none';
+    });
+  });
+})();
+</script>
 <script>
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries) => {
