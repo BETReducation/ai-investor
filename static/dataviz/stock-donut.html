@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8"><title>GCG Stock Donut</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#0f1730;--mu:#64708c;--bd:#dde3f0;--ac:#2563eb;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1020;--card:#141b33;--tx:#eef2ff;--mu:#8e9ac0;--bd:#26305a;--ac:#5b8cff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b1020;--card:#141b33;--tx:#eef2ff;--mu:#8e9ac0;--bd:#26305a;--ac:#5b8cff;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:transparent;color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:4px 2px 12px}
+.w{max-width:720px;margin:0 auto}h2,.big,.ct b{font-family:"Fredoka","Baloo 2","Comic Sans MS",system-ui,sans-serif}.sub{color:var(--mu);font-size:13px;margin:0 0 14px}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:20px;padding:14px;margin-bottom:16px;box-shadow:0 4px 0 var(--bd)}
+.row{display:flex;gap:8px;flex-wrap:wrap}input,button{font:inherit;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);padding:10px 12px;min-width:0}
+input:focus{outline:2px solid var(--ac)}#sym{flex:2 1 160px}#sh{flex:1 1 90px}
+button{cursor:pointer}.go{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+.cur{display:flex;gap:6px;margin-bottom:10px}.cur button{flex:1;padding:8px}.cur button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.msg{color:#e11d48;font-size:13px;min-height:18px;margin-top:6px}
+.dn{position:relative;max-width:340px;margin:0 auto}@keyframes pop{0%{transform:scale(.7) rotate(-25deg);opacity:0}60%{transform:scale(1.05) rotate(3deg);opacity:1}100%{transform:none}}
+.dn svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 6px 0 rgba(15,23,48,.3));animation:pop .7s cubic-bezier(.3,1.4,.5,1)}
+.ct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.ct small{color:var(--mu);font-size:12px}.ct b{font-size:clamp(22px,7vw,32px);font-weight:700}
+.it{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
+.it:first-child{border-top:0}.dot{width:14px;height:14px;border-radius:50%}.nm{font-weight:600}.nm span{color:var(--mu);font-weight:400;font-size:12px;display:block}
+.rt{text-align:right}.rt b{font-size:15px}.rt span{display:block;color:var(--mu);font-size:12px}
+.ed{grid-column:2/4;display:flex;gap:6px;align-items:center;font-size:12px;color:var(--mu)}.ed input{width:90px;padding:6px 8px;font-size:13px}.ed .x{margin-left:auto;padding:6px 10px;font-size:12px}
+.empty{color:var(--mu);text-align:center;padding:20px 0}
+.rs{display:block;width:100%;margin:0 0 14px;padding:12px;font-weight:700;cursor:pointer;border:2px solid var(--bd);border-radius:14px;box-shadow:0 4px 0 var(--bd);background:var(--card);color:var(--tx)}.rs[hidden]{display:none}.rs.cf{background:#ef4444;color:#fff;border-color:#ef4444;box-shadow:0 4px 0 #b91c1c}
+.tg{display:flex;gap:6px;margin-bottom:10px}.tg button{flex:1;padding:8px}.tg button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.gauge{height:12px;border-radius:8px;background:linear-gradient(90deg,#ef4444,#f97316,#facc15,#22c55e);position:relative;margin:14px 0 10px}.gauge i{position:absolute;top:-4px;width:8px;height:20px;border-radius:4px;background:var(--tx);border:2px solid var(--card);transform:translateX(-50%)}
+.big{font-size:30px;font-weight:800}.big span{font-size:14px;font-weight:500;color:var(--mu)}.pers{text-align:center}.pers .em{font-size:48px}.pers h2{margin:2px 0 4px}.pers .sub{margin:0}.lab{color:var(--mu);font-size:12px;text-transform:uppercase;letter-spacing:.06em}.fine{color:var(--mu);font-size:12px;text-align:center;margin:4px 0}
+</style></head><body><div class="w">
+<div class="card"><div class="row"><input id="sym" list="dl" placeholder="Ticker or name (e.g. AAPL, Tesla)" autocomplete="off"><input id="sh" type="number" min="0" step="any" inputmode="decimal" placeholder="Shares owned"><button class="go" id="add">Add</button></div><datalist id="dl"></datalist><div class="msg" id="msg"></div></div>
+<div class="card"><div class="cur" id="cur"></div><div class="tg" id="tg"></div>
+<div class="dn"><svg viewBox="0 0 200 200" id="svg"></svg><div class="ct"><small>Total value</small><b id="tot">—</b></div></div></div>
+<div class="card" id="leg" hidden></div><div class="card" id="score" hidden></div><div class="card pers" id="pers" hidden></div><div class="card" id="list"></div>
+<button class="rs" id="rs" onclick="resetAll()" hidden>🔄 Reset</button>
+<p class="fine">Prices are built-in estimates in USD, so edit any price to match the market. For illustration only, not advice.</p>
+<p class="fine" id="sv"></p>
+</div>
+<script>
+const S={AAPL:["Apple",230],MSFT:["Microsoft",450],NVDA:["NVIDIA",180],GOOGL:["Alphabet",190],AMZN:["Amazon",220],META:["Meta Platforms",700],TSLA:["Tesla",430],"BRK.B":["Berkshire Hathaway",500],JPM:["JPMorgan Chase",300],V:["Visa",340],MA:["Mastercard",570],UNH:["UnitedHealth",330],XOM:["Exxon Mobil",110],WMT:["Walmart",100],JNJ:["Johnson & Johnson",170],PG:["Procter & Gamble",155],HD:["Home Depot",380],COST:["Costco",900],NFLX:["Netflix",1200],AMD:["AMD",160],DIS:["Disney",110],KO:["Coca-Cola",70],PEP:["PepsiCo",145],NKE:["Nike",75],MCD:["McDonald's",300],BA:["Boeing",210],INTC:["Intel",35],PYPL:["PayPal",70],ADBE:["Adobe",350],CRM:["Salesforce",250],ORCL:["Oracle",220],CSCO:["Cisco",70],UBER:["Uber",95],SHOP:["Shopify",150],PLTR:["Palantir",170],COIN:["Coinbase",330],SPOT:["Spotify",650],SBUX:["Starbucks",85],T:["AT&T",28],VZ:["Verizon",42],PFE:["Pfizer",25],BAC:["Bank of America",48],GS:["Goldman Sachs",750],LLY:["Eli Lilly",800],AVGO:["Broadcom",340],TSM:["TSMC",280],BABA:["Alibaba",140]};
+const FX={USD:["$",1],GBP:["£",.75],EUR:["€",.86]},COL=["#ff3d71","#ffb300","#00c853","#2979ff","#d500f9","#00bcd4","#ff6d00","#76ff03","#7c4dff","#ff4081","#1de9b6","#ffd740"];
+const SEC={},SCOL={Tech:"#2979ff",Comms:"#d500f9",Consumer:"#ffb300",Finance:"#00c853",Health:"#ff3d71",Energy:"#ff6d00",Industrial:"#00bcd4",Other:"#8e9ac0"};
+[["Tech","AAPL MSFT NVDA AMD INTC ADBE CRM ORCL CSCO SHOP PLTR AVGO TSM"],["Comms","GOOGL META NFLX DIS SPOT T VZ"],["Consumer","AMZN TSLA WMT PG HD COST KO PEP NKE MCD SBUX BABA"],["Finance","BRK.B JPM V MA PYPL BAC GS COIN"],["Health","UNH JNJ PFE LLY"],["Energy","XOM"],["Industrial","BA UBER"]].forEach(([s,l])=>l.split(" ").forEach(t=>SEC[t]=s));
+const sec=h=>SEC[h.sym]||"Other";
+let H=[],cur="GBP",mode="stock";
+try{H=JSON.parse(localStorage.getItem("gca-sd")||"[]");cur=localStorage.getItem("gca-sd-c")||"GBP"}catch(e){}
+const $=id=>document.getElementById(id);
+$("dl").innerHTML=Object.entries(S).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("");
+// Signed-in users: saved to the account (same /api/save-preferences every tool uses) so it
+// follows them across devices. Everyone also gets a localStorage copy.
+let user=null,timer;
+function status(m){$("sv").textContent=m}
+function save(){
+  try{localStorage.setItem("gca-sd",JSON.stringify(H));localStorage.setItem("gca-sd-c",cur)}catch(e){}
+  if(!user)return;
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{
+    try{const r=await fetch("/api/save-preferences",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({stock_donut:{H,cur}})});
+      status(r.ok?"Saved to your account":"Could not save to your account")}catch(e){status("Could not save to your account")}
+  },500);
+}
+async function restore(){
+  try{
+    const me=await(await fetch("/api/me",{credentials:"include"})).json();
+    if(!me.authenticated){status("Log in to save your donut to your account");return}
+    user=me.username;
+    const r=await fetch("/api/load-preferences",{credentials:"include"});
+    const remote=r.ok?(await r.json()).preferences?.stock_donut:null;
+    if(remote&&Array.isArray(remote.H)){
+      H=remote.H.filter(h=>h&&h.sym&&h.sh>=0);
+      if(FX[remote.cur])cur=remote.cur;
+      save();draw();status("Saved to your account");
+    }else if(H.length){save()}
+    else status("Your donut saves to your account automatically");
+  }catch(e){}
+}
+function find(q){q=q.trim().toLowerCase();if(!q)return null;const k=Object.keys(S);
+return k.find(x=>x.toLowerCase()==q)||k.find(x=>S[x][0].toLowerCase()==q)||k.find(x=>S[x][0].toLowerCase().includes(q))||null}
+function fmt(v){const[s,r]=FX[cur];return s+(v*r).toLocaleString("en-GB",{maximumFractionDigits:v*r>=1e5?0:2,minimumFractionDigits:v*r>=1e5?0:2})}
+function add(){const q=$("sym").value,n=parseFloat($("sh").value),m=$("msg");m.textContent="";
+if(!q.trim())return m.textContent="Enter a ticker or stock name.";
+if(!(n>0))return m.textContent="Enter how many shares you own.";
+const k=find(q),sym=k||q.trim().toUpperCase(),ex=H.find(h=>h.sym==sym);
+if(ex)ex.sh+=n;else H.push({sym,name:k?S[k][0]:"Custom ticker",price:k?S[k][1]:0,sh:n});
+if(!k)m.textContent=sym+" isn't in the built-in list, so enter its price below.";
+$("sym").value="";$("sh").value="";save();draw()}
+function draw(){const val=h=>h.sh*h.price,T=H.reduce((a,h)=>a+val(h),0),svg=$("svg"),R=70,C=2*Math.PI*R;
+const G=mode=="sector"?Object.entries(H.reduce((a,h)=>(a[sec(h)]=(a[sec(h)]||0)+val(h),a),{})).map(([n,v])=>({n,v,c:SCOL[n]})).sort((a,b)=>b.v-a.v):H.map((h,i)=>({n:h.sym,v:val(h),c:COL[i%12]}));
+$("cur").innerHTML=Object.keys(FX).map(c=>`<button class="${c==cur?"on":""}" onclick="cur='${c}';save();draw()">${c}</button>`).join("");
+let o=`<circle cx="100" cy="100" r="${R}" fill="none" stroke="#1b1230" stroke-width="36"/>${T?"":`<circle cx="100" cy="100" r="${R}" fill="none" stroke="var(--bd)" stroke-width="28"/>`}`,off=0;
+G.forEach(g=>{const l=T?g.v/T*C:0;if(l>0){o+=`<circle cx="100" cy="100" r="${R}" fill="none" stroke="${g.c}" stroke-width="28" stroke-dasharray="${Math.max(l-4,0)} ${C}" stroke-dashoffset="${-off-2}"/><circle cx="100" cy="100" r="${R+6}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-dasharray="${Math.max(l-16,0)} ${C}" stroke-dashoffset="${-off-8}"/>`;off+=l}});
+svg.innerHTML=`<g transform="rotate(-90 100 100)">${o}</g>`;$("tot").textContent=T?fmt(T):"—";extras(T,G);
+$("list").innerHTML=H.length?H.slice().map((h,i)=>({h,i})).sort((a,b)=>val(b.h)-val(a.h)).map(({h,i})=>`<div class="it"><div class="dot" style="background:${mode=="sector"?SCOL[sec(h)]:COL[i%12]}"></div><div class="nm">${h.sym}<span>${h.name} · ${sec(h)}</span></div><div class="rt"><b>${T?(val(h)/T*100).toFixed(1):0}%</b><span>${fmt(val(h))}</span></div>
+<div class="ed"><span>Shares</span><input type="number" step="any" value="${h.sh}" onchange="H[${i}].sh=+this.value||0;save();draw()"><span>Price $</span><input type="number" step="any" value="${h.price||""}" placeholder="price" onchange="H[${i}].price=+this.value||0;save();draw()"><button class="x" onclick="H.splice(${i},1);save();draw()">Remove</button></div></div>`).join(""):`<div class="empty">No holdings yet. Add a stock above.</div>`}
+function extras(T,G){
+$("tg").innerHTML=[["stock","By stock"],["sector","By sector"]].map(([m,l])=>`<button class="${m==mode?"on":""}" onclick="mode='${m}';draw()">${l}</button>`).join("");
+const L=$("leg"),S2=$("score"),P=$("pers");$("rs").hidden=!H.length;L.hidden=!(mode=="sector"&&T);S2.hidden=P.hidden=!T;if(!T)return;
+L.innerHTML=G.map(g=>`<div class="it"><div class="dot" style="background:${g.c}"></div><div class="nm">${g.n}</div><div class="rt"><b>${(g.v/T*100).toFixed(1)}%</b><span>${fmt(g.v)}</span></div></div>`).join("");
+const by=f=>{const m={};H.forEach(h=>{const v=h.sh*h.price;if(v>0)m[f(h)]=(m[f(h)]||0)+v});return Object.entries(m).map(([k,v])=>[k,v/T]).sort((a,b)=>b[1]-a[1])};
+const st=by(h=>h.sym),sc=by(sec),eff=a=>1/a.reduce((s,[,f])=>s+f*f,0);
+const score=Math.round((.6*Math.min(1,(eff(st)-1)/7)+.4*Math.min(1,(eff(sc)-1)/4))*100);
+const lab=score<25?"Very concentrated":score<50?"Concentrated":score<75?"Fairly balanced":"Well diversified";
+const pc=x=>Math.round(x*100),tip=st[0][1]>.4?"One stock is doing a lot of heavy lifting: if it drops, the whole pot feels it.":sc[0][1]>.6?"Lots of eggs in one sector basket.":"A wide spread, with no single stock or sector dominating.";
+S2.innerHTML=`<div class="lab">Diversification score</div><div class="big">${score}<span>/100 · ${lab}</span></div><div class="gauge"><i style="left:${Math.min(97,Math.max(3,score))}%"></i></div><div class="sub" style="margin:0">Top holding: ${st[0][0]} (${pc(st[0][1])}%) · Top sector: ${sc[0][0]} (${pc(sc[0][1])}%)<br>${tip}</div>`;
+const sh=n=>(sc.find(x=>x[0]==n)||[0,0])[1],n=st.length;let p;
+if(n==1)p=["🎰","The All-In Rebel","One stock, full send. Bold... but a little spicy."];
+else if(st[0][1]>=.5)p=["🎯","The One-Stock Wonder",`${st[0][0]} is basically your whole personality.`];
+else if(sh("Tech")>=.55)p=["🚀","The Tech Titan","Betting on the future: chips, code and cloud."];
+else if(sh("Finance")>=.4)p=["🏦","The Wall Street Banker","Money moves money, and you're into it."];
+else if(sh("Health")>=.35)p=["🧬","The Health Hero","You back the companies keeping the world well."];
+else if(sh("Consumer")+sh("Comms")>=.55)p=["🛍️","The High Street Hero","You invest in brands people use every single day."];
+else if(sh("Energy")+sh("Industrial")>=.35)p=["🏭","The Old-School Industrialist","Oil, planes and heavy hitters. Built different."];
+else if(score>=75)p=["⚖️","The All-Rounder","Balanced, calm and hard to shake. Textbook."];
+else p=["🧭","The Explorer","A bit of everything, still finding your style."];
+P.innerHTML=`<div class="lab">Your portfolio personality</div><div class="em">${p[0]}</div><h2>${p[1]}</h2><div class="sub">${p[2]}</div>`}
+let rt;function resetAll(){const b=$("rs");clearTimeout(rt);if(b.classList.contains("cf")){b.classList.remove("cf");b.textContent="🔄 Reset";H=[];mode="stock";$("msg").textContent="";$("sym").value="";$("sh").value="";save();draw();return}b.classList.add("cf");b.textContent="Tap again to clear everything";rt=setTimeout(()=>{b.classList.remove("cf");b.textContent="🔄 Reset"},3000)}
+$("add").onclick=add;$("sh").addEventListener("keydown",e=>{if(e.key=="Enter")add()});draw();restore();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"stock-donut"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script></body></html>

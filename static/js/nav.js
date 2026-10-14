@@ -50,7 +50,8 @@
       ['Metal Calculator', DV + 'metal-calculator', 'Convert troy ounces and grams of gold, silver, platinum, palladium and copper into dollars, pounds, euros and bitcoin.', 'Live data']
     ] },
     { name: 'Stocks tools', rgb: '0,212,170', blurb: 'Dividends and income from listed companies.', pages: [
-      ['Dividend Calculator', DV + 'dividend-calculator', 'Enter a ticker and a share count to see a year of dividend income and where the yield sits on a thermometer.', 'Live data']
+      ['Dividend Calculator', DV + 'dividend-calculator', 'Enter a ticker and a share count to see a year of dividend income and where the yield sits on a thermometer.', 'Live data'],
+      ['GCG Stock Donut', DV + 'stock-donut', 'Add the shares you own and see your portfolio as a donut, split by stock or sector, with a diversification score.', 'Interactive']
     ] },
     { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [] },
     { name: 'Other tools', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [

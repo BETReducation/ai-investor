@@ -518,6 +518,7 @@ def _ensure_table() -> None:
                              ("market-orbs", "GCG Market Orbs"),
                              ("crypto-unit-calculator", "Crypto Unit Calculator"),
                              ("crypto-portfolio-donut", "Crypto Portfolio Donut"),
+                             ("stock-donut", "GCG Stock Donut"),
                              ("dividend-calculator", "Dividend Calculator"),
                              ("freedom-clock", "The Freedom Clock"),
                              ("price-value-tracker", "Price & Value Tracker"),
@@ -532,6 +533,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-orbs'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-unit-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-portfolio-donut'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'stock-donut'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'dividend-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'freedom-clock'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'price-value-tracker'")
@@ -1497,6 +1499,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True},
     {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True},
     {"slug": "crypto-portfolio-donut", "label": "Crypto Portfolio Donut", "author": None, "has_live_widget": True},
+    {"slug": "stock-donut", "label": "GCG Stock Donut", "author": None, "has_live_widget": True},
     {"slug": "dividend-calculator", "label": "Dividend Calculator", "author": None, "has_live_widget": True},
     {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True},
     {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True},
