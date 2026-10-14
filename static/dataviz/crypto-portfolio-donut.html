@@ -75,16 +75,16 @@ function personality(items,tot){
 }
 const PAL=["#00d4c4","#ffb400","#ff3d71","#7a5cff","#2dd36f","#ff7a1a","#18a0fb","#e0359e","#c6e600","#00a3a3","#ff5c5c","#9b8cff"];
 const col=i=>i<12?PAL[i]:`hsl(${(i*137.5)%360} 85% 55%)`;
-const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿"};
+const SYM={gbp:"£",usd:"$",eur:"€",btc:"₿",eth:"Ξ"};
 let cur="gbp",amt={},px={},isLive=false,touched=false;
 const FX={gbp:.75,eur:.86};
-C.forEach(([id,,,u])=>px[id]={usd:u,gbp:u*FX.gbp,eur:u*FX.eur,btc:u/C[0][3]});
+C.forEach(([id,,,u])=>px[id]={usd:u,gbp:u*FX.gbp,eur:u*FX.eur,btc:u/C[0][3],eth:u/C[1][3]});
 const $=id=>document.getElementById(id);
 function money(v,c){
-  if(c==="btc"){const s=v>=1?v.toLocaleString(undefined,{maximumFractionDigits:4}):v.toFixed(v<1e-4?10:8).replace(/0+$/,"").replace(/\.$/,"");return "₿"+(s||"0")}
+  if(c==="btc"||c==="eth"){const s=v>=1?v.toLocaleString(undefined,{maximumFractionDigits:4}):v.toFixed(v<1e-4?10:8).replace(/0+$/,"").replace(/\.$/,"");return SYM[c]+(s||"0")}
   return SYM[c]+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:v<1?6:2});
 }
-$("seg").innerHTML=["gbp","usd","eur","btc"].map(c=>`<button data-c="${c}" class="${c===cur?"on":""}">${c.toUpperCase()}</button>`).join("");
+$("seg").innerHTML=["gbp","usd","eur","btc","eth"].map(c=>`<button data-c="${c}" class="${c===cur?"on":""}">${c.toUpperCase()}</button>`).join("");
 $("seg").onclick=e=>{const c=e.target.dataset.c;if(!c)return;touched=true;cur=c;[...$("seg").children].forEach(b=>b.classList.toggle("on",b.dataset.c===c));update();save()};
 $("list").innerHTML=C.map(([id,s,n],i)=>`<div class="row" data-id="${id}" data-s="${(s+" "+n).toLowerCase()}"><i style="background:${col(i)}"></i><div><b>${s}</b><small>${n} · <span class="p"></span></small></div><input type="number" inputmode="decimal" min="0" step="any" placeholder="0"><div class="v"></div></div>`).join("");
 $("list").oninput=e=>{const r=e.target.closest(".row");const v=parseFloat(e.target.value);touched=true;amt[r.dataset.id]=v>0?v:0;update();save()};
@@ -108,7 +108,7 @@ function update(){
   const big=money(tot,cur).length>11;
   g+=`<text class="tot" x="150" y="138" text-anchor="middle">Total value</text><text class="tv" x="150" y="164" text-anchor="middle" style="font-size:${big?15:19}px">${money(tot,cur)}</text><text class="tot" x="150" y="184" text-anchor="middle">${cur.toUpperCase()}</text>`;
   $("d").innerHTML=g;
-  const oc=["gbp","usd","eur","btc"].filter(c=>c!==cur);
+  const oc=["gbp","usd","eur","btc","eth"].filter(c=>c!==cur);
   $("oth").textContent=tot?"≈ "+oc.map(c=>money(items.reduce((s,t)=>s+amt[t.id]*px[t.id][c],0),c)).join("  ·  "):"Add coins to build your donut";
   const P=$("pers");P.hidden=!tot;
   if(tot){const p=personality(items,tot);P.innerHTML=`<div class="lab">Your portfolio personality</div><div class="em">${p[0]}</div><h3>${p[1]}</h3><p>${p[2]}</p>`}
@@ -116,8 +116,8 @@ function update(){
   $("st").textContent=isLive?"Live prices via CoinGecko. For illustration only, not advice.":"Approximate snapshot prices, not live. For illustration only, not advice.";
 }
 async function goLive(){
-  try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+C.map(c=>c[0]).join(",")+"&vs_currencies=usd,gbp,eur,btc");
-    if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});px.bitcoin.btc=1;isLive=n>10}catch(e){}
+  try{const r=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+C.map(c=>c[0]).join(",")+"&vs_currencies=usd,gbp,eur,btc,eth");
+    if(!r.ok)throw 0;const d=await r.json();let n=0;C.forEach(([id])=>{if(d[id]&&d[id].usd){px[id]=d[id];n++}});px.bitcoin.btc=1;px.ethereum.eth=1;isLive=n>10}catch(e){}
   update();
 }
 // Signed-in users: saved to the account (same /api/save-preferences every tool uses),
