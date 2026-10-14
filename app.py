@@ -5894,6 +5894,90 @@ def api_dividend_lookup():
     return (jsonify(result), 200) if result else (jsonify({"error": "not found"}), 404)
 
 
+# GCG Stock Donut: latest price in USD for a batch of tickers. The donut's built-in list
+# is all US-listed (Yahoo writes BRK.B as BRK-B); anything else is tried as typed, then
+# with .L appended, and converted to USD from its quote currency.
+_STOCK_DONUT_BUILTIN = set("AAPL MSFT NVDA GOOGL AMZN META TSLA BRK.B JPM V MA UNH XOM WMT JNJ PG HD COST NFLX AMD DIS KO PEP NKE MCD BA INTC PYPL ADBE CRM ORCL CSCO UBER SHOP PLTR COIN SPOT SBUX T VZ PFE BAC GS LLY AVGO TSM BABA".split())
+_stock_donut_cache: dict = {}
+_stock_donut_lock = threading.Lock()
+
+
+def _last_closes(symbols: list) -> dict:
+    out = {}
+    try:
+        raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+        for sym in symbols:
+            try:
+                closes = raw[sym]["Close"].dropna()
+                if len(closes):
+                    out[sym] = float(closes.iloc[-1])
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return out
+
+
+def _fetch_stock_donut_quotes(tickers: list) -> dict:
+    fx = _last_closes(["GBPUSD=X", "EURUSD=X"])
+    ysym = {t: (t.replace(".", "-") if t in _STOCK_DONUT_BUILTIN else t) for t in tickers}
+    last = _last_closes(list(ysym.values()) + ["GBPUSD=X", "EURUSD=X"])
+    # Custom tickers that missed: retry with the London suffix.
+    retry = {t: ysym[t] + ".L" for t in tickers if ysym[t] not in last and "." not in t}
+    if retry:
+        last.update(_last_closes(list(retry.values()) + ["GBPUSD=X", "EURUSD=X"]))
+        ysym.update({t: v for t, v in retry.items() if v in last})
+    result = {}
+    for t in tickers:
+        sym = ysym[t]
+        if sym not in last:
+            continue
+        price = last[sym]
+        if t not in _STOCK_DONUT_BUILTIN:
+            try:
+                ccy = yf.Ticker(sym).fast_info.get("currency") or "USD"
+            except Exception:
+                ccy = "USD"
+            if ccy in ("GBp", "GBX") and fx.get("GBPUSD=X"):
+                price = price / 100 * fx["GBPUSD=X"]
+            elif ccy == "GBP" and fx.get("GBPUSD=X"):
+                price *= fx["GBPUSD=X"]
+            elif ccy == "EUR" and fx.get("EURUSD=X"):
+                price *= fx["EURUSD=X"]
+            elif ccy != "USD":
+                continue
+        result[t] = {"price": price}
+    return result
+
+
+@app.route("/api/dataviz/stock-donut/quotes", methods=["GET"])
+def api_stock_donut_quotes():
+    tickers = []
+    for t in (request.args.get("tickers") or "").upper().split(","):
+        t = t.strip()
+        if re.fullmatch(r"[A-Z0-9.\-]{1,12}", t) and t not in tickers:
+            tickers.append(t)
+    tickers = tickers[:60]
+    now = time.monotonic()
+    out, missing = {}, []
+    with _stock_donut_lock:
+        for t in tickers:
+            hit = _stock_donut_cache.get(t)
+            if hit and now - hit[0] < _MARKET_PULSE_CACHE_TTL_SECONDS:
+                if hit[1]:
+                    out[t] = hit[1]
+            else:
+                missing.append(t)
+    if missing:
+        fresh = _fetch_stock_donut_quotes(missing)
+        with _stock_donut_lock:
+            for t in missing:
+                _stock_donut_cache[t] = (now, fresh.get(t))
+        out.update(fresh)
+    return jsonify({"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "quotes": out})
+
+
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])
 def api_gold_silver_ratio_live():
     force = request.args.get("refresh") in ("1", "true", "yes")

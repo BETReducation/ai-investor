@@ -37,7 +37,7 @@ button{cursor:pointer}.go{background:var(--ac);color:#fff;border-color:var(--ac)
 <div class="dn"><svg viewBox="0 0 200 200" id="svg"></svg><div class="ct"><small>Total value</small><b id="tot">—</b></div></div></div>
 <div class="card" id="leg" hidden></div><div class="card" id="score" hidden></div><div class="card pers" id="pers" hidden></div><div class="card" id="list"></div>
 <button class="rs" id="rs" onclick="resetAll()" hidden>🔄 Reset</button>
-<p class="fine">Prices are built-in estimates in USD, so edit any price to match the market. For illustration only, not advice.</p>
+<p class="fine">Prices are the latest daily close in USD (slightly delayed); if a lookup fails, a built-in estimate is used. Edit any price to override it. For illustration only, not advice.</p>
 <p class="fine" id="sv"></p>
 </div>
 <script>
@@ -78,6 +78,19 @@ async function restore(){
     else status("Your donut saves to your account automatically");
   }catch(e){}
 }
+// Live USD prices from the server. A price the visitor typed in themselves (h.manual) is left alone.
+let live=false;
+async function goLive(){
+  const syms=H.filter(h=>!h.manual).map(h=>h.sym);
+  if(!syms.length)return;
+  try{
+    const r=await fetch("/api/dataviz/stock-donut/quotes?tickers="+encodeURIComponent(syms.join(",")));
+    if(!r.ok)throw 0;
+    const q=(await r.json()).quotes||{};let n=0;
+    H.forEach(h=>{if(!h.manual&&q[h.sym]){h.price=q[h.sym].price;h.live=true;n++}});
+    if(n){live=true;if($("msg").textContent.startsWith("Looking up"))$("msg").textContent="";try{localStorage.setItem("gca-sd",JSON.stringify(H))}catch(e){}draw()}
+  }catch(e){}
+}
 function find(q){q=q.trim().toLowerCase();if(!q)return null;const k=Object.keys(S);
 return k.find(x=>x.toLowerCase()==q)||k.find(x=>S[x][0].toLowerCase()==q)||k.find(x=>S[x][0].toLowerCase().includes(q))||null}
 function fmt(v){const[s,r]=FX[cur];return s+(v*r).toLocaleString("en-GB",{maximumFractionDigits:v*r>=1e5?0:2,minimumFractionDigits:v*r>=1e5?0:2})}
@@ -86,8 +99,8 @@ if(!q.trim())return m.textContent="Enter a ticker or stock name.";
 if(!(n>0))return m.textContent="Enter how many shares you own.";
 const k=find(q),sym=k||q.trim().toUpperCase(),ex=H.find(h=>h.sym==sym);
 if(ex)ex.sh+=n;else H.push({sym,name:k?S[k][0]:"Custom ticker",price:k?S[k][1]:0,sh:n});
-if(!k)m.textContent=sym+" isn't in the built-in list, so enter its price below.";
-$("sym").value="";$("sh").value="";save();draw()}
+if(!k)m.textContent="Looking up "+sym+"... if no price appears, enter it below.";
+$("sym").value="";$("sh").value="";save();draw();goLive()}
 function draw(){const val=h=>h.sh*h.price,T=H.reduce((a,h)=>a+val(h),0),svg=$("svg"),R=70,C=2*Math.PI*R;
 const G=mode=="sector"?Object.entries(H.reduce((a,h)=>(a[sec(h)]=(a[sec(h)]||0)+val(h),a),{})).map(([n,v])=>({n,v,c:SCOL[n]})).sort((a,b)=>b.v-a.v):H.map((h,i)=>({n:h.sym,v:val(h),c:COL[i%12]}));
 $("cur").innerHTML=Object.keys(FX).map(c=>`<button class="${c==cur?"on":""}" onclick="cur='${c}';save();draw()">${c}</button>`).join("");
@@ -95,7 +108,7 @@ let o=`<circle cx="100" cy="100" r="${R}" fill="none" stroke="#1b1230" stroke-wi
 G.forEach(g=>{const l=T?g.v/T*C:0;if(l>0){o+=`<circle cx="100" cy="100" r="${R}" fill="none" stroke="${g.c}" stroke-width="28" stroke-dasharray="${Math.max(l-4,0)} ${C}" stroke-dashoffset="${-off-2}"/><circle cx="100" cy="100" r="${R+6}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-dasharray="${Math.max(l-16,0)} ${C}" stroke-dashoffset="${-off-8}"/>`;off+=l}});
 svg.innerHTML=`<g transform="rotate(-90 100 100)">${o}</g>`;$("tot").textContent=T?fmt(T):"—";extras(T,G);
 $("list").innerHTML=H.length?H.slice().map((h,i)=>({h,i})).sort((a,b)=>val(b.h)-val(a.h)).map(({h,i})=>`<div class="it"><div class="dot" style="background:${mode=="sector"?SCOL[sec(h)]:COL[i%12]}"></div><div class="nm">${h.sym}<span>${h.name} · ${sec(h)}</span></div><div class="rt"><b>${T?(val(h)/T*100).toFixed(1):0}%</b><span>${fmt(val(h))}</span></div>
-<div class="ed"><span>Shares</span><input type="number" step="any" value="${h.sh}" onchange="H[${i}].sh=+this.value||0;save();draw()"><span>Price $</span><input type="number" step="any" value="${h.price||""}" placeholder="price" onchange="H[${i}].price=+this.value||0;save();draw()"><button class="x" onclick="H.splice(${i},1);save();draw()">Remove</button></div></div>`).join(""):`<div class="empty">No holdings yet. Add a stock above.</div>`}
+<div class="ed"><span>Shares</span><input type="number" step="any" value="${h.sh}" onchange="H[${i}].sh=+this.value||0;save();draw()"><span>Price $${h.live?" (live)":""}</span><input type="number" step="any" value="${h.price||""}" placeholder="price" onchange="H[${i}].price=+this.value||0;H[${i}].manual=true;H[${i}].live=false;save();draw()"><button class="x" onclick="H.splice(${i},1);save();draw()">Remove</button></div></div>`).join(""):`<div class="empty">No holdings yet. Add a stock above.</div>`}
 function extras(T,G){
 $("tg").innerHTML=[["stock","By stock"],["sector","By sector"]].map(([m,l])=>`<button class="${m==mode?"on":""}" onclick="mode='${m}';draw()">${l}</button>`).join("");
 const L=$("leg"),S2=$("score"),P=$("pers");$("rs").hidden=!H.length;L.hidden=!(mode=="sector"&&T);S2.hidden=P.hidden=!T;if(!T)return;
@@ -118,7 +131,7 @@ else if(score>=75)p=["⚖️","The All-Rounder","Balanced, calm and hard to shak
 else p=["🧭","The Explorer","A bit of everything, still finding your style."];
 P.innerHTML=`<div class="lab">Your portfolio personality</div><div class="em">${p[0]}</div><h2>${p[1]}</h2><div class="sub">${p[2]}</div>`}
 let rt;function resetAll(){const b=$("rs");clearTimeout(rt);if(b.classList.contains("cf")){b.classList.remove("cf");b.textContent="🔄 Reset";H=[];mode="stock";$("msg").textContent="";$("sym").value="";$("sh").value="";save();draw();return}b.classList.add("cf");b.textContent="Tap again to clear everything";rt=setTimeout(()=>{b.classList.remove("cf");b.textContent="🔄 Reset"},3000)}
-$("add").onclick=add;$("sh").addEventListener("keydown",e=>{if(e.key=="Enter")add()});draw();restore();
+$("add").onclick=add;$("sh").addEventListener("keydown",e=>{if(e.key=="Enter")add()});draw();restore().then(goLive);
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"stock-donut"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
