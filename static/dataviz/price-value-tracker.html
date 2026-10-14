@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Price &amp; Value Tracker</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--card:#fff;--tx:#0b1f3a;--mut:#5b6b82;--bd:#d9e1ec;--acc:#0fb5a6;--bg:#f1f5fa;--up:#0e9f6e;--dn:#e5484d;--upbg:rgba(14,159,110,.12);--dnbg:rgba(229,72,77,.12)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--card:#0f2038;--tx:#eef3fa;--mut:#8fa3bf;--bd:#1f3556;--bg:#081426;--up:#2dd36f;--dn:#ff6b75;--upbg:rgba(45,211,111,.14);--dnbg:rgba(255,107,117,.14)}}
+:root[data-theme="dark"]{--card:#0f2038;--tx:#eef3fa;--mut:#8fa3bf;--bd:#1f3556;--bg:#081426;--up:#2dd36f;--dn:#ff6b75;--upbg:rgba(45,211,111,.14);--dnbg:rgba(255,107,117,.14)}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--tx);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:4px 2px 12px;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;min-width:0}
+h3{margin:0 0 12px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top .sp{flex:1}
+.seg{display:flex;gap:6px}
+.seg button,.btn{padding:9px 14px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--acc);border-color:var(--acc);color:#04201d}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04201d}
+.btn.sm{padding:5px 9px;font-size:12px}
+.btn.ghost{background:transparent;color:var(--mut)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px 16px}
+.kpi small{display:block;color:var(--mut);font-size:12px;margin-bottom:4px}
+.kpi b{display:block;font-size:22px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+.kpi em{display:block;font-style:normal;font-size:12px;margin-top:2px;color:var(--mut)}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.form{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:end}
+.form .f{display:grid;gap:4px;min-width:0}
+.form label{font-size:11px;color:var(--mut);font-weight:700}
+.f.w2{grid-column:span 2}
+@media(max-width:860px){.form{grid-template-columns:repeat(2,1fr)}.f.w2{grid-column:span 2}}
+input,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;min-width:0;width:100%}
+input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.side button{flex:1}
+.side button.on.buy{background:var(--up);border-color:var(--up);color:#04201d}
+.side button.on.sell{background:var(--dn);border-color:var(--dn);color:#fff}
+.msg{font-size:12px;margin-top:8px;min-height:16px;color:var(--dn)}
+.actions{display:flex;gap:8px;grid-column:span 2}
+.actions .btn{flex:1}
+@media(max-width:860px){.actions{grid-column:span 2}}
+.tw{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;min-width:760px;font-size:14px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:right;padding:8px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:11px 8px;border-bottom:1px solid var(--bd);text-align:right;white-space:nowrap;vertical-align:middle}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+td.as{white-space:normal;min-width:130px}
+.as button{all:unset;cursor:pointer;font-weight:700}
+.as button:hover{color:var(--acc)}
+.as small{display:block;color:var(--mut);font-size:11px;font-weight:400}
+.wt{height:4px;background:var(--bd);border-radius:2px;margin-top:5px;max-width:110px}
+.wt span{display:block;height:100%;background:var(--acc);border-radius:2px}
+td input.px{width:104px;text-align:right;padding:6px 8px}
+td small.pd{display:block;color:var(--mut);font-size:10px;margin-top:2px}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:700;margin-top:3px}
+.pill.up{background:var(--upbg)}.pill.dn{background:var(--dnbg)}.pill.flat{background:var(--bd);color:var(--mut)}
+tr.closed td{color:var(--mut)}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase}
+.tag.buy{background:var(--upbg);color:var(--up)}.tag.sell{background:var(--dnbg);color:var(--dn)}
+.empty{text-align:center;color:var(--mut);padding:26px 10px}
+.empty .btn{margin-top:10px}
+.lh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.lh h3{margin:0}.lh .sp{flex:1}
+.lh select{width:auto;padding:6px 10px}
+.leg{display:flex;gap:16px;font-size:12px;color:var(--mut);margin-bottom:6px}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg{width:100%;display:block}
+.cl{font-size:12px;fill:var(--tx);font-weight:600}.vl{font-size:11px;fill:var(--mut)}
+.note{color:var(--mut);font-size:12px;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.st{font-size:12px;color:var(--mut);text-align:center}
+</style>
+</head>
+<body><div class="wrap">
+
+<div class="top">
+  <div class="seg" id="cur"></div>
+  <span class="st" style="text-align:left">Enter everything in one currency. No conversion is applied.</span>
+  <span class="sp"></span>
+  <button class="btn" id="exp">Export CSV</button>
+  <button class="btn" id="imp">Import CSV</button>
+  <input type="file" id="file" accept=".csv,text/csv" hidden>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="card">
+  <h3 id="ftitle">Add a purchase or sale</h3>
+  <div class="form">
+    <div class="f"><label>Type</label><div class="seg side" id="side"><button class="buy on" data-s="buy">Buy</button><button class="sell" data-s="sell">Sell</button></div></div>
+    <div class="f w2"><label for="fa">Asset</label><input id="fa" list="al" placeholder="e.g. Bitcoin, Gold, AAPL" autocomplete="off"><datalist id="al"></datalist></div>
+    <div class="f"><label for="fd">Date</label><input id="fd" type="date"></div>
+    <div class="f"><label for="fq">Quantity</label><input id="fq" type="text" inputmode="decimal" placeholder="0"></div>
+    <div class="f"><label for="fp">Price per unit</label><input id="fp" type="text" inputmode="decimal" placeholder="0.00"></div>
+    <div class="f"><label for="ff">Fees (optional)</label><input id="ff" type="text" inputmode="decimal" placeholder="0.00"></div>
+    <div class="f w2"><label for="fn">Note (optional)</label><input id="fn" placeholder="Where, why, anything"></div>
+    <div class="actions"><button class="btn pri" id="add">Add transaction</button><button class="btn ghost" id="cancel" hidden>Cancel</button></div>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="card">
+  <h3>Holdings</h3>
+  <div class="tw"><table><thead><tr><th>Asset</th><th>Held</th><th>Avg buy price</th><th>Price now</th><th>Cost</th><th>Value now</th><th>Gain / loss</th><th>Realised</th></tr></thead><tbody id="hold"></tbody></table></div>
+</div>
+
+<div class="card" id="chcard"><h3>Bought for vs worth now</h3><div class="leg"><span><i style="background:var(--mut);opacity:.55"></i>Cost</span><span><i style="background:var(--up)"></i>Value now</span></div><div id="chart"></div></div>
+
+<div class="card">
+  <div class="lh"><h3>Transactions</h3><select id="flt"></select><span class="sp"></span><button class="btn sm ghost" id="clr">Clear everything</button></div>
+  <div class="tw"><table style="min-width:680px"><thead><tr><th>Date</th><th>Asset</th><th style="text-align:center">Type</th><th>Qty</th><th>Price</th><th>Fees</th><th>Total</th><th style="text-align:left">Note</th><th></th></tr></thead><tbody id="led"></tbody></table></div>
+</div>
+
+<div class="st" id="st">Your own records, shown back to you. Prices you type in are not live data. For illustration only, not advice.</div>
+<div class="st" id="sv"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const SYM={gbp:"£",usd:"$",eur:"€"};
+const KEY="gcg-price-tracker";
+let S={tx:[],prices:{},cur:"gbp",nid:1},side="buy",editId=null,filter="",user=null,timer;
+
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=s=>{const v=parseFloat(String(s).replace(/,/g,""));return isFinite(v)?v:NaN};
+const n2=v=>v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:v!==0&&Math.abs(v)<1?6:2});
+const money=v=>(v<0?"-":"")+SYM[S.cur]+n2(Math.abs(v));
+const sgn=v=>(v>0?"+":v<0?"-":"")+SYM[S.cur]+n2(Math.abs(v));
+const pct=v=>(v>0?"+":"")+v.toFixed(2)+"%";
+const qf=q=>(+q.toFixed(8)).toLocaleString(undefined,{maximumFractionDigits:8});
+const cls=v=>Math.abs(v)<1e-9?"":v>0?"up":"dn";
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const fdate=d=>new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+const ago=n=>new Date(Date.now()-n*864e5-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+
+// Average-cost method: a sale removes units at the running average cost, and the
+// difference between sale proceeds and that cost is the realised gain.
+function compute(list){
+  const A={};
+  [...list].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id).forEach(t=>{
+    const k=t.sym.toLowerCase();
+    const a=A[k]||(A[k]={k,label:t.sym,qty:0,cost:0,realised:0,bought:0,boughtCost:0,sells:0,last:0,warn:false});
+    a.last=t.price;
+    if(t.side==="buy"){const c=t.qty*t.price+t.fee;a.qty+=t.qty;a.cost+=c;a.bought+=t.qty;a.boughtCost+=c}
+    else{
+      let q=t.qty;if(q>a.qty+1e-9){a.warn=true;q=a.qty}
+      const avg=a.qty>0?a.cost/a.qty:0;
+      a.realised+=q*t.price-t.fee-q*avg;a.cost-=q*avg;a.qty-=q;a.sells++;
+      if(a.qty<1e-9){a.qty=0;a.cost=0}
+    }
+  });
+  Object.values(A).forEach(a=>{
+    const p=S.prices[a.k];
+    a.manual=!!(p&&p.p>0);a.price=a.manual?p.p:a.last;a.pdate=p&&p.d||null;
+    a.avg=a.qty>0?a.cost/a.qty:0;a.value=a.qty*a.price;a.gain=a.value-a.cost;a.gp=a.cost>0?a.gain/a.cost*100:0;
+  });
+  return Object.values(A);
+}
+
+function render(){
+  const A=compute(S.tx),open=A.filter(a=>a.qty>0).sort((a,b)=>b.value-a.value),closed=A.filter(a=>a.qty===0);
+  const value=open.reduce((s,a)=>s+a.value,0),cost=open.reduce((s,a)=>s+a.cost,0),un=value-cost;
+  const real=A.reduce((s,a)=>s+a.realised,0),put=A.reduce((s,a)=>s+a.boughtCost,0),tot=un+real;
+  const kp=(l,v,sub,c)=>`<div class="kpi"><small>${l}</small><b class="${c||""}">${v}</b><em>${sub}</em></div>`;
+  $("kpis").innerHTML=
+    kp("Portfolio value now",money(value),`${open.length} holding${open.length===1?"":"s"}`)+
+    kp("Cost of current holdings",money(cost),"What you paid, fees included")+
+    kp("Unrealised gain / loss",sgn(un),cost>0?pct(un/cost*100)+" on cost":"–",cls(un))+
+    kp("Realised gain / loss",sgn(real),"From sales you have made",cls(real))+
+    kp("Total gain / loss",sgn(tot),put>0?pct(tot/put*100)+" of all money bought":"–",cls(tot));
+
+  const ae=document.activeElement,fk=ae&&ae.classList.contains("px")?ae.dataset.k:null,fv=fk?ae.value:null;
+  const px=(a)=>`<input class="px" data-k="${esc(a.k)}" type="text" inputmode="decimal" value="${a.manual?a.price:""}" placeholder="${n2(a.price)}"><small class="pd">${a.manual&&a.pdate?"set "+fdate(a.pdate):"last trade price"}</small>`;
+  let h=open.map(a=>`<tr><td class="as"><button data-view="${esc(a.k)}" title="Show this asset's transactions">${esc(a.label)}</button>${a.warn?'<small class="dn">Sales exceed units held, check dates</small>':`<small>${value>0?(a.value/value*100).toFixed(1)+"% of portfolio":""}</small>`}<div class="wt"><span style="width:${value>0?a.value/value*100:0}%"></span></div></td>
+    <td>${qf(a.qty)}</td><td>${money(a.avg)}</td><td>${px(a)}</td><td>${money(a.cost)}</td><td><b>${money(a.value)}</b></td>
+    <td class="${cls(a.gain)}"><b>${sgn(a.gain)}</b><br><span class="pill ${cls(a.gain)||"flat"}">${pct(a.gp)}</span></td>
+    <td class="${cls(a.realised)}">${a.sells?sgn(a.realised):"–"}</td></tr>`).join("");
+  h+=closed.map(a=>`<tr class="closed"><td class="as"><button data-view="${esc(a.k)}">${esc(a.label)}</button><small>Closed position</small></td><td>0</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td class="${cls(a.realised)}"><b>${sgn(a.realised)}</b></td></tr>`).join("");
+  $("hold").innerHTML=h||`<tr><td colspan="8"><div class="empty">No holdings yet. Add your first purchase above.<br><button class="btn" id="demo">Load example data</button></div></td></tr>`;
+  if(fk){const el=document.querySelector(`.px[data-k="${CSS.escape(fk)}"]`);if(el){el.value=fv;el.focus();el.setSelectionRange(fv.length,fv.length)}}
+
+  $("chcard").style.display=open.length?"":"none";
+  const mx=Math.max(1e-9,...open.map(a=>Math.max(a.value,a.cost))),L=96,bw=600-L-130,rh=46;
+  $("chart").innerHTML=`<svg viewBox="0 0 600 ${open.length*rh+4}">`+open.map((a,i)=>{
+    const y=i*rh+6,c=a.cost/mx*bw,v=a.value/mx*bw,nm=a.label.length>12?a.label.slice(0,11)+"…":a.label;
+    return `<text x="${L-10}" y="${y+19}" text-anchor="end" class="cl">${esc(nm)}</text>
+    <rect x="${L}" y="${y}" width="${Math.max(c,2)}" height="11" rx="3" fill="var(--mut)" opacity=".55"/><text x="${L+Math.max(c,2)+6}" y="${y+9}" class="vl">${money(a.cost)}</text>
+    <rect x="${L}" y="${y+16}" width="${Math.max(v,2)}" height="11" rx="3" fill="${a.gain>=0?"var(--up)":"var(--dn)"}"/><text x="${L+Math.max(v,2)+6}" y="${y+25}" class="vl">${money(a.value)}</text>`}).join("")+`</svg>`;
+
+  const keys=A.map(a=>a.k);if(filter&&!keys.includes(filter))filter="";
+  $("flt").innerHTML=`<option value="">All assets</option>`+A.map(a=>`<option value="${esc(a.k)}"${a.k===filter?" selected":""}>${esc(a.label)}</option>`).join("");
+  $("al").innerHTML=A.map(a=>`<option value="${esc(a.label)}">`).join("");
+  const rows=[...S.tx].filter(t=>!filter||t.sym.toLowerCase()===filter).sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:b.id-a.id);
+  $("led").innerHTML=rows.map(t=>{const tt=t.side==="buy"?t.qty*t.price+t.fee:t.qty*t.price-t.fee;
+    return `<tr><td>${fdate(t.date)}</td><td><b>${esc(t.sym)}</b></td><td style="text-align:center"><span class="tag ${t.side}">${t.side}</span></td><td>${qf(t.qty)}</td><td>${money(t.price)}</td><td>${t.fee?money(t.fee):"–"}</td><td><b>${money(tt)}</b></td><td style="text-align:left" class="note" title="${esc(t.note)}">${esc(t.note)}</td>
+    <td><button class="btn sm" data-edit="${t.id}">Edit</button> <button class="btn sm ghost" data-del="${t.id}">Delete</button></td></tr>`}).join("")||`<tr><td colspan="9"><div class="empty">No transactions.</div></td></tr>`;
+}
+
+function setSide(s){side=s;[...$("side").children].forEach(b=>b.classList.toggle("on",b.dataset.s===s))}
+function resetForm(){editId=null;["fa","fq","fp","ff","fn"].forEach(i=>$(i).value="");$("fd").value=today();$("msg").textContent="";$("add").textContent="Add transaction";$("cancel").hidden=true;$("ftitle").textContent="Add a purchase or sale"}
+function submit(){
+  const sym=$("fa").value.trim(),qty=num($("fq").value),price=num($("fp").value),fee=$("ff").value.trim()?num($("ff").value):0,date=$("fd").value;
+  const err=m=>{$("msg").textContent=m};
+  if(!sym)return err("Enter an asset name.");
+  if(!date)return err("Pick a date.");
+  if(!(qty>0))return err("Quantity must be more than zero.");
+  if(!(price>=0))return err("Enter a price per unit.");
+  if(!(fee>=0))return err("Fees must be zero or more.");
+  const t={id:editId||S.nid,date,sym,side,qty,price,fee,note:$("fn").value.trim()};
+  const next=editId?S.tx.map(x=>x.id===editId?t:x):[...S.tx,t];
+  const a=compute(next).find(x=>x.k===sym.toLowerCase());
+  if(a&&a.warn)return err("That sale is larger than the units you held on that date.");
+  if(!editId)S.nid++;
+  // Keep one spelling per asset so "bitcoin" and "Bitcoin" merge.
+  const known=S.tx.find(x=>x.sym.toLowerCase()===sym.toLowerCase());if(known)t.sym=known.sym;
+  S.tx=editId?S.tx.map(x=>x.id===editId?t:x):[...S.tx,t];
+  resetForm();render();save();
+}
+function startEdit(id){
+  const t=S.tx.find(x=>x.id===id);if(!t)return;
+  editId=id;setSide(t.side);$("fa").value=t.sym;$("fd").value=t.date;$("fq").value=t.qty;$("fp").value=t.price;$("ff").value=t.fee||"";$("fn").value=t.note;
+  $("add").textContent="Save changes";$("cancel").hidden=false;$("ftitle").textContent="Edit transaction";$("msg").textContent="";
+  $("ftitle").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+$("cur").innerHTML=Object.keys(SYM).map(c=>`<button data-c="${c}">${SYM[c]} ${c.toUpperCase()}</button>`).join("");
+function markCur(){[...$("cur").children].forEach(b=>b.classList.toggle("on",b.dataset.c===S.cur))}
+$("cur").onclick=e=>{const c=e.target.dataset.c;if(!c)return;S.cur=c;markCur();render();save()};
+$("side").onclick=e=>{const s=e.target.dataset.s;if(s)setSide(s)};
+$("add").onclick=submit;
+$("cancel").onclick=resetForm;
+document.querySelector(".form").addEventListener("keydown",e=>{if(e.key==="Enter")submit()});
+$("flt").onchange=()=>{filter=$("flt").value;render()};
+$("hold").addEventListener("input",e=>{
+  const el=e.target;if(!el.classList.contains("px"))return;
+  const v=num(el.value);
+  if(v>0)S.prices[el.dataset.k]={p:v,d:today()};else delete S.prices[el.dataset.k];
+  render();save();
+});
+$("hold").addEventListener("click",e=>{
+  const v=e.target.closest("[data-view]");
+  if(v){filter=v.dataset.view;render();$("flt").scrollIntoView({behavior:"smooth",block:"center"})}
+  if(e.target.id==="demo")demo();
+});
+$("led").addEventListener("click",e=>{
+  const ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-del]");
+  if(ed)startEdit(+ed.dataset.edit);
+  if(dl&&confirm("Delete this transaction?")){S.tx=S.tx.filter(t=>t.id!==+dl.dataset.del);if(editId===+dl.dataset.del)resetForm();render();save()}
+});
+$("clr").onclick=()=>{if(S.tx.length&&confirm("Delete every transaction and price? This cannot be undone.")){S.tx=[];S.prices={};S.nid=1;filter="";resetForm();render();save()}};
+
+function demo(){
+  const rows=[["Bitcoin","buy",.05,52000,5,420],["Bitcoin","buy",.03,68000,3,200],["Gold (oz)","buy",2,1850,10,700],["Apple shares","buy",15,142,2,500],["Apple shares","sell",5,198,2,90],["Ethereum","buy",1.2,2400,4,300],["Ethereum","sell",1.2,3100,4,60]];
+  const cur={bitcoin:97000,"gold (oz)":2650,"apple shares":228,ethereum:3500};
+  S.cur="usd";markCur();
+  rows.forEach(([sym,s,qty,price,fee,d])=>S.tx.push({id:S.nid++,date:ago(d),sym,side:s,qty,price,fee,note:"Example"}));
+  Object.keys(cur).forEach(k=>S.prices[k]={p:cur[k],d:today()});
+  render();save();
+}
+
+// CSV in and out, so the data can move to and from a spreadsheet.
+function parseCSV(s){
+  const rows=[];let r=[],f="",q=false;
+  for(let i=0;i<s.length;i++){const c=s[i];
+    if(q){if(c==='"'){if(s[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===","){r.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&s[i+1]==="\n")i++;r.push(f);rows.push(r);r=[];f=""}
+    else f+=c}
+  if(f!==""||r.length){r.push(f);rows.push(r)}
+  return rows.filter(r=>r.some(x=>x.trim()!==""));
+}
+function isoDate(s){
+  s=s.trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  if(m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/))return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+  return "";
+}
+$("exp").onclick=()=>{
+  if(!S.tx.length){alert("Nothing to export yet.");return}
+  const q=v=>/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const csv=["date,asset,side,quantity,price,fees,note",...[...S.tx].sort((a,b)=>a.date<b.date?-1:1).map(t=>[t.date,q(t.sym),t.side,t.qty,t.price,t.fee,q(t.note)].join(","))].join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="price-value-tracker.csv";a.click();URL.revokeObjectURL(a.href);
+};
+$("imp").onclick=()=>$("file").click();
+$("file").onchange=async()=>{
+  const f=$("file").files[0];$("file").value="";if(!f)return;
+  const rows=parseCSV(await f.text());if(rows.length<2){alert("No rows found.");return}
+  const head=rows[0].map(x=>x.trim().toLowerCase()),ix=n=>head.findIndex(h=>n.includes(h));
+  const c={date:ix(["date"]),sym:ix(["asset","name","symbol","ticker"]),side:ix(["side","type"]),qty:ix(["quantity","qty","units","amount"]),price:ix(["price"]),fee:ix(["fees","fee"]),note:ix(["note","notes"])};
+  if(c.date<0||c.sym<0||c.side<0||c.qty<0||c.price<0){alert("Columns needed: date, asset, side (buy/sell), quantity, price. Fees and note are optional.");return}
+  const add=[];let bad=0;
+  rows.slice(1).forEach(r=>{
+    const side=(r[c.side]||"").trim().toLowerCase(),date=isoDate(r[c.date]||""),sym=(r[c.sym]||"").trim(),qty=num(r[c.qty]),price=num(r[c.price]),fee=c.fee>=0&&r[c.fee]?num(r[c.fee]):0;
+    if(!date||!sym||!(side==="buy"||side==="sell")||!(qty>0)||!(price>=0)||!(fee>=0)){bad++;return}
+    add.push({id:0,date,sym,side,qty,price,fee,note:c.note>=0?(r[c.note]||"").trim():""});
+  });
+  if(!add.length){alert("No valid rows. Dates should be YYYY-MM-DD or DD/MM/YYYY.");return}
+  if(!confirm(`Add ${add.length} transaction${add.length===1?"":"s"} to your tracker?${bad?` (${bad} row${bad===1?"":"s"} skipped as invalid.)`:""}`))return;
+  add.forEach(t=>{t.id=S.nid++;const k=S.tx.find(x=>x.sym.toLowerCase()===t.sym.toLowerCase());if(k)t.sym=k.sym;S.tx.push(t)});
+  render();save();
+};
+
+// Signed-in users: saved to the account (same /api/save-preferences every tool uses),
+// so it follows them across devices. Everyone also gets a localStorage copy.
+function status(m){$("sv").textContent=m}
+function apply(d){
+  if(!d||!Array.isArray(d.tx))return false;
+  const tx=d.tx.filter(t=>t&&t.sym&&(t.side==="buy"||t.side==="sell")&&t.qty>0&&t.price>=0&&/^\d{4}-\d{2}-\d{2}$/.test(t.date))
+    .map(t=>({id:+t.id||0,date:t.date,sym:String(t.sym),side:t.side,qty:+t.qty,price:+t.price,fee:+t.fee||0,note:String(t.note||"")}));
+  let id=1;tx.forEach(t=>{if(!t.id||t.id>=1e9)t.id=0;id=Math.max(id,t.id+1)});tx.forEach(t=>{if(!t.id)t.id=id++});
+  S.tx=tx;S.nid=id;S.prices={};
+  Object.entries(d.prices||{}).forEach(([k,v])=>{if(v&&v.p>0)S.prices[k]={p:+v.p,d:String(v.d||today())}});
+  if(SYM[d.cur])S.cur=d.cur;
+  return true;
+}
+function save(){
+  const d={tx:S.tx,prices:S.prices,cur:S.cur};
+  try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
+  if(!user)return;
+  clearTimeout(timer);
+  timer=setTimeout(async()=>{
+    try{const r=await fetch("/api/save-preferences",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({price_tracker:d})});
+      status(r.ok?"Saved to your account":"Could not save to your account")}catch(e){status("Could not save to your account")}
+  },500);
+}
+async function restore(){
+  try{apply(JSON.parse(localStorage.getItem(KEY)))}catch(e){}
+  markCur();render();
+  try{
+    const me=await(await fetch("/api/me",{credentials:"include"})).json();
+    if(!me.authenticated){status("Log in to save your tracker to your account");return}
+    user=me.username;
+    const r=await fetch("/api/load-preferences",{credentials:"include"});
+    const remote=r.ok?(await r.json()).preferences?.price_tracker:null;
+    if(remote&&apply(remote)){markCur();render();save();status("Saved to your account")}
+    else if(S.tx.length){save()}
+    else status("Your tracker saves to your account automatically");
+  }catch(e){}
+}
+setSide("buy");$("fd").value=today();markCur();render();restore();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"price-value-tracker"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script></body></html>

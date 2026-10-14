@@ -55,6 +55,7 @@
     { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [] },
     { name: 'Other tools', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
       ['Freedom Clock', DV + 'freedom-clock', 'Pick what you invest, how often and the return you assume, then watch compounding play out over time.', 'Interactive'],
+      ['Price &amp; Value Tracker', DV + 'price-value-tracker', 'Log every purchase and sale like a spreadsheet, then see average buy price, current value and gain or loss for each holding.', 'Tracker'],
       ['Portfolio Manager', '/tools/portfolio', 'Add every investment you hold, then track its value, top-ups and gain/loss over time in one place.', 'Tracker'],
       ['Position Size Calculator', '/tools/calculator', 'Size positions with the Kelly Criterion and convert pip values across FX pairs and lot sizes.', 'Calculator']
     ] }
