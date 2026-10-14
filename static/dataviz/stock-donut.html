@@ -36,7 +36,7 @@ button{cursor:pointer}.go{background:var(--ac);color:#fff;border-color:var(--ac)
 <div class="card"><div class="cur" id="cur"></div><div class="tg" id="tg"></div>
 <div class="dn"><svg viewBox="0 0 200 200" id="svg"></svg><div class="ct"><small>Total value</small><b id="tot">—</b></div></div></div>
 <div class="card" id="leg" hidden></div><div class="card" id="score" hidden></div><div class="card pers" id="pers" hidden></div><div class="card" id="list"></div>
-<button class="rs" id="rs" onclick="resetAll()" hidden>🔄 Reset</button>
+<button class="rs" id="rs" onclick="resetAll()" hidden>Clear all</button>
 <p class="fine">Prices are the latest daily close in USD (slightly delayed); if a lookup fails, a built-in estimate is used. Edit any price to override it. For illustration only, not advice.</p>
 <p class="fine" id="sv"></p>
 </div>
@@ -130,7 +130,7 @@ else if(sh("Energy")+sh("Industrial")>=.35)p=["🏭","The Old-School Industriali
 else if(score>=75)p=["⚖️","The All-Rounder","Balanced, calm and hard to shake. Textbook."];
 else p=["🧭","The Explorer","A bit of everything, still finding your style."];
 P.innerHTML=`<div class="lab">Your portfolio personality</div><div class="em">${p[0]}</div><h2>${p[1]}</h2><div class="sub">${p[2]}</div>`}
-let rt;function resetAll(){const b=$("rs");clearTimeout(rt);if(b.classList.contains("cf")){b.classList.remove("cf");b.textContent="🔄 Reset";H=[];mode="stock";$("msg").textContent="";$("sym").value="";$("sh").value="";save();draw();return}b.classList.add("cf");b.textContent="Tap again to clear everything";rt=setTimeout(()=>{b.classList.remove("cf");b.textContent="🔄 Reset"},3000)}
+function resetAll(){if(!H.length||!confirm("Clear all holdings from your donut? This also removes the saved copy on your account."))return;H=[];mode="stock";$("msg").textContent="";$("sym").value="";$("sh").value="";save();draw()}
 $("add").onclick=add;$("sh").addEventListener("keydown",e=>{if(e.key=="Enter")add()});draw();restore().then(goLive);
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"stock-donut"},location.origin);}
