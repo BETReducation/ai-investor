@@ -3,6 +3,13 @@
 // link plus coloured category pills next to the title. Categories come from the
 // EXPLAINERS list in app.py, so a new Explainer needs nothing extra on the page.
 (function () {
+  // A #tab hash makes the browser jump to that panel, so open at the top instead.
+  try { history.scrollRestoration = 'manual'; } catch (e) {}
+  var go = true;
+  function up() { if (go) scrollTo(0, 0); }
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (k) { addEventListener(k, function () { go = false; }, { once: true, passive: true }); });
+  up(); addEventListener('load', up); setTimeout(up, 150); setTimeout(up, 500);
+
   var m = location.pathname.match(/\/explainers\/([^\/]+)/);
   var h1 = document.querySelector('h1');
   if (!m || !h1) return;
