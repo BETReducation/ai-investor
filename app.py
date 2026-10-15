@@ -3381,16 +3381,20 @@ def learn_tools(): return send_from_directory("static", "learn-tools.html")
 @app.route("/learn/artifacts")
 def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 
-# Explainers shown on /learn/artifacts. category is one of: technical-analysis,
-# understanding-markets, investment-appraisal, basic-trading, trading-strategies.
-# part is "basics" (The basics) or "in-depth" (In-depth). Add a dict per explainer.
+# Explainers shown on /learn/artifacts. categories is a list of: technical-analysis,
+# understanding-markets, investment-appraisal, basic-trading, trading-strategies
+# (an Explainer can sit in several; the page shows a coloured pill for each).
+# part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
+# static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
-    # {"category": "technical-analysis", "part": "basics", "title": "...", "desc": "...", "url": "/static/explainers/<slug>/index.html"},
+    {"slug": "panic-at-the-bottom", "categories": ["trading-strategies", "technical-analysis"], "part": "in-depth",
+     "title": "Buying Panic at the Bottom",
+     "desc": "A five-signal mean-reversion setup (RSI, Bollinger Bands, 30% dip, volume spike, support) and its take-profit exit, explained with replayable charts."},
 ]
 
 @app.route("/api/explainers")
 def api_explainers():
-    return jsonify({"items": EXPLAINERS})
+    return jsonify({"items": [{**e, "url": f"/static/explainers/{e['slug']}/index.html"} for e in EXPLAINERS]})
 
 @app.route("/tools")
 def tools(): return send_from_directory("static", "tools.html")

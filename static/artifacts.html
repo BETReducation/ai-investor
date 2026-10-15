@@ -38,6 +38,8 @@ button.card { text-align: left; font: inherit; cursor: pointer; }
 .card .tag { align-self: flex-start; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; }
 .card .go { margin-top: auto; padding-top: 10px; font-weight: 700; font-size: .9rem; color: var(--accent); }
 
+.pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.pill { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #fff; padding: 3px 9px; border-radius: 999px; }
 .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
 .tabs button { font: 600 .88rem inherit; font-family: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; }
 .tabs button.on { color: var(--text); background: var(--accent-soft); border-color: var(--accent); }
@@ -56,15 +58,10 @@ button.card { text-align: left; font: inherit; cursor: pointer; }
 </main>
 
 <script src="/static/js/footer.js"></script>
+<script src="/static/js/explainer-cats.js"></script>
 <script>
 // Each explainer has a category and a part: "basics" (The basics) or "in-depth" (In-depth).
-var CATS = [
-  ['technical-analysis', 'Technical Analysis', 'Reading price charts, patterns and indicators.'],
-  ['understanding-markets', 'Understanding Markets', 'How markets work, who takes part and what moves prices.'],
-  ['investment-appraisal', 'Investment Appraisal', 'Weighing up what an investment has historically returned and at what cost.'],
-  ['basic-trading', 'Basic Trading', 'Order types, position sizing and the mechanics of placing a trade.'],
-  ['trading-strategies', 'Trading Strategies', 'How common strategies are built, and how they behaved historically.']
-];
+var CATS = window.GCG_EXPLAINER_CATS.map(function (c) { return [c.slug, c.name, c.blurb, c.color]; });
 var PARTS = [
   ['basics', 'The basics', 'Start here. A short, clear walk-through of the core idea.'],
   ['in-depth', 'In-depth', 'Go further. Extra detail, worked examples and edge cases.']
@@ -73,7 +70,12 @@ var view = document.getElementById('view'), crumbs = document.getElementById('cr
 var items = [];
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function inCat(slug) { return items.filter(function (e) { return e.category === slug; }); }
+function inCat(slug) { return items.filter(function (e) { return (e.categories || []).indexOf(slug) !== -1; }); }
+function pills(e) {
+  return '<span class="pills">' + CATS.filter(function (c) { return (e.categories || []).indexOf(c[0]) !== -1; }).map(function (c) {
+    return '<span class="pill" style="background:' + c[3] + '">' + c[1] + '</span>';
+  }).join('') + '</span>';
+}
 function plural(n) { return n + (n === 1 ? ' explainer' : ' explainers'); }
 
 function home() {
@@ -83,7 +85,7 @@ function home() {
     '<p class="lead">A growing collection of interactive explainers. Each one covers a single idea in two parts: The basics to get started, and In-depth to go further. Everything here is educational and historical, never personal advice.</p></section>' +
     '<div class="grid">' + CATS.map(function (c, i) {
       var n = inCat(c[0]).length;
-      return '<a class="card" href="#' + c[0] + '"><span class="num">' + (i + 1) + '</span><span class="t">' + c[1] + '</span><span class="sub">' + c[2] + '</span>' +
+      return '<a class="card" style="border-top-color:' + c[3] + '" href="#' + c[0] + '"><span class="num" style="color:' + c[3] + '">' + (i + 1) + '</span><span class="t">' + c[1] + '</span><span class="sub">' + c[2] + '</span>' +
         '<span class="count' + (n ? '' : ' zero') + '">' + (n ? plural(n) : 'Coming soon') + '</span></a>';
     }).join('') + '</div>';
 }
@@ -104,7 +106,7 @@ function category(slug) {
       var rows = by[p[0]];
       return '<div class="tabpanel" data-p="' + p[0] + '"' + (p[0] === first ? '' : ' hidden') + '><p class="hint">' + p[2] + '</p>' +
         (rows.length ? '<div class="grid">' + rows.map(function (e) {
-          return '<a class="card" href="' + esc(e.url) + '"><span class="tag">Explainer</span><span class="t">' + esc(e.title) + '</span>' +
+          return '<a class="card" href="' + esc(e.url) + '"><span class="tag">Explainer</span><span class="t">' + esc(e.title) + '</span>' + pills(e) +
             '<span class="sub">' + esc(e.desc) + '</span><span class="go">Open →</span></a>';
         }).join('') + '</div>' : '<div class="placeholder">' + (p[0] === 'basics' ? 'No explainers here yet. They are on their way.' : 'No in-depth explainers here yet.') + '</div>') + '</div>';
     }).join('');
