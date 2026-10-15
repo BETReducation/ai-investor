@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artifacts — Education — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --accent: #3b82f6; --accent-soft: rgba(59,130,246,0.13); --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+[data-theme="light"] { --accent: #2563eb; --accent-soft: rgba(37,99,235,0.09); }
+
+main { max-width: 1100px; margin: 0 auto; padding: 100px 20px 72px; min-height: 80vh; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 6px; font-size: .85rem; color: var(--muted); margin-bottom: 18px; }
+.crumbs a { text-decoration: none; color: var(--accent); }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs i { font-style: normal; opacity: .5; }
+.hero { padding: 4px 0 24px; }
+.kicker { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--accent); margin-bottom: 10px; }
+.hero h1 { font-family: var(--serif); font-size: clamp(1.8rem, 4.5vw, 2.7rem); line-height: 1.15; letter-spacing: -.02em; color: var(--text); max-width: 24ch; text-wrap: balance; }
+.hero .lead { color: var(--muted); font-size: 1.05rem; max-width: 62ch; margin-top: 12px; line-height: 1.6; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.card { display: flex; flex-direction: column; gap: 6px; padding: 18px 18px 16px; background: var(--bg2); border: 1px solid var(--border2); border-top: 4px solid var(--accent); border-radius: 12px; text-decoration: none; color: var(--text); transition: transform .12s, box-shadow .12s; }
+a.card:hover, button.card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+button.card { text-align: left; font: inherit; cursor: pointer; }
+.card .num { font-family: var(--serif); font-weight: 700; font-size: 1.9rem; line-height: 1; color: var(--accent); }
+.card .t { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; line-height: 1.25; }
+.card .sub { color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.card .count { margin-top: auto; padding-top: 8px; font-size: .78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+.card .count.zero { color: var(--muted); }
+.card .tag { align-self: flex-start; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; }
+.card .go { margin-top: auto; padding-top: 10px; font-weight: 700; font-size: .9rem; color: var(--accent); }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tabs button { font: 600 .88rem inherit; font-family: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border2); background: transparent; color: var(--muted); cursor: pointer; }
+.tabs button.on { color: var(--text); background: var(--accent-soft); border-color: var(--accent); }
+.hint { color: var(--muted); font-size: .85rem; margin: 4px 0 14px; }
+.placeholder { border: 1px dashed var(--border2); border-radius: 12px; padding: 24px; max-width: 640px; color: var(--muted); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<script src="/static/js/nav.js" data-logo="GCE Square.png"></script>
+
+<main>
+  <div class="crumbs" id="crumbs"></div>
+  <div id="view"></div>
+</main>
+
+<script src="/static/js/footer.js"></script>
+<script>
+// Each explainer has a category and a part: "basics" (The basics) or "in-depth" (In-depth).
+var CATS = [
+  ['technical-analysis', 'Technical Analysis', 'Reading price charts, patterns and indicators.'],
+  ['understanding-markets', 'Understanding Markets', 'How markets work, who takes part and what moves prices.'],
+  ['investment-appraisal', 'Investment Appraisal', 'Weighing up what an investment has historically returned and at what cost.'],
+  ['basic-trading', 'Basic Trading', 'Order types, position sizing and the mechanics of placing a trade.'],
+  ['trading-strategies', 'Trading Strategies', 'How common strategies are built, and how they behaved historically.']
+];
+var PARTS = [
+  ['basics', 'The basics', 'Start here. A short, clear walk-through of the core idea.'],
+  ['in-depth', 'In-depth', 'Go further. Extra detail, worked examples and edge cases.']
+];
+var view = document.getElementById('view'), crumbs = document.getElementById('crumbs');
+var items = [];
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function inCat(slug) { return items.filter(function (e) { return e.category === slug; }); }
+function plural(n) { return n + (n === 1 ? ' explainer' : ' explainers'); }
+
+function home() {
+  crumbs.innerHTML = '<a href="/learn">Education</a><i>/</i><span>Artifacts</span>';
+  document.title = 'Artifacts — Education — Growth Capital Group';
+  view.innerHTML = '<section class="hero"><p class="kicker">Education</p><h1>Artifacts</h1>' +
+    '<p class="lead">A growing collection of interactive explainers. Each one covers a single idea in two parts: The basics to get started, and In-depth to go further. Everything here is educational and historical, never personal advice.</p></section>' +
+    '<div class="grid">' + CATS.map(function (c, i) {
+      var n = inCat(c[0]).length;
+      return '<a class="card" href="#' + c[0] + '"><span class="num">' + (i + 1) + '</span><span class="t">' + c[1] + '</span><span class="sub">' + c[2] + '</span>' +
+        '<span class="count' + (n ? '' : ' zero') + '">' + (n ? plural(n) : 'Coming soon') + '</span></a>';
+    }).join('') + '</div>';
+}
+
+function category(slug) {
+  var c = CATS.filter(function (x) { return x[0] === slug; })[0];
+  if (!c) return home();
+  var list = inCat(slug), first = PARTS[0][0];
+  var by = {}; PARTS.forEach(function (p) { by[p[0]] = list.filter(function (e) { return e.part === p[0]; }); });
+  if (!by.basics.length && by['in-depth'].length) first = 'in-depth';
+  crumbs.innerHTML = '<a href="/learn">Education</a><i>/</i><a href="#">Artifacts</a><i>/</i><span>' + c[1] + '</span>';
+  document.title = c[1] + ' — Artifacts — Growth Capital Group';
+  view.innerHTML = '<section class="hero"><p class="kicker">Artifacts</p><h1>' + c[1] + '</h1><p class="lead">' + c[2] + '</p></section>' +
+    '<div class="tabs" role="tablist">' + PARTS.map(function (p) {
+      return '<button role="tab" data-t="' + p[0] + '" class="' + (p[0] === first ? 'on' : '') + '">' + p[1] + ' (' + by[p[0]].length + ')</button>';
+    }).join('') + '</div>' +
+    PARTS.map(function (p) {
+      var rows = by[p[0]];
+      return '<div class="tabpanel" data-p="' + p[0] + '"' + (p[0] === first ? '' : ' hidden') + '><p class="hint">' + p[2] + '</p>' +
+        (rows.length ? '<div class="grid">' + rows.map(function (e) {
+          return '<a class="card" href="' + esc(e.url) + '"><span class="tag">Explainer</span><span class="t">' + esc(e.title) + '</span>' +
+            '<span class="sub">' + esc(e.desc) + '</span><span class="go">Open →</span></a>';
+        }).join('') + '</div>' : '<div class="placeholder">' + (p[0] === 'basics' ? 'No explainers here yet. They are on their way.' : 'No in-depth explainers here yet.') + '</div>') + '</div>';
+    }).join('');
+  view.querySelectorAll('.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      view.querySelectorAll('.tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      view.querySelectorAll('.tabpanel').forEach(function (p) { p.hidden = p.getAttribute('data-p') !== b.getAttribute('data-t'); });
+    });
+  });
+}
+
+function route() {
+  var h = location.hash.replace('#', '');
+  h ? category(h) : home();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+fetch('/api/explainers').then(function (r) { return r.json(); })
+  .then(function (d) { items = d.items || []; }, function () {})
+  .then(route);
+</script>
+</body>
+</html>

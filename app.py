@@ -3378,6 +3378,20 @@ def learn_guest_lessons(): return send_from_directory("static", "guest-lessons.h
 @app.route("/learn/tools")
 def learn_tools(): return send_from_directory("static", "learn-tools.html")
 
+@app.route("/learn/artifacts")
+def learn_artifacts(): return send_from_directory("static", "artifacts.html")
+
+# Explainers shown on /learn/artifacts. category is one of: technical-analysis,
+# understanding-markets, investment-appraisal, basic-trading, trading-strategies.
+# part is "basics" (The basics) or "in-depth" (In-depth). Add a dict per explainer.
+EXPLAINERS = [
+    # {"category": "technical-analysis", "part": "basics", "title": "...", "desc": "...", "url": "/static/explainers/<slug>/index.html"},
+]
+
+@app.route("/api/explainers")
+def api_explainers():
+    return jsonify({"items": EXPLAINERS})
+
 @app.route("/tools")
 def tools(): return send_from_directory("static", "tools.html")
 
@@ -4393,7 +4407,7 @@ def load_preferences():
 
 LANDING_PAGE_CHOICES = {
     "/",
-    "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/guest-lessons", "/learn/tools",
+    "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/guest-lessons", "/learn/tools", "/learn/artifacts",
     "/tools", "/tools/signals", "/backtester", "/tools/ai-chart-analysis", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
@@ -5252,6 +5266,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Learn — Pro", "url": "/learn/pro", "sub": "Lesson hub"},
     {"title": "Learn — Guest Lessons", "url": "/learn/guest-lessons", "sub": "Lessons from outside contributors"},
     {"title": "Learn — Tools", "url": "/learn/tools", "sub": "How to use each tool"},
+    {"title": "Learn — Artifacts", "url": "/learn/artifacts", "sub": "Interactive explainers"},
     {"title": "Tools", "url": "/tools", "sub": "Tools hub"},
     {"title": "Signals", "url": "/tools/signals", "sub": "Tool"},
     {"title": "Backtester", "url": "/backtester", "sub": "Tool"},
