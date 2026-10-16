@@ -116,6 +116,7 @@ tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:700;paddin
 .mo table{table-layout:fixed;margin-bottom:8px}
 .mo td{padding:10px 12px}.mo tr:last-child td{border-bottom:0}
 .mo td:first-child{padding-left:26px}
+.mo th{padding-top:0;padding-bottom:8px;border-bottom:1px solid var(--line);white-space:normal;line-height:1.25}.mo th:first-child{padding-left:26px}
 /* what if */
 #wiBox{order:5}
 .sl{margin-top:18px}.sl label{display:flex;justify-content:space-between;gap:10px}.sl label b{color:var(--hand)}
@@ -275,7 +276,7 @@ function payments(A){
   var l=by[i].sort(function(a,b){return a.d-b.d}),tot=l.reduce(function(a,p){return a+p.amt},0);
   var rows=l.map(function(p){var z=zi(p.s.yld);return '<tr><td data-l="Ex-dividend date">'+dt(p.d)+'</td><td class="nm" data-l="Stock"><b>'+esc(p.s.name)+'</b><small>'+esc(p.s.sym)+' · '+p.s.shares.toLocaleString('en-GB')+' shares</small></td><td class="r" data-l="Per share">'+p.ps+'</td><td data-l="Stock yield"><span class="pill"><i style="background:'+ZC[z]+'"></i>'+p.s.yld.toFixed(1)+'%</span></td><td class="r" data-l="Your payout"><b>'+money(disp,p.amt,2)+'</b></td></tr>'}).join('');
   return '<details class="mo'+(l.length?'':' none')+'" data-m="'+i+'"'+(moOpen[i]?' open':'')+'><summary><span class="mn">'+MONTHS[i]+'</span><span class="mc">'+(l.length?l.length+(l.length===1?' payment':' payments'):'No payments')+'</span><span class="mt">'+(l.length?money(disp,tot,2):'')+'</span></summary>'
-  +(l.length?'<div class="tw"><table><colgroup><col style="width:17%"><col><col style="width:13%"><col style="width:15%"><col style="width:16%"></colgroup><tbody>'+rows+'</tbody></table></div>':'<p class="note" style="margin:0 0 14px">Nothing went ex-dividend in '+MONTHS[i]+'.</p>')+'</details>'}).join('');
+  +(l.length?'<div class="tw"><table><colgroup><col style="width:17%"><col><col style="width:13%"><col style="width:15%"><col style="width:16%"></colgroup><thead><tr><th>Ex-div date</th><th>Stock</th><th class="r">Per share</th><th>Yield</th><th class="r">Payout</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="note" style="margin:0 0 14px">Nothing went ex-dividend in '+MONTHS[i]+'.</p>')+'</details>'}).join('');
  return '<section class="card pay"><div class="ch"><h2>Payments by month</h2><p class="cap">Ex-dividend dates in the last 12 months · total '+money(disp,A.inc,2)+'</p></div>'+h+'</section>'}
 
 function wiCard(){
