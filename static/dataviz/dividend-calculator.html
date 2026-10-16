@@ -102,6 +102,19 @@ tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:700;paddin
 .clr{font:600 13px "Instrument Sans",sans-serif;background:none;color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
 .clr:hover,.clr.c{color:#fff;background:#D6453F;border-color:#D6453F}
 
+/* payments by month */
+.mo{border-top:1px solid var(--line)}
+.mo summary{display:flex;align-items:center;gap:12px;padding:14px 0;cursor:pointer;list-style:none}
+.mo summary::-webkit-details-marker{display:none}
+.mo summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(-45deg);transition:transform .2s;flex:none;margin:0 4px 0 2px}
+.mo[open] summary::before{transform:rotate(45deg)}
+.mn{font:700 17px "Bricolage Grotesque",system-ui,sans-serif;flex:1}
+.mc{color:var(--mute);font-size:14px}
+.mt{font-weight:700;min-width:84px;text-align:right}
+.mo.none .mn,.mo.none .mc{opacity:.55}
+.mo table{table-layout:fixed;margin-bottom:8px}
+.mo td{padding:10px 12px}.mo tr:last-child td{border-bottom:0}
+.mo td:first-child{padding-left:26px}
 /* what if */
 #wiBox{order:5}
 .sl{margin-top:18px}.sl label{display:flex;justify-content:space-between;gap:10px}.sl label b{color:var(--hand)}
@@ -182,6 +195,7 @@ var NAMES={AAPL:'Apple',MSFT:'Microsoft',NVDA:'NVIDIA',GOOGL:'Alphabet',META:'Me
 function resolve(t){
  t=t.trim().toUpperCase();if(t==='BRK.B')return 'BRK-B';
  var q=t.toLowerCase();for(var k in NAMES){if(NAMES[k].toLowerCase()===q)return k}return t}
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'],moOpen=MO.map(function(m,i){return i===new Date().getMonth()});
 var ZC=['#6FA8FF','#2EE6A6','#7AD97A','#F4A340','#FF6B5B'],ZW=[1,2,3,3,3];
 var $=function(i){return document.getElementById(i)};
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -265,13 +279,14 @@ function holdings(A){
  +'<tfoot><tr><td class="e" colspan="4">Total</td><td class="r" data-l="Total">'+money(disp,A.inc,2)+'</td><td class="e" colspan="2"></td></tr></tfoot></table></div></section>'}
 
 function payments(A){
- var list=[];
- stocks.forEach(function(s){var r=rf(s);if(!(r>0))return;s.divs.forEach(function(x){list.push({d:x.date,s:s,ps:s.pence?x.amt.toFixed(2)+'p':money(s.sy,x.amt,2),amt:x.amt*s.shares/s.unit*r})})});
- list.sort(function(a,b){return b.d-a.d});
- var rows=list.map(function(p){return '<tr><td data-l="Ex-dividend date">'+dt(p.d)+'</td><td class="nm" data-l="Stock"><b>'+esc(p.s.name)+'</b></td><td class="r" data-l="Per share">'+p.ps+'</td><td class="r" data-l="Your payout"><b>'+money(disp,p.amt,2)+'</b></td></tr>'}).join('');
- return '<section class="card pay"><div class="ch"><h2>Payments</h2><p class="cap">Ex-dividend dates in the last 12 months</p></div>'
- +(rows?'<div class="tw"><table><thead><tr><th>Ex-dividend date</th><th>Stock</th><th class="r">Per share</th><th class="r">Payout</th></tr></thead><tbody>'+rows+'</tbody>'
- +'<tfoot><tr><td class="e" colspan="3">Total</td><td class="r" data-l="Total">'+money(disp,A.inc,2)+'</td></tr></tfoot></table></div>':'<p class="note">No dividends found in the last 12 months.</p>')+'</section>'}
+ var by=MO.map(function(){return []});
+ stocks.forEach(function(s){var r=rf(s);if(!(r>0))return;s.divs.forEach(function(x){by[x.date.getMonth()].push({d:x.date,s:s,ps:s.pence?x.amt.toFixed(2)+'p':money(s.sy,x.amt,2),amt:x.amt*s.shares/s.unit*r})})});
+ var h=MO.map(function(m,i){
+  var l=by[i].sort(function(a,b){return a.d-b.d}),tot=l.reduce(function(a,p){return a+p.amt},0);
+  var rows=l.map(function(p){return '<tr><td data-l="Ex-dividend date">'+dt(p.d)+'</td><td class="nm" data-l="Stock"><b>'+esc(p.s.name)+'</b></td><td class="r" data-l="Per share">'+p.ps+'</td><td class="r" data-l="Your payout"><b>'+money(disp,p.amt,2)+'</b></td></tr>'}).join('');
+  return '<details class="mo'+(l.length?'':' none')+'" data-m="'+i+'"'+(moOpen[i]?' open':'')+'><summary><span class="mn">'+MONTHS[i]+'</span><span class="mc">'+(l.length?l.length+(l.length===1?' payment':' payments'):'No payments')+'</span><span class="mt">'+(l.length?money(disp,tot,2):'')+'</span></summary>'
+  +(l.length?'<div class="tw"><table><colgroup><col style="width:24%"><col><col style="width:18%"><col style="width:18%"></colgroup><tbody>'+rows+'</tbody></table></div>':'<p class="note" style="margin:0 0 14px">Nothing went ex-dividend in '+MONTHS[i]+'.</p>')+'</details>'}).join('');
+ return '<section class="card pay"><div class="ch"><h2>Payments by month</h2><p class="cap">Ex-dividend dates in the last 12 months · total '+money(disp,A.inc,2)+'</p></div>'+h+'</section>'}
 
 function wiCard(){
  var sy=wiCtx.sy,pm=(wiM/2000*100)+'%',py=((wiY-1)/29*100)+'%';
@@ -310,6 +325,7 @@ async function add(e){
  b.disabled=false;b.textContent='Add stock'}
 $('addForm').addEventListener('submit',add);
 $('wiBox').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){wiM=+e.target.value;setP(e.target);wiUpdate()}else if(i==='wiy'){wiY=+e.target.value;setP(e.target);wiUpdate()}});
+$('out').addEventListener('toggle',function(e){var d=e.target;if(d.classList&&d.classList.contains('mo'))moOpen[+d.dataset.m]=d.open},true);
 $('out').onclick=function(e){
  var t=e.target;
  var cs=t.closest('.cs button');if(cs){setDisp(cs.dataset.c);return}
