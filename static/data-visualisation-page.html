@@ -625,6 +625,10 @@ function initIframeViz(name, maxWidth) {
     if (e.origin !== location.origin || e.data?.src !== name) return;
     document.getElementById('vizFrame').style.height = e.data.gcgIframeHeight + 'px';
   });
+  // Keep the widget's theme in step when the nav toggle is used after it has loaded.
+  document.addEventListener('gcg-theme-change', e => {
+    try { document.getElementById('vizFrame').contentDocument.documentElement.setAttribute('data-theme', e.detail.theme); } catch (err) {}
+  });
 }
 
 async function loadPage() {
