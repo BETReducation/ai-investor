@@ -157,14 +157,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 <aside class="side">
 <form class="card" id="addForm" autocomplete="off">
 <h2>Add a holding</h2>
-<div class="fld"><label for="tk">Ticker</label><input id="tk" type="text" placeholder="LGEN or AAPL" maxlength="20" autocapitalize="characters" spellcheck="false"></div>
+<div class="fld"><label for="tk">Ticker</label><input id="tk" type="text" list="dl" placeholder="Ticker or name, e.g. KO or Tesla" maxlength="20" autocapitalize="characters" spellcheck="false"><datalist id="dl"></datalist></div>
 <div class="pair fld">
 <div><label for="sh">Shares</label><input id="sh" type="number" inputmode="decimal" min="0" step="any" placeholder="1000"></div>
 <div><label for="px">Price <span style="font-weight:400;color:var(--mute)">(optional)</span></label><input id="px" type="number" inputmode="decimal" min="0" step="any" placeholder="latest"></div>
 </div>
 <button class="add" id="addBtn" type="submit">Add stock</button>
 <p class="msg o" id="msg" role="status"></p>
-<p class="hint">UK prices are in pence. UK shares need .L (e.g. LGEN.L if the plain ticker is not found).</p>
+<p class="hint">Works with US and UK shares, and most others on Yahoo Finance. Pick from the list or type any ticker. UK prices are in pence; if a UK ticker isn’t found, add .L (e.g. LGEN.L).</p>
 </form>
 <div id="wiBox"></div>
 </aside>
@@ -177,10 +177,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 var API='/api/dataviz/dividend-calculator/';
 var disp='',fxBusy=false,fx={},DC={'£':'GBP','$':'USD','€':'EUR'},CS={GBP:'£',USD:'$',EUR:'€'},wiM=100,wiY=5,wiCtx={sy:'£',inc:0,y:0};
 var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],stocks=[],nid=1;
+var NAMES={AAPL:'Apple',MSFT:'Microsoft',NVDA:'NVIDIA',GOOGL:'Alphabet',AMZN:'Amazon',META:'Meta Platforms',TSLA:'Tesla','BRK-B':'Berkshire Hathaway',JPM:'JPMorgan Chase',V:'Visa',MA:'Mastercard',UNH:'UnitedHealth',XOM:'Exxon Mobil',WMT:'Walmart',JNJ:'Johnson & Johnson',PG:'Procter & Gamble',HD:'Home Depot',COST:'Costco',NFLX:'Netflix',AMD:'AMD',DIS:'Disney',KO:'Coca-Cola',PEP:'PepsiCo',NKE:'Nike',MCD:"McDonald's",BA:'Boeing',INTC:'Intel',PYPL:'PayPal',ADBE:'Adobe',CRM:'Salesforce',ORCL:'Oracle',CSCO:'Cisco',UBER:'Uber',SHOP:'Shopify',PLTR:'Palantir',COIN:'Coinbase',SPOT:'Spotify',SBUX:'Starbucks',T:'AT&T',VZ:'Verizon',PFE:'Pfizer',BAC:'Bank of America',GS:'Goldman Sachs',LLY:'Eli Lilly',AVGO:'Broadcom',TSM:'TSMC',BABA:'Alibaba','LGEN.L':'Legal & General','VOD.L':'Vodafone','BP.L':'BP','SHEL.L':'Shell','HSBA.L':'HSBC','ULVR.L':'Unilever','AZN.L':'AstraZeneca','GSK.L':'GSK','BATS.L':'British American Tobacco','RIO.L':'Rio Tinto','LLOY.L':'Lloyds Banking Group','NG.L':'National Grid','TSCO.L':'Tesco','AV.L':'Aviva','PHNX.L':'Phoenix Group'};
+function resolve(t){
+ t=t.trim().toUpperCase();if(t==='BRK.B')return 'BRK-B';
+ var q=t.toLowerCase();for(var k in NAMES){if(NAMES[k].toLowerCase()===q)return k}return t}
 var ZC=['#6FA8FF','#2EE6A6','#7AD97A','#F4A340','#FF6B5B'],ZW=[1,2,3,3,3];
 var $=function(i){return document.getElementById(i)};
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function money(sym,n,d){return sym+n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d})}
+$('dl').innerHTML=Object.keys(NAMES).map(function(k){return '<option value="'+k+'">'+esc(NAMES[k])+'</option>'}).join('');
 function dt(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
 function normalise(j){return {name:j.name||'',sym:j.symbol||'',cur:j.currency||'GBP',price:+j.price||0,divs:(j.dividends||[]).map(function(d){return {date:new Date(d.date),amt:+d.amount||0}}).filter(function(d){return !isNaN(d.date)&&d.amt>0})}}
 async function getJSON(url){
@@ -293,14 +298,14 @@ function render(){
 
 async function add(e){
  if(e)e.preventDefault();
- var t=$('tk').value.trim().toUpperCase(),sh=parseFloat($('sh').value),px=parseFloat($('px').value)||0,msg=$('msg');
+ var t=resolve($('tk').value),sh=parseFloat($('sh').value),px=parseFloat($('px').value)||0,msg=$('msg');
  if(!t){msg.className='msg e';msg.textContent='Enter a ticker.';return}
  if(!(sh>0)){msg.className='msg e';msg.textContent='Enter how many shares you own.';return}
  var b=$('addBtn');b.disabled=true;b.textContent='Looking up '+t+'…';msg.className='msg o';msg.textContent='Fetching the latest price and dividends…';
  try{var s=build(await fetchTicker(t),sh,px);
   if(!(s.price>0))throw new Error('nf');
   if(!disp)disp=s.sy;stocks.push(s);fxBusy=needList().length>0;['tk','sh','px'].forEach(function(i){$(i).value=''});msg.textContent='';render();$('tk').focus();if(fxBusy){await prep();render()}}
- catch(err){msg.className='msg e';msg.textContent=err.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'Couldn’t find dividend data for '+t+'. For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
+ catch(err){msg.className='msg e';msg.textContent=err.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'No dividend data found for '+t+'. It may not pay a dividend (Tesla and Berkshire Hathaway don’t). For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
  b.disabled=false;b.textContent='Add stock'}
 $('addForm').addEventListener('submit',add);
 $('wiBox').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){wiM=+e.target.value;setP(e.target);wiUpdate()}else if(i==='wiy'){wiY=+e.target.value;setP(e.target);wiUpdate()}});
