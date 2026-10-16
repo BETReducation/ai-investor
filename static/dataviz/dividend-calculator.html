@@ -81,7 +81,7 @@ input:focus-visible,button:focus-visible{outline:2px solid var(--hand);outline-o
 .avg span{position:absolute;right:0;bottom:3px;font-size:12px;font-weight:600;color:var(--hand);background:var(--panel);padding:0 6px;border-radius:6px}
 
 /* tables */
-.hold{order:4}.pay{order:6}
+#chipBox{order:1}.pay{order:4}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th{text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);padding:0 12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
@@ -95,10 +95,11 @@ td b{font-weight:600}
 tfoot td{border-top:2px solid var(--line);border-bottom:0;font-weight:700;padding-top:14px}
 .pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:13px;font-weight:600;white-space:nowrap}
 .pill i{width:9px;height:9px;border-radius:50%;display:block}
-.sh{min-width:130px}.sh .pb{display:inline-block;vertical-align:middle;width:70px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-right:8px}
-.sh .pb i{display:block;height:100%;background:var(--grow);border-radius:4px}.sh em{font-style:normal;font-size:13px;color:var(--mute)}
-.rm{background:none;border:1px solid transparent;color:var(--mute);width:30px;height:30px;border-radius:8px;font-size:20px;line-height:1;cursor:pointer}
-.rm:hover{color:#D6453F;border-color:var(--line)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 12px;font-size:14px;color:var(--mute)}
+.chip b{color:var(--ink);font-weight:700}
+.rm{background:none;border:0;color:var(--mute);width:24px;height:24px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer}
+.rm:hover{color:#fff;background:#D6453F}
 .clr{font:600 13px "Instrument Sans",sans-serif;background:none;color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
 .clr:hover,.clr.c{color:#fff;background:#D6453F;border-color:#D6453F}
 
@@ -137,7 +138,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 @media(min-width:960px){
 .app{display:grid;grid-template-columns:330px minmax(0,1fr);gap:24px;align-items:start}
 .side,.main{display:flex;flex-direction:column;gap:24px;min-width:0}
-#addForm,#wiBox,.hero,.cal,.hold,.pay,.empty{order:0}
+#addForm,#chipBox,#wiBox,.hero,.cal,.pay,.empty{order:0}
 #foot{grid-column:1/-1}
 }
 @media(max-width:959px){
@@ -146,16 +147,14 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 @media(max-width:720px){
 .card{padding:16px}
 .bars{height:210px;gap:4px}
-.hold thead,.pay thead,.hold tfoot .e,.pay tfoot .e{display:none}
-.hold tr,.pay tr{display:block;border-bottom:1px solid var(--line);padding:12px 0}
-.hold tbody tr:last-child,.pay tbody tr:last-child{border-bottom:0}
-.hold td,.pay td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:4px 0;text-align:right}
-.hold td::before,.pay td::before{content:attr(data-l);color:var(--mute);font-size:13px;text-align:left}
-.hold td.nm,.pay td.nm{display:block;text-align:left}.hold td.nm::before,.pay td.nm::before{content:none}
-.hold tr{position:relative}.hold td.x{position:absolute;top:6px;right:0;padding:0}.hold td.x::before{content:none}.hold td.nm{padding-right:34px}
-.hold td:first-child,.pay td:first-child{padding-left:0}
-.hold tfoot tr,.pay tfoot tr{border:0;padding:8px 0 0}
-.hold tfoot td,.pay tfoot td{border:0;padding:4px 0}
+.pay thead{display:none}
+.pay tr{display:block;border-bottom:1px solid var(--line);padding:10px 0}
+.pay tbody tr:last-child{border-bottom:0}
+.pay td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:3px 0;text-align:right}
+.pay td::before{content:attr(data-l);color:var(--mute);font-size:13px;text-align:left}
+.pay td.nm{display:block;text-align:left}.pay td.nm::before{content:none}
+.pay td:first-child{padding-left:0}
+.mo colgroup{display:none}
 }
 @media(max-width:520px){.val{display:none}.tiles{gap:8px}.tile b{font-size:16px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -180,6 +179,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 <p class="hint" id="sv" style="margin:0 0 10px"></p>
 <p class="hint">Works with US and UK shares, and most others on Yahoo Finance. Pick from the list or type any ticker. UK prices are in pence; if a UK ticker isn’t found, add .L (e.g. LGEN.L).</p>
 </form>
+<div id="chipBox"></div>
 <div id="wiBox"></div>
 </aside>
 <main class="main" id="out"></main>
@@ -264,28 +264,18 @@ function calendar(A){
  +'<div class="bars" role="img" aria-label="Dividends by month, January to December">'+bars+'<div class="avg" style="bottom:calc(24px + (100% - 40px)*'+(mx?avg/mx:0)+')"><span>Avg '+money(sy,avg,2)+'</span></div></div>'
  +'<p class="note">The dashed line is the monthly average. Grey months had no payout.</p></section>'}
 
-function holdings(A){
- var rows=stocks.map(function(s){
-  var r=rf(s),i=zi(s.yld),inc=r>0?s.income*r:null,pc=(inc!=null&&A.inc>0)?inc/A.inc*100:0,
-   pr=s.pence?s.price.toFixed(2)+'p':money(s.sy,s.price,2);
-  return '<tr><td class="nm" data-l="Stock"><b>'+esc(s.name)+'</b>'+(s.name!==s.sym?'<small>'+esc(s.sym)+'</small>':'')+'</td>'
-  +'<td class="r" data-l="Shares">'+s.shares.toLocaleString('en-GB')+'</td><td class="r" data-l="Price">'+pr+'</td>'
-  +'<td data-l="Yield"><span class="pill"><i style="background:'+ZC[i]+'"></i>'+s.yld.toFixed(1)+'% · '+ZN[i]+'</span></td>'
-  +'<td class="r" data-l="Dividends a year"><b>'+(inc==null?'…':money(disp,inc,2))+'</b></td>'
-  +'<td class="sh" data-l="Share of total"><span class="pb"><i style="width:'+pc+'%"></i></span><em>'+pc.toFixed(0)+'%</em></td>'
-  +'<td class="x"><button class="rm" type="button" data-id="'+s.id+'" aria-label="Remove '+esc(s.sym)+'">×</button></td></tr>'}).join('');
- return '<section class="card hold"><div class="ch"><h2>Your holdings</h2><button class="clr" type="button">Clear all</button></div>'
- +'<div class="tw"><table><thead><tr><th>Stock</th><th class="r">Shares</th><th class="r">Price</th><th>Yield</th><th class="r">Dividends a year</th><th>Share of total</th><th></th></tr></thead><tbody>'+rows+'</tbody>'
- +'<tfoot><tr><td class="e" colspan="4">Total</td><td class="r" data-l="Total">'+money(disp,A.inc,2)+'</td><td class="e" colspan="2"></td></tr></tfoot></table></div></section>'}
+function chips(){
+ $('chipBox').innerHTML=stocks.length?'<section class="card"><div class="ch"><h2>Your holdings <span class="cap">'+stocks.length+'</span></h2><button class="clr" type="button">Clear all</button></div><div class="chips">'
+ +stocks.map(function(s){return '<span class="chip" title="'+esc(s.name)+'"><b>'+esc(s.sym)+'</b>'+s.shares.toLocaleString('en-GB')+'<button class="rm" type="button" data-id="'+s.id+'" aria-label="Remove '+esc(s.sym)+'">×</button></span>'}).join('')+'</div></section>':''}
 
 function payments(A){
  var by=MO.map(function(){return []});
  stocks.forEach(function(s){var r=rf(s);if(!(r>0))return;s.divs.forEach(function(x){by[x.date.getMonth()].push({d:x.date,s:s,ps:s.pence?x.amt.toFixed(2)+'p':money(s.sy,x.amt,2),amt:x.amt*s.shares/s.unit*r})})});
  var h=MO.map(function(m,i){
   var l=by[i].sort(function(a,b){return a.d-b.d}),tot=l.reduce(function(a,p){return a+p.amt},0);
-  var rows=l.map(function(p){return '<tr><td data-l="Ex-dividend date">'+dt(p.d)+'</td><td class="nm" data-l="Stock"><b>'+esc(p.s.name)+'</b></td><td class="r" data-l="Per share">'+p.ps+'</td><td class="r" data-l="Your payout"><b>'+money(disp,p.amt,2)+'</b></td></tr>'}).join('');
+  var rows=l.map(function(p){var z=zi(p.s.yld);return '<tr><td data-l="Ex-dividend date">'+dt(p.d)+'</td><td class="nm" data-l="Stock"><b>'+esc(p.s.name)+'</b><small>'+esc(p.s.sym)+' · '+p.s.shares.toLocaleString('en-GB')+' shares</small></td><td class="r" data-l="Per share">'+p.ps+'</td><td data-l="Stock yield"><span class="pill"><i style="background:'+ZC[z]+'"></i>'+p.s.yld.toFixed(1)+'%</span></td><td class="r" data-l="Your payout"><b>'+money(disp,p.amt,2)+'</b></td></tr>'}).join('');
   return '<details class="mo'+(l.length?'':' none')+'" data-m="'+i+'"'+(moOpen[i]?' open':'')+'><summary><span class="mn">'+MONTHS[i]+'</span><span class="mc">'+(l.length?l.length+(l.length===1?' payment':' payments'):'No payments')+'</span><span class="mt">'+(l.length?money(disp,tot,2):'')+'</span></summary>'
-  +(l.length?'<div class="tw"><table><colgroup><col style="width:24%"><col><col style="width:18%"><col style="width:18%"></colgroup><tbody>'+rows+'</tbody></table></div>':'<p class="note" style="margin:0 0 14px">Nothing went ex-dividend in '+MONTHS[i]+'.</p>')+'</details>'}).join('');
+  +(l.length?'<div class="tw"><table><colgroup><col style="width:17%"><col><col style="width:13%"><col style="width:15%"><col style="width:16%"></colgroup><tbody>'+rows+'</tbody></table></div>':'<p class="note" style="margin:0 0 14px">Nothing went ex-dividend in '+MONTHS[i]+'.</p>')+'</details>'}).join('');
  return '<section class="card pay"><div class="ch"><h2>Payments by month</h2><p class="cap">Ex-dividend dates in the last 12 months · total '+money(disp,A.inc,2)+'</p></div>'+h+'</section>'}
 
 function wiCard(){
@@ -306,10 +296,10 @@ function render(){
  var A=agg();if(!disp&&stocks.length)disp=stocks[0].sy;
  if(!stocks.length){
   $('out').innerHTML='<section class="card empty"><h2>Nothing added yet</h2><p>Add a ticker and the number of shares you hold. You’ll see what they paid over the last 12 months, the monthly pattern and the yield.</p></section>';
-  $('wiBox').innerHTML='';$('foot').hidden=true;postHeight();return}
+  $('wiBox').innerHTML='';chips();$('foot').hidden=true;postHeight();return}
  wiCtx={sy:disp,inc:A.inc,y:A.y};
- $('out').innerHTML=hero(A)+calendar(A)+holdings(A)+payments(A);
- $('wiBox').innerHTML=wiCard();wiUpdate();
+ $('out').innerHTML=hero(A)+calendar(A)+payments(A);
+ $('wiBox').innerHTML=wiCard();wiUpdate();chips();
  $('foot').hidden=false;postHeight()}
 
 async function add(e){
@@ -326,11 +316,11 @@ async function add(e){
 $('addForm').addEventListener('submit',add);
 $('wiBox').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){wiM=+e.target.value;setP(e.target);wiUpdate()}else if(i==='wiy'){wiY=+e.target.value;setP(e.target);wiUpdate()}});
 $('out').addEventListener('toggle',function(e){var d=e.target;if(d.classList&&d.classList.contains('mo'))moOpen[+d.dataset.m]=d.open},true);
-$('out').onclick=function(e){
+document.addEventListener('click',function(e){
  var t=e.target;
  var cs=t.closest('.cs button');if(cs){setDisp(cs.dataset.c);return}
  var r=t.closest('.rm');if(r){stocks=stocks.filter(function(x){return x.id!==+r.dataset.id});if(!stocks.length)disp='';touched=true;save();render();return}
- var cl=t.closest('.clr');if(cl){if(cl.dataset.arm){stocks=[];disp='';touched=true;save();render()}else{cl.dataset.arm='1';cl.classList.add('c');cl.textContent='Click again to clear all';setTimeout(function(){cl.dataset.arm='';cl.classList.remove('c');cl.textContent='Clear all'},3000)}}};
+ var cl=t.closest('.clr');if(cl){if(cl.dataset.arm){stocks=[];disp='';touched=true;save();render()}else{cl.dataset.arm='1';cl.classList.add('c');cl.textContent='Click again to clear all';setTimeout(function(){cl.dataset.arm='';cl.classList.remove('c');cl.textContent='Clear all'},3000)}}});
 
 
 // Signed-in users: saved to the account (same /api/save-preferences every tool uses) so it
