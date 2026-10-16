@@ -164,6 +164,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <button class="add" id="addBtn" type="submit">Add stock</button>
 <p class="msg o" id="msg" role="status"></p>
+<p class="hint" id="sv" style="margin:0 0 10px"></p>
 <p class="hint">Works with US and UK shares, and most others on Yahoo Finance. Pick from the list or type any ticker. UK prices are in pence; if a UK ticker isn’t found, add .L (e.g. LGEN.L).</p>
 </form>
 <div id="wiBox"></div>
@@ -202,7 +203,7 @@ function dcode(){return DC[disp]||'GBP'}
 function rf(s){var c=dcode();return s.cc===c?1:(fx[s.cc+c]||0)}
 function needList(){var c=dcode(),n=[];stocks.forEach(function(s){if(s.cc!==c&&!fx[s.cc+c]&&n.indexOf(s.cc)<0)n.push(s.cc)});return n}
 async function prep(){var c=dcode(),n=needList();for(var i=0;i<n.length;i++){try{await rate(n[i],c)}catch(e){}}fxBusy=false}
-async function setDisp(sym){disp=sym;fxBusy=needList().length>0;render();if(fxBusy){await prep();render()}}
+async function setDisp(sym){disp=sym;touched=true;save();fxBusy=needList().length>0;render();if(fxBusy){await prep();render()}}
 function agg(){
  var c=dcode(),inc=0,val=0,m=MO.map(function(){return 0}),left=[],used=[];
  stocks.forEach(function(s){var r=rf(s);if(!(r>0)){left.push(s);return}
@@ -223,7 +224,7 @@ function build(d,shares,px){
  var cut=new Date();cut.setFullYear(cut.getFullYear()-1);var now=new Date();
  var divs=d.divs.filter(function(x){return x.date>=cut&&x.date<=now}).sort(function(a,b){return a.date-b.date});
  var price=px>0?px:d.price,perShare=divs.reduce(function(a,x){return a+x.amt},0);
- return {id:nid++,name:d.name||d.sym,sym:d.sym,sy:sym,cc:pence?'GBP':String(d.cur||'GBP').toUpperCase(),pence:pence,unit:unit,shares:shares,price:price,divs:divs,income:perShare*shares/unit,
+ return {id:nid++,name:d.name||d.sym,sym:d.sym,sy:sym,cc:pence?'GBP':String(d.cur||'GBP').toUpperCase(),pence:pence,unit:unit,shares:shares,inpx:px>0?px:0,price:price,divs:divs,income:perShare*shares/unit,
   value:price*shares/unit,yld:price>0?perShare/price*100:0}}
 
 function zi(y){return y<1?0:y<3?1:y<6?2:y<9?3:4}
@@ -304,7 +305,7 @@ async function add(e){
  var b=$('addBtn');b.disabled=true;b.textContent='Looking up '+t+'…';msg.className='msg o';msg.textContent='Fetching the latest price and dividends…';
  try{var s=build(await fetchTicker(t),sh,px);
   if(!(s.price>0))throw new Error('nf');
-  if(!disp)disp=s.sy;stocks.push(s);fxBusy=needList().length>0;['tk','sh','px'].forEach(function(i){$(i).value=''});msg.textContent='';render();$('tk').focus();if(fxBusy){await prep();render()}}
+  if(!disp)disp=s.sy;stocks.push(s);touched=true;save();fxBusy=needList().length>0;['tk','sh','px'].forEach(function(i){$(i).value=''});msg.textContent='';render();$('tk').focus();if(fxBusy){await prep();render()}}
  catch(err){msg.className='msg e';msg.textContent=err.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'No dividend data found for '+t+'. It may not pay a dividend. For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
  b.disabled=false;b.textContent='Add stock'}
 $('addForm').addEventListener('submit',add);
@@ -312,11 +313,48 @@ $('wiBox').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){
 $('out').onclick=function(e){
  var t=e.target;
  var cs=t.closest('.cs button');if(cs){setDisp(cs.dataset.c);return}
- var r=t.closest('.rm');if(r){stocks=stocks.filter(function(x){return x.id!==+r.dataset.id});if(!stocks.length)disp='';render();return}
- var cl=t.closest('.clr');if(cl){if(cl.dataset.arm){stocks=[];disp='';render()}else{cl.dataset.arm='1';cl.classList.add('c');cl.textContent='Click again to clear all';setTimeout(function(){cl.dataset.arm='';cl.classList.remove('c');cl.textContent='Clear all'},3000)}}};
+ var r=t.closest('.rm');if(r){stocks=stocks.filter(function(x){return x.id!==+r.dataset.id});if(!stocks.length)disp='';touched=true;save();render();return}
+ var cl=t.closest('.clr');if(cl){if(cl.dataset.arm){stocks=[];disp='';touched=true;save();render()}else{cl.dataset.arm='1';cl.classList.add('c');cl.textContent='Click again to clear all';setTimeout(function(){cl.dataset.arm='';cl.classList.remove('c');cl.textContent='Clear all'},3000)}}};
+
+
+// Signed-in users: saved to the account (same /api/save-preferences every tool uses) so it
+// follows them across devices. Everyone also gets a localStorage copy. Only the tickers,
+// share counts and currency are stored; prices and dividends are re-fetched on load.
+var KEY='gcg-dividend-calc',user=null,touched=false,timer;
+function status(m){$('sv').textContent=m}
+function save(){
+ var d={h:stocks.map(function(x){return {t:x.sym,sh:x.shares,px:x.inpx}}),cur:disp};
+ try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
+ if(!user)return;
+ clearTimeout(timer);
+ timer=setTimeout(async function(){
+  try{var r=await fetch('/api/save-preferences',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({dividend_calc:d})});
+   status(r.ok?'Saved to your account':'Could not save to your account')}catch(e){status('Could not save to your account')}
+ },500)}
+async function apply(d){
+ if(!d||!Array.isArray(d.h)||!d.h.length)return false;
+ var got=await Promise.all(d.h.slice(0,30).map(function(x){
+  if(!(x&&typeof x.t==='string'&&/^[A-Z0-9.\-]{1,12}$/.test(x.t)&&x.sh>0))return null;
+  return fetchTicker(x.t).then(function(r){var st=build(r,+x.sh,+x.px||0);return st.price>0?st:null}).catch(function(){return null})}));
+ got=got.filter(Boolean);if(!got.length||touched)return false;
+ stocks=got;disp=DC[d.cur]?d.cur:stocks[0].sy;fxBusy=needList().length>0;render();
+ if(fxBusy){await prep();render()}
+ return true}
+async function restore(){
+ try{await apply(JSON.parse(localStorage.getItem(KEY)))}catch(e){}
+ try{
+  var me=await(await fetch('/api/me',{credentials:'include'})).json();
+  if(!me.authenticated){status('Log in to save your holdings to your account');return}
+  user=me.username;
+  var r=await fetch('/api/load-preferences',{credentials:'include'});
+  var remote=r.ok?(await r.json()).preferences.dividend_calc:null;
+  if(remote&&!touched&&await apply(remote)){save();status('Saved to your account')}
+  else if(touched||stocks.length){save()}
+  else status('Your holdings save to your account automatically')
+ }catch(e){}}
 
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"dividend-calculator"},location.origin)}
 window.addEventListener('load',postHeight);window.addEventListener('resize',postHeight);
-render();
+render();restore();
 })();
 </script></div></body></html>
