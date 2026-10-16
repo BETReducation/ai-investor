@@ -3390,6 +3390,9 @@ EXPLAINERS = [
     {"slug": "panic-at-the-bottom", "categories": ["trading-strategies", "technical-analysis"], "part": "in-depth",
      "title": "Buying Panic at the Bottom",
      "desc": "A five-signal mean-reversion setup (RSI, Bollinger Bands, 30% dip, volume spike, support) and its take-profit exit, explained with replayable charts."},
+    {"slug": "appraising-a-firm", "categories": ["investment-appraisal"], "part": "basics",
+     "title": "Appraising a Firm: Ratios, Returns and NPV",
+     "desc": "Profit, liquidity and share ratios, plus gearing, efficiency and cash flow, then NPV, ARR, payback and IRR, and how they are read together. Three fictional firms to explore."},
 ]
 
 @app.route("/api/explainers")
