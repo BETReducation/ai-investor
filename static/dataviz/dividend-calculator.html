@@ -1,153 +1,235 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dividend Calculator</title>
-<script>
-  // Follow the site's light/dark toggle (same origin as the host page).
-  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#EDF2EF;--panel:#FFFFFF;--ink:#12302B;--mute:#5B7570;--line:#D3DED9;--hand:#E9962B}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1816;--panel:#142925;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--hand:#F2AC4B}}
-:root[data-theme="dark"]{--bg:#0B1816;--panel:#142925;--ink:#E6F0EC;--mute:#8FA8A2;--line:#264039;--hand:#F2AC4B}
+:root{--bg:#060812;--card:#12302b;--card2:#123a30;--in:#0d1b18;--line:#1f4a3f;--ink:#EEF5F2;--mute:#8FA7A0;--gold:#F4B14E;--mint:#2EE6A6;--red:#FF6B5B}
 *{box-sizing:border-box}
-body{margin:0;background:transparent;color:var(--ink);font:400 16px/1.5 "Instrument Sans",system-ui,sans-serif}
-.wrap{max-width:780px;margin:0 auto;padding:4px 2px 12px}
-label{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
-.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1 1 140px;min-width:0}
-input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-width:0}
-#tk{text-transform:uppercase;font-weight:700;letter-spacing:.04em}
-input:focus-visible,select:focus-visible{outline:2px solid var(--hand);outline-offset:2px}
-.hint{font-size:13px;color:var(--mute);margin-top:6px}
-#manual{display:none}
-.hero{display:grid;grid-template-columns:1fr 230px;gap:8px;background:linear-gradient(145deg,#0C2622,#17463D);color:#EAF6F1;border-radius:18px;padding:24px;margin-bottom:14px;overflow:hidden;position:relative}
-.hero:before{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(242,172,75,.25),transparent 70%)}
-.hero>*{position:relative}
-@media(max-width:600px){.hero{grid-template-columns:1fr;padding:20px}}
-.co{font:700 18px "Bricolage Grotesque",system-ui,sans-serif}
-.lab{font-size:13px;color:rgba(234,246,241,.65)}
-.big{font:800 clamp(44px,11vw,68px)/1.05 "Bricolage Grotesque",system-ui,sans-serif;color:#F5B455;letter-spacing:-.03em;margin:4px 0 14px}
-.stats{display:flex;gap:10px;margin-bottom:18px}
-.stats div{flex:1;background:rgba(255,255,255,.09);border-radius:10px;padding:8px 10px}
-.stats b{display:block;font:700 17px "Bricolage Grotesque",system-ui,sans-serif}
-.stats span{font-size:12px;color:rgba(234,246,241,.65)}
-.bl{margin-bottom:12px}
-.bt{display:flex;justify-content:space-between;gap:10px;font-size:14px}
-.bt small{display:block;color:rgba(234,246,241,.6);font-size:12px}
-.track{height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
-.track i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#2EE6A0,#F5B455)}
-.msg{color:rgba(234,246,241,.75);padding:20px 0}
-.thermo{display:flex;flex-direction:column;align-items:center;text-align:center}
-.thermo svg{width:120px;height:300px;overflow:visible}
-#mer,#bulb{transition:y .7s ease,height .7s ease,fill .5s}
-.yv{font:800 34px/1 "Bricolage Grotesque",system-ui,sans-serif}
-.yz{font-weight:600;font-size:14px;margin:2px 0 6px}
-.yn{font-size:12.5px;color:rgba(234,246,241,.7);margin:0;max-width:210px}
-@media(max-width:600px){.thermo{flex-direction:row;gap:12px;text-align:left;align-items:center;margin-top:8px}.thermo svg{width:90px;height:225px;flex:none}}
-.note{font-size:12px;color:var(--mute);margin:0}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <div class="row">
-      <div><label for="tk">Ticker</label><input id="tk" value="LGEN" maxlength="10" autocomplete="off" spellcheck="false" placeholder="e.g. LGEN"></div>
-      <div><label for="sh">Number of shares</label><input id="sh" type="number" min="0" step="1" value="1000" inputmode="numeric"></div>
-      <div><label for="px">Share price (optional)</label><input id="px" type="number" min="0" step="any" inputmode="decimal" placeholder="for exact yield"></div>
-    </div>
-    <div class="hint" id="avail"></div>
-  </div>
-  <div class="card" id="manual">
-    <div style="font-weight:700;margin-bottom:4px">We don't have that ticker yet</div>
-    <p class="hint" style="margin:0 0 12px">Enter its dividend yourself. Add a share price above to see the thermometer.</p>
-    <div class="row">
-      <div><label for="dps">Dividend per share, per year</label><input id="dps" type="number" min="0" step="any" inputmode="decimal" placeholder="e.g. 21.91"></div>
-      <div><label for="unit">In</label><select id="unit"><option value="p">pence (p)</option><option value="£">pounds (£)</option><option value="$">dollars ($)</option><option value="€">euros (€)</option></select></div>
-      <div><label for="n">Paid</label><select id="n"><option value="1">yearly</option><option value="2" selected>twice a year</option><option value="4">quarterly</option><option value="12">monthly</option></select></div>
-    </div>
-  </div>
-  <div class="hero">
-    <div id="heroL"></div>
-    <div class="thermo">
-      <svg id="th" viewBox="0 0 120 300" aria-hidden="true">
-        <rect x="38" y="20" width="24" height="230" rx="12" fill="rgba(255,255,255,.12)"/>
-        <circle cx="50" cy="268" r="26" fill="rgba(255,255,255,.12)"/>
-        <rect id="mer" x="44" y="250" width="12" height="18" rx="6" fill="#6F8782"/>
-        <circle id="bulb" cx="50" cy="268" r="18" fill="#6F8782"/>
-        <g id="ticks"></g>
-      </svg>
-      <div><div class="lab">Dividend yield</div><div class="yv" id="yv">--</div><div class="yz" id="yz"></div><p class="yn" id="yn"></p></div>
-    </div>
-  </div>
-  <p class="note">Before tax. Based on the latest dividends declared, which companies can raise, cut or cancel. Yield moves with the share price. Educational tool, not financial advice.</p>
-</div>
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Space Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;padding:8px 16px 48px}
+.wrap{max-width:820px;margin:0 auto}
+h1{font-size:clamp(32px,8vw,52px);line-height:1.1;letter-spacing:-.02em;text-align:center;margin:18px 0 10px}
+.sub{text-align:center;color:#9d93c9;margin:0 0 24px;font-size:18px}
+.card{background:linear-gradient(160deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:28px;padding:22px;margin-bottom:18px;position:relative}
+.row{display:flex;gap:12px;flex-wrap:wrap}.f{flex:1 1 140px}
+label{display:block;font-weight:600;margin-bottom:6px}
+input{width:100%;padding:14px;font:inherit;color:var(--ink);background:var(--in);border:1px solid var(--line);border-radius:16px}
+input::placeholder{color:var(--mute)}
+input:focus,button:focus-visible{outline:2px solid var(--mint);outline-offset:1px}
+.hint{font-size:14px;color:var(--mute);margin:12px 0 0}
+.add{width:100%;margin-top:14px;padding:15px;font:inherit;font-weight:700;color:#062018;background:linear-gradient(90deg,var(--mint),var(--gold));border:0;border-radius:16px;cursor:pointer}
+.add:disabled{opacity:.6;cursor:wait}
+.msg{min-height:22px;margin:10px 0 0;font-size:15px}.msg.e{color:var(--red)}.msg.o{color:var(--mute)}
+h2{font-size:clamp(20px,5vw,28px);line-height:1.2;margin:0 0 2px;text-transform:uppercase;letter-spacing:-.01em}
+.cap{color:var(--mute);margin:0}
+.big{font-size:clamp(46px,14vw,84px);line-height:1;font-weight:700;letter-spacing:-.03em;color:var(--gold);margin:10px 0 18px;overflow-wrap:anywhere}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{background:rgba(255,255,255,.07);border-radius:18px;padding:14px}
+.tile b{display:block;font-size:clamp(17px,5vw,24px);overflow-wrap:anywhere}.tile span{color:var(--mute);font-size:14px}
+.ex{margin-top:20px}.ex .r{display:flex;justify-content:space-between;gap:10px;font-size:clamp(17px,4.5vw,22px)}.ex .r b{font-weight:600;white-space:nowrap}
+.ex small{display:block;color:var(--mute);font-size:15px;margin-bottom:8px}
+.pb{height:12px;border-radius:6px;background:#2c4d46;margin-bottom:18px;overflow:hidden}
+.pb i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--mint),var(--gold))}
+.note{font-size:15px;color:var(--mute);margin:8px 0 0}
+.hd{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}
+.hl{flex:1;min-width:0}.hr{text-align:right}.hr b{display:block;font-size:clamp(18px,5vw,24px);color:var(--gold)}.hr span{font-size:14px;font-weight:600}
+.chev{width:10px;height:10px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);transition:transform .25s;flex:none;margin:0 6px 4px}
+.hd[aria-expanded=true] .chev{transform:rotate(-135deg);margin-bottom:-4px}
+.bd{margin-top:16px}
+.hdw{display:flex;align-items:center;gap:10px}.hdw .hd{flex:1;min-width:0;width:auto}
+.rm{flex:none;background:none;border:1px solid var(--line);color:var(--mute);border-radius:12px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.clr{width:100%;margin:2px 0 18px;padding:14px;font:inherit;font-weight:600;color:var(--red);background:none;border:1px solid var(--red);border-radius:16px;cursor:pointer}
+.clr.c{background:var(--red);color:#1a0705}
+.rm:hover{color:var(--red);border-color:var(--red)}
+.tools{display:flex;gap:8px;margin:0 0 14px}
+.tools button{flex:1;padding:12px;font:inherit;font-weight:600;color:var(--ink);background:var(--in);border:1px solid var(--line);border-radius:16px;cursor:pointer}
+.avg{position:absolute;left:0;right:0;border-top:2px dashed var(--gold);pointer-events:none}
+.avg span{position:absolute;right:0;bottom:3px;font-size:12px;font-weight:600;color:var(--gold);background:#12342d;padding:0 6px;border-radius:6px}
+.avgt{margin:14px 0 0;font-size:clamp(17px,4.5vw,20px)}.avgt b{color:var(--gold)}
+.th{display:flex;gap:14px;align-items:center;margin-top:18px}
+.thermo{position:relative;height:250px;width:130px;flex:none}
+.tube{position:absolute;left:28px;top:0;bottom:36px;width:50px;background:#2c4d46;border-radius:25px 25px 0 0}
+.fill{position:absolute;left:39px;width:28px;bottom:45px;border-radius:14px 14px 0 0;animation:grow .9s cubic-bezier(.2,.9,.3,1)}
+@keyframes grow{from{height:0}}
+.bulb{position:absolute;left:8px;bottom:0;width:90px;height:90px;border-radius:50%;background:#2c4d46}
+.bulb::after{content:"";position:absolute;inset:20px;border-radius:50%;background:var(--c)}
+.tk{position:absolute;left:88px;font-size:13px;color:var(--mute);transform:translateY(50%);white-space:nowrap}
+.tk::before{content:"— "}
+.yl{color:var(--mute)}.yv{font-size:clamp(44px,13vw,64px);font-weight:700;line-height:1.05;letter-spacing:-.02em}
+.yz{font-size:24px;font-weight:700}.yd{color:var(--mute);margin:6px 0 0}
+.bars{display:flex;align-items:flex-end;gap:6px;height:230px;margin-top:16px;position:relative}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.val{font-size:11px;color:var(--mute);height:16px;white-space:nowrap}
+.bar{width:100%;background:linear-gradient(0deg,var(--mint),var(--gold));border-radius:8px 8px 0 0;min-height:4px;transition:height .6s}
+.col.z .bar{background:#2c4d46}.mon{font-size:12px;color:var(--mute);margin-top:6px;height:18px;line-height:18px}
+.sep{height:1px;background:var(--line);margin:22px 0 4px}
+[hidden]{display:none!important}
+.cs{display:flex;gap:8px;margin:0 0 18px}
+.cs button{flex:1;padding:12px;font:inherit;font-weight:700;font-size:18px;color:var(--ink);background:var(--in);border:1px solid var(--line);border-radius:16px;cursor:pointer}
+.cs button small{font-size:12px;font-weight:500;color:var(--mute)}
+.cs button[aria-pressed=true]{background:var(--mint);color:#062018;border-color:var(--mint)}.cs button[aria-pressed=true] small{color:#0d4a38}
+.wih{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}
+.wih .hl{flex:1;min-width:0}.wis{color:var(--gold);font-weight:600;margin:2px 0 0}
+.wih[aria-expanded=true] .chev{transform:rotate(-135deg);margin-bottom:-4px}
+.sl{margin-top:18px}.sl label{display:flex;justify-content:space-between;gap:10px}.sl label b{color:var(--gold)}
+.tl{color:var(--mute);margin:0 0 8px;font-size:15px}
+.tt{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-top:6px}
+.ta{flex:1 1 220px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.tb{flex:1 1 300px}
+.rl{display:flex;justify-content:space-between;font-size:13px;color:var(--mute);margin-top:-2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;padding:0;border:0;border-radius:0;background:transparent;cursor:pointer;--p:0%}
+input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--mint) var(--p),#2c4d46 var(--p))}
+input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:#2c4d46}
+input[type=range]::-moz-range-progress{height:10px;border-radius:5px;background:var(--mint)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:var(--gold);border:3px solid #fff2d6;margin-top:-10px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--gold);border:3px solid #fff2d6}
+@media(min-width:900px){.wrap{max-width:1000px}.bars{height:300px}}
+@media(max-width:520px){.val{display:none}.bars{gap:3px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><div class="wrap">
+
+<h1>Dividend Calculator</h1>
+<p class="sub">Enter a ticker and your shares. See the income, and how hot the yield is.</p>
+
+<div class="card">
+<div class="row">
+<div class="f"><label for="tk">Ticker</label><input id="tk" placeholder="LGEN" maxlength="20" autocomplete="off" autocapitalize="characters"></div>
+<div class="f"><label for="sh">Number of shares</label><input id="sh" type="number" inputmode="decimal" min="0" step="any" placeholder="1000"></div></div>
+<div style="margin-top:12px"><label for="px">Share price (optional)</label><input id="px" type="number" inputmode="decimal" min="0" step="any" placeholder="for exact yield"></div>
+<p class="hint">UK prices in pence. UK shares need .L (e.g. LGEN.L if the plain ticker is not found).</p>
+<button class="add" id="addBtn" type="button">Add stock</button>
+<p class="msg o" id="msg" role="status"></p></div>
+
+<div id="out"></div>
+
+<p class="note" id="foot" hidden>Before tax. A look at dividends paid over the last 12 months, which companies can raise, cut or cancel. Yield moves with the share price. Educational tool, not financial advice.</p>
+
 <script>
-const $=id=>document.getElementById(id);
-// Live lookup: the server returns the last 12 months of dividends and the latest price for a ticker.
-let live=null,pending=null,timer=null,status="";
-function lookup(){
-  const t=$("tk").value.trim().toUpperCase();
-  clearTimeout(timer);
-  if(!t){live=null;status="";render();return;}
-  status="Looking up "+t+"...";render();
-  timer=setTimeout(()=>{
-    fetch("/api/dataviz/dividend-calculator/lookup?ticker="+encodeURIComponent(t))
-      .then(r=>r.ok?r.json():null).catch(()=>null)
-      .then(d=>{if($("tk").value.trim().toUpperCase()!==t)return;live=d?{...d,query:t}:null;status=d?"":"No dividend data found for "+t+".";render();});
-  },450);
-}
-const MAXY=12,TOP=20,BOT=250;
-const ZONES=[[2,"Low","#5B9BF0","A small payout compared with the share price."],[4,"Modest","#2BB6A3","A steady, moderate income."],[6,"Healthy","#8BD450","A solid income yield."],[8,"High","#F2A33A","Strong income. Whether profits cover it matters."],[999,"Very high","#EF5B4C","Very high yields can mean the market doubts the payout will last."]];
-const ty=v=>BOT-(BOT-TOP)*Math.min(v,MAXY)/MAXY;
-$("ticks").innerHTML=[0,2,4,6,8,10,12].map(v=>`<line x1="66" x2="74" y1="${ty(v)}" y2="${ty(v)}" stroke="rgba(255,255,255,.5)"/><text x="80" y="${ty(v)+4}" font-size="11" fill="rgba(234,246,241,.7)">${v}%</text>`).join("");
-function thermo(y){
-  let col="#6F8782",z="",n="Add a share price to see the yield.";
-  if(y!==null){const zz=ZONES.find(a=>y<a[0]);col=zz[2];z=zz[1];n=zz[3];}
-  const top=y===null?BOT:ty(y);
-  const m=$("mer");
-  m.setAttribute("y",top);m.setAttribute("height",268-top);m.style.y=top+"px";m.style.height=(268-top)+"px";m.setAttribute("fill",col);
-  $("bulb").setAttribute("fill",col);
-  $("yv").textContent=y===null?"--":y.toFixed(1)+"%";
-  $("yz").textContent=z;$("yz").style.color=col;$("yn").textContent=n;
-}
-const fmt=(x,s)=>s+x.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+(function(){
+var API='/api/dataviz/dividend-calculator/';
+var disp='',fxBusy=false,fx={},DC={'£':'GBP','$':'USD','€':'EUR'},CS={GBP:'£',USD:'$',EUR:'€'},wiM=100,wiY=5,wiOpen=window.innerWidth>=700,wiCtx={sy:'£',inc:0,y:0};
+var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],stocks=[],nid=1;
+var $=function(i){return document.getElementById(i)};
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function money(sym,n,d){return sym+n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function dt(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}
+function normalise(j){return {name:j.name||'',sym:j.symbol||'',cur:j.currency||'GBP',price:+j.price||0,divs:(j.dividends||[]).map(function(d){return {date:new Date(d.date),amt:+d.amount||0}}).filter(function(d){return !isNaN(d.date)&&d.amt>0})}}
+async function getJSON(url){
+ var r;try{r=await fetch(url)}catch(e){throw new Error('no-api')}
+ if(r.status===404)throw new Error('nf');
+ if(!r.ok)throw new Error('no-api');
+ try{return await r.json()}catch(e){throw new Error('no-api')}}
+async function fetchTicker(t){return normalise(await getJSON(API+'lookup?ticker='+encodeURIComponent(t)))}
+async function rate(a,b){
+ if(a===b)return 1;var k=a+b;if(fx[k])return fx[k];var v=0;
+ try{v=+(await getJSON(API+'fx?pair='+k)).rate||0}catch(e){}
+ if(!(v>0))throw new Error('fx');fx[k]=v;return v}
+function dcode(){return DC[disp]||'GBP'}
+function rf(s){var c=dcode();return s.cc===c?1:(fx[s.cc+c]||0)}
+function needList(){var c=dcode(),n=[];stocks.forEach(function(s){if(s.cc!==c&&!fx[s.cc+c]&&n.indexOf(s.cc)<0)n.push(s.cc)});return n}
+async function prep(){var c=dcode(),n=needList();for(var i=0;i<n.length;i++){try{await rate(n[i],c)}catch(e){}}fxBusy=false}
+async function setDisp(sym){disp=sym;fxBusy=needList().length>0;render();if(fxBusy){await prep();render()}}
+function agg(){
+ var c=dcode(),inc=0,val=0,m=MO.map(function(){return 0}),left=[],used=[];
+ stocks.forEach(function(s){var r=rf(s);if(!(r>0)){left.push(s);return}
+  inc+=s.income*r;val+=s.value*r;s.divs.forEach(function(x){m[x.date.getMonth()]+=x.amt*s.shares/s.unit*r});
+  if(s.cc!==c&&used.indexOf(s.cc)<0)used.push(s.cc)});
+ return {inc:inc,val:val,m:m,left:left,used:used,n:stocks.length-left.length,y:val>0?inc/val*100:0}}
+function fxNote(A){
+ var c=dcode(),t='';
+ if(A.used.length)t+='Converted at today’s rates: '+A.used.map(function(u){return (CS[u]||u+' ')+'1 = '+disp+fx[u+c].toFixed(4)}).join(', ')+'. ';
+ if(fxBusy)t+='Getting exchange rates…';
+ else if(A.left.length)t+='Couldn’t get the exchange rate for '+A.left.length+(A.left.length===1?' stock':' stocks')+', so '+(A.left.length===1?'it is':'they are')+' left out of these totals. Try again in a moment.';
+ return t?'<p class="note">'+esc(t)+'</p>':''}
+function csHTML(){return '<p class="tl">Show totals in</p><div class="cs" role="group" aria-label="Show totals in">'+[['£','GBP'],['$','USD'],['€','EUR']].map(function(p){return '<button type="button" data-c="'+p[0]+'" aria-pressed="'+(p[0]===disp)+'">'+p[0]+' <small>'+p[1]+'</small></button>'}).join('')+'</div>'}
+function setP(el){el.style.setProperty('--p',((el.value-el.min)/(el.max-el.min)*100)+'%')}
+
+function build(d,shares,px){
+ var pence=/^(GBp|GBX)$/.test(d.cur)||/\.L$/.test(d.sym),unit=pence?100:1,sym=pence?'£':({GBP:'£',USD:'$',EUR:'€'}[d.cur]||(d.cur?d.cur+' ':'£'));
+ var cut=new Date();cut.setFullYear(cut.getFullYear()-1);var now=new Date();
+ var divs=d.divs.filter(function(x){return x.date>=cut&&x.date<=now}).sort(function(a,b){return a.date-b.date});
+ var price=px>0?px:d.price,perShare=divs.reduce(function(a,x){return a+x.amt},0);
+ return {id:nid++,name:d.name||d.sym,sym:d.sym,sy:sym,cc:pence?'GBP':String(d.cur||'GBP').toUpperCase(),pence:pence,unit:unit,shares:shares,price:price,divs:divs,income:perShare*shares/unit,
+  value:price*shares/unit,yld:price>0?perShare/price*100:0}}
+
+function zone(y){return y<1?['Low','#6FA8FF','Mostly growth, little income.']:y<3?['Moderate','#2EE6A6','A modest income on top of growth.']:y<6?['Solid','#7AD97A','Healthy income. Many income investors aim here.']:y<9?['High','#F4A340','Strong income. Whether profits cover it matters.']:['Very high','#FF6B5B','Often a warning sign. Check the dividend is safe.']}
+function thermo(y,label){
+ var z=zone(y),h=190*Math.min(12,y)/12,tk='';
+ [0,2,4,6,8,10,12].forEach(function(n){tk+='<div class="tk" style="bottom:'+(45+n/12*190)+'px">'+n+'%</div>'});
+ return '<div class="th"><div class="thermo"><div class="tube"></div><div class="fill" style="height:'+h+'px;background:'+z[1]+'"></div><div class="bulb" style="--c:'+z[1]+'"></div>'+tk+'</div>'
+ +'<div><div class="yl">'+label+'</div><div class="yv">'+y.toFixed(1)+'%</div><div class="yz" style="color:'+z[1]+'">'+z[0]+'</div><p class="yd">'+z[2]+'</p></div></div>'}
+function tiles(sym,n){return '<div class="tiles"><div class="tile"><b>'+money(sym,n/12,2)+'</b><span>a month</span></div><div class="tile"><b>'+money(sym,n/52,2)+'</b><span>a week</span></div><div class="tile"><b>'+money(sym,n/365,2)+'</b><span>a day</span></div></div>'}
+
+function stockCard(s){
+ var z=zone(s.yld),mx=Math.max.apply(null,s.divs.map(function(x){return x.amt})),rows=s.divs.map(function(x){
+  var amt=x.amt*s.shares/s.unit,ds=s.pence?x.amt.toFixed(2)+'p':money(s.sy,x.amt,2);
+  return '<div class="ex"><div class="r"><span>Ex-dividend '+dt(x.date)+'</span><b>'+money(s.sy,amt,2)+'</b></div><small>'+ds+' × '+s.shares.toLocaleString('en-GB')+' shares</small><div class="pb"><i style="width:'+(mx?x.amt/mx*100:0)+'%"></i></div></div>'}).join('');
+ var pr=s.pence?s.price.toFixed(2)+'p':money(s.sy,s.price,2);
+ return '<div class="card" data-id="'+s.id+'"><div class="hdw"><button class="hd" type="button" data-t="'+s.id+'" aria-expanded="'+!!s.open+'">'
+ +'<div class="hl"><h2>'+esc(s.name)+(s.name.indexOf(s.sym)<0?' ('+esc(s.sym)+')':'')+'</h2><p class="cap">'+s.shares.toLocaleString('en-GB')+' shares</p></div>'
+ +'<div class="hr"><b>'+money(s.sy,s.income,2)+'</b><span style="color:'+z[1]+'">'+s.yld.toFixed(1)+'% · '+z[0]+'</span></div><i class="chev"></i></button><button class="rm" type="button" data-id="'+s.id+'" aria-label="Remove '+esc(s.sym)+'">Remove</button></div>'
+ +'<div class="bd"'+(s.open?'':' hidden')+'><p class="cap">Dividends a year on '+s.shares.toLocaleString('en-GB')+' shares</p>'
+ +'<div class="big">'+money(s.sy,s.income,2)+'</div>'+tiles(s.sy,s.income)
+ +(rows||'<p class="note">No dividends found in the last 12 months.</p>')
+ +'<p class="note">Dividends with an ex-dividend date in the last 12 months. Latest price '+pr+'.</p>'
+ +thermo(s.yld,'Dividend yield')+'</div></div>'}
+
+function portfolio(A){
+ var sy=disp,m=A.m,avg=A.inc/12,mx=Math.max.apply(null,m);wiCtx={sy:sy,inc:A.inc,y:A.y};
+ var bars=m.map(function(v,i){return '<div class="col '+(v?'':'z')+'" title="'+MO[i]+': '+money(sy,v,2)+'"><div class="val">'+(v?(v>=1000?sy+(v/1000).toFixed(1)+'k':sy+Math.round(v)):'')+'</div><div class="bar" style="height:calc((100% - 40px)*'+(mx?v/mx:0)+')"></div><div class="mon">'+MO[i]+'</div></div>'}).join('');
+ return '<div class="card">'+csHTML()+'<h2>Your portfolio</h2><p class="cap">Dividends a year on '+A.n+(A.n===1?' stock':' stocks')+'</p>'
+ +'<div class="big">'+money(sy,A.inc,2)+'</div>'
+ +'<div class="sep"></div><h2 style="font-size:20px;margin-top:18px">Dividend calendar</h2><div class="bars" role="img" aria-label="Dividends by month, January to December">'+bars+'<div class="avg" style="bottom:calc(24px + (100% - 40px)*'+(mx?avg/mx:0)+')"><span>Avg '+money(sy,avg,2)+'</span></div></div>'
+ +'<p class="avgt">Average monthly payout <b>'+money(sy,avg,2)+'</b> across Jan–Dec</p><p class="note">Shown by ex-dividend month. The dashed line is the monthly average; grey months have no payout.</p>'+fxNote(A)+'</div>'}
+
+function totalsCard(A){
+ var sy=disp;
+ return '<div class="card"><h2>Your dividends on average</h2><p class="cap" style="margin-bottom:14px">Across all '+A.n+(A.n===1?' stock':' stocks')+' you’ve added</p>'+csHTML()
+ +'<div class="tt"><div class="ta"><div class="tile"><b>'+money(sy,A.inc,2)+'</b><span>a year</span></div><div class="tile"><b>'+money(sy,A.inc/12,2)+'</b><span>a month</span></div><div class="tile"><b>'+money(sy,A.inc/52,2)+'</b><span>a week</span></div><div class="tile"><b>'+money(sy,A.inc/365,2)+'</b><span>a day</span></div></div>'
+ +'<div class="tb">'+thermo(A.y,'Average yield')+'</div></div>'
+ +'<p class="note">Average yield is weighted by what you hold: total yearly dividends divided by the total value of your shares. Before tax.</p>'+fxNote(A)+'</div>'}
+
+function wiCard(){
+ var sy=wiCtx.sy,pm=(wiM/2000*100)+'%',py=((wiY-1)/29*100)+'%';
+ return '<div class="card"><button class="wih" type="button" aria-expanded="'+wiOpen+'"><div class="hl"><h2>What if you invest more?</h2><p class="wis" id="wis"></p></div><i class="chev"></i></button>'
+ +'<div id="wib"'+(wiOpen?'':' hidden')+'><div class="sl"><label for="wim">Invest each month <b id="wimv"></b></label><input id="wim" type="range" min="0" max="2000" step="25" value="'+wiM+'" style="--p:'+pm+'"><div class="rl"><span>'+money(sy,0,0)+'</span><span>'+money(sy,2000,0)+'</span></div></div>'
+ +'<div class="sl"><label for="wiy">For how long <b id="wiyv"></b></label><input id="wiy" type="range" min="1" max="30" step="1" value="'+wiY+'" style="--p:'+py+'"><div class="rl"><span>1 year</span><span>30 years</span></div></div>'
+ +'<div class="tiles" style="margin-top:18px"><div class="tile"><b id="wi1"></b><span>extra a year</span></div><div class="tile"><b id="wi2"></b><span>extra a month</span></div><div class="tile"><b id="wi3"></b><span>total a year</span></div></div>'
+ +'<p class="note" id="win"></p></div></div>'}
+function wiUpdate(){
+ var c=wiCtx,inv=wiM*12*wiY,extra=inv*c.y/100,yr=wiY+(wiY===1?' year':' years');
+ $('wimv').textContent=money(c.sy,wiM,0);$('wiyv').textContent=yr;
+ $('wi1').textContent=money(c.sy,extra,2);$('wi2').textContent=money(c.sy,extra/12,2);$('wi3').textContent=money(c.sy,c.inc+extra,2);
+ $('wis').textContent=wiM>0?money(c.sy,wiM,0)+' a month for '+yr+': +'+money(c.sy,extra,0)+' a year':'Slide to see what investing more adds';
+ $('win').textContent='Investing '+money(c.sy,inv,0)+' in total would have added this much at your '+c.y.toFixed(1)+'% yield. Assumes the yield stays the same, share prices don’t move and dividends aren’t reinvested. An illustration, not a forecast.'}
+
 function render(){
-  const t=$("tk").value.trim().toUpperCase(),sh=Math.max(0,parseFloat($("sh").value)||0),d=(live&&live.query===t)?live:null,u=$("unit").value,pr=parseFloat($("px").value)||0;
-  $("manual").style.display=(!d&&t&&!status.startsWith("Looking"))?"block":"none";
-  $("avail").textContent=status||(d?"Price in "+(d.unit==="p"?"pence":d.unit.trim())+". Data from Yahoo Finance; UK shares need .L (e.g. LGEN.L if the plain ticker is not found).":"Any listed ticker with dividends. For UK shares the .L is added automatically if needed.");
-  const S=sh.toLocaleString("en-GB")+" shares";
-  let sym="£",annual=0,total=0,lines=[],name=t;
-  if(d){const pence=d.unit==="p";sym=pence?"£":d.unit;annual=d.annual;name=d.name+" ("+d.symbol+")";
-    lines=d.payments.map(p=>{const m=pence?p.amount/100:p.amount;return["Ex-dividend "+p.date,(pence?p.amount.toFixed(2)+"p":fmt(p.amount,sym))+" × "+S,m*sh];});
-    total=lines.reduce((a,l)=>a+l[2],0);}
-  else if(t){const n=+$("n").value;annual=parseFloat($("dps").value)||0;sym=u==="p"?"£":u;
-    const major=u==="p"?annual/100:annual;total=major*sh;
-    lines=[[n+" payment"+(n>1?"s":"")+" a year, each",fmt(major/n,sym)+" × "+S,major/n*sh]];}
-  const y=(pr>0&&annual>0)?annual/pr*100:(d&&d.yield?d.yield:null);
-  thermo(y);
-  const L=$("heroL");
-  if(!t){L.innerHTML='<div class="msg">Type a ticker to start.</div>';return;}
-  if(!annual){L.innerHTML='<div class="msg">Enter the dividend per share to see your income.</div>';return;}
-  if(!sh){L.innerHTML='<div class="msg">Enter how many shares you own.</div>';return;}
-  const mx=Math.max(...lines.map(l=>l[2]));
-  L.innerHTML=`<div class="co">${name}</div><div class="lab">Dividends a year on ${S}</div>
-  <div class="big">${fmt(total,sym)}</div>
-  <div class="stats"><div><b>${fmt(total/12,sym)}</b><span>a month</span></div><div><b>${fmt(total/52,sym)}</b><span>a week</span></div><div><b>${fmt(total/365,sym)}</b><span>a day</span></div></div>`+
-  lines.map(l=>`<div class="bl"><div class="bt"><span>${l[0]}<small>${l[1]}</small></span><b>${fmt(l[2],sym)}</b></div><div class="track"><i style="width:${Math.max(4,l[2]/mx*100)}%"></i></div></div>`).join("")+
-  (d?`<div class="lab">Dividends with an ex-dividend date in the last 12 months. Latest price ${d.unit==="p"?d.price.toFixed(2)+"p":fmt(d.price,d.unit)}${pr>0?", replaced by yours for the yield":""}.</div>`:"");
-}
-["sh","px","dps","unit","n"].forEach(id=>$(id).addEventListener("input",render));
-$("tk").addEventListener("input",lookup);
-lookup();
-// Tell the host page how tall to make the iframe.
-function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"dividend-calculator"},location.origin);}
-new ResizeObserver(postHeight).observe(document.body);
-postHeight();
-</script>
-</body>
-</html>
+ var A=agg();if(!disp&&stocks.length)disp=stocks[0].sy;
+ $('out').innerHTML=(stocks.length?portfolio(A)+wiCard():'')+(stocks.length>1?'<div class="tools"><button class="ea" type="button">Expand all</button><button class="ca" type="button">Collapse all</button></div>':'')+stocks.map(stockCard).join('')+(stocks.length?totalsCard(A)+'<button class="clr" type="button">Clear all</button>':'');
+ if(stocks.length)wiUpdate();
+ $('foot').hidden=!stocks.length;postHeight()}
+
+async function add(){
+ var t=$('tk').value.trim().toUpperCase(),sh=parseFloat($('sh').value),px=parseFloat($('px').value)||0,msg=$('msg');
+ if(!t){msg.className='msg e';msg.textContent='Enter a ticker.';return}
+ if(!(sh>0)){msg.className='msg e';msg.textContent='Enter how many shares you own.';return}
+ var b=$('addBtn');b.disabled=true;b.textContent='Looking up '+t+'…';msg.className='msg o';msg.textContent='Fetching the latest price and dividends. This can take a few seconds.';
+ try{var s=build(await fetchTicker(t),sh,px);
+  if(!(s.price>0))throw new Error('nf');
+  stocks.forEach(function(x){x.open=false});s.open=true;if(!disp)disp=s.sy;stocks.push(s);fxBusy=needList().length>0;['tk','sh','px'].forEach(function(i){$(i).value=''});msg.textContent='';render();$('tk').focus();if(fxBusy){await prep();render()}}
+ catch(e){msg.className='msg e';msg.textContent=e.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'Couldn’t find dividend data for '+t+'. For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
+ b.disabled=false;b.textContent='Add stock'}
+$('addBtn').onclick=add;
+['tk','sh','px'].forEach(function(i){$(i).addEventListener('keydown',function(e){if(e.key==='Enter')add()})});
+$('out').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){wiM=+e.target.value;setP(e.target);wiUpdate()}else if(i==='wiy'){wiY=+e.target.value;setP(e.target);wiUpdate()}});
+$('out').onclick=function(e){
+ var t=e.target;
+ var w=t.closest('.wih');if(w){wiOpen=!wiOpen;w.setAttribute('aria-expanded',wiOpen);$('wib').hidden=!wiOpen;postHeight();return}
+ var cs=t.closest('.cs button');if(cs){setDisp(cs.dataset.c);return}
+ var h=t.closest('.hd');if(h){var c=h.closest('.card'),st=stocks.filter(function(x){return x.id===+h.dataset.t})[0];st.open=!st.open;h.setAttribute('aria-expanded',st.open);c.querySelector('.bd').hidden=!st.open;postHeight();return}
+ var r=t.closest('.rm');if(r){stocks=stocks.filter(function(x){return x.id!==+r.dataset.id});render();return}
+ var cl=t.closest('.clr');if(cl){if(cl.dataset.arm){stocks=[];render()}else{cl.dataset.arm='1';cl.classList.add('c');cl.textContent='Tap again to clear everything';setTimeout(function(){cl.dataset.arm='';cl.classList.remove('c');cl.textContent='Clear all'},3000)}return}
+ if(t.closest('.ea')){stocks.forEach(function(x){x.open=true});render()}
+ if(t.closest('.ca')){stocks.forEach(function(x){x.open=false});render()}};
+
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"dividend-calculator"},location.origin)}
+window.addEventListener('load',postHeight);window.addEventListener('resize',postHeight);postHeight();
+})();
+</script></div></body></html>

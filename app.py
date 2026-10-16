@@ -5886,9 +5886,10 @@ def _fetch_dividend_info(symbol: str) -> dict | None:
         name = symbol
     price = float(hist.iloc[-1])
     annual = float(recent.sum())
-    return {"symbol": symbol, "name": name, "unit": unit, "price": price, "annual": annual,
+    return {"symbol": symbol, "name": name, "unit": unit, "currency": ccy, "price": price, "annual": annual,
             "yield": annual / price * 100 if price else None,
-            "payments": [{"date": ix.strftime("%d %b %Y"), "amount": float(v)} for ix, v in recent.items()]}
+            "payments": [{"date": ix.strftime("%d %b %Y"), "amount": float(v)} for ix, v in recent.items()],
+            "dividends": [{"date": ix.strftime("%Y-%m-%d"), "amount": float(v)} for ix, v in divs[divs.index > anchor - pd.DateOffset(years=2)].items()]}
 
 
 @app.route("/api/dataviz/dividend-calculator/lookup", methods=["GET"])
@@ -5911,6 +5912,30 @@ def api_dividend_lookup():
     with _div_lock:
         _div_cache[raw] = (time.monotonic(), result)
     return (jsonify(result), 200) if result else (jsonify({"error": "not found"}), 404)
+
+
+# Spot FX rate for the Dividend Calculator's currency switch (e.g. pair=GBPUSD).
+_div_fx_cache: dict = {}
+
+
+@app.route("/api/dataviz/dividend-calculator/fx", methods=["GET"])
+def api_dividend_fx():
+    pair = (request.args.get("pair") or "").strip().upper()
+    if not re.fullmatch(r"(GBP|USD|EUR){2}", pair) or pair[:3] == pair[3:]:
+        return jsonify({"error": "bad pair"}), 400
+    with _div_lock:
+        hit = _div_fx_cache.get(pair)
+        if hit and time.monotonic() - hit[0] < _DIV_CACHE_TTL_SECONDS:
+            return jsonify({"rate": hit[1]})
+    try:
+        rate = float(yf.Ticker(pair + "=X").fast_info["last_price"])
+    except Exception:
+        rate = 0
+    if not rate > 0:
+        return jsonify({"error": "not found"}), 404
+    with _div_lock:
+        _div_fx_cache[pair] = (time.monotonic(), rate)
+    return jsonify({"rate": rate})
 
 
 # GCG Stock Donut: latest price in USD for a batch of tickers. The donut's built-in list
