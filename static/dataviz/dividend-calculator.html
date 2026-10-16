@@ -157,7 +157,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 <aside class="side">
 <form class="card" id="addForm" autocomplete="off">
 <h2>Add a holding</h2>
-<div class="fld"><label for="tk">Ticker</label><input id="tk" type="text" list="dl" placeholder="Ticker or name, e.g. KO or Tesla" maxlength="20" autocapitalize="characters" spellcheck="false"><datalist id="dl"></datalist></div>
+<div class="fld"><label for="tk">Ticker</label><input id="tk" type="text" list="dl" placeholder="Ticker or name, e.g. KO or Coca-Cola" maxlength="20" autocapitalize="characters" spellcheck="false"><datalist id="dl"></datalist></div>
 <div class="pair fld">
 <div><label for="sh">Shares</label><input id="sh" type="number" inputmode="decimal" min="0" step="any" placeholder="1000"></div>
 <div><label for="px">Price <span style="font-weight:400;color:var(--mute)">(optional)</span></label><input id="px" type="number" inputmode="decimal" min="0" step="any" placeholder="latest"></div>
@@ -177,7 +177,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 var API='/api/dataviz/dividend-calculator/';
 var disp='',fxBusy=false,fx={},DC={'£':'GBP','$':'USD','€':'EUR'},CS={GBP:'£',USD:'$',EUR:'€'},wiM=100,wiY=5,wiCtx={sy:'£',inc:0,y:0};
 var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],stocks=[],nid=1;
-var NAMES={AAPL:'Apple',MSFT:'Microsoft',NVDA:'NVIDIA',GOOGL:'Alphabet',AMZN:'Amazon',META:'Meta Platforms',TSLA:'Tesla','BRK-B':'Berkshire Hathaway',JPM:'JPMorgan Chase',V:'Visa',MA:'Mastercard',UNH:'UnitedHealth',XOM:'Exxon Mobil',WMT:'Walmart',JNJ:'Johnson & Johnson',PG:'Procter & Gamble',HD:'Home Depot',COST:'Costco',NFLX:'Netflix',AMD:'AMD',DIS:'Disney',KO:'Coca-Cola',PEP:'PepsiCo',NKE:'Nike',MCD:"McDonald's",BA:'Boeing',INTC:'Intel',PYPL:'PayPal',ADBE:'Adobe',CRM:'Salesforce',ORCL:'Oracle',CSCO:'Cisco',UBER:'Uber',SHOP:'Shopify',PLTR:'Palantir',COIN:'Coinbase',SPOT:'Spotify',SBUX:'Starbucks',T:'AT&T',VZ:'Verizon',PFE:'Pfizer',BAC:'Bank of America',GS:'Goldman Sachs',LLY:'Eli Lilly',AVGO:'Broadcom',TSM:'TSMC',BABA:'Alibaba','LGEN.L':'Legal & General','VOD.L':'Vodafone','BP.L':'BP','SHEL.L':'Shell','HSBA.L':'HSBC','ULVR.L':'Unilever','AZN.L':'AstraZeneca','GSK.L':'GSK','BATS.L':'British American Tobacco','RIO.L':'Rio Tinto','LLOY.L':'Lloyds Banking Group','NG.L':'National Grid','TSCO.L':'Tesco','AV.L':'Aviva','PHNX.L':'Phoenix Group'};
+var NAMES={AAPL:'Apple',MSFT:'Microsoft',NVDA:'NVIDIA',GOOGL:'Alphabet',META:'Meta Platforms',JPM:'JPMorgan Chase',V:'Visa',MA:'Mastercard',UNH:'UnitedHealth',XOM:'Exxon Mobil',WMT:'Walmart',JNJ:'Johnson & Johnson',PG:'Procter & Gamble',HD:'Home Depot',COST:'Costco',DIS:'Disney',KO:'Coca-Cola',PEP:'PepsiCo',NKE:'Nike',MCD:"McDonald's",BA:'Boeing',INTC:'Intel',PYPL:'PayPal',ADBE:'Adobe',CRM:'Salesforce',ORCL:'Oracle',CSCO:'Cisco',SBUX:'Starbucks',T:'AT&T',VZ:'Verizon',PFE:'Pfizer',BAC:'Bank of America',GS:'Goldman Sachs',LLY:'Eli Lilly',AVGO:'Broadcom',TSM:'TSMC',BABA:'Alibaba','LGEN.L':'Legal & General','VOD.L':'Vodafone','BP.L':'BP','SHEL.L':'Shell','HSBA.L':'HSBC','ULVR.L':'Unilever','AZN.L':'AstraZeneca','GSK.L':'GSK','BATS.L':'British American Tobacco','RIO.L':'Rio Tinto','LLOY.L':'Lloyds Banking Group','NG.L':'National Grid','TSCO.L':'Tesco','AV.L':'Aviva'};
 function resolve(t){
  t=t.trim().toUpperCase();if(t==='BRK.B')return 'BRK-B';
  var q=t.toLowerCase();for(var k in NAMES){if(NAMES[k].toLowerCase()===q)return k}return t}
@@ -305,7 +305,7 @@ async function add(e){
  try{var s=build(await fetchTicker(t),sh,px);
   if(!(s.price>0))throw new Error('nf');
   if(!disp)disp=s.sy;stocks.push(s);fxBusy=needList().length>0;['tk','sh','px'].forEach(function(i){$(i).value=''});msg.textContent='';render();$('tk').focus();if(fxBusy){await prep();render()}}
- catch(err){msg.className='msg e';msg.textContent=err.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'No dividend data found for '+t+'. It may not pay a dividend (Tesla and Berkshire Hathaway don’t). For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
+ catch(err){msg.className='msg e';msg.textContent=err.message==='no-api'?'Couldn’t reach the data service. Try again in a moment.':'No dividend data found for '+t+'. It may not pay a dividend. For UK shares try adding .L (e.g. '+t.replace(/\.L$/,'')+'.L).'}
  b.disabled=false;b.textContent='Add stock'}
 $('addForm').addEventListener('submit',add);
 $('wiBox').addEventListener('input',function(e){var i=e.target.id;if(i==='wim'){wiM=+e.target.value;setP(e.target);wiUpdate()}else if(i==='wiy'){wiY=+e.target.value;setP(e.target);wiUpdate()}});
