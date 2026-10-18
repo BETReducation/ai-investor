@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bitcoin Dashboard</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#0b1f3a;--mut:#5b6b80;--line:#dde3ea;--acc:#f7931a;--up:#1a9d57;--dn:#d6453d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}}
+:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:4px 2px 12px}
+h2{font-size:15px;margin:0 0 10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.big{font-size:40px;font-weight:800;letter-spacing:-.02em;color:var(--acc)}
+.mut{color:var(--mut);font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=number]{width:130px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;cursor:pointer}
+button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.cd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;margin:8px 0 14px}
+.cd b{display:block;font-size:26px}.cd span{font-size:12px;color:var(--mut)}
+.bar{height:22px;background:var(--bg);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#f7931a,#ffc15a);border-radius:999px;transition:width .6s}
+.between{display:flex;justify-content:space-between;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--bg);border-radius:12px;padding:10px 12px}.stat b{display:block;font-size:18px}
+.scroll{overflow-x:auto}
+.hrow{display:flex;align-items:center;gap:8px;margin:3px 0;cursor:pointer;font-size:12px}
+.hrow .y{width:34px;color:var(--mut)}.hrow .t{flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden}
+.hrow .t i{display:block;height:100%;background:var(--acc);opacity:.55}.hrow.sel .t i{opacity:1}.hrow.sel .y{color:var(--ink);font-weight:700}
+.hrow .v{width:64px;text-align:right}
+input[type=range]{width:100%;accent-color:var(--acc)}
+h2.tg{cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center}
+h2.tg::after{content:"▾";transition:transform .2s}
+.closed>h2.tg::after{transform:rotate(-90deg)}
+.closed>h2{margin-bottom:0}
+.pwrap{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;align-items:center}
+@media(max-width:520px){.pwrap{grid-template-columns:1fr}}
+table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.ss th,.ss td{border:1px solid var(--line);padding:7px 8px;text-align:right;white-space:nowrap}
+.ss th{background:var(--bg);color:var(--mut);font-weight:600}
+.ss td:first-child,.ss th:first-child{text-align:left;font-weight:700}
+.ss .hl{outline:2px solid var(--acc);outline-offset:-2px}
+.ss tr:last-child td{background:var(--bg);font-weight:700}
+</style>
+</head>
+<body>
+<main>
+
+<section class="card">
+  <h2>Price</h2>
+  <div class="pwrap">
+    <div>
+      <div class="big" id="price">–</div>
+      <div class="mut" id="pstatus"></div>
+      <div class="row" style="margin-top:10px">
+        <label class="mut" for="pin">BTC/USD:</label>
+        <input type="number" id="pin" min="1" step="100" value="80000">
+        <button id="pset">Update</button>
+      </div>
+    </div>
+    <div>
+      <svg id="pchart" viewBox="0 0 300 150" width="100%" role="img" aria-label="Bitcoin price over 5 years"></svg>
+      <div class="mut" style="text-align:center">5-year trend (approximate points)</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Next halving</h2>
+  <div class="cd">
+    <div><b id="d">0</b><span>days</span></div><div><b id="h">0</b><span>hrs</span></div>
+    <div><b id="m">0</b><span>mins</span></div><div><b id="s">0</b><span>secs</span></div>
+  </div>
+  <div class="bar"><i id="hbar" style="width:0"></i></div>
+  <div class="between mut"><span>Apr 20, 2024 (block 840,000)</span><b id="hpct" style="color:var(--ink)"></b><span>~Apr 2028 (block 1,050,000)</span></div>
+  <div class="mut" style="margin-top:8px">Block reward drops from 3.125 to 1.5625 BTC. Date is an estimate – it moves with block times.</div>
+</section>
+
+<section class="card">
+  <h2>Coins mined &amp; left to mine</h2>
+  <div class="row" style="align-items:baseline"><span class="big" style="font-size:30px" id="mined">–</span><span class="mut">BTC mined (estimate)</span></div>
+  <div class="bar" style="margin:8px 0"><i id="sbar" style="width:0"></i></div>
+  <div class="between mut"><span>0</span><b id="spct" style="color:var(--ink)"></b><span>21,000,000</span></div>
+  <div class="grid" style="margin:12px 0">
+    <div class="stat"><span class="mut">Left to mine</span><b id="sleft">–</b></div>
+    <div class="stat"><span class="mut">Value of coins left</span><b id="sval">–</b></div>
+    <div class="stat"><span class="mut">Still to mine before next halving</span><b id="shalv">–</b></div>
+    <div class="stat"><span class="mut">New coins per day</span><b>~450 BTC</b></div>
+  </div>
+  <div class="scroll"><table class="ss" id="stable"></table></div>
+  <div class="mut" style="margin-top:8px">Supply is estimated from the last halving at 10-minute blocks. It's the theoretical total, so lost coins aren't subtracted. Future dates are approximate (about every 4 years); the last fraction of a coin arrives around 2140.</div>
+</section>
+
+<section class="card">
+  <h2>Returns</h2>
+  <div class="row" id="cur" style="margin-bottom:10px"></div>
+  <div class="scroll"><table class="ss" id="rtable"></table></div>
+  <div class="mut" style="margin-top:8px">Each column is the return measured in that currency, so exchange-rate moves are included. The toggle highlights a column and sets the 'BTC then' price. Historical points are approximate.</div>
+</section>
+
+<section class="card">
+  <h2>Average house in Bitcoin</h2>
+  <div class="row" id="mkt" style="margin-bottom:8px"></div>
+  <svg id="house" viewBox="0 0 300 190" width="100%" style="max-height:230px" role="img" aria-label="Cartoon house with its price in Bitcoin"></svg>
+  <input type="range" id="yr" min="2010" max="2026" step="1" value="2026">
+  <div id="hyears" style="margin-top:8px"></div>
+  <div class="mut" style="margin-top:6px">Bars are log scale (each step ≈ 10× fewer BTC). UK = average UK house price, US = median US home price; both approximate yearly figures.</div>
+</section>
+
+<section class="card">
+  <h2>Extras</h2>
+  <div class="grid">
+    <div class="stat"><span class="mut">Sats per <span class="c1">$</span>1</span><b id="sats">–</b></div>
+    <div class="stat"><span class="mut">From all-time high (~$126k)</span><b id="ath">–</b></div>
+    <div class="stat"><span class="mut">Price in all four</span><b id="four" style="font-size:14px;line-height:1.5">–</b></div>
+    <div class="stat"><span class="mut">Supply cap</span><b>21,000,000</b></div>
+  </div>
+  <div class="mut" style="margin-top:8px">Historical and educational only – not financial advice.</div>
+</section>
+</main>
+
+<script>
+(function(){
+var CUR={USD:{s:'$',r:1},GBP:{s:'£',r:.75},EUR:{s:'€',r:.855},JPY:{s:'¥',r:150}}; // units per USD (approx, now)
+var price=80000,cur='USD',selYear=2026;
+var fmt=function(n,d){return n.toLocaleString('en-GB',{maximumFractionDigits:d==null?0:d})};
+var money=function(usd,c){var v=usd*CUR[c].r;return CUR[c].s+fmt(v,0)};
+function $(i){return document.getElementById(i)}
+
+// ---- price ----
+function setPrice(p,live){
+  price=p;$('price').textContent='$'+fmt(p);
+  $('pstatus').textContent=live?'Live from CoinGecko':'Manual price – enter today\'s BTC/USD below';
+  $('pin').value=Math.round(p);renderAll();
+}
+function tryLive(){
+  try{
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+    .then(function(r){return r.json()}).then(function(j){if(j&&j.bitcoin)setPrice(j.bitcoin.usd,true)}).catch(function(){});
+  }catch(e){}
+}
+$('pset').onclick=function(){var v=parseFloat($('pin').value);if(v>0)setPrice(v,false)};
+
+// ---- halving ----
+var START=Date.UTC(2024,3,20,0,9),END=Date.UTC(2028,3,17,0,0);
+function tick(){
+  var n=Date.now(),left=Math.max(0,END-n),pct=Math.min(100,Math.max(0,(n-START)/(END-START)*100));
+  $('d').textContent=Math.floor(left/864e5);$('h').textContent=Math.floor(left/36e5)%24;
+  $('m').textContent=Math.floor(left/6e4)%60;$('s').textContent=Math.floor(left/1e3)%60;
+  $('hbar').style.width=pct+'%';$('hpct').textContent=pct.toFixed(2)+'%';supplyLive();
+}
+
+// ---- returns ----
+// then: usd price, units-per-USD for each currency (approx, same calendar day)
+var HIST=[
+['1M',78000,{GBP:.746,EUR:.855,JPY:148}],
+['1Y',106500,{GBP:.746,EUR:.862,JPY:151}],
+['2Y',67500,{GBP:.769,EUR:.917,JPY:150}],
+['3Y',28500,{GBP:.826,EUR:.943,JPY:150}],
+['4Y',19500,{GBP:.885,EUR:1.02,JPY:149}],
+['5Y',61000,{GBP:.725,EUR:.862,JPY:114}]];
+function renderCur(){
+  var h='';Object.keys(CUR).forEach(function(c){h+='<button data-c="'+c+'" class="'+(c===cur?'on':'')+'">'+CUR[c].s+'</button>'});
+  $('cur').innerHTML=h;
+  [].forEach.call($('cur').children,function(b){b.onclick=function(){cur=b.dataset.c;renderAll()}});
+}
+function renderReturns(){
+  var ks=['USD','GBP','EUR','JPY'],sy=CUR[cur].s;
+  var rc=function(k,h){var r=k==='USD'?1:h[2][k];return (price*CUR[k].r/(h[1]*r)-1)*100};
+  var all=[];HIST.forEach(function(h){ks.forEach(function(k){all.push(Math.abs(rc(k,h)))})});
+  var mx=Math.max.apply(null,all.concat([10]));
+  var cl=function(k){return k===cur?' class="hl"':''};
+  var t='<tr><th>Period</th><th>BTC then ('+sy+')</th>'+ks.map(function(k){return '<th'+cl(k)+'>'+CUR[k].s+' return</th>'}).join('')+'</tr>';
+  HIST.forEach(function(h){
+    var rr=cur==='USD'?1:h[2][cur];
+    t+='<tr><td>'+h[0]+'</td><td>'+sy+fmt(h[1]*rr)+'</td>'+ks.map(function(k){
+      var v=rc(k,h),a=Math.min(.6,Math.abs(v)/mx*.6),bg=v>=0?'26,157,87':'214,69,61';
+      return '<td'+cl(k)+' style="background:rgba('+bg+','+a.toFixed(2)+')">'+(v>=0?'+':'')+fmt(v,1)+'%</td>'}).join('')+'</tr>';
+  });
+  t+='<tr><td>Now</td><td>'+sy+fmt(price*CUR[cur].r)+'</td>'+ks.map(function(k){return '<td'+cl(k)+'>'+money(price,k)+'</td>'}).join('')+'</tr>';
+  $('rtable').innerHTML=t;
+}
+function renderPChart(){
+  var sy=CUR[cur].s;
+  var pts=[[60,HIST[5]],[48,HIST[4]],[36,HIST[3]],[24,HIST[2]],[12,HIST[1]],[1,HIST[0]]].map(function(a){var h=a[1],r=cur==='USD'?1:h[2][cur];return [a[0],h[1]*r]});
+  pts.push([0,price*CUR[cur].r]);
+  var vs=pts.map(function(p){return p[1]}),mn=Math.min.apply(null,vs)*.9,mx=Math.max.apply(null,vs)*1.05;
+  var X=function(m){return 8+(60-m)/60*284},Y=function(v){return 120-(v-mn)/(mx-mn)*95};
+  var d=pts.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)}).join(' ');
+  var s='<path d="'+d+' L'+X(0)+' 126 L'+X(60)+' 126 Z" fill="var(--acc)" opacity=".15"/><path d="'+d+'" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round"/>';
+  pts.forEach(function(p){s+='<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="3" fill="var(--acc)"/>'});
+  var f=pts[0],l=pts[pts.length-1];
+  s+='<text x="8" y="'+(Y(f[1])-7).toFixed(1)+'" font-size="11" font-weight="700" fill="var(--ink)">'+sy+short(f[1])+'</text>';
+  s+='<text x="292" y="'+(Y(l[1])-7).toFixed(1)+'" text-anchor="end" font-size="11" font-weight="700" fill="var(--ink)">'+sy+short(l[1])+'</text>';
+  s+='<line x1="8" x2="292" y1="126" y2="126" stroke="var(--line)"/><text x="8" y="142" font-size="11" fill="var(--mut)">5Y ago</text><text x="292" y="142" text-anchor="end" font-size="11" fill="var(--mut)">now</text>';
+  $('pchart').innerHTML=s;
+}
+
+// ---- houses (UK avg house £k, BTC yearly avg USD, GBP→USD yearly avg) ----
+var HY=[[2010,166,.08,1.55],[2011,166,5,1.60],[2012,168,8,1.58],[2013,174,130,1.56],[2014,188,530,1.65],[2015,200,270,1.53],[2016,215,570,1.36],[2017,226,4000,1.29],[2018,231,7500,1.33],[2019,233,7300,1.28],[2020,244,11100,1.28],[2021,267,47500,1.38],[2022,295,28200,1.24],[2023,285,28800,1.24],[2024,289,65000,1.28],[2025,298,101000,1.32],[2026,303,null,1.33]];
+var market='UK';
+var US=[222.9,227.2,245.1,268.9,288.5,294.2,304.1,322.1,331.8,321.9,336.9,397.1,457.8,428.6,420.8,415,425]; // median US home, $k, index = year-2010
+function btcPerHouse(r){var usd=r[2]==null?price:r[2];return market==='UK'?r[1]*1000*r[3]/usd:US[r[0]-2010]*1000/usd}
+function localK(r){return market==='UK'?'£'+r[1]+'k':'$'+Math.round(US[r[0]-2010])+'k'}
+function renderMkt(){
+  var h='';['UK','US'].forEach(function(m){h+='<button data-m="'+m+'" class="'+(m===market?'on':'')+'">'+(m==='UK'?'🇬🇧 UK':'🇺🇸 US')+'</button>'});
+  $('mkt').innerHTML=h;[].forEach.call($('mkt').children,function(b){b.onclick=function(){market=b.dataset.m;renderHouse()}});
+}
+function short(n){if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e4)return Math.round(n/1e3)+'k';if(n>=1e3)return fmt(n);if(n>=10)return n.toFixed(0);return n.toFixed(2)}
+function renderHouse(){
+  renderMkt();var rows=HY.map(btcPerHouse),lmax=Math.log10(Math.max.apply(null,rows)),lmin=Math.log10(Math.min.apply(null,rows))-.2;
+  var h='';HY.forEach(function(r,i){var w=(Math.log10(rows[i])-lmin)/(lmax-lmin)*100;
+    h+='<div class="hrow'+(r[0]===selYear?' sel':'')+'" data-y="'+r[0]+'"><span class="y">'+r[0]+'</span><span class="t"><i style="width:'+w+'%"></i></span><span class="v">₿ '+short(rows[i])+'</span></div>'});
+  $('hyears').innerHTML=h;
+  [].forEach.call($('hyears').children,function(e){e.onclick=function(){selYear=+e.dataset.y;$('yr').value=selYear;renderHouse()}});
+  var i=selYear-2010,v=rows[i],sc=.55+.45*((Math.log10(v)-lmin)/(lmax-lmin)); // house grows with BTC needed
+  var s='<g transform="translate(150 178) scale('+sc+') translate(-150 -178)">'+
+  '<ellipse cx="150" cy="178" rx="120" ry="9" fill="var(--line)"/>'+
+  '<rect x="212" y="40" width="22" height="50" rx="3" fill="#b5533c" stroke="#1c1b19" stroke-width="3"/>'+
+  '<circle cx="226" cy="28" r="9" fill="var(--line)"/><circle cx="238" cy="14" r="6" fill="var(--line)"/>'+
+  '<rect x="55" y="82" width="190" height="94" rx="6" fill="#ffd9a0" stroke="#1c1b19" stroke-width="4"/>'+
+  '<path d="M38 88 L150 18 L262 88 Z" fill="#e0603f" stroke="#1c1b19" stroke-width="4" stroke-linejoin="round"/>'+
+  '<rect x="125" y="118" width="50" height="58" rx="4" fill="#8a5a3b" stroke="#1c1b19" stroke-width="4"/>'+
+  '<circle cx="165" cy="150" r="3.5" fill="#ffd54a"/>'+
+  '<rect x="72" y="104" width="38" height="32" rx="4" fill="#9ad8ff" stroke="#1c1b19" stroke-width="4"/>'+
+  '<rect x="190" y="104" width="38" height="32" rx="4" fill="#9ad8ff" stroke="#1c1b19" stroke-width="4"/>'+
+  '<circle cx="150" cy="58" r="17" fill="#f7931a" stroke="#1c1b19" stroke-width="4"/>'+
+  '<text x="150" y="65" text-anchor="middle" font-size="22" font-weight="800" fill="#fff">₿</text></g>'+
+  '<text x="150" y="186" text-anchor="middle" font-size="16" font-weight="800" fill="var(--ink)">'+selYear+' ('+localK(HY[i])+'): ₿ '+short(v)+'</text>';
+  $('house').innerHTML=s;
+}
+$('yr').oninput=function(){selYear=+this.value;renderHouse()};
+
+// ---- supply ----
+function supplyLive(){
+  var blocks=Math.max(0,(Date.now()-START)/6e5),mined=19687500+blocks*3.125,left=21e6-mined,v=left*price*CUR[cur].r;
+  $('mined').textContent=fmt(mined,2);
+  $('sbar').style.width=(mined/21e6*100)+'%';$('spct').textContent=(mined/21e6*100).toFixed(2)+'% mined';
+  $('sleft').textContent=fmt(left,0)+' BTC';
+  $('sval').textContent=CUR[cur].s+(v>=1e12?(v/1e12).toFixed(2)+'T':(v/1e9).toFixed(1)+'B');
+  $('shalv').textContent=fmt(Math.max(0,20343750-mined),0)+' BTC';
+}
+function renderSupplyTable(){
+  var R=[[1,'28 Nov 2012',25,10.5e6],[2,'9 Jul 2016',12.5,15.75e6],[3,'11 May 2020',6.25,18.375e6],[4,'20 Apr 2024',3.125,19687500],[5,'~Apr 2028',1.5625,20343750],[6,'~2032',.78125,20671875],[7,'~2036',.390625,20835937.5],[8,'~2040',.1953125,20917968.75],[9,'~2044',.09765625,20958984.375],['End','~2140',0,21e6]];
+  var t='<tr><th>Halving</th><th>Date</th><th>Reward cut to</th><th>Mined by then</th><th>% of 21M</th></tr>';
+  R.forEach(function(r){
+    var done=r[0]<=4,next=r[0]===5,c=next?' class="hl"':'',st=done?' style="opacity:.65"':'';
+    t+='<tr'+st+'><td'+c+'>'+r[0]+(done?' ✓':next?' ← next':'')+'</td><td'+c+'>'+r[1]+'</td><td'+c+'>'+fmt(r[2],8)+'</td><td'+c+'>'+fmt(r[3],0)+'</td><td'+c+'>'+(r[3]/21e6*100).toFixed(2)+'%</td></tr>';
+  });
+  $('stable').innerHTML=t;
+}
+// ---- extras ----
+function renderExtras(){
+  var c=CUR[cur];
+  [].forEach.call(document.querySelectorAll('.c1'),function(e){e.textContent=c.s});
+  $('sats').textContent=fmt(1e8/(price*c.r));
+  var d=(price/126000-1)*100;$('ath').textContent=(d>=0?'+':'')+d.toFixed(1)+'%';
+  $('four').innerHTML=['USD','GBP','EUR','JPY'].map(function(k){return money(price,k)}).join('<br>');
+}
+function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderExtras()}
+
+[].forEach.call(document.querySelectorAll('section.card'),function(sec){
+  var h=sec.querySelector(':scope > h2'),kids=[].filter.call(sec.children,function(e){return e!==h});
+  h.className+=' tg';h.setAttribute('role','button');h.setAttribute('tabindex','0');
+  var go=function(){var c=sec.classList.toggle('closed');h.setAttribute('aria-expanded',!c);kids.forEach(function(k){k.style.display=c?'none':''})};
+  h.onclick=go;h.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+});
+renderSupplyTable();setPrice(price,false);tick();setInterval(tick,1000);tryLive();setInterval(tryLive,60000);
+
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bitcoin-dashboard"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+})();
+</script>
+</body>
+</html>
