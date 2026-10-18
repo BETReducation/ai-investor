@@ -135,6 +135,14 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
           <textarea class="form-textarea" id="newDescription" rows="3" placeholder="Plain-English description of what this shows."></textarea>
         </div>
         <div class="form-field">
+          <label class="form-label" for="newKind">Type</label>
+          <select class="form-select" id="newKind">
+            <option value="viz">Data visualisation (view only)</option>
+            <option value="tool">Tool (takes user input)</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+        <div class="form-field">
           <label class="form-label" for="newImage">Image (optional)</label>
           <input type="file" id="newImage" accept="image/png,image/jpeg,image/gif,image/webp">
         </div>
@@ -197,8 +205,9 @@ function renderPageManageList() {
         ${p.has_live_widget ? '<span class="status-badge published" title="Has a live widget built into the page">live widget</span>' : ''}
       </summary>
       <div class="studio-card-head">
-        <a href="/tools/data-visualisation/${esc(p.slug)}" target="_blank" class="page-count">View live →</a>
+        <a href="${p.kind === 'tool' ? '/tools/' : '/tools/data-visualisation/'}${esc(p.slug)}" target="_blank" class="page-count">View live →</a>
       </div>
+      <div class="form-field"><label class="form-label">Type</label><select class="form-select" onchange="updatePageField('${esc(p.slug)}', 'kind', this.value)">${[['viz', 'Data visualisation (view only)'], ['tool', 'Tool (takes user input)'], ['both', 'Both']].map(([v, t]) => `<option value="${v}"${p.kind === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
       <div class="form-field"><label class="form-label">Title</label><input class="form-input" value="${esc(p.label)}" onblur="updatePageField('${esc(p.slug)}', 'label', this.value)"></div>
       <div class="card-image-input-row">
         ${p.has_header_image ? `<img class="card-image-preview" src="/api/dataviz/pages/${esc(p.slug)}/header-image?ts=${Date.now()}" alt="">` : ''}
@@ -299,6 +308,7 @@ async function createPage() {
     const fd = new FormData();
     fd.append('label', label);
     fd.append('description', document.getElementById('newDescription').value.trim());
+    fd.append('kind', document.getElementById('newKind').value);
     const imageInput = document.getElementById('newImage');
     if (imageInput.files && imageInput.files[0]) fd.append('image', imageInput.files[0]);
     const res = await fetch('/api/dataviz/pages', { method: 'POST', credentials: 'include', body: fd });

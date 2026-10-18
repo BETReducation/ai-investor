@@ -34,7 +34,7 @@
   // Tools menu: categories shown as flyout submenus, and the same list drives the
   // /tools hub page (window.GCG_TOOL_CATEGORIES). A category with no pages is left
   // out until it has some. Page entry: [label, url, description, tag].
-  var DV = '/tools/data-visualisation/';
+  var DV = '/tools/';
   var TOOL_CATEGORIES = [
     { name: 'Analysis tools', rgb: '59,130,246', blurb: 'Find setups, test them against history and review charts.', pages: [
       ['Signals', '/tools/signals', 'Configure multi-indicator signals across 30+ technical studies. Filter, score and surface only the setups that match your criteria.', 'Analysis'],

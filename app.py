@@ -472,6 +472,11 @@ def _ensure_table() -> None:
         # already serves that role — so the publish-time "upload an image first"
         # rule (see api_dataviz_content_item) is skipped for them.
         cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS has_live_widget BOOLEAN NOT NULL DEFAULT FALSE")
+        # 'tool' (takes user input, lives at /tools/<slug>), 'viz' (view-only, lives at
+        # /tools/data-visualisation/<slug>) or 'both' (served at both).
+        cur.execute("SELECT 1 FROM information_schema.columns WHERE table_name = 'dataviz_pages' AND column_name = 'kind'")
+        kind_is_new = cur.fetchone() is None
+        cur.execute("ALTER TABLE dataviz_pages ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'viz'")
         # header_image: an optional page-level hero image, shown above the title
         # (and above any live widget). Separate from dataviz_content.image_file,
         # which is per-post — this is per-page, and the only image field a
@@ -540,6 +545,11 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'price-value-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'metal-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bitcoin-dashboard'")
+        # Classify the seeded pages once, when the column is first added; after that the
+        # Studio owns each page's kind.
+        if kind_is_new:
+            for slug, kind in _SEED_DATAVIZ_KINDS.items():
+                cur.execute("UPDATE dataviz_pages SET kind = %s WHERE slug = %s", (kind, slug))
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1495,18 +1505,25 @@ def alpha_content_delete(item_id: int) -> bool:
 # rows inserted by _ensure_table so dev-mode (no DATABASE_URL) still has the
 # original 3 pages available.
 
+_SEED_DATAVIZ_KINDS = {
+    "crypto-unit-calculator": "tool", "crypto-portfolio-donut": "tool", "metal-calculator": "tool",
+    "dividend-calculator": "tool", "stock-donut": "tool", "freedom-clock": "tool", "price-value-tracker": "tool",
+    "bitcoin-dashboard": "both",
+}
+DATAVIZ_KINDS = ("tool", "viz", "both")
+
 _SEED_DATAVIZ_PAGES = [
-    {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True},
-    {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True},
-    {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True},
-    {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True},
-    {"slug": "crypto-portfolio-donut", "label": "Crypto Portfolio Donut", "author": None, "has_live_widget": True},
-    {"slug": "stock-donut", "label": "GCG Stock Donut", "author": None, "has_live_widget": True},
-    {"slug": "dividend-calculator", "label": "Dividend Calculator", "author": None, "has_live_widget": True},
-    {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True},
-    {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True},
-    {"slug": "metal-calculator", "label": "Metal Calculator", "author": None, "has_live_widget": True},
-    {"slug": "bitcoin-dashboard", "label": "Bitcoin Dashboard", "author": None, "has_live_widget": True},
+    {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "crypto-portfolio-donut", "label": "Crypto Portfolio Donut", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "stock-donut", "label": "GCG Stock Donut", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "dividend-calculator", "label": "Dividend Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "metal-calculator", "label": "Metal Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "bitcoin-dashboard", "label": "Bitcoin Dashboard", "author": None, "has_live_widget": True, "kind": "both"},
 ]
 
 
@@ -1535,17 +1552,17 @@ def dataviz_pages_list() -> list:
     # earlier.
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT slug, label, description, author, has_live_widget, header_image_filename, created_at FROM dataviz_pages "
+            cur.execute("SELECT slug, label, description, author, has_live_widget, kind, header_image_filename, created_at FROM dataviz_pages "
                         "ORDER BY has_live_widget DESC, created_at ASC")
             return [
                 {"slug": r["slug"], "label": r["label"], "description": r["description"], "author": r["author"],
-                 "has_live_widget": bool(r["has_live_widget"]), "has_header_image": bool(r["header_image_filename"]),
+                 "has_live_widget": bool(r["has_live_widget"]), "kind": r["kind"] or "viz", "has_header_image": bool(r["header_image_filename"]),
                  "created_at": r["created_at"].isoformat() if r["created_at"] else None}
                 for r in cur.fetchall()
             ]
     data = _load_dataviz_pages_json()
     pages = sorted(data["pages"], key=lambda p: (0 if p.get("has_live_widget") else 1, p.get("created_at") or ""))
-    return [{**p, "has_live_widget": bool(p.get("has_live_widget")), "has_header_image": bool(p.get("header_image_filename"))} for p in pages]
+    return [{**p, "kind": p.get("kind") or _SEED_DATAVIZ_KINDS.get(p["slug"], "viz"), "has_live_widget": bool(p.get("has_live_widget")), "has_header_image": bool(p.get("header_image_filename"))} for p in pages]
 
 
 def dataviz_page_get_header_image(slug: str):
@@ -1592,7 +1609,7 @@ def dataviz_page_get(slug: str) -> dict | None:
     return None
 
 
-def dataviz_page_create(label: str, author: str, description: str | None = None, has_live_widget: bool = False) -> dict:
+def dataviz_page_create(label: str, author: str, description: str | None = None, has_live_widget: bool = False, kind: str = "viz") -> dict:
     now = _dt.datetime.utcnow()
     base_slug = _slugify(label)
     existing_slugs = {p["slug"] for p in dataviz_pages_list()}
@@ -1604,22 +1621,22 @@ def dataviz_page_create(label: str, author: str, description: str | None = None,
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "INSERT INTO dataviz_pages (slug, label, description, author, has_live_widget, created_at) VALUES (%s, %s, %s, %s, %s, %s) "
-                "RETURNING slug, label, description, author, has_live_widget, created_at",
-                (slug, label, description, author, has_live_widget, now),
+                "INSERT INTO dataviz_pages (slug, label, description, author, has_live_widget, kind, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s) "
+                "RETURNING slug, label, description, author, has_live_widget, kind, created_at",
+                (slug, label, description, author, has_live_widget, kind, now),
             )
             row = cur.fetchone()
             return {"slug": row["slug"], "label": row["label"], "description": row["description"], "author": row["author"],
-                     "has_live_widget": bool(row["has_live_widget"]), "created_at": row["created_at"].isoformat()}
+                     "has_live_widget": bool(row["has_live_widget"]), "kind": row["kind"], "created_at": row["created_at"].isoformat()}
     data = _load_dataviz_pages_json()
-    page = {"slug": slug, "label": label, "description": description, "author": author, "has_live_widget": has_live_widget, "created_at": now.isoformat()}
+    page = {"slug": slug, "label": label, "description": description, "author": author, "has_live_widget": has_live_widget, "kind": kind, "created_at": now.isoformat()}
     data["pages"].append(page)
     _save_dataviz_pages_json(data)
     return page
 
 
 def dataviz_page_update(slug: str, updates: dict) -> dict | None:
-    """updates may contain 'label' and/or 'description'."""
+    """updates may contain 'label', 'description' and/or 'kind'."""
     if not updates:
         return dataviz_page_get(slug)
     if DATABASE_URL:
@@ -3420,10 +3437,26 @@ def tools_calculator(): return send_from_directory("static", "calculator.html")
 @app.route("/tools/data-visualisation")
 def tools_data_visualisation(): return send_from_directory("static", "data-visualisation.html")
 
+def _dataviz_page_url(page: dict) -> str:
+    return f"/tools/{page['slug']}" if page.get("kind") == "tool" else f"/tools/data-visualisation/{page['slug']}"
+
+# Pages that take user input (kind "tool") live at /tools/<slug>; view-only ones (kind
+# "viz") at /tools/data-visualisation/<slug>; "both" is served at either. The fixed
+# /tools/... routes above take precedence over the <slug> catch-all.
 @app.route("/tools/data-visualisation/<slug>")
 def tools_data_visualisation_page(slug):
-    if not dataviz_page_get(slug):
+    page = dataviz_page_get(slug)
+    if not page:
         return send_from_directory("static", "data-visualisation.html"), 404
+    if page["kind"] == "tool":
+        return redirect(f"/tools/{slug}", code=301)
+    return send_from_directory("static", "data-visualisation-page.html")
+
+@app.route("/tools/<slug>")
+def tools_page(slug):
+    page = dataviz_page_get(slug)
+    if not page or page["kind"] == "viz":
+        return send_from_directory("static", "tools.html"), 404
     return send_from_directory("static", "data-visualisation-page.html")
 
 @app.route("/arena")
@@ -6080,9 +6113,12 @@ def api_dataviz_pages():
         return jsonify({"error": "Title is required"}), 400
     if len(label) > 80:
         return jsonify({"error": "Title must be 80 characters or fewer"}), 400
-    page = dataviz_page_create(label, current_user.alpha_role, description=description)
+    kind = (request.form.get("kind") or "viz").strip()
+    if kind not in DATAVIZ_KINDS:
+        return jsonify({"error": "Kind must be tool, viz or both"}), 400
+    page = dataviz_page_create(label, current_user.alpha_role, description=description, kind=kind)
     gcg_notify.record("dataviz_page", current_user.id, f"{current_user.alpha_role} created a Data Viz page: {label}",
-                      f"/tools/data-visualisation/{page['slug']}")
+                      _dataviz_page_url(page))
     image_file = request.files.get("image")
     if image_file and image_file.filename:
         ext = image_file.filename.rsplit(".", 1)[-1].lower() if "." in image_file.filename else ""
@@ -6110,6 +6146,10 @@ def api_dataviz_page_update(slug):
         updates["label"] = label
     if "description" in data:
         updates["description"] = (data["description"] or "").strip() or None
+    if "kind" in data:
+        if data["kind"] not in DATAVIZ_KINDS:
+            return jsonify({"error": "Kind must be tool, viz or both"}), 400
+        updates["kind"] = data["kind"]
     page = dataviz_page_update(slug, updates)
     return jsonify({"success": True, "page": page})
 
@@ -6156,20 +6196,13 @@ def api_dataviz_page_delete(slug):
     return jsonify({"success": True})
 
 
-# Pages that need user input are tools and live only in the Tools menu (see
-# TOOL_CATEGORIES in static/js/nav.js). Pages with no input are visualisations;
-# borderline ones (bitcoin-dashboard) are in both, so they're not listed here.
-_DATAVIZ_TOOL_SLUGS = {"crypto-unit-calculator", "crypto-portfolio-donut", "metal-calculator",
-                       "dividend-calculator", "stock-donut", "freedom-clock", "price-value-tracker"}
-
-
 @app.route("/api/dataviz/pages/overview", methods=["GET"])
 def api_dataviz_pages_overview():
     """Hub-page feed: each visualisation is now the page itself — title,
     description, image — not a page plus a separate feed of posts underneath."""
     overview = []
     for page in dataviz_pages_list():
-        if page["slug"] in _DATAVIZ_TOOL_SLUGS:
+        if page["kind"] == "tool":
             continue
         overview.append({
             "slug": page["slug"],
