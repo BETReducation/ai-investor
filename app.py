@@ -6156,10 +6156,11 @@ def api_dataviz_page_delete(slug):
     return jsonify({"success": True})
 
 
-# Interactive utilities that live in the Tools menu (see TOOL_CATEGORIES in
-# static/js/nav.js); the Data Visualisation hub only lists the rest.
-_DATAVIZ_TOOL_SLUGS = {"crypto-unit-calculator", "crypto-portfolio-donut", "gold-silver-ratio", "metal-calculator",
-                       "dividend-calculator", "stock-donut", "freedom-clock", "price-value-tracker", "bitcoin-dashboard"}
+# Pages that need user input are tools and live only in the Tools menu (see
+# TOOL_CATEGORIES in static/js/nav.js). Pages with no input are visualisations;
+# borderline ones (bitcoin-dashboard) are in both, so they're not listed here.
+_DATAVIZ_TOOL_SLUGS = {"crypto-unit-calculator", "crypto-portfolio-donut", "metal-calculator",
+                       "dividend-calculator", "stock-donut", "freedom-clock", "price-value-tracker"}
 
 
 @app.route("/api/dataviz/pages/overview", methods=["GET"])

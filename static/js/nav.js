@@ -47,7 +47,6 @@
       ['Bitcoin Dashboard', DV + 'bitcoin-dashboard', 'Live price, the next halving countdown, coins left to mine, historical returns in four currencies and the average house priced in bitcoin.', 'Live data']
     ] },
     { name: 'Metals tools', rgb: '212,160,23', blurb: 'Precious and industrial metals, priced and compared.', pages: [
-      ['Gold &amp; Silver', DV + 'gold-silver-ratio', 'How many ounces of silver match one ounce of gold, and how that ratio has moved.', 'Live data'],
       ['Metal Calculator', DV + 'metal-calculator', 'Convert troy ounces and grams of gold, silver, platinum, palladium and copper into dollars, pounds, euros and bitcoin.', 'Live data']
     ] },
     { name: 'Stocks tools', rgb: '0,212,170', blurb: 'Dividends and income from listed companies.', pages: [
