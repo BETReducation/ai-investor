@@ -48,6 +48,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .ss td:first-child,.ss th:first-child{text-align:left;font-weight:700}
 .ss .hl{outline:2px solid var(--acc);outline-offset:-2px}
 .ss tr:last-child td{background:var(--bg);font-weight:700}
+.datamaps-hoverover{display:none!important}
 </style>
 </head>
 <body>
@@ -113,6 +114,36 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 </section>
 
 <section class="card">
+  <h2>Average new car in Bitcoin</h2>
+  <div class="row" id="mkt2" style="margin-bottom:8px"></div>
+  <svg id="car" viewBox="0 0 300 160" width="100%" style="max-height:220px" role="img" aria-label="Cartoon car with its price in Bitcoin"></svg>
+  <input type="range" id="cyr" min="2010" max="2026" step="1" value="2026">
+  <div id="cyears" style="margin-top:8px"></div>
+  <div class="mut" style="margin-top:6px">Bars are log scale. The UK / US toggle matches the house section. Average new-car prices are approximate yearly figures.</div>
+</section>
+
+<section class="card">
+  <h2>Gold vs Bitcoin</h2>
+  <div class="row" style="align-items:baseline"><span class="big" id="goz">–</span><span id="gdir" style="font-size:22px"></span></div>
+  <div class="mut">ounces of gold you get for 1 BTC</div>
+  <div class="mut" id="gstatus" style="margin:8px 0">Gold at $4,000/oz (estimate) until the live price loads.</div>
+  <svg id="gchart" viewBox="0 0 300 170" width="100%" role="img" aria-label="Ounces of gold per Bitcoin over time"></svg>
+  <div class="mut">Ounces of gold per BTC, 2010 to now (log scale). Uses yearly average prices, with the last point at today's prices. Press Refresh price to update both the BTC and gold price.</div>
+</section>
+
+<section class="card">
+  <h2>House price maps in Bitcoin</h2>
+  <div class="mut" style="margin-bottom:6px">🇬🇧 UK – average house price by region</div>
+  <svg id="ukmap" viewBox="0 0 290 420" width="100%" style="max-height:440px" role="img" aria-label="Map of the UK with house prices in Bitcoin by region"></svg>
+  <div class="mut" style="margin:14px 0 6px">🇺🇸 USA – typical home value by state</div>
+  <div id="usreal" style="position:relative;width:100%;aspect-ratio:1.55/1"></div>
+  <svg id="usmap" viewBox="0 0 330 208" width="100%" style="display:none" role="img" aria-label="US tile map of house prices in Bitcoin"></svg>
+  <div id="mapinfo" style="margin:10px 0 6px;font-weight:700;min-height:22px">Tap a region for details</div>
+  <div class="row" style="gap:6px"><span class="mut">Fewer BTC</span><span style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(247,147,26,.12),rgba(247,147,26,.9))"></span><span class="mut">More BTC</span></div>
+  <div class="mut" style="margin-top:8px">Colour is relative within each map (darker = more BTC). The US map is a real state map; the UK regions are hand-drawn simplified boundaries, so their shapes are approximate. Regional prices are approximate and use the live BTC price above.</div>
+</section>
+
+<section class="card">
   <h2>Extras</h2>
   <div class="grid">
     <div class="stat"><span class="mut">Sats per <span class="c1">$</span>1</span><b id="sats">–</b></div>
@@ -124,6 +155,9 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 </section>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.usa.min.js"></script>
 <script>
 (function(){
 var CUR={USD:{s:'$',r:1},GBP:{s:'£',r:.75},EUR:{s:'€',r:.855},JPY:{s:'¥',r:150}}; // units per USD (approx, now)
@@ -142,6 +176,7 @@ function refresh(){
   fetch('/api/dataviz/bitcoin-dashboard/live').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
     Object.keys(j.fx||{}).forEach(function(k){CUR[k].r=j.fx[k]});
     var t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    if(j.gold>0){gold=j.gold;$('gstatus').textContent='Gold at $'+fmt(gold)+'/oz (latest futures price)'}
     setPrice(j.usd,'Live price, updated '+t);
   }).catch(function(){$('pstatus').textContent='Live price unavailable – showing the last value'})
   .then(function(){btn.disabled=false;btn.textContent='↻ Refresh price'});
@@ -211,7 +246,7 @@ function btcPerHouse(r){var usd=r[2]==null?price:r[2];return market==='UK'?r[1]*
 function localK(r){return market==='UK'?'£'+r[1]+'k':'$'+Math.round(US[r[0]-2010])+'k'}
 function renderMkt(){
   var h='';['UK','US'].forEach(function(m){h+='<button data-m="'+m+'" class="'+(m===market?'on':'')+'">'+(m==='UK'?'🇬🇧 UK':'🇺🇸 US')+'</button>'});
-  $('mkt').innerHTML=h;[].forEach.call($('mkt').children,function(b){b.onclick=function(){market=b.dataset.m;renderHouse()}});
+  ['mkt','mkt2'].forEach(function(id){var e=$(id);e.innerHTML=h;[].forEach.call(e.children,function(b){b.onclick=function(){market=b.dataset.m;renderHouse();renderCar()}})});
 }
 function short(n){if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e4)return Math.round(n/1e3)+'k';if(n>=1e3)return fmt(n);if(n>=10)return n.toFixed(0);return n.toFixed(2)}
 function renderHouse(){
@@ -238,6 +273,51 @@ function renderHouse(){
 }
 $('yr').oninput=function(){selYear=+this.value;renderHouse()};
 
+// ---- car ----
+var CAR={UK:[17.5,18,18.5,19,19.5,20,20.7,21.3,22,23,25,27.5,31,35,36,37,38],US:[29.2,30,30.8,31.2,32.4,33.7,34.5,35.9,36.7,37.6,39,42.4,46,48.3,48.4,49,49.5]}; // avg new car, £k / $k
+var cYear=2026;
+function carBtc(i){var r=HY[i],usd=r[2]==null?price:r[2],k=CAR[market][i];return market==='UK'?k*1000*r[3]/usd:k*1000/usd}
+function renderCar(){
+  var rows=HY.map(function(r,i){return carBtc(i)}),lmax=Math.log10(Math.max.apply(null,rows)),lmin=Math.log10(Math.min.apply(null,rows))-.2,h='';
+  HY.forEach(function(r,i){var w=(Math.log10(rows[i])-lmin)/(lmax-lmin)*100;
+    h+='<div class="hrow'+(r[0]===cYear?' sel':'')+'" data-y="'+r[0]+'"><span class="y">'+r[0]+'</span><span class="t"><i style="width:'+w+'%"></i></span><span class="v">₿ '+short(rows[i])+'</span></div>'});
+  $('cyears').innerHTML=h;
+  [].forEach.call($('cyears').children,function(e){e.onclick=function(){cYear=+e.dataset.y;$('cyr').value=cYear;renderCar()}});
+  var i=cYear-2010,v=rows[i],sc=.6+.4*((Math.log10(v)-lmin)/(lmax-lmin)),sym=market==='UK'?'£':'$',k=CAR[market][i];
+  var ink='stroke="#1c1b19" stroke-width="4" stroke-linejoin="round"';
+  var s='<g transform="translate(150 130) scale('+sc.toFixed(2)+') translate(-150 -130)">'+
+  '<ellipse cx="150" cy="130" rx="125" ry="7" fill="var(--line)"/>'+
+  '<path d="M40 112 L40 86 Q40 76 55 74 L100 71 L125 46 Q130 41 140 41 L190 41 Q200 41 205 47 L228 71 L252 75 Q262 77 262 89 L262 112 Z" fill="#e0603f" '+ink+'/>'+
+  '<path d="M112 71 L132 51 L148 51 L148 71 Z" fill="#9ad8ff" '+ink+'/><path d="M158 71 L158 51 L188 51 L206 71 Z" fill="#9ad8ff" '+ink+'/>'+
+  '<line x1="152" y1="71" x2="152" y2="108" stroke="#1c1b19" stroke-width="3"/>'+
+  '<circle cx="200" cy="92" r="12" fill="#f7931a" stroke="#1c1b19" stroke-width="3"/><text x="200" y="98" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">₿</text>'+
+  '<circle cx="254" cy="90" r="4" fill="#ffd54a"/>'+
+  '<circle cx="88" cy="114" r="18" fill="#2b2b2b" '+ink+'/><circle cx="88" cy="114" r="7" fill="#ccc"/>'+
+  '<circle cx="216" cy="114" r="18" fill="#2b2b2b" '+ink+'/><circle cx="216" cy="114" r="7" fill="#ccc"/></g>'+
+  '<text x="150" y="155" text-anchor="middle" font-size="15" font-weight="800" fill="var(--ink)">'+cYear+' ('+sym+k+'k): ₿ '+short(v)+'</text>';
+  $('car').innerHTML=s;
+}
+$('cyr').oninput=function(){cYear=+this.value;renderCar()};
+
+// ---- gold ----
+var gold=4000,prevRatio=null,lastDir='';
+var GOLDY=[1225,1571,1669,1411,1266,1160,1251,1257,1268,1393,1770,1799,1802,1943,2386,3400,null]; // yearly avg $/oz, 2010-2026
+function renderGold(){
+  var r=price/gold;
+  if(prevRatio!==null&&Math.abs(r-prevRatio)>1e-9)lastDir=r>prevRatio?'<span style="color:var(--up)">▲</span>':'<span style="color:var(--dn)">▼</span>';
+  prevRatio=r;$('goz').textContent=r.toFixed(2)+' oz';$('gdir').innerHTML=lastDir;
+  var vals=HY.map(function(y,i){return (y[2]==null?price:y[2])/(GOLDY[i]==null?gold:GOLDY[i])}),lv=vals.map(function(v){return Math.log10(v)});
+  var lmin=Math.floor(Math.min.apply(null,lv)),lmax=Math.ceil(Math.max.apply(null,lv));
+  var X=function(i){return 42+i/16*248},Y=function(l){return 140-(l-lmin)/(lmax-lmin)*118},s='';
+  for(var k=lmin;k<=lmax;k++){s+='<line x1="42" x2="290" y1="'+Y(k).toFixed(1)+'" y2="'+Y(k).toFixed(1)+'" stroke="var(--line)"/><text x="38" y="'+(Y(k)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--mut)">'+Math.pow(10,k)+'</text>'}
+  var d=lv.map(function(l,i){return (i?'L':'M')+X(i).toFixed(1)+' '+Y(l).toFixed(1)}).join(' ');
+  s+='<path d="'+d+'" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linejoin="round"/>';
+  lv.forEach(function(l,i){s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(l).toFixed(1)+'" r="'+(i===16?4:2.2)+'" fill="var(--acc)"/>'});
+  s+='<text x="290" y="'+(Y(lv[16])-8).toFixed(1)+'" text-anchor="end" font-size="11" font-weight="700" fill="var(--ink)">'+r.toFixed(2)+' oz</text>';
+  [0,4,8,12,16].forEach(function(i){s+='<text x="'+X(i).toFixed(1)+'" y="160" text-anchor="middle" font-size="10" fill="var(--mut)">'+(2010+i)+'</text>'});
+  $('gchart').innerHTML=s;
+}
+
 // ---- supply ----
 function supplyLive(){
   var blocks=Math.max(0,(Date.now()-START)/6e5),mined=19687500+blocks*3.125,left=21e6-mined,v=left*price*CUR[cur].r;
@@ -256,6 +336,87 @@ function renderSupplyTable(){
   });
   $('stable').innerHTML=t;
 }
+// ---- maps ----
+var UKR=[['SCO',190,-4.2,56.8,'Scotland'],['NI',190,-6.7,54.6,'Northern Ireland'],['NW',220,-2.6,53.8,'North West'],['YH',213,-1.2,53.9,'Yorkshire & Humber'],['NE',165,-1.7,54.9,'North East'],['WAL',215,-3.7,52.3,'Wales'],['WM',255,-2.2,52.5,'West Midlands'],['EM',245,-1.0,52.9,'East Midlands'],['EE',340,0.8,52.3,'East of England'],['SW',320,-3.4,50.9,'South West'],['LDN',560,0.0,51.55,'London'],['SE',395,-1.2,51.1,'South East']]; // abbr, £k, lon, lat, name
+var SEG={
+A:'-3.05,54.98 -3.5,54.85 -4.0,54.8 -4.85,54.63 -5.0,54.9 -5.15,55.0 -4.65,55.46 -4.8,55.9 -5.05,55.7 -5.8,55.3 -5.6,55.8 -5.5,56.4 -6.2,56.73 -5.8,57.0 -5.7,57.28 -5.7,57.7 -5.2,57.9 -5.1,58.4 -5.0,58.62 -4.7,58.57 -4.4,58.5 -3.9,58.55 -3.4,58.62 -3.05,58.64 -3.1,58.35 -3.5,58.15 -3.95,57.85 -4.2,57.6 -3.9,57.6 -3.3,57.7 -2.5,57.7 -2.0,57.69 -1.78,57.5 -2.08,57.14 -2.45,56.7 -2.6,56.55 -2.8,56.45 -2.6,56.28 -3.0,56.0 -2.5,56.0 -2.0,55.77',
+SB1:'-3.05,54.98 -2.85,55.05 -2.65,55.15',SB2:'-2.65,55.15 -2.48,55.35 -2.15,55.48 -2.2,55.65 -2.0,55.77',
+NEc:'-2.0,55.77 -1.8,55.65 -1.6,55.5 -1.45,55.0 -1.2,54.65 -1.15,54.6',
+NENW:'-2.65,55.15 -2.45,54.95 -2.4,54.8 -2.2,54.65 -2.1,54.52',
+NEY:'-2.1,54.52 -1.7,54.5 -1.4,54.5 -1.15,54.6',
+Yc:'-1.15,54.6 -0.6,54.5 -0.1,54.12 0.1,53.6 0.0,53.52',
+YEM:'0.0,53.52 -0.4,53.5 -0.8,53.45 -1.15,53.4 -1.4,53.3 -1.6,53.3 -1.8,53.42',
+YNW:'-1.8,53.42 -1.95,53.6 -2.2,53.85 -2.3,54.2 -2.1,54.52',
+EMc:'0.0,53.52 0.1,53.4 0.35,53.15 0.3,52.95 0.22,52.8',
+EMEoE:'0.22,52.8 -0.1,52.7 -0.45,52.55 -0.55,52.35 -0.7,52.15 -0.85,52.05',
+EMSE:'-0.85,52.05 -1.15,52.08 -1.3,52.1',
+EMWM:'-1.3,52.1 -1.3,52.4 -1.4,52.55 -1.55,52.7 -1.8,52.9 -2.03,53.08',
+EMNW:'-2.03,53.08 -2.0,53.2 -1.85,53.35 -1.8,53.42',
+EoEc:'0.22,52.8 0.5,52.95 1.3,52.95 1.75,52.6 1.7,52.4 1.4,51.95 1.15,51.8 0.9,51.7 0.7,51.55 0.3,51.5',
+EoESE:'-0.85,52.05 -0.65,51.98 -0.55,51.8 -0.5,51.7 -0.45,51.62',
+EoELon:'-0.45,51.62 -0.3,51.68 0.0,51.68 0.2,51.62 0.3,51.5',
+LonSE:'-0.45,51.62 -0.5,51.5 -0.4,51.4 -0.25,51.33 -0.1,51.3 0.05,51.3 0.1,51.45 0.3,51.5',
+SEc:'0.3,51.5 0.8,51.45 1.05,51.37 1.4,51.4 1.4,51.13 1.0,50.92 0.25,50.75 -0.8,50.75 -1.3,50.78 -1.78,50.72',
+SESW:'-1.78,50.72 -1.8,51.0 -1.6,51.2 -1.55,51.4 -1.65,51.7 -1.55,51.97',
+SEWM:'-1.55,51.97 -1.35,52.05 -1.3,52.1',
+WMSW:'-1.55,51.97 -1.7,51.98 -1.95,52.0 -2.2,52.0 -2.4,52.0 -2.55,51.95 -2.7,51.85',
+SWc:'-1.78,50.72 -1.95,50.7 -2.45,50.55 -3.4,50.6 -3.65,50.22 -4.15,50.35 -4.8,50.3 -5.2,49.96 -5.7,50.07 -5.4,50.2 -5.1,50.42 -5.03,50.55 -4.6,50.85 -4.5,51.0 -4.1,51.2 -3.45,51.2 -3.0,51.35 -2.7,51.5 -2.65,51.62',
+SWW:'-2.7,51.85 -2.65,51.7 -2.65,51.62',
+Wc:'-2.65,51.62 -3.0,51.55 -3.2,51.45 -3.95,51.6 -4.4,51.7 -4.9,51.65 -5.3,51.9 -4.97,52.0 -4.7,52.1 -4.1,52.4 -4.05,52.7 -4.4,52.88 -4.75,52.8 -4.3,53.15 -4.6,53.3 -4.4,53.42 -3.8,53.3 -3.15,53.35 -3.1,53.33',
+WWM:'-2.7,51.85 -2.8,51.95 -3.1,52.07 -3.05,52.33 -3.1,52.55 -3.05,52.82 -2.9,52.95',
+WNW:'-2.9,52.95 -2.95,53.15 -3.1,53.33',
+WMNW:'-2.9,52.95 -2.75,52.95 -2.6,52.97 -2.45,53.0 -2.25,53.0 -2.03,53.08',
+NWc:'-3.1,53.33 -3.0,53.4 -3.05,53.65 -3.05,53.8 -2.85,54.1 -3.2,54.1 -3.6,54.5 -3.55,54.65 -3.3,54.95 -3.05,54.98'};
+// each region = shared border segments ('-' = walked backwards), so neighbours meet exactly
+var REG={SCO:'A -SB2 -SB1',NE:'NEc -NEY -NENW SB2',NW:'NWc SB1 NENW -YNW -EMNW -WMNW WNW',YH:'Yc YEM YNW NEY',EM:'EMc EMEoE EMSE EMWM EMNW -YEM',EE:'EoEc -EoELon -EoESE -EMEoE',LDN:'EoELon -LonSE',SE:'SEc SESW SEWM -EMSE EoESE LonSE',WM:'EMWM -WMNW -WWM -WMSW SEWM',SW:'SWc -SWW -WMSW -SESW',WAL:'Wc -WNW -WWM SWW'};
+function proj(p){var q=p.split(',');return ((+q[0]+8.3)*26.7).toFixed(1)+' '+((58.9-q[1])*46).toFixed(1)}
+function regPath(c){var pts=[];REG[c].split(' ').forEach(function(n){var r=n[0]==='-',a=SEG[r?n.slice(1):n].split(' ');if(r)a=a.slice().reverse();pts=pts.concat(a)});return 'M'+pts.map(proj).join('L')+'Z'}
+var NIO='-5.9,54.65 -5.8,54.85 -6.0,55.2 -6.65,55.2 -7.2,55.05 -7.35,54.7 -7.8,54.5 -8.0,54.3 -7.6,54.1 -7.0,54.0 -6.3,54.05 -5.55,54.3 -5.5,54.55 -5.65,54.65';
+function outline(s){return 'M'+s.split(' ').map(proj).join('L')+'Z'}
+var USS="AK,365,0,0;ME,395,10,0;WI,285,5,1;MI,250,7,1;VT,400,9,1;NH,485,10,1;WA,620,0,2;ID,440,1,2;MT,485,2,2;ND,265,3,2;MN,320,4,2;IL,270,5,2;IN,250,6,2;OH,225,7,2;NY,460,8,2;MA,620,9,2;RI,460,10,2;OR,520,0,3;NV,440,1,3;WY,330,2,3;SD,305,3,3;IA,215,4,3;MO,245,5,3;KY,230,6,3;WV,160,7,3;PA,270,8,3;NJ,520,9,3;CT,395,10,3;CA,780,0,4;UT,520,1,4;CO,575,2,4;NE,260,3,4;KS,225,4,4;AR,215,5,4;TN,335,6,4;VA,405,7,4;MD,400,8,4;DE,375,9,4;DC,600,10,4;AZ,440,1,5;NM,330,2,5;TX,300,3,5;OK,205,4,5;LA,205,5,5;MS,185,6,5;AL,235,7,5;NC,330,8,5;SC,295,9,5;HI,840,0,6;GA,330,8,6;FL,410,9,6";
+var USR=USS.split(';').map(function(s){var p=s.split(',');return [p[0],+p[1],+p[2],+p[3]]});
+function bt(v){return v>=10?v.toFixed(0):v.toFixed(1)}
+function drawMap(id,items,pitch,size,f1,f2,sym,cs,toBtc){
+  var vals=items.map(function(i){return toBtc(i[1])}),mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),s='';
+  items.forEach(function(it,n){
+    var v=vals[n],t=(v-mn)/(mx-mn),x=it[2]*pitch,y=it[3]*pitch,cx=x+size/2;
+    s+='<g data-n="'+n+'" style="cursor:pointer"><rect x="'+x+'" y="'+y+'" width="'+size+'" height="'+size+'" rx="5" fill="var(--acc)" fill-opacity="'+(.12+.78*t).toFixed(2)+'" stroke="var(--line)"/>'+
+    '<text x="'+cx+'" y="'+(y+size*.46)+'" text-anchor="middle" font-size="'+f1+'" font-weight="700" fill="var(--ink)">'+it[0]+'</text>'+
+    '<text x="'+cx+'" y="'+(y+size*.8)+'" text-anchor="middle" font-size="'+f2+'" fill="var(--ink)">'+sym+bt(v)+'</text></g>';
+  });
+  var svg=$(id);svg.innerHTML=s;
+  [].forEach.call(svg.querySelectorAll('g'),function(g){g.onclick=function(){var it=items[+g.dataset.n];
+    $('mapinfo').textContent=(it[4]||it[0])+': '+cs+it[1]+'k = ₿ '+bt(vals[+g.dataset.n])}});
+}
+var usMap=null,USK={};
+function renderMaps(){
+  var vals=UKR.map(function(i){return i[1]*1000/(price*CUR.GBP.r)}),mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);
+  var s='';
+  UKR.forEach(function(it,n){
+    var t=(vals[n]-mn)/(mx-mn),x=((it[2]+8.3)*26.7).toFixed(1),y=((58.9-it[3])*46).toFixed(1),d=it[0]==='NI'?outline(NIO):regPath(it[0]);
+    s+='<g data-n="'+n+'" style="cursor:pointer"><path d="'+d+'" fill="var(--acc)" fill-opacity="'+(.12+.78*t).toFixed(2)+'" stroke="var(--mut)" stroke-width=".9" stroke-linejoin="round"/>'+
+    '<text x="'+x+'" y="'+(+y-2)+'" text-anchor="middle" font-size="8" fill="var(--ink)" pointer-events="none">'+it[0]+'</text>'+
+    '<text x="'+x+'" y="'+(+y+9)+'" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ink)" pointer-events="none">'+bt(vals[n])+'</text></g>';
+  });
+  var uk=$('ukmap');uk.innerHTML=s;
+  [].forEach.call(uk.querySelectorAll('g'),function(g){g.onclick=function(){var n=+g.dataset.n,it=UKR[n];$('mapinfo').textContent=it[4]+': £'+it[1]+'k = ₿ '+bt(vals[n])}});
+  USR.forEach(function(r){USK[r[0]]=r[1]});
+  var uv=USR.map(function(r){return r[1]*1000/price}),umn=Math.min.apply(null,uv),umx=Math.max.apply(null,uv),cols={};
+  USR.forEach(function(r,n){cols[r[0]]={fillColor:'rgba(247,147,26,'+(.12+.78*(uv[n]-umn)/(umx-umn)).toFixed(2)+')'}});
+  var info=function(name,k){return name+': $'+k+'k = ₿ '+bt(k*1000/price)};
+  try{
+    if(typeof Datamap==='undefined')throw 0;
+    if(!usMap){
+      usMap=new Datamap({element:$('usreal'),scope:'usa',responsive:true,fills:{defaultFill:'rgba(128,128,128,.15)'},data:cols,
+        geographyConfig:{borderColor:'rgba(128,128,128,.6)',borderWidth:.6,highlightFillColor:'#ffb347',highlightBorderColor:'#1c1b19',popupOnHover:false},
+        done:function(m){m.svg.selectAll('.datamaps-subunit').on('click',function(g){var k=USK[g.id];if(k)$('mapinfo').textContent=info(g.properties.name,k)})}});
+      window.addEventListener('resize',function(){if(usMap)usMap.resize()});
+    }else usMap.updateChoropleth(cols);
+  }catch(e){
+    $('usreal').style.display='none';$('usmap').style.display='';
+    drawMap('usmap',USR,30,28,9,8.5,'','$',function(k){return k*1000/price});
+  }
+}
 // ---- extras ----
 function renderExtras(){
   var c=CUR[cur];
@@ -264,7 +425,7 @@ function renderExtras(){
   var d=(price/126000-1)*100;$('ath').textContent=(d>=0?'+':'')+d.toFixed(1)+'%';
   $('four').innerHTML=['USD','GBP','EUR','JPY'].map(function(k){return money(price,k)}).join('<br>');
 }
-function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderExtras()}
+function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderCar();renderGold();renderMaps();renderExtras()}
 
 [].forEach.call(document.querySelectorAll('section.card'),function(sec){
   var h=sec.querySelector(':scope > h2'),kids=[].filter.call(sec.children,function(e){return e!==h});
