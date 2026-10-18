@@ -5887,7 +5887,7 @@ def api_bitcoin_dashboard_live():
         return jsonify({"error": "unavailable"}), 502
     gbp, eur, jpy = last("GBPUSD=X"), last("EURUSD=X"), last("JPY=X")
     data = {"usd": btc, "fx": {k: v for k, v in (("GBP", 1 / gbp if gbp else None), ("EUR", 1 / eur if eur else None), ("JPY", jpy)) if v},
-            "updated_at": datetime.now(timezone.utc).isoformat()}
+            "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
     with _btc_dash_lock:
         _btc_dash_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
