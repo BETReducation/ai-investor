@@ -5865,6 +5865,34 @@ def api_metal_calculator_live():
     return jsonify(_fetch_metal_prices())
 
 
+# Bitcoin Dashboard: BTC/USD spot plus units-per-USD for GBP/EUR/JPY, cached briefly
+# so repeated refresh clicks don't hammer Yahoo.
+_btc_dash_cache: dict = {"at": 0.0, "data": None}
+_btc_dash_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/bitcoin-dashboard/live", methods=["GET"])
+def api_bitcoin_dashboard_live():
+    with _btc_dash_lock:
+        if _btc_dash_cache["data"] and time.monotonic() - _btc_dash_cache["at"] < 20:
+            return jsonify(_btc_dash_cache["data"])
+    def last(sym):
+        try:
+            v = float(yf.Ticker(sym).fast_info["last_price"])
+            return v if v > 0 else None
+        except Exception:
+            return None
+    btc = last("BTC-USD")
+    if not btc:
+        return jsonify({"error": "unavailable"}), 502
+    gbp, eur, jpy = last("GBPUSD=X"), last("EURUSD=X"), last("JPY=X")
+    data = {"usd": btc, "fx": {k: v for k, v in (("GBP", 1 / gbp if gbp else None), ("EUR", 1 / eur if eur else None), ("JPY", jpy)) if v},
+            "updated_at": datetime.now(timezone.utc).isoformat()}
+    with _btc_dash_lock:
+        _btc_dash_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 # Dividend Calculator lookup: trailing-12-month dividends and the latest price for
 # any Yahoo ticker. A bare ticker is tried as-is first, then with .L (LSE) appended.
 _DIV_CACHE_TTL_SECONDS = 3600

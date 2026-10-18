@@ -60,9 +60,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
       <div class="big" id="price">–</div>
       <div class="mut" id="pstatus"></div>
       <div class="row" style="margin-top:10px">
-        <label class="mut" for="pin">BTC/USD:</label>
-        <input type="number" id="pin" min="1" step="100" value="80000">
-        <button id="pset">Update</button>
+        <button id="pset" class="on">↻ Refresh price</button>
       </div>
     </div>
     <div>
@@ -135,18 +133,20 @@ var money=function(usd,c){var v=usd*CUR[c].r;return CUR[c].s+fmt(v,0)};
 function $(i){return document.getElementById(i)}
 
 // ---- price ----
-function setPrice(p,live){
+function setPrice(p,note){
   price=p;$('price').textContent='$'+fmt(p);
-  $('pstatus').textContent=live?'Live from CoinGecko':'Manual price – enter today\'s BTC/USD below';
-  $('pin').value=Math.round(p);renderAll();
+  $('pstatus').textContent=note;renderAll();
 }
-function tryLive(){
-  try{
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
-    .then(function(r){return r.json()}).then(function(j){if(j&&j.bitcoin)setPrice(j.bitcoin.usd,true)}).catch(function(){});
-  }catch(e){}
+function refresh(){
+  var btn=$('pset');btn.disabled=true;btn.textContent='Refreshing…';
+  fetch('/api/dataviz/bitcoin-dashboard/live').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+    Object.keys(j.fx||{}).forEach(function(k){CUR[k].r=j.fx[k]});
+    var t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setPrice(j.usd,'Live price, updated '+t);
+  }).catch(function(){$('pstatus').textContent='Live price unavailable – showing the last value'})
+  .then(function(){btn.disabled=false;btn.textContent='↻ Refresh price'});
 }
-$('pset').onclick=function(){var v=parseFloat($('pin').value);if(v>0)setPrice(v,false)};
+$('pset').onclick=refresh;
 
 // ---- halving ----
 var START=Date.UTC(2024,3,20,0,9),END=Date.UTC(2028,3,17,0,0);
@@ -272,7 +272,7 @@ function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();re
   var go=function(){var c=sec.classList.toggle('closed');h.setAttribute('aria-expanded',!c);kids.forEach(function(k){k.style.display=c?'none':''})};
   h.onclick=go;h.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
 });
-renderSupplyTable();setPrice(price,false);tick();setInterval(tick,1000);tryLive();setInterval(tryLive,60000);
+renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
 
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bitcoin-dashboard"},location.origin);}
