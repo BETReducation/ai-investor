@@ -6156,12 +6156,20 @@ def api_dataviz_page_delete(slug):
     return jsonify({"success": True})
 
 
+# Interactive utilities that live in the Tools menu (see TOOL_CATEGORIES in
+# static/js/nav.js); the Data Visualisation hub only lists the rest.
+_DATAVIZ_TOOL_SLUGS = {"crypto-unit-calculator", "crypto-portfolio-donut", "gold-silver-ratio", "metal-calculator",
+                       "dividend-calculator", "stock-donut", "freedom-clock", "price-value-tracker", "bitcoin-dashboard"}
+
+
 @app.route("/api/dataviz/pages/overview", methods=["GET"])
 def api_dataviz_pages_overview():
     """Hub-page feed: each visualisation is now the page itself — title,
     description, image — not a page plus a separate feed of posts underneath."""
     overview = []
     for page in dataviz_pages_list():
+        if page["slug"] in _DATAVIZ_TOOL_SLUGS:
+            continue
         overview.append({
             "slug": page["slug"],
             "label": page["label"],
