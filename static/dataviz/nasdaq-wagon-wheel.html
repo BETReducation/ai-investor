@@ -58,7 +58,7 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 </svg>
 </div>
 <div class="bar">
-<button class="spin" id="spin">Spin the market</button>
+<button class="spin" id="spin">Spin &amp; refresh</button>
 <button id="ord"></button>
 </div>
 <div class="bar chips" id="chips"></div>
@@ -68,13 +68,13 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 <button id="bg" class="on">Top 10 gainers</button><button id="bl">Top 10 losers</button>
 </div>
 <div id="list"></div>
-<p class="foot">Illustrative sample day with simulated moves, not live prices. Spin to roll a new one. For education, not financial advice.</p>
+<p class="foot">Loading prices… For education, not financial advice.</p>
 </main>
 <script>
 const RAW="AAPL:Apple|MSFT:Microsoft|NVDA:NVIDIA|AMZN:Amazon|GOOGL:Alphabet|META:Meta|AVGO:Broadcom|TSLA:Tesla|COST:Costco|NFLX:Netflix|PLTR:Palantir|ASML:ASML|AMD:AMD|CSCO:Cisco|TMUS:T-Mobile|AZN:AstraZeneca|LIN:Linde|PEP:PepsiCo|ISRG:Intuitive Surgical|SHOP:Shopify|ADBE:Adobe|QCOM:Qualcomm|TXN:Texas Instruments|INTU:Intuit|BKNG:Booking|AMGN:Amgen|AMAT:Applied Materials|HON:Honeywell|PDD:PDD Holdings|GILD:Gilead|CMCSA:Comcast|ARM:Arm|MU:Micron|LRCX:Lam Research|PANW:Palo Alto|ADP:ADP|APP:AppLovin|KLAC:KLA|CRWD:CrowdStrike|VRTX:Vertex|SBUX:Starbucks|MELI:MercadoLibre|CEG:Constellation|ADI:Analog Devices|INTC:Intel|CDNS:Cadence|MDLZ:Mondelez|ORLY:O’Reilly|DASH:DoorDash|FTNT:Fortinet|MAR:Marriott|REGN:Regeneron|CTAS:Cintas|SNPS:Synopsys|PYPL:PayPal|MRVL:Marvell|ABNB:Airbnb|WDAY:Workday|ADSK:Autodesk|CSX:CSX|MNST:Monster|AEP:AEP|NXPI:NXP|ROP:Roper|FAST:Fastenal|PCAR:Paccar|AXON:Axon|CPRT:Copart|TTWO:Take-Two|KDP:Keurig Dr Pepper|EA:Electronic Arts|ROST:Ross Stores|BKR:Baker Hughes|XEL:Xcel|EXC:Exelon|FANG:Diamondback|CCEP:Coca-Cola Europacific|PAYX:Paychex|CHTR:Charter|TEAM:Atlassian|ODFL:Old Dominion|VRSK:Verisk|KHC:Kraft Heinz|DDOG:Datadog|GEHC:GE HealthCare|CTSH:Cognizant|LULU:Lululemon|IDXX:IDEXX|MCHP:Microchip|CSGP:CoStar|TTD:Trade Desk|ON:onsemi|ZS:Zscaler|BIIB:Biogen|DXCM:Dexcom|CDW:CDW|GFS:GlobalFoundries|WBD:Warner Bros. Discovery|MDB:MongoDB";
 const S=RAW.split("|").map(s=>{const[t,n]=s.split(":");return{t,n}});
-const $=q=>document.querySelector(q),N=S.length;
-let mode="perf",view="g",flt="all",sel=null;
+const $=q=>document.querySelector(q);let N=S.length;
+let mode="perf",view="g",flt="all",sel=null,liveOn=false;
 const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 function roll(){
  const r=rng(Date.now()&0xffffff),g=()=>{let s=0;for(let i=0;i<4;i++)s+=r();return(s-2)*1.73},d=g()*.9;
@@ -126,8 +126,20 @@ $("#chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b
 $("#ord").onclick=()=>{mode=mode==="cap"?"perf":"cap";draw()};
 $("#bg").onclick=()=>{view="g";draw()};$("#bl").onclick=()=>{view="l";draw()};
 $("#spin").onclick=()=>{const g=$("#ring");g.style.transition="transform 1s cubic-bezier(.6,0,.2,1)";g.style.transform="rotate(360deg)";
- setTimeout(()=>{roll();sel=null;draw()},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
-roll();draw();
+ setTimeout(()=>{(liveOn?loadLive():Promise.resolve(roll())).then(()=>{sel=null;draw()})},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
+function note(t){document.querySelector(".foot").textContent=t}
+// Live moves from our server (Yahoo daily bars, % change vs previous close). Falls back to a simulated day if unavailable.
+function loadLive(){
+ return fetch("/api/dataviz/nasdaq-wheel/live").then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+  S.forEach(s=>{s.c=j.moves[s.t]!=null?j.moves[s.t]:null});
+  const have=S.filter(s=>s.c!=null);
+  if(have.length<20)throw 0;
+  S.splice(0,S.length,...have);N=S.length;liveOn=true;
+  const t=new Date(j.updated_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  note("Live Nasdaq prices (about 15 minutes delayed), % change against the previous close. Latest session: "+j.as_of+", refreshed "+t+". Press the spin button to refresh. For education, not financial advice.");
+ }).catch(()=>{liveOn=false;roll();note("Live prices are unavailable right now, so this is an illustrative sample day with simulated moves. For education, not financial advice.")});
+}
+roll();draw();loadLive().then(()=>{sel=null;draw()});
 
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"nasdaq-wagon-wheel"},location.origin);}

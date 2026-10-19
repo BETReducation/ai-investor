@@ -6073,6 +6073,45 @@ def api_bull_bear_live():
     return jsonify(data)
 
 
+# NASDAQ Wagon Wheel: today's % move for the wheel's ~100 large Nasdaq names, from Yahoo daily
+# bars (the latest bar is the live session during market hours). Cached briefly.
+_NASDAQ_WHEEL_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'TSLA', 'COST', 'NFLX', 'PLTR', 'ASML', 'AMD', 'CSCO', 'TMUS', 'AZN', 'LIN', 'PEP', 'ISRG', 'SHOP', 'ADBE', 'QCOM', 'TXN', 'INTU', 'BKNG', 'AMGN', 'AMAT', 'HON', 'PDD', 'GILD', 'CMCSA', 'ARM', 'MU', 'LRCX', 'PANW', 'ADP', 'APP', 'KLAC', 'CRWD', 'VRTX', 'SBUX', 'MELI', 'CEG', 'ADI', 'INTC', 'CDNS', 'MDLZ', 'ORLY', 'DASH', 'FTNT', 'MAR', 'REGN', 'CTAS', 'SNPS', 'PYPL', 'MRVL', 'ABNB', 'WDAY', 'ADSK', 'CSX', 'MNST', 'AEP', 'NXPI', 'ROP', 'FAST', 'PCAR', 'AXON', 'CPRT', 'TTWO', 'KDP', 'EA', 'ROST', 'BKR', 'XEL', 'EXC', 'FANG', 'CCEP', 'PAYX', 'CHTR', 'TEAM', 'ODFL', 'VRSK', 'KHC', 'DDOG', 'GEHC', 'CTSH', 'LULU', 'IDXX', 'MCHP', 'CSGP', 'TTD', 'ON', 'ZS', 'BIIB', 'DXCM', 'CDW', 'GFS', 'WBD', 'MDB']
+_NASDAQ_TTL_SECONDS = 120
+_nasdaq_cache: dict = {"at": 0.0, "data": None}
+_nasdaq_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/nasdaq-wheel/live", methods=["GET"])
+def api_nasdaq_wheel_live():
+    with _nasdaq_lock:
+        if _nasdaq_cache["data"] and time.monotonic() - _nasdaq_cache["at"] < _NASDAQ_TTL_SECONDS:
+            return jsonify(_nasdaq_cache["data"])
+    try:
+        raw = yf.download(tickers=_NASDAQ_WHEEL_SYMBOLS, period="5d", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    moves, as_of = {}, None
+    for sym in _NASDAQ_WHEEL_SYMBOLS:
+        try:
+            closes = raw[sym]["Close"].dropna()
+            if len(closes) < 2 or (closes.index[-1] - closes.index[-2]).days > 5:
+                continue
+            moves[sym] = round((float(closes.iloc[-1]) / float(closes.iloc[-2]) - 1) * 100, 2)
+            as_of = closes.index[-1].date().isoformat()
+        except Exception:
+            continue
+    if len(moves) < 20:
+        with _nasdaq_lock:
+            if _nasdaq_cache["data"]:
+                return jsonify(_nasdaq_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves}
+    with _nasdaq_lock:
+        _nasdaq_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 # Where Bitcoin gets spent: merchant counts per country from BTC Map's public API (data
 # © OpenStreetMap contributors, ODbL). One refresh a day, served from memory, so visitors never
 # hit BTC Map directly. BTC Map publishes a report per area whenever its stats change, so we take

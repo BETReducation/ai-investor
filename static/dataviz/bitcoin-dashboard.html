@@ -356,6 +356,7 @@ function renderCar(){
   $('car').innerHTML=s;
 }
 $('cyr').oninput=function(){cYear=+this.value;renderCar()};
+try{new ResizeObserver(function(){if($('usreal').clientWidth&&!usMap&&!$('usmap').offsetWidth)renderMaps()}).observe($('usreal'))}catch(e){}
 
 // ---- gold ----
 var gold=4000,prevRatio=null,lastDir='';
@@ -661,6 +662,8 @@ g("wmGlob").innerHTML='<div><b>'+tot.toLocaleString()+'</b><span>Mapped merchant
 function tabs(){var tb=g("wmTabs");tb.innerHTML="";
 Object.keys(M).forEach(function(k){var bt=document.createElement("button");bt.textContent=M[k].label;bt.className=k==cur?"on":"";bt.onclick=function(){cur=k;[].forEach.call(tb.children,function(c){c.className=""});bt.className="on";draw()};tb.appendChild(bt)})}
 window._wmBuild=build;
+// Safety net: whenever the map's container gains a width and there is no map yet (e.g. its section was opened some other way), build it.
+try{new ResizeObserver(function(){if(g("wmMap").clientWidth&&!map)build()}).observe(g("wmMap"))}catch(e){}
 g("wmRz").onclick=function(){if(zm&&map){zm.scale(1).translate([0,0]);zm.event(map.svg)}};
 window.addEventListener("resize",function(){if(map)map.resize()});
 // Rebuild with the right colours whenever the light/dark theme flips (system setting or the site toggle).
