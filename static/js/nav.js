@@ -43,8 +43,7 @@
     ] },
     { name: 'Crypto tools', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
       ['Crypto Unit Calculator', DV + 'crypto-unit-calculator', 'See how a coin divides into its smallest units, from satoshi to whole coins, with live prices.', 'Live data'],
-      ['Crypto Portfolio Donut', DV + 'crypto-portfolio-donut', 'Enter the coins you hold from the top 50 by market cap and see your portfolio as a donut, valued in pounds, dollars, euros or bitcoin.', 'Live data'],
-      ['Bitcoin Dashboard', DV + 'bitcoin-dashboard', 'Live price, the next halving countdown, coins left to mine, historical returns in four currencies and the average house priced in bitcoin.', 'Live data']
+      ['Crypto Portfolio Donut', DV + 'crypto-portfolio-donut', 'Enter the coins you hold from the top 50 by market cap and see your portfolio as a donut, valued in pounds, dollars, euros or bitcoin.', 'Live data']
     ] },
     { name: 'Metals tools', rgb: '212,160,23', blurb: 'Precious and industrial metals, priced and compared.', pages: [
       ['Metal Calculator', DV + 'metal-calculator', 'Convert troy ounces and grams of gold, silver, platinum, palladium and copper into dollars, pounds, euros and bitcoin.', 'Live data']

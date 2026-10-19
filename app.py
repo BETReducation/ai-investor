@@ -550,6 +550,8 @@ def _ensure_table() -> None:
         if kind_is_new:
             for slug, kind in _SEED_DATAVIZ_KINDS.items():
                 cur.execute("UPDATE dataviz_pages SET kind = %s WHERE slug = %s", (kind, slug))
+        # One-off: the Bitcoin Dashboard was first seeded as 'both'; it is view-only. Safe to delete once deployed.
+        cur.execute("UPDATE dataviz_pages SET kind = 'viz' WHERE slug = 'bitcoin-dashboard' AND kind = 'both'")
 
 VALID_INTERVALS = {"1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"}
 
@@ -1508,7 +1510,6 @@ def alpha_content_delete(item_id: int) -> bool:
 _SEED_DATAVIZ_KINDS = {
     "crypto-unit-calculator": "tool", "crypto-portfolio-donut": "tool", "metal-calculator": "tool",
     "dividend-calculator": "tool", "stock-donut": "tool", "freedom-clock": "tool", "price-value-tracker": "tool",
-    "bitcoin-dashboard": "both",
 }
 DATAVIZ_KINDS = ("tool", "viz", "both")
 
@@ -1523,7 +1524,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "metal-calculator", "label": "Metal Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
-    {"slug": "bitcoin-dashboard", "label": "Bitcoin Dashboard", "author": None, "has_live_widget": True, "kind": "both"},
+    {"slug": "bitcoin-dashboard", "label": "Bitcoin Dashboard", "author": None, "has_live_widget": True, "kind": "viz"},
 ]
 
 
