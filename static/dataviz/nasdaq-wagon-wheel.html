@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NASDAQ Wagon Wheel</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--tx:#0b1f3a;--mu:#5b6b80;--ln:#dde3ea;--up:#0fb374;--dn:#e5344d;--fl:#f0a000;--glow:#0fb374;--rim:#b8892b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--tx:#eef2f7;--mu:#93a4bb;--ln:#223a5e;--up:#1fd18b;--dn:#ff4d63;--fl:#ffb21e}}
+:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--tx:#eef2f7;--mu:#93a4bb;--ln:#223a5e;--up:#1fd18b;--dn:#ff4d63;--fl:#ffb21e}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--tx);font-family:"Bricolage Grotesque",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:520px;margin:0 auto;padding:4px 2px 12px}
+.sub{color:var(--mu);margin:2px 0 14px;font-size:14px}
+.stage{border-radius:28px;padding:10px;background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--glow) 24%,transparent),transparent 68%),var(--card);border:1px solid var(--ln);transition:background .6s}
+svg{width:100%;height:auto;display:block;touch-action:manipulation}
+#ring{transform-origin:200px 200px}
+#ring path{cursor:pointer;transform-origin:200px 200px;animation:pop .6s both;transition:opacity .25s}
+#ring path.sel{stroke:var(--tx);stroke-width:1.5}#ring path.h{animation:none}#ring path.h.sel{stroke:none}
+@keyframes pop{from{opacity:0;transform:scale(.55)}}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+button{font:inherit;color:var(--tx);background:transparent;border:1px solid var(--ln);border-radius:999px;padding:8px 14px;cursor:pointer;min-height:40px}
+button:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.spin{background:var(--up);color:#04210f;border-color:var(--up);font-weight:800}
+.chips button{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 18px}
+.cards div{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:10px 12px}
+.cards b{display:block;font-size:20px;letter-spacing:-.02em}
+.cards span{font-size:12px;color:var(--mu)}
+.seg{display:inline-flex;border:1px solid var(--ln);border-radius:999px;padding:3px;gap:2px;margin-bottom:10px}
+.seg button{border:0;min-height:36px}
+h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
+.row{display:grid;grid-template-columns:26px 1fr 64px;align-items:center;gap:8px;padding:7px 8px;border-radius:12px;cursor:pointer;position:relative;overflow:hidden}
+.row:hover,.row.sel{background:color-mix(in srgb,var(--tx) 8%,transparent)}
+.row i{position:absolute;left:0;top:0;bottom:0;opacity:.2;border-radius:12px;transition:width .6s}
+.row>*{position:relative}
+.rk{color:var(--mu);font-size:13px}
+.nm b{font-size:15px}.nm small{color:var(--mu);margin-left:6px}
+.ch{text-align:right;font-weight:800}
+.flist{max-height:340px;overflow-y:auto;border:1px solid var(--ln);border-radius:16px;padding:6px;margin-bottom:16px}
+.foot{color:var(--mu);font-size:12px;margin-top:18px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){#ring path{animation:none}#ring{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<p class="sub">Winners on the left, losers on the right. Tap a spoke, spin the day.</p>
+<div class="stage" id="stage">
+<svg viewBox="0 0 400 400" role="img" aria-label="Wagon wheel of Nasdaq stocks: green spokes on the left for stocks that are up, red on the right for down, amber at the top for flat">
+<g id="ring"></g><circle cx="200" cy="200" r="195" fill="none" stroke="var(--rim)" stroke-width="6"/><circle cx="200" cy="200" r="197" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.5"/><circle cx="200" cy="200" r="86" fill="var(--bg)" opacity=".92" stroke="var(--rim)" stroke-width="4"/><g id="hub" text-anchor="middle" style="pointer-events:none"></g>
+</svg>
+</div>
+<div class="bar">
+<button class="spin" id="spin">Spin the market</button>
+<button id="ord"></button>
+</div>
+<div class="bar chips" id="chips"></div>
+<div id="flist"></div>
+<div class="cards" id="cards"></div>
+<div class="seg" role="group" aria-label="Show">
+<button id="bg" class="on">Top 10 gainers</button><button id="bl">Top 10 losers</button>
+</div>
+<div id="list"></div>
+<p class="foot">Illustrative sample day with simulated moves, not live prices. Spin to roll a new one. For education, not financial advice.</p>
+</main>
+<script>
+const RAW="AAPL:Apple|MSFT:Microsoft|NVDA:NVIDIA|AMZN:Amazon|GOOGL:Alphabet|META:Meta|AVGO:Broadcom|TSLA:Tesla|COST:Costco|NFLX:Netflix|PLTR:Palantir|ASML:ASML|AMD:AMD|CSCO:Cisco|TMUS:T-Mobile|AZN:AstraZeneca|LIN:Linde|PEP:PepsiCo|ISRG:Intuitive Surgical|SHOP:Shopify|ADBE:Adobe|QCOM:Qualcomm|TXN:Texas Instruments|INTU:Intuit|BKNG:Booking|AMGN:Amgen|AMAT:Applied Materials|HON:Honeywell|PDD:PDD Holdings|GILD:Gilead|CMCSA:Comcast|ARM:Arm|MU:Micron|LRCX:Lam Research|PANW:Palo Alto|ADP:ADP|APP:AppLovin|KLAC:KLA|CRWD:CrowdStrike|VRTX:Vertex|SBUX:Starbucks|MELI:MercadoLibre|CEG:Constellation|ADI:Analog Devices|INTC:Intel|CDNS:Cadence|MDLZ:Mondelez|ORLY:O’Reilly|DASH:DoorDash|FTNT:Fortinet|MAR:Marriott|REGN:Regeneron|CTAS:Cintas|SNPS:Synopsys|PYPL:PayPal|MRVL:Marvell|ABNB:Airbnb|WDAY:Workday|ADSK:Autodesk|CSX:CSX|MNST:Monster|AEP:AEP|NXPI:NXP|ROP:Roper|FAST:Fastenal|PCAR:Paccar|AXON:Axon|CPRT:Copart|TTWO:Take-Two|KDP:Keurig Dr Pepper|EA:Electronic Arts|ROST:Ross Stores|BKR:Baker Hughes|XEL:Xcel|EXC:Exelon|FANG:Diamondback|CCEP:Coca-Cola Europacific|PAYX:Paychex|CHTR:Charter|TEAM:Atlassian|ODFL:Old Dominion|VRSK:Verisk|KHC:Kraft Heinz|DDOG:Datadog|GEHC:GE HealthCare|CTSH:Cognizant|LULU:Lululemon|IDXX:IDEXX|MCHP:Microchip|CSGP:CoStar|TTD:Trade Desk|ON:onsemi|ZS:Zscaler|BIIB:Biogen|DXCM:Dexcom|CDW:CDW|GFS:GlobalFoundries|WBD:Warner Bros. Discovery|MDB:MongoDB";
+const S=RAW.split("|").map(s=>{const[t,n]=s.split(":");return{t,n}});
+const $=q=>document.querySelector(q),N=S.length;
+let mode="perf",view="g",flt="all",sel=null;
+const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+function roll(){
+ const r=rng(Date.now()&0xffffff),g=()=>{let s=0;for(let i=0;i<4;i++)s+=r();return(s-2)*1.73},d=g()*.9;
+ S.forEach(s=>{s.c=Math.max(-9,Math.min(9,Math.round((d+g()*1.5*(r()<.1?2.4:1))*100)/100))});
+ for(let k=0;k<4;k++)S[Math.floor(r()*N)].c=0;
+ S.forEach(s=>{if(Math.abs(s.c)<.03)s.c=0});
+}
+const col=c=>c>0?"var(--up)":c<0?"var(--dn)":"var(--fl)";
+const fmt=c=>(c>0?"+":"")+c.toFixed(2)+"%";
+const ok=s=>flt==="all"||(flt==="up"&&s.c>0)||(flt==="dn"&&s.c<0)||(flt==="fl"&&s.c===0);
+const P=(r,a)=>{a*=Math.PI/180;return[200+r*Math.cos(a),200+r*Math.sin(a)]};
+function wedge(A,B,r1){
+ const a0=A,a1=B,r0=92,f=p=>p.map(v=>v.toFixed(1)).join(" ");
+ return`M${f(P(r0,a0))}L${f(P(r1,a0))}A${r1} ${r1} 0 0 1 ${f(P(r1,a1))}L${f(P(r0,a1))}A${r0} ${r0} 0 0 0 ${f(P(r0,a0))}Z`;
+}
+function sw(a,b,c){const w=.25+.65*Math.min(Math.abs(c)/5,1),m=(b-a)*(1-w)/2;return wedge(a+m,b-m,193)}
+function draw(){
+ const sp=a=>{if(mode!=="perf")return a;a=a.slice().sort((x,y)=>Math.abs(y.c)-Math.abs(x.c));const l=[],r=[];a.forEach((x,i)=>(i%2?l:r).push(x));return l.reverse().concat(r)};
+ const gr=sp(S.filter(s=>s.c>0)),fz=S.filter(s=>s.c===0),rd=sp(S.filter(s=>s.c<0)),fa=Math.min(fz.length*3,30),arr=[];
+ const place=(L,a,b)=>L.forEach((s,i)=>arr.push({s,a:a+(b-a)/L.length*i,b:a+(b-a)/L.length*(i+1)}));
+ place(gr,90,270-fa/2);place(fz,270-fa/2,270+fa/2);place(rd,270+fa/2,450);
+ $("#ring").innerHTML=arr.map(({s,a,b},i)=>`<path d="${sw(a,b,s.c)}" fill="${col(s.c)}" opacity="${ok(s)?1:.12}" data-t="${s.t}" class="${sel===s.t?"sel":""}" style="animation-delay:${i*6}ms"><title>${s.t} ${fmt(s.c)}</title></path><path class="h" d="${wedge(a,b,193)}" fill="transparent" data-t="${s.t}"/>`).join("");
+ const up=S.filter(s=>s.c>0).length,dn=S.filter(s=>s.c<0).length,fl=N-up-dn,pct=Math.round(up/N*100),avg=S.reduce((a,s)=>a+s.c,0)/N;
+ const mood=pct>=70?"Bull rush":pct>=55?"Green tide":pct>=45?"Tug of war":pct>=30?"Red tide":"Bear hug";
+ $("#stage").style.setProperty("--glow",pct>=55?"var(--up)":pct>=45?"var(--fl)":"var(--dn)");
+ const h=$("#hub"),s=S.find(x=>x.t===sel);
+ h.innerHTML=s?`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>`
+ :`<text x="200" y="170" font-size="15" font-weight="600" fill="var(--mu)">${mood}</text><text x="200" y="214" font-size="46" font-weight="800" fill="var(--tx)">${pct}%</text><text x="200" y="234" font-size="12" fill="var(--mu)">of stocks are up</text><text x="200" y="256" font-size="13" font-weight="600"><tspan fill="var(--up)">▲${up} </tspan><tspan fill="var(--fl)">●${fl} </tspan><tspan fill="var(--dn)">▼${dn}</tspan></text>`;
+ $("#chips").innerHTML=[["all","All",N,"var(--tx)"],["up","Up",up,"var(--up)"],["fl","Flat",fl,"var(--fl)"],["dn","Down",dn,"var(--dn)"]].map(c=>`<button data-f="${c[0]}" class="${flt===c[0]?"on":""}"><span class="dot" style="background:${c[3]}"></span>${c[1]} ${c[2]}</button>`).join("");
+ const cs=S.slice().sort((a,b)=>b.c-a.c);
+ $("#cards").innerHTML=`<div><b style="color:${col(avg)}">${fmt(avg)}</b><span>Average move</span></div><div><b>${dn?(up/dn).toFixed(1):"∞"}</b><span>Up per down stock</span></div><div><b>${(cs[0].c-cs[N-1].c).toFixed(1)} pts</b><span>Best to worst gap</span></div>`;
+ $("#ord").textContent=mode==="cap"?"Peak the big movers":"Sort by company size";
+ $("#bg").className=view==="g"?"on":"";$("#bl").className=view==="l"?"on":"";
+ const top=view==="g"?cs.slice(0,10):cs.slice(-10).reverse(),mx=Math.max(...top.map(s=>Math.abs(s.c)),.01);
+ $("#list").innerHTML=top.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/mx*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join("");
+ const fs=$("#flist .flist"),sc=fs?fs.scrollTop:0;
+ const fl2=S.filter(s=>flt==="up"?s.c>0:flt==="dn"?s.c<0:flt==="fl"?s.c===0:false).sort((a,b)=>flt==="dn"?a.c-b.c:flt==="fl"?a.t.localeCompare(b.t):b.c-a.c);
+ const fm=Math.max(...fl2.map(s=>Math.abs(s.c)),.01);
+ $("#flist").innerHTML=flt==="all"?"":`<h2>${{up:"Stocks that are up",dn:"Stocks that are down",fl:"Stocks that are flat"}[flt]} (${fl2.length})</h2><div class="flist">${fl2.length?fl2.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/fm*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join(""):'<p class="sub" style="padding:8px">None right now. Spin again.</p>'}</div>`;
+ const f2=$("#flist .flist");if(f2)f2.scrollTop=sc;
+}
+function pick(t){sel=sel===t?null:t;draw()}
+$("#ring").addEventListener("click",e=>{const p=e.target.closest("path");if(p)pick(p.dataset.t)});
+$("#ring").addEventListener("mouseover",e=>{const p=e.target.closest("path");if(p&&sel!==p.dataset.t){sel=p.dataset.t;$("#ring").querySelectorAll("path").forEach(x=>x.classList.toggle("sel",x.dataset.t===p.dataset.t));draw2()}});
+function draw2(){const s=S.find(x=>x.t===sel),h=$("#hub");h.innerHTML=`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>`}
+$("#list").addEventListener("click",e=>{const r=e.target.closest(".row");if(r)pick(r.dataset.t)});
+$("#flist").addEventListener("click",e=>{const r=e.target.closest(".row");if(r)pick(r.dataset.t)});
+$("#chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){flt=flt===b.dataset.f?"all":b.dataset.f;draw()}});
+$("#ord").onclick=()=>{mode=mode==="cap"?"perf":"cap";draw()};
+$("#bg").onclick=()=>{view="g";draw()};$("#bl").onclick=()=>{view="l";draw()};
+$("#spin").onclick=()=>{const g=$("#ring");g.style.transition="transform 1s cubic-bezier(.6,0,.2,1)";g.style.transform="rotate(360deg)";
+ setTimeout(()=>{roll();sel=null;draw()},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
+roll();draw();
+
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"nasdaq-wagon-wheel"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
