@@ -36,10 +36,6 @@ button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:7
 .hrow .t i{display:block;height:100%;background:var(--acc);opacity:.55}.hrow.sel .t i{opacity:1}.hrow.sel .y{color:var(--ink);font-weight:700}
 .hrow .v{width:64px;text-align:right}
 input[type=range]{width:100%;accent-color:var(--acc)}
-h2.tg{cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center}
-h2.tg::after{content:"▾";transition:transform .2s}
-.closed>h2.tg::after{transform:rotate(-90deg)}
-.closed>h2{margin-bottom:0}
 .pwrap{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;align-items:center}
 @media(max-width:520px){.pwrap{grid-template-columns:1fr}}
 table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
@@ -52,9 +48,21 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .dnav{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}@media(max-width:520px){.dnav{grid-template-columns:repeat(3,1fr)}}
 .dnav button{display:flex;align-items:center;justify-content:center;padding:16px 8px;border-radius:14px;color:var(--ink);font-size:13px;font-weight:600;line-height:1.2;text-align:center;border:1px solid rgba(168,85,247,.28);background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,.22),rgba(168,85,247,.07) 70%),var(--card);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:border-color .2s,background .2s,transform .2s}
 .dnav button:hover{border-color:rgba(168,85,247,.6);background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,.34),rgba(168,85,247,.12) 70%),var(--card);transform:translateY(-1px)}
-h2.tg{justify-content:flex-start}h2.tg::after{margin-left:10px}
-h2.tg .up{margin-left:auto;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
-h2.tg .up:hover{color:var(--ink);border-color:var(--acc)}
+/* Collapsible sections: a tinted header band across the top of each card is the click target. */
+section.card{padding:0;overflow:hidden}
+.sbody{padding:16px}
+h2.tg{display:flex;align-items:center;gap:10px;margin:0;padding:12px 14px 12px 16px;cursor:pointer;user-select:none;color:var(--ink);font-size:14px;letter-spacing:.06em;
+  background:linear-gradient(90deg,rgba(168,85,247,.20),rgba(168,85,247,.07) 60%,rgba(247,147,26,.07));border-bottom:1px solid var(--line);transition:background .2s}
+h2.tg:hover{background:linear-gradient(90deg,rgba(168,85,247,.30),rgba(168,85,247,.12) 60%,rgba(247,147,26,.10))}
+h2.tg:focus-visible{outline:2px solid rgba(168,85,247,.8);outline-offset:-2px}
+.closed>h2.tg{border-bottom-color:transparent}
+h2.tg .sp{flex:1}
+h2.tg .up,h2.tg .tgl{font:inherit;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 13px;border-radius:99px;
+  border:1px solid rgba(168,85,247,.35);background:rgba(168,85,247,.10);color:var(--ink);cursor:pointer;transition:background .2s,border-color .2s}
+h2.tg .up:hover,h2.tg .tgl:hover{background:rgba(168,85,247,.24);border-color:rgba(168,85,247,.7)}
+h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
+.closed>h2.tg .tgl svg{transform:rotate(-90deg)}
+@media(max-width:480px){h2.tg .up{display:none}}
 .wm-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .wm-mapwrap{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 #wmMap{position:relative;width:100%;aspect-ratio:2/1;min-height:200px}
@@ -494,12 +502,20 @@ $('dnav').onclick=function(e){
   jump(sec);
 };
 [].forEach.call(document.querySelectorAll('section.card'),function(sec){
-  var h=sec.querySelector(':scope > h2'),kids=[].filter.call(sec.children,function(e){return e!==h});
+  var h=sec.querySelector(':scope > h2'),body=document.createElement('div');body.className='sbody';
+  [].filter.call(sec.children,function(e){return e!==h}).forEach(function(k){body.appendChild(k)});sec.appendChild(body);
+  var sp=document.createElement('span');sp.className='sp';h.appendChild(sp);
   var up=document.createElement('button');up.type='button';up.className='up';up.textContent='↑ Menu';
   up.onclick=function(e){e.stopPropagation();jump($('dnav'))};h.appendChild(up);
+  var tg=document.createElement('span');tg.className='tgl';tg.setAttribute('aria-hidden','true');h.appendChild(tg);
+  var label=function(open){tg.innerHTML=(open?'Hide':'Show')+' <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l4 4 4-4"/></svg>'};
   h.className+=' tg';h.setAttribute('role','button');h.setAttribute('tabindex','0');
-  var go=function(){var c=sec.classList.toggle('closed');h.setAttribute('aria-expanded',!c);kids.forEach(function(k){k.style.display=c?'none':''})};
+  var set=function(closed){sec.classList.toggle('closed',closed);h.setAttribute('aria-expanded',!closed);body.style.display=closed?'none':'';label(!closed);
+    // maps are sized from their container, so re-measure them once they become visible
+    if(!closed)setTimeout(function(){window.dispatchEvent(new Event('resize'))},0)};
+  var go=function(){set(!sec.classList.contains('closed'))};
   h.onclick=go;h.onkeydown=function(e){if(e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();go()}};
+  set(sec.id!=='s-price'); // load with only the price section open
 });
 renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
 
