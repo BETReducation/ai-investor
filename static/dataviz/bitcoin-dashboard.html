@@ -9,9 +9,9 @@
   try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
 <style>
-:root{--bg:#f5f7fa;--card:#fff;--ink:#0b1f3a;--mut:#5b6b80;--line:#dde3ea;--acc:#f7931a;--up:#1a9d57;--dn:#d6453d}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}}
-:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}
+:root{--empty:rgba(0,0,0,.07);--bg:#f5f7fa;--card:#fff;--ink:#0b1f3a;--mut:#5b6b80;--line:#dde3ea;--acc:#f7931a;--up:#1a9d57;--dn:#d6453d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--empty:rgba(255,255,255,.09);--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}}
+:root[data-theme="dark"]{--empty:rgba(255,255,255,.09);--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mut:#93a4bb;--line:#223a5e;--up:#3ccf86;--dn:#ff6b62}
 *{box-sizing:border-box}
 body{margin:0;background:transparent;color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 main{max-width:760px;margin:0 auto;padding:4px 2px 12px}
@@ -48,13 +48,49 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .ss td:first-child,.ss th:first-child{text-align:left;font-weight:700}
 .ss .hl{outline:2px solid var(--acc);outline-offset:-2px}
 .ss tr:last-child td{background:var(--bg);font-weight:700}
-.datamaps-hoverover{display:none!important}
+#usreal .datamaps-hoverover{display:none!important}
+.dnav{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}@media(max-width:520px){.dnav{grid-template-columns:repeat(3,1fr)}}
+.dnav button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:600;line-height:1.2;text-align:center}
+.dnav button span{font-size:22px;line-height:1}
+.dnav button:hover{border-color:var(--acc);transform:translateY(-1px)}
+h2.tg{justify-content:flex-start}h2.tg::after{margin-left:10px}
+h2.tg .up{margin-left:auto;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+h2.tg .up:hover{color:var(--ink);border-color:var(--acc)}
+.wm-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.wm-mapwrap{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#wmMap{position:relative;width:100%;aspect-ratio:2/1;min-height:200px}
+#wmRz{position:absolute;right:8px;top:8px;font-size:12px;padding:4px 10px}
+.hoverinfo{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;line-height:1.4}
+.wm-leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin:10px 0}
+.wm-bar{flex:1;max-width:220px;height:10px;border-radius:6px;background:linear-gradient(90deg,rgba(247,147,26,.12),rgba(247,147,26,1))}
+.wm-row{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:700px){.wm-row{grid-template-columns:1.2fr 1fr}}
+.wm-card{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px}
+.wm-card h2,.wm-card h3{font-size:17px;margin:0 0 8px;color:var(--ink);text-transform:none;letter-spacing:0}
+.wm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.wm-stats div{background:var(--bg);border-radius:10px;padding:8px}.wm-stats b{display:block;font-size:17px;color:var(--acc)}.wm-stats span{font-size:11px;color:var(--mut)}
+.wm-card .wm-stats div{background:var(--card)}
+.wm-note{color:var(--mut);font-size:13px}
+#wmTop{margin:0;padding-left:20px}#wmTop li{margin:3px 0}#wmTop li span{color:var(--mut);float:right}
+
 </style>
 </head>
 <body>
 <main>
+<nav class="dnav" id="dnav" aria-label="Dashboard sections">
+  <button type="button" data-t="s-price"><span>💰</span>Price</button>
+  <button type="button" data-t="s-halving"><span>⏳</span>Halving</button>
+  <button type="button" data-t="s-supply"><span>⛏️</span>Supply</button>
+  <button type="button" data-t="s-returns"><span>📈</span>Returns</button>
+  <button type="button" data-t="s-house"><span>🏠</span>House</button>
+  <button type="button" data-t="s-car"><span>🚗</span>Car</button>
+  <button type="button" data-t="s-gold"><span>🥇</span>Gold</button>
+  <button type="button" data-t="s-maps"><span>🗺️</span>House maps</button>
+  <button type="button" data-t="s-acceptance"><span>🌍</span>Where it’s spent</button>
+  <button type="button" data-t="s-extras"><span>✨</span>Extras</button>
+</nav>
 
-<section class="card">
+
+<section class="card" id="s-price">
   <h2>Price</h2>
   <div class="pwrap">
     <div>
@@ -71,7 +107,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   </div>
 </section>
 
-<section class="card">
+<section class="card" id="s-halving">
   <h2>Next halving</h2>
   <div class="cd">
     <div><b id="d">0</b><span>days</span></div><div><b id="h">0</b><span>hrs</span></div>
@@ -82,7 +118,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut" style="margin-top:8px">Block reward drops from 3.125 to 1.5625 BTC. Date is an estimate – it moves with block times.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-supply">
   <h2>Coins mined &amp; left to mine</h2>
   <div class="row" style="align-items:baseline"><span class="big" style="font-size:30px" id="mined">–</span><span class="mut">BTC mined (estimate)</span></div>
   <div class="bar" style="margin:8px 0"><i id="sbar" style="width:0"></i></div>
@@ -97,14 +133,14 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut" style="margin-top:8px">Supply is estimated from the last halving at 10-minute blocks. It's the theoretical total, so lost coins aren't subtracted. Future dates are approximate (about every 4 years); the last fraction of a coin arrives around 2140.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-returns">
   <h2>Returns</h2>
   <div class="row" id="cur" style="margin-bottom:10px"></div>
   <div class="scroll"><table class="ss" id="rtable"></table></div>
   <div class="mut" style="margin-top:8px">Each column is the return measured in that currency, so exchange-rate moves are included. The toggle highlights a column and sets the 'BTC then' price. Historical points are approximate.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-house">
   <h2>Average house in Bitcoin</h2>
   <div class="row" id="mkt" style="margin-bottom:8px"></div>
   <svg id="house" viewBox="0 0 300 215" width="100%" style="max-height:260px" role="img" aria-label="Cartoon house with its price in Bitcoin"></svg>
@@ -113,7 +149,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut" style="margin-top:6px">Bars are log scale (each step ≈ 10× fewer BTC). UK = average UK house price, US = median US home price; both approximate yearly figures.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-car">
   <h2>Average new car in Bitcoin</h2>
   <div class="row" id="mkt2" style="margin-bottom:8px"></div>
   <svg id="car" viewBox="0 0 300 160" width="100%" style="max-height:220px" role="img" aria-label="Cartoon car with its price in Bitcoin"></svg>
@@ -122,7 +158,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut" style="margin-top:6px">Bars are log scale. The UK / US toggle matches the house section. Average new-car prices are approximate yearly figures.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-gold">
   <h2>Gold vs Bitcoin</h2>
   <div class="row" style="align-items:baseline"><span class="big" id="goz">–</span><span id="gdir" style="font-size:22px"></span></div>
   <div class="mut">ounces of gold you get for 1 BTC</div>
@@ -131,7 +167,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut">Ounces of gold per BTC, 2010 to now (log scale). Uses yearly average prices, with the last point at today's prices. Press Refresh price to update both the BTC and gold price.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-maps">
   <h2>House price maps in Bitcoin</h2>
   <div class="mut" style="margin-bottom:6px">🇬🇧 UK – average house price by region</div>
   <svg id="ukmap" viewBox="0 0 290 420" width="100%" style="max-height:440px" role="img" aria-label="Map of the UK with house prices in Bitcoin by region"></svg>
@@ -143,7 +179,21 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
   <div class="mut" style="margin-top:8px">Colour is relative within each map (darker = more BTC). The US map is a real state map; the UK regions are hand-drawn simplified boundaries, so their shapes are approximate. Regional prices are approximate and use the live BTC price above.</div>
 </section>
 
-<section class="card">
+<section class="card" id="s-acceptance">
+  <h2>Where Bitcoin gets spent</h2>
+  <div class="mut" style="margin-bottom:10px">The darker the orange, the denser the bitcoin use. Tap a country for details, pinch or double-click to zoom, drag to pan.</div>
+  <div class="wm-tabs" id="wmTabs"></div>
+  <div class="wm-mapwrap"><div id="wmMap"></div><button id="wmRz">Reset zoom</button></div>
+  <div class="wm-leg"><span>Low</span><div class="wm-bar"></div><span>High</span><span id="wmLm" style="margin-left:auto"></span></div>
+  <div class="wm-row">
+    <div class="wm-card" id="wmInfo"></div>
+    <div class="wm-card"><h3 id="wmTt">Top 10</h3><ol id="wmTop"></ol></div>
+  </div>
+  <div class="wm-stats" style="margin-top:12px" id="wmGlob"></div>
+  <div class="mut" id="wmSrc" style="margin-top:10px">Indicative estimates only: merchant counts are rounded orders of magnitude based on public map projects (e.g. BTC Map, Coinmap), and the usage score is a rough illustrative blend of retail acceptance and everyday use. Grey countries have no data yet.</div>
+</section>
+
+<section class="card" id="s-extras">
   <h2>Extras</h2>
   <div class="grid">
     <div class="stat"><span class="mut">Sats per <span class="c1">$</span>1</span><b id="sats">–</b></div>
@@ -157,7 +207,7 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.usa.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.all.min.js"></script>
 <script>
 (function(){
 var CUR={USD:{s:'$',r:1},GBP:{s:'£',r:.75},EUR:{s:'€',r:.855},JPY:{s:'¥',r:150}}; // units per USD (approx, now)
@@ -427,11 +477,29 @@ function renderExtras(){
 }
 function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderCar();renderGold();renderMaps();renderExtras()}
 
+// Jump to a section: open it if collapsed, then scroll the page (the dashboard sits in an iframe, so scroll the parent).
+function jump(el,offset){
+  try{
+    if(window.frameElement&&parent!==window){
+      var y=el.getBoundingClientRect().top+window.pageYOffset+window.frameElement.getBoundingClientRect().top+parent.pageYOffset-(offset||90);
+      parent.scrollTo({top:y,behavior:'smooth'});return;
+    }
+  }catch(e){}
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('dnav').onclick=function(e){
+  var b=e.target.closest('button');if(!b)return;
+  var sec=$(b.dataset.t);if(!sec)return;
+  if(sec.classList.contains('closed'))sec.querySelector(':scope > h2').click();
+  jump(sec);
+};
 [].forEach.call(document.querySelectorAll('section.card'),function(sec){
   var h=sec.querySelector(':scope > h2'),kids=[].filter.call(sec.children,function(e){return e!==h});
+  var up=document.createElement('button');up.type='button';up.className='up';up.textContent='↑ Menu';
+  up.onclick=function(e){e.stopPropagation();jump($('dnav'))};h.appendChild(up);
   h.className+=' tg';h.setAttribute('role','button');h.setAttribute('tabindex','0');
   var go=function(){var c=sec.classList.toggle('closed');h.setAttribute('aria-expanded',!c);kids.forEach(function(k){k.style.display=c?'none':''})};
-  h.onclick=go;h.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}};
+  h.onclick=go;h.onkeydown=function(e){if(e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();go()}};
 });
 renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
 
@@ -439,6 +507,143 @@ renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bitcoin-dashboard"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
 postHeight();
+})();
+</script>
+<script>
+// Where Bitcoin gets spent: country map. Own scope so its names can't clash with the dashboard script above.
+(function(){
+// iso3,name,merchants,popM,score,note
+// Optional live feed (daily JSON built from BTC Map); falls back to the indicative figures below when absent.
+var DATA_URL="bitcoin-merchants.json";
+var D=[
+["CAN","Canada",1800,40,62,"Bitcoin ATMs are everywhere; first BTC ETFs launched here."],
+["USA","United States",9000,335,66,"Most merchants in absolute terms, mostly via payment processors."],
+["MEX","Mexico",700,129,48,"Big remittance corridor with the US."],
+["GTM","Guatemala",200,18,30,"Lake Atitlán towns lean heavily on bitcoin."],
+["SLV","El Salvador",6000,6.3,72,"Legal tender 2021–2025; densest bitcoin shops per person on earth."],
+["CRI","Costa Rica",350,5.2,38,"Beach-town economy accepts BTC widely."],
+["PAN","Panama",200,4.5,34,""],
+["COL","Colombia",300,52,44,"Growing remittance and P2P use."],
+["VEN","Venezuela",600,28,64,"Used as an inflation hedge and for everyday payments."],
+["PER","Peru",150,34,32,""],
+["BRA","Brazil",2500,216,60,"Pix-linked Lightning payments are booming."],
+["CHL","Chile",300,19.5,36,""],
+["ARG","Argentina",1200,46,63,"High inflation pushes people toward BTC and stablecoins."],
+["ISL","Iceland",60,0.4,28,"Cheap green energy made it a mining hub."],
+["IRL","Ireland",400,5.3,35,""],
+["GBR","United Kingdom",3500,67,58,"Strong London scene, plenty of bitcoin meetups."],
+["NOR","Norway",400,5.5,40,"Tiny population, high crypto uptake."],
+["SWE","Sweden",500,10.5,42,"A near-cashless society makes digital payments easy."],
+["FIN","Finland",400,5.6,38,""],
+["DNK","Denmark",300,5.9,38,""],
+["NLD","Netherlands",1800,17.9,55,"Dense merchant coverage in Amsterdam."],
+["DEU","Germany",4500,84,62,"Most merchants in Europe; BTC held over a year is tax-free."],
+["POL","Poland",500,37,46,""],
+["RUS","Russia",300,144,45,"Mostly P2P and mining."],
+["UKR","Ukraine",400,38,66,"Crypto donations and daily use during the war."],
+["FRA","France",2500,68,52,""],
+["CHE","Switzerland",1500,8.8,60,"Zug’s “Crypto Valley” lets you pay local taxes in BTC."],
+["CZE","Czechia",900,10.8,54,"Prague is one of the most bitcoin-friendly cities in Europe."],
+["AUT","Austria",900,9.1,50,""],
+["SVK","Slovakia",200,5.4,42,""],
+["ROU","Romania",250,19,44,""],
+["PRT","Portugal",700,10.4,50,"Personal crypto gains were historically untaxed."],
+["ESP","Spain",1500,48,52,""],
+["ITA","Italy",1200,59,46,""],
+["HRV","Croatia",200,3.9,40,""],
+["HUN","Hungary",200,9.6,40,""],
+["BGR","Bulgaria",200,6.4,42,""],
+["TUR","Turkey",600,85,66,"Lira weakness drives strong retail demand for BTC."],
+["GRC","Greece",300,10.4,40,""],
+["ISR","Israel",400,9.8,48,""],
+["MAR","Morocco",100,37,32,""],
+["EGY","Egypt",50,112,30,""],
+["SAU","Saudi Arabia",50,36,28,""],
+["ARE","UAE",600,9.5,56,"Dubai is a global crypto-licensing hub."],
+["PAK","Pakistan",100,240,52,"Huge retail adoption, low merchant acceptance."],
+["GHA","Ghana",150,34,46,""],
+["NGA","Nigeria",400,223,78,"One of the world’s top P2P bitcoin markets."],
+["KEN","Kenya",300,55,58,"M-Pesa culture feeds mobile crypto use."],
+["ZAF","South Africa",800,60,56,"Strong Lightning merchant network."],
+["IND","India",200,1430,60,"Huge user base, little shop-level acceptance."],
+["CHN","China",20,1410,20,"Banned for trading, mining largely pushed out."],
+["KOR","South Korea",400,51.7,58,""],
+["JPN","Japan",1500,124,50,"Bitcoin has been a legal payment method since 2017."],
+["TWN","Taiwan",300,23.4,44,""],
+["THA","Thailand",1200,71.8,56,"Koh Phangan and Chiang Mai are digital-nomad bitcoin hotspots."],
+["VNM","Vietnam",400,100,72,"One of the highest crypto-ownership rates in Asia."],
+["PHL","Philippines",500,117,62,"Remittances and play-to-earn drove adoption."],
+["MYS","Malaysia",300,34,46,""],
+["IDN","Indonesia",600,277,60,"Bali has a visible bitcoin merchant scene."],
+["AUS","Australia",1800,26,56,"Bitcoin ATMs are widespread."],
+["NZL","New Zealand",500,5.2,50,""]
+];
+var by={};D.forEach(function(d){by[d[0]]=d});
+var M={
+m:{label:"Merchants",v:function(d){return d[2]},log:1,fmt:function(x){return x==null?"–":x.toLocaleString()}},
+p:{label:"Per million people",v:function(d){return d[3]?d[2]/d[3]:null},log:1,fmt:function(x){return x==null?"–":x>=10?Math.round(x).toLocaleString():x.toFixed(1)}},
+s:{label:"Usage score",v:function(d){return d[4]},log:0,fmt:function(x){return x==null?"–":x+"/100"}}
+};
+var cur="m",sel="SLV",map,zm,live=null;
+function g(id){return document.getElementById(id)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function applyLive(j){
+if(!j||!j.countries)throw 0;
+live=j;
+Object.keys(j.countries).forEach(function(iso){var c=j.countries[iso],d=by[iso];
+if(!d){d=[iso,iso,0,null,null,""];D.push(d);by[iso]=d}
+d[2]=c.m;d.ln=c.ln;d.top=c.top});
+D.forEach(function(d){if(!(d[0] in j.countries))d[2]=0});
+M.l={label:"⚡ Lightning share",log:0,v:function(d){return d.ln!=null&&d[2]>=20?100*d.ln/d[2]:null},fmt:function(x){return x==null?"–":Math.round(x)+"%"}};
+var dt=new Date(j.generated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+g("wmSrc").textContent="Live merchant counts from BTC Map (© OpenStreetMap contributors), updated "+dt+". Population and usage score are static, indicative figures; Lightning share needs 20+ shops.";
+}
+function ext(k){var a=D.map(M[k].v).filter(function(x){return x!=null});return[Math.min.apply(0,a),Math.max.apply(0,a)]}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function col(d){var x=M[cur].v(d);if(x==null||x<=0)return css("--empty");
+var e=ext(cur),t=M[cur].log?Math.log(x+1)/Math.log(e[1]+1):(x-e[0])/((e[1]-e[0])||1);
+return"rgba(247,147,26,"+(.12+.88*Math.pow(t,1.1)).toFixed(2)+")"}
+function pop(geo,x){if(!x||!x.d)return'<div class="hoverinfo"><b>'+esc(geo.properties.name)+'</b><br>No data yet</div>';var d=x.d;
+return'<div class="hoverinfo"><b>'+esc(d[1])+'</b><br>'+d[2].toLocaleString()+' merchants<br>'+M.p.fmt(M.p.v(d))+' per million</div>'}
+function build(){
+var el=g("wmMap");el.innerHTML="";
+if(!window.Datamap){el.textContent="Map library failed to load.";return}
+var data={};D.forEach(function(d){data[d[0]]={fillColor:col(d),d:d}});
+map=new Datamap({element:el,scope:"world",responsive:true,fills:{defaultFill:css("--empty")},data:data,
+geographyConfig:{borderColor:css("--line"),borderWidth:.5,highlightFillColor:"#ffd08a",highlightBorderColor:css("--ink"),highlightBorderWidth:1,popupTemplate:pop},
+done:function(ds){
+ds.svg.selectAll(".datamaps-subunit").each(function(gm){var d=by[gm.id];if(d&&d[1]===d[0])d[1]=gm.properties.name});
+ds.svg.selectAll(".datamaps-subunit").on("click",function(gm){if(by[gm.id]){sel=gm.id;info();mark()}});
+// No mouse-wheel zoom: the map sits inside a scrolling page, so the wheel has to keep scrolling the page.
+zm=d3.behavior.zoom().scaleExtent([1,8]).on("zoom",function(){ds.svg.selectAll("g").attr("transform","translate("+d3.event.translate+")scale("+d3.event.scale+")")});
+ds.svg.call(zm).on("wheel.zoom",null).on("mousewheel.zoom",null).on("DOMMouseScroll.zoom",null)}});
+draw()}
+function mark(){if(!map)return;map.svg.selectAll(".datamaps-subunit").style("stroke",css("--line")).style("stroke-width","0.5px");
+map.svg.select(".datamaps-subunit."+sel).style("stroke",css("--ink")).style("stroke-width","1.8px")}
+function draw(){
+if(map)D.forEach(function(d){map.svg.select(".datamaps-subunit."+d[0]).style("fill",col(d))});
+mark();
+g("wmLm").textContent=M[cur].label;
+var s=D.filter(function(d){var x=M[cur].v(d);return x!=null&&x>0}).sort(function(a,b){return M[cur].v(b)-M[cur].v(a)}).slice(0,10);
+g("wmTt").textContent="Top 10: "+M[cur].label.toLowerCase();
+g("wmTop").innerHTML=s.map(function(d){return"<li>"+esc(d[1])+"<span>"+M[cur].fmt(M[cur].v(d))+"</span></li>"}).join("");
+info()}
+function info(){var d=by[sel];
+var rk=function(f){var a=D.filter(function(x){return f(x)!=null}).sort(function(a,b){return f(b)-f(a)}),i=a.indexOf(d);return i<0?"–":"#"+(i+1)};
+var ex="";
+if(live&&d.ln!=null&&d[2])ex+="⚡ "+Math.round(100*d.ln/d[2])+"% accept Lightning. ";
+if(d.top&&d.top.length)ex+="Most common: "+d.top.map(function(t){return esc(t[0])+" ("+t[1]+")"}).join(", ")+". ";
+g("wmInfo").innerHTML='<h3>'+esc(d[1])+'</h3><div class="wm-stats"><div><b>'+d[2].toLocaleString()+'</b><span>Merchants ('+rk(function(x){return x[2]})+')</span></div><div><b>'+M.p.fmt(M.p.v(d))+'</b><span>Per million people ('+rk(M.p.v)+')</span></div><div><b>'+M.s.fmt(d[4])+'</b><span>Usage score ('+rk(function(x){return x[4]})+')</span></div></div><div class="wm-note">'+(ex?ex+"<br>":"")+esc(d[5]||"No standout story yet, but adoption here is steadily growing.")+'</div>'}
+function glob(){var tot=D.reduce(function(a,d){return a+d[2]},0),b=D.filter(function(d){return d[3]&&d[2]>0}).sort(function(a,b){return M.p.v(b)-M.p.v(a)})[0];
+g("wmGlob").innerHTML='<div><b>'+tot.toLocaleString()+'</b><span>Mapped merchants</span></div><div><b>'+esc(b[1])+'</b><span>Densest per person</span></div><div><b>'+D.filter(function(d){return d[2]>0}).length+'</b><span>Countries with shops</span></div>'}
+function tabs(){var tb=g("wmTabs");tb.innerHTML="";
+Object.keys(M).forEach(function(k){var bt=document.createElement("button");bt.textContent=M[k].label;bt.className=k==cur?"on":"";bt.onclick=function(){cur=k;[].forEach.call(tb.children,function(c){c.className=""});bt.className="on";draw()};tb.appendChild(bt)})}
+g("wmRz").onclick=function(){if(zm&&map){zm.scale(1).translate([0,0]);zm.event(map.svg)}};
+window.addEventListener("resize",function(){if(map)map.resize()});
+// Rebuild with the right colours whenever the light/dark theme flips (system setting or the site toggle).
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",build)}catch(e){}
+try{new MutationObserver(build).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
+fetch(DATA_URL,{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(applyLive).catch(function(){}).then(function(){tabs();glob();build()});
 })();
 </script>
 </body>
