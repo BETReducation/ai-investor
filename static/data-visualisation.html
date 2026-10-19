@@ -32,36 +32,27 @@
 .content-section { padding: 20px 5% 20px; }
 .content-inner { max-width: 1100px; margin: 0 auto; }
 
-/* VISUALISATION ROWS */
-.list-loading { font-size: 14px; color: var(--muted); text-align: center; padding: 60px 20px; }
-.viz-row { display: flex; gap: 40px; align-items: center; justify-content: center; padding: 48px 0; border-bottom: 1px solid var(--border); }
-.viz-row:last-child { border-bottom: none; }
-.viz-row.reverse { flex-direction: row-reverse; }
-.viz-image { flex: 0 0 33%; max-width: 33%; }
-.viz-image .placeholder-box {
-  width: 100%; aspect-ratio: 4 / 3; border-radius: 16px; background: var(--bg3);
-  border: 1px dashed var(--border2); display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 8px; color: var(--muted); overflow: hidden;
+/* VISUALISATION GRID */
+.list-loading { font-size: 14px; color: var(--muted); text-align: center; padding: 60px 20px; grid-column: 1 / -1; }
+.viz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; padding: 24px 0 8px; }
+.viz-card { display: block; text-decoration: none; color: inherit; border-radius: 16px; }
+.viz-card:focus-visible { outline: 2px solid #a855f7; outline-offset: 4px; }
+.viz-thumb { position: relative; aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: var(--bg3); border: 1px solid var(--border2); transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s; }
+.viz-card:hover .viz-thumb, .viz-card:focus-visible .viz-thumb { transform: translateY(-3px); border-color: #a855f7; box-shadow: 0 10px 28px rgba(168,85,247,0.18); }
+.viz-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.viz-ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 44px; color: rgba(255,255,255,0.85); }
+.viz-over { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 16px; background: linear-gradient(180deg, rgba(8,10,22,0.35), rgba(8,10,22,0.92)); color: #eef0fa; font-size: 14px; line-height: 1.55; opacity: 0; transition: opacity 0.25s; }
+.viz-card:hover .viz-over, .viz-card:focus-visible .viz-over { opacity: 1; }
+.viz-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: -0.02em; color: var(--text); margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.viz-name::after { content: '→'; color: #a855f7; opacity: 0; transform: translateX(-4px); transition: all 0.2s; }
+.viz-card:hover .viz-name::after, .viz-card:focus-visible .viz-name::after { opacity: 1; transform: none; }
+.viz-sub { display: none; font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+@media (hover: none) {
+  .viz-over { display: none; }
+  .viz-sub { display: block; }
+  .viz-name::after { opacity: 1; transform: none; }
 }
-.viz-image .placeholder-box img { width: 100%; height: 100%; object-fit: cover; }
-.placeholder-icon { font-size: 32px; opacity: 0.6; }
-.placeholder-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7; }
-.viz-text { flex: 0 1 520px; } /* capped, not stretched, so image and text sit together in both row directions */
-.viz-kicker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #a855f7; margin-bottom: 10px; }
-.viz-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(22px, 2.6vw, 30px); color: var(--text); margin-bottom: 12px; letter-spacing: -0.02em; }
-.viz-desc { font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
-.viz-cta { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 22px; }
-.viz-btn {
-  display: inline-flex; align-items: center; gap: 8px; background: #a855f7; color: #03130f;
-  text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 22px; border-radius: 8px;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.viz-btn:hover { opacity: 0.88; transform: translateY(-1px); }
-@media (max-width: 800px) {
-  .viz-row, .viz-row.reverse { flex-direction: column; }
-  .viz-image, .viz-image { flex: 0 0 auto; max-width: 100%; }
-  .viz-text { flex: 0 0 auto; }
-}
+@media (max-width: 560px) { .viz-grid { grid-template-columns: 1fr; } }
 
 footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px; }
 .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
@@ -83,13 +74,13 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; margin-top: 40px
   <div style="position:relative;z-index:2;animation:fadeUp 0.7s 0.1s ease both;">
     <div class="section-badge">Platform Tools</div>
     <h1 class="hero-title">Data <span class="accent">Visualisation</span></h1>
-    <p class="hero-sub">A growing library of interactive charts and dashboards that turn raw market data into clear, actionable insight — maintained and updated regularly.</p>
+    <p class="hero-sub">A growing library of interactive charts and dashboards that turn raw market data into clear, at-a-glance insight — maintained and updated regularly.</p>
   </div>
 </div>
 
 <section class="content-section">
   <div class="content-inner">
-    <div class="viz-list" id="vizList">
+    <div class="viz-grid" id="vizList">
       <div class="list-loading">Loading visualisations…</div>
     </div>
   </div>
@@ -123,25 +114,23 @@ async function loadPages() {
   }
 }
 
-function renderPageRow(page, index) {
-  const imageInner = page.image_url
-    ? `<img src="${esc(page.image_url)}" alt="">`
-    : `<div class="placeholder-label">No image yet</div>`;
+const PH_ICONS = ['📈', '🗺️', '🧭', '📊', '🔮', '🛰️', '⚖️', '🧮'];
+function placeholder(slug) {
+  let h = 0;
+  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const hue = 235 + (h % 55); // blues through purples, in line with the page's accent
+  return `<div class="viz-ph" style="background:linear-gradient(135deg,hsl(${hue} 60% 38%),hsl(${hue + 25} 65% 24%))">${PH_ICONS[h % PH_ICONS.length]}</div>`;
+}
+
+function renderPageRow(page) {
+  const thumb = page.image_url ? `<img src="${esc(page.image_url)}" alt="" loading="lazy">` : placeholder(page.slug);
   const desc = page.description ? esc(page.description) : 'Open the full visualisation to explore it.';
   return `
-    <div class="viz-row reveal${index % 2 === 1 ? ' reverse' : ''}">
-      <div class="viz-image">
-        <div class="placeholder-box">${imageInner}</div>
-      </div>
-      <div class="viz-text">
-        <div class="viz-kicker">Data Visualisation</div>
-        <div class="viz-title">${esc(page.label)}</div>
-        <div class="viz-desc">${desc}</div>
-        <a href="/tools/data-visualisation/${esc(page.slug)}" class="viz-btn">View Full Visualisation
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </a>
-      </div>
-    </div>
+    <a class="viz-card reveal" href="/tools/data-visualisation/${esc(page.slug)}">
+      <div class="viz-thumb">${thumb}<div class="viz-over">${desc}</div></div>
+      <div class="viz-name">${esc(page.label)}</div>
+      <div class="viz-sub">${desc}</div>
+    </a>
   `;
 }
 
