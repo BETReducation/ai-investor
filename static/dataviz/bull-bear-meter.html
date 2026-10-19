@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bull vs Bear Meter</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--text:#0b1f3a;--muted:#5b6b80;--line:#dde3ea;--bear:#e5484d;--bull:#2fb67c;--amber:#e9a23b;--gold:#d4a84b;--teal:#1aa6a6;--hero1:#0f2747;--hero2:#1b3f6b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--text:#eef2f7;--muted:#93a4bb;--line:#223a5e;--hero1:#0b1c33;--hero2:#16365e}}
+:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--text:#eef2f7;--muted:#93a4bb;--line:#223a5e;--hero1:#0b1c33;--hero2:#16365e}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:4px 2px 12px}
+.hero{background:linear-gradient(160deg,var(--hero1),var(--hero2));border-radius:20px;padding:18px 14px 16px;color:#fff;border:1px solid rgba(212,168,75,.35)}
+.win{transform:scale(1.08);filter:drop-shadow(0 0 14px rgba(255,255,255,.35))}
+.lose{transform:scale(.9);opacity:.6}
+.meter{position:relative;margin:34px 6px 4px}
+.bar{height:30px;border-radius:15px;background:linear-gradient(90deg,#c62f3a 0%,#e5484d 20%,#e9a23b 40%,#e8d35a 50%,#8fd16a 62%,#2fb67c 80%,#16945f 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.ticks{position:absolute;inset:0;display:flex;pointer-events:none}
+.ticks i{flex:1;border-right:2px solid rgba(15,39,71,.35)}.ticks i:last-child{border:0}
+.needle{position:absolute;top:-8px;left:50%;width:0;transition:left 1.4s cubic-bezier(.2,.9,.3,1.1)}
+.needle::before{content:"";position:absolute;left:-3px;top:0;width:6px;height:46px;border-radius:3px;background:#fff;box-shadow:0 0 0 2px #0f2747}
+.needle span{position:absolute;left:0;top:-30px;transform:translateX(-50%);background:var(--gold);color:#0f2747;font-weight:800;border-radius:12px;padding:1px 10px;font-size:1rem;white-space:nowrap}
+.labels{display:flex;justify-content:space-between;font-size:.68rem;margin-top:8px;opacity:.9;text-transform:uppercase;letter-spacing:.03em}
+.labels span{flex:1;text-align:center}.labels span:first-child{text-align:left}.labels span:last-child{text-align:right}
+.verdict{text-align:center;margin-top:12px}
+.verdict h2{margin:0;font-size:clamp(1.2rem,5vw,1.7rem);color:var(--gold)}
+.verdict p{margin:4px 0 0;font-size:.92rem;opacity:.9}
+.tally{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.pill{border-radius:20px;padding:3px 12px;font-size:.8rem;font-weight:700;color:#fff}
+.pill.bu{background:var(--bull)}.pill.ne{background:var(--amber)}.pill.be{background:var(--bear)}
+h3{margin:22px 0 10px;font-size:1.15rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card .top{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.card h4{margin:0;font-size:.95rem}
+.chip{font-size:.7rem;font-weight:800;padding:2px 9px;border-radius:10px;color:#fff;white-space:nowrap}
+.chip.bu{background:var(--bull)}.chip.ne{background:var(--amber)}.chip.be{background:var(--bear)}
+.val{font-size:1.5rem;font-weight:800;margin:6px 0 8px}
+.mini{height:8px;border-radius:4px;background:linear-gradient(90deg,var(--bear),var(--amber),var(--bull));position:relative}
+.mini i{position:absolute;top:-4px;width:6px;height:16px;border-radius:3px;background:var(--text);transform:translateX(-50%)}
+.why{color:var(--muted);font-size:.82rem;margin:10px 0 0}
+.note{color:var(--muted);font-size:.78rem;margin-top:18px}
+.sample{background:rgba(233,162,59,.15);border:1px dashed var(--amber);border-radius:10px;padding:6px 10px;font-size:.8rem;margin-top:12px}
+.names{display:flex;justify-content:space-between;padding:6px 14px 0}
+.names b{font-size:clamp(.9rem,3.4vw,1.15rem);letter-spacing:.08em;text-transform:uppercase}
+.nb{color:#ff8b8f}.nu{color:#6be3ae}
+.stage{display:grid;grid-template-columns:42fr 58fr;gap:2px;align-items:end;padding:8px 4px 0;background:radial-gradient(ellipse at 50% 85%,rgba(232,220,196,.28),transparent 65%)}
+.fighter{transition:transform .6s,opacity .6s,filter .6s}
+#bearBox{transform-origin:20% 100%}#bullBox{transform-origin:80% 100%}
+.fighter img{display:block;width:100%;height:auto;filter:drop-shadow(0 14px 14px rgba(0,0,0,.45))}
+.fighter img.flip{transform:scaleX(-1)}
+.fighter .emo{text-align:center;font-size:clamp(4rem,16vw,8rem);line-height:1.1}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p style="color:var(--muted);margin:0 0 14px;font-size:.95rem">Is the stock market in bull or bear territory? We blend 8 market health signals into one reading.</p>
+
+<section class="hero">
+  <div class="stage">
+    <div class="fighter" id="bearBox"><img src="bear.webp" alt="Grizzly bear" width="720" height="654" data-emo="🐻"></div>
+    <div class="fighter" id="bullBox"><img class="flip" src="bull.webp" alt="Bronze charging bull" width="820" height="574" data-emo="🐂"></div>
+  </div>
+  <div class="names"><b class="nb">Bear</b><b class="nu">Bull</b></div>
+
+  <div class="meter">
+    <div class="bar"></div><div class="ticks"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="needle" id="needle"><span id="score">50</span></div>
+    <div class="labels"><span>Strong bear</span><span>Bear</span><span>Neutral</span><span>Bull</span><span>Strong bull</span></div>
+  </div>
+
+  <div class="verdict">
+    <h2 id="verdict">Loading…</h2>
+    <p id="blurb"></p>
+    <div class="tally" id="tally"></div>
+  </div>
+</section>
+
+<div class="sample" id="stamp"></div>
+
+<h3>What’s driving the reading</h3>
+<div class="grid" id="grid"></div>
+
+<p class="note">How it works: each signal is scored 0 (fully bearish) to 100 (fully bullish), then averaged with equal weight. A 20% fall from a recent high is the traditional definition of a bear market. This is for education only and isn’t financial advice. Past signals don’t predict future returns.</p>
+</div>
+
+<script>
+// ===== EDIT THESE NUMBERS TO UPDATE THE PAGE =====
+const AS_OF = "Sample figures, replace before publishing";
+const IS_SAMPLE = true;
+const DATA = {
+  pctAbove200: 6.2,   // S&P 500 % above its 200-day average
+  spread50v200: 3.4,  // 50-day average % above/below 200-day
+  drawdown: -2.1,     // % below the all-time high (negative number)
+  vix: 17.4,          // VIX level
+  breadth: 63,        // % of S&P 500 stocks above their 200-day average
+  highsShare: 74,     // % of new 52-week highs vs (highs + lows)
+  putCall: 0.84,      // CBOE equity put/call ratio (10-day average)
+  earnings: 11.5      // S&P 500 earnings growth, year on year %
+};
+// ==================================================
+
+const clamp = n => Math.max(0, Math.min(100, n));
+const lin = (v, lo, hi) => clamp((v - lo) / (hi - lo) * 100);
+const sg = v => (v >= 0 ? "+" : "") + v;
+const IND = [
+  {n:"Price vs 200-day average", v:sg(DATA.pctAbove200)+"%", s:lin(DATA.pctAbove200,-10,10), w:"Bull markets live above the long-term trend line. Slipping below it is an early warning."},
+  {n:"50-day vs 200-day average", v:sg(DATA.spread50v200)+"%", s:lin(DATA.spread50v200,-5,5), w:"50 above 200 is a “golden cross” (bullish). 50 below 200 is a “death cross” (bearish)."},
+  {n:"Distance from all-time high", v:DATA.drawdown+"%", s:lin(DATA.drawdown,-20,0), w:"Down 10% is a correction. Down 20% or more is officially a bear market."},
+  {n:"VIX (fear index)", v:String(DATA.vix), s:100-lin(DATA.vix,12,35), w:"Low VIX means calm, confident markets. Spikes above 30 signal panic."},
+  {n:"Market breadth", v:DATA.breadth+"%", s:lin(DATA.breadth,20,80), w:"Share of S&P 500 stocks above their 200-day average. A healthy rally is broad."},
+  {n:"New highs vs new lows", v:DATA.highsShare+"% highs", s:lin(DATA.highsShare,10,90), w:"When more stocks hit 52-week highs than lows, buyers are in control."},
+  {n:"Put/call ratio", v:DATA.putCall.toFixed(2), s:100-lin(DATA.putCall,0.6,1.2), w:"More puts (bets on falls) than calls pushes it higher. Above 1.0 shows fear."},
+  {n:"Earnings growth (YoY)", v:sg(DATA.earnings)+"%", s:lin(DATA.earnings,-10,20), w:"Rising profits support higher prices. Falling profits usually come with bear markets."}
+];
+const sig = s => s>=60?["bu","Bullish"]:s<=40?["be","Bearish"]:["ne","Neutral"];
+
+const total = Math.round(IND.reduce((a,i)=>a+i.s,0)/IND.length);
+const tiers = [
+  [20,"Bear market territory","Most signals are flashing red. Sellers are firmly in charge."],
+  [40,"Leaning bearish","Pressure is building. Several warning signs are showing."],
+  [60,"Neutral and choppy","The bulls and bears are evenly matched right now."],
+  [80,"Leaning bullish","Trend, breadth and sentiment are mostly supportive."],
+  [101,"Bull market","Nearly every signal points up. Buyers are firmly in charge."]
+];
+const t = tiers.find(x=>total<x[0]);
+document.getElementById("verdict").textContent = t[1];
+document.getElementById("blurb").textContent = t[2];
+document.getElementById("score").textContent = total;
+document.getElementById("stamp").textContent = (IS_SAMPLE?"⚠️ ":"Data as of: ") + AS_OF;
+if(!IS_SAMPLE) document.getElementById("stamp").className="note";
+
+const counts = {bu:0,ne:0,be:0};
+document.getElementById("grid").innerHTML = IND.map(i=>{
+  const [c,l] = sig(i.s); counts[c]++;
+  return `<div class="card"><div class="top"><h4>${i.n}</h4><span class="chip ${c}">${l}</span></div>
+  <div class="val">${i.v}</div><div class="mini"><i style="left:${Math.max(3,Math.min(97,i.s))}%"></i></div>
+  <p class="why">${i.w}</p></div>`;
+}).join("");
+document.getElementById("tally").innerHTML =
+  `<span class="pill be">${counts.be} bearish</span><span class="pill ne">${counts.ne} neutral</span><span class="pill bu">${counts.bu} bullish</span>`;
+
+const bear = document.getElementById("bearBox"), bull = document.getElementById("bullBox");
+if(total>55){bull.classList.add("win");bear.classList.add("lose")}
+else if(total<45){bear.classList.add("win");bull.classList.add("lose")}
+setTimeout(()=>{document.getElementById("needle").style.left = Math.max(4,Math.min(96,total))+"%"},250);
+
+// If an animal image is missing, show an emoji instead of a broken icon.
+document.querySelectorAll(".fighter img").forEach(img=>{
+  img.addEventListener("error",()=>{const d=document.createElement("div");d.className="emo";d.textContent=img.dataset.emo;img.replaceWith(d)});
+});
+
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bull-bear-meter"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
