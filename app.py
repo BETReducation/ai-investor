@@ -551,6 +551,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'winners-league'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bull-bear-meter'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'nasdaq-wagon-wheel'")
+        for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
+            cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
         # Classify the seeded pages once, when the column is first added; after that the
         # Studio owns each page's kind.
         if kind_is_new:
@@ -1518,6 +1520,17 @@ _SEED_DATAVIZ_KINDS = {
     "dividend-calculator": "tool", "stock-donut": "tool", "freedom-clock": "tool", "price-value-tracker": "tool",
 }
 DATAVIZ_KINDS = ("tool", "viz", "both")
+# One-line blurbs shown on hover in the Data Visualisation hub. Only filled in where a
+# page has no description yet, so anything edited in the Studio is never overwritten.
+_SEED_DATAVIZ_DESCRIPTIONS = {
+    "global-heat-map": "Every major stock index worldwide, coloured by today's move.",
+    "market-orbs": "Markets and assets as bubbles in their own pools: gainers float, decliners sink.",
+    "gold-silver-ratio": "How many ounces of silver it takes to match one ounce of gold, and how that ratio has moved.",
+    "bitcoin-dashboard": "Bitcoin's price, halving countdown, coins left to mine, returns and what a house or car costs in BTC.",
+    "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
+    "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
+    "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
+}
 
 _SEED_DATAVIZ_PAGES = [
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True, "kind": "viz"},
@@ -1572,7 +1585,7 @@ def dataviz_pages_list() -> list:
             ]
     data = _load_dataviz_pages_json()
     pages = sorted(data["pages"], key=lambda p: (0 if p.get("has_live_widget") else 1, p.get("created_at") or ""))
-    return [{**p, "kind": p.get("kind") or _SEED_DATAVIZ_KINDS.get(p["slug"], "viz"), "has_live_widget": bool(p.get("has_live_widget")), "has_header_image": bool(p.get("header_image_filename"))} for p in pages]
+    return [{**p, "description": p.get("description") or _SEED_DATAVIZ_DESCRIPTIONS.get(p["slug"]), "kind": p.get("kind") or _SEED_DATAVIZ_KINDS.get(p["slug"], "viz"), "has_live_widget": bool(p.get("has_live_widget")), "has_header_image": bool(p.get("header_image_filename"))} for p in pages]
 
 
 def dataviz_page_get_header_image(slug: str):
