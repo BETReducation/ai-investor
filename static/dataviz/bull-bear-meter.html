@@ -57,9 +57,14 @@ h3{margin:22px 0 10px;font-size:1.15rem}
 .fighter .emo{text-align:center;font-size:clamp(4rem,16vw,8rem);line-height:1.1}
 .pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button,.pick select{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:6px 14px;cursor:pointer}
+.chips button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:6px 14px;cursor:pointer}
 .chips button.on{background:var(--gold);border-color:var(--gold);color:#0f2747;font-weight:700}
-.pick select{max-width:100%}
+.browse{margin:0 0 12px}.browse .lbl{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 6px}
+.chips button.grp{border-style:dashed}.chips button.grp.open{border-style:solid;border-color:var(--gold)}.chips button.grp.has{border-color:var(--gold)}
+.panel{margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--card);display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow-y:auto}
+.panel[hidden]{display:none}
+.panel button{font:inherit;font-size:.8rem;border:1px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:4px 11px;cursor:pointer}
+.panel button.on{background:var(--gold);border-color:var(--gold);color:#0f2747;font-weight:700}
 #stamp.err{border-color:var(--bear);background:rgba(229,72,77,.12)}
 .hero.busy{opacity:.55;transition:opacity .2s}
 </style>
@@ -69,7 +74,11 @@ h3{margin:22px 0 10px;font-size:1.15rem}
 <p style="color:var(--muted);margin:0 0 12px;font-size:.95rem">Is a market in bull or bear territory? Pick one and we blend its market health signals into a single reading.</p>
 <div class="pick">
   <div class="chips" id="chips"></div>
-  <select id="more" aria-label="More markets"><option value="">More markets…</option></select>
+</div>
+<div class="browse">
+  <span class="lbl">Browse by type</span>
+  <div class="chips" id="groups"></div>
+  <div class="panel" id="panel" hidden></div>
 </div>
 
 <section class="hero">
@@ -137,9 +146,14 @@ function show(d){
   $("needle").style.left = Math.max(4,Math.min(96,total))+"%";
 }
 
+let GROUPS = [], openGroup = null;
 function markChips(){
   $("chips").innerHTML = FEATURED.map(f=>`<button data-s="${f[0]}" class="${f[0]===current?"on":""}">${f[1]}</button>`).join("");
-  const sel = $("more"); sel.value = FEATURED.some(f=>f[0]===current) ? "" : current;
+  $("groups").innerHTML = GROUPS.map((g,i)=>`<button data-g="${i}" class="grp${openGroup===i?" open":""}${g.items.some(x=>x.symbol===current)?" has":""}">${g.group} ▾</button>`).join("");
+  const panel = $("panel");
+  if(openGroup===null){ panel.hidden = true; return; }
+  panel.hidden = false;
+  panel.innerHTML = GROUPS[openGroup].items.map(x=>`<button data-s="${x.symbol}" class="${x.symbol===current?"on":""}">${x.name}</button>`).join("");
 }
 
 async function load(sym){
@@ -161,12 +175,9 @@ async function load(sym){
 }
 
 $("chips").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) load(b.dataset.s); });
-$("more").addEventListener("change", e=>{ if(e.target.value) load(e.target.value); });
-fetch("/api/dataviz/bull-bear-meter/markets").then(r=>r.json()).then(d=>{
-  $("more").innerHTML = '<option value="">More markets…</option>' + d.groups.map(g=>
-    `<optgroup label="${g.group}">${g.items.map(i=>`<option value="${i.symbol}">${i.name}</option>`).join("")}</optgroup>`).join("");
-  markChips();
-}).catch(()=>{});
+$("panel").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b){ openGroup=null; load(b.dataset.s); } });
+$("groups").addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; const g=+b.dataset.g; openGroup = openGroup===g ? null : g; markChips(); });
+fetch("/api/dataviz/bull-bear-meter/markets").then(r=>r.json()).then(d=>{ GROUPS = d.groups; markChips(); }).catch(()=>{});
 markChips(); load(current);
 
 // If an animal image is missing, show an emoji instead of a broken icon.
