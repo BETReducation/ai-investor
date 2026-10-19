@@ -462,6 +462,7 @@ function renderMaps(){
   var uv=USR.map(function(r){return r[1]*1000/price}),umn=Math.min.apply(null,uv),umx=Math.max.apply(null,uv),cols={};
   USR.forEach(function(r,n){cols[r[0]]={fillColor:'rgba(247,147,26,'+(.12+.78*(uv[n]-umn)/(umx-umn)).toFixed(2)+')'}});
   var info=function(name,k){return name+': $'+k+'k = ₿ '+bt(k*1000/price)};
+  if(!$('usreal').clientWidth)return; // hidden (collapsed section): built when the section opens
   try{
     if(typeof Datamap==='undefined')throw 0;
     if(!usMap){
@@ -512,7 +513,11 @@ $('dnav').onclick=function(e){
   h.className+=' tg';h.setAttribute('role','button');h.setAttribute('tabindex','0');
   var set=function(closed){sec.classList.toggle('closed',closed);h.setAttribute('aria-expanded',!closed);body.style.display=closed?'none':'';label(!closed);
     // maps are sized from their container, so re-measure them once they become visible
-    if(!closed)setTimeout(function(){window.dispatchEvent(new Event('resize'))},0)};
+    if(!closed){
+      if(sec.id==='s-maps'){$('usreal').innerHTML='';usMap=null;renderMaps()}
+      if(sec.id==='s-acceptance'&&window._wmBuild)window._wmBuild();
+      setTimeout(function(){window.dispatchEvent(new Event('resize'))},0);
+    }};
   var go=function(){set(!sec.classList.contains('closed'))};
   h.onclick=go;h.onkeydown=function(e){if(e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();go()}};
   set(sec.id!=='s-price'); // load with only the price section open
@@ -622,7 +627,8 @@ return"rgba(247,147,26,"+(.12+.88*Math.pow(t,1.1)).toFixed(2)+")"}
 function pop(geo,x){if(!x||!x.d)return'<div class="hoverinfo"><b>'+esc(geo.properties.name)+'</b><br>No data yet</div>';var d=x.d;
 return'<div class="hoverinfo"><b>'+esc(d[1])+'</b><br>'+d[2].toLocaleString()+' merchants<br>'+M.p.fmt(M.p.v(d))+' per million</div>'}
 function build(){
-var el=g("wmMap");el.innerHTML="";
+var el=g("wmMap");el.innerHTML="";map=null;
+if(!el.clientWidth){draw();return} // hidden (collapsed section): built when the section opens
 if(!window.Datamap){el.textContent="Map library failed to load.";return}
 var data={};D.forEach(function(d){data[d[0]]={fillColor:col(d),d:d}});
 map=new Datamap({element:el,scope:"world",responsive:true,fills:{defaultFill:css("--empty")},data:data,
@@ -654,6 +660,7 @@ function glob(){var tot=D.reduce(function(a,d){return a+d[2]},0),b=D.filter(func
 g("wmGlob").innerHTML='<div><b>'+tot.toLocaleString()+'</b><span>Mapped merchants</span></div><div><b>'+esc(b[1])+'</b><span>Densest per person</span></div><div><b>'+D.filter(function(d){return d[2]>0}).length+'</b><span>Countries with shops</span></div>'}
 function tabs(){var tb=g("wmTabs");tb.innerHTML="";
 Object.keys(M).forEach(function(k){var bt=document.createElement("button");bt.textContent=M[k].label;bt.className=k==cur?"on":"";bt.onclick=function(){cur=k;[].forEach.call(tb.children,function(c){c.className=""});bt.className="on";draw()};tb.appendChild(bt)})}
+window._wmBuild=build;
 g("wmRz").onclick=function(){if(zm&&map){zm.scale(1).translate([0,0]);zm.event(map.svg)}};
 window.addEventListener("resize",function(){if(map)map.resize()});
 // Rebuild with the right colours whenever the light/dark theme flips (system setting or the site toggle).
