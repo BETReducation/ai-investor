@@ -5984,11 +5984,50 @@ def _bb_compute(sym: str, name: str, kind: str) -> dict | None:
         {"n": "Position in 52-week range", "v": f"{pos:.0f}%", "s": clamp(pos),
          "w": "Near the top of the past year's range is bullish. Near the bottom is bearish."},
     ]
+    # RSI (Wilder, 14 days): above 50 means gains have outweighed losses lately.
+    delta = close.diff()
+    rs = delta.clip(lower=0).ewm(alpha=1 / 14, adjust=False).mean() / (-delta.clip(upper=0)).ewm(alpha=1 / 14, adjust=False).mean()
+    rsi = float(100 - 100 / (1 + rs.iloc[-1])) if float(rs.iloc[-1]) == float(rs.iloc[-1]) else 50.0
+    ind.append({"n": "RSI (14-day)", "v": f"{rsi:.0f}", "s": lin(rsi, 30, 70),
+                "w": "Above 50 means recent gains outweigh losses. Above 70 is stretched, below 30 is oversold."})
+    macd = float((close.ewm(span=12, adjust=False).mean() - close.ewm(span=26, adjust=False).mean()).iloc[-1]) / last * 100
+    ind.append({"n": "MACD trend", "v": sg(macd, 2), "s": lin(macd, -3 * m, 3 * m),
+                "w": "Compares a fast and a slow moving average. Positive means short-term momentum is running ahead of the trend."})
+    above = float((close > close.rolling(50).mean()).tail(60).mean() * 100)
+    ind.append({"n": "Days above 50-day average", "v": f"{above:.0f}%", "s": lin(above, 25, 75),
+                "w": "Share of the last 60 trading days it closed above its 50-day average. Healthy uptrends spend most days above."})
+    if len(high) >= 130:
+        hh = float(high.tail(60).max()) > float(high.iloc[-120:-60].max())
+        hl = float(low.tail(60).min()) > float(low.iloc[-120:-60].min())
+        ind.append({"n": "Highs and lows (3 months)", "v": "Higher highs & lows" if hh and hl else "Lower highs & lows" if not hh and not hl else "Mixed",
+                    "s": 100.0 if hh and hl else 0.0 if not hh and not hl else 50.0,
+                    "w": "Uptrends make higher highs and higher lows. Downtrends make lower ones. Compares the last 3 months with the 3 before."})
+    vol = df["Volume"].reindex(close.index).fillna(0).tail(50)
+    if float(vol.sum()) > 0:
+        upv = float(vol[delta.tail(50) > 0].sum() / vol.sum() * 100)
+        ind.append({"n": "Volume on up days", "v": f"{upv:.0f}%", "s": lin(upv, 40, 60),
+                    "w": "Share of the last 50 days' trading volume that happened on up days. More volume on rises suggests buyers are driving it."})
     if sym in _BB_VIX_SYMBOLS:
         try:
             vix = float(yf.Ticker("^VIX").history(period="5d")["Close"].dropna().iloc[-1])
             ind.append({"n": "VIX (fear index)", "v": f"{vix:.1f}", "s": 100 - lin(vix, 12, 35),
                         "w": "Low VIX means calm, confident markets. Spikes above 30 signal panic."})
+        except Exception:
+            pass
+        try:
+            yc = yf.download(["^TNX", "^IRX"], period="1mo", interval="1d", progress=False, auto_adjust=False)["Close"].dropna()
+            curve = float(yc["^TNX"].iloc[-1] - yc["^IRX"].iloc[-1])
+            ind.append({"n": "Yield curve (10yr minus 3mo)", "v": f"{curve:+.2f} pts", "s": lin(curve, -1, 2),
+                        "w": "An inverted curve (short rates above long) has often come before US slowdowns. A positive slope is the healthy shape."})
+        except Exception:
+            pass
+        try:
+            cr = yf.download(["HYG", "LQD"], period="6mo", interval="1d", progress=False, auto_adjust=True)["Close"].dropna()
+            ratio_c = cr["HYG"] / cr["LQD"]
+            chg = float((ratio_c.iloc[-1] / ratio_c.iloc[-64] - 1) * 100) if len(ratio_c) > 64 else None
+            if chg is not None:
+                ind.append({"n": "Credit risk appetite (3 months)", "v": sg(chg, 2), "s": lin(chg, -4, 4),
+                            "w": "High-yield (riskier) corporate bonds against investment-grade ones. When the riskier bonds outperform, appetite for risk is healthy."})
         except Exception:
             pass
     for i in ind:
