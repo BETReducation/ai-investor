@@ -528,7 +528,8 @@ def _ensure_table() -> None:
                              ("freedom-clock", "The Freedom Clock"),
                              ("price-value-tracker", "Price & Value Tracker"),
                              ("metal-calculator", "Metal Calculator"),
-                             ("bitcoin-dashboard", "Bitcoin Dashboard")):
+                             ("bitcoin-dashboard", "Bitcoin Dashboard"),
+                             ("winners-league", "Winners League")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -545,6 +546,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'price-value-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'metal-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bitcoin-dashboard'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'winners-league'")
         # Classify the seeded pages once, when the column is first added; after that the
         # Studio owns each page's kind.
         if kind_is_new:
@@ -1525,6 +1527,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "metal-calculator", "label": "Metal Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "bitcoin-dashboard", "label": "Bitcoin Dashboard", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "winners-league", "label": "Winners League", "author": None, "has_live_widget": True, "kind": "viz"},
 ]
 
 

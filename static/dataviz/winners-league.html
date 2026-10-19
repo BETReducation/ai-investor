@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Winners League</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var t = localStorage.getItem('gcg-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+:root{--bg:#f5f7fa;--card:#fff;--ink:#0b1f3a;--mute:#5b6b80;--line:#dde3ea;--gold:#c8961e;--goldbg:#fbf1d6;--up:#0f8a6a;--down:#c0392b;--teal:#0e8f8f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mute:#93a4bb;--line:#223a5e;--gold:#e8b94a;--goldbg:#3a3015;--up:#35c9a0;--down:#ff7b6b;--teal:#33c3c3}}
+:root[data-theme="dark"]{--bg:#0a1628;--card:#112240;--ink:#eef2f7;--mute:#93a4bb;--line:#223a5e;--gold:#e8b94a;--goldbg:#3a3015;--up:#35c9a0;--down:#ff7b6b;--teal:#33c3c3}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:920px;margin:0 auto;padding:4px 2px 12px}
+h2{font-size:19px;margin:30px 0 4px}
+p.sub{color:var(--mute);margin:0 0 16px;font-size:14px}
+.lead{background:var(--card);border:2px solid var(--gold);border-radius:12px;padding:14px 16px;margin:16px 0}
+.lead b{font-size:20px;color:var(--gold)}
+.lead small{display:block;color:var(--mute);margin-top:4px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:var(--mw,800px);font-size:13.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+th,td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--mute);background:var(--card);position:sticky;top:0}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card);font-weight:700;color:var(--ink);z-index:1}
+tr:last-child td{border-bottom:0}
+td.up{color:var(--up)}td.dn{color:var(--down)}
+td.win{background:var(--goldbg);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--gold)}
+td.win::before{content:"🏆 "}
+td.s2{background:rgba(150,160,175,.22);font-weight:600}td.s2::before{content:"🥈 "}
+td.s3{background:rgba(190,120,60,.20);font-weight:600}td.s3::before{content:"🥉 "}
+td.ytd,th.ytd{font-style:italic}
+.tabs{display:flex;gap:8px;margin:0 0 14px}.tabs button{flex:1;padding:10px 8px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:600 14px inherit;font-family:inherit;cursor:pointer}.tabs button.on{background:var(--gold);color:#0b2540;border-color:var(--gold)}.tabs button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.tabs.t2 button{font-weight:500;font-size:13px;padding:8px 6px}.lr{display:grid;grid-template-columns:30px 1fr auto;gap:2px 10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}.lr:last-child{border-bottom:0}.rk{font-weight:700;color:var(--mute)}.lr:first-child .rk{color:var(--gold)}.nm i{font-style:normal;color:var(--mute);font-size:12px;margin-left:6px}.lr b.up{color:var(--up)}.lr b.dn{color:var(--down)}.lt{grid-column:2/4;height:8px;background:var(--bg);border-radius:4px;overflow:hidden}.lf{height:100%;border-radius:4px;background:var(--teal)}.lf.neg{background:var(--down)}.lr:first-child .lf{background:var(--gold)}
+.note{font-size:12.5px;line-height:1.5;color:var(--mute);margin-top:10px}
+.bars{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.row{display:grid;grid-template-columns:106px 1fr 28px;gap:10px;align-items:center;margin:9px 0;font-size:14px}
+.track{height:22px;background:var(--bg);border-radius:6px;overflow:hidden}
+.fill{height:100%;background:var(--teal);border-radius:6px;min-width:3px}
+.fill.top{background:var(--gold)}
+.row b{text-align:right}
+.yrs{color:var(--mute);font-size:12px;grid-column:2/4;margin-top:-4px}
+</style>
+</head>
+<body>
+<main>
+<div class="tabs" id="t1"></div>
+<div class="tabs t2" id="t2"></div>
+<p class="sub" id="sub"></p>
+<div class="lead" id="lead"></div>
+<div class="bars" id="board"></div>
+<div class="wrap" id="wrap"><table id="t"></table></div>
+<p class="note" id="note"></p>
+<div id="winsec"><h2 id="wh"></h2><p class="sub" id="ws"></p><div class="bars" id="bars"></div></div>
+<p class="note">Educational and historical content only, not financial advice. Past performance does not predict future returns.</p>
+</main>
+<script>
+var ST=[["Moderna","MRNA",702.0],["Sandisk","SNDK",487.6],["Dell Technologies","DELL",279.5],["Micron","MU",226.5],["Marathon Petroleum","MPC",196.7],["Marvell","MRVL",184.4],["Valero","VLO",176.8],["Bloom Energy","BE",172.0],["AMD","AMD",162.5],["Intel","INTC",158.5]];
+var AN=["S&P 500","Nasdaq","Dow","Gold","Silver","Bitcoin","Oil (WTI)","Russell 2000","FTSE 100"],MN=["Gold","Silver","Copper","Palladium","Platinum"];
+var AD={2010:[12.8,16.9,11.0,29.5,83.7,null,15.1,25.3,9.0],2011:[0.0,-1.8,5.5,10.1,-9.8,1473,8.2,-5.5,-5.6],2012:[13.4,15.9,7.3,7.0,8.3,186,-7.1,14.6,5.8],2013:[29.6,38.3,26.5,-28.0,-36.0,5507,7.2,37.0,14.4],2014:[11.4,13.4,7.5,-1.5,-19.4,-58,-45.9,3.5,-2.7],2015:[-0.7,5.7,-2.2,-10.4,-11.7,35,-30.5,-5.7,-4.9],2016:[9.5,7.5,13.4,8.5,15.8,125,45.0,19.5,14.4],2017:[19.4,28.2,25.1,13.5,6.4,1331,12.5,13.1,7.6],2018:[-6.2,-3.9,-5.6,-1.6,-9.4,-73,-24.8,-12.2,-12.5],2019:[28.9,35.2,22.3,18.3,15.3,92,34.5,23.7,12.1],2020:[16.3,43.6,7.3,24.6,47.4,303,-20.5,18.4,-14.3],2021:[26.9,21.4,18.7,-3.6,-11.7,60,55.0,13.7,14.3],2022:[-19.4,-33.1,-8.8,-0.3,2.9,-64,6.7,-21.6,0.9],2023:[24.2,43.4,13.7,13.1,-0.7,155,-10.7,15.1,3.8],2024:[23.3,28.6,12.9,27.2,21.5,121,0.1,10.0,5.7],2025:[16.4,20.4,13.0,64.6,147.9,-6.5,-19.9,11.3,21.5],2026:[13.1,14.9,8.6,-5,-21,-7,64.0,14,5]};
+var MD={2010:[29.5,83.7,33.0,102.5,20.6],2011:[10.1,-9.8,-22.7,-18.6,-21.3],2012:[7.0,8.3,6.3,8.3,10.6],2013:[-28.0,-36.0,-6.7,1.1,-11.0],2014:[-1.5,-19.4,-17.0,13.5,-11.7],2015:[-10.4,-11.7,-24.6,-30.4,-26.1],2016:[8.5,15.8,17.4,21.0,1.3],2017:[13.5,6.4,31.7,55.8,3.8],2018:[-1.6,-9.4,-20.2,12.8,-14.7],2019:[18.3,15.3,6.3,59.5,22.1],2020:[24.6,47.4,25.8,28.5,10.4],2021:[-3.6,-11.7,26.8,-22.1,-10.4],2022:[-0.3,2.9,-14.4,-10.1,10.7],2023:[13.1,-0.7,-0.4,-35,-7.0],2024:[27.2,21.5,3.4,-19,-9.9],2025:[64.6,147.9,42,76,127],2026:[-5,-21,19,-30,-21]};
+var HN={a:"asset",m:"metal"},mode="live",sub="s";
+var NOTE={
+ls:"Year-to-date total return (dividends reinvested) for S&P 500 members from the 31 December 2025 close to the 15 October 2026 close. Rankings change daily.",
+la:"Calendar-year price returns in USD, excluding dividends, 1 January to 15 October 2026. Gold, silver, Bitcoin, Russell 2000 and FTSE 100 are approximate.",
+lm:"Year-to-date price returns in USD, 1 January to mid-October 2026. Gold, silver, platinum and palladium use spot prices; copper uses COMEX futures. All figures are approximate.",
+ha:"Calendar-year price returns in USD, excluding dividends. Sources: published year-end index, spot and futures data; crypto and metals vary by a few points between providers. Bitcoin has no 2010 figure and its 2011 to 2013 prices are from thin early markets. 2026 is year to date at the 15 October close.",
+hm:"Calendar-year price returns in USD. Gold, silver, platinum and palladium use spot or futures prices per ounce; copper uses COMEX futures per pound. Figures vary by a few points between sources. 2026 is year to date as of mid-October and approximate."};
+function f(v){if(v==null)return"n/a";var a=Math.abs(v),s=a>=100?Math.round(a).toLocaleString("en-GB"):a.toFixed(1);return(v<0?"−":"+")+s+"%"}
+function mx(r){return Math.max.apply(null,r.filter(function(v){return v!=null}))}
+function btns(l,c,k){return l.map(function(x){return'<button class="'+(x[0]==c?"on":"")+'" data-'+k+'="'+x[0]+'">'+x[1]+"</button>"}).join("")}
+function render(){
+var T2=mode=="live"?[["s","Top 10 stocks"],["a","Assets"],["m","Metals"]]:[["a","Assets"],["m","Metals"]];
+if(mode=="hist"&&sub=="s")sub="a";
+document.getElementById("t1").innerHTML=btns([["live","Live 2026"],["hist","Historic 2010–2026"]],mode,"m");
+document.getElementById("t2").innerHTML=btns(T2,sub,"s");
+var live=mode=="live";
+["board","lead"].forEach(function(i){document.getElementById(i).style.display=live||i=="lead"?"":"none"});
+document.getElementById("wrap").style.display=live?"none":"";
+document.getElementById("winsec").style.display=live?"none":"";
+document.getElementById("note").textContent=NOTE[(live?"l":"h")+sub];
+if(live)drawLive();else drawHist();}
+function drawLive(){
+var rows=sub=="s"?ST.map(function(x){return[x[0],x[2],x[1]]}):(sub=="a"?AN:MN).map(function(n,i){return[n,(sub=="a"?AD:MD)[2026][i],""]});
+rows.sort(function(a,b){return b[1]-a[1]});var m=Math.max.apply(null,rows.map(function(r){return Math.abs(r[1])})),h="";
+rows.forEach(function(r,i){h+='<div class="lr"><span class="rk">'+(i+1)+'</span><span class="nm">'+r[0]+(r[2]?"<i>"+r[2]+"</i>":"")+'</span><b class="'+(r[1]<0?"dn":"up")+'">'+f(r[1])+'</b><div class="lt"><div class="lf'+(r[1]<0?" neg":"")+'" style="width:'+Math.max(2,Math.abs(r[1])/m*100)+'%"></div></div></div>'});
+document.getElementById("board").innerHTML=h;
+document.getElementById("sub").textContent=sub=="s"?"The ten best S&P 500 stocks of 2026 so far, 1 January to 31 December. Standings to the 15 October close.":"Live "+(sub=="a"?"assets":"metals")+" league, 1 January to 31 December 2026. Standings to mid-October.";
+var tail=sub=="s"?"The S&P 500 index itself is up +13.1%, and the median member is up about +7.9%.":(sub=="a"?"Stocks are up, while gold, silver and Bitcoin are all in the red.":"Only copper is in the green; gold, silver, platinum and palladium are all down.");
+document.getElementById("lead").innerHTML="<b>2026 leader: "+rows[0][0]+" at "+f(rows[0][1])+"</b><small>Then "+rows.slice(1,3).map(function(r){return r[0]+" "+f(r[1])}).join(", ")+". "+tail+"</small>"}
+function drawHist(){
+var A=sub=="a"?AN:MN,D=sub=="a"?AD:MD;document.documentElement.style.setProperty("--mw",(sub=="a"?880:700)+"px");
+document.getElementById("sub").textContent="Which "+HN[sub]+" won each calendar year, 1 January to 31 December. 🏆 winner, 🥈 second, 🥉 third.";
+var wins=A.map(function(){return 0}),yrs=A.map(function(){return[]}),h="<tr><th>Year</th>"+A.map(function(x){return"<th>"+x+"</th>"}).join("")+"</tr>";
+Object.keys(D).reverse().forEach(function(y){var r=D[y],k=r.map(function(v,i){return[v,i]}).filter(function(x){return x[0]!=null}).sort(function(a,b){return b[0]-a[0]}),w=k[0][1];wins[w]++;yrs[w].push(y==2026?"2026 YTD":y);
+h+="<tr><td>"+y+(y==2026?" YTD":"")+"</td>"+r.map(function(v,i){return'<td class="'+(i==w?"win ":i==k[1][1]?"s2 ":i==k[2][1]?"s3 ":"")+(v==null||v>=0?"up":"dn")+(y==2026?" ytd":"")+'">'+f(v)+"</td>"}).join("")+"</tr>"});
+document.getElementById("t").innerHTML=h;
+var r=D[2026],l=r.indexOf(mx(r)),o=r.map(function(v,i){return[v,i]}).sort(function(a,b){return b[0]-a[0]});
+document.getElementById("lead").innerHTML="<b>2026 so far: "+A[l]+" leads at "+f(r[l])+"</b><small>Then "+o.slice(1,3).map(function(x){return A[x[1]]+" "+f(x[0])}).join(", ")+".</small>";
+document.getElementById("wh").textContent="Wins by "+HN[sub];
+document.getElementById("ws").textContent="Number of years each "+HN[sub]+" finished top of the league, 2010 to 2026.";
+var m=mx(wins),b="";
+A.map(function(n,i){return[n,wins[i],yrs[i]]}).sort(function(a,b){return b[1]-a[1]}).forEach(function(x){b+='<div class="row"><span>'+x[0]+'</span><div class="track"><div class="fill'+(x[1]==m?" top":"")+'" style="width:'+(x[1]/m*100)+'%"></div></div><b>'+x[1]+'</b>'+(x[1]?'<div class="yrs">'+x[2].join(", ")+"</div>":"")+"</div>"});
+document.getElementById("bars").innerHTML=b}
+document.addEventListener("click",function(e){var d=e.target.dataset||{};if(d.m){mode=d.m;sub=d.m=="live"?"s":"a"}else if(d.s)sub=d.s;else return;render()});
+render();
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"winners-league"},location.origin);}
+new ResizeObserver(postHeight).observe(document.body);
+postHeight();
+</script>
+</body>
+</html>
