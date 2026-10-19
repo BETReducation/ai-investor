@@ -6073,6 +6073,76 @@ def api_bull_bear_live():
     return jsonify(data)
 
 
+# Where Bitcoin gets spent: merchant counts per country from BTC Map's public API (data
+# © OpenStreetMap contributors, ODbL). One refresh a day, served from memory, so visitors never
+# hit BTC Map directly. BTC Map publishes a report per area whenever its stats change, so we take
+# each country's latest report from the past nine months.
+_BTCMAP_ISO3 = dict(p.split(":") for p in "AD:AND,AE:ARE,AF:AFG,AG:ATG,AL:ALB,AM:ARM,AO:AGO,AR:ARG,AT:AUT,AU:AUS,AZ:AZE,BA:BIH,BB:BRB,BD:BGD,BE:BEL,BF:BFA,BG:BGR,BH:BHR,BI:BDI,BJ:BEN,BN:BRN,BO:BOL,BR:BRA,BS:BHS,BT:BTN,BW:BWA,BY:BLR,BZ:BLZ,CA:CAN,CD:COD,CF:CAF,CG:COG,CH:CHE,CI:CIV,CL:CHL,CM:CMR,CN:CHN,CO:COL,CR:CRI,CU:CUB,CV:CPV,CY:CYP,CZ:CZE,DE:DEU,DJ:DJI,DK:DNK,DM:DMA,DO:DOM,DZ:DZA,EC:ECU,EE:EST,EG:EGY,ER:ERI,ES:ESP,ET:ETH,FI:FIN,FJ:FJI,FR:FRA,GA:GAB,GB:GBR,GD:GRD,GE:GEO,GH:GHA,GM:GMB,GN:GIN,GQ:GNQ,GR:GRC,GT:GTM,GW:GNB,GY:GUY,HN:HND,HR:HRV,HT:HTI,HU:HUN,ID:IDN,IE:IRL,IL:ISR,IN:IND,IQ:IRQ,IR:IRN,IS:ISL,IT:ITA,JM:JAM,JO:JOR,JP:JPN,KE:KEN,KG:KGZ,KH:KHM,KM:COM,KN:KNA,KP:PRK,KR:KOR,KW:KWT,KZ:KAZ,LA:LAO,LB:LBN,LC:LCA,LI:LIE,LK:LKA,LR:LBR,LS:LSO,LT:LTU,LU:LUX,LV:LVA,LY:LBY,MA:MAR,MC:MCO,MD:MDA,ME:MNE,MG:MDG,MK:MKD,ML:MLI,MM:MMR,MN:MNG,MR:MRT,MT:MLT,MU:MUS,MV:MDV,MW:MWI,MX:MEX,MY:MYS,MZ:MOZ,NA:NAM,NE:NER,NG:NGA,NI:NIC,NL:NLD,NO:NOR,NP:NPL,NZ:NZL,OM:OMN,PA:PAN,PE:PER,PG:PNG,PH:PHL,PK:PAK,PL:POL,PT:PRT,PY:PRY,QA:QAT,RO:ROU,RS:SRB,RU:RUS,RW:RWA,SA:SAU,SB:SLB,SC:SYC,SD:SDN,SE:SWE,SG:SGP,SI:SVN,SK:SVK,SL:SLE,SM:SMR,SN:SEN,SO:SOM,SR:SUR,SS:SSD,ST:STP,SV:SLV,SY:SYR,SZ:SWZ,TD:TCD,TG:TGO,TH:THA,TJ:TJK,TL:TLS,TM:TKM,TN:TUN,TO:TON,TR:TUR,TT:TTO,TW:TWN,TZ:TZA,UA:UKR,UG:UGA,US:USA,UY:URY,UZ:UZB,VA:VAT,VC:VCT,VE:VEN,VN:VNM,VU:VUT,WS:WSM,XK:XKX,YE:YEM,ZA:ZAF,ZM:ZMB,ZW:ZWE".split(","))
+_BTCMAP_TTL_SECONDS = 24 * 3600
+_btcmap_cache: dict = {"at": 0.0, "data": None, "busy": False}
+_btcmap_lock = threading.Lock()
+
+
+def _build_btcmap_countries() -> dict | None:
+    since = (_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=270)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    latest: dict = {}
+    for _ in range(150):
+        resp = requests.get("https://api.btcmap.org/v3/reports", params={"updated_since": since, "limit": 200}, timeout=40,
+                            headers={"User-Agent": "GrowthCapitalGroup-dashboard/1.0 (educational; daily cached)"})
+        resp.raise_for_status()
+        rows = resp.json()
+        if not rows:
+            break
+        for r in rows:
+            tags = r.get("tags") or {}
+            alias = (tags.get("area_url_alias") or "").upper()
+            iso3 = _BTCMAP_ISO3.get(alias)
+            if iso3 and (iso3 not in latest or r["date"] >= latest[iso3]["date"]):
+                latest[iso3] = {"date": r["date"], "m": int(tags.get("total_merchants") or 0),
+                                "ln": int(tags.get("total_elements_lightning") or 0)}
+        if len(rows) < 200:
+            break
+        since = rows[-1]["updated_at"]
+    if not latest:
+        return None
+    return {"generated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "countries": latest}
+
+
+def _refresh_btcmap() -> None:
+    try:
+        data = _build_btcmap_countries()
+        with _btcmap_lock:
+            if data:
+                _btcmap_cache.update(at=time.monotonic(), data=data)
+    except Exception:
+        pass
+    finally:
+        with _btcmap_lock:
+            _btcmap_cache["busy"] = False
+
+
+def _kick_btcmap_refresh() -> None:
+    with _btcmap_lock:
+        if _btcmap_cache["busy"]:
+            return
+        _btcmap_cache["busy"] = True
+    threading.Thread(target=_refresh_btcmap, daemon=True).start()
+
+
+_kick_btcmap_refresh()  # warm at startup
+
+
+@app.route("/api/dataviz/bitcoin-merchants", methods=["GET"])
+def api_bitcoin_merchants():
+    with _btcmap_lock:
+        data, age = _btcmap_cache["data"], time.monotonic() - _btcmap_cache["at"]
+    if data is None or age > _BTCMAP_TTL_SECONDS:
+        _kick_btcmap_refresh()
+    if data is None:
+        return jsonify({"error": "warming up"}), 503  # the page falls back to its static figures
+    return jsonify(data)
+
+
 # Bitcoin Dashboard: BTC/USD spot plus units-per-USD for GBP/EUR/JPY, cached briefly
 # so repeated refresh clicks don't hammer Yahoo.
 _btc_dash_cache: dict = {"at": 0.0, "data": None}

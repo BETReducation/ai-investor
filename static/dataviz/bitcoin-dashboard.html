@@ -50,9 +50,8 @@ table.ss{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric
 .ss tr:last-child td{background:var(--bg);font-weight:700}
 #usreal .datamaps-hoverover{display:none!important}
 .dnav{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}@media(max-width:520px){.dnav{grid-template-columns:repeat(3,1fr)}}
-.dnav button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:600;line-height:1.2;text-align:center}
-.dnav button span{font-size:22px;line-height:1}
-.dnav button:hover{border-color:var(--acc);transform:translateY(-1px)}
+.dnav button{display:flex;align-items:center;justify-content:center;padding:16px 8px;border-radius:14px;color:var(--ink);font-size:13px;font-weight:600;line-height:1.2;text-align:center;border:1px solid rgba(168,85,247,.28);background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,.22),rgba(168,85,247,.07) 70%),var(--card);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:border-color .2s,background .2s,transform .2s}
+.dnav button:hover{border-color:rgba(168,85,247,.6);background:radial-gradient(ellipse at 50% 0%,rgba(168,85,247,.34),rgba(168,85,247,.12) 70%),var(--card);transform:translateY(-1px)}
 h2.tg{justify-content:flex-start}h2.tg::after{margin-left:10px}
 h2.tg .up{margin-left:auto;font-size:11px;font-weight:600;text-transform:none;letter-spacing:0;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
 h2.tg .up:hover{color:var(--ink);border-color:var(--acc)}
@@ -70,6 +69,7 @@ h2.tg .up:hover{color:var(--ink);border-color:var(--acc)}
 .wm-stats div{background:var(--bg);border-radius:10px;padding:8px}.wm-stats b{display:block;font-size:17px;color:var(--acc)}.wm-stats span{font-size:11px;color:var(--mut)}
 .wm-card .wm-stats div{background:var(--card)}
 .wm-note{color:var(--mut);font-size:13px}
+#wmSrc a{color:var(--acc)}
 #wmTop{margin:0;padding-left:20px}#wmTop li{margin:3px 0}#wmTop li span{color:var(--mut);float:right}
 
 </style>
@@ -77,16 +77,16 @@ h2.tg .up:hover{color:var(--ink);border-color:var(--acc)}
 <body>
 <main>
 <nav class="dnav" id="dnav" aria-label="Dashboard sections">
-  <button type="button" data-t="s-price"><span>💰</span>Price</button>
-  <button type="button" data-t="s-halving"><span>⏳</span>Halving</button>
-  <button type="button" data-t="s-supply"><span>⛏️</span>Supply</button>
-  <button type="button" data-t="s-returns"><span>📈</span>Returns</button>
-  <button type="button" data-t="s-house"><span>🏠</span>House</button>
-  <button type="button" data-t="s-car"><span>🚗</span>Car</button>
-  <button type="button" data-t="s-gold"><span>🥇</span>Gold</button>
-  <button type="button" data-t="s-maps"><span>🗺️</span>House maps</button>
-  <button type="button" data-t="s-acceptance"><span>🌍</span>Where it’s spent</button>
-  <button type="button" data-t="s-extras"><span>✨</span>Extras</button>
+  <button type="button" data-t="s-price">Price</button>
+  <button type="button" data-t="s-halving">Halving</button>
+  <button type="button" data-t="s-supply">Supply</button>
+  <button type="button" data-t="s-returns">Returns</button>
+  <button type="button" data-t="s-house">House</button>
+  <button type="button" data-t="s-car">Car</button>
+  <button type="button" data-t="s-gold">Gold</button>
+  <button type="button" data-t="s-maps">House maps</button>
+  <button type="button" data-t="s-acceptance">Where it’s spent</button>
+  <button type="button" data-t="s-extras">Extras</button>
 </nav>
 
 
@@ -513,8 +513,8 @@ postHeight();
 // Where Bitcoin gets spent: country map. Own scope so its names can't clash with the dashboard script above.
 (function(){
 // iso3,name,merchants,popM,score,note
-// Optional live feed (daily JSON built from BTC Map); falls back to the indicative figures below when absent.
-var DATA_URL="bitcoin-merchants.json";
+// Live merchant counts, refreshed daily on our server from BTC Map; falls back to the indicative figures below if unavailable.
+var DATA_URL="/api/dataviz/bitcoin-merchants";
 var D=[
 ["CAN","Canada",1800,40,62,"Bitcoin ATMs are everywhere; first BTC ETFs launched here."],
 ["USA","United States",9000,335,66,"Most merchants in absolute terms, mostly via payment processors."],
@@ -596,7 +596,7 @@ d[2]=c.m;d.ln=c.ln;d.top=c.top});
 D.forEach(function(d){if(!(d[0] in j.countries))d[2]=0});
 M.l={label:"⚡ Lightning share",log:0,v:function(d){return d.ln!=null&&d[2]>=20?100*d.ln/d[2]:null},fmt:function(x){return x==null?"–":Math.round(x)+"%"}};
 var dt=new Date(j.generated_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-g("wmSrc").textContent="Live merchant counts from BTC Map (© OpenStreetMap contributors), updated "+dt+". Population and usage score are static, indicative figures; Lightning share needs 20+ shops.";
+g("wmSrc").innerHTML="Live merchant counts from <a href=\"https://btcmap.org\" target=\"_blank\" rel=\"noopener\">BTC Map</a>, refreshed daily (latest report per country, "+dt+"). Merchant data © <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener\">OpenStreetMap contributors</a>, available under the <a href=\"https://opendatacommons.org/licenses/odbl/\" target=\"_blank\" rel=\"noopener\">Open Database Licence</a>. Population and usage score are static, indicative figures; Lightning share needs 20+ shops.";
 }
 function ext(k){var a=D.map(M[k].v).filter(function(x){return x!=null});return[Math.min.apply(0,a),Math.max.apply(0,a)]}
 function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
