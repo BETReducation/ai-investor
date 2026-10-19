@@ -55,11 +55,22 @@ h3{margin:22px 0 10px;font-size:1.15rem}
 .fighter img{display:block;width:100%;height:auto;filter:drop-shadow(0 14px 14px rgba(0,0,0,.45))}
 .fighter img.flip{transform:scaleX(-1)}
 .fighter .emo{text-align:center;font-size:clamp(4rem,16vw,8rem);line-height:1.1}
+.pick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button,.pick select{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:6px 14px;cursor:pointer}
+.chips button.on{background:var(--gold);border-color:var(--gold);color:#0f2747;font-weight:700}
+.pick select{max-width:100%}
+#stamp.err{border-color:var(--bear);background:rgba(229,72,77,.12)}
+.hero.busy{opacity:.55;transition:opacity .2s}
 </style>
 </head>
 <body>
 <div class="wrap">
-<p style="color:var(--muted);margin:0 0 14px;font-size:.95rem">Is the stock market in bull or bear territory? We blend 8 market health signals into one reading.</p>
+<p style="color:var(--muted);margin:0 0 12px;font-size:.95rem">Is a market in bull or bear territory? Pick one and we blend its market health signals into a single reading.</p>
+<div class="pick">
+  <div class="chips" id="chips"></div>
+  <select id="more" aria-label="More markets"><option value="">More markets…</option></select>
+</div>
 
 <section class="hero">
   <div class="stage">
@@ -81,74 +92,82 @@ h3{margin:22px 0 10px;font-size:1.15rem}
   </div>
 </section>
 
-<div class="sample" id="stamp"></div>
+<div class="note" id="stamp"></div>
 
 <h3>What’s driving the reading</h3>
 <div class="grid" id="grid"></div>
 
-<p class="note">How it works: each signal is scored 0 (fully bearish) to 100 (fully bullish), then averaged with equal weight. A 20% fall from a recent high is the traditional definition of a bear market. This is for education only and isn’t financial advice. Past signals don’t predict future returns.</p>
+<p class="note">How it works: each signal is scored 0 (fully bearish) to 100 (fully bullish), then averaged with equal weight. Signals are calculated from daily price history (plus the VIX for US indices), with wider bands for choppier assets like crypto. A 20% fall from a recent high is the traditional definition of a bear market. This describes what the indicators currently show and is for education only, not financial advice. Past signals don’t predict future returns.</p>
 </div>
 
 <script>
-// ===== EDIT THESE NUMBERS TO UPDATE THE PAGE =====
-const AS_OF = "Sample figures, replace before publishing";
-const IS_SAMPLE = true;
-const DATA = {
-  pctAbove200: 6.2,   // S&P 500 % above its 200-day average
-  spread50v200: 3.4,  // 50-day average % above/below 200-day
-  drawdown: -2.1,     // % below the all-time high (negative number)
-  vix: 17.4,          // VIX level
-  breadth: 63,        // % of S&P 500 stocks above their 200-day average
-  highsShare: 74,     // % of new 52-week highs vs (highs + lows)
-  putCall: 0.84,      // CBOE equity put/call ratio (10-day average)
-  earnings: 11.5      // S&P 500 earnings growth, year on year %
-};
-// ==================================================
-
-const clamp = n => Math.max(0, Math.min(100, n));
-const lin = (v, lo, hi) => clamp((v - lo) / (hi - lo) * 100);
-const sg = v => (v >= 0 ? "+" : "") + v;
-const IND = [
-  {n:"Price vs 200-day average", v:sg(DATA.pctAbove200)+"%", s:lin(DATA.pctAbove200,-10,10), w:"Bull markets live above the long-term trend line. Slipping below it is an early warning."},
-  {n:"50-day vs 200-day average", v:sg(DATA.spread50v200)+"%", s:lin(DATA.spread50v200,-5,5), w:"50 above 200 is a “golden cross” (bullish). 50 below 200 is a “death cross” (bearish)."},
-  {n:"Distance from all-time high", v:DATA.drawdown+"%", s:lin(DATA.drawdown,-20,0), w:"Down 10% is a correction. Down 20% or more is officially a bear market."},
-  {n:"VIX (fear index)", v:String(DATA.vix), s:100-lin(DATA.vix,12,35), w:"Low VIX means calm, confident markets. Spikes above 30 signal panic."},
-  {n:"Market breadth", v:DATA.breadth+"%", s:lin(DATA.breadth,20,80), w:"Share of S&P 500 stocks above their 200-day average. A healthy rally is broad."},
-  {n:"New highs vs new lows", v:DATA.highsShare+"% highs", s:lin(DATA.highsShare,10,90), w:"When more stocks hit 52-week highs than lows, buyers are in control."},
-  {n:"Put/call ratio", v:DATA.putCall.toFixed(2), s:100-lin(DATA.putCall,0.6,1.2), w:"More puts (bets on falls) than calls pushes it higher. Above 1.0 shows fear."},
-  {n:"Earnings growth (YoY)", v:sg(DATA.earnings)+"%", s:lin(DATA.earnings,-10,20), w:"Rising profits support higher prices. Falling profits usually come with bear markets."}
-];
-const sig = s => s>=60?["bu","Bullish"]:s<=40?["be","Bearish"]:["ne","Neutral"];
-
-const total = Math.round(IND.reduce((a,i)=>a+i.s,0)/IND.length);
+const FEATURED=[["^GSPC","S&P 500"],["^FTSE","FTSE 100"],["^N225","Nikkei 225"],["BTC-USD","Bitcoin"],["GC=F","Gold"],["ADA-USD","Cardano"]];
 const tiers = [
   [20,"Bear market territory","Most signals are flashing red. Sellers are firmly in charge."],
   [40,"Leaning bearish","Pressure is building. Several warning signs are showing."],
   [60,"Neutral and choppy","The bulls and bears are evenly matched right now."],
-  [80,"Leaning bullish","Trend, breadth and sentiment are mostly supportive."],
-  [101,"Bull market","Nearly every signal points up. Buyers are firmly in charge."]
+  [80,"Leaning bullish","Trend and momentum are mostly supportive."],
+  [101,"Bull market territory","Nearly every signal points up. Buyers are firmly in charge."]
 ];
-const tier = tiers.find(x=>total<x[0]);
-document.getElementById("verdict").textContent = tier[1];
-document.getElementById("blurb").textContent = tier[2];
-document.getElementById("score").textContent = total;
-document.getElementById("stamp").textContent = (IS_SAMPLE?"⚠️ ":"Data as of: ") + AS_OF;
-if(!IS_SAMPLE) document.getElementById("stamp").className="note";
+const sig = s => s>=60?["bu","Bullish"]:s<=40?["be","Bearish"]:["ne","Neutral"];
+const $ = id => document.getElementById(id);
+const bear = $("bearBox"), bull = $("bullBox");
+let current = "^GSPC", seq = 0;
 
-const counts = {bu:0,ne:0,be:0};
-document.getElementById("grid").innerHTML = IND.map(i=>{
-  const [c,l] = sig(i.s); counts[c]++;
-  return `<div class="card"><div class="top"><h4>${i.n}</h4><span class="chip ${c}">${l}</span></div>
-  <div class="val">${i.v}</div><div class="mini"><i style="left:${Math.max(3,Math.min(97,i.s))}%"></i></div>
-  <p class="why">${i.w}</p></div>`;
-}).join("");
-document.getElementById("tally").innerHTML =
-  `<span class="pill be">${counts.be} bearish</span><span class="pill ne">${counts.ne} neutral</span><span class="pill bu">${counts.bu} bullish</span>`;
+function show(d){
+  const IND = d.indicators, total = Math.round(IND.reduce((a,i)=>a+i.s,0)/IND.length);
+  const tier = tiers.find(x=>total<x[0]);
+  $("verdict").textContent = d.name + ": " + tier[1];
+  $("blurb").textContent = tier[2];
+  $("score").textContent = total;
+  $("stamp").className = "note"; $("stamp").style.cssText = "";
+  $("stamp").textContent = "Latest close: " + d.as_of + ". Signals are calculated from " + d.name + " price history.";
+  const counts = {bu:0,ne:0,be:0};
+  $("grid").innerHTML = IND.map(i=>{
+    const [c,l] = sig(i.s); counts[c]++;
+    return `<div class="card"><div class="top"><h4>${i.n}</h4><span class="chip ${c}">${l}</span></div>
+    <div class="val">${i.v}</div><div class="mini"><i style="left:${Math.max(3,Math.min(97,i.s))}%"></i></div>
+    <p class="why">${i.w}</p></div>`;
+  }).join("");
+  $("tally").innerHTML =
+    `<span class="pill be">${counts.be} bearish</span><span class="pill ne">${counts.ne} neutral</span><span class="pill bu">${counts.bu} bullish</span>`;
+  bear.className = "fighter"; bull.className = "fighter";
+  if(total>55){bull.classList.add("win");bear.classList.add("lose")}
+  else if(total<45){bear.classList.add("win");bull.classList.add("lose")}
+  $("needle").style.left = Math.max(4,Math.min(96,total))+"%";
+}
 
-const bear = document.getElementById("bearBox"), bull = document.getElementById("bullBox");
-if(total>55){bull.classList.add("win");bear.classList.add("lose")}
-else if(total<45){bear.classList.add("win");bull.classList.add("lose")}
-setTimeout(()=>{document.getElementById("needle").style.left = Math.max(4,Math.min(96,total))+"%"},250);
+function markChips(){
+  $("chips").innerHTML = FEATURED.map(f=>`<button data-s="${f[0]}" class="${f[0]===current?"on":""}">${f[1]}</button>`).join("");
+  const sel = $("more"); sel.value = FEATURED.some(f=>f[0]===current) ? "" : current;
+}
+
+async function load(sym){
+  current = sym; markChips();
+  const me = ++seq, hero = document.querySelector(".hero");
+  hero.classList.add("busy");
+  try{
+    const r = await fetch("/api/dataviz/bull-bear-meter/live?symbol="+encodeURIComponent(sym));
+    const d = await r.json();
+    if(me!==seq) return;
+    if(!r.ok) throw new Error(d.error||"Couldn't load this market");
+    show(d);
+  }catch(e){
+    if(me!==seq) return;
+    $("stamp").className = "sample err"; $("stamp").textContent = "⚠️ " + e.message + ". Try another market.";
+  }finally{
+    if(me===seq) hero.classList.remove("busy");
+  }
+}
+
+$("chips").addEventListener("click", e=>{ const b=e.target.closest("button"); if(b) load(b.dataset.s); });
+$("more").addEventListener("change", e=>{ if(e.target.value) load(e.target.value); });
+fetch("/api/dataviz/bull-bear-meter/markets").then(r=>r.json()).then(d=>{
+  $("more").innerHTML = '<option value="">More markets…</option>' + d.groups.map(g=>
+    `<optgroup label="${g.group}">${g.items.map(i=>`<option value="${i.symbol}">${i.name}</option>`).join("")}</optgroup>`).join("");
+  markChips();
+}).catch(()=>{});
+markChips(); load(current);
 
 // If an animal image is missing, show an emoji instead of a broken icon.
 document.querySelectorAll(".fighter img").forEach(img=>{

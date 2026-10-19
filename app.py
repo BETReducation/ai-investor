@@ -5908,6 +5908,115 @@ def api_metal_calculator_live():
     return jsonify(_fetch_metal_prices())
 
 
+# Bull vs Bear Meter: price-derived health signals for any index, crypto, metal or stock
+# already tracked on the site (the Market Orbs pools plus the heat-map indices). The symbol
+# must come from that list, so the endpoint can't be used to query arbitrary tickers.
+_BB_TTL_SECONDS = 3600
+_bb_cache: dict = {}
+_bb_lock = threading.Lock()
+_BB_SCALE = {"index": 1.0, "stock": 1.6, "metal": 1.4, "crypto": 3.0}  # wider bands for choppier assets
+_BB_VIX_SYMBOLS = {"^GSPC", "^IXIC", "^DJI", "^NDX", "^RUT"}
+
+
+def _bb_universe() -> tuple[list, dict]:
+    groups, info, seen = [], {}, set()
+    idx = []
+    for m in MARKET_PULSE_INDICES:
+        if m["symbol"] in seen:
+            continue
+        seen.add(m["symbol"])
+        idx.append({"symbol": m["symbol"], "name": f"{m['index']} ({m['country']})"})
+        info[m["symbol"]] = (m["index"], "index")
+    groups.append({"group": "Stock indices", "items": idx})
+    kinds = {"Crypto": "crypto", "Metals": "metal"}
+    for pool, _, assets in ORB_POOLS:
+        if pool == "Currencies":
+            continue
+        items = []
+        for a in assets:
+            if a[0] in seen:
+                continue
+            seen.add(a[0])
+            items.append({"symbol": a[0], "name": a[2]})
+            info[a[0]] = (a[2], kinds.get(pool, "stock"))
+        groups.append({"group": pool, "items": items})
+    return groups, info
+
+
+@app.route("/api/dataviz/bull-bear-meter/markets", methods=["GET"])
+def api_bull_bear_markets():
+    return jsonify({"groups": _bb_universe()[0]})
+
+
+def _bb_compute(sym: str, name: str, kind: str) -> dict | None:
+    df = _yf_history_with_retry(yf.Ticker(sym), period="max", interval="1d")
+    close, high, low = df["Close"].dropna(), df["High"].dropna(), df["Low"].dropna()
+    if len(close) < 260:
+        return None
+    m = _BB_SCALE[kind]
+    clamp = lambda n: max(0.0, min(100.0, n))
+    lin = lambda v, lo, hi: clamp((v - lo) / (hi - lo) * 100)
+    sg = lambda v, d=1: f"{v:+.{d}f}%"
+    last = float(close.iloc[-1])
+    ma50, ma200 = float(close.tail(50).mean()), float(close.tail(200).mean())
+    vs200, spread = (last / ma200 - 1) * 100, (ma50 / ma200 - 1) * 100
+    dd = (last / float(high.max()) - 1) * 100
+    r63, r252 = (last / float(close.iloc[-64]) - 1) * 100, (last / float(close.iloc[-253]) - 1) * 100
+    rets = close.pipe(lambda c: (c / c.shift(1)).apply(math.log)).dropna()
+    vol_roll = rets.rolling(30).std().dropna().tail(252) * math.sqrt(252) * 100
+    vol_now, vol_med = float(vol_roll.iloc[-1]), float(vol_roll.median())
+    ratio = vol_now / vol_med if vol_med else 1.0
+    hi52, lo52 = float(high.tail(252).max()), float(low.tail(252).min())
+    pos = (last - lo52) / (hi52 - lo52) * 100 if hi52 > lo52 else 50.0
+    ind = [
+        {"n": "Price vs 200-day average", "v": sg(vs200), "s": lin(vs200, -10 * m, 10 * m),
+         "w": "Rising markets tend to sit above their long-term trend line. Slipping below it is an early warning."},
+        {"n": "50-day vs 200-day average", "v": sg(spread), "s": lin(spread, -5 * m, 5 * m),
+         "w": "50 above 200 is a “golden cross” (bullish). 50 below 200 is a “death cross” (bearish)."},
+        {"n": "Distance from all-time high", "v": sg(dd), "s": lin(dd, -20 * m, 0),
+         "w": "Traditionally a 20% fall from the peak marks a bear market. Choppier assets such as crypto swing much further."},
+        {"n": "3-month momentum", "v": sg(r63), "s": lin(r63, -12 * m, 12 * m),
+         "w": "The recent direction of travel. Sustained gains point to buyers in control."},
+        {"n": "12-month momentum", "v": sg(r252), "s": lin(r252, -20 * m, 20 * m),
+         "w": "The longer-run trend. Bull markets usually show gains over a full year."},
+        {"n": "Volatility vs normal", "v": f"{ratio:.2f}x", "s": 100 - lin(ratio, 0.7, 1.6),
+         "w": "Calm, steady trading usually goes with bull phases. Volatility well above its usual level signals stress."},
+        {"n": "Position in 52-week range", "v": f"{pos:.0f}%", "s": clamp(pos),
+         "w": "Near the top of the past year's range is bullish. Near the bottom is bearish."},
+    ]
+    if sym in _BB_VIX_SYMBOLS:
+        try:
+            vix = float(yf.Ticker("^VIX").history(period="5d")["Close"].dropna().iloc[-1])
+            ind.append({"n": "VIX (fear index)", "v": f"{vix:.1f}", "s": 100 - lin(vix, 12, 35),
+                        "w": "Low VIX means calm, confident markets. Spikes above 30 signal panic."})
+        except Exception:
+            pass
+    for i in ind:
+        i["s"] = round(i["s"], 1)
+    return {"symbol": sym, "name": name, "as_of": close.index[-1].date().isoformat(), "indicators": ind}
+
+
+@app.route("/api/dataviz/bull-bear-meter/live", methods=["GET"])
+def api_bull_bear_live():
+    sym = (request.args.get("symbol") or "").strip()
+    info = _bb_universe()[1].get(sym)
+    if not info:
+        return jsonify({"error": "unknown market"}), 404
+    with _bb_lock:
+        hit = _bb_cache.get(sym)
+        if hit and time.monotonic() - hit[0] < _BB_TTL_SECONDS:
+            return jsonify(hit[1])
+    try:
+        data = _bb_compute(sym, info[0], info[1])
+    except Exception:
+        data = None
+    if not data:
+        return jsonify({"error": "Not enough price history for this market yet"}), 502
+    with _bb_lock:
+        _bb_cache[sym] = (time.monotonic(), data)
+    return jsonify(data)
+
+
 # Bitcoin Dashboard: BTC/USD spot plus units-per-USD for GBP/EUR/JPY, cached briefly
 # so repeated refresh clicks don't hammer Yahoo.
 _btc_dash_cache: dict = {"at": 0.0, "data": None}
