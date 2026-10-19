@@ -5939,6 +5939,10 @@ def _bb_universe() -> tuple[list, dict]:
             seen.add(a[0])
             items.append({"symbol": a[0], "name": a[2]})
             info[a[0]] = (a[2], kinds.get(pool, "stock"))
+        if pool == "Crypto" and "FET-USD" not in seen:
+            seen.add("FET-USD")
+            items.append({"symbol": "FET-USD", "name": "Artificial Superintelligence Alliance (FET)"})
+            info["FET-USD"] = ("Fetch.ai (FET)", "crypto")
         groups.append({"group": pool, "items": items})
     return groups, info
 
