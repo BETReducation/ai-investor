@@ -8269,10 +8269,13 @@ if _is_production:
 
 _ensure_table()
 import gcg_chat
+import gcg_finance
 import gcg_notify
 gcg_notify.init(_db_conn, DATABASE_URL, is_admin_user)
 gcg_chat.init(_db_conn, DATABASE_URL)
+gcg_finance.init(_db_conn, DATABASE_URL, is_admin_user, _load_users)
 app.register_blueprint(gcg_chat.bp)
+app.register_blueprint(gcg_finance.bp)
 app.register_blueprint(gcg_notify.bp)
 _ensure_default_user()
 

@@ -43,6 +43,32 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
 .save-flash { display: inline-block; margin-left: 6px; font-size: 11px; color: var(--green); opacity: 0; transition: opacity 0.2s; }
 .save-flash.show { opacity: 1; }
 .err-banner { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 24px; flex-wrap: wrap; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); padding: 10px 18px; font: 600 14px 'Space Grotesk', sans-serif; cursor: pointer; margin-bottom: -1px; }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--gold); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.fin-block { margin-bottom: 40px; }
+.fin-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+.fin-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .05em; }
+.fin-form input, .fin-form select, .fin-form textarea { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 8px 10px; border-radius: 8px; font: 13px 'Space Grotesk', sans-serif; }
+.btn { background: var(--gold); color: #111; border: none; border-radius: 8px; padding: 9px 16px; font: 600 13px 'Space Grotesk', sans-serif; cursor: pointer; }
+.btn.ghost { background: none; color: var(--text); border: 1px solid var(--border2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.stat { border: 1px solid var(--border); background: var(--card); border-radius: 14px; padding: 16px; }
+.stat .k { font: 11px 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.stat .v { font: 800 22px 'Outfit', sans-serif; margin-top: 6px; }
+.stat .n { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.neg { color: #ef4444; } .pos { color: var(--green); }
+.sub-head { font: 600 13px 'Space Grotesk', sans-serif; margin: 18px 0 8px; color: var(--muted); }
+.fin-table { min-width: 560px; }
+.fin-table td { white-space: normal; }
+.pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--border2); }
+.vote-btns { display: flex; gap: 6px; }
+.vote-btns button.mine { background: var(--gold); color: #111; }
+.muted { color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -50,7 +76,7 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
 
 <div class="page-hero">
   <div class="page-title">Admin</div>
-  <div class="page-sub">Account tiers, per-feature entitlements, and alpha-author roles — hand-set per user.</div>
+  <div class="page-sub">Partner activity, account permissions, and the books.</div>
 </div>
 
 <div class="content-section">
@@ -58,9 +84,15 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
     <div id="gate">Checking access…</div>
     <div id="panel" style="display:none;">
       <div class="err-banner" id="errBanner"></div>
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="activity">Partner Activity</button>
+        <button class="tab-btn" data-tab="permissions">User Permissions</button>
+        <button class="tab-btn" data-tab="finances">Finances</button>
+      </div>
+      <div class="tab-pane active" id="tab-activity">
       <div class="section-head">Partner activity</div>
       <div class="section-note">Logins count from 26 Sept 2026; active days count from the day this table shipped (days the partner was signed in and loaded the site). Alpha posts and chat include earlier history.</div>
-      <div class="table-wrap" style="margin-bottom:36px;">
+      <div class="table-wrap">
         <table style="min-width:640px;">
           <thead>
             <tr><th>Partner</th><th>Times logged in</th><th>Active days</th><th>Alpha posts</th><th>GCG chat contributions</th></tr>
@@ -68,6 +100,8 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
           <tbody id="activityRows"></tbody>
         </table>
       </div>
+      </div>
+      <div class="tab-pane" id="tab-permissions">
       <div class="section-head">Users</div>
       <div class="table-wrap">
         <table>
@@ -86,6 +120,80 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
           </thead>
           <tbody id="userRows"></tbody>
         </table>
+      </div>
+      </div>
+      <div class="tab-pane" id="tab-finances">
+      <div class="fin-block">
+        <div class="section-head">Period</div>
+        <div class="fin-form">
+          <label>From<input type="date" id="finFrom"></label>
+          <label>To<input type="date" id="finTo"></label>
+          <button class="btn ghost" id="finApply">Apply</button>
+          <span class="muted">Applies to income, profit and ratios. Leave blank for all time.</span>
+        </div>
+      </div>
+
+      <div class="fin-block">
+        <div class="section-head">Costs</div>
+        <div class="section-note">Upload the invoice or receipt for every cost paid. No evidence, no entry. Pick the type so it lands in the right profit line.</div>
+        <form class="fin-form" id="costForm">
+          <label>Date<input type="date" name="date" required></label>
+          <label>Supplier<input name="supplier" required></label>
+          <label>Description<input name="description" size="26"></label>
+          <label>Type<select name="type" id="costType"></select></label>
+          <label>Amount (£)<input name="amount" type="number" step="0.01" min="0.01" required style="width:110px"></label>
+          <label>Evidence<input type="file" name="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xlsx,.txt"></label>
+          <button class="btn" type="submit">Upload cost</button>
+        </form>
+        <div class="table-wrap"><table class="fin-table"><thead><tr><th>Date</th><th>Supplier</th><th>Type</th><th>Amount</th><th>Evidence</th><th>By</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
+      </div>
+
+      <div class="fin-block">
+        <div class="section-head">Income</div>
+        <div class="section-note">Cart sales appear here automatically once the shopping cart is wired to the income webhook. Manual entries are for anything taken outside the cart.</div>
+        <form class="fin-form" id="incomeForm">
+          <label>Date<input type="date" name="date" required></label>
+          <label>Description<input name="description" size="30" required></label>
+          <label>Amount (£)<input name="amount" type="number" step="0.01" min="0.01" required style="width:110px"></label>
+          <button class="btn" type="submit">Add income</button>
+        </form>
+        <div class="table-wrap"><table class="fin-table"><thead><tr><th>Date</th><th>Description</th><th>Source</th><th>Amount</th><th></th></tr></thead><tbody id="incomeRows"></tbody></table></div>
+      </div>
+
+      <div class="fin-block">
+        <div class="section-head">Profit</div>
+        <div class="section-note">Gross = income minus cost of sales. Operating = gross minus operating expenses. NPBT = operating minus interest &amp; finance. NPAT = NPBT minus tax.</div>
+        <div class="stat-grid" id="profitStats"></div>
+      </div>
+
+      <div class="fin-block">
+        <div class="section-head">Ratios</div>
+        <div class="section-note">Margins come from the ledger above. Liquidity and leverage need the balance sheet figures below; they show a dash until those are filled in.</div>
+        <div class="stat-grid" id="ratioStats"></div>
+        <div class="sub-head">Balance sheet inputs (£)</div>
+        <form class="fin-form" id="balanceForm"></form>
+      </div>
+
+      <div class="fin-block">
+        <div class="section-head">Budget</div>
+        <div class="section-note">Set the pot, then raise spend proposals against it. Proposals at or above the threshold go to a partner vote; smaller ones go to a member vote. Majority of yes over no carries it when you close the vote.</div>
+        <form class="fin-form" id="budgetForm">
+          <label>Total budget (£)<input name="total" type="number" step="0.01" min="0" style="width:120px"></label>
+          <label>Period<input name="period" placeholder="e.g. Q1 2027"></label>
+          <label>Partner-vote threshold (£)<input name="big_threshold" type="number" step="0.01" min="0.01" style="width:120px"></label>
+          <label>Notes<input name="notes" size="30"></label>
+          <button class="btn" type="submit">Save budget</button>
+        </form>
+        <div class="stat-grid" id="budgetStats" style="margin-bottom:18px;"></div>
+        <div class="sub-head">New spend proposal</div>
+        <form class="fin-form" id="proposalForm">
+          <label>Title<input name="title" required></label>
+          <label>What it's for<input name="description" size="30"></label>
+          <label>Amount (£)<input name="amount" type="number" step="0.01" min="0.01" required style="width:110px"></label>
+          <button class="btn" type="submit">Open vote</button>
+        </form>
+        <div class="table-wrap"><table class="fin-table"><thead><tr><th>Proposal</th><th>Amount</th><th>Voters</th><th>Tally</th><th>Your vote</th><th>Status</th><th></th></tr></thead><tbody id="proposalRows"></tbody></table></div>
+      </div>
       </div>
     </div>
   </div>
@@ -142,7 +250,7 @@ async function loadUsers() {
 
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('.del-btn');
-  if (!btn) return;
+  if (!btn || btn.dataset.del) return;
   const username = btn.dataset.username;
   const typed = prompt(`This permanently deletes the account "${username}" — their profile, preferences, saved strategies and watchlists. This can't be undone.\n\nType the username to confirm:`);
   if (typed !== username) { if (typed !== null) alert('Username did not match — nothing deleted.'); return; }
@@ -216,6 +324,156 @@ async function loadActivity() {
 
 loadUsers();
 loadActivity();
+
+// ---- tabs ----
+function showTab(name) {
+  if (!document.getElementById('tab-' + name)) name = 'activity';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  history.replaceState(null, '', '#' + name);
+  if (name === 'finances') loadFinances();
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+// ---- finances ----
+const gbp = p => (p < 0 ? '-' : '') + '£' + (Math.abs(p) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = r => r == null ? '—' : (r * 100).toFixed(1) + '%';
+const times = r => r == null ? '—' : r.toFixed(2) + '×';
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const BAL_LABELS = { cash: 'Cash', receivables: 'Receivables', inventory: 'Inventory', other_current_assets: 'Other current assets', fixed_assets: 'Fixed assets', current_liabilities: 'Current liabilities', long_term_liabilities: 'Long-term liabilities' };
+let COST_TYPES = {}, financeReady = false;
+
+async function api(url, opts) {
+  const res = await fetch(url, opts);
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(out.error || 'Request failed');
+  return out;
+}
+const jsonOpts = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const dateRange = () => {
+  const f = document.getElementById('finFrom').value, t = document.getElementById('finTo').value;
+  return { from: f, to: t, qs: new URLSearchParams({ ...(f && { from: f }), ...(t && { to: t }) }).toString() };
+};
+const inRange = (d, r) => (!r.from || d >= r.from) && (!r.to || d <= r.to);
+
+async function loadFinances() {
+  try {
+    const r = dateRange();
+    const [costs, income, sum, budget] = await Promise.all([
+      api('/api/admin/finance/costs'), api('/api/admin/finance/income'),
+      api('/api/admin/finance/summary?' + r.qs), api('/api/admin/finance/budget')]);
+    COST_TYPES = costs.types;
+    if (!financeReady) {
+      document.getElementById('costType').innerHTML = Object.entries(COST_TYPES).map(([k, v]) => `<option value="${k}" ${k === 'operating' ? 'selected' : ''}>${v}</option>`).join('');
+      financeReady = true;
+    }
+    document.getElementById('costRows').innerHTML = costs.costs.filter(c => inRange(c.date, r)).map(c => `
+      <tr><td>${c.date}</td><td><div class="uname">${esc(c.supplier)}</div><div class="uemail">${esc(c.description)}</div></td>
+      <td><span class="pill">${COST_TYPES[c.type]}</span></td><td>${gbp(c.amount)}</td>
+      <td><a href="/api/admin/finance/file/${c.file_id}" target="_blank" rel="noopener">${esc(c.file_name)}</a></td>
+      <td>${esc(c.added_by)}</td><td><button class="del-btn" data-del="costs" data-id="${c.id}">Delete</button></td></tr>`).join('')
+      || '<tr><td colspan="7" class="muted">No costs uploaded yet.</td></tr>';
+    document.getElementById('incomeRows').innerHTML = income.income.filter(i => inRange(i.date, r)).map(i => `
+      <tr><td>${i.date}</td><td>${esc(i.description)}</td><td><span class="pill">${i.source === 'cart' ? 'Cart' : 'Manual'}</span></td>
+      <td>${gbp(i.amount)}</td><td><button class="del-btn" data-del="income" data-id="${i.id}">Delete</button></td></tr>`).join('')
+      || '<tr><td colspan="5" class="muted">No income yet.</td></tr>';
+    renderSummary(sum);
+    renderBudget(budget);
+  } catch (err) { showError(err.message); }
+}
+
+function statTile(k, v, n, signed) {
+  const cls = signed && typeof v === 'number' ? (v < 0 ? 'neg' : 'pos') : '';
+  return `<div class="stat"><div class="k">${k}</div><div class="v ${cls}">${typeof v === 'number' ? gbp(v) : v}</div>${n ? `<div class="n">${n}</div>` : ''}</div>`;
+}
+
+function renderSummary(s) {
+  const c = s.costs_by_type, rt = s.ratios;
+  document.getElementById('profitStats').innerHTML = [
+    statTile('Revenue', s.revenue, 'Total income'),
+    statTile('Gross profit', s.gross, `after ${gbp(c.cost_of_sales)} cost of sales`, true),
+    statTile('Operating profit', s.operating, `after ${gbp(c.operating)} operating costs`, true),
+    statTile('NPBT', s.npbt, `after ${gbp(c.finance)} interest & finance`, true),
+    statTile('NPAT', s.npat, `after ${gbp(c.tax)} tax`, true)].join('');
+  document.getElementById('ratioStats').innerHTML = [
+    statTile('Gross margin', pct(rt.gross_margin), 'Gross profit ÷ revenue'),
+    statTile('Operating margin', pct(rt.operating_margin), 'Operating profit ÷ revenue'),
+    statTile('Net margin', pct(rt.net_margin), 'NPAT ÷ revenue'),
+    statTile('Cost-to-income', pct(rt.cost_to_income), 'All costs ÷ revenue'),
+    statTile('Current ratio', times(rt.current_ratio), 'Current assets ÷ current liabilities'),
+    statTile('Quick ratio', times(rt.quick_ratio), '(Current assets − inventory) ÷ current liabilities'),
+    statTile('Cash ratio', times(rt.cash_ratio), 'Cash ÷ current liabilities'),
+    statTile('Working capital', s.working_capital == null ? '—' : s.working_capital, 'Current assets − current liabilities', true),
+    statTile('Debt-to-equity', times(rt.debt_to_equity), 'Total liabilities ÷ equity'),
+    statTile('Return on assets', pct(rt.return_on_assets), 'NPAT ÷ total assets'),
+    statTile('Return on equity', pct(rt.return_on_equity), 'NPAT ÷ equity')].join('');
+  const f = document.getElementById('balanceForm');
+  if (!f.dataset.built) {
+    f.innerHTML = Object.entries(BAL_LABELS).map(([k, l]) => `<label>${l}<input name="${k}" type="number" step="0.01" min="0" style="width:130px"></label>`).join('') + '<button class="btn" type="submit">Save</button>';
+    f.dataset.built = '1';
+  }
+  for (const k of Object.keys(BAL_LABELS)) f.elements[k].value = s.balance[k] ? (s.balance[k] / 100).toFixed(2) : '';
+}
+
+function renderBudget(b) {
+  const f = document.getElementById('budgetForm');
+  if (!f.dataset.filled) {
+    f.elements.total.value = b.budget.total ? (b.budget.total / 100).toFixed(2) : '';
+    f.elements.period.value = b.budget.period; f.elements.notes.value = b.budget.notes;
+    f.elements.big_threshold.value = (b.big_threshold / 100).toFixed(2);
+    f.dataset.filled = '1';
+  }
+  document.getElementById('budgetStats').innerHTML = [
+    statTile('Budget', b.budget.total, b.budget.period),
+    statTile('Approved spend', b.approved, 'Proposals carried by vote'),
+    statTile('Pending votes', b.pending, 'Open proposals'),
+    statTile('Remaining', b.budget.total - b.approved, 'Budget less approved spend', true)].join('');
+  document.getElementById('proposalRows').innerHTML = b.proposals.map(p => {
+    const who = p.group === 'partner' ? 'Partners' : 'Members';
+    const voters = Object.entries(p.votes || {}).map(([u, v]) => `${esc(u)}: ${v.choice}`).join(', ');
+    const buttons = p.can_vote ? ['yes', 'no', 'abstain'].map(c => `<button class="btn ghost ${p.my_vote === c ? 'mine' : ''}" data-vote="${c}" data-id="${p.id}">${c}</button>`).join('') : '';
+    return `<tr><td><div class="uname">${esc(p.title)}</div><div class="uemail">${esc(p.description)}</div></td>
+      <td>${gbp(p.amount)}</td><td>${who}<div class="uemail">${p.eligible} eligible</div></td>
+      <td>${p.tally.yes} yes · ${p.tally.no} no · ${p.tally.abstain} abstain<div class="uemail" style="white-space:normal">${voters}</div></td>
+      <td><div class="vote-btns">${buttons || (p.my_vote ? esc(p.my_vote) : '<span class="muted">' + (p.status === 'open' ? 'not eligible' : '—') + '</span>')}</div></td>
+      <td>${p.status === 'open' ? '<span class="pill">Open</span>' : `<span class="pill ${p.outcome === 'approved' ? 'pos' : 'neg'}">${p.outcome}</span>`}</td>
+      <td>${p.status === 'open' ? `<button class="btn ghost" data-close="${p.id}">Close vote</button> ` : ''}<button class="del-btn" data-del="proposals" data-id="${p.id}">Delete</button></td></tr>`;
+  }).join('') || '<tr><td colspan="7" class="muted">No proposals yet.</td></tr>';
+}
+
+async function submit(e, fn) {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try { await fn(); e.target.reset?.(); await loadFinances(); }
+  catch (err) { showError(err.message); }
+  btn.disabled = false;
+}
+const formJson = f => Object.fromEntries(new FormData(f));
+document.getElementById('costForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/costs', { method: 'POST', body: new FormData(e.target) })));
+document.getElementById('incomeForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/income', jsonOpts('POST', formJson(e.target)))));
+document.getElementById('proposalForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/proposals', jsonOpts('POST', formJson(e.target)))));
+document.getElementById('balanceForm').addEventListener('submit', e => { e.preventDefault(); api('/api/admin/finance/balance', jsonOpts('PUT', formJson(e.target))).then(loadFinances).catch(err => showError(err.message)); });
+document.getElementById('budgetForm').addEventListener('submit', e => { e.preventDefault(); api('/api/admin/finance/budget', jsonOpts('PUT', formJson(e.target))).then(loadFinances).catch(err => showError(err.message)); });
+document.getElementById('finApply').addEventListener('click', loadFinances);
+
+document.addEventListener('click', async (e) => {
+  const del = e.target.closest('[data-del]'), vote = e.target.closest('[data-vote]'), close = e.target.closest('[data-close]');
+  try {
+    if (del) {
+      if (!confirm('Delete this entry? This can\'t be undone.')) return;
+      await api(`/api/admin/finance/${del.dataset.del}/${del.dataset.id}`, { method: 'DELETE' });
+    } else if (vote) {
+      await api(`/api/finance/proposals/${vote.dataset.id}/vote`, jsonOpts('POST', { choice: vote.dataset.vote }));
+    } else if (close) {
+      if (!confirm('Close voting and record the result?')) return;
+      await api(`/api/admin/finance/proposals/${close.dataset.close}/close`, { method: 'POST' });
+    } else return;
+    loadFinances();
+  } catch (err) { showError(err.message); }
+});
+
+showTab(location.hash.slice(1) || 'activity');
 </script>
 </body>
 </html>
