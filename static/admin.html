@@ -143,8 +143,11 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
           <label>Description<input name="description" size="26"></label>
           <label>Type<select name="type" id="costType"></select></label>
           <label>Amount (£)<input name="amount" type="number" step="0.01" min="0.01" required style="width:110px"></label>
-          <label>Evidence<input type="file" name="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xlsx,.txt"></label>
-          <button class="btn" type="submit">Upload cost</button>
+          <label>Evidence 1<input type="file" name="file" id="ev1" required accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xlsx,.txt"></label>
+          <label>Evidence 2 (optional)<input type="file" name="file" id="ev2" accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xlsx,.txt"></label>
+          <div id="existingEv" class="muted" style="width:100%"></div>
+          <button class="btn" type="submit" id="costSubmit">Upload cost</button>
+          <button class="btn ghost" type="button" id="costCancel" style="display:none">Cancel edit</button>
         </form>
         <div class="table-wrap"><table class="fin-table"><thead><tr><th>Date paid</th><th>Invoice date</th><th>Supplier</th><th>Type</th><th>Amount</th><th>Evidence</th><th>By</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
       </div>
@@ -342,7 +345,7 @@ const pct = r => r == null ? '—' : (r * 100).toFixed(1) + '%';
 const times = r => r == null ? '—' : r.toFixed(2) + '×';
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const BAL_LABELS = { cash: 'Cash', receivables: 'Receivables', inventory: 'Inventory', other_current_assets: 'Other current assets', fixed_assets: 'Fixed assets', current_liabilities: 'Current liabilities', long_term_liabilities: 'Long-term liabilities' };
-let COST_TYPES = {}, financeReady = false;
+let COST_TYPES = {}, financeReady = false, COSTS = [], editingId = null;
 
 async function api(url, opts) {
   const res = await fetch(url, opts);
@@ -363,7 +366,7 @@ async function loadFinances() {
     const [costs, income, sum, budget] = await Promise.all([
       api('/api/admin/finance/costs'), api('/api/admin/finance/income'),
       api('/api/admin/finance/summary?' + r.qs), api('/api/admin/finance/budget')]);
-    COST_TYPES = costs.types;
+    COST_TYPES = costs.types; COSTS = costs.costs;
     if (!financeReady) {
       document.getElementById('costType').innerHTML = Object.entries(COST_TYPES).map(([k, v]) => `<option value="${k}" ${k === 'operating' ? 'selected' : ''}>${v}</option>`).join('');
       financeReady = true;
@@ -371,8 +374,8 @@ async function loadFinances() {
     document.getElementById('costRows').innerHTML = costs.costs.filter(c => inRange(c.date, r)).map(c => `
       <tr><td>${c.date}</td><td>${c.invoice_date || c.date}</td><td><div class="uname">${esc(c.supplier)}</div><div class="uemail">${esc(c.description)}</div></td>
       <td><span class="pill">${COST_TYPES[c.type]}</span></td><td>${gbp(c.amount)}</td>
-      <td><a href="/api/admin/finance/file/${c.file_id}" target="_blank" rel="noopener">${esc(c.file_name)}</a></td>
-      <td>${esc(c.added_by)}</td><td><button class="del-btn" data-del="costs" data-id="${c.id}">Delete</button></td></tr>`).join('')
+      <td>${c.files.map(f => `<div><a href="/api/admin/finance/file/${f.file_id}" target="_blank" rel="noopener">${esc(f.file_name)}</a></div>`).join('')}</td>
+      <td>${esc(c.added_by)}</td><td style="white-space:nowrap"><button class="btn ghost" data-edit="${c.id}">Edit</button> <button class="del-btn" data-del="costs" data-id="${c.id}">Delete</button></td></tr>`).join('')
       || '<tr><td colspan="8" class="muted">No costs uploaded yet.</td></tr>';
     document.getElementById('incomeRows').innerHTML = income.income.filter(i => inRange(i.date, r)).map(i => `
       <tr><td>${i.date}</td><td>${esc(i.description)}</td><td><span class="pill">${i.source === 'cart' ? 'Cart' : 'Manual'}</span></td>
@@ -451,7 +454,42 @@ async function submit(e, fn) {
   btn.disabled = false;
 }
 const formJson = f => Object.fromEntries(new FormData(f));
-document.getElementById('costForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/costs', { method: 'POST', body: new FormData(e.target) })));
+function resetCostForm() {
+  editingId = null;
+  const f = document.getElementById('costForm');
+  f.reset();
+  document.getElementById('ev1').required = true;
+  document.getElementById('existingEv').innerHTML = '';
+  document.getElementById('costSubmit').textContent = 'Upload cost';
+  document.getElementById('costCancel').style.display = 'none';
+}
+function startEdit(id) {
+  const c = COSTS.find(x => x.id === id);
+  if (!c) return;
+  editingId = id;
+  const f = document.getElementById('costForm');
+  f.elements.date.value = c.date; f.elements.invoice_date.value = c.invoice_date || c.date;
+  f.elements.supplier.value = c.supplier; f.elements.description.value = c.description || '';
+  f.elements.type.value = c.type; f.elements.amount.value = (c.amount / 100).toFixed(2);
+  document.getElementById('ev1').required = false;
+  document.getElementById('existingEv').innerHTML = 'Current evidence (tick to remove): ' + c.files.map(x =>
+    `<label style="display:inline-flex;flex-direction:row;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-family:inherit;margin-right:14px"><input type="checkbox" class="rm-ev" value="${x.file_id}"> ${esc(x.file_name)}</label>`).join('')
+    + '<br>Total evidence per cost is capped at 2; new files add to whatever you keep.';
+  document.getElementById('costSubmit').textContent = 'Save changes';
+  document.getElementById('costCancel').style.display = '';
+  f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+document.getElementById('costCancel').addEventListener('click', resetCostForm);
+document.getElementById('costForm').addEventListener('submit', e => submit(e, async () => {
+  const body = new FormData(e.target);
+  if (editingId) {
+    document.querySelectorAll('.rm-ev:checked').forEach(cb => body.append('remove', cb.value));
+    await api('/api/admin/finance/costs/' + editingId, { method: 'PUT', body });
+  } else {
+    await api('/api/admin/finance/costs', { method: 'POST', body });
+  }
+  resetCostForm();
+}));
 document.getElementById('incomeForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/income', jsonOpts('POST', formJson(e.target)))));
 document.getElementById('proposalForm').addEventListener('submit', e => submit(e, () => api('/api/admin/finance/proposals', jsonOpts('POST', formJson(e.target)))));
 document.getElementById('balanceForm').addEventListener('submit', e => { e.preventDefault(); api('/api/admin/finance/balance', jsonOpts('PUT', formJson(e.target))).then(loadFinances).catch(err => showError(err.message)); });
@@ -459,6 +497,8 @@ document.getElementById('budgetForm').addEventListener('submit', e => { e.preven
 document.getElementById('finApply').addEventListener('click', loadFinances);
 
 document.addEventListener('click', async (e) => {
+  const edit = e.target.closest('[data-edit]');
+  if (edit) return startEdit(+edit.dataset.edit);
   const del = e.target.closest('[data-del]'), vote = e.target.closest('[data-vote]'), close = e.target.closest('[data-close]');
   try {
     if (del) {

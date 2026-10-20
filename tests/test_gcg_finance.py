@@ -50,7 +50,7 @@ def test_costs_require_evidence_and_admin(client_for):
     assert r.status_code == 400
     r = add_cost(gary, "12.50")
     assert r.status_code == 200
-    fid = r.get_json()["cost"]["file_id"]
+    fid = r.get_json()["cost"]["files"][0]["file_id"]
     assert gary.get(f"/api/admin/finance/file/{fid}").data == b"%PDF-1.4"
     assert tom.get(f"/api/admin/finance/file/{fid}").status_code == 403
 
@@ -95,3 +95,26 @@ def test_voting_groups(client_for):
     b = gary.get("/api/admin/finance/budget").get_json()
     out = {p["title"]: p["outcome"] for p in b["proposals"]}
     assert out == {"Big": "approved", "Small": "rejected"} and b["approved"] == 60000
+
+
+def test_edit_cost_and_two_evidence(client_for):
+    gary = client_for("gary")
+    pdf = lambda n: (io.BytesIO(b"x"), n)
+    base = {"date": "2026-05-24", "supplier": "Railway", "type": "operating", "amount": "3.83"}
+    r = gary.post("/api/admin/finance/costs", data=dict(base, file=[pdf("a.pdf"), pdf("b.pdf")]))
+    cid = r.get_json()["cost"]["id"]
+    assert len(r.get_json()["cost"]["files"]) == 2
+    assert gary.post("/api/admin/finance/costs", data=dict(base, file=[pdf("a.pdf"), pdf("b.pdf"), pdf("c.pdf")])).status_code == 400
+    # at the cap: a third file is refused, removing one first makes room
+    assert gary.put(f"/api/admin/finance/costs/{cid}", data=dict(base, file=pdf("c.pdf")),
+                    content_type="multipart/form-data").status_code == 400
+    first = gary.get("/api/admin/finance/costs").get_json()["costs"][0]["files"][0]["file_id"]
+    r = gary.put(f"/api/admin/finance/costs/{cid}", data=dict(base, amount="4.00", remove=first, file=pdf("c.pdf")),
+                 content_type="multipart/form-data")
+    assert r.status_code == 200
+    c = gary.get("/api/admin/finance/costs").get_json()["costs"][0]
+    assert c["amount"] == 400 and [f["file_name"] for f in c["files"]] == ["b.pdf", "c.pdf"]
+    # removing everything without a replacement is refused
+    ids = [f["file_id"] for f in c["files"]]
+    assert gary.put(f"/api/admin/finance/costs/{cid}", data=dict(base, remove=ids),
+                    content_type="multipart/form-data").status_code == 400

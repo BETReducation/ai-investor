@@ -31,6 +31,7 @@ COST_TYPES = {
 BALANCE_FIELDS = ["cash", "receivables", "inventory", "other_current_assets", "fixed_assets",
                   "current_liabilities", "long_term_liabilities"]
 MAX_FILE_BYTES = 5 * 1024 * 1024
+MAX_EVIDENCE = 2
 ALLOWED_EXT = {"pdf", "png", "jpg", "jpeg", "webp", "heic", "csv", "xlsx", "txt"}
 DEFAULT_BIG_THRESHOLD = 50000  # pence: spend at/above this goes to a partner vote
 
@@ -179,34 +180,74 @@ def finance_file(fid):
 
 # ---- costs ---------------------------------------------------------------------
 
+def _cost_files(c) -> list:
+    """Evidence list; entries saved before two-file support carry a single file_id."""
+    return c.get("files") or ([{"file_id": c["file_id"], "file_name": c["file_name"]}] if c.get("file_id") else [])
+
+
+def _uploads() -> list:
+    return [f for f in request.files.getlist("file") if f and f.filename]
+
+
+def _cost_fields(form) -> dict:
+    kind = form.get("type", "operating")
+    if kind not in COST_TYPES:
+        raise FinError("Unknown cost type")
+    paid = _date(form.get("date"))
+    return {"date": paid, "invoice_date": _date(form["invoice_date"]) if form.get("invoice_date") else paid,
+            "supplier": _text(form.get("supplier"), 120, "Supplier"),
+            "description": _text(form.get("description"), 300, "Description", required=False),
+            "type": kind, "amount": _pence(form.get("amount"))}
+
+
 @bp.route("/api/admin/finance/costs", methods=["GET"])
 @login_required
 def list_costs():
     _admin_required()
-    return jsonify({"costs": sorted(store.read()["costs"], key=lambda c: (c["date"], c["id"]), reverse=True),
-                    "types": COST_TYPES})
+    costs = [dict(c, files=_cost_files(c)) for c in store.read()["costs"]]
+    return jsonify({"costs": sorted(costs, key=lambda c: (c["date"], c["id"]), reverse=True), "types": COST_TYPES})
 
 
 @bp.route("/api/admin/finance/costs", methods=["POST"])
 @login_required
 def add_cost():
     _admin_required()
-    form = request.form
-    kind = form.get("type", "operating")
-    if kind not in COST_TYPES:
-        raise FinError("Unknown cost type")
-    upload = request.files.get("file")
-    if not upload or not upload.filename:
+    entry = _cost_fields(request.form)
+    uploads = _uploads()
+    if not uploads:
         raise FinError("Evidence file is required (receipt or invoice)")
-    paid = _date(form.get("date"))
-    entry = {"date": paid, "invoice_date": _date(form["invoice_date"]) if form.get("invoice_date") else paid, "supplier": _text(form.get("supplier"), 120, "Supplier"),
-             "description": _text(form.get("description"), 300, "Description", required=False),
-             "type": kind, "amount": _pence(form.get("amount")), "added_by": current_user.id, "at": _now()}
-    entry.update(_save_file(upload))
+    if len(uploads) > MAX_EVIDENCE:
+        raise FinError(f"At most {MAX_EVIDENCE} evidence files")
+    entry.update(added_by=current_user.id, at=_now(), files=[_save_file(f) for f in uploads])
     with store.txn() as doc:
         entry["id"] = _new_id(doc)
         doc["costs"].append(entry)
     return jsonify({"cost": entry})
+
+
+@bp.route("/api/admin/finance/costs/<int:cid>", methods=["PUT"])
+@login_required
+def edit_cost(cid):
+    _admin_required()
+    fields = _cost_fields(request.form)
+    drop = set(request.form.getlist("remove"))
+    uploads = _uploads()
+    with store.txn() as doc:
+        c = next((x for x in doc["costs"] if x["id"] == cid), None)
+        if not c:
+            raise FinError("Cost not found", 404)
+        kept = [f for f in _cost_files(c) if f["file_id"] not in drop]
+        if not kept and not uploads:
+            raise FinError("Keep or upload at least one evidence file")
+        if len(kept) + len(uploads) > MAX_EVIDENCE:
+            raise FinError(f"At most {MAX_EVIDENCE} evidence files")
+        removed = [f for f in _cost_files(c) if f["file_id"] in drop]
+        c.update(fields, files=kept + [_save_file(f) for f in uploads], edited_by=current_user.id, edited_at=_now())
+        c.pop("file_id", None)
+        c.pop("file_name", None)
+    for f in removed:
+        _delete_file(f["file_id"])
+    return jsonify({"success": True})
 
 
 @bp.route("/api/admin/finance/costs/<int:cid>", methods=["DELETE"])
@@ -218,7 +259,8 @@ def delete_cost(cid):
         if not match:
             raise FinError("Cost not found", 404)
         doc["costs"].remove(match)
-    _delete_file(match.get("file_id"))
+    for f in _cost_files(match):
+        _delete_file(f["file_id"])
     return jsonify({"success": True})
 
 
