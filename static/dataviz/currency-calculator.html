@@ -72,17 +72,17 @@ details.sub{margin-top:16px;border-top:1px dashed var(--ln);padding-top:6px}deta
 <div class="chips" id="chips"></div>
 </div></details>
 
-<details class="card btc" open><summary>In Bitcoin</summary><div class="inner">
+<details class="card btc"><summary>In Bitcoin</summary><div class="inner">
 <div id="btcrows"></div>
 <div class="note"><label for="btcp">Bitcoin price in USD (edit to match today’s market)</label><input id="btcp" type="number" inputmode="decimal" value="75000" min="1"></div>
 </div></details>
 
-<details class="card" open><summary>Currency guide</summary><div class="inner">
+<details class="card"><summary>Currency guide</summary><div class="inner">
 <div class="tabs"><button id="t1" aria-pressed="false"></button><button id="t2" aria-pressed="true"></button></div>
 <div id="info"></div>
 </div></details>
 
-<details class="card" open><summary>Inflation hotspots</summary><div class="inner"><p class="sub" style="margin-bottom:10px">Deep red is high inflation, amber is moderate and blue is falling prices. Grey land has no figure here. Scroll sideways, then tap a country (small ones are dots) for its rate.</p><div class="tabs" id="mm"><button id="m1" aria-pressed="true">Snapshot (mid-2026)</button><button id="m2" aria-pressed="false">World Bank (live)</button></div><div class="mapw"><svg id="map" viewBox="0 0 360 142" width="760" height="300" role="img" aria-label="World map of annual inflation by country"></svg></div><div class="leg"></div><div class="legl"><span>Below 0%</span><span>0–3%</span><span>6%</span><span>12%</span><span>25%+</span></div><div id="mapinfo" class="rate" style="margin-top:10px">Tap a country to see its rate.</div><div class="rk"><div><h3>Hottest</h3><div id="hi"></div></div><div><h3>Coolest</h3><div id="lo"></div></div></div><p class="note">Snapshot view: latest published annual CPI figures, mostly April to June 2026 (Türkiye is Dec 2025). Inflation is released monthly, so for the latest annual figures use the World Bank button. Countries without a reliable figure are shown in grey, borders are simplified, and Antarctica has no currency.</p></div></details>
+<details class="card"><summary>Inflation hotspots</summary><div class="inner"><p class="sub" style="margin-bottom:10px">Deep red is high inflation, amber is moderate and blue is falling prices. Grey land has no figure here. Scroll sideways, then tap a country (small ones are dots) for its rate.</p><div class="tabs" id="mm"><button id="m1" aria-pressed="true">Snapshot (mid-2026)</button><button id="m2" aria-pressed="false">World Bank (live)</button></div><div class="mapw"><svg id="map" viewBox="0 0 360 142" width="760" height="300" role="img" aria-label="World map of annual inflation by country"></svg></div><div class="leg"></div><div class="legl"><span>Below 0%</span><span>0–3%</span><span>6%</span><span>12%</span><span>25%+</span></div><div id="mapinfo" class="rate" style="margin-top:10px">Tap a country to see its rate.</div><div class="rk"><div><h3>Hottest</h3><div id="hi"></div></div><div><h3>Coolest</h3><div id="lo"></div></div></div><p class="note">Snapshot view: latest published annual CPI figures, mostly April to June 2026 (Türkiye is Dec 2025). Inflation is released monthly, so for the latest annual figures use the World Bank button. Countries without a reliable figure are shown in grey, borders are simplified, and Antarctica has no currency.</p></div></details>
 <p class="note">Exchange rates and the Bitcoin price update live when you are online (otherwise they are an indicative snapshot). Inflation figures are rounded annual averages from public statistics and may be revised. Economy figures (debt, jobs, central bank rates, growth) are rounded estimates drawn from IMF, central bank and national sources for roughly 2025 to mid-2026, and n/a means no clear current figure. Educational and historical information only, not financial advice.</p>
 </main>
 <script>
@@ -203,7 +203,7 @@ FJD:[80,null,null,3,"Tourism, sugar, fish","Fuel, machinery, food"]};
 function eco(c){var e=E[c];if(!e)return"";
  var bx=function(v,l){return"<div><b>"+v+"</b><small>"+l+"</small></div>"};
  var r=e[2]==null?"n/a":(typeof e[2]==="string"?e[2]:e[2].toFixed(2))+"%";
- return'<details class="sub" open><summary>Economy snapshot</summary><div class="stat">'+bx(e[0]==null?"n/a":e[0]+"%","government debt, share of GDP")+bx(e[1]==null?"n/a":e[1]+"%","unemployment")+bx(r,"central bank rate")+bx(e[3]==null?"n/a":(e[3]>0?"+":"")+e[3]+"%","GDP growth, 2026 estimate")+'</div><div class="row"><span>Top exports</span><span>'+e[4]+'</span></div><div class="row"><span>Top imports</span><span>'+e[5]+"</span></div>"+wbline(c)+(e[6]?'<p class="note">'+e[6]+"</p>":"")+"</details>"}
+ return'<details class="sub"><summary>Economy snapshot</summary><div class="stat">'+bx(e[0]==null?"n/a":e[0]+"%","government debt, share of GDP")+bx(e[1]==null?"n/a":e[1]+"%","unemployment")+bx(r,"central bank rate")+bx(e[3]==null?"n/a":(e[3]>0?"+":"")+e[3]+"%","GDP growth, 2026 estimate")+'</div><div class="row"><span>Top exports</span><span>'+e[4]+'</span></div><div class="row"><span>Top imports</span><span>'+e[5]+"</span></div>"+wbline(c)+(e[6]?'<p class="note">'+e[6]+"</p>":"")+"</details>"}
 function wbline(c){var w=ISO&&W&&W[ISO[c]];if(!w)return"";var p=[];[["inf","inflation"],["gdp","GDP growth"],["une","unemployment"],["debt","central govt debt"]].forEach(function(k){if(w[k[0]])p.push(k[1]+" "+(+w[k[0]].v).toFixed(1)+"% ("+w[k[0]].y+")")});return p.length?'<p class="note"><b>Live from the World Bank (latest annual figures):</b> '+p.join(" · ")+"</p>":""}
 function info(){
  var m=M[st.tab==="to"?st.to:st.from],h='<div class="gh"><span class="gf">'+fl(m.c)+'</span><span class="gs">'+m.s+'</span></div><h2 style="font-size:18px">'+m.n+" ("+m.c+")</h2>";
