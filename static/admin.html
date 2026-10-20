@@ -135,9 +135,10 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
 
       <div class="fin-block">
         <div class="section-head">Costs</div>
-        <div class="section-note">Upload the invoice or receipt for every cost paid. No evidence, no entry. Pick the type so it lands in the right profit line.</div>
+        <div class="section-note">Upload the invoice or receipt for every cost paid. No evidence, no entry. Profit and ratios use the date paid; leave invoice date blank if it matches. Pick the type so it lands in the right profit line.</div>
         <form class="fin-form" id="costForm">
-          <label>Date<input type="date" name="date" required></label>
+          <label>Date paid<input type="date" name="date" required></label>
+          <label>Invoice date<input type="date" name="invoice_date"></label>
           <label>Supplier<input name="supplier" required></label>
           <label>Description<input name="description" size="26"></label>
           <label>Type<select name="type" id="costType"></select></label>
@@ -145,7 +146,7 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
           <label>Evidence<input type="file" name="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.csv,.xlsx,.txt"></label>
           <button class="btn" type="submit">Upload cost</button>
         </form>
-        <div class="table-wrap"><table class="fin-table"><thead><tr><th>Date</th><th>Supplier</th><th>Type</th><th>Amount</th><th>Evidence</th><th>By</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
+        <div class="table-wrap"><table class="fin-table"><thead><tr><th>Date paid</th><th>Invoice date</th><th>Supplier</th><th>Type</th><th>Amount</th><th>Evidence</th><th>By</th><th></th></tr></thead><tbody id="costRows"></tbody></table></div>
       </div>
 
       <div class="fin-block">
@@ -368,11 +369,11 @@ async function loadFinances() {
       financeReady = true;
     }
     document.getElementById('costRows').innerHTML = costs.costs.filter(c => inRange(c.date, r)).map(c => `
-      <tr><td>${c.date}</td><td><div class="uname">${esc(c.supplier)}</div><div class="uemail">${esc(c.description)}</div></td>
+      <tr><td>${c.date}</td><td>${c.invoice_date || c.date}</td><td><div class="uname">${esc(c.supplier)}</div><div class="uemail">${esc(c.description)}</div></td>
       <td><span class="pill">${COST_TYPES[c.type]}</span></td><td>${gbp(c.amount)}</td>
       <td><a href="/api/admin/finance/file/${c.file_id}" target="_blank" rel="noopener">${esc(c.file_name)}</a></td>
       <td>${esc(c.added_by)}</td><td><button class="del-btn" data-del="costs" data-id="${c.id}">Delete</button></td></tr>`).join('')
-      || '<tr><td colspan="7" class="muted">No costs uploaded yet.</td></tr>';
+      || '<tr><td colspan="8" class="muted">No costs uploaded yet.</td></tr>';
     document.getElementById('incomeRows').innerHTML = income.income.filter(i => inRange(i.date, r)).map(i => `
       <tr><td>${i.date}</td><td>${esc(i.description)}</td><td><span class="pill">${i.source === 'cart' ? 'Cart' : 'Manual'}</span></td>
       <td>${gbp(i.amount)}</td><td><button class="del-btn" data-del="income" data-id="${i.id}">Delete</button></td></tr>`).join('')

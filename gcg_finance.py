@@ -198,7 +198,8 @@ def add_cost():
     upload = request.files.get("file")
     if not upload or not upload.filename:
         raise FinError("Evidence file is required (receipt or invoice)")
-    entry = {"date": _date(form.get("date")), "supplier": _text(form.get("supplier"), 120, "Supplier"),
+    paid = _date(form.get("date"))
+    entry = {"date": paid, "invoice_date": _date(form["invoice_date"]) if form.get("invoice_date") else paid, "supplier": _text(form.get("supplier"), 120, "Supplier"),
              "description": _text(form.get("description"), 300, "Description", required=False),
              "type": kind, "amount": _pence(form.get("amount")), "added_by": current_user.id, "at": _now()}
     entry.update(_save_file(upload))
