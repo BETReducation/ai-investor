@@ -52,7 +52,9 @@
       ['Dividend Calculator', DV + 'dividend-calculator', 'Enter a ticker and a share count to see a year of dividend income and where the yield sits on a thermometer.', 'Live data'],
       ['GCG Stock Donut', DV + 'stock-donut', 'Add the shares you own and see your portfolio as a donut, split by stock or sector, with a diversification score.', 'Interactive']
     ] },
-    { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [] },
+    { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [
+      ['Currency Calculator', DV + 'currency-calculator', 'Convert between 40+ currencies and Bitcoin, with each currency\'s history, inflation and economy snapshot.', 'Live data']
+    ] },
     { name: 'Other tools', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
       ['Freedom Clock', DV + 'freedom-clock', 'Pick what you invest, how often and the return you assume, then watch compounding play out over time.', 'Interactive'],
       ['Price &amp; Value Tracker', DV + 'price-value-tracker', 'Log every purchase and sale like a spreadsheet, then see average buy price, current value and gain or loss for each holding.', 'Tracker'],

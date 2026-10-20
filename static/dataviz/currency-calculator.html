@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCG Currency Calculator</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#0e1f1c;--sf:#15302b;--ln:#25473f;--tx:#e7efe9;--mu:#8fa89f;--ac:#d9b25f;--bt:#f7931a;--neg:#e0705f;color-scheme:dark;box-sizing:border-box}
+@media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef3ee;--sf:#fff;--ln:#cddbd2;--tx:#14241f;--mu:#55695f;--ac:#8a6410;--bt:#c56a00;--neg:#b23a28;color-scheme:light}}
+:root[data-theme="light"]{--bg:#eef3ee;--sf:#fff;--ln:#cddbd2;--tx:#14241f;--mu:#55695f;--ac:#8a6410;--bt:#c56a00;--neg:#b23a28;color-scheme:light}
+:root[data-theme="dark"]{--bg:#0e1f1c;--sf:#15302b;--ln:#25473f;--tx:#e7efe9;--mu:#8fa89f;--ac:#d9b25f;--bt:#f7931a;--neg:#e0705f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:var(--tx);font:16px/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:4px 2px 24px}
+h2{font-size:20px;margin:0 0 10px;font-weight:600}
+.sub{color:var(--mu);margin:0 0 18px;font-size:14px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:16px;margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--mu);margin:0 0 4px}
+input,select{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:11px 12px;min-height:44px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.amt{font-size:24px;font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 44px 1fr;gap:8px;align-items:end;margin-top:12px}
+button{font:inherit;cursor:pointer;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:10px;min-height:44px}
+.res{margin-top:16px;padding-top:14px;border-top:1px dashed var(--ln)}
+.big{font-size:32px;font-weight:800;line-height:1.1;word-break:break-all}
+.rate{color:var(--mu);font-size:14px;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chips button{min-height:34px;padding:0 12px;font-size:13px;border-radius:99px}
+.btc{border-left:4px solid var(--bt)}
+.btc b{color:var(--bt)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--ln);font-size:14px}
+.row:last-child{border:0}
+.row span:first-child{color:var(--mu)}
+.row span:last-child{text-align:right}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tabs button[aria-pressed="true"]{background:var(--ac);color:var(--bg);border-color:var(--ac);font-weight:600}
+.chart{width:100%;height:auto;display:block;margin:6px 0}
+.chart text{fill:var(--mu);font-size:8px;text-anchor:middle}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.stat div{background:var(--bg);border-radius:10px;padding:10px}
+.stat b{display:block;font-size:20px}
+.stat small{color:var(--mu)}
+.note{color:var(--mu);font-size:12px;margin-top:8px}
+.note input{margin-top:4px}
+.mapw{overflow-x:auto;margin:0 -4px}.mapw svg{display:block;min-width:760px;max-width:none}.mapw rect{cursor:pointer}.mapw text{pointer-events:none;font-weight:600}.leg{height:10px;border-radius:5px;margin:12px 0 4px;background:linear-gradient(90deg,#1f4fb5,#7fb0ee 12%,#f2c45a 13%,#eea43a 30%,#e2662f 50%,#c92a22 75%,#7a0a12)}.legl{display:flex;justify-content:space-between;font-size:11px;color:var(--mu)}.rk{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.rk h3{font-size:14px;margin:0 0 4px}
+summary{list-style:none;cursor:pointer;font-size:20px;font-weight:600;display:flex;justify-content:space-between;align-items:center;min-height:44px;border-radius:8px}summary::-webkit-details-marker{display:none}summary:focus-visible{outline:2px solid var(--ac);outline-offset:2px}summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--mu);border-bottom:2px solid var(--mu);transform:rotate(45deg);margin:0 4px 4px 12px;transition:transform .2s}details[open]>summary::after{transform:rotate(-135deg);margin-bottom:-2px}.inner{margin-top:10px}@media(prefers-reduced-motion:reduce){summary::after{transition:none}}
+details.sub{margin-top:16px;border-top:1px dashed var(--ln);padding-top:6px}details.sub>summary{font-size:16px;min-height:40px}
+.pairdisp{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-top:14px;text-align:center}.pd{background:var(--bg);border:1px solid var(--ln);border-radius:12px;padding:10px 6px}.pd .f{font-size:44px;line-height:1.15}.pd .s{font-size:40px;font-weight:800;color:var(--ac);line-height:1.1;overflow-wrap:anywhere}.pd small{display:block;color:var(--mu);font-size:12px;margin-top:2px}.pairdisp .ar{color:var(--mu);font-size:20px}.gh{display:flex;align-items:center;gap:14px;margin:0 0 6px}.gf{font-size:56px;line-height:1}.gs{font-size:56px;font-weight:800;color:var(--ac);line-height:1;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+<p class="note" id="live" style="margin:0 0 14px">Using the built-in snapshot while live data loads…</p>
+
+<details class="card" open><summary>Convert</summary><div class="inner"><label for="amt">Amount</label>
+<input id="amt" class="amt" type="number" inputmode="decimal" value="100" min="0">
+<div class="pair">
+<div><label for="from">From</label><select id="from"></select></div>
+<button id="swap" aria-label="Swap currencies">⇄</button>
+<div><label for="to">To</label><select id="to"></select></div>
+</div>
+<div class="pairdisp" id="pd"></div>
+<div class="res">
+<div class="big" id="out"></div>
+<div class="rate" id="rate"></div>
+</div>
+<div class="chips" id="chips"></div>
+</div></details>
+
+<details class="card btc" open><summary>In Bitcoin</summary><div class="inner">
+<div id="btcrows"></div>
+<div class="note"><label for="btcp">Bitcoin price in USD (edit to match today’s market)</label><input id="btcp" type="number" inputmode="decimal" value="75000" min="1"></div>
+</div></details>
+
+<details class="card" open><summary>Currency guide</summary><div class="inner">
+<div class="tabs"><button id="t1" aria-pressed="false"></button><button id="t2" aria-pressed="true"></button></div>
+<div id="info"></div>
+</div></details>
+
+<details class="card" open><summary>Inflation hotspots</summary><div class="inner"><p class="sub" style="margin-bottom:10px">Deep red is high inflation, amber is moderate and blue is falling prices. Grey land has no figure here. Scroll sideways, then tap a country (small ones are dots) for its rate.</p><div class="tabs" id="mm"><button id="m1" aria-pressed="true">Snapshot (mid-2026)</button><button id="m2" aria-pressed="false">World Bank (live)</button></div><div class="mapw"><svg id="map" viewBox="0 0 360 142" width="760" height="300" role="img" aria-label="World map of annual inflation by country"></svg></div><div class="leg"></div><div class="legl"><span>Below 0%</span><span>0–3%</span><span>6%</span><span>12%</span><span>25%+</span></div><div id="mapinfo" class="rate" style="margin-top:10px">Tap a country to see its rate.</div><div class="rk"><div><h3>Hottest</h3><div id="hi"></div></div><div><h3>Coolest</h3><div id="lo"></div></div></div><p class="note">Snapshot view: latest published annual CPI figures, mostly April to June 2026 (Türkiye is Dec 2025). Inflation is released monthly, so for the latest annual figures use the World Bank button. Countries without a reliable figure are shown in grey, borders are simplified, and Antarctica has no currency.</p></div></details>
+<p class="note">Exchange rates and the Bitcoin price update live when you are online (otherwise they are an indicative snapshot). Inflation figures are rounded annual averages from public statistics and may be revised. Economy figures (debt, jobs, central bank rates, growth) are rounded estimates drawn from IMF, central bank and national sources for roughly 2025 to mid-2026, and n/a means no clear current figure. Educational and historical information only, not financial advice.</p>
+</main>
+<script>
+// code,name,symbol,country,perUSD,born,bank,notes,coins,fact,inflation 2016-2025
+var Y=[2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+var D=[
+["USD","US Dollar","$","United States",1,"1792 (Coinage Act)","Federal Reserve","$1, $2, $5, $10, $20, $50, $100","1¢, 5¢, 10¢, 25¢, 50¢, $1","The world’s main reserve currency, used in most global trade invoicing.",[1.3,2.1,2.4,1.8,1.2,4.7,8,4.1,2.9,2.7]],
+["EUR","Euro","€","Euro area (21 countries)",.86,"1999 (cash from 2002)","European Central Bank","€5, €10, €20, €50, €100, €200","1, 2, 5, 10, 20, 50 cent; €1, €2","Replaced national currencies like the mark, franc and lira.",[.2,1.5,1.8,1.2,.3,2.6,8.4,5.4,2.4,2.1]],
+["GBP","Pound Sterling","£","United Kingdom",.75,"Decimalised 1971; origins c.775","Bank of England","£5, £10, £20, £50","1p, 2p, 5p, 10p, 20p, 50p, £1, £2","The oldest currency still in everyday use.",[.7,2.7,2.5,1.8,.9,2.6,9.1,7.3,2.5,3.4]],
+["JPY","Japanese Yen","¥","Japan",155,"1871 (New Currency Act)","Bank of Japan","¥1,000, ¥2,000, ¥5,000, ¥10,000","¥1, 5, 10, 50, 100, 500","Decades of near-zero inflation made Japan the classic low-rate economy.",[-.1,.5,1,.5,0,-.2,2.5,3.3,2.7,3.1]],
+["CHF","Swiss Franc","Fr","Switzerland",.8,"1850","Swiss National Bank","10, 20, 50, 100, 200, 1000 francs","5, 10, 20 rappen; ½, 1, 2, 5 francs","A long-standing safe haven in times of stress.",[-.4,.5,.9,.4,-.7,.6,2.8,2.1,1.1,.2]],
+["CAD","Canadian Dollar","$","Canada",1.37,"1858","Bank of Canada","$5, $10, $20, $50, $100","5¢, 10¢, 25¢, $1 (loonie), $2 (toonie)","The penny was withdrawn from circulation in 2012.",[1.4,1.6,2.3,1.9,.7,3.4,6.8,3.9,2.4,2]],
+["AUD","Australian Dollar","$","Australia",1.5,"1966 (replaced the pound)","Reserve Bank of Australia","$5, $10, $20, $50, $100","5¢, 10¢, 20¢, 50¢, $1, $2","Australia pioneered polymer banknotes in 1988.",[1.3,2,1.9,1.6,.9,2.8,6.6,5.6,3.2,3]],
+["NZD","New Zealand Dollar","$","New Zealand",1.67,"1967 (replaced the pound)","Reserve Bank of New Zealand","$5, $10, $20, $50, $100","10¢, 20¢, 50¢, $1, $2","Nicknamed the kiwi.",[.6,1.9,1.6,1.6,1.7,3.9,7.2,5.7,2.9,2.8]],
+["CNY","Chinese Yuan (Renminbi)","¥","China",7.1,"1948 (renminbi)","People’s Bank of China","¥1, 5, 10, 20, 50, 100","1 jiao, 5 jiao, ¥1","Renminbi means “people’s currency”; yuan is the unit.",[2,1.6,2.1,2.9,2.5,.9,2,.2,.2,0]],
+["INR","Indian Rupee","₹","India",88,"Rupee dates to the 1540s; decimal 1957","Reserve Bank of India","₹10, 20, 50, 100, 200, 500","₹1, 2, 5, 10, 20","Decimalised in 1957: 100 paise to the rupee.",[4.5,3.6,3.4,4.8,6.2,5.5,6.7,5.4,4.9,2.5]],
+["KRW","South Korean Won","₩","South Korea",1400,"1962 (current won)","Bank of Korea","₩1,000, 5,000, 10,000, 50,000","₩10, 50, 100, 500","No subunit is used in practice.",[1,1.9,1.5,.4,.5,2.5,5.1,3.6,2.3,2.1]],
+["SGD","Singapore Dollar","$","Singapore",1.29,"1967","Monetary Authority of Singapore","$2, $5, $10, $50, $100","5¢, 10¢, 20¢, 50¢, $1","Managed against a basket of currencies rather than a fixed peg.",[-.5,.6,.4,.6,-.2,2.3,6.1,4.8,2.4,.9]],
+["HKD","Hong Kong Dollar","$","Hong Kong",7.8,"1863; pegged to USD since 1983","HKMA (notes issued by three banks)","$10, 20, 50, 100, 500, 1000","10¢, 20¢, 50¢, $1, 2, 5, 10","Trades inside a 7.75–7.85 band per US dollar.",[2.4,1.5,2.4,2.9,.3,1.6,1.9,2.1,1.7,1.4]],
+["SEK","Swedish Krona","kr","Sweden",9.4,"1873","Sveriges Riksbank","20, 50, 100, 200, 500, 1000 kr","1, 2, 5, 10 kr","Sweden is one of the most cashless societies in the world.",[1.1,1.9,2,1.8,.7,2.7,8.4,8.5,2.8,.7]],
+["NOK","Norwegian Krone","kr","Norway",10,"1875","Norges Bank","50, 100, 200, 500, 1000 kr","1, 5, 10, 20 kr","Often moves with oil prices.",[3.6,1.9,2.8,2.2,1.3,3.5,5.8,5.5,3.1,3]],
+["PLN","Polish Złoty","zł","Poland",3.65,"1995 redenomination","National Bank of Poland","10, 20, 50, 100, 200, 500 zł","1, 2, 5 gr; 1, 2, 5 zł","10,000 old złoty became 1 new złoty in 1995.",[-.6,2,1.6,2.3,3.4,5.1,14.4,11.4,3.7,3.6]],
+["TRY","Turkish Lira","₺","Türkiye",42,"2005 (new lira)","Central Bank of Türkiye","₺5, 10, 20, 50, 100, 200","1, 5, 10, 25, 50 kuruş; ₺1","Six zeros were removed in 2005; the lira has lost most of its value since 2018.",[7.8,11.1,16.3,15.2,12.3,19.6,72.3,53.9,58.5,33]],
+["RUB","Russian Ruble","₽","Russia",80,"Modern ruble 1991; redenominated 1998","Bank of Russia","₽50, 100, 200, 500, 1000, 2000, 5000","1, 5, 10, 50 kop; ₽1, 2, 5, 10","Redenominated 1,000 to 1 in 1998 after the default.",[7,3.7,2.9,4.5,3.4,6.7,13.8,5.9,8.4,8.5]],
+["BRL","Brazilian Real","R$","Brazil",5.4,"1994 (Plano Real)","Banco Central do Brasil","R$2, 5, 10, 20, 50, 100, 200","5, 10, 25, 50 centavos; R$1","The Real Plan ended hyperinflation of over 2,000% a year.",[8.7,3.4,3.7,3.7,3.2,8.3,9.3,4.6,4.4,5]],
+["MXN","Mexican Peso","$","Mexico",18.5,"1993 (new peso)","Banco de México","$20, 50, 100, 200, 500, 1000","10, 20, 50¢; $1, 2, 5, 10, 20","Three zeros were removed in 1993.",[2.8,6,4.9,3.6,3.4,5.7,7.9,5.5,4.7,3.8]],
+["ARS","Argentine Peso","$","Argentina",1450,"1992 (after convertibility)","Banco Central de la República Argentina","$500, 1000, 2000, 10000, 20000","Rarely used now","Several zeros dropped since 1970; inflation topped 200% in 2023.",[41,25.7,34.3,53.5,42,48.4,72.4,133.5,219.9,42]],
+["ZAR","South African Rand","R","South Africa",17.5,"1961 (replaced the pound)","South African Reserve Bank","R10, 20, 50, 100, 200","10, 20, 50c; R1, 2, 5","Named after the Witwatersrand gold fields.",[6.3,5.3,4.6,4.1,3.3,4.5,6.9,6,4.4,3.2]],
+["EGP","Egyptian Pound","E£","Egypt",48,"1834 (modern pound)","Central Bank of Egypt","E£5, 10, 20, 50, 100, 200","25, 50 piastres; E£1","Floated in 2016 and again in 2024, with sharp devaluations each time.",[10.2,23.5,20.9,13.9,5.7,4.5,8.5,24.4,33.3,28]],
+["SAR","Saudi Riyal","﷼","Saudi Arabia",3.75,"1925; pegged to USD since 1986","Saudi Central Bank","﷼5, 10, 50, 100, 200, 500","5, 10, 25, 50 halalas; ﷼1, 2","Pegged at 3.75 per US dollar.",[2,-.9,2.5,-1.2,3.4,3.1,2.5,2.3,1.7,2]],
+["AED","UAE Dirham","د.إ","United Arab Emirates",3.6725,"1973; pegged to USD since 1997","Central Bank of the UAE","Dh5, 10, 20, 50, 100, 200, 500, 1000","25, 50 fils; Dh1","Pegged at 3.6725 per US dollar.",[1.6,2,3.1,-1.9,-2.1,-.1,4.8,1.6,2.3,1.6]],
+["ILS","Israeli New Shekel","₪","Israel",3.3,"1985 (new shekel)","Bank of Israel","₪20, 50, 100, 200","10, 50 agorot; ₪1, 2, 5, 10","Replaced the old shekel at 1,000 to 1 during stabilisation.",[-.5,.2,.8,.8,-.6,1.5,4.4,4.2,3,3.2]],
+["THB","Thai Baht","฿","Thailand",32.5,"1928","Bank of Thailand","฿20, 50, 100, 500, 1000","25, 50 satang; ฿1, 2, 5, 10","Floating the baht in July 1997 set off the Asian financial crisis.",[.2,.7,1.1,.7,-.8,1.2,6.1,1.2,.4,-.1]],
+["IDR","Indonesian Rupiah","Rp","Indonesia",16500,"1946","Bank Indonesia","Rp1,000 to Rp100,000","Rp100, 200, 500, 1000","Many zeros; redenomination has been discussed for years.",[3.5,3.8,3.2,2.8,2,1.6,4.2,3.7,2.3,1.9]],
+["NGN","Nigerian Naira","₦","Nigeria",1500,"1973 (replaced the pound)","Central Bank of Nigeria","₦100, 200, 500, 1000","50 kobo; ₦1, 2","Floated in 2023 and lost much of its value.",[15.7,16.5,12.1,11.4,13.2,17,18.8,24.5,33.2,23]],
+["KES","Kenyan Shilling","KSh","Kenya",129,"1966","Central Bank of Kenya","KSh50, 100, 200, 500, 1000","KSh1, 5, 10, 20","Home of M-Pesa, the mobile money pioneer.",[6.3,8,4.7,5.2,5.3,6.1,7.7,7.7,4.5,4.1]],
+["MAD","Moroccan Dirham","Dh","Morocco",9.3,"1960","Bank Al-Maghrib","Dh20, 50, 100, 200","10, 20, 50 santimat; Dh1, 2, 5, 10","Managed against a basket of euro and US dollar.",[1.6,.8,1.9,.2,.6,1.4,6.6,6.1,.9,.8]],
+["GHS","Ghanaian Cedi","GH₵","Ghana",11,"2007 (redenominated)","Bank of Ghana","GH₵1, 2, 5, 10, 20, 50, 100, 200","1, 5, 10, 20, 50 pesewas; GH₵1, 2","Cedi means cowrie shell; 10,000 old cedis became 1 in 2007.",[17.5,12.4,9.8,7.1,9.9,10,31.9,40.3,22.9,14]],
+["PKR","Pakistani Rupee","Rs","Pakistan",282,"1948","State Bank of Pakistan","Rs10, 20, 50, 100, 500, 1000, 5000","Rs1, 2, 5, 10","Inflation hit about 29% in 2023.",[2.9,4.1,3.9,6.8,10.7,8.9,12.2,29.2,23.4,4.5]],
+["BDT","Bangladeshi Taka","৳","Bangladesh",122,"1972","Bangladesh Bank","৳2, 5, 10, 20, 50, 100, 500, 1000","৳1, 2, 5, 10","Replaced the Pakistani rupee after independence.",[5.5,5.4,5.8,5.5,5.6,5.5,6.2,9,9.7,8.5]],
+["MYR","Malaysian Ringgit","RM","Malaysia",4.2,"1967","Bank Negara Malaysia","RM1, 5, 10, 20, 50, 100","5, 10, 20, 50 sen","Ringgit means “jagged”, after the serrated edges of old Spanish dollars.",[2.1,3.8,1,.7,-1.1,2.5,3.4,2.5,1.8,1.4]],
+["TWD","New Taiwan Dollar","NT$","Taiwan",31,"1949","Central Bank of the Republic of China (Taiwan)","NT$100, 200, 500, 1000, 2000","NT$1, 5, 10, 50","Replaced the old Taiwan dollar at 40,000 to 1.",[1.4,.6,1.4,.6,-.2,2,2.9,2.5,2.2,1.6]],
+["PHP","Philippine Peso","₱","Philippines",57,"1852; modern piso 1967","Bangko Sentral ng Pilipinas","₱20, 50, 100, 200, 500, 1000","5, 10, 25 sentimo; ₱1, 5, 10, 20","The ₱1,000 note is polymer.",[1.8,2.9,5.2,2.5,2.4,3.9,5.8,6,3.2,1.7]],
+["VND","Vietnamese Dong","₫","Vietnam",26300,"1978 (unified); dong dates to 1946","State Bank of Vietnam","₫1,000 up to ₫500,000","Rarely used","Polymer notes; the ₫500,000 is the largest.",[2.7,3.5,3.5,2.8,3.2,1.8,3.2,3.3,3.6,3.3]],
+["DKK","Danish Krone","kr","Denmark",6.4,"1875","Danmarks Nationalbank","50, 100, 200, 500, 1000 kr","50 øre; 1, 2, 5, 10, 20 kr","Pegged to the euro within a narrow band.",[0,1.1,.7,.7,.3,1.9,8.5,3.3,1.4,1.9]],
+["CZK","Czech Koruna","Kč","Czechia",21,"1993","Czech National Bank","100, 200, 500, 1000, 2000, 5000 Kč","1, 2, 5, 10, 20, 50 Kč","Created when Czechoslovakia split in 1993.",[.6,2.4,2.1,2.8,3.2,3.8,15.1,10.7,2.4,2.5]],
+["HUF","Hungarian Forint","Ft","Hungary",335,"1946","Magyar Nemzeti Bank","Ft500, 1000, 2000, 5000, 10000, 20000","Ft5, 10, 20, 50, 100, 200","Replaced the pengő after the worst hyperinflation on record.",[.4,2.4,2.8,3.4,3.3,5.1,14.6,17,3.7,4.5]],
+["CLP","Chilean Peso","$","Chile",940,"1975","Banco Central de Chile","$1,000, 2,000, 5,000, 10,000, 20,000","$10, 50, 100, 500","No minor units in everyday use.",[3.8,2.2,2.3,2.3,3,4.5,11.6,7.6,3.9,4]],
+["COP","Colombian Peso","$","Colombia",4000,"1837","Banco de la República","$2,000 up to $100,000","$50, 100, 200, 500, 1000","The $100,000 note is the largest.",[7.5,4.3,3.2,3.5,2.5,3.5,10.2,11.7,6.6,5.2]],
+["PEN","Peruvian Sol","S/","Peru",3.6,"1991 (nuevo sol)","Banco Central de Reserva del Perú","S/10, 20, 50, 100, 200","10, 20, 50 céntimos; S/1, 2, 5","Introduced to end the hyperinflation of the 1980s.",[3.6,2.8,1.3,2.1,1.8,4,7.9,6.3,2.4,1.5]],
+["FJD","Fijian Dollar","$","Fiji",2.25,"1969","Reserve Bank of Fiji","$5, 10, 20, 50, 100","5, 10, 20, 50c; $1, 2","Managed against a basket of major currencies.",[3.9,3.4,4.1,1.8,-2.6,.2,4.3,5.3,2.2,1.5]],
+["BTC","Bitcoin","₿","No country (decentralised)",0,"2009 (genesis block)","None; run by a global network","Digital only","Divisible to 1 satoshi (0.00000001 BTC)","Supply is capped at 21 million coins. Not fiat; shown here for comparison.",null]
+];
+var M={};D.forEach(function(r){M[r[0]]={c:r[0],n:r[1],s:r[2],co:r[3],r:r[4],b:r[5],bk:r[6],no:r[7],cn:r[8],f:r[9],i:r[10]}});
+var $=function(i){return document.getElementById(i)};
+var st={from:"USD",to:"EUR",tab:"to"};
+var FL={USD:"US",EUR:"EU",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",TWD:"TW",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ"};
+function f2(k){return k?String.fromCodePoint.apply(null,k.split("").map(function(x){return 127397+x.charCodeAt(0)})):"🟠"}
+function fl(c){return f2(FL[c])}
+function btc(){return Math.max(parseFloat($("btcp").value)||75000,1)}
+function per(c){return c==="BTC"?1/btc():M[c].r}
+function fmt(n){if(!isFinite(n))return"–";var a=Math.abs(n);if(a===0)return"0";if(a>=1000)return n.toLocaleString("en",{maximumFractionDigits:2});if(a>=1)return n.toLocaleString("en",{maximumFractionDigits:4});return n.toLocaleString("en",{maximumSignificantDigits:6})}
+function fb(n){return n>=1?n.toLocaleString("en",{maximumFractionDigits:4}):n.toFixed(8).replace(/0+$/,"").replace(/\.$/,"")}
+function opts(sel,v){sel.innerHTML=D.map(function(r){return'<option value="'+r[0]+'">'+fl(r[0])+" "+r[0]+" – "+r[1]+"</option>"}).join("");sel.value=v}
+function chart(i){
+ var mx=Math.max.apply(null,i.map(Math.abs).concat([1])),h=90,z=h*(Math.max.apply(null,i.concat([0]))/(Math.max.apply(null,i.concat([0]))-Math.min.apply(null,i.concat([0]))||1));
+ var rg=Math.max.apply(null,i.concat([0]))-Math.min.apply(null,i.concat([0]))||1,s='<svg class="chart" viewBox="0 0 300 130" role="img" aria-label="Inflation by year">';
+ i.forEach(function(v,k){var x=k*30+5,bh=Math.abs(v)/rg*h,y=v>=0?z-bh:z;s+='<rect x="'+x+'" y="'+(y+14)+'" width="20" height="'+Math.max(bh,1)+'" rx="2" fill="'+(v<0?"var(--neg)":"var(--ac)")+'"/><text x="'+(x+10)+'" y="'+(v>=0?y+11:y+bh+23)+'">'+v+'</text><text x="'+(x+10)+'" y="126">'+String(Y[k]).slice(2)+'</text>'});
+ return s+'<line x1="0" x2="300" y1="'+(z+14)+'" y2="'+(z+14)+'" stroke="var(--ln)"/></svg>'}
+
+// debt % GDP, unemployment %, policy rate, GDP growth 2026 est., exports, imports, note
+var E={
+USD:[125,4.4,"3.50–3.75",2,"Refined oil, aircraft, machinery","Vehicles, electronics, pharmaceuticals"],
+EUR:[88,6.3,2.25,1,"Machinery, vehicles, pharmaceuticals","Energy, electronics, chemicals","Euro-area totals. The 21 members differ a lot: Greece’s debt is around 147% of GDP, Germany’s around 65%."],
+GBP:[101,5,3.75,1.2,"Services, vehicles, pharmaceuticals","Vehicles, fuels, machinery"],
+JPY:[230,2.5,1,.6,"Cars, machinery, electronics","Oil and gas, electronics, food"],
+CHF:[38,3,0,1.3,"Pharmaceuticals, gold, watches","Gold, chemicals, machinery"],
+CAD:[111,6.8,2.25,1.2,"Crude oil, vehicles, natural gas","Vehicles, machinery, electronics"],
+AUD:[50,4.3,4.35,2.1,"Iron ore, coal, gas","Vehicles, fuel, machinery"],
+NZD:[50,5.3,2.5,2,"Dairy, meat, timber","Vehicles, machinery, oil"],
+CNY:[96,5.2,2.4,4.5,"Electronics, machinery, textiles","Oil, chips, iron ore"],
+INR:[80,5,5.25,6.4,"Refined oil, IT services, gems","Crude oil, gold, electronics"],
+KRW:[55,2.8,2.75,1.8,"Chips, cars, ships","Oil, chips, gas"],
+SGD:[176,2,null,1.8,"Electronics, chemicals, refined fuel","Electronics, fuel, machinery","Singapore steers its exchange rate rather than an interest rate. Much of the debt is issued to build savings, not to fund spending."],
+HKD:[10,3.8,4,2.5,"Electronics, re-exports, gold","Electronics, gold, jewellery"],
+SEK:[34,8.7,1.75,1.9,"Machinery, vehicles, pharmaceuticals","Vehicles, fuels, electronics"],
+NOK:[43,4.3,4.25,1.5,"Oil, gas, fish","Vehicles, machinery, electronics"],
+PLN:[57,3.2,3.75,3,"Machinery, vehicles, food","Machinery, vehicles, fuels"],
+TRY:[25,8.5,37,3,"Vehicles, textiles, machinery","Gold, energy, machinery"],
+RUB:[21,2.2,14,1.1,"Oil, gas, metals","Machinery, vehicles, electronics"],
+BRL:[92,5.8,14.25,1.8,"Soy, oil, iron ore","Fuels, machinery, fertiliser"],
+MXN:[58,2.7,6.5,1,"Vehicles, electronics, machinery","Machinery, fuels, electronics"],
+ARS:[85,7,null,3,"Soy products, corn, energy","Machinery, fuels, vehicles"],
+ZAR:[77,32,7,1.3,"Gold, platinum, coal","Fuel, machinery, vehicles"],
+EGP:[85,6.4,null,4.3,"Fuels, gold, fertiliser","Fuel, wheat, machinery"],
+SAR:[30,3.5,4.25,null,"Crude oil, petrochemicals, plastics","Machinery, vehicles, food"],
+AED:[30,2.7,3.65,null,"Oil, gold, re-exports","Gold, electronics, vehicles"],
+ILS:[69,3,null,null,"Chips, diamonds, chemicals","Fuel, machinery, vehicles"],
+THB:[63,1,1,1.8,"Electronics, vehicles, food","Oil, machinery, electronics"],
+IDR:[40,4.9,5.75,4.9,"Coal, palm oil, nickel","Fuel, machinery, chemicals"],
+NGN:[52,4.3,null,3.5,"Crude oil, LNG, cocoa","Refined fuel, machinery, wheat"],
+KES:[68,5.6,null,5,"Tea, cut flowers, coffee","Fuel, machinery, vehicles"],
+MAD:[69,13,2.25,4,"Cars, phosphates, electronics","Fuel, machinery, wheat"],
+GHS:[60,null,null,4.5,"Gold, oil, cocoa","Fuel, machinery, vehicles"],
+PKR:[70,7.1,11.5,3.5,"Textiles, rice, leather","Oil, gas, machinery"],
+BDT:[40,4.5,null,4.5,"Garments, textiles, jute","Fuel, cotton, machinery"],
+MYR:[64,3,2.75,4,"Chips, oil and gas, palm oil","Chips, fuel, machinery"],
+TWD:[27,3.4,2,3.5,"Chips, electronics, machinery","Chips, oil, machinery"],
+PHP:[60,4,4.75,4.8,"Electronics, machinery, coconut","Fuel, electronics, vehicles"],
+VND:[36,2.2,3,6.5,"Electronics, textiles, footwear","Chips, machinery, fuel"],
+DKK:[30,2.9,null,2,"Pharmaceuticals, machinery, food","Machinery, vehicles, food"],
+CZK:[44,2.8,2.75,2.2,"Cars, machinery, electronics","Machinery, electronics, fuels"],
+HUF:[74,4.4,5.75,1,"Vehicles, machinery, electronics","Machinery, fuels, electronics"],
+CLP:[42,8.5,4.5,2.2,"Copper, lithium, fruit","Fuel, machinery, vehicles"],
+COP:[60,9,12,2.5,"Oil, coal, coffee","Machinery, chemicals, vehicles"],
+PEN:[33,4,4.25,3,"Copper, gold, fruit","Fuel, machinery, vehicles"],
+FJD:[80,null,null,3,"Tourism, sugar, fish","Fuel, machinery, food"]};
+function eco(c){var e=E[c];if(!e)return"";
+ var bx=function(v,l){return"<div><b>"+v+"</b><small>"+l+"</small></div>"};
+ var r=e[2]==null?"n/a":(typeof e[2]==="string"?e[2]:e[2].toFixed(2))+"%";
+ return'<details class="sub" open><summary>Economy snapshot</summary><div class="stat">'+bx(e[0]==null?"n/a":e[0]+"%","government debt, share of GDP")+bx(e[1]==null?"n/a":e[1]+"%","unemployment")+bx(r,"central bank rate")+bx(e[3]==null?"n/a":(e[3]>0?"+":"")+e[3]+"%","GDP growth, 2026 estimate")+'</div><div class="row"><span>Top exports</span><span>'+e[4]+'</span></div><div class="row"><span>Top imports</span><span>'+e[5]+"</span></div>"+wbline(c)+(e[6]?'<p class="note">'+e[6]+"</p>":"")+"</details>"}
+function wbline(c){var w=ISO&&W&&W[ISO[c]];if(!w)return"";var p=[];[["inf","inflation"],["gdp","GDP growth"],["une","unemployment"],["debt","central govt debt"]].forEach(function(k){if(w[k[0]])p.push(k[1]+" "+(+w[k[0]].v).toFixed(1)+"% ("+w[k[0]].y+")")});return p.length?'<p class="note"><b>Live from the World Bank (latest annual figures):</b> '+p.join(" · ")+"</p>":""}
+function info(){
+ var m=M[st.tab==="to"?st.to:st.from],h='<div class="gh"><span class="gf">'+fl(m.c)+'</span><span class="gs">'+m.s+'</span></div><h2 style="font-size:18px">'+m.n+" ("+m.c+")</h2>";
+ h+='<div class="row"><span>Symbol</span><span>'+m.s+'</span></div><div class="row"><span>Used in</span><span>'+m.co+'</span></div><div class="row"><span>Created</span><span>'+m.b+'</span></div><div class="row"><span>Issuer</span><span>'+m.bk+'</span></div><div class="row"><span>Banknotes</span><span>'+m.no+'</span></div><div class="row"><span>Coins</span><span>'+m.cn+'</span></div>';
+ if(m.c!=="USD"){h+='<div class="row"><span>Value of 1 '+m.c+'</span><span>'+fmt(per("USD")/per(m.c))+' USD</span></div>'}
+ h+='<div class="row"><span>Value of 1 '+m.c+'</span><span>'+fb(1/per(m.c)/btc())+' BTC</span></div>';
+ if(m.i){var p=m.i.reduce(function(a,v){return a*(1+v/100)},1),av=m.i.reduce(function(a,v){return a+v},0)/m.i.length;
+  h+='<h2 style="font-size:16px;margin-top:16px">Inflation per year, %</h2>'+chart(m.i)+'<div class="stat"><div><b>'+av.toFixed(1)+'%</b><small>average per year, 2016–2025</small></div><div><b>'+fmt(100/p)+'</b><small>what 100 from 2015 buys in 2025 terms</small></div></div>'}
+ h+=eco(m.c);h+='<p style="margin:10px 0 0;font-size:14px;color:var(--mu)">'+m.f+'</p>';
+ $("info").innerHTML=h}
+function calc(){
+ var a=parseFloat($("amt").value)||0,f=st.from,t=st.to,v=a/per(f)*per(t),r=per(t)/per(f);
+ $("pd").innerHTML=[f,t].map(function(c){return'<div class="pd"><div class="f">'+fl(c)+'</div><div class="s">'+M[c].s+'</div><small>'+c+" · "+M[c].co+"</small></div>"}).join('<div class="ar">→</div>');
+ $("out").textContent=fmt(v)+" "+t;
+ $("rate").textContent="1 "+f+" = "+fmt(r)+" "+t+"  ·  1 "+t+" = "+fmt(1/r)+" "+f;
+ var u=a/per(f),bf=u/btc(),bt=v/per(t)/btc(),h="";
+ h+='<div class="row"><span>'+fmt(a)+" "+f+"</span><span><b>"+fb(bf)+" BTC</b></span></div>";
+ if(t!==f)h+='<div class="row"><span>'+fmt(v)+" "+t+"</span><span><b>"+fb(bt)+" BTC</b></span></div>";
+ h+='<div class="row"><span>1 BTC buys</span><span>'+fmt(btc()*per(f))+" "+f+"</span></div>";
+ h+='<div class="row"><span>1 '+f+" in satoshis</span><span>"+fmt(1/per(f)/btc()*1e8)+" sats</span></div>";
+ $("btcrows").innerHTML=h;
+ $("t1").textContent="From: "+f;$("t2").textContent="To: "+t;
+ $("t1").setAttribute("aria-pressed",st.tab==="from");$("t2").setAttribute("aria-pressed",st.tab==="to");
+ info()}
+opts($("from"),"USD");opts($("to"),"EUR");
+$("from").onchange=function(){st.from=this.value;st.tab="from";calc()};
+$("to").onchange=function(){st.to=this.value;st.tab="to";calc()};
+$("swap").onclick=function(){var x=st.from;st.from=st.to;st.to=x;$("from").value=st.from;$("to").value=st.to;calc()};
+$("amt").oninput=calc;$("btcp").oninput=calc;
+$("t1").onclick=function(){st.tab="from";calc()};$("t2").onclick=function(){st.tab="to";calc()};
+[["USD","EUR"],["GBP","USD"],["EUR","GBP"],["USD","JPY"],["USD","BTC"],["GBP","BTC"],["EUR","TRY"]].forEach(function(p){
+ var b=document.createElement("button");b.textContent=p[0]+" → "+p[1];
+ b.onclick=function(){st.from=p[0];st.to=p[1];$("from").value=p[0];$("to").value=p[1];calc()};$("chips").appendChild(b)});
+calc();
+var MP=("CA:Canada:2.8:3:1;US:United States:3.5:3:2;MX:Mexico:3.4:3:3;CU:Cuba:15.9:4:3;HT:Haiti:21:5:3;CO:Colombia:6.1:4:4;PE:Peru:4:3:5;BR:Brazil:4.6:5:5;BO:Bolivia:12.5:4:6;CL:Chile:4.3:3:7;AR:Argentina:33.6:4:7;NO:Norway:2.7:9:0;SE:Sweden:0.7:10:0;UK:United Kingdom:2.6:8:1;DE:Germany:2.7:9:1;PL:Poland:2.4:10:1;BY:Belarus:4.8:11:1;RU:Russia:6:14:1;FR:France:0.9:8:2;CH:Switzerland:0.5:9:2;CZ:Czechia:2.1:10:2;AT:Austria:3.7:11:2;HU:Hungary:1.7:12:2;BG:Bulgaria:6.9:13:2;ES:Spain:2.7:8:3;IT:Italy:1:9:3;HR:Croatia:5.2:10:3;AL:Albania:3:11:3;GR:Greece:2.9:12:3;TR:Türkiye:30.9:13:3;AM:Armenia:4.2:14:3;AZ:Azerbaijan:5.6:15:3;LB:Lebanon:19:12:4;SA:Saudi Arabia:1.8:13:4;IR:Iran:50:14:4;BH:Bahrain:2.3:13:5;DZ:Algeria:4.9:8:4;LY:Libya:14:9:4;ML:Mali:1:8:5;TD:Chad:-2.8:9:5;BJ:Benin:-0.7:8:6;CM:Cameroon:2.7:9:6;DJ:Djibouti:3:11:6;BI:Burundi:12.1:10:7;AO:Angola:10.9:9:8;BW:Botswana:10.7:10:9;ZA:South Africa:5:10:10;KG:Kyrgyzstan:11:16:3;CN:China:1:18:3;KR:South Korea:3.2:20:3;JP:Japan:1.7:21:3;AF:Afghanistan:8.6:15:4;PK:Pakistan:11.1:16:4;NP:Nepal:5:17:4;BT:Bhutan:6.1:18:4;HK:Hong Kong:1.9:20:4;TW:Taiwan:2.6:21:4;IN:India:4.4:17:5;BD:Bangladesh:9.4:18:5;LA:Laos:9:19:5;VN:Vietnam:4.7:20:5;PH:Philippines:6.4:21:5;TH:Thailand:2.4:18:6;KH:Cambodia:5.8:19:6;MY:Malaysia:1.9:19:7;BN:Brunei:0.1:20:7;ID:Indonesia:3.3:20:8;AU:Australia:3.8:19:10;NZ:New Zealand:4.1:21:10").split(";").map(function(s){var a=s.split(":");return{i:a[0],n:a[1],v:+a[2],c:+a[3],r:+a[4]}});
+function mix(S,v){if(v<=S[0][0])return S[0][1];for(var k=1;k<S.length;k++){if(v<=S[k][0]){var t=(v-S[k-1][0])/(S[k][0]-S[k-1][0]),a=S[k-1][1],b=S[k][1];return[0,1,2].map(function(j){return Math.round(a[j]+(b[j]-a[j])*t)})}}return S[S.length-1][1]}
+var NEG=[[-3,[31,79,181]],[0,[127,176,238]]],POS=[[0,[242,196,90]],[2.5,[238,164,58]],[6,[226,102,47]],[12,[201,42,34]],[25,[122,10,18]]];
+function col(v){return"rgb("+mix(v<0?NEG:POS,v).join(",")+")"}
+
+var LAND="-168,66 -162,70 -156,71 -141,70 -128,70 -115,68 -95,72 -85,70 -82,66 -90,62 -94,59 -88,56 -82,52 -78,56 -78,62 -72,62 -65,60 -60,55 -56,52 -60,47 -66,45 -70,43 -74,40 -76,35 -81,31 -80,26 -82,26 -85,30 -90,30 -94,29 -97,26 -97,22 -95,19 -91,19 -90,21 -87,21 -88,16 -84,15 -83,10 -77,8 -80,7 -83,8 -86,11 -88,13 -92,15 -96,16 -100,17 -105,20 -106,23 -110,24 -112,29 -115,30 -114,32 -117,33 -121,35 -124,40 -124,46 -125,49 -130,55 -135,58 -140,60 -148,60 -153,58 -158,56 -165,54 -160,58 -166,62 -166,65|-55,60 -45,60 -40,65 -22,70 -20,78 -30,83 -60,82 -72,78 -58,75 -52,70|-80,64 -68,62 -62,66 -70,72 -80,73 -90,70|-77,8 -72,12 -62,11 -52,5 -50,0 -44,-2 -35,-6 -38,-13 -40,-20 -48,-26 -53,-34 -58,-38 -62,-40 -65,-45 -68,-50 -69,-55 -73,-52 -75,-47 -73,-40 -71,-30 -70,-18 -76,-14 -80,-6 -81,-3 -78,2|-17,21 -13,28 -6,35 10,37 11,33 20,31 32,31 34,27 37,21 43,12 51,12 46,3 40,-3 40,-10 35,-20 33,-26 28,-33 20,-35 18,-32 14,-22 12,-13 13,-5 9,1 9,4 5,5 -2,5 -8,4 -13,8 -17,13|44,-25 47,-25 50,-15 49,-12 44,-17 43,-23|-9,37 -9,43 -2,43.5 -1,46 -4.5,48 -1.5,49.5 2,51 4,52 8,54 10,57 12,55 14,54 20,55 22,57 24,59 30,60 22,60.5 21,63 25,65 22,66 18,63 17,60 13,56 11,59 5,59 5,62 12,66 16,69 24,71 31,70 40,67 44,68 54,68 60,69 68,69 70,73 80,73 88,75 100,77 113,74 128,72 140,72 160,70 170,70 180,68 180,65 170,62 163,60 160,54 156,51 155,58 142,59 135,55 140,52 140,48 133,43 130,42 129,41 129,35 126,34.5 126,38 125,40 122,40 121,38 119,37 122,37 121,32 120,27 117,23 110,21 108,21.5 106,19 109,15 109,11 105,9 103,10 100,13 100,8 104,1.5 101,3 98,8 98,16 94,17 92,22 89,22 86,20 80,15 80,10 77,8 73,16 72,21 68,23 66,25 57,25 56,27 50,30 48,30 51,25 56,24 59,22 55,17 52,16 44,13 43,17 39,22 35,28 34,31 36,35 30,36 27,37 26,40 23,40 24,38 22,37 21,39 19,42 14,45 12,44 16,41 18,40 16,38 15,40 12,42 10,44 7,44 3,43 0,39 -1,37 -5,36|-10,52 -6,52 -6,55 -9,54|-24,64 -14,64 -14,66 -22,66|80,6 82,7 80,9|172,-41 174,-42 171,-46 167,-46";
+var WATER="28,41.5 28,44 31,46.5 34,46 38,47 41,45 41,42 36,41.5 32,41.5|47,45 50,46 53,45 54,41 53,37 49,37 49,40 47,43";
+var G={CA:"-141,70 -128,70 -115,68 -95,72 -85,70 -82,66 -90,62 -94,59 -88,56 -82,52 -78,56 -78,62 -72,62 -65,60 -60,55 -56,52 -60,47 -66,45 -67,47 -70,47 -75,45 -79,43 -83,42 -83,46 -89,48 -95,49 -123,49 -125,49 -130,55 -135,58 -141,60",
+US:"-123,49 -95,49 -89,48 -83,46 -83,42 -79,43 -75,45 -70,47 -67,45 -70,43 -74,40 -76,35 -81,31 -80,26 -82,26 -85,30 -90,30 -94,29 -97,26 -99,27 -103,29 -106,31.5 -111,31.3 -114.7,32.7 -117,33 -121,35 -124,40 -124,46|-141,70 -156,71 -162,70 -168,66 -166,62 -158,56 -165,54 -153,58 -148,60 -141,60",
+MX:"-117,32.5 -114.7,32.7 -111,31.3 -106,31.5 -103,29 -99,27 -97,26 -97,22 -95,19 -91,19 -90,21 -87,21 -88,18 -92,15 -96,16 -100,17 -105,20 -106,23 -110,24 -112,29 -115,30",
+CU:"-85,22 -80,23 -74,20 -78,20",HT:"-74.5,19.8 -72.5,19.9 -71.7,19.8 -71.7,18 -74.4,18.3",
+CO:"-77,8 -72,12 -71,11 -67,6 -67,2 -70,-4 -75,-1 -78,2",PE:"-81,-4 -75,-1 -70,-4 -70,-11 -69,-13 -70,-18 -76,-14 -80,-6",
+BR:"-60,5 -52,5 -50,0 -44,-2 -35,-6 -38,-13 -40,-20 -48,-26 -53,-34 -58,-30 -55,-27 -54,-25 -58,-22 -58,-16 -65,-10 -70,-11 -74,-8 -70,-4 -67,2 -64,4",
+BO:"-69,-11 -65,-10 -58,-16 -58,-20 -62,-22 -68,-23 -70,-18 -69,-13",
+CL:"-70,-18 -68.5,-23 -69.5,-30 -71,-40 -72,-48 -73,-52 -69,-55 -68.5,-52 -71.5,-48 -71.7,-40 -70.3,-30 -70,-24",
+AR:"-66,-22 -62,-22 -58,-25 -54,-26 -58,-31 -58,-34 -57,-37 -62,-39 -65,-42 -65,-46 -68,-50 -69,-52 -68.5,-52 -71.5,-48 -71.7,-40 -70.3,-30 -68.5,-23",
+NO:"5,59 5,62 12,66 16,69 24,71 31,70 28,69 20,68 15,66 13,64 12,61 11,59",SE:"11,59 13,56 17,57 17,60 18,63 22,66 24,66 20,69 15,66 13,64 12,61",
+UK:"-5,50 -1,51 2,52 0,54 -2,56 -3,58 -6,58 -5,55 -3,54 -4,52",DE:"6,51 8,54 10,54.5 14,54 15,51 12,50 13,48.5 8,47.5 6,49",
+PL:"14,54 19,54.5 23.5,54 24,52 23,50 19,49.5 15,51",BY:"23,52 26,56 31,56 32,53 30,51.5 24,52",
+RU:"28,60 30,60 31,63 30,66 40,67 41,66.5 44,68 54,68 60,69 68,69 70,73 80,73 88,75 100,77 113,74 128,72 140,72 160,70 170,70 180,68 180,65 170,62 163,60 160,54 156,51 155,58 142,59 135,55 140,52 140,48 133,43 131,43 135,48 127,50 120,53 115,50 108,50 98,51 90,50 87,49 80,51 70,55 61,54 60,51 50,51 47,48 47,45 48,42 40,43 38,47 40,49 35,52 32,54 31,56 28,56",
+FR:"-4.5,48 -1.5,49.5 2,51 6,49 8,48 7,44 3,43 -1,43.5 -1,46",ES:"-9,43 -2,43.5 3,42.5 0,39 -1,37 -5,36 -9,37",
+IT:"7,44 7,46 13,47 13,45.5 12.5,44 14,42 18,40 16,38 15,40 12,42 10,44",GR:"20,40 23,41.5 26,41 26,40 24,38 22,37 21,39",
+TR:"26,40 26,42 29,41 33,42 41,41 44,40 44,38 40,37 36,36 30,36 27,37",
+SA:"35,28 39,32 43,29 47,29 48,28 50,26 51,24 56,24 59,22 55,17 52,16 43,17 39,22",
+IR:"44,39 48,38 54,37 61,36 61,31 63,27 61,25 57,25 56,27 50,30 48,30 46,33 45,36",
+DZ:"-8.5,28 -2,35 8,37 9,33 10,30 9,26 12,23 5,19 -4,24 -8.5,27",LY:"10,31 11,33 20,31 25,32 25,20 24,20 15,23 12,23 9,26 10,30",
+ML:"-5,25 5,19 4,15 -4,12 -8,12 -12,15 -12,24",TD:"14,13 15,8 18,8 23,10 24,15 24,20 15,23 14,17",
+BJ:"1.5,6.3 3.5,6.5 3.5,11.5 2.5,12 1,11 1.5,9",CM:"9,4 11,2 15,2 16,5 14,10 14,13 12,13 10,7",
+AO:"12,-5 17,-8 24,-8 24,-12 21,-13 21,-18 12,-17 14,-12",BW:"20,-18 25,-18 26,-23 21,-26 20,-22",
+ZA:"17,-29 20,-35 28,-33 32,-29 32,-26 30,-23 27,-23 21,-26 19,-28",
+CN:"74,39 80,45 87,49 90,47 96,43 105,42 112,45 118,48 120,53 127,50 135,48 131,43 129,42.5 124,40 122,40 121,38 119,37 122,37 121,32 120,27 117,23 110,21 108,21.5 106,23 101,22 98,24 98,28 92,28 89,28 82,30 78,32 79,35 74,37",
+KR:"126.2,34.5 129,35.2 129.4,37 128.3,38.5 126.5,37.8 126.5,36",JP:"130,33 135,34 140,35 141,38 142,41 140,40 138,37 133,35.5|140,42 145,43 142,45.5",
+AF:"61,36 66,37.5 71,37 74,37 71,35 70,33 72,31 66,29.5 62,29.5 61,31",PK:"61,25 61,29.5 66,29.5 70,33 71,35 74,37 77,35.5 74,32 75,31 72,28 70,26 68,23.5 66,25",
+IN:"68,23.5 70,26 72,28 75,31 74,32 77,35.5 79,35 79,32 82,30 80,28.5 88,27 88,26 92,28 97,28 95,26 92,22 89,22 88,21.5 86,20 80,15 80,10 77,8 73,16 72,21 69.5,22",
+BD:"88,22 92,22 92.5,24 92,26 89,26.3",LA:"100,22 104,22 107,18 105,14 102,14 101,17.5 100,20",
+VN:"102.5,22.5 106,23 108,21.5 106,19 108,15 109,12 107,10 105,9 105,11 107,13 105.5,15 107,17 105,19 103,21",
+TH:"98,16 100,20 101,17.5 102,14 100,13 100,8 98.5,8 98,12.5",
+MY:"100,6.5 103,2 104,1.5 101,3 100,5|109.5,1.5 116,7 119,5 115,4 111,2.5",
+ID:"95,5 98,4 104,-2 106,-6 102,-4 98,0|106,-6 114,-7 114,-8.5 106,-7.5|109,2 111,1.5 116,4 117,1 116,-4 110,-3|119,-1 125,1 121,-5|131,-1 141,-3 141,-9 138,-8 134,-4",
+PH:"120,18 122,18 124,12 126,7 122,7 120,14",
+AU:"114,-22 114,-34 118,-35 124,-33 131,-31 138,-35 141,-38 147,-38 150,-37 153,-30 153,-25 146,-19 143,-14 142,-11 139,-17 136,-12 131,-12 127,-14 122,-18",
+NZ:"173,-35 178,-38 175,-41 173,-39|172,-41 174,-42 171,-46 167,-46"};
+var DOT="BH:50.5:26:1.4;BN:114.7:4.6:1.2;HK:114.2:22.3:1.2;LB:35.8:33.9:1.3;BT:90.4:27.5:1.5;DJ:42.8:11.7:1.5;BI:29.9:-3.4:1.5;AL:20:41:1.5;AM:45:40.2:1.6;CH:8.2:46.8:1.6;AT:14.5:47.5:1.8;HR:16:45.2:1.8;CZ:15.5:49.8:1.9;HU:19.5:47:1.9;BG:25:42.7:1.9;AZ:47.6:40.4:1.9;TW:121:23.7:1.6;KH:104.9:12.6:2;NP:84:28.3:2;KG:74.5:41.5:2.2";
+function pts(z){return z.split(" ").map(function(p){var q=p.split(",");return(+q[0]+180).toFixed(1)+","+(84-q[1]).toFixed(1)}).join(" ")}
+function polys(z,at){return z.split("|").map(function(g){return'<polygon points="'+pts(g)+'" '+at+'/>'}).join("")}
+var V={};MP.forEach(function(m){V[m.i]=m});
+var sv='<rect width="360" height="142" fill="var(--bg)"/>'+polys(LAND,'fill="var(--ln)"');
+Object.keys(G).forEach(function(k){var m=V[k];sv+=polys(G[k],'data-i="'+k+'" fill="'+col(m.v)+'" stroke="var(--bg)" stroke-width=".3"')});
+sv+=polys(WATER,'fill="var(--bg)" style="pointer-events:none"');
+DOT.split(";").forEach(function(d){var a=d.split(":"),m=V[a[0]];sv+='<circle data-i="'+a[0]+'" cx="'+(+a[1]+180)+'" cy="'+(84-a[2])+'" r="'+a[3]+'" fill="'+col(m.v)+'" stroke="var(--bg)" stroke-width=".3"/>'});
+$("map").innerHTML=sv;
+$("map").onclick=function(e){var i=e.target.getAttribute&&e.target.getAttribute("data-i");if(!i)return;var m=MP.filter(function(q){return q.i===i})[0];var v=val(i);$("mapinfo").innerHTML=f2(i==="UK"?"GB":i)+" <b>"+m.n+"</b>: "+(v==null?"no World Bank figure":(+v).toFixed(1)+"% annual inflation"+(mode==="wb"?" ("+W[i==="UK"?"GB":i].inf.y+", World Bank)":""))};
+function rows(a){return a.map(function(m){return'<div class="row"><span>'+f2(m.i==="UK"?"GB":m.i)+" "+m.n+'</span><span><b>'+(+val(m.i)).toFixed(1)+'%</b></span></div>'}).join("")}
+
+var mode="snap",W={},L={fx:null,btc:0,wb:0},userBtc=false;
+function wbid(i){return i==="UK"?"GB":i}
+function val(i){if(mode==="snap")return V[i].v;var w=W[wbid(i)];return w&&w.inf?w.inf.v:null}
+function lists(){var a=MP.filter(function(m){return val(m.i)!=null}).sort(function(x,y){return val(y.i)-val(x.i)});$("hi").innerHTML=rows(a.slice(0,5));$("lo").innerHTML=rows(a.slice(-5).reverse())}
+function paint(){[].forEach.call($("map").querySelectorAll("[data-i]"),function(e){var v=val(e.getAttribute("data-i"));e.setAttribute("fill",v==null?"var(--ln)":col(v))});lists();$("m1").setAttribute("aria-pressed",mode==="snap");$("m2").setAttribute("aria-pressed",mode==="wb")}
+$("m1").onclick=function(){mode="snap";paint()};
+$("m2").onclick=function(){mode="wb";paint();if(!L.wb)$("mapinfo").textContent="World Bank data has not loaded yet, so the map shows grey. Check your connection and try again."};
+lists();
+var ISO={USD:"US",EUR:"XC",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ"};
+function jget(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
+function stat(){$("live").textContent=(L.fx?"Live exchange rates (updated "+L.fx+")":"Snapshot exchange rates")+" · "+(L.btc?"live Bitcoin price":"snapshot Bitcoin price")+" · "+(L.wb?"World Bank economy data loaded":"economy data from snapshot")}
+function loadFX(){jget("https://open.er-api.com/v6/latest/USD").then(function(d){if(d.result!=="success")throw 0;D.forEach(function(r){var x=d.rates[r[0]];if(r[0]!=="BTC"&&x>0)M[r[0]].r=x});L.fx=new Date(d.time_last_update_unix*1000).toLocaleDateString("en-GB");calc();stat()}).catch(stat)}
+function loadBTC(){jget("https://api.coinbase.com/v2/prices/BTC-USD/spot").then(function(d){return+d.data.amount}).catch(function(){return jget("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd").then(function(d){return d.bitcoin.usd})}).then(function(v){if(!(v>0))throw 0;if(!userBtc)$("btcp").value=Math.round(v);L.btc=1;calc();stat()}).catch(stat)}
+function wb(ind,key){return jget("https://api.worldbank.org/v2/country/all/indicator/"+ind+"?format=json&mrnev=1&per_page=400").then(function(d){(d[1]||[]).forEach(function(x){if(x.value==null||!x.country)return;var id=x.country.id;(W[id]=W[id]||{})[key]={v:x.value,y:x.date}})}).catch(function(){})}
+function loadWB(){Promise.all([wb("FP.CPI.TOTL.ZG","inf"),wb("NY.GDP.MKTP.KD.ZG","gdp"),wb("SL.UEM.TOTL.ZS","une"),wb("GC.DOD.TOTL.GD.ZS","debt")]).then(function(){L.wb=Object.keys(W).length>0?1:0;calc();if(mode==="wb")paint();stat()})}
+$("btcp").addEventListener("input",function(){userBtc=true});
+loadFX();loadBTC();loadWB();setInterval(loadBTC,60000);setInterval(loadFX,1800000);
+// Tell the host page how tall the content is so the iframe doesn't clip or scroll.
+function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"currency-calculator"},location.origin)}catch(e){}}
+try{new ResizeObserver(postH).observe(document.body)}catch(e){}
+</script>
+</body>
+</html>

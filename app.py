@@ -533,6 +533,8 @@ def _ensure_table() -> None:
                              ("bull-bear-meter", "Bull vs Bear Meter"),
                              ("nasdaq-wagon-wheel", "NASDAQ Wagon Wheel")):
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
+        # Seeded as a tool from the start so it never shows in the visualisation hub.
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('currency-calculator', 'Currency Calculator', 'tool') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
         # NOTHING above wouldn't touch it) — these UPDATEs are what actually make
@@ -551,6 +553,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'winners-league'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bull-bear-meter'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'nasdaq-wagon-wheel'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'currency-calculator'")
         for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
             cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
         # Classify the seeded pages once, when the column is first added; after that the
@@ -1516,7 +1519,7 @@ def alpha_content_delete(item_id: int) -> bool:
 # original 3 pages available.
 
 _SEED_DATAVIZ_KINDS = {
-    "crypto-unit-calculator": "tool", "crypto-portfolio-donut": "tool", "metal-calculator": "tool",
+    "crypto-unit-calculator": "tool", "crypto-portfolio-donut": "tool", "metal-calculator": "tool", "currency-calculator": "tool",
     "dividend-calculator": "tool", "stock-donut": "tool", "freedom-clock": "tool", "price-value-tracker": "tool",
 }
 DATAVIZ_KINDS = ("tool", "viz", "both")
@@ -1530,6 +1533,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
     "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
+    "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
 _SEED_DATAVIZ_PAGES = [
@@ -1547,6 +1551,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "winners-league", "label": "Winners League", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
 ]
 
 
