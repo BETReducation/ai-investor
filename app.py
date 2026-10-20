@@ -6092,7 +6092,7 @@ def api_nasdaq_wheel_live():
         if _nasdaq_cache["data"] and time.monotonic() - _nasdaq_cache["at"] < _NASDAQ_TTL_SECONDS:
             return jsonify(_nasdaq_cache["data"])
     try:
-        raw = yf.download(tickers=_NASDAQ_WHEEL_SYMBOLS, period="5d", interval="1d", group_by="ticker",
+        raw = yf.download(tickers=_NASDAQ_WHEEL_SYMBOLS + ["^IXIC"], period="5d", interval="1d", group_by="ticker",
                           threads=True, auto_adjust=False, progress=False)
     except Exception:
         raw = None
@@ -6106,12 +6106,18 @@ def api_nasdaq_wheel_live():
             as_of = closes.index[-1].date().isoformat()
         except Exception:
             continue
+    index = None
+    try:
+        ic = raw["^IXIC"]["Close"].dropna()
+        index = round((float(ic.iloc[-1]) / float(ic.iloc[-2]) - 1) * 100, 2)
+    except Exception:
+        pass
     if len(moves) < 20:
         with _nasdaq_lock:
             if _nasdaq_cache["data"]:
                 return jsonify(_nasdaq_cache["data"])
         return jsonify({"error": "unavailable"}), 502
-    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves}
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves, "index": index}
     with _nasdaq_lock:
         _nasdaq_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
