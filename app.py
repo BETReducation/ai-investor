@@ -535,6 +535,7 @@ def _ensure_table() -> None:
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Seeded as a tool from the start so it never shows in the visualisation hub.
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('currency-calculator', 'Currency Calculator', 'tool') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'GCG League and Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
         # NOTHING above wouldn't touch it) — these UPDATEs are what actually make
@@ -554,6 +555,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bull-bear-meter'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'nasdaq-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'currency-calculator'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'league-compass'")
         for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
             cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
         # Classify the seeded pages once, when the column is first added; after that the
@@ -1533,6 +1535,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
     "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
+    "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
@@ -1551,6 +1554,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "winners-league", "label": "Winners League", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "league-compass", "label": "GCG League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
 ]
 
@@ -6120,6 +6124,88 @@ def api_nasdaq_wheel_live():
     data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves, "index": index}
     with _nasdaq_lock:
         _nasdaq_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
+# GCG League and Compass: ranked price performance for ~500 large US stocks over day/week/month/year,
+# built from one Yahoo daily-bar download and cached, so every period switch is instant on the page.
+_LEAGUE_UNIVERSE = {
+    "Technology":"NVDA,AAPL,MSFT,AVGO,ORCL,PLTR,AMD,CSCO,IBM,CRM,NOW,INTU,ADBE,QCOM,TXN,AMAT,MU,LRCX,ANET,KLAC,PANW,APH,CRWD,ADI,INTC,DELL,CDNS,SNPS,MSI,FTNT,ADSK,WDAY,ROP,GLW,TEL,NXPI,DDOG,MPWR,FICO,MCHP,CTSH,HPQ,HPE,STX,TYL,KEYS,SMCI,WDC,IT,PTC,TDY,GDDY,JBL,VRSN,ON,NTAP,CDW,TER,FSLR,GEN,FFIV,TRMB,ZBRA,AKAM,EPAM,SWKS,ENPH,QRVO,TTD,PSTG,NET,SNOW",
+    "Communication":"GOOGL,GOOG,META,NFLX,DIS,TMUS,VZ,T,CMCSA,CHTR,EA,TTWO,WBD,LYV,FOXA,FOX,OMC,NWSA,NWS,PSKY,IPG,MTCH",
+    "Cons. Discretionary":"AMZN,TSLA,HD,MCD,BKNG,LOW,TJX,SBUX,NKE,DASH,ORLY,CMG,MAR,ABNB,RCL,HLT,AZO,GM,ROST,F,DHI,YUM,EBAY,GRMN,LVS,CCL,LEN,TSCO,EXPE,LULU,PHM,ULTA,WSM,NVR,DRI,TPR,RL,GPC,BBY,APTV,DECK,POOL,NCLH,MGM,WYNN,HAS,LKQ,BWA,KMX,CZR",
+    "Financials":"BRK.B,JPM,V,MA,BAC,WFC,MS,GS,AXP,BX,BLK,SCHW,C,SPGI,PGR,COF,KKR,CB,MMC,ICE,CME,HOOD,MCO,AON,AJG,APO,FI,PNC,USB,BK,PYPL,COIN,TRV,TFC,AFL,MET,ALL,NDAQ,AMP,AIG,XYZ,MSCI,PRU,FIS,ACGL,HIG,WTW,STT,FITB,MTB,RJF,BRO,SYF,CINF,WRB,NTRS,HBAN,CPAY,CBOE,GPN,TROW,RF,CFG,KEY,PFG,L,EG,FDS,ERIE,BEN,JKHY,AIZ,GL,MKTX,IVZ",
+    "Health Care":"LLY,UNH,JNJ,ABBV,MRK,ABT,TMO,ISRG,AMGN,PFE,DHR,BSX,SYK,GILD,MDT,VRTX,BMY,HCA,MCK,CVS,CI,REGN,ELV,ZTS,COR,BDX,IDXX,EW,A,RMD,GEHC,CAH,IQV,DXCM,HUM,MTD,WAT,STE,LH,DGX,ZBH,BIIB,PODD,CNC,INCY,MOH,WST,HOLX,VTRS,ALGN,COO,BAX,SOLV,DVA,UHS,MRNA,TECH,RVTY,HSIC,CRL,TFX",
+    "Cons. Staples":"WMT,COST,PG,KO,PEP,PM,MO,MDLZ,CL,MNST,TGT,KMB,KDP,KR,SYY,HSY,KVUE,STZ,GIS,KHC,EL,ADM,CHD,MKC,TSN,DG,DLTR,CLX,HRL,BG,BF.B,CAG,SJM,TAP,CPB,LW",
+    "Energy":"XOM,CVX,COP,EOG,WMB,SLB,KMI,OKE,MPC,PSX,VLO,OXY,FANG,BKR,TRGP,EQT,TPL,EXE,DVN,CTRA,HAL,APA",
+    "Industrials":"GE,CAT,RTX,GEV,HON,UNP,ETN,BA,ADP,DE,LMT,UPS,TT,WM,PH,MMM,TDG,GD,CTAS,NOC,ITW,EMR,HWM,JCI,CSX,PWR,FDX,NSC,CARR,PCAR,CMI,URI,LHX,RSG,AXON,FAST,PAYX,CPRT,AME,VRSK,ROK,DAL,OTIS,ODFL,IR,WAB,XYL,UAL,EFX,ROL,DOV,BR,FTV,LDOS,VLTO,HUBB,LII,SNA,J,PNR,LUV,EXPD,JBHT,TXT,BLDR,IEX,NDSN,MAS,CHRW,SWK,ALLE,PAYC,GNRC,AOS,AAL",
+    "Utilities":"NEE,CEG,SO,DUK,VST,AEP,SRE,D,EXC,PEG,XEL,ETR,PCG,ED,WEC,NRG,DTE,AEE,PPL,AWK,ATO,ES,FE,CNP,CMS,NI,LNT,EVRG,PNW,AES",
+    "Real Estate":"PLD,WELL,AMT,EQIX,SPG,DLR,PSA,O,CCI,CBRE,VICI,EXR,IRM,CSGP,VTR,AVB,EQR,SBAC,WY,INVH,ESS,MAA,KIM,UDR,REG,DOC,HST,CPT,BXP,ARE,FRT",
+    "Materials":"LIN,SHW,NEM,ECL,APD,FCX,CTVA,MLM,VMC,DD,NUE,PPG,SW,IP,STLD,DOW,LYB,IFF,PKG,AMCR,BALL,CF,AVY,MOS,ALB,EMN"
+}
+_LEAGUE_TTL_SECONDS = 300
+_league_cache: dict = {"at": 0.0, "data": None}
+_league_lock = threading.Lock()
+_league_build_lock = threading.Lock()
+
+
+def _build_league() -> dict | None:
+    syms = [x for v in _LEAGUE_UNIVERSE.values() for x in v.split(",")]
+    year = _dt.date.today().year
+    try:
+        raw = yf.download(tickers=[x.replace(".", "-") for x in syms], start=f"{year - 1}-12-10", interval="1d",
+                          group_by="ticker", threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        return None
+    series = {}
+    for x in syms:
+        try:
+            c = raw[x.replace(".", "-")]["Close"].dropna()
+            if len(c) >= 2:
+                series[x] = c
+        except Exception:
+            continue
+    if len(series) < 100:
+        return None
+    newest = max(c.index[-1] for c in series.values())
+    periods = {"day": {}, "week": {}, "month": {}, "year": {}}
+    for x, c in series.items():
+        if (newest - c.index[-1]).days > 5:
+            continue
+        last = float(c.iloc[-1])
+        bases = {"day": float(c.iloc[-2])}
+        for name, cutoff in (("week", c.index[-1] - _dt.timedelta(days=7)), ("month", c.index[-1] - _dt.timedelta(days=30))):
+            prior = c[c.index <= cutoff]
+            if len(prior):
+                bases[name] = float(prior.iloc[-1])
+        prior = c[c.index.year < c.index[-1].year]
+        if len(prior):
+            bases["year"] = float(prior.iloc[-1])
+        for name, b in bases.items():
+            if b > 0:
+                periods[name][x] = {"base": round(b, 2), "last": round(last, 2)}
+    return {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": newest.date().isoformat(),
+            "year": newest.year, "universe": {k: v.split(",") for k, v in _LEAGUE_UNIVERSE.items()}, "periods": periods}
+
+
+@app.route("/api/dataviz/league-compass/live", methods=["GET"])
+def api_league_compass_live():
+    def fresh():
+        return _league_cache["data"] and time.monotonic() - _league_cache["at"] < _LEAGUE_TTL_SECONDS
+    with _league_lock:
+        if fresh():
+            return jsonify(_league_cache["data"])
+    with _league_build_lock:  # one slow download at a time; waiters reuse its result
+        with _league_lock:
+            if fresh():
+                return jsonify(_league_cache["data"])
+        data = _build_league()
+        with _league_lock:
+            if data:
+                _league_cache.update(at=time.monotonic(), data=data)
+            elif _league_cache["data"]:
+                return jsonify(_league_cache["data"])
+            else:
+                return jsonify({"error": "unavailable"}), 502
     return jsonify(data)
 
 
