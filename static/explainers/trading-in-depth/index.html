@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{var t=localStorage.getItem("gcg-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<title>Basic Trading: Orders, Risk and Position Sizing</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>/* Base for artifacts that keep their own page CSS: the tab bar plus kit components scoped under .kit, mapped onto whatever palette the page defines. */
+.kit,.kitvars{--soft:var(--accent-soft);--warn:var(--amber,#a85d00);--warn-soft:var(--amber-soft,#fbead2);--accent-ink:var(--bg);--sans:var(--body,system-ui,sans-serif);--serif:var(--display,Georgia,serif);--k:#1f5fa8;--a:#1d7a4c;--n:#7a3fa0;--e:#b25a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.kit,.kitvars){--k:#7fb2ee;--a:#6ccb9b;--n:#c79be6;--e:#f0a95a}}
+:root[data-theme="dark"] :is(.kit,.kitvars){--k:#7fb2ee;--a:#6ccb9b;--n:#c79be6;--e:#f0a95a}
+.tl-wrap{max-width:var(--tl-w,900px);margin:0 auto}
+.tablist{display:flex;gap:4px;flex-wrap:wrap;margin:14px 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5;padding-top:8px}
+.tablist button{font:600 .9rem var(--sans);padding:8px 13px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.tablist button:hover{color:var(--ink)}
+.tablist button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tablist button:focus-visible,.b:focus-visible,summary:focus-visible,.chip:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[role=tabpanel][hidden]{display:none}
+@media (max-width:640px){.tablist{position:static}}
+@media print{.tablist{display:none}[role=tabpanel][hidden]{display:block}.stp-ctl{display:none}}
+.kit .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 14px}
+.kit .card.big{background:var(--accent-soft);border-color:var(--accent)}
+.kit .card h3:first-child{margin-top:0}
+.kit .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.kit .grid2>.card{margin:0}
+.kit .formula{font:600 1.05rem var(--mono);background:var(--soft);border-left:4px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;overflow-x:auto}
+.kit .kw{font-weight:700;color:var(--accent)}
+.kit table.t{border-collapse:collapse;width:auto;max-width:100%;font-size:.93rem;margin:8px 0}
+.kit table.t th,.kit table.t td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.kit table.t th{font:700 .72rem var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.kit .tw{overflow-x:auto}table.t.mono th,table.t.mono td{padding:3px 14px;line-height:1.3}table.t.mono{font-size:.9rem}
+.kit .b{font:700 .9rem var(--sans);padding:8px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.kit .b:hover{background:var(--soft)}
+.kit .b.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.kit .b:disabled{opacity:.5;cursor:default}
+.kit .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.kit .note{font-size:.88rem;color:var(--muted)}
+.kit .pill{display:inline-block;font:700 .72rem var(--sans);padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);vertical-align:middle}
+.kit .tip{border-left:4px solid var(--warn);background:var(--warn-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.kit .tip b.h{display:block;font:700 .72rem var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+.kit .warn{border-left:4px solid var(--bad);background:var(--bad-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.kit .warn b.h{display:block;font:700 .72rem var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--bad)}
+.kit /* stepper */
+.stp{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0 14px}
+.kit .stp svg{display:block;width:100%;height:auto;background:var(--surface)}
+.kit .stp-cap{padding:12px 16px;background:var(--ink);color:var(--bg);font-size:1.02rem;min-height:3.6em}
+.kit .stp-ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px}
+.kit .stp-dots{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.kit .stp-dots button{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:var(--muted);font:700 .72rem var(--sans);cursor:pointer;padding:0}
+.kit .stp-dots button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.kit .stp-dots button.done{border-color:var(--accent);color:var(--accent)}
+.kit /* svg theme classes */
+svg text{font-family:var(--sans);fill:var(--ink)}
+.kit svg .ax{stroke:var(--ink);stroke-width:2;fill:none}
+.kit svg .gr{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4;fill:none}
+.kit svg .lbl{font-size:13px}
+.kit svg .sm{font-size:11.5px;fill:var(--muted)}
+.kit svg .bd{font-weight:700}
+.kit svg .c1{stroke:var(--accent);stroke-width:3.5;fill:none}
+.kit svg .c2{stroke:var(--bad);stroke-width:3.5;fill:none}
+.kit svg .c3{stroke:var(--good);stroke-width:3.5;fill:none}
+.kit svg .c4{stroke:var(--warn);stroke-width:3.5;fill:none}
+.kit svg .f1{fill:var(--accent);opacity:.18}
+.kit svg .f2{fill:var(--bad);opacity:.18}
+.kit svg .f3{fill:var(--good);opacity:.2}
+.kit svg .f4{fill:var(--warn);opacity:.22}
+.kit svg .dash{stroke-dasharray:6 5}
+.kit svg .t1{fill:var(--accent)}
+.kit svg .t2{fill:var(--bad)}
+.kit svg .t3{fill:var(--good)}
+.kit svg .t4{fill:var(--warn)}
+.kit svg .dot1{fill:var(--accent)}
+.kit svg .dot2{fill:var(--bad)}
+.kit svg .dot3{fill:var(--good)}
+.kit svg .dot4{fill:var(--warn)}
+.kit /* sliders */
+.sl{margin:10px 0}
+.kit .sl label{display:flex;justify-content:space-between;font-weight:600;font-size:.95rem}
+.kit .sl output{font:600 .9rem var(--mono);color:var(--accent)}
+.kit .sl input{width:100%;accent-color:var(--accent);margin:6px 0}
+.kit .readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.kit .readout div{border-top:3px solid var(--accent);background:var(--surface);padding:8px 10px;border-radius:0 0 8px 8px;border:1px solid var(--line);border-top:3px solid var(--accent)}
+.kit .readout small{display:block;font:700 .66rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kit .readout strong{font:700 1.25rem var(--mono);font-variant-numeric:tabular-nums}
+.kit .verdict{padding:10px 14px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--accent);font-weight:600;margin:8px 0}
+.kit /* classify / match */
+.cls .pool{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:2px dashed var(--line);border-radius:10px;min-height:54px;background:var(--soft)}
+.kit .cls .buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}
+.kit .cls .bk{border:2px solid var(--line);border-radius:10px;padding:8px;min-height:84px;background:var(--surface)}
+.kit .cls .bk h4{margin:0 0 6px;font:700 .82rem var(--sans);color:var(--accent)}
+.kit .cls .bk .slot{display:flex;flex-wrap:wrap;gap:6px;min-height:34px}
+.kit .cls .bk.over,.kit .cls .pool.over{border-color:var(--accent);background:var(--accent-soft)}
+.kit .chip{font:600 .88rem var(--sans);padding:6px 11px;border-radius:8px;border:1.5px solid var(--accent);background:var(--surface);color:var(--ink);cursor:grab;user-select:none;text-align:left}
+.kit .chip.sel{background:var(--accent);color:var(--accent-ink)}
+.kit .chip.ok{border-color:var(--good);background:var(--good-soft)}
+.kit .chip.no{border-color:var(--bad);background:var(--bad-soft)}
+.kit .cls .msg,.kit .ord .msg,.kit .calc .msg{font-weight:700;margin:8px 0}
+.kit .match .bk h4{font-size:.9rem;color:var(--ink)}
+.kit /* order */
+.ord ol{list-style:none;margin:10px 0;padding:0;counter-reset:o}
+.kit .ord li{counter-increment:o;display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:6px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);cursor:grab}
+.kit .ord li::before{content:counter(o);font:700 .8rem var(--mono);width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.kit .ord li.ok{border-color:var(--good);background:var(--good-soft)}
+.kit .ord li.no{border-color:var(--bad);background:var(--bad-soft)}
+.kit .ord li.drag{opacity:.4}
+.kit .ord li span{flex:1}
+.kit .ord li button{padding:2px 8px}
+.kit /* quiz */
+.qz .q{margin:0 0 16px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.kit .qz .q p.qt{font-weight:700;margin-bottom:8px}
+.kit .opt{display:block;width:100%;text-align:left;font:500 .95rem var(--sans);padding:9px 12px;margin:5px 0;border-radius:9px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.kit .opt:hover{border-color:var(--accent)}
+.kit .opt.ok{border-color:var(--good);background:var(--good-soft)}
+.kit .opt.no{border-color:var(--bad);background:var(--bad-soft)}
+.kit .why{display:none;margin-top:8px;font-size:.92rem;padding:8px 12px;background:var(--soft);border-radius:8px}
+.kit .q.done .why{display:block}
+.kit .score{font:700 1.05rem var(--sans);margin:10px 0}
+.kit /* calc */
+.calc .q{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:12px}
+.kit .calc input[type=number],.kit .calc input[type=text]{width:130px;padding:7px 10px;font:600 1rem var(--mono);border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.kit .calc .sol{display:none;margin-top:8px;padding:10px 12px;background:var(--soft);border-radius:8px;font-size:.93rem}
+.kit .calc .sol.show{display:block}
+.kit .calc .fb{font-weight:700;margin-left:8px}
+.kit .calc .fb.ok{color:var(--good)}
+.kit .calc .fb.no{color:var(--bad)}
+.kit /* cards */
+.fc{perspective:900px;max-width:520px}
+.kit .fc .face{min-height:170px;display:grid;place-items:center;text-align:center;padding:20px;border-radius:14px;border:2px solid var(--accent);background:var(--surface);cursor:pointer;font-size:1.1rem}
+.kit .fc .face.back{background:var(--accent-soft)}
+.kit .fc .face small{display:block;font:700 .66rem var(--sans);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+.kit /* exam Qs */
+details.eq{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
+.kit details.eq>summary{cursor:pointer;padding:12px 16px;font-weight:700;list-style:none;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.kit details.eq>summary::-webkit-details-marker{display:none}
+.kit details.eq>summary::before{content:"▸";color:var(--accent)}
+.kit details.eq[open]>summary::before{content:"▾"}
+.kit details.eq .body{padding:4px 18px 16px}
+.kit .mark{font:700 .72rem var(--mono);background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:99px}
+.kit .cmd{font:700 .72rem var(--sans);background:var(--warn-soft);color:var(--warn);padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em}
+.kit .ans{border-left:4px solid var(--accent);padding:6px 14px;margin:10px 0;background:var(--soft);border-radius:0 8px 8px 0}
+.kit .mk{border-bottom:2px solid currentColor;padding-bottom:1px}
+.kit .mk[data-t]::after{content:" [" attr(data-t) "]";font:700 .64rem var(--sans);vertical-align:super;opacity:.85}
+.kit .mk.k{color:var(--k)}
+.kit .mk.a{color:var(--a)}
+.kit .mk.n{color:var(--n)}
+.kit .mk.e{color:var(--e)}
+.kit .key{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;margin:6px 0}
+.kit .key span{display:inline-flex;gap:5px;align-items:center}
+.kit .key i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.kit .key .k i{background:var(--k)}
+.kit .key .a i{background:var(--a)}
+.kit .key .n i{background:var(--n)}
+.kit .key .e i{background:var(--e)}
+.kit .rw{border:1px solid var(--line);border-left:5px solid var(--accent);background:var(--surface);border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:12px}
+.kit .rw h3{margin:0 0 4px}
+.kit .rw .use{margin-top:8px;padding:8px 12px;background:var(--accent-soft);border-radius:8px;font-size:.93rem}
+.kit .rw .use b{color:var(--accent)}
+.kit ul.tips{list-style:none;padding:0;margin:0}
+.kit ul.tips li{padding:10px 14px;margin-bottom:8px;border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:0 10px 10px 0;background:var(--surface)}
+.kit ul.tips li b{color:var(--warn)}
+.kit .algo{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(250px,1fr);gap:14px;align-items:start;margin:10px 0 14px}
+.kit .algo .stp{margin:0}
+.kit @media (max-width:820px){.algo{grid-template-columns:minmax(0,1fr)}}
+.kit .code{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kit .ctabs{display:flex;gap:4px;padding:8px 8px 0;border-bottom:1px solid var(--line);background:var(--soft)}
+.kit .ctabs button{font:700 .78rem var(--sans);padding:6px 12px;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:var(--bg);color:var(--muted);cursor:pointer}
+.kit .ctabs button[aria-selected="true"]{background:var(--surface);color:var(--accent);border-color:var(--accent)}
+.kit svg .cell{fill:var(--soft);stroke:var(--line);stroke-width:2}
+.kit svg .cell-cur{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
+.kit svg .cell-ok{fill:var(--good-soft);stroke:var(--good);stroke-width:3}
+.kit svg .cell-no{fill:var(--bad-soft);stroke:var(--bad);stroke-width:3}
+.kit svg .cell-warn{fill:var(--warn-soft);stroke:var(--warn);stroke-width:3}
+.kit svg .cell-sorted{fill:var(--good-soft);stroke:var(--good);stroke-width:2}
+.kit svg .cell-dimg{opacity:.28}
+.kit svg .nd{fill:var(--soft);stroke:var(--muted);stroke-width:2}
+.kit svg .nd-cur{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3.5}
+.kit svg .nd-ok{fill:var(--good-soft);stroke:var(--good);stroke-width:3.5}
+.kit svg .nd-no{fill:var(--bad-soft);stroke:var(--bad);stroke-width:3}
+.kit svg .nd-seen{fill:var(--good-soft);stroke:var(--good);stroke-width:2}
+.kit svg .edge{stroke:var(--muted);stroke-width:2.5;fill:none}
+.kit svg .arr{fill:var(--muted)}
+.kit svg .edge-on{stroke:var(--accent);stroke-width:4;fill:none}
+.kit .vars{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.kit .vars span{font:600 .85rem var(--mono);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:3px 9px}
+.kit .bar{height:14px;border-radius:7px;background:var(--accent);min-width:2px}
+.kit .bar.b2{background:var(--bad)}
+.kit .bar.b3{background:var(--good)}
+.kit .bar.b4{background:var(--warn)}
+.kit table.mx td,.kit table.mx th{text-align:center;font:600 .95rem var(--mono);padding:6px 10px}
+.kit table.mx td.z{color:var(--muted);opacity:.6}
+.kit table.mx td.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.kit table.mx td.hl{outline:3px solid var(--warn);outline-offset:-3px}
+.kit table.mx td.ls{text-align:left}
+.kit .stp{scroll-margin-top:70px}
+
+/* legacy */
+
+/* One colour per signal everywhere (chips, chart marks, cards): RSI violet, Bollinger blue, dip red, volume amber, support teal. */
+:root{
+  --bg:#F3F5F0; --surface:#FFFFFF; --ink:#14201A; --muted:#55645B; --line:#D3DCD4;
+  --accent:#1F7A4D; --accent-soft:#D6EFE1; --bad:#B3372F; --bad-soft:#F8DEDB; --amber-soft:#F8E8CF;
+  --s1:#7A4FD0; --s2:#2A5BD7; --s3:#C4302B; --s4:#B8650A; --s5:#0E8A7D;
+  --price:#14201A; --grid:#E4EAE5;
+  --display:'Bricolage Grotesque','Segoe UI',sans-serif; --body:'Source Sans 3','Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1612; --surface:#16211B; --ink:#E4EFE8; --muted:#97A99E; --line:#2A3A31;
+  --accent:#6CCB9B; --accent-soft:#143A28; --bad:#F0857D; --bad-soft:#3E1D1B; --amber-soft:#3A2A14;
+  --s1:#A98BFF; --s2:#8DA8FF; --s3:#FF7A70; --s4:#F0A04B; --s5:#4FD1BF; --price:#E4EFE8; --grid:#22302A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1612; --surface:#16211B; --ink:#E4EFE8; --muted:#97A99E; --line:#2A3A31;
+  --accent:#6CCB9B; --accent-soft:#143A28; --bad:#F0857D; --bad-soft:#3E1D1B; --amber-soft:#3A2A14;
+  --s1:#A98BFF; --s2:#8DA8FF; --s3:#FF7A70; --s4:#F0A04B; --s5:#4FD1BF; --price:#E4EFE8; --grid:#22302A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;padding:0 16px 64px}
+.wrap{max-width:920px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,6vw,3rem)} h2{font-size:1.6rem;margin-bottom:6px} h3{font-size:1.12rem;margin:20px 0 8px}
+p{margin:0 0 12px} code,.mono{font-family:var(--mono);font-size:.88em}
+.eyebrow{font-family:var(--mono);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{padding:34px 0 16px} header p{max-width:64ch;color:var(--muted);font-size:1.08rem;margin-top:10px}
+.edu{background:var(--amber-soft);border-radius:10px;padding:10px 14px;font-size:.92rem;margin-top:14px}
+[role=tablist]{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px;padding:8px 16px;display:flex;gap:6px;overflow-x:auto}
+[role=tab]{font-family:var(--mono);font-size:.8rem;padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+[role=tab][aria-selected=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+[role=tab]:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) [role=tab][aria-selected=true]{color:#0E1612}}
+:root[data-theme="dark"] [role=tab][aria-selected=true]{color:#0E1612}
+[role=tabpanel]{padding-top:22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:14px 0}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.tip{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:10px 14px;margin:14px 0}
+.tip b.l{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.warn{border-left-color:var(--bad);background:var(--bad-soft)}
+svg{width:100%;height:auto;display:block}
+button{font:inherit;font-size:.92rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:7px 14px;cursor:pointer}
+button.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.pri{color:#0E1612}}
+:root[data-theme="dark"] button.pri{color:#0E1612}
+button:disabled{opacity:.45;cursor:default}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:.78rem;padding:4px 10px;border-radius:99px;border:1.5px solid var(--c,var(--line));color:var(--ink);background:var(--surface)}
+.chip.on{background:var(--c);color:#fff;border-color:var(--c)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);display:inline-block}
+.sig1{--c:var(--s1)}.sig2{--c:var(--s2)}.sig3{--c:var(--s3)}.sig4{--c:var(--s4)}.sig5{--c:var(--s5)}
+.sigcard{border-top:5px solid var(--c)}
+.sigcard h3{margin-top:0}
+.read{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.cond{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;background:var(--surface)}
+.cond .lamp{width:16px;height:16px;border-radius:50%;border:2px solid var(--c);flex:none}
+.cond.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--surface))}
+.cond.on .lamp{background:var(--c)}
+.cond .v{margin-left:auto;font-family:var(--mono);font-size:.82rem}
+.verdict{font-family:var(--display);font-size:1.5rem;font-weight:700;padding:12px 16px;border-radius:12px;text-align:center;margin:10px 0}
+.v-no{background:var(--bad-soft);color:var(--bad)} .v-wait{background:var(--grid);color:var(--muted)} .v-buy{background:var(--accent-soft);color:var(--accent)}
+.stats{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-family:var(--display);font-size:1.6rem}
+.stat span{font-size:.82rem;color:var(--muted)}
+ol.steps{padding-left:0;list-style:none;margin:0;counter-reset:s}
+ol.steps li{counter-increment:s;display:flex;gap:10px;padding:8px 10px;border-radius:10px;border:1px solid transparent;opacity:.55}
+ol.steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;background:var(--grid);display:grid;place-items:center;font-family:var(--mono);font-size:.8rem}
+ol.steps li.on{opacity:1;border-color:var(--accent);background:var(--accent-soft)} ol.steps li.on::before{background:var(--accent);color:#fff}
+.q{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--surface)}
+.q .fb{margin-top:8px;font-size:.95rem}.ok{color:var(--accent)}.no{color:var(--bad)}
+.ord{list-style:none;margin:0;padding:0}
+.ord li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;margin:6px 0;cursor:grab}
+.ord li.drag{opacity:.4}.ord li.right{border-color:var(--accent);background:var(--accent-soft)}.ord li.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.ord .mv{margin-left:auto;display:flex;gap:4px}.ord .mv button{padding:2px 9px}
+.match{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+@media(max-width:600px){.match{grid-template-columns:1fr}}
+.match .t,.match .d{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--surface);cursor:pointer;font-size:.93rem}
+.match .sel{border-color:var(--accent);outline:2px solid var(--accent)}.match .done{background:var(--accent-soft);border-color:var(--accent);cursor:default}
+.match .bad{background:var(--bad-soft);border-color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.card a,.tip a,.read a{color:var(--accent)}.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
+
+.formula{font-family:var(--mono);font-size:.84rem;background:var(--accent-soft);border-left:4px solid var(--accent);padding:7px 11px;border-radius:0 8px 8px 0;margin:8px 0;overflow-wrap:anywhere}
+.mgrid{display:grid;gap:14px;grid-auto-rows:1fr;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.mgrid .card{margin:0;display:flex;flex-direction:column;gap:2px}
+.mgrid .card h3{margin:0 0 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mgrid .card p{margin:4px 0 0;font-size:.95rem}
+.xtra{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;background:var(--amber-soft);color:var(--s4);border-radius:99px;padding:2px 8px}
+.fam{margin:26px 0 8px}
+.fam h2{margin-bottom:2px}
+.fam p.sub{color:var(--muted);margin:0 0 12px;max-width:68ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chips button{border-radius:99px;font-family:var(--mono);font-size:.82rem}
+.chips button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chips button[aria-pressed=true]{color:#0E1612}}
+:root[data-theme="dark"] .chips button[aria-pressed=true]{color:#0E1612}
+.tw{overflow-x:auto}
+table.fin td.n,table.fin th.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+table.fin tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+table.fin tr.grp td{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:14px;border-bottom:1px solid var(--line)}
+table.fin .fm{display:block;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.st{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--grid);border:2px solid var(--line)}
+.st.in{background:var(--accent);border-color:var(--accent)}.st.out{background:var(--s4);border-color:var(--s4)}
+.up{color:var(--accent)}.dn{color:var(--s4)}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.two>.card{margin:0}
+.lens{border-left:5px solid var(--c,var(--accent))}
+.lens h3{margin:0}
+.lens .q{border:0;padding:0;margin:2px 0 8px;background:none;color:var(--muted);font-style:italic}
+.lens ul,.lst{margin:6px 0 0;padding-left:1.1em}.lens li,.lst li{margin:4px 0}
+.good{border-top:4px solid var(--accent)}.bad{border-top:4px solid var(--s4)}
+.sl{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin:6px 0}
+.sl output{font-family:var(--mono);font-size:.9rem;text-align:right}
+@media(max-width:560px){.sl{grid-template-columns:1fr 60px}.sl label{grid-column:1/-1}}
+svg text.lbl{fill:var(--muted);font:11px var(--mono)}
+svg .ax{stroke:var(--line);stroke-width:1}
+svg .zero{stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3}
+svg .bar{fill:var(--accent)}svg .barn{fill:var(--accent-soft);stroke:var(--accent)}
+svg .crv{fill:none;stroke:var(--accent);stroke-width:2.5}
+svg .mk{fill:var(--s4)}
+.ans{width:7.5em;font:inherit;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.opt{display:block;width:100%;text-align:left;margin:5px 0}
+.opt.right{background:var(--accent-soft);border-color:var(--accent)}.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.match{margin-top:8px}
+.big{font-family:var(--display);font-size:1.15rem}
+
+.card svg{max-width:600px;margin:0 auto}
+.ob{margin:8px 0;font-family:var(--mono);font-size:.82rem}
+.ob .r{display:grid;grid-template-columns:64px 1fr 54px;gap:8px;align-items:center;padding:2px 0}
+.ob .bar{height:14px;border-radius:3px}
+.ob .ask .bar{background:color-mix(in srgb,var(--bad) 45%,var(--surface))}
+.ob .bid .bar{background:color-mix(in srgb,var(--accent) 45%,var(--surface))}
+.ob .mine .bar{outline:2px solid var(--s4)}
+.ob .sp{text-align:center;color:var(--muted);border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);margin:4px 0;padding:3px 0}
+.ob .sz{text-align:right;color:var(--muted)}
+.phase{display:inline-block}
+svg .dl{stroke:var(--s2);stroke-width:2.5;fill:none}svg .sl2{stroke:var(--s3);stroke-width:2.5;fill:none}
+svg .base{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;fill:none;opacity:.6}
+svg .guide{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+svg .eq{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+svg .pline{fill:none;stroke:var(--ink);stroke-width:2.2}
+svg .sent{fill:none;stroke:var(--s4);stroke-width:2;stroke-dasharray:6 4}
+svg .ph{opacity:.16}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.pcard{border-left:5px solid var(--accent)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:4px 12px;margin:8px 0;font-size:.95rem}
+.kv b{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+@media(max-width:560px){.kv{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="kitvars">
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Basic trading · In-depth · Educational</div>
+  <h1>Basic Trading: Orders, Risk and Position Sizing</h1>
+  <p>The mechanics of placing a trade and the arithmetic of surviving it: order types and fills, what costs and leverage do to a result, how far to risk, and why a good plan still has losing streaks. Four labs let you test the numbers on simulated prices.</p>
+  <div class="edu">Educational and historical only. All prices are simulated and nothing here is advice or a recommendation. Trading, especially with leverage, can lose more than the money you put in.</div>
+</header>
+<div class="tablist" role="tablist" aria-label="Sections">
+  <button role="tab" data-p="learn">Learn</button>
+  <button role="tab" data-p="trade">Trade lab</button>
+  <button role="tab" data-p="cost">Costs and leverage</button>
+  <button role="tab" data-p="size">Position size</button>
+  <button role="tab" data-p="edge">Expectancy</button>
+  <button role="tab" data-p="practise">Practise</button>
+  <button role="tab" data-p="real">Real world</button>
+  <button role="tab" data-p="tips">Keywords</button>
+</div>
+
+<section id="learn" role="tabpanel">
+<h2>The idea in one minute</h2>
+<p>Every trade has the same skeleton: a reason to enter, a size, an exit if it fails and an exit if it works. Getting the mechanics wrong turns a sound idea into a bad result, and getting the size wrong can end the account before the idea has time to work.</p>
+<div class="fam"><h2>1. The life of a trade</h2><p class="sub">Six steps that repeat every time.</p></div>
+<ol class="steps" style="max-width:700px"><li class="on"><span><b>Idea.</b> What setup or reason are you acting on?</span></li><li class="on"><span><b>Plan.</b> Entry, stop-loss, take-profit and size, written down before you enter.</span></li><li class="on"><span><b>Entry.</b> Place the order and check the fill against the plan.</span></li><li class="on"><span><b>Manage.</b> Follow the plan. Moving a stop further away is the classic way to turn a small loss into a large one.</span></li><li class="on"><span><b>Exit.</b> At the stop, the target, or when the reason for the trade no longer holds.</span></li><li class="on"><span><b>Review.</b> Record the result, the costs and whether you followed the plan.</span></li></ol>
+<div class="fam"><h2>2. Orders and execution</h2><p class="sub">What you ask for and what you actually get.</p></div>
+<div id="ot"></div>
+<div class="mgrid" style="margin-top:14px">
+<div class="card"><h3>Spread and slippage</h3><p>Buyers pay the ask and sellers receive the bid, so every round trip starts slightly behind. Slippage is the extra cost when the fill is worse than the price you saw, common in fast or thin markets and on stops.</p></div>
+<div class="card"><h3>Gaps</h3><p>Prices can jump between one trade and the next, for example on overnight news or at the open. A stop cannot protect against a price that was never available to trade at.</p></div>
+</div>
+<div class="fam"><h2>3. Costs and leverage</h2><p class="sub">The arithmetic that sits under every result.</p></div>
+<div class="mgrid">
+<div class="card"><h3>Costs</h3><p>Spread, commission, financing for borrowed money held overnight, and slippage. On a small, short trade they can be most of the expected gain.</p></div>
+<div class="card"><h3>Leverage and margin</h3><p>Leverage lets you control a position bigger than the money you put up, the <b>margin</b>. At 10x a 10% move against you uses all of the margin. Gains and losses are both multiplied relative to your own money.</p><p class="read">Watch for: leverage changes the risk, not the quality of the idea.</p></div>
+<div class="card"><h3>Long and short</h3><p>Going short means selling something you do not own, having borrowed it, to buy it back later. A long position can lose at most what was paid. A short position has no ceiling because a price can keep rising.</p></div>
+</div>
+<div class="fam"><h2>4. Risk and size</h2><p class="sub">How a series of trades, not one trade, decides the outcome.</p></div>
+<div class="mgrid">
+<div class="card"><h3>Reward-to-risk and R-multiples</h3><p>Call the amount you risk on a trade 1R. A trade that makes twice that is +2R, one that hits the stop is −1R. Measuring in R makes trades of different sizes comparable.</p></div>
+<div class="card"><h3>Expectancy</h3><p>Win rate × average win − loss rate × average loss. A strategy that wins only 40% of the time can still have positive expectancy if its wins are more than 1.5 times its losses. It is an average over many trades and says nothing certain about the next one.</p></div>
+<div class="card"><h3>Position sizing</h3><p>Fixed-fraction sizing risks the same small percentage of the account on each trade, so size shrinks after losses and grows after wins. It keeps one bad trade from doing disproportionate damage.</p><p class="read">The GCG <a href="/tools/calculator">Position Size Calculator</a> does this arithmetic and the Kelly Criterion.</p></div>
+<div class="card"><h3>Drawdown and recovery</h3><p>Losses are asymmetric: a 10% fall needs +11% to recover, 25% needs +33%, 50% needs +100% and 80% needs +400%. Small risk per trade keeps a losing streak recoverable.</p></div>
+</div>
+<div class="fam"><h2>5. Process</h2><p class="sub">The habits that turn trades into data.</p></div>
+<div class="mgrid">
+<div class="card"><h3>A trading journal</h3><p>Record the setup, entry, stop, target, size, costs, result and whether the plan was followed. Reviewing it separates bad luck from bad process.</p></div>
+<div class="card"><h3>Psychology</h3><p>The common errors are predictable: widening a stop, taking profits too early, and trading bigger after a loss to win it back. Rules written in advance exist to stop in-the-moment decisions.</p></div>
+</div>
+</section>
+
+<section id="trade" role="tabpanel" hidden>
+<h2>Trade lab</h2>
+<p>A trade is entered at 100 and followed bar by bar. Set the stop, target and volatility, try a trailing stop, and press New price path to see how the same plan fares on different paths. Occasional gaps are built in.</p>
+<div id="tk"></div>
+</section>
+
+<section id="cost" role="tabpanel" hidden>
+<h2>Costs and leverage</h2>
+<p>Add commission, spread, leverage and days held, and see how the result changes.</p>
+<div id="pl"></div>
+</section>
+
+<section id="size" role="tabpanel" hidden>
+<h2>Position size</h2>
+<p>Pick how much of the account you are willing to lose if the stop is hit. The tool works out the size, and shows what a run of losses at that risk does.</p>
+<div id="sz"></div>
+</section>
+
+<section id="edge" role="tabpanel" hidden>
+<h2>Expectancy</h2>
+<p>Choose a win rate and average win size. Five simulated runs of 100 trades show how much results vary even with the same rules.</p>
+<div id="ex"></div>
+</section>
+
+<section id="practise" role="tabpanel" hidden><h2>Practise</h2><div id="quiz"></div></section>
+
+<section id="real" role="tabpanel" hidden>
+<h2>Real world</h2>
+<p>Two well-documented episodes in outline. Figures are approximate; check primary sources before relying on them.</p>
+<div class="card"><h3>The Swiss franc shock, 15 January 2015: stops that did not hold</h3>
+<p>For three years the Swiss National Bank had held the franc to a floor of 1.20 per euro. On 15 January 2015 it dropped the floor without warning. The franc surged by around 30% against the euro within minutes. Many stop-loss orders were filled far beyond their stop levels because there were almost no prices in between, and some leveraged accounts lost more than they had deposited. Several brokers suffered heavy losses, and one large US forex broker needed an emergency rescue loan.</p>
+<div class="tip"><b class="l">What it illustrates</b>A stop is a market order waiting for a trigger, not a guarantee of price. Gaps and leverage together can exceed the money put up.</div></div>
+<div class="card"><h3>Long-Term Capital Management, 1998: leverage at scale</h3>
+<p>LTCM was a hedge fund run by well-credentialed traders that used heavy leverage, with borrowing at roughly 25 times its capital, to make small, normally reliable gains. After Russia defaulted on its debt in August 1998, markets moved in ways its models had treated as extremely unlikely, and it lost billions within weeks. In September 1998 a group of banks, organised by the New York Fed, put in about $3.6bn to stabilise it.</p>
+<div class="tip"><b class="l">What it illustrates</b>With enough leverage, a small adverse move is a large loss on your own money, and a good record does not remove the risk of a rare event.</div></div>
+<div class="card"><h3>Retail leveraged trading</h3>
+<p>Under European regulation, brokers offering leveraged products such as CFDs must display the share of their retail accounts that lose money. Those figures have typically been somewhere between roughly 70% and 90%.</p>
+<div class="tip"><b class="l">What it illustrates</b>Costs, leverage and sizing mistakes are the usual reasons. The labs on this page show how each one works.</div></div>
+</section>
+
+<section id="tips" role="tabpanel" hidden>
+<h2>Keywords</h2>
+<div class="card"><div class="tw"><table class="fin" id="gl"></table></div></div>
+<div class="two">
+<div class="card good"><h3>Good habits</h3><ul class="lst"><li>Write the plan before the order.</li><li>Size from the stop distance and the amount you will risk.</li><li>Count costs before judging a result.</li><li>Keep a journal and review it.</li></ul></div>
+<div class="card bad"><h3>Common mistakes</h3><ul class="lst"><li>Moving a stop further away to avoid a loss.</li><li>Sizing up after a loss to win it back.</li><li>Treating a stop as a guaranteed exit price.</li><li>Using leverage because it is available, not because the risk fits.</li></ul></div>
+</div>
+</section>
+</div>
+</div>
+<script>
+const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const f1 = (n, d = 1) => n.toFixed(d);
+
+function initTabs() {
+  const tabs = $$("[role=tab]"), panels = tabs.map((t) => $("#" + t.dataset.p));
+  const show = (i, focus) => {
+    tabs.forEach((t, k) => { t.setAttribute("aria-selected", k === i); t.tabIndex = k === i ? 0 : -1; panels[k].hidden = k !== i; });
+    if (focus) tabs[i].focus();
+    try { history.replaceState(null, "", "#" + tabs[i].dataset.p); } catch (e) {}
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => { show(i); window.scrollTo(0, 0); });
+    t.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") { e.preventDefault(); show((i + 1) % tabs.length, true); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); show((i + tabs.length - 1) % tabs.length, true); }
+    });
+  });
+  const start = tabs.findIndex((t) => "#" + t.dataset.p === location.hash);
+  show(start < 0 ? 0 : start);
+}
+
+function initQuiz(el, QS) {
+  el.innerHTML = QS.map((q, qi) => { const idx = shuffle(q.o.map((_, i) => i));
+    return `<div class="q" data-q="${qi}"><b>${qi + 1}. ${q.q}</b>${idx.map((i) => `<button class="opt" data-i="${i}">${q.o[i]}</button>`).join("")}<div class="fb" hidden></div></div>`; }).join("");
+  $$(".q", el).forEach((box) => { const q = QS[+box.dataset.q];
+    $$(".opt", box).forEach((b) => b.addEventListener("click", () => {
+      const fb = $(".fb", box); if (!fb.hidden) return;
+      const ok = +b.dataset.i === q.a; b.classList.add(ok ? "right" : "wrong");
+      if (!ok) $$(".opt", box).find((x) => +x.dataset.i === q.a).classList.add("right");
+      fb.hidden = false; fb.innerHTML = `<span class="${ok ? "ok" : "no"}">${ok ? "Correct." : "Not quite."}</span> ${q.e}`; })); });
+}
+
+
+const OT = [
+  { n: "Market", d: "Buy or sell right now at the best price available.", c: "You control: that it happens. You do not control: the exact price.", r: "In a fast or thin market the fill can be well away from the last quote.", e: "Market buy 100 shares: fills at the lowest asks until 100 are bought." },
+  { n: "Limit", d: "Buy at a set price or lower, or sell at a set price or higher.", c: "You control: the worst price you accept. You do not control: whether you are filled.", r: "The price may touch your level and move away without filling you, or never reach it.", e: "Limit buy at £49.50 when the price is £50: waits until sellers come down to £49.50." },
+  { n: "Stop", d: "Sits dormant until the price reaches a trigger, then becomes a market order.", c: "You control: where it triggers. You do not control: the price you get once triggered.", r: "If the price gaps past the trigger, the fill can be much worse than the stop level.", e: "Stop-loss sell at £47 on a £50 long: if the price falls to £47, a market sell fires." },
+  { n: "Stop-limit", d: "Like a stop, but becomes a limit order, not a market order, when triggered.", c: "You control: the trigger and the worst fill price.", r: "In a fast fall the price can pass your limit and the order never fills, leaving you in the trade.", e: "Stop £47, limit £46.50: sells only between £47 and £46.50." },
+  { n: "Bracket / OCO", d: "An entry with a stop-loss and a take-profit attached. When one exits, the other cancels (one cancels other).", c: "You control: the whole plan up front.", r: "Both exits are still ordinary orders, so the stop can still slip in a gap.", e: "Buy at £50, stop £47, target £56: whichever is hit first closes the trade." },
+  { n: "Trailing stop", d: "A stop that follows the price at a fixed distance as it moves in your favour, but never backs off.", c: "You control: the distance. It locks in some profit as the trade works.", r: "A normal pullback can trigger it and take you out of a trade that then continues.", e: "Trail £3 behind: price £50 to £56 moves the stop from £47 to £53." }
+];
+function orderTypes(root) {
+  root.innerHTML = `<div class="chips" data-ch></div><div class="card pcard" data-card></div>`;
+  const show = (i) => { $$("[data-ch] button", root).forEach((b, k) => b.setAttribute("aria-pressed", k === i)); const o = OT[i];
+    $("[data-card]", root).innerHTML = `<h3>${o.n} order</h3><p>${o.d}</p><div class="kv"><b>Control</b><span>${o.c}</span><b>Watch for</b><span>${o.r}</span><b>Example</b><span>${o.e}</span></div>`; };
+  $("[data-ch]", root).innerHTML = OT.map((o) => `<button>${o.n}</button>`).join("");
+  $$("[data-ch] button", root).forEach((b, i) => b.addEventListener("click", () => show(i)));
+  show(0);
+}
+function norm() { return Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random()); }
+const gbp = (n, d = 0) => (n < 0 ? "−£" : "£") + Math.abs(n).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
+const dirChips = () => `<div class="chips" data-dir><button data-d="1" aria-pressed="true">Long (buy first)</button><button data-d="-1" aria-pressed="false">Short (sell first)</button></div>`;
+function bindDir(root, draw) { let dir = 1; $$("[data-dir] button", root).forEach((b) => b.addEventListener("click", () => { dir = +b.dataset.d; $$("[data-dir] button", root).forEach((x) => x.setAttribute("aria-pressed", x === b)); draw(); })); return () => dir; }
+const slider = (k, label, min, max, step, val) => `<div class="sl"><label>${label}</label><input type="range" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${val}"><output data-o="${k}"></output></div>`;
+const stat = (b, s) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`;
+
+/* ---------- Trade ticket replay ---------- */
+function ticketLab(root, adv) {
+  root.innerHTML = `<div class="card">${dirChips()}${slider("stop", "Stop-loss distance (%)", 1, 10, 0.5, 3)}${slider("tgt", "Take-profit distance (%)", 1, 20, 0.5, 6)}${adv ? slider("vol", "Price volatility (% per bar)", 0.5, 3, 0.1, 1.2) + '<label class="read"><input type="checkbox" data-k="trail"> Trailing stop</label>' : ""}
+    <div class="btnrow"><button class="pri" data-new>New price path</button></div></div><div class="stats" data-st></div><div class="card"><div data-ch></div><p class="read" data-tx></p></div>`;
+  let z = [];
+  const gen = () => { z = Array.from({ length: 60 }, () => norm() * (Math.random() < 0.06 ? 3 : 1)); };
+  const getDir = bindDir(root, () => draw());
+  const v = (k) => +$(`[data-k=${k}]`, root).value;
+  function draw() {
+    const dir = getDir(), s = v("stop"), t = v("tgt"), vol = adv ? v("vol") : 1.2, trail = adv && $("[data-k=trail]", root).checked;
+    $("[data-o=stop]", root).textContent = s + "%"; $("[data-o=tgt]", root).textContent = t + "%"; if (adv) $("[data-o=vol]", root).textContent = f1(vol) + "%";
+    const path = [100]; z.forEach((q) => path.push(Math.max(1, path[path.length - 1] * (1 + vol / 100 * q))));
+    let stop = 100 * (1 - dir * s / 100); const tgt = 100 * (1 + dir * t / 100), stops = [stop]; let exit = null, reason = "", idx = path.length - 1;
+    for (let i = 1; i < path.length && exit === null; i++) {
+      const p = path[i];
+      if (dir === 1 ? p <= stop : p >= stop) { exit = p; reason = "stop"; idx = i; }
+      else if (dir === 1 ? p >= tgt : p <= tgt) { exit = p; reason = "target"; idx = i; }
+      else { if (trail) stop = dir === 1 ? Math.max(stop, p * (1 - s / 100)) : Math.min(stop, p * (1 + s / 100)); stops.push(stop); }
+    }
+    if (exit === null) { exit = path[path.length - 1]; reason = "time"; idx = path.length - 1; }
+    stops.length = Math.min(stops.length, idx + 1);
+    const pnl = dir * (exit / 100 - 1) * 100, R = pnl / s, stopLvl = stops[stops.length - 1];
+    const W = 520, H = 260, pl = 10, pb = 22, pt = 10, all = path.concat([tgt, 100 * (1 - dir * s / 100)]), mx = Math.max(...all) * 1.01, mn = Math.min(...all) * 0.99;
+    const x = (i) => pl + i / 60 * (W - pl - 10), y = (p) => H - pb - (p - mn) / (mx - mn) * (H - pb - pt);
+    let c = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trade replay"><line class="ax" x1="${pl}" y1="${H - pb}" x2="${W - 10}" y2="${H - pb}"/>`;
+    c += `<line class="guide" x1="${pl}" y1="${y(100)}" x2="${W - 10}" y2="${y(100)}"/><text class="lbl" x="${W - 12}" y="${y(100) - 4}" text-anchor="end">entry 100</text>`;
+    c += `<line x1="${pl}" y1="${y(tgt)}" x2="${W - 10}" y2="${y(tgt)}" stroke="var(--accent)" stroke-dasharray="5 4" stroke-width="1.6"/><text class="lbl" x="${pl + 2}" y="${y(tgt) - 4}" style="fill:var(--accent)">take-profit</text>`;
+    c += trail ? `<path d="${stops.map((q, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(q).toFixed(1)).join(" ")}" fill="none" stroke="var(--bad)" stroke-width="1.6" stroke-dasharray="5 4"/>` : `<line x1="${pl}" y1="${y(stops[0])}" x2="${W - 10}" y2="${y(stops[0])}" stroke="var(--bad)" stroke-dasharray="5 4" stroke-width="1.6"/>`;
+    c += `<text class="lbl" x="${pl + 2}" y="${y(stops[0]) + 12}" style="fill:var(--bad)">${trail ? "trailing stop" : "stop-loss"}</text>`;
+    c += `<path class="pline" d="${path.slice(0, idx + 1).map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p).toFixed(1)).join(" ")}"/>`;
+    c += `<path d="${path.slice(idx).map((p, i) => (i ? "L" : "M") + x(idx + i).toFixed(1) + " " + y(p).toFixed(1)).join(" ")}" fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".4"/>`;
+    c += `<circle class="eq" cx="${x(idx)}" cy="${y(exit)}" r="7" style="fill:${pnl >= 0 ? "var(--accent)" : "var(--bad)"}"/></svg>`;
+    $("[data-ch]", root).innerHTML = c;
+    $("[data-st]", root).innerHTML = stat((pnl >= 0 ? "+" : "−") + f1(Math.abs(pnl), 2) + "%", "result on the trade") + stat((R >= 0 ? "+" : "−") + f1(Math.abs(R), 1) + "R", "in multiples of the risk taken") + stat("1 : " + f1(t / s, 1), "reward : risk planned");
+    const why = reason === "stop" ? "The stop-loss was hit first." : reason === "target" ? "The take-profit was hit first." : "Neither level was reached, so the trade is closed at the end of the period.";
+    const gap = reason === "stop" && ((dir === 1 && exit < stopLvl - 0.05) || (dir === -1 && exit > stopLvl + 0.05));
+    $("[data-tx]", root).textContent = why + (gap ? ` The price jumped past the stop level (${f1(stopLvl, 2)}), so the order filled at ${f1(exit, 2)}, a bigger loss than planned. That is slippage on a stop.` : "") + " The faded line shows what the price did afterwards. Change the stop or target and the same price path gives a different result.";
+  }
+  $$("input", root).forEach((i) => i.addEventListener("input", draw)); $("[data-new]", root).addEventListener("click", () => { gen(); draw(); });
+  gen(); draw();
+}
+
+/* ---------- Profit, loss and costs ---------- */
+function pnlLab(root, adv) {
+  root.innerHTML = `<div class="card">${dirChips()}${slider("en", "Entry price (£)", 5, 100, 0.5, 50)}${slider("ex", "Exit price (£)", 5, 100, 0.5, 54)}${slider("sh", "Shares", 50, 2000, 50, 500)}${slider("cm", "Commission per trade (£)", 0, 25, 1, 5)}${slider("sp", "Spread (£ per share)", 0, 0.5, 0.01, 0.05)}
+    ${adv ? slider("lv", "Leverage (x)", 1, 20, 1, 1) + slider("dy", "Days held", 0, 60, 1, 10) + slider("fr", "Financing rate (% a year)", 0, 15, 0.5, 6) : ""}</div><div class="stats" data-st></div><div class="card"><div class="kv" data-kv></div><p class="read" data-tx></p></div>`;
+  const getDir = bindDir(root, () => draw()); const v = (k) => +$(`[data-k=${k}]`, root).value;
+  function draw() {
+    const dir = getDir(), en = v("en"), ex = v("ex"), sh = v("sh"), cm = v("cm"), sp = v("sp"), lv = adv ? v("lv") : 1, dy = adv ? v("dy") : 0, fr = adv ? v("fr") : 0;
+    $("[data-o=en]", root).textContent = "£" + f1(en, 2); $("[data-o=ex]", root).textContent = "£" + f1(ex, 2); $("[data-o=sh]", root).textContent = sh; $("[data-o=cm]", root).textContent = "£" + cm; $("[data-o=sp]", root).textContent = "£" + f1(sp, 2);
+    if (adv) { $("[data-o=lv]", root).textContent = lv + "x"; $("[data-o=dy]", root).textContent = dy; $("[data-o=fr]", root).textContent = f1(fr) + "%"; }
+    const gross = dir * (ex - en) * sh, cost = 2 * cm + sp * sh, notional = en * sh, borrowed = notional * (1 - 1 / lv), fin = borrowed * fr / 100 / 365 * dy, net = gross - cost - fin, base = notional / lv;
+    const be = en + dir * (cost + fin) / sh;
+    $("[data-st]", root).innerHTML = stat(gbp(gross, 0), "gross profit or loss") + stat(gbp(-(cost + fin), 0), "costs" + (adv ? " and financing" : "")) + stat(gbp(net, 0), "net profit or loss") + stat((net >= 0 ? "+" : "−") + f1(Math.abs(net / base * 100)) + "%", adv && lv > 1 ? "return on the money put up" : "return on the position");
+    $("[data-kv]", root).innerHTML = `<b>Position value</b><span>${gbp(notional, 0)}</span>` + (adv ? `<b>Money put up (margin)</b><span>${gbp(base, 0)}</span>` : "") +
+      `<b>Break-even price</b><span>£${f1(be, 2)} (${dir === 1 ? "above" : "below"} your entry, because costs come first)</span>` +
+      (adv && lv > 1 ? `<b>Approx. wipe-out price</b><span>£${f1(dir === 1 ? en * (1 - 1 / lv) : en * (1 + 1 / lv), 2)}: a ${f1(100 / lv)}% move against you uses all the margin. Brokers usually close positions earlier.</span>` : "");
+    $("[data-tx]", root).textContent = (dir === -1 ? "A short sale profits when the price falls, but the loss has no ceiling because a price can keep rising. " : "") + "Costs are charged whether the trade wins or loses, so a trade needs to move past break-even before it earns anything." + (adv && lv > 1 ? " Leverage multiplies the percentage return on your own money, in both directions." : "");
+  }
+  $$("input", root).forEach((i) => i.addEventListener("input", draw)); draw();
+}
+
+/* ---------- Position sizing ---------- */
+function sizeLab(root, adv) {
+  root.innerHTML = `<div class="card">${slider("ac", "Account size (£)", 1000, 100000, 500, 10000)}${slider("rk", "Risk per trade (% of account)", 0.25, 5, 0.25, 1)}${slider("en", "Entry price (£)", 5, 200, 1, 50)}${slider("sd", "Stop distance (% from entry)", 1, 15, 0.5, 4)}${adv ? slider("lv", "Leverage available (x)", 1, 20, 1, 1) : ""}</div>
+    <div class="stats" data-st></div><div class="card"><h3>If you lose several in a row</h3><div class="tw"><table class="fin" data-tb></table></div><p class="read" data-tx></p></div>`;
+  const v = (k) => +$(`[data-k=${k}]`, root).value;
+  function draw() {
+    const ac = v("ac"), rk = v("rk"), en = v("en"), sd = v("sd"), lv = adv ? v("lv") : 1;
+    $("[data-o=ac]", root).textContent = gbp(ac); $("[data-o=rk]", root).textContent = f1(rk, 2) + "%"; $("[data-o=en]", root).textContent = "£" + en; $("[data-o=sd]", root).textContent = sd + "%"; if (adv) $("[data-o=lv]", root).textContent = lv + "x";
+    const riskGbp = ac * rk / 100, perShare = en * sd / 100, sh = Math.floor(riskGbp / perShare), val = sh * en, pct = val / ac * 100;
+    $("[data-st]", root).innerHTML = stat(sh.toLocaleString("en-GB"), "shares to buy") + stat(gbp(riskGbp, 0), "lost if the stop is hit") + stat(gbp(val, 0), "position value (" + f1(pct, 0) + "% of account)") + (adv ? stat(gbp(val / lv, 0), "margin needed at " + lv + "x") : "");
+    $("[data-tb]", root).innerHTML = "<thead><tr><th>Losses in a row</th><th class='n'>Account left</th><th class='n'>Drawdown</th><th class='n'>Gain needed to recover</th></tr></thead><tbody>" +
+      [3, 5, 10, 20].map((n) => { const b = ac * (1 - rk / 100) ** n, dd = 1 - b / ac; return `<tr><td>${n}</td><td class="n">${gbp(b, 0)}</td><td class="n">−${f1(dd * 100)}%</td><td class="n">+${f1((1 / (1 - dd) - 1) * 100)}%</td></tr>`; }).join("") + "</tbody>";
+    $("[data-tx]", root).textContent = (pct > 100 / (adv ? lv : 1) && lv === 1 ? "This position is larger than the whole account, so it could not be bought with cash alone. A tight stop on a pricey share needs a lot of shares. " : "") + "Risk per trade sets the size of the position, not the other way round. Notice how a fall needs a bigger gain to recover: after a 50% fall, +100% is needed.";
+  }
+  $$("input", root).forEach((i) => i.addEventListener("input", draw)); draw();
+}
+
+/* ---------- Expectancy ---------- */
+function expLab(root) {
+  root.innerHTML = `<div class="card">${slider("wr", "Win rate (%)", 20, 80, 1, 45)}${slider("aw", "Average win (in R, where 1R = the risk taken)", 0.5, 5, 0.1, 2)}${slider("rk", "Risk per trade (% of account)", 0.25, 3, 0.25, 1)}<div class="btnrow"><button class="pri" data-new>Run 5 more attempts</button></div></div>
+    <div class="stats" data-st></div><div class="card"><div data-ch></div><p class="read" data-tx></p></div>`;
+  const v = (k) => +$(`[data-k=${k}]`, root).value; const COL = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)"];
+  function draw() {
+    const w = v("wr") / 100, aw = v("aw"), rk = v("rk") / 100, N = 100; $("[data-o=wr]", root).textContent = f1(w * 100, 0) + "%"; $("[data-o=aw]", root).textContent = f1(aw) + "R"; $("[data-o=rk]", root).textContent = f1(rk * 100, 2) + "%";
+    const exp = w * aw - (1 - w), be = 1 / (1 + aw); const runs = []; let worst = 0, streak = 0, finals = [];
+    for (let r = 0; r < 5; r++) { let b = 100, peak = 100, ls = 0; const eq = [b];
+      for (let i = 0; i < N; i++) { if (Math.random() < w) { b *= 1 + rk * aw; ls = 0; } else { b *= 1 - rk; ls++; streak = Math.max(streak, ls); } peak = Math.max(peak, b); worst = Math.min(worst, b / peak - 1); eq.push(b); }
+      runs.push(eq); finals.push(b); }
+    const W = 520, H = 250, pl = 10, pb = 22, pt = 10, mx = Math.max(...runs.flat(), 100) * 1.03, mn = Math.min(...runs.flat(), 100) * 0.97, x = (i) => pl + i / N * (W - pl - 10), y = (p) => H - pb - (p - mn) / (mx - mn) * (H - pb - pt);
+    let c = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Five simulated equity curves"><line class="guide" x1="${pl}" y1="${y(100)}" x2="${W - 10}" y2="${y(100)}"/><text class="lbl" x="${pl + 2}" y="${H - 8}">trade 0</text><text class="lbl" x="${W - 12}" y="${H - 8}" text-anchor="end">trade ${N}</text>`;
+    runs.forEach((eq, k) => { c += `<path d="${eq.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p).toFixed(1)).join(" ")}" fill="none" stroke="${COL[k]}" stroke-width="2"/>`; });
+    $("[data-ch]", root).innerHTML = c + "</svg>";
+    $("[data-st]", root).innerHTML = stat((exp >= 0 ? "+" : "−") + f1(Math.abs(exp), 2) + "R", "expectancy per trade") + stat(f1(be * 100, 0) + "%", "break-even win rate") + stat(f1(worst * 100, 0) + "%", "deepest fall across the 5 runs") + stat(streak, "longest losing streak seen");
+    $("[data-tx]", root).textContent = `Expectancy = win rate × average win − loss rate × 1R. It is the average result per trade over many trades, not a promise for the next one. With these settings a ${f1(w * 100, 0)}% win rate needs wins of at least ${f1((1 - w) / w, 2)}R to break even. Five runs of the same rules end in different places: a positive edge still has losing streaks and slow patches. This is a simulation, not a forecast.`;
+  }
+  $$("input", root).forEach((i) => i.addEventListener("input", draw)); $("[data-new]", root).addEventListener("click", draw); draw();
+}
+
+</script>
+<script>
+const QS = [
+  { q: "A stop-loss triggers during a gap. The fill is…", o: ["Always at the stop price", "At the next available price, possibly much worse", "Cancelled", "Paid for by the exchange"], a: 1, e: "Once triggered a stop is a market order, so a gap means a worse fill." },
+  { q: "Account £20,000, risk 1% per trade, entry £50, stop £48. How many shares?", o: ["50", "100", "200", "400"], a: 1, e: "Risk £200 ÷ £2 per share = 100 shares." },
+  { q: "A strategy wins 40% of the time, wins average 2R and losses 1R. Expectancy per trade is…", o: ["−0.2R", "0", "+0.2R", "+0.8R"], a: 2, e: "0.4 × 2 − 0.6 × 1 = +0.2R." },
+  { q: "An account falls 50%. What gain is needed to get back to the start?", o: ["+50%", "+75%", "+100%", "+150%"], a: 2, e: "Half the money must double: +100%." },
+  { q: "At 10x leverage, roughly what adverse move uses up all the margin?", o: ["1%", "10%", "50%", "100%"], a: 1, e: "Margin is one tenth of the position, so a 10% move against you wipes it out." },
+  { q: "Which order stays dormant until the price hits a trigger, then becomes a market order?", o: ["Limit", "Stop", "Bracket", "Stop-limit"], a: 1, e: "A stop. A stop-limit becomes a limit order instead." },
+  { q: "Why can a short position lose more than the amount first received for it?", o: ["Brokers charge extra", "The price can rise without limit", "Interest is always high", "Shorts cannot have stops"], a: 1, e: "A price has no ceiling, so the cost of buying back is unbounded." },
+  { q: "Risk 1% per trade, ten losses in a row. About how much of the account is left?", o: ["90%", "90.4%", "99%", "80%"], a: 1, e: "0.99 to the power 10 ≈ 0.904, so about 90.4% remains." }
+];
+const GL = [["Long","Buying first, profiting if the price rises."],["Short","Selling first (borrowed), profiting if the price falls."],["Market order","Trade now at the best available price."],["Limit order","Trade only at a set price or better."],["Stop order","Becomes a market order once a trigger price is hit."],["Stop-limit","Becomes a limit order once a trigger price is hit."],["Bracket (OCO)","An entry with a stop and a target; one cancels the other."],["Trailing stop","A stop that follows price at a fixed distance."],["Take-profit","An order to exit and bank a gain at a target price."],["Slippage","Fill at a worse price than expected."],["Gap","A jump in price with no trades in between."],["Spread","Ask minus bid."],["Leverage","Controlling a larger position than the money put up."],["Margin","The money you put up to hold a leveraged position."],["Margin call","Demand for more money, or position closure, after losses."],["R-multiple","Result divided by the amount risked on the trade."],["Expectancy","Average result per trade over many trades."],["Drawdown","Fall from a peak in account value."],["Fixed-fraction sizing","Risking the same percentage of the account on every trade."]];
+$("#gl").innerHTML = "<thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody>" + GL.map((g) => `<tr><td><b>${g[0]}</b></td><td>${g[1]}</td></tr>`).join("") + "</tbody>";
+orderTypes($("#ot")); ticketLab($("#tk"), true); pnlLab($("#pl"), true); sizeLab($("#sz"), true); expLab($("#ex"));
+initQuiz($("#quiz"), QS); initTabs();
+</script>
+
+<script src="/static/js/explainer-cats.js"></script>
+<script src="/static/js/explainer-pills.js"></script>
+</body></html>
