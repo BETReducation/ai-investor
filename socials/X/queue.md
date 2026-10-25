@@ -35,3 +35,22 @@ Chat or video: "Fed hiking cycles: what stocks, bonds, gold and bitcoin did in 1
 
 ### Reply target
 None found this run (no specific post URLs surfaced in search).
+
+## 2026-10-25 (third run)
+
+Status: pending
+
+Idea used: #1 (Black Monday worry at the open amid war rhetoric). News used: oil rose to an October high on Middle East and Ukraine tensions (Interactive Brokers, 12 Oct); relief rally around 9 Oct when US-Iran strike worries eased (RTTNews), so headlines have been moving markets both ways. No dated pre-market report for 26 Oct was found, so nothing here claims what Monday will do. Black Monday 1987 facts: Dow fell about 22.6% in one day on 19 Oct 1987, after a 4.6% drop the Friday before; automated selling and portfolio insurance are most often blamed for the severity.
+
+### Draft 5 (status: pending)
+Covers idea #1.
+Wondering what "Black Monday" actually means? On 19 Oct 1987 the Dow fell about 22% in a single day. There was no one big headline behind it. Computer-driven selling fed on itself, and people kept selling because prices were falling. We have a lesson on how markets work if you want the basics.
+
+### Draft 6 (status: pending)
+Why do wars and tense headlines move stock markets? Often it's through oil. Fighting near big oil producers can push oil prices up, which can push up the cost of almost everything, and that changes what investors expect from interest rates. Oil has been in the news this month for exactly this reason.
+
+### Angle suggestion
+Beginner explainer (Alpha, chat or video): "What actually happens on a market crash day?" Walk through 1987, then the March 2020 drop, covering circuit breakers (pauses that stop trading after big falls) and how long markets took to recover each time. Fits the idea's theme without predicting anything.
+
+### Reply target
+None found this run (no specific post URLs surfaced in search).
