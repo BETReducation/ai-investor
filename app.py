@@ -535,7 +535,7 @@ def _ensure_table() -> None:
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Seeded as a tool from the start so it never shows in the visualisation hub.
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('currency-calculator', 'Currency Calculator', 'tool') ON CONFLICT (slug) DO NOTHING")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'League and Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'S&P500 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
@@ -566,6 +566,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
         # Drop the "GCG " prefix from page labels (2026-10-25); only touches labels still at the old default.
         cur.execute("UPDATE dataviz_pages SET label = substr(label, 5) WHERE label LIKE 'GCG %' AND slug IN ('market-orbs', 'stock-donut', 'league-compass', 'barrel-map', 'etf-tracker', 'ftse-wagon-wheel', 'russell-compass')")
+        # League and Compass renamed (2026-10-25); only touches the old default label.
+        cur.execute("UPDATE dataviz_pages SET label = 'S&P500 Compass' WHERE slug = 'league-compass' AND label = 'League and Compass'")
         for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
             cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
         # Classify the seeded pages once, when the column is first added; after that the
@@ -1568,7 +1570,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "winners-league", "label": "Winners League", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "league-compass", "label": "League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "league-compass", "label": "S&P500 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "barrel-map", "label": "Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
@@ -3457,6 +3459,9 @@ def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 # part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
 # static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
+    {"slug": "oil-inflation-regimes", "categories": ["understanding-markets"], "part": "in-depth",
+     "title": "Oil Shocks and Inflation: 1973–74 and 2008",
+     "desc": "What stocks, 10-year bonds and gold did when oil surged and inflation climbed, month by month, nominal and CPI-adjusted. Two historical windows with oil and inflation underneath."},
     {"slug": "panic-at-the-bottom", "categories": ["trading-strategies", "technical-analysis"], "part": "in-depth",
      "title": "Buying Panic at the Bottom",
      "desc": "A five-signal mean-reversion setup (RSI, Bollinger Bands, 30% dip, volume spike, support) and its take-profit exit, explained with replayable charts."},
@@ -6131,6 +6136,41 @@ _nasdaq_cache: dict = {"at": 0.0, "data": None}
 _nasdaq_lock = threading.Lock()
 
 
+_index_snap_cache: dict = {}
+_index_snap_lock = threading.Lock()
+
+
+def _index_snapshot(sym: str, ttl: int = 6 * 3600) -> dict | None:
+    """Latest level, 52-week range, recent closes and calendar-year price returns for an index,
+    from Yahoo's full daily history. Cached; a failed refresh serves the last good copy."""
+    with _index_snap_lock:
+        hit = _index_snap_cache.get(sym)
+        if hit and time.monotonic() - hit[0] < ttl:
+            return hit[1]
+    try:
+        raw = yf.download(tickers=sym, period="max", interval="1d", auto_adjust=False, progress=False)
+        c = raw["Close"]
+        c = (c[sym] if hasattr(c, "columns") else c).dropna()
+        if len(c) < 300:
+            raise ValueError("short history")
+        last_dt = c.index[-1]
+        year_end = c.groupby(c.index.year).last()
+        years = [[int(y), round((float(year_end[y]) / float(year_end[y - 1]) - 1) * 100, 1)]
+                 for y in year_end.index if y - 1 in year_end.index and y < last_dt.year]
+        window = c[c.index > last_dt - _dt.timedelta(days=365)]
+        prior = year_end.get(last_dt.year - 1)
+        snap = {"last": round(float(c.iloc[-1]), 2), "prev": round(float(c.iloc[-2]), 2),
+                "closes": [round(float(v), 2) for v in c.iloc[-16:]], "last_date": last_dt.date().isoformat(),
+                "low": round(float(window.min()), 2), "high": round(float(window.max()), 2),
+                "ytd": round((float(c.iloc[-1]) / float(prior) - 1) * 100, 1) if prior else None,
+                "year": int(last_dt.year), "first_year": int(year_end.index[0]), "years": years}
+    except Exception:
+        return hit[1] if hit else None
+    with _index_snap_lock:
+        _index_snap_cache[sym] = (time.monotonic(), snap)
+    return snap
+
+
 @app.route("/api/dataviz/nasdaq-wheel/live", methods=["GET"])
 def api_nasdaq_wheel_live():
     with _nasdaq_lock:
@@ -6162,7 +6202,8 @@ def api_nasdaq_wheel_live():
             if _nasdaq_cache["data"]:
                 return jsonify(_nasdaq_cache["data"])
         return jsonify({"error": "unavailable"}), 502
-    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves, "index": index}
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves, "index": index,
+            "px": _index_snapshot("^IXIC")}
     with _nasdaq_lock:
         _nasdaq_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
@@ -6409,6 +6450,88 @@ if _RUSSELL_UNIVERSE:  # start after League and Compass's warm-up so the two don
 @app.route("/api/dataviz/russell-compass/live", methods=["GET"])
 def api_russell_compass_live():
     return _russell_board.response()
+
+
+@app.route("/api/dataviz/russell-compass/history", methods=["GET"])
+def api_russell_compass_history():
+    snap = _index_snapshot("^RUT")
+    return jsonify(snap) if snap else (jsonify({"error": "unavailable"}), 502)
+
+
+# Winners League live 2026 standings: year-to-date price returns for the page's assets and metals plus
+# the ten best S&P 500 stocks (from the League and Compass board). Cached for an hour, so it moves daily.
+_WL_ASSETS = ["^GSPC", "^IXIC", "^DJI", "GC=F", "SI=F", "BTC-USD", "CL=F", "^RUT", "^FTSE"]
+_WL_METALS = ["GC=F", "SI=F", "HG=F", "PA=F", "PL=F"]
+_wl_cache: dict = {"at": 0.0, "data": None}
+_wl_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/winners-league/live", methods=["GET"])
+def api_winners_league_live():
+    with _wl_lock:
+        if _wl_cache["data"] and time.monotonic() - _wl_cache["at"] < 3600:
+            return jsonify(_wl_cache["data"])
+    year = _dt.date.today().year
+    try:
+        raw = yf.download(tickers=sorted(set(_WL_ASSETS + _WL_METALS)), start=f"{year - 1}-12-10", interval="1d",
+                          group_by="ticker", threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    ytd, as_of = {}, None
+    for sym in set(_WL_ASSETS + _WL_METALS):
+        try:
+            c = raw[sym]["Close"].dropna()
+            prior = c[c.index.year < c.index[-1].year]
+            if len(prior) and c.index[-1].year == year:
+                ytd[sym] = round((float(c.iloc[-1]) / float(prior.iloc[-1]) - 1) * 100, 1)
+                if sym == "^GSPC":  # Bitcoin trades weekends, so date the standings by the stock market
+                    as_of = c.index[-1].date()
+        except Exception:
+            continue
+    board = _league_board.cache["data"]
+    stocks, median = [], None
+    if board:
+        pcts = sorted(((s, (v["last"] / v["base"] - 1) * 100) for s, v in board["periods"]["year"].items() if v["base"] > 0),
+                      key=lambda x: -x[1])
+        stocks = [[s, round(p, 1)] for s, p in pcts[:10]]
+        median = round(pcts[len(pcts) // 2][1], 1) if pcts else None
+    if len(ytd) < 8 or len(stocks) < 10:
+        with _wl_lock:
+            if _wl_cache["data"]:
+                return jsonify(_wl_cache["data"])
+        if len(ytd) < 8:
+            return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of.isoformat() if as_of else None,
+            "year": year, "assets": [ytd.get(x) for x in _WL_ASSETS], "metals": [ytd.get(x) for x in _WL_METALS],
+            "stocks": stocks, "median": median}
+    if stocks:  # board still warming up: serve the partial answer but retry next request
+        with _wl_lock:
+            _wl_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
+# Barrel Map crude price: latest Brent futures close, so the page's pump-price model tracks oil.
+_brent_cache: dict = {"at": 0.0, "data": None}
+_brent_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/barrel-map/live", methods=["GET"])
+def api_barrel_map_live():
+    with _brent_lock:
+        if _brent_cache["data"] and time.monotonic() - _brent_cache["at"] < 6 * 3600:
+            return jsonify(_brent_cache["data"])
+    try:
+        c = yf.download(tickers="BZ=F", period="1mo", interval="1d", auto_adjust=False, progress=False)["Close"]
+        c = (c["BZ=F"] if hasattr(c, "columns") else c).dropna()
+        data = {"brent": round(float(c.iloc[-1]), 2), "as_of": c.index[-1].date().isoformat()}
+    except Exception:
+        with _brent_lock:
+            if _brent_cache["data"]:
+                return jsonify(_brent_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    with _brent_lock:
+        _brent_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
 
 
 # Where Bitcoin gets spent: merchant counts per country from BTC Map's public API (data
