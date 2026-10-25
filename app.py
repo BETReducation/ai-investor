@@ -1549,7 +1549,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "etf-tracker": "Around 130 ETFs from every region ranked by their day, week, month or year, with a spin-the-globe regional view, fee checks and side-by-side comparison (sample data).",
-    "russell-compass": "Two thousand small caps on one compass: how many are up by day, week, month or year, with sector wheel and annual history (illustrative modelled data).",
+    "russell-compass": "A live small-cap compass: how many small-cap ETFs (IWM plus sector and industry funds) are up by day, week, month or year, with a sector wheel and annual history. A proxy for the Russell 2000, not the index itself.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
@@ -6274,6 +6274,63 @@ def api_etf_tracker_live():
     data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "etfs": out}
     with _etf_lock:
         _etf_cache[key] = (time.monotonic(), data)
+    return jsonify(data)
+
+
+# Russell 2000 Compass: a live proxy built from the index ETF (IWM) plus other small-cap broad and
+# sector/industry ETFs, because the Russell 2000's own constituent list isn't freely available.
+# [ticker, name, sector index into the page's SEC list]
+_RUSSELL_PROXY = [
+    ["IWM", "iShares Russell 2000 ETF", 11], ["IWN", "iShares Russell 2000 Value ETF", 11], ["IWO", "iShares Russell 2000 Growth ETF", 11],
+    ["IJR", "iShares Core S&P Small-Cap ETF", 11], ["VB", "Vanguard Small-Cap ETF", 11],
+    ["PSCH", "Invesco S&P SmallCap Health Care", 0], ["XBI", "SPDR S&P Biotech", 0], ["XHE", "SPDR S&P Health Care Equipment", 0],
+    ["PSCF", "Invesco S&P SmallCap Financials", 1], ["KRE", "SPDR S&P Regional Banking", 1], ["KBE", "SPDR S&P Bank", 1],
+    ["PSCI", "Invesco S&P SmallCap Industrials", 2], ["XAR", "SPDR S&P Aerospace & Defense", 2], ["XTN", "SPDR S&P Transportation", 2],
+    ["PSCT", "Invesco S&P SmallCap Technology", 3], ["XSD", "SPDR S&P Semiconductor", 3], ["XSW", "SPDR S&P Software & Services", 3],
+    ["PSCD", "Invesco S&P SmallCap Consumer Discretionary", 4], ["XHB", "SPDR S&P Homebuilders", 4], ["XRT", "SPDR S&P Retail", 4],
+    ["KBWY", "Invesco KBW Premium Yield Equity REIT", 5],
+    ["PSCE", "Invesco S&P SmallCap Energy", 6], ["XOP", "SPDR S&P Oil & Gas Exploration", 6],
+    ["PSCM", "Invesco S&P SmallCap Materials", 7], ["XME", "SPDR S&P Metals & Mining", 7],
+    ["XTL", "SPDR S&P Telecom", 8],
+    ["PSCC", "Invesco S&P SmallCap Consumer Staples", 9],
+    ["PSCU", "Invesco S&P SmallCap Utilities", 10],
+]
+_RUSSELL_TTL_SECONDS = 300
+_russell_cache: dict = {"at": 0.0, "data": None}
+_russell_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/russell-compass/live", methods=["GET"])
+def api_russell_compass_live():
+    with _russell_lock:
+        if _russell_cache["data"] and time.monotonic() - _russell_cache["at"] < _RUSSELL_TTL_SECONDS:
+            return jsonify(_russell_cache["data"])
+    try:
+        raw = yf.download(tickers=[x[0] for x in _RUSSELL_PROXY], period="1y", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    items, as_of = [], None
+    for t, name, sec in _RUSSELL_PROXY:
+        try:
+            c = raw[t]["Close"].dropna()
+            if len(c) < 2 or (raw.index[-1] - c.index[-1]).days > 5:
+                continue
+            m = _period_moves(c)
+            if not all(k in m for k in "dwmy"):
+                continue
+            items.append({"t": t, "n": name, "s": sec, "r": [m["d"], m["w"], m["m"], m["y"]]})
+            as_of = c.index[-1].date().isoformat()
+        except Exception:
+            continue
+    if len(items) < 10:
+        with _russell_lock:
+            if _russell_cache["data"]:
+                return jsonify(_russell_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "items": items}
+    with _russell_lock:
+        _russell_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
 
 

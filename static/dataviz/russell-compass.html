@@ -49,7 +49,8 @@ details{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}summar
 </style></head>
 <body><div class="w">
 <h1>RUSSELL 2000 <span>COMPASS</span></h1>
-<p class="sub">Two thousand small caps, one bearing. The outer ring shows how much of the index is up; every dot inside is a company.</p>
+<p class="note" id="proxy"><b>Live proxy, not the index itself.</b> The Russell 2000's own constituent list isn't freely available, so each dot here is a small-cap ETF: the index funds IWM, IWN, IWO, IJR and VB, plus sector and industry funds that hold small companies. Loading prices…</p>
+<p class="sub">One bearing for US small caps. The outer ring shows how many of the tracked small-cap ETFs are up; every dot inside is a fund.</p>
 <div class="bar" id="bar"></div>
 <div class="chips" id="chips" aria-label="Sector filter"></div>
 <div class="cards" id="cards"></div>
@@ -57,26 +58,23 @@ details{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}summar
 <details open><summary>The compass</summary><div class="cv"><canvas id="cv"></canvas>
 <div class="big" id="big"></div><div class="info" id="info">Tap or hover a dot to identify a company.</div></div></details>
 
-<details open><summary>Top 20 gainers and losers</summary><p class="note" id="mvnote"></p>
+<details open><summary>Biggest gainers and losers</summary><p class="note" id="mvnote"></p>
 <table id="mv"></table></details>
 
-<details open><summary>Sector wheel</summary><p class="note">Slice size is each sector’s share of companies. Slice colour is its average return for the selected period. Tap a slice to filter the whole page.</p>
+<details open><summary>Sector wheel</summary><p class="note">Slice size is each sector’s share of the tracked ETFs. Slice colour is its average return for the selected period. Tap a slice to filter the whole page.</p>
 <div class="pie"><svg id="pie" viewBox="-50 0 300 200" role="img" aria-label="Sector pie chart"></svg><div class="lg" id="lg"></div></div></details>
 
 <details open><summary>Every year since inception</summary><p class="note" id="hnote"></p>
 <div class="hs"><svg id="hist"></svg></div></details>
 
-<p class="foot">Illustrative build: the 2,000 constituents, tickers and period returns are a modelled snapshot generated in the page, not live market data. Annual index returns are approximate total returns. Educational and historical only, not advice.</p>
+<p class="foot" id="foot">Loading prices… Educational and historical only, not advice.</p>
 </div>
 <script>
-const $=id=>document.getElementById(id),N=2000,PK=['D','W','M','Y'],PN=['Day','Week','Month','Year'];
+const $=id=>document.getElementById(id);let N=0;const PK=['D','W','M','Y'],PN=['Day','Week','Month','Year'];
 let pi=0,sf=-1;
-function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const R=rng(20261022),G=()=>Math.sqrt(-2*Math.log(1-R()))*Math.cos(6.2832*R());
-const SEC=[['Health Care',440,['Bio','Therapeutics','Medical','Genomics']],['Financials',350,['Bancorp','Financial','Capital','Trust']],['Industrials',285,['Industries','Systems','Logistics','Aerospace']],['Technology',250,['Software','Micro','Networks','Labs']],['Consumer Discretionary',200,['Brands','Outdoors','Motors','Leisure']],['Real Estate',120,['REIT','Properties','Realty','Lodging']],['Energy',90,['Petroleum','Energy','Drilling','Midstream']],['Materials',80,['Chemicals','Metals','Mining','Materials']],['Communication',75,['Media','Telecom','Interactive','Broadcast']],['Consumer Staples',70,['Foods','Farms','Beverage','Household']],['Utilities',40,['Power','Water','Gas','Electric']]];
-const MK=[.6,1.4,-1.5,9],SF=[.6,1.6,3.5,9],ID=[1.6,3.4,8,32],SC=[2.2,4.5,9,28];
-const A='Ar Bel Cor Dyn Eld Fen Gal Hel Ion Jun Kes Lum Mer Nov Orb Pol Qua Riv Sol Tar Umb Vel Wyn Zen'.split(' '),B='tex gen vant ora ium ix core lyn vex ara is on'.split(' ');
-const ST=[];SEC.forEach((s,si)=>{const f=PK.map((_,p)=>MK[p]+G()*SF[p]);for(let i=0;i<s[1];i++){const a=A[R()*24|0],b=B[R()*12|0],r=f.map((x,p)=>Math.max(-88,x+G()*ID[p]*(R()<.04?2.3:1)));ST.push({n:a+b+' '+s[2][R()*4|0],t:(a[0]+b.slice(0,2)+String.fromCharCode(65+R()*26|0)).toUpperCase(),s:si,r})}});
+const SEC=[['Health Care',0],['Financials',0],['Industrials',0],['Technology',0],['Consumer Discretionary',0],['Real Estate',0],['Energy',0],['Materials',0],['Communication',0],['Consumer Staples',0],['Utilities',0],['Broad index',0]];
+const SC=[1.5,3,6,15];
+const ST=[];
 const HY=[43.1,38.6,2,25,29.1,-7.3,31.1,5.7,-8.8,25,16.3,-19.5,46,18.4,18.9,-1.8,28.5,16.5,22.4,-2.5,21.3,-3,2.5,-20.5,47.3,18.3,4.6,18.4,-1.6,-33.8,27.2,26.9,-4.2,16.3,38.8,4.9,-4.4,21.3,14.6,-11,25.5,20,14.8,-20.4,16.9,11.5,12.8];
 const f2=v=>(v>0?'+':'')+v.toFixed(2)+'%',col=v=>v>=0?'var(--up)':'var(--dn)';
 const inS=s=>sf<0||s.s==sf,cnt=p=>{let u=0;ST.forEach(s=>inS(s)&&s.r[p]>0&&u++);return u},tot=()=>sf<0?N:SEC[sf][1];
@@ -99,22 +97,22 @@ cx.strokeStyle=ring;cx.globalAlpha=.14;cx.beginPath();cx.arc(c,c,W*.445,0,6.2832
 cx.strokeStyle=g;cx.beginPath();cx.arc(c,c,W*.445,a0,a0+up*6.2832);cx.stroke();
 cx.strokeStyle=d;cx.beginPath();cx.arc(c,c,W*.445,a0+up*6.2832,a0+tot()/N*6.2832);cx.stroke();
 cx.strokeStyle=ring;cx.globalAlpha=.55;for(let i=0;i<72;i++){const a=i*Math.PI/36,l=i%18==0?.03:i%9==0?.022:.012;cx.lineWidth=i%9?1:2;cx.beginPath();cx.moveTo(c+Math.cos(a)*W*.488,c+Math.sin(a)*W*.488);cx.lineTo(c+Math.cos(a)*W*(.488-l),c+Math.sin(a)*W*(.488-l));cx.stroke()}cx.globalAlpha=1;
-cx.fillStyle=br;cx.font=`600 ${W*.022}px Unbounded,sans-serif`;cx.textAlign='center';cx.textBaseline='middle';for(let k=1;k<=8;k++){const a=a0+k*Math.PI/4;cx.fillText(k*250,c+Math.cos(a)*W*.41,c+Math.sin(a)*W*.41)}
+cx.fillStyle=br;cx.font=`600 ${W*.022}px Unbounded,sans-serif`;cx.textAlign='center';cx.textBaseline='middle';for(let k=1;k<=8;k++){const a=a0+k*Math.PI/4;cx.fillText(Math.round(k*N/8),c+Math.cos(a)*W*.41,c+Math.sin(a)*W*.41)}
 const ja=a0+up*6.2832;cx.fillStyle=br;cx.beginPath();cx.arc(c+Math.cos(ja)*W*.445,c+Math.sin(ja)*W*.445,W*.014,0,6.2832);cx.fill();
-const rad=Math.min(W*.0052*Math.sqrt(N/tot()),W*.02);ST.forEach(s=>{if(!inS(s))return;const v=s.r[pi],a=.4+.6*Math.min(Math.abs(v)/SC[pi],1);cx.globalAlpha=a;cx.fillStyle=v>=0?g:d;cx.beginPath();cx.arc(s.x,s.y,rad,0,6.2832);cx.fill()});cx.globalAlpha=1}
+const rad=Math.min(W*.0052*Math.sqrt(2000/tot()),W*.02);ST.forEach(s=>{if(!inS(s))return;const v=s.r[pi],a=.4+.6*Math.min(Math.abs(v)/SC[pi],1);cx.globalAlpha=a;cx.fillStyle=v>=0?g:d;cx.beginPath();cx.arc(s.x,s.y,rad,0,6.2832);cx.fill();if(tot()<=40){cx.globalAlpha=.9;cx.fillStyle=cssv('--fg');cx.font=`600 ${Math.max(9,W*.017)}px 'IBM Plex Sans',sans-serif`;cx.textAlign='center';cx.textBaseline='top';cx.fillText(s.t,s.x,s.y+rad+2);}});cx.globalAlpha=1}
 function pick(e){const b=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e,x=t.clientX-b.left,y=t.clientY-b.top;let m=null,md=1e9;ST.forEach(s=>{if(!inS(s))return;const q=(s.tx-x)**2+(s.ty-y)**2;if(q<md){md=q;m=s}});if(m&&md<400)$('info').innerHTML=`<b>${m.t}</b> ${m.n} · ${SEC[m.s][0]} · <b style="color:${col(m.r[pi])}">${f2(m.r[pi])}</b>`}
 cv.addEventListener('mousemove',pick);cv.addEventListener('click',pick);cv.addEventListener('touchstart',pick,{passive:true});
 
 // pie
 function arc(a0,a1,ro,ri){const P=(a,r)=>[(100+r*Math.cos(a)).toFixed(2),(100+r*Math.sin(a)).toFixed(2)],l=a1-a0>Math.PI?1:0,p1=P(a0,ro),p2=P(a1,ro),p3=P(a1,ri),p4=P(a0,ri);return `M${p1}A${ro} ${ro} 0 ${l} 1 ${p2}L${p3}A${ri} ${ri} 0 ${l} 0 ${p4}Z`}
 function shade(v){const m=Math.min(Math.abs(v)/(SC[pi]*.5),1);return (v>=0?'rgba(46,229,154,':'rgba(255,77,98,')+(.35+.65*m).toFixed(2)+')'}
-function pie(){const LB=[],SHORT=['Health Care','Financials','Industrials','Technology','Cons. Disc.','Real Estate','Energy','Materials','Comms','Staples','Utilities'];let a=-Math.PI/2,h='',l='<i></i><span class="h">Sector</span><span class="h">Cos</span><span class="h">Share</span><span class="h">'+PN[pi]+'</span>';
+function pie(){const LB=[],SHORT=['Health Care','Financials','Industrials','Technology','Cons. Disc.','Real Estate','Energy','Materials','Comms','Staples','Utilities','Broad'];let a=-Math.PI/2,h='',l='<i></i><span class="h">Sector</span><span class="h">ETFs</span><span class="h">Share</span><span class="h">'+PN[pi]+'</span>';
 SEC.forEach((s,si)=>{const m=ST.filter(x=>x.s==si),av=m.reduce((t,x)=>t+x.r[pi],0)/m.length,sh=s[1]/N,b=a+sh*6.2832,mid=(a+b)/2;
 h+=`<path data-p="${si}" opacity="${sf<0||sf==si?1:.25}" style="cursor:pointer" d="${arc(a,b-.012,66,26)}" fill="${shade(av)}" stroke="${cssv('--bg')}" stroke-width=".8"><title>${s[0]}</title></path>`;
 LB.push({m:mid,t:SHORT[si]+' '+(sh*100).toFixed(1)+'%'});
 l+=`<div class="sw" style="background:${shade(av)}"></div><span>${s[0]}</span><span>${s[1]}</span><span>${(sh*100).toFixed(1)}%</span><b style="color:${col(av)}">${f2(av)}</b>`;a=b});
 [1,-1].forEach(sd=>{let p=-99;LB.filter(o=>Math.cos(o.m)*sd>=0).sort((u,v)=>Math.sin(u.m)-Math.sin(v.m)).forEach(o=>{let y=Math.max(100+74*Math.sin(o.m),p+10);p=y;const x=100+74*Math.cos(o.m);h+=`<line x1="${100+66*Math.cos(o.m)}" y1="${100+66*Math.sin(o.m)}" x2="${x}" y2="${y}" stroke="${cssv('--mut')}" stroke-width=".5"/><text x="${x+sd*3}" y="${y+3}" text-anchor="${sd>0?'start':'end'}" font-size="8" font-weight="600" fill="${cssv('--fg')}">${o.t}</text>`})});
-$('pie').innerHTML=h+`<text x="100" y="98" text-anchor="middle" font-size="9" font-weight="600" fill="${cssv('--fg')}">2,000</text><text x="100" y="108" text-anchor="middle" font-size="5.5" fill="${cssv('--mut')}">companies</text>`;$('lg').innerHTML=l;document.querySelectorAll('[data-p]').forEach(p=>p.onclick=()=>{sf=sf==+p.dataset.p?-1:+p.dataset.p;render()})}
+$('pie').innerHTML=h+`<text x="100" y="98" text-anchor="middle" font-size="9" font-weight="600" fill="${cssv('--fg')}">${N}</text><text x="100" y="108" text-anchor="middle" font-size="5.5" fill="${cssv('--mut')}">ETFs</text>`;$('lg').innerHTML=l;document.querySelectorAll('[data-p]').forEach(p=>p.onclick=()=>{sf=sf==+p.dataset.p?-1:+p.dataset.p;render()})}
 // history
 function hist(){const n=HY.length,bw=16,gp=6,top=24,H=300,z=top+190,sc=190/50,Wd=n*(bw+gp)+36;let h=`<line x1="0" x2="${Wd}" y1="${z}" y2="${z}" stroke="${cssv('--line')}"/>`;
 HY.forEach((v,i)=>{const x=24+i*(bw+gp),ht=Math.abs(v)*sc,y=v>=0?z-ht:z;h+=`<rect x="${x}" y="${y}" width="${bw}" height="${ht}" rx="2" fill="${v>=0?cssv('--up'):cssv('--dn')}"/><text class="v" x="${x+bw/2}" y="${v>=0?y-4:y+ht+10}" text-anchor="middle">${Math.round(v)}</text><text transform="translate(${x+bw/2+3},${H-16}) rotate(-90)" text-anchor="start">${1979+i}</text>`});
@@ -122,12 +120,18 @@ $('hist').setAttribute('viewBox',`0 0 ${Wd} ${H}`);$('hist').setAttribute('width
 const up=HY.filter(v=>v>0).length,bi=HY.indexOf(Math.max(...HY)),wi=HY.indexOf(Math.min(...HY));$('hnote').innerHTML=`${up} up years, ${n-up} down years. Best: ${1979+bi} (${HY[bi]}%). Worst: ${1979+wi} (${HY[wi]}%). Scroll sideways for the full run.`}
 
 function render(){chips();cards();document.querySelectorAll('[data-i]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.i==pi));const u=cnt(pi),T=tot(),s=ST.filter(inS).sort((a,b)=>b.r[pi]-a.r[pi]);
-$('big').innerHTML=`<span class="u">${u.toLocaleString()} up</span> · <span class="d">${(T-u).toLocaleString()} down</span>`;$('mvnote').textContent=PN[pi]+' movers across '+(sf<0?'all 2,000 companies.':T+' '+SEC[sf][0]+' companies.');
-const g=s.slice(0,20),lo=s.slice(-20).reverse(),tt=x=>`${x.n} · ${SEC[x.s][0]}`;$('mv').innerHTML='<tr><th></th><th class="g">Gainers</th><th></th><th class="l">Losers</th><th></th></tr>'+g.map((x,i)=>{const y=lo[i];return `<tr><td class="k">${i+1}</td><td title="${tt(x)}"><b>${x.t}</b><small>${x.n}</small></td><td class="r" style="color:${col(x.r[pi])}">${f2(x.r[pi])}</td><td title="${tt(y)}"><b>${y.t}</b><small>${y.n}</small></td><td class="r" style="color:${col(y.r[pi])}">${f2(y.r[pi])}</td></tr>`}).join('');pie();layout(true)}
+$('big').innerHTML=`<span class="u">${u.toLocaleString()} up</span> · <span class="d">${(T-u).toLocaleString()} down</span>`;$('mvnote').textContent=PN[pi]+' movers across '+(sf<0?'all '+N+' small-cap ETFs.':T+' '+SEC[sf][0]+' ETFs.');
+const k=Math.min(10,s.length>>1),g=s.slice(0,k),lo=s.slice(-k).reverse(),tt=x=>`${x.n} · ${SEC[x.s][0]}`;$('mv').innerHTML='<tr><th></th><th class="g">Gainers</th><th></th><th class="l">Losers</th><th></th></tr>'+g.map((x,i)=>{const y=lo[i];return `<tr><td class="k">${i+1}</td><td title="${tt(x)}"><b>${x.t}</b><small>${x.n}</small></td><td class="r" style="color:${col(x.r[pi])}">${f2(x.r[pi])}</td><td title="${tt(y)}"><b>${y.t}</b><small>${y.n}</small></td><td class="r" style="color:${col(y.r[pi])}">${f2(y.r[pi])}</td></tr>`}).join('');pie();layout(true)}
 function redraw(){draw();pie();hist()}
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"russell-compass"},location.origin)}
 addEventListener('resize',size);matchMedia('(prefers-color-scheme:dark)').addEventListener('change',redraw);
 new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-size();hist();render();
+fetch('/api/dataviz/russell-compass/live').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+  j.items.forEach(x=>{ST.push({n:x.n,t:x.t,s:x.s,r:x.r});SEC[x.s][1]++});N=ST.length;
+  const t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  $('proxy').innerHTML='<b>Live proxy, not the index itself.</b> The Russell 2000\'s own constituent list isn\'t freely available, so each dot here is a small-cap ETF: the index funds IWM, IWN, IWO, IJR and VB, plus sector and industry funds that hold small companies. '+N+' funds, so the ring and counts show how many of these funds are up, not how many Russell 2000 companies.';
+  $('foot').textContent='Live ETF prices from Yahoo Finance (about 15 minutes delayed). Latest session: '+j.as_of+', refreshed '+t+'. Day, week and month are price changes; Year is year to date. Sector and industry ETFs overlap with each other and are not the Russell 2000 itself. The yearly bars below are approximate total returns for the Russell 2000 index. Educational and historical only, not advice.';
+  size();hist();render();
+}).catch(()=>{$('proxy').innerHTML='<b>Live prices are unavailable right now.</b> Try again shortly.';$('foot').textContent='Educational and historical only, not advice.';hist()});
 new ResizeObserver(postHeight).observe(document.body);postHeight();
 </script></body></html>
