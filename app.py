@@ -536,6 +536,7 @@ def _ensure_table() -> None:
         # Seeded as a tool from the start so it never shows in the visualisation hub.
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('currency-calculator', 'Currency Calculator', 'tool') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'GCG League and Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'GCG Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'GCG Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -557,6 +558,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'nasdaq-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'currency-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'league-compass'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'barrel-map'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'GCG FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
@@ -1541,6 +1543,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
     "ftse-wagon-wheel": "A wheel of FTSE 100 stocks with winners on the left and losers on the right, plus the index's calendar-year returns since 1984 (illustrative simulated moves).",
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
+    "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "russell-compass": "Two thousand small caps on one compass: how many are up by day, week, month or year, with sector wheel and annual history (illustrative modelled data).",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
@@ -1561,6 +1564,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "league-compass", "label": "GCG League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "barrel-map", "label": "GCG Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "GCG FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "GCG Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
