@@ -52,7 +52,7 @@ th{color:var(--mute);font-weight:500;border-top:0}
 
 <div class="card"><h2>Allocation</h2><div class="dw"><svg id="donut" viewBox="0 0 120 120"></svg><div id="legend"></div></div></div>
 
-<div class="card pers" id="pers" style="display:none"></div>
+<div class="card pers" id="pers"></div>
 
 <div class="card tot"><h2>Total value</h2>
 <div class="big" id="tot-usd">$0.00</div>
@@ -129,7 +129,7 @@ function upd(){
   $('t-'+m.k).innerHTML=r;
  });
  $('tot-usd').textContent=money('$',tot,2);donut(V,tot);
- if(tot>0){var p=personality(V,tot);$('pers').style.display='';$('pers').innerHTML='<div class="lab">Your stack personality</div><div class="em">'+p[0]+'</div><h3>'+p[1]+'</h3><p>'+p[2]+'</p>'+livebar(V,tot)}else $('pers').style.display='none';
+ if(tot>0){var p=personality(V,tot);$('pers').style.display='';$('pers').innerHTML='<div class="lab">Your stack personality</div><div class="em">'+p[0]+'</div><h3>'+p[1]+'</h3><p>'+p[2]+'</p>'+livebar(V,tot)}else $('pers').innerHTML='<div class="lab">Your stack personality</div><div class="em">🪙</div><h3>Add some metal</h3><p>Enter a weight above and we will work out your stack personality, with live moves.</p>';
  var t='';
  C.forEach(function(c){t+='<tr><td>'+c[0]+'</td><td><b>'+money(c[1],tot*c[2],c[3])+'</b></td></tr>'});
  $('tot-rows').innerHTML=t;
