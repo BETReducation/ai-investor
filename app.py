@@ -1549,7 +1549,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "etf-tracker": "Around 130 ETFs from every region ranked by their day, week, month or year, with a spin-the-globe regional view, fee checks and side-by-side comparison (sample data).",
-    "russell-compass": "A live small-cap compass: how many small-cap ETFs (IWM plus sector and industry funds) are up by day, week, month or year, with a sector wheel and annual history. A proxy for the Russell 2000, not the index itself.",
+    "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
@@ -4759,6 +4759,11 @@ def _auto_link_market_xi_assets(body: str) -> str:
         canonical = aliases.get(matched_lower)
         if not canonical or canonical.lower() in linked_lower or is_protected(start, end):
             continue
+        # A bare ticker only counts when written in caps — otherwise "link"
+        # matches LINK (Chainlink), "near" matches NEAR, etc.
+        tm = re.match(r"^.+?\s*\(([A-Za-z0-9.]+)\)$", canonical)
+        if tm and matched_lower == tm.group(1).lower() and m.group(1) != m.group(1).upper():
+            continue
         out.append(body[last_end:start])
         out.append(f"[{m.group(1)}]({MARKET_XI_URL})")
         last_end = end
@@ -6277,63 +6282,6 @@ def api_etf_tracker_live():
     return jsonify(data)
 
 
-# Russell 2000 Compass: a live proxy built from the index ETF (IWM) plus other small-cap broad and
-# sector/industry ETFs, because the Russell 2000's own constituent list isn't freely available.
-# [ticker, name, sector index into the page's SEC list]
-_RUSSELL_PROXY = [
-    ["IWM", "iShares Russell 2000 ETF", 11], ["IWN", "iShares Russell 2000 Value ETF", 11], ["IWO", "iShares Russell 2000 Growth ETF", 11],
-    ["IJR", "iShares Core S&P Small-Cap ETF", 11], ["VB", "Vanguard Small-Cap ETF", 11],
-    ["PSCH", "Invesco S&P SmallCap Health Care", 0], ["XBI", "SPDR S&P Biotech", 0], ["XHE", "SPDR S&P Health Care Equipment", 0],
-    ["PSCF", "Invesco S&P SmallCap Financials", 1], ["KRE", "SPDR S&P Regional Banking", 1], ["KBE", "SPDR S&P Bank", 1],
-    ["PSCI", "Invesco S&P SmallCap Industrials", 2], ["XAR", "SPDR S&P Aerospace & Defense", 2], ["XTN", "SPDR S&P Transportation", 2],
-    ["PSCT", "Invesco S&P SmallCap Technology", 3], ["XSD", "SPDR S&P Semiconductor", 3], ["XSW", "SPDR S&P Software & Services", 3],
-    ["PSCD", "Invesco S&P SmallCap Consumer Discretionary", 4], ["XHB", "SPDR S&P Homebuilders", 4], ["XRT", "SPDR S&P Retail", 4],
-    ["KBWY", "Invesco KBW Premium Yield Equity REIT", 5],
-    ["PSCE", "Invesco S&P SmallCap Energy", 6], ["XOP", "SPDR S&P Oil & Gas Exploration", 6],
-    ["PSCM", "Invesco S&P SmallCap Materials", 7], ["XME", "SPDR S&P Metals & Mining", 7],
-    ["XTL", "SPDR S&P Telecom", 8],
-    ["PSCC", "Invesco S&P SmallCap Consumer Staples", 9],
-    ["PSCU", "Invesco S&P SmallCap Utilities", 10],
-]
-_RUSSELL_TTL_SECONDS = 300
-_russell_cache: dict = {"at": 0.0, "data": None}
-_russell_lock = threading.Lock()
-
-
-@app.route("/api/dataviz/russell-compass/live", methods=["GET"])
-def api_russell_compass_live():
-    with _russell_lock:
-        if _russell_cache["data"] and time.monotonic() - _russell_cache["at"] < _RUSSELL_TTL_SECONDS:
-            return jsonify(_russell_cache["data"])
-    try:
-        raw = yf.download(tickers=[x[0] for x in _RUSSELL_PROXY], period="1y", interval="1d", group_by="ticker",
-                          threads=True, auto_adjust=False, progress=False)
-    except Exception:
-        raw = None
-    items, as_of = [], None
-    for t, name, sec in _RUSSELL_PROXY:
-        try:
-            c = raw[t]["Close"].dropna()
-            if len(c) < 2 or (raw.index[-1] - c.index[-1]).days > 5:
-                continue
-            m = _period_moves(c)
-            if not all(k in m for k in "dwmy"):
-                continue
-            items.append({"t": t, "n": name, "s": sec, "r": [m["d"], m["w"], m["m"], m["y"]]})
-            as_of = c.index[-1].date().isoformat()
-        except Exception:
-            continue
-    if len(items) < 10:
-        with _russell_lock:
-            if _russell_cache["data"]:
-                return jsonify(_russell_cache["data"])
-        return jsonify({"error": "unavailable"}), 502
-    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "items": items}
-    with _russell_lock:
-        _russell_cache.update(at=time.monotonic(), data=data)
-    return jsonify(data)
-
-
 # GCG League and Compass: ranked price performance for ~500 large US stocks over day/week/month/year,
 # built from one Yahoo daily-bar download and cached, so every period switch is instant on the page.
 _LEAGUE_UNIVERSE = {
@@ -6349,84 +6297,118 @@ _LEAGUE_UNIVERSE = {
     "Real Estate":"PLD,WELL,AMT,EQIX,SPG,DLR,PSA,O,CCI,CBRE,VICI,EXR,IRM,CSGP,VTR,AVB,EQR,SBAC,WY,INVH,ESS,MAA,KIM,UDR,REG,DOC,HST,CPT,BXP,ARE,FRT",
     "Materials":"LIN,SHW,NEM,ECL,APD,FCX,CTVA,MLM,VMC,DD,NUE,PPG,SW,IP,STLD,DOW,LYB,IFF,PKG,AMCR,BALL,CF,AVY,MOS,ALB,EMN"
 }
-_LEAGUE_TTL_SECONDS = 300
-_league_cache: dict = {"at": 0.0, "data": None}
-_league_lock = threading.Lock()
-_league_build_lock = threading.Lock()
 
 
-def _build_league() -> dict | None:
-    syms = [x for v in _LEAGUE_UNIVERSE.values() for x in v.split(",")]
-    year = _dt.date.today().year
-    try:
-        raw = yf.download(tickers=[x.replace(".", "-") for x in syms], start=f"{year - 1}-12-10", interval="1d",
-                          group_by="ticker", threads=True, auto_adjust=False, progress=False)
-    except Exception:
-        return None
-    series = {}
-    for x in syms:
-        try:
-            c = raw[x.replace(".", "-")]["Close"].dropna()
-            if len(c) >= 2:
-                series[x] = c
-        except Exception:
-            continue
-    if len(series) < 100:
-        return None
-    newest = max(c.index[-1] for c in series.values())
-    periods = {"day": {}, "week": {}, "month": {}, "year": {}}
-    for x, c in series.items():
-        if (newest - c.index[-1]).days > 5:
-            continue
-        last = float(c.iloc[-1])
-        bases = {"day": float(c.iloc[-2])}
-        for name, cutoff in (("week", c.index[-1] - _dt.timedelta(days=7)), ("month", c.index[-1] - _dt.timedelta(days=30))):
-            prior = c[c.index <= cutoff]
+class _StockBoard:
+    """Cached day/week/month/year price moves for a stock universe, built from Yahoo daily bars."""
+
+    def __init__(self, universe: dict, ttl: int, min_series: int, chunk: int = 500):
+        self.universe, self.ttl, self.min_series, self.chunk = universe, ttl, min_series, chunk
+        self.cache: dict = {"at": 0.0, "data": None}
+        self.lock = threading.Lock()
+        self.build_lock = threading.Lock()
+
+    def build(self) -> dict | None:
+        syms = [x for v in self.universe.values() for x in v]
+        year = _dt.date.today().year
+        series = {}
+        # Chunked so a 2,000-stock board doesn't hit one huge request; Yahoo rate-limits some chunks,
+        # so tickers still missing get up to two slower retries in smaller chunks.
+        for attempt, size in enumerate((self.chunk, self.chunk // 2, self.chunk // 4)):
+            todo = [x for x in syms if x not in series]
+            if not todo or (attempt and len(todo) < 5):
+                break
+            if attempt:
+                time.sleep(20)
+            for k in range(0, len(todo), size):
+                part = todo[k:k + size]
+                try:
+                    raw = yf.download(tickers=[x.replace(".", "-") for x in part], start=f"{year - 1}-12-10", interval="1d",
+                                      group_by="ticker", threads=True, auto_adjust=False, progress=False)
+                except Exception:
+                    continue
+                for x in part:
+                    try:
+                        c = raw[x.replace(".", "-")]["Close"].dropna()
+                        if len(c) >= 2:
+                            series[x] = c
+                    except Exception:
+                        continue
+        if len(series) < self.min_series:
+            return None
+        newest = max(c.index[-1] for c in series.values())
+        periods = {"day": {}, "week": {}, "month": {}, "year": {}}
+        for x, c in series.items():
+            if (newest - c.index[-1]).days > 5:
+                continue
+            last = float(c.iloc[-1])
+            bases = {"day": float(c.iloc[-2])}
+            for name, cutoff in (("week", c.index[-1] - _dt.timedelta(days=7)), ("month", c.index[-1] - _dt.timedelta(days=30))):
+                prior = c[c.index <= cutoff]
+                if len(prior):
+                    bases[name] = float(prior.iloc[-1])
+            prior = c[c.index.year < c.index[-1].year]
             if len(prior):
-                bases[name] = float(prior.iloc[-1])
-        prior = c[c.index.year < c.index[-1].year]
-        if len(prior):
-            bases["year"] = float(prior.iloc[-1])
-        for name, b in bases.items():
-            if b > 0:
-                periods[name][x] = {"base": round(b, 2), "last": round(last, 2)}
-    return {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": newest.date().isoformat(),
-            "year": newest.year, "universe": {k: v.split(",") for k, v in _LEAGUE_UNIVERSE.items()}, "periods": periods}
+                bases["year"] = float(prior.iloc[-1])
+            for name, b in bases.items():
+                if b > 0:
+                    periods[name][x] = {"base": round(b, 2), "last": round(last, 2)}
+        return {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": newest.date().isoformat(),
+                "year": newest.year, "universe": self.universe, "periods": periods}
+
+    def refresh(self) -> None:
+        with self.build_lock:  # one slow download at a time
+            try:
+                data = self.build()
+                if data:
+                    with self.lock:
+                        self.cache.update(at=time.monotonic(), data=data)
+            except Exception:
+                pass
+
+    def kick(self) -> None:
+        if not self.build_lock.locked():
+            threading.Thread(target=self.refresh, daemon=True).start()
+
+    def response(self):
+        with self.lock:
+            data, age = self.cache["data"], time.monotonic() - self.cache["at"]
+        if data and age < self.ttl:
+            return jsonify(data)
+        if data:  # stale: answer instantly and refresh behind the scenes
+            self.kick()
+            return jsonify(data)
+        self.refresh()  # nothing cached yet (cold start): wait for the build
+        with self.lock:
+            data = self.cache["data"]
+        return jsonify(data) if data else (jsonify({"error": "unavailable"}), 502)
 
 
-def _refresh_league() -> None:
-    with _league_build_lock:  # one slow download at a time
-        try:
-            data = _build_league()
-            if data:
-                with _league_lock:
-                    _league_cache.update(at=time.monotonic(), data=data)
-        except Exception:
-            pass
-
-
-def _kick_league_refresh() -> None:
-    if _league_build_lock.locked():
-        return
-    threading.Thread(target=_refresh_league, daemon=True).start()
-
-
-_kick_league_refresh()  # warm at startup so the first visitor doesn't wait on the ~40s download
+_league_board = _StockBoard({k: v.split(",") for k, v in _LEAGUE_UNIVERSE.items()}, ttl=300, min_series=100)
+_league_board.kick()  # warm at startup so the first visitor doesn't wait on the ~40s download
 
 
 @app.route("/api/dataviz/league-compass/live", methods=["GET"])
 def api_league_compass_live():
-    with _league_lock:
-        data, age = _league_cache["data"], time.monotonic() - _league_cache["at"]
-    if data and age < _LEAGUE_TTL_SECONDS:
-        return jsonify(data)
-    if data:  # stale: answer instantly and refresh behind the scenes
-        _kick_league_refresh()
-        return jsonify(data)
-    _refresh_league()  # nothing cached yet (cold start): wait for the build
-    with _league_lock:
-        data = _league_cache["data"]
-    return jsonify(data) if data else (jsonify({"error": "unavailable"}), 502)
+    return _league_board.response()
+
+
+# Russell 2000 Compass: the index's ~2,000 stocks, from iShares' IWM holdings file (downloaded by hand
+# and reduced to tickers + sectors in russell2000_constituents.json; refresh it after Russell's
+# June reconstitution and each quarter). Prices are the same Yahoo daily bars as League and Compass.
+try:
+    with open(os.path.join(os.path.dirname(__file__), "russell2000_constituents.json"), encoding="utf-8") as _f:
+        _RUSSELL_UNIVERSE = json.load(_f)
+except (OSError, ValueError):
+    _RUSSELL_UNIVERSE = {}
+_russell_board = _StockBoard(_RUSSELL_UNIVERSE, ttl=900, min_series=500)
+if _RUSSELL_UNIVERSE:  # start after League and Compass's warm-up so the two don't fight over Yahoo's rate limit
+    threading.Timer(90, _russell_board.kick).start()
+
+
+@app.route("/api/dataviz/russell-compass/live", methods=["GET"])
+def api_russell_compass_live():
+    return _russell_board.response()
 
 
 # Where Bitcoin gets spent: merchant counts per country from BTC Map's public API (data
