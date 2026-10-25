@@ -85,9 +85,33 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
     <div id="panel" style="display:none;">
       <div class="err-banner" id="errBanner"></div>
       <div class="tabs" role="tablist">
+        <button class="tab-btn" data-tab="planner" id="plannerTabBtn" style="display:none">Planner</button>
         <button class="tab-btn active" data-tab="activity">Partner Activity</button>
         <button class="tab-btn" data-tab="permissions">User Permissions</button>
         <button class="tab-btn" data-tab="finances">Finances</button>
+      </div>
+      <div class="tab-pane" id="tab-planner">
+        <div class="fin-block">
+          <div class="section-head">Calendar</div>
+          <div class="section-note" id="gcalStatus"></div>
+          <form class="fin-form" id="eventForm" style="display:none">
+            <label>Title<input name="title" required size="24"></label>
+            <label>Date<input type="date" name="date" required></label>
+            <label>Time (blank = all day)<input type="time" name="time"></label>
+            <label>Minutes<input type="number" name="minutes" value="30" min="5" step="5" style="width:80px"></label>
+            <button class="btn" type="submit">Add to Google Calendar</button>
+          </form>
+          <div class="table-wrap"><table class="fin-table"><thead><tr><th>When</th><th>Event</th><th></th></tr></thead><tbody id="eventRows"></tbody></table></div>
+        </div>
+        <div class="fin-block">
+          <div class="section-head">To do</div>
+          <form class="fin-form" id="todoForm">
+            <label>Task<input name="text" required size="36"></label>
+            <label>Due (optional)<input type="date" name="due"></label>
+            <button class="btn" type="submit">Add</button>
+          </form>
+          <div class="table-wrap"><table class="fin-table"><thead><tr><th style="width:40px"></th><th>Task</th><th>Due</th><th></th></tr></thead><tbody id="todoRows"></tbody></table></div>
+        </div>
       </div>
       <div class="tab-pane active" id="tab-activity">
       <div class="section-head">Partner activity</div>
@@ -331,11 +355,12 @@ loadActivity();
 
 // ---- tabs ----
 function showTab(name) {
-  if (!document.getElementById('tab-' + name)) name = 'activity';
+  if (!document.getElementById('tab-' + name) || (name === 'planner' && !PLANNER_OK)) name = PLANNER_OK ? 'planner' : 'activity';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
   history.replaceState(null, '', '#' + name);
   if (name === 'finances') loadFinances();
+  if (name === 'planner') loadPlanner();
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
@@ -514,7 +539,81 @@ document.addEventListener('click', async (e) => {
   } catch (err) { showError(err.message); }
 });
 
-showTab(location.hash.slice(1) || 'activity');
+// ---- planner (owner only; the API 403s for everyone else, which hides the tab) ----
+let PLANNER_OK = false;
+const fmtWhen = e => e.all_day ? new Date(e.start + 'T00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+  : new Date(e.start).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+async function loadPlanner() {
+  const st = await api('/api/planner/state');
+  const g = st.google, status = document.getElementById('gcalStatus');
+  document.getElementById('eventForm').style.display = g.connected ? 'flex' : 'none';
+  if (g.connected) {
+    status.innerHTML = `Connected${g.email ? ' as ' + esc(g.email) : ''}. Next 30 days. <a href="#" id="gcalOff">Disconnect</a>`;
+    loadEvents();
+  } else {
+    status.innerHTML = g.configured ? '<a class="btn" href="/api/planner/google/connect" style="display:inline-block;text-decoration:none">Connect Google Calendar</a>'
+      : `Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the server, with redirect URI <code>${esc(g.redirect_uri)}</code>, then reload.`;
+    document.getElementById('eventRows').innerHTML = '<tr><td colspan="3" class="muted">Calendar not connected.</td></tr>';
+  }
+  renderTodos(st.todos);
+}
+
+async function loadEvents() {
+  try {
+    const { events } = await api('/api/planner/events?days=30');
+    document.getElementById('eventRows').innerHTML = events.length ? events.map(e =>
+      `<tr><td>${esc(fmtWhen(e))}</td><td><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.title)}</a></td>
+       <td><button class="del-btn" data-evdel="${esc(e.id)}">Delete</button></td></tr>`).join('')
+      : '<tr><td colspan="3" class="muted">Nothing in the next 30 days.</td></tr>';
+  } catch (err) { showError(err.message); }
+}
+
+function renderTodos(todos) {
+  const sorted = [...todos].sort((a, b) => a.done - b.done || (a.due || '9').localeCompare(b.due || '9'));
+  document.getElementById('todoRows').innerHTML = sorted.length ? sorted.map(t =>
+    `<tr><td><input type="checkbox" data-todo="${t.id}" ${t.done ? 'checked' : ''}></td>
+     <td style="${t.done ? 'text-decoration:line-through;opacity:.55' : ''}">${esc(t.text)}</td>
+     <td>${t.due ? esc(new Date(t.due + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : ''}</td>
+     <td><button class="del-btn" data-tododel="${t.id}">Delete</button></td></tr>`).join('')
+    : '<tr><td colspan="4" class="muted">Nothing to do.</td></tr>';
+}
+
+document.getElementById('todoForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  try { await api('/api/planner/todos', jsonOpts('POST', { text: f.text.value, due: f.due.value })); f.reset(); loadPlanner(); }
+  catch (err) { showError(err.message); }
+});
+document.getElementById('eventForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  try { await api('/api/planner/events', jsonOpts('POST', { title: f.title.value, date: f.date.value, time: f.time.value, minutes: +f.minutes.value })); f.reset(); f.minutes.value = 30; loadEvents(); }
+  catch (err) { showError(err.message); }
+});
+document.getElementById('tab-planner').addEventListener('click', async e => {
+  try {
+    if (e.target.id === 'gcalOff') {
+      e.preventDefault();
+      if (confirm('Disconnect Google Calendar?')) { await api('/api/planner/google/disconnect', { method: 'POST' }); loadPlanner(); }
+    } else if (e.target.dataset.tododel) {
+      await api('/api/planner/todos/' + e.target.dataset.tododel, { method: 'DELETE' }); loadPlanner();
+    } else if (e.target.dataset.evdel) {
+      if (confirm('Delete this event from Google Calendar?')) { await api('/api/planner/events/' + encodeURIComponent(e.target.dataset.evdel), { method: 'DELETE' }); loadEvents(); }
+    }
+  } catch (err) { showError(err.message); }
+});
+document.getElementById('tab-planner').addEventListener('change', async e => {
+  if (!e.target.dataset.todo) return;
+  try { await api('/api/planner/todos/' + e.target.dataset.todo, jsonOpts('PATCH', { done: e.target.checked })); loadPlanner(); }
+  catch (err) { showError(err.message); }
+});
+
+fetch('/api/planner/state').then(r => {
+  PLANNER_OK = r.ok;
+  if (PLANNER_OK) document.getElementById('plannerTabBtn').style.display = '';
+  showTab(location.hash.slice(1) || (PLANNER_OK ? 'planner' : 'activity'));
+});
 </script>
 </body>
 </html>

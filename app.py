@@ -8609,12 +8609,15 @@ _ensure_table()
 import gcg_chat
 import gcg_finance
 import gcg_notify
+import gcg_planner
 gcg_notify.init(_db_conn, DATABASE_URL, is_admin_user)
 gcg_chat.init(_db_conn, DATABASE_URL)
 gcg_finance.init(_db_conn, DATABASE_URL, is_admin_user, _load_users)
+gcg_planner.init(_db_conn, DATABASE_URL)
 app.register_blueprint(gcg_chat.bp)
 app.register_blueprint(gcg_finance.bp)
 app.register_blueprint(gcg_notify.bp)
+app.register_blueprint(gcg_planner.bp)
 _ensure_default_user()
 
 
