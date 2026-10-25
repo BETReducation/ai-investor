@@ -79,24 +79,8 @@ body {
   border-bottom-color: rgba(0,0,0,0.09);
 }
 
-[data-theme="light"] .hero::before {
-  background: radial-gradient(ellipse, rgba(0,168,130,0.10) 0%, transparent 65%);
-}
-[data-theme="light"] .hero::after {
-  background: radial-gradient(ellipse, rgba(109,40,217,0.07) 0%, transparent 65%);
-}
-[data-theme="light"] .hero-grid {
-  background-image:
-    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
-}
-[data-theme="light"] .hero-title { color: #0d0f1c; }
 [data-theme="light"] .section-title { color: #0d0f1c; }
 [data-theme="light"] .cta-title { color: #0d0f1c; }
-[data-theme="light"] .hero-badge {
-  background: rgba(0,168,130,0.08);
-  border-color: rgba(0,168,130,0.25);
-}
 [data-theme="light"] .btn-ghost {
   border-color: rgba(0,0,0,0.15);
   color: var(--text);
@@ -318,148 +302,97 @@ nav {
 }
 .btn-primary:hover { background: var(--green2); transform: translateY(-1px); }
 
-/* ── HERO ── */
+/* ── HERO ── full-bleed illustrated scene. The ridgeline is a stylised century
+   of market history (built in JS, see sceneHero). Always dark: the text sits on
+   the artwork, not on the page theme. */
 .hero {
   position: relative;
   min-height: 100vh;
+  min-height: 100svh;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 120px 5% 80px;
+  padding: 120px 6% 140px;
   overflow: hidden;
-}
-
-/* Radial background glows */
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -10%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 900px;
-  height: 600px;
-  background: radial-gradient(ellipse, rgba(0,212,170,0.10) 0%, transparent 65%);
-  pointer-events: none;
-}
-.hero::after {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: 10%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 65%);
-  pointer-events: none;
-}
-
-/* Rotating background gallery of self-hosted trading/graph/finance/banking
-   photos (see static/img/hero-gallery/). Sits behind everything else in the
-   hero; the ::after scrim keeps the headline/body text readable over photos. */
-.hero-gallery {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  background: var(--bg);
-}
-.hero-gallery-slide {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  filter: saturate(1.15) contrast(1.05);
-  opacity: 0;
-  transition: opacity 1.4s ease;
-}
-.hero-gallery-slide.active { opacity: 1; }
-.hero-gallery::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(6,8,18,0.585) 0%, rgba(6,8,18,0.75) 55%, var(--bg) 100%);
-  pointer-events: none;
-}
-[data-theme="light"] .hero-gallery::after {
-  background: linear-gradient(180deg, rgba(245,247,255,0.685) 0%, rgba(245,247,255,0.82) 55%, var(--bg) 100%);
-}
-
-/* Grid pattern overlay */
-.hero-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 780px;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,212,170,0.08);
-  border: 1px solid rgba(0,212,170,0.22);
-  border-radius: 100px;
-  padding: 6px 16px;
-  font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
-  color: var(--green);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-  animation: fadeUp 0.7s 0.1s ease both;
-}
-.hero-badge::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.hero-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  font-size: clamp(42px, 6.5vw, 80px);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  background: #0b0a1f;
   color: #fff;
-  animation: fadeUp 0.7s 0.2s ease both;
-  margin-bottom: 4px;
+  isolation: isolate;
 }
-.hero-title .accent-green { color: var(--green); }
-.hero-title .accent-purple { color: var(--purple2); }
-
-.hero-sub {
-  font-size: clamp(16px, 1.8vw, 20px);
-  color: var(--muted);
-  max-width: 560px;
-  margin: 22px auto 40px;
-  line-height: 1.65;
-  animation: fadeUp 0.7s 0.35s ease both;
+.scene { position: absolute; inset: 0; z-index: 0; }
+.scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene .layer { transition: transform 0.6s cubic-bezier(.2,.8,.2,1); transform: translate3d(calc(var(--px,0) * var(--d,0) * 1px), calc(var(--py,0) * var(--d,0) * 0.5px), 0); }
+.scene .star { animation: twinkle 4s ease-in-out infinite; }
+@keyframes twinkle { 0%,100% { opacity: var(--o,.8); } 50% { opacity: .15; } }
+.scene .sun-halo { animation: breathe 9s ease-in-out infinite; transform-origin: 1130px 560px; }
+@keyframes breathe { 0%,100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.06); opacity: 1; } }
+.scene .flame { animation: flicker 2.4s ease-in-out infinite; transform-origin: center; }
+@keyframes flicker { 0%,100% { opacity: 1; } 45% { opacity: .75; } 60% { opacity: .95; } }
+.scene .cloud { animation: drift linear infinite; }
+@keyframes drift { from { transform: translateX(-260px); } to { transform: translateX(1900px); } }
+.scene .marker-pulse { animation: markerPulse 3.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes markerPulse { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(2.6); opacity: 0; } }
+.hero-scrim {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(8,7,26,0.82) 0%, rgba(8,7,26,0.55) 38%, rgba(8,7,26,0) 68%),
+    linear-gradient(180deg, rgba(8,7,26,0) 62%, var(--bg) 100%);
 }
 
-.hero-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  animation: fadeUp 0.7s 0.45s ease both;
+.hero-content { position: relative; z-index: 2; max-width: 640px; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 7px 16px 7px 12px; border-radius: 100px;
+  background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: rgba(255,255,255,0.88); margin-bottom: 30px;
+}
+.hero-eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: #ffc66b; box-shadow: 0 0 10px #ffc66b; }
+.hero-title {
+  font-family: 'Outfit', sans-serif; font-weight: 800;
+  font-size: clamp(44px, 7vw, 92px); line-height: 1.02; letter-spacing: -0.035em;
+  color: #fff; margin-bottom: 26px;
+}
+.hero-title .l { display: block; }
+.hero-title .l2 {
+  background: linear-gradient(95deg, #ffd58a 0%, #ff9d6c 55%, #ff7aa8 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-sub { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.65; color: rgba(255,255,255,0.78); max-width: 520px; margin-bottom: 38px; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 34px; }
+.hero .btn-hero { padding: 14px 28px; font-size: 15px; border-radius: 100px; }
+.hero .btn-hero-primary { background: #fff; color: #14122e; box-shadow: 0 10px 40px rgba(255,190,120,0.28); }
+.hero .btn-hero-primary:hover { background: #ffe9c7; box-shadow: 0 14px 54px rgba(255,190,120,0.45); }
+.hero .btn-hero-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.28); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.hero .btn-hero-secondary:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.45); }
+.hero-note { font-size: 12.5px; color: rgba(255,255,255,0.55); letter-spacing: .01em; }
+.hero-note b { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+/* Staggered blur-and-rise entrance; skipped entirely for reduced motion. */
+.rise { opacity: 0; filter: blur(10px); transform: translateY(22px); animation: rise 1s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i, 0) * 120ms + 150ms); }
+@keyframes rise { to { opacity: 1; filter: blur(0); transform: none; } }
+
+.hero-legend {
+  position: absolute; z-index: 2; right: 5%; bottom: 44px;
+  display: flex; gap: 10px; align-items: center;
+  padding: 9px 16px; border-radius: 100px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: .03em;
+}
+.hero-legend span { width: 7px; height: 7px; border-radius: 50%; background: #ff8a5c; box-shadow: 0 0 10px #ff8a5c; }
+
+@media (max-width: 760px) {
+  .hero { padding: 104px 6% 150px; align-items: flex-start; }
+  .hero-scrim { background: linear-gradient(180deg, rgba(8,7,26,0.35) 0%, rgba(8,7,26,0.1) 55%, rgba(8,7,26,0) 70%, var(--bg) 100%); }
+  .hero-title { font-size: clamp(40px, 11vw, 60px); margin-bottom: 18px; }
+  .hero-sub { margin-bottom: 26px; }
+  .hero-actions { margin-bottom: 20px; }
+  .hero-legend { left: 6%; right: auto; bottom: 28px; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; opacity: 1; filter: none; transform: none; }
+  .scene .star, .scene .sun-halo, .scene .flame, .scene .cloud, .scene .marker-pulse { animation: none; }
+  .scene .layer { transition: none; transform: none; }
 }
 
 .btn-hero {
@@ -925,7 +858,6 @@ section.alt-bg { background: var(--bg2); }
 @media (max-width: 600px) {
   .stats-inner { grid-template-columns: 1fr; }
   .cta-inner { padding: 48px 28px; }
-  .hero { padding: 100px 5% 60px; }
 }
 </style>
 </head>
@@ -935,31 +867,75 @@ section.alt-bg { background: var(--bg2); }
 <script src="/static/js/nav.js"></script>
 
 <!-- HERO -->
-<section class="hero">
-  <div class="hero-gallery" id="heroGallery"></div>
-  <div class="hero-grid"></div>
+<section class="hero" id="hero">
+  <div class="scene" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" id="sceneSvg">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0a0a24"/>
+          <stop offset=".38" stop-color="#2a1a5e"/>
+          <stop offset=".62" stop-color="#7a3a8c"/>
+          <stop offset=".78" stop-color="#e2696f"/>
+          <stop offset=".9" stop-color="#ffb26b"/>
+          <stop offset="1" stop-color="#ffd9a0"/>
+        </linearGradient>
+        <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#fff3d0" stop-opacity="1"/>
+          <stop offset=".18" stop-color="#ffd58a" stop-opacity=".95"/>
+          <stop offset=".45" stop-color="#ff9d6c" stop-opacity=".35"/>
+          <stop offset="1" stop-color="#ff7aa8" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9739f"/><stop offset="1" stop-color="#e9908a"/></linearGradient>
+        <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3a86"/><stop offset="1" stop-color="#a24f7e"/></linearGradient>
+        <linearGradient id="near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1b4a"/><stop offset=".5" stop-color="#14123a"/><stop offset="1" stop-color="#0b0a22"/></linearGradient>
+        <filter id="soft"><feGaussianBlur stdDeviation="14"/></filter>
+        <filter id="lampGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="9"/></filter>
+      </defs>
+      <rect x="-200" y="-500" width="2000" height="1400" fill="url(#sky)"/>
+      <g id="stars"></g>
+      <g class="layer" style="--d:-6">
+        <g class="sun-halo"><circle cx="1130" cy="560" r="330" fill="url(#sunGlow)"/></g>
+        <circle cx="1130" cy="560" r="62" fill="#fff0c8"/>
+      </g>
+      <g class="layer" style="--d:-10" opacity=".55" filter="url(#soft)">
+        <ellipse class="cloud" style="animation-duration:90s" cx="0" cy="330" rx="210" ry="22" fill="#ffc9a0"/>
+        <ellipse class="cloud" style="animation-duration:130s;animation-delay:-60s" cx="0" cy="420" rx="300" ry="26" fill="#f4a0b0"/>
+        <ellipse class="cloud" style="animation-duration:110s;animation-delay:-20s" cx="0" cy="250" rx="180" ry="16" fill="#d9a0d8"/>
+      </g>
+      <g class="layer" style="--d:-14"><path id="ridgeFar" fill="url(#far)" opacity=".8"/></g>
+      <g class="layer" style="--d:-22"><path id="ridgeMid" fill="url(#mid)"/></g>
+      <g class="layer" style="--d:-34">
+        <path id="ridgeNear" fill="url(#near)"/>
+        <path id="ridgeLine" fill="none" stroke="#ffb98a" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>
+        <g id="markers"></g>
+        <g id="walker"></g>
+      </g>
+      <rect y="760" width="1600" height="140" fill="#0b0a22" opacity=".0"/>
+    </svg>
+  </div>
+  <div class="hero-scrim"></div>
 
   <div class="hero-content">
-    <div class="hero-badge">Your Investing Education Hub</div>
+    <div class="hero-eyebrow rise" style="--i:0"><i></i>Investing education, built on history</div>
     <h1 class="hero-title">
-      Learn to Invest<br>
-      with <span class="accent-green">Confidence</span> &amp;<br>
-      <span class="accent-purple">Clarity</span>
+      <span class="l rise" style="--i:1">Every market</span>
+      <span class="l rise" style="--i:2">has a history.</span>
+      <span class="l l2 rise" style="--i:3">Learn to read it.</span>
     </h1>
-    <p class="hero-sub">
-      Growth Capital Group makes investing education interactive — explore real signals, test strategies on live data, and build the knowledge to make smarter financial decisions.
+    <p class="hero-sub rise" style="--i:4">
+      Growth Capital Group turns a century of market history into interactive lessons, tools and backtests, so you can see what happened, and why, before you ever place a trade.
     </p>
-    <div class="hero-actions">
+    <div class="hero-actions rise" style="--i:5">
       <a href="/learn" class="btn-hero btn-hero-primary">
-        Start Learning Free
+        Start learning free
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </a>
-      <a href="/learn" class="btn-hero btn-hero-secondary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        Explore the Platform
-      </a>
+      <a href="/tools" class="btn-hero btn-hero-secondary">Explore the tools</a>
     </div>
+    <p class="hero-note rise" style="--i:6"><b>Education only.</b> Everything here shows what happened historically, never what to do next.</p>
   </div>
+
+  <div class="hero-legend rise" style="--i:7"><span></span>The ridge: a stylised century of market history</div>
 </section>
 
 <!-- STATS BAR — counts come live from /api/site-stats (lessons, visualisations, Alpha posts,
@@ -1202,66 +1178,99 @@ section.alt-bg { background: var(--bg2); }
 <script src="/static/js/footer.js"></script>
 
 <script>
-// ── Hero rolling gallery: self-hosted trading/graph/finance/banking photos ──
-(function heroGallery() {
-  const wrap = document.getElementById('heroGallery');
-  if (!wrap) return;
+// ── Hero scene: the near ridgeline is a stylised century of market history,
+// with the big drawdowns marked. Illustrative shape, not real index data.
+(function sceneHero() {
+  const svg = document.getElementById('sceneSvg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
-  const GALLERY_IMAGES = [
-    'frankfurt-trading-floor.webp',
-    'nyse-facade.webp',
-    'manhattan-financial-skyline.webp',
-    'wall-street-bull.webp',
-    'bank-building-mumbai.webp',
-    'bank-building-portland.webp',
-    'stock-tickers.webp',
-    'ecb-frankfurt-dawn.webp',
-    'nyse-trading-floor-historic.webp',
-    'taipei-financial-skyline.webp',
-    'royal-exchange-london.webp',
-    'candlestick-chart.webp',
-    'tokyo-exchange-interior.webp',
-  ];
-
-  // Shuffle so repeat visits don't always open on the same image.
-  const order = GALLERY_IMAGES.slice();
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [order[i], order[j]] = [order[j], order[i]];
+  // Stars, only in the upper sky.
+  const stars = document.getElementById('stars');
+  for (let i = 0; i < 150; i++) {
+    const c = el('circle', { cx: rnd() * 1600, cy: -300 + rnd() * 720, r: 0.5 + rnd() * 1.4, fill: '#fff', class: 'star' }, stars);
+    c.style.setProperty('--o', (0.35 + rnd() * 0.6).toFixed(2));
+    c.style.animationDelay = (-rnd() * 4).toFixed(2) + 's';
+    c.style.animationDuration = (3 + rnd() * 4).toFixed(1) + 's';
   }
-  order.length = Math.min(order.length, 5); // random 5 per visit — a long visit downloads 5 photos, not all 13
 
-  const slides = order.map(() => {
-    const slide = document.createElement('div');
-    slide.className = 'hero-gallery-slide';
-    wrap.appendChild(slide);
-    return slide;
+  // Interpolated ridge through keyframes [x, y], then jittered so it reads as a chart.
+  function ridge(keys, jitter, step) {
+    const pts = [];
+    for (let i = 0; i < keys.length - 1; i++) {
+      const [x0, y0] = keys[i], [x1, y1] = keys[i + 1];
+      for (let x = x0; x < x1; x += step) {
+        const t = (x - x0) / (x1 - x0);
+        const e = t * t * (3 - 2 * t);
+        pts.push([x, y0 + (y1 - y0) * e + (rnd() - 0.5) * jitter]);
+      }
+    }
+    pts.push(keys[keys.length - 1]);
+    return pts;
+  }
+  const toPath = (pts, close) => 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + (close ? ' L1700 900 L-100 900 Z' : '');
+
+  const far = ridge([[-100,700],[200,640],[480,690],[800,610],[1100,680],[1400,600],[1700,660]], 10, 14);
+  const mid = ridge([[-100,740],[260,700],[560,760],[900,690],[1250,750],[1700,690]], 14, 12);
+  document.getElementById('ridgeFar').setAttribute('d', toPath(far, true));
+  document.getElementById('ridgeMid').setAttribute('d', toPath(mid, true));
+
+  // Near ridge keyframes: [x, y, label?]. Lower y = higher on screen = higher index.
+  const keys = [
+    [-100, 840], [60, 810], [190, 735, 'peak'], [235, 835, '1929'],
+    [330, 815], [560, 770], [760, 700], [850, 640, 'peak'], [895, 705, '1987'],
+    [1010, 640], [1120, 560, 'peak'], [1170, 650, '2000'],
+    [1260, 610], [1330, 560, 'peak'], [1380, 680, '2008'],
+    [1450, 600], [1500, 520, 'peak'], [1530, 590, '2020'],
+    [1590, 500, 'top'], [1700, 520]
+  ];
+  const near = ridge(keys.map(k => [k[0], k[1]]), 9, 6);
+  document.getElementById('ridgeNear').setAttribute('d', toPath(near, true));
+  document.getElementById('ridgeLine').setAttribute('d', toPath(near, false));
+
+  // Crash markers: a pulse and year label at each labelled trough.
+  const markers = document.getElementById('markers');
+  keys.forEach(k => {
+    if (!/^\d{4}$/.test(k[2] || '')) return;
+    const g = el('g', {}, markers);
+    el('circle', { cx: k[0], cy: k[1], r: 5, fill: '#ff8a5c', class: 'marker-pulse' }, g);
+    el('circle', { cx: k[0], cy: k[1], r: 3.5, fill: '#ffd9a0' }, g);
+    const t = el('text', { x: k[0], y: k[1] + 28, 'text-anchor': 'middle', fill: '#ffd9a0', 'fill-opacity': '.85',
+      'font-family': 'JetBrains Mono, monospace', 'font-size': '15', 'letter-spacing': '.08em' }, g);
+    t.textContent = k[2];
   });
 
-  // Only fetch an image the first time its slide is about to be shown, so a
-  // page load costs 2 photos, not all 14 — the rest load in the background
-  // as rotation reaches them (and are cached by the browser after that).
-  function loadSlide(i) {
-    const slide = slides[i];
-    if (!slide.style.backgroundImage) {
-      slide.style.backgroundImage = `url("/static/img/hero-gallery/${order[i]}")`;
-    }
-  }
+  // A lone walker with a lantern on the last high point, looking back over the history.
+  const wx = 1590, wy = 500;
+  const w = document.getElementById('walker');
+  el('circle', { cx: wx - 20, cy: wy - 34, r: 26, fill: '#ffcf7a', filter: 'url(#lampGlow)', class: 'flame', opacity: '.9' }, w);
+  el('path', { d: `M${wx} ${wy} l-3 -34 q-1 -8 4 -12 q-3 -3 -2 -8 q3 -6 8 -3 q4 3 1 9 q5 4 4 12 l2 36 z`, fill: '#07061a' }, w);
+  el('path', { d: `M${wx - 2} ${wy - 40} l-14 8`, stroke: '#07061a', 'stroke-width': 3, 'stroke-linecap': 'round', fill: 'none' }, w);
+  el('circle', { cx: wx - 17, cy: wy - 32, r: 3.4, fill: '#fff4cf', class: 'flame' }, w);
 
-  loadSlide(0);
-  slides[0].classList.add('active');
+  // Portrait screens only have room for the right-hand end of the scene (sun, 2020 peak, walker).
+  const fit = () => svg.setAttribute('viewBox', innerWidth / innerHeight < 1 ? '880 -270 860 1170' : '0 0 1600 900');
+  fit();
+  addEventListener('resize', fit);
 
-  if (slides.length > 1) {
-    loadSlide(1);
-    let idx = 0;
-    setInterval(() => {
-      if (document.hidden) return; // background tabs shouldn't keep downloading photos
-      slides[idx].classList.remove('active');
-      idx = (idx + 1) % slides.length;
-      loadSlide(idx);
-      loadSlide((idx + 1) % slides.length);
-      slides[idx].classList.add('active');
-    }, 10000);
+  // Gentle parallax on pointer move; touch devices and reduced-motion users skip it.
+  const hero = document.getElementById('hero');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && matchMedia('(pointer: fine)').matches) {
+    hero.addEventListener('pointermove', e => {
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty('--px', ((e.clientX - r.left) / r.width - 0.5).toFixed(3) * 2);
+      hero.style.setProperty('--py', ((e.clientY - r.top) / r.height - 0.5).toFixed(3) * 2);
+    });
+    hero.addEventListener('pointerleave', () => { hero.style.setProperty('--px', 0); hero.style.setProperty('--py', 0); });
   }
 })();
 
