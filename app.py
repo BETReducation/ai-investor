@@ -3454,12 +3454,13 @@ def learn_tools(): return send_from_directory("static", "learn-tools.html")
 def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 
 # Explainers shown on /learn/artifacts. categories is a list of: technical-analysis,
-# understanding-markets, investment-appraisal, basic-trading, trading-strategies
+# understanding-markets, investment-appraisal, basic-trading, trading-strategies,
+# markets-in-context (news / recent moves set against past episodes)
 # (an Explainer can sit in several; the page shows a coloured pill for each).
 # part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
 # static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
-    {"slug": "oil-inflation-regimes", "categories": ["understanding-markets"], "part": "in-depth",
+    {"slug": "oil-inflation-regimes", "categories": ["markets-in-context"], "part": "in-depth",
      "title": "Oil Shocks and Inflation: 1973–74 and 2008",
      "desc": "What stocks, 10-year bonds and gold did when oil surged and inflation climbed, month by month, nominal and CPI-adjusted. Two historical windows with oil and inflation underneath."},
     {"slug": "panic-at-the-bottom", "categories": ["trading-strategies", "technical-analysis"], "part": "in-depth",
