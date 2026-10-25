@@ -69,22 +69,35 @@
   }).join('');
 
   // Data Viz menu: its own top-level dropdown between Tools and Arena.
-  var DATAVIZ_PAGES = [
-    ['All visualisations', '/tools/data-visualisation'],
-    ['Global Heat Map', '/tools/data-visualisation/global-heat-map'],
-    ['GCG Market Orbs', '/tools/data-visualisation/market-orbs'],
-    ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'],
-    ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard'],
-    ['Winners League', '/tools/data-visualisation/winners-league'],
-    ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter'],
-    ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
-    ['GCG League and Compass', '/tools/data-visualisation/league-compass'],
-    ['GCG Barrel Map', '/tools/data-visualisation/barrel-map'],
-    ['GCG Global ETF Tracker', '/tools/data-visualisation/etf-tracker'],
-    ['GCG FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
-    ['GCG Russell 2000 Compass', '/tools/data-visualisation/russell-compass']
+  // Same category folders as the Tools menu; Forex has no visualisations yet so it's left out.
+  var DATAVIZ_CATEGORIES = [
+    { name: 'Analysis', pages: [
+      ['Global Heat Map', '/tools/data-visualisation/global-heat-map'],
+      ['GCG Market Orbs', '/tools/data-visualisation/market-orbs'],
+      ['Winners League', '/tools/data-visualisation/winners-league'],
+      ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter']
+    ] },
+    { name: 'Crypto', pages: [
+      ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard']
+    ] },
+    { name: 'Metals', pages: [
+      ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio']
+    ] },
+    { name: 'Stocks', pages: [
+      ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
+      ['GCG FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
+      ['GCG Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
+      ['GCG League and Compass', '/tools/data-visualisation/league-compass'],
+      ['GCG Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
+    ] },
+    { name: 'Other', pages: [
+      ['GCG Barrel Map', '/tools/data-visualisation/barrel-map']
+    ] }
   ];
-  var DATAVIZ_MENU_HTML = DATAVIZ_PAGES.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('');
+  var DATAVIZ_MENU_HTML = '<li><a href="/tools/data-visualisation">All visualisations</a></li>' + DATAVIZ_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
+    return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
+      '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
+  }).join('');
 
   var NAV_HTML = '' +
 '<nav>' +
