@@ -8765,14 +8765,17 @@ import gcg_chat
 import gcg_finance
 import gcg_notify
 import gcg_planner
+import gcg_ideas
 gcg_notify.init(_db_conn, DATABASE_URL, is_admin_user)
 gcg_chat.init(_db_conn, DATABASE_URL)
 gcg_finance.init(_db_conn, DATABASE_URL, is_admin_user, _load_users)
 gcg_planner.init(_db_conn, DATABASE_URL)
+gcg_ideas.init(_db_conn, DATABASE_URL, is_admin_user)
 app.register_blueprint(gcg_chat.bp)
 app.register_blueprint(gcg_finance.bp)
 app.register_blueprint(gcg_notify.bp)
 app.register_blueprint(gcg_planner.bp)
+app.register_blueprint(gcg_ideas.bp)
 _ensure_default_user()
 
 

@@ -230,7 +230,17 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
           <button class="btn-muted btn-small" id="xqRefresh">Refresh</button>
         </div>
       </div>
-      <div id="xqBody"></div>
+      <div class="xq-note" id="xqSchedule" style="margin:0 0 14px;"></div>
+      <div class="xq-card">
+        <div class="section-eyebrow" style="margin-bottom:6px;">Ideas for the next drafts</div>
+        <div class="xq-note" style="margin:0 0 8px;">Topics, angles or news you want covered. The next draft run picks these up, writes posts around them, then marks them used.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="xqIdeaInput" maxlength="600" placeholder="e.g. Explain what a stock split is, for beginners" style="flex:1;min-width:220px;">
+          <button class="btn-outline btn-small" id="xqIdeaAdd">Add idea</button>
+        </div>
+        <div id="xqIdeas" style="margin-top:10px;"></div>
+      </div>
+      <div id="xqBody" style="margin-top:14px;"></div>
     </div>
 
     <div id="studioApp" style="display:none;">
@@ -812,7 +822,58 @@ async function loadXQueue() {
     body.appendChild(wrap);
   });
 }
-document.getElementById('xqRefresh').onclick = loadXQueue;
+// Runs are scheduled in the Mac's local time, which is this browser's zone when Gary is on that Mac.
+const XQ_HOURS = [9, 13, 17, 21];
+function xqNextRun() {
+  const now = new Date();
+  for (let d = 0; d < 2; d++) for (const h of XQ_HOURS) {
+    const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, h);
+    if (t > now) return t;
+  }
+}
+function xqScheduleNote() {
+  const next = xqNextRun();
+  document.getElementById('xqSchedule').textContent =
+    'Drafts are written at 9am, 1pm, 5pm and 9pm (the Mac\'s local time), and only while the Mac is on with Claude open. Next run: ' +
+    next.toLocaleString('en-GB', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) +
+    '. Add ideas before then so they\'re included.';
+}
+xqScheduleNote();
+
+async function loadIdeas() {
+  const box = document.getElementById('xqIdeas');
+  try {
+    const res = await fetch('/api/x-ideas', { credentials: 'include' });
+    const { ideas } = await res.json();
+    if (!res.ok) throw new Error();
+    const shown = ideas.filter(i => !i.used).concat(ideas.filter(i => i.used).slice(-5));
+    box.innerHTML = '';
+    if (!shown.length) { box.textContent = 'No ideas queued.'; box.className = 'xq-note'; return; }
+    shown.forEach(i => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;align-items:center;justify-content:space-between;padding:4px 0;font-size:13px;';
+      const t = document.createElement('span');
+      t.textContent = i.text + (i.used ? ' (used)' : '');
+      if (i.used) t.style.opacity = '0.5';
+      const del = document.createElement('button');
+      del.className = 'btn-muted btn-small';
+      del.textContent = 'Remove';
+      del.onclick = async () => { await fetch('/api/x-ideas/' + i.id, { method: 'DELETE', credentials: 'include' }); loadIdeas(); };
+      row.append(t, del);
+      box.appendChild(row);
+    });
+  } catch { box.textContent = 'Could not load ideas.'; }
+}
+document.getElementById('xqIdeaAdd').onclick = async () => {
+  const input = document.getElementById('xqIdeaInput');
+  if (!input.value.trim()) return;
+  await fetch('/api/x-ideas', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: input.value }) });
+  input.value = '';
+  loadIdeas();
+};
+document.getElementById('xqIdeaInput').onkeydown = e => { if (e.key === 'Enter') document.getElementById('xqIdeaAdd').click(); };
+
+document.getElementById('xqRefresh').onclick = () => { loadXQueue(); loadIdeas(); xqScheduleNote(); };
 document.getElementById('xqHidePosted').onchange = loadXQueue;
 document.getElementById('xqShowRemoved').onchange = loadXQueue;
 
@@ -831,6 +892,7 @@ document.getElementById('xqShowRemoved').onchange = loadXQueue;
   if (me.is_admin) {
     document.getElementById('xQueue').style.display = 'block';
     loadXQueue();
+    loadIdeas();
   }
   if (!me.alpha_role) {
     if (!me.is_admin) document.getElementById('gateNoAccess').style.display = 'block';
