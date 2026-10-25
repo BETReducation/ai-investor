@@ -10,6 +10,7 @@ import datetime as _dt
 import os
 import secrets
 import time
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from urllib.parse import urlencode
 
 import requests
@@ -24,7 +25,7 @@ SCOPE = "https://www.googleapis.com/auth/calendar.events"
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 CAL_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
-TZ = "Europe/London"
+DEFAULT_TZ = "Europe/London"
 
 store = DocStore("gcg_planner", lambda: {"next_id": 1, "todos": [], "google": {}})
 _token_cache = {"token": "", "exp": 0.0}
@@ -207,11 +208,15 @@ def create_event():
         return jsonify({"error": "Valid date (and time) required"}), 400
     if not title:
         return jsonify({"error": "Title required"}), 400
+    try:
+        tz = str(ZoneInfo(body.get("tz") or DEFAULT_TZ))  # times are entered in the browser's own zone
+    except (ZoneInfoNotFoundError, ValueError):
+        tz = DEFAULT_TZ
     if time_:
         mins = min(max(int(body.get("minutes") or 30), 5), 1440)
         end = start + _dt.timedelta(minutes=mins)
-        payload = {"start": {"dateTime": start.isoformat(), "timeZone": TZ},
-                   "end": {"dateTime": end.isoformat(), "timeZone": TZ}}
+        payload = {"start": {"dateTime": start.isoformat(), "timeZone": tz},
+                   "end": {"dateTime": end.isoformat(), "timeZone": tz}}
     else:
         payload = {"start": {"date": date}, "end": {"date": (day + _dt.timedelta(days=1)).isoformat()}}
     payload["summary"] = title

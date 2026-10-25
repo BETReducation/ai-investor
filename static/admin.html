@@ -588,7 +588,7 @@ document.getElementById('todoForm').addEventListener('submit', async e => {
 document.getElementById('eventForm').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
-  try { await api('/api/planner/events', jsonOpts('POST', { title: f.title.value, date: f.date.value, time: f.time.value, minutes: +f.minutes.value })); f.reset(); f.minutes.value = 30; loadEvents(); }
+  try { await api('/api/planner/events', jsonOpts('POST', { title: f.title.value, date: f.date.value, time: f.time.value, minutes: +f.minutes.value, tz: Intl.DateTimeFormat().resolvedOptions().timeZone })); f.reset(); f.minutes.value = 30; loadEvents(); }
   catch (err) { showError(err.message); }
 });
 document.getElementById('tab-planner').addEventListener('click', async e => {
