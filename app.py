@@ -7747,7 +7747,7 @@ def social_posts():
             f"URL TO INCLUDE: {source_url[:500]} — place this link at the very "
             "end of the post (after the CTA text), on its own line."
         )
-    prompt_parts.append("BRAND VOICE NOTES: authoritative and friendly")
+    prompt_parts.append("BRAND VOICE NOTES: friendly, plain-English educator writing for complete beginners; no jargon without a short explanation")
     prompt_parts += [
         f"TONE: {(data.get('tone') or 'Friendly')[:50]}",
         "",
