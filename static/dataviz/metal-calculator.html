@@ -35,6 +35,8 @@ th{color:var(--mute);font-weight:500;border-top:0}
 .dw svg{width:160px;height:160px;flex:none}
 .lg{display:flex;align-items:center;gap:8px;font-size:14px;margin:6px 0}.lg b{margin-left:auto;padding-left:16px}
 #legend{flex:1;min-width:160px}
+.pers{text-align:center}.pers .lab{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}.pers .em{font-size:44px;line-height:1.2}.pers h3{margin:2px 0 4px;font:700 20px Georgia,serif}.pers p{margin:0;color:var(--mute);font-size:14px}
+.live{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center}.up{color:#0fb374}.dn{color:#e5344d}
 .note{font-size:12px;color:var(--mute);margin-top:14px}
 </style>
 </head>
@@ -50,6 +52,8 @@ th{color:var(--mute);font-weight:500;border-top:0}
 
 <div class="card"><h2>Allocation</h2><div class="dw"><svg id="donut" viewBox="0 0 120 120"></svg><div id="legend"></div></div></div>
 
+<div class="card pers" id="pers" style="display:none"></div>
+
 <div class="card tot"><h2>Total value</h2>
 <div class="big" id="tot-usd">$0.00</div>
 <div class="tw"><table><tbody id="tot-rows"></tbody></table></div></div>
@@ -60,7 +64,7 @@ th{color:var(--mute);font-weight:500;border-top:0}
 var OZ=31.1034768;
 var M=[{k:'gold',n:'Gold',c:'#d4a017',p:4300},{k:'silver',n:'Silver',c:'#9aa5b1',p:65},{k:'platinum',n:'Platinum',c:'#6c8ea4',p:1750},{k:'palladium',n:'Palladium',c:'#8d7fb0',p:1250},{k:'copper',n:'Copper',c:'#b87333',p:0.4}];
 var FX=[{k:'gbp',n:'£1 in USD',v:1.33},{k:'eur',n:'€1 in USD',v:1.16},{k:'btc',n:'₿1 in USD',v:110000}];
-var P={},R={},Q={};
+var P={},R={},Q={},DAY={};
 function $(i){return document.getElementById(i)}
 function f(n,d){return n.toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d})}
 function cur(u){return[['USD','$',1,2],['GBP','£',1/R.gbp,2],['EUR','€',1/R.eur,2],['BTC','₿',1/R.btc,6]]}
@@ -94,6 +98,25 @@ function donut(V,tot){
  s+='<text x="60" y="64" text-anchor="middle" style="fill:var(--mute);font-size:10px">'+(tot>0?'Your stack':'Add metal')+'</text>';
  $('donut').innerHTML=s;$('legend').innerHTML=l;
 }
+function personality(V,tot){
+ var s=function(k){return(V[k]||0)/tot},n=M.filter(function(m){return V[m.k]>0}).length,top=Math.max.apply(null,M.map(function(m){return s(m.k)}));
+ if(n==1&&s('gold')==1)return['🥇','The Gold Bug','All gold, no distractions. The oldest store of value in the book.'];
+ if(s('gold')>=.6)return['🥇','The Gold Bug','Gold is carrying the stack. Slow, steady and thousands of years old.'];
+ if(s('silver')>=.4)return['🥈','The Silver Surfer','Silver is the wild cousin of gold: cheaper, twitchier, with a big industrial side.'];
+ if(s('platinum')+s('palladium')>=.4)return['🏭','The Industrial Contrarian','Platinum and palladium sit in car catalysts and factories. Not the usual crowd.'];
+ if(s('copper')>=.4)return['🔌','Dr Copper','Copper is the metal traders read for the health of the global economy.'];
+ if(s('gold')+s('silver')>=.85)return['⚖️','The Classic Stacker','Gold and silver, the traditional pairing.'];
+ if(n>=4&&top<.45)return['🧺','The All-Rounder','Spread across the metals with none in charge.'];
+ return['🧭','The Collector','A bit of everything, still finding your style.'];
+}
+function livebar(V,tot){
+ var chg=0,best=null;
+ M.forEach(function(m){var d=DAY[m.k];if(d==null||!(V[m.k]>0))return;chg+=V[m.k]-V[m.k]/(1+d/100);if(!best||Math.abs(d)>Math.abs(best[1]))best=[m.n,d]});
+ var out='';
+ if(DAY.gold!=null&&DAY.silver!=null&&P.silver>0)out+='<span>Gold/silver ratio <b>'+f(P.gold/P.silver,1)+'</b></span>';
+ if(best){var pct=chg/(tot-chg)*100;out='<span>Stack today <b class="'+(chg>=0?'up':'dn')+'">'+(chg>=0?'+':'−')+'$'+f(Math.abs(chg),2)+' ('+(pct>=0?'+':'−')+f(Math.abs(pct),2)+'%)</b></span><span>Biggest mover <b class="'+(best[1]>=0?'up':'dn')+'">'+best[0]+' '+(best[1]>=0?'+':'−')+f(Math.abs(best[1]),2)+'%</b></span>'+out}
+ return out?'<div class="live">'+out+'</div>':'';
+}
 function num(id){var v=parseFloat($(id).value);return isFinite(v)&&v>=0?v:0}
 function upd(){
  M.forEach(function(m){P[m.k]=num('p-'+m.k)});
@@ -106,6 +129,7 @@ function upd(){
   $('t-'+m.k).innerHTML=r;
  });
  $('tot-usd').textContent=money('$',tot,2);donut(V,tot);
+ if(tot>0){var p=personality(V,tot);$('pers').style.display='';$('pers').innerHTML='<div class="lab">Your stack personality</div><div class="em">'+p[0]+'</div><h3>'+p[1]+'</h3><p>'+p[2]+'</p>'+livebar(V,tot)}else $('pers').style.display='none';
  var t='';
  C.forEach(function(c){t+='<tr><td>'+c[0]+'</td><td><b>'+money(c[1],tot*c[2],c[3])+'</b></td></tr>'});
  $('tot-rows').innerHTML=t;
@@ -118,6 +142,7 @@ fetch('/api/dataviz/metal-calculator/live').then(function(r){return r.json()}).t
  function put(id,v){var el=$(id);if(v>0&&el&&!el.dataset.dirty){el.value=+v.toPrecision(6);n++}}
  M.forEach(function(m){put('p-'+m.k,(d.metals||{})[m.k])});
  FX.forEach(function(x){put('r-'+x.k,(d.fx||{})[x.k])});
+ DAY=d.day||{};
  upd();
  var t=d.updated_at?new Date(d.updated_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}):'';
  $('priceNote').textContent=n?'Live prices (latest futures close, so slightly delayed), updated '+t+'. You can edit any of them. 1 troy oz = 31.1035 g.':'Live prices unavailable, showing editable estimates. 1 troy oz = 31.1035 g.';

@@ -5947,7 +5947,7 @@ def _fetch_metal_prices() -> dict:
         if _metal_cache["data"] is not None and now - _metal_cache["at"] < _MARKET_PULSE_CACHE_TTL_SECONDS:
             return _metal_cache["data"]
     symbols = list(_METAL_SYMBOLS.values()) + list(_METAL_FX_SYMBOLS.values())
-    last = {}
+    last, prev = {}, {}
     try:
         raw = yf.download(tickers=symbols, period="5d", interval="1d", group_by="ticker",
                           threads=True, auto_adjust=False, progress=False)
@@ -5956,13 +5956,16 @@ def _fetch_metal_prices() -> dict:
                 closes = raw[sym]["Close"].dropna()
                 if len(closes):
                     last[sym] = float(closes.iloc[-1])
+                if len(closes) >= 2:
+                    prev[sym] = float(closes.iloc[-2])
             except Exception:
                 continue
     except Exception:
         pass
     metals = {k: (last[v] / _LB_PER_TROY_OZ if k == "copper" else last[v]) for k, v in _METAL_SYMBOLS.items() if v in last}
     fx = {k: last[v] for k, v in _METAL_FX_SYMBOLS.items() if v in last}
-    result = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "metals": metals, "fx": fx}
+    day = {k: round((last[v] / prev[v] - 1) * 100, 2) for k, v in _METAL_SYMBOLS.items() if v in last and prev.get(v)}
+    result = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "metals": metals, "fx": fx, "day": day}
     with _metal_lock:
         _metal_cache["at"] = now
         if metals or fx or _metal_cache["data"] is None:
