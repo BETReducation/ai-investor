@@ -557,6 +557,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'nasdaq-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'currency-calculator'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'league-compass'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'GCG FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
         for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
             cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
@@ -1537,6 +1539,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
     "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
+    "ftse-wagon-wheel": "A wheel of FTSE 100 stocks with winners on the left and losers on the right, plus the index's calendar-year returns since 1984 (illustrative simulated moves).",
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "russell-compass": "Two thousand small caps on one compass: how many are up by day, week, month or year, with sector wheel and annual history (illustrative modelled data).",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
@@ -1558,6 +1561,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "league-compass", "label": "GCG League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "ftse-wagon-wheel", "label": "GCG FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "GCG Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
 ]
