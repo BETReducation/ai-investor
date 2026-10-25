@@ -1,137 +1,232 @@
 <!DOCTYPE html>
-<html lang="en-GB"><head><meta charset="utf-8">
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Russell 2000 Compass</title>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:light dark;--bg:#ece6d4;--fg:#1a1d24;--mut:#6a6757;--card:#f6f1e2;--line:#cfc7ae;--up:#0b8f55;--dn:#cf2438;--brass:#9a6e12;--ring:#1a1d24;box-sizing:border-box}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1322;--fg:#efe9da;--mut:#8a97ad;--card:#101c31;--line:#22314c;--up:#2ee59a;--dn:#ff4d62;--brass:#d9b565;--ring:#efe9da}}
-:root[data-theme="dark"]{--bg:#0a1322;--fg:#efe9da;--mut:#8a97ad;--card:#101c31;--line:#22314c;--up:#2ee59a;--dn:#ff4d62;--brass:#d9b565;--ring:#efe9da}
+:root{--navy:#0b1b2e;--panel:#10263f;--line:#1c3a5c;--teal:#2bb5a8;--gold:#d4a84b;--text:#e8eef5;--mute:#8da2b8;--g:#3ddc97;--r:#ff6b6b}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'IBM Plex Sans',system-ui,sans-serif;font-variant-numeric:tabular-nums;border-radius:14px}
-.w{max-width:1040px;margin:0 auto;padding:0 16px 32px}
-h1{font:800 clamp(26px,7vw,54px)/1.02 Unbounded,system-ui,sans-serif;letter-spacing:-.02em;margin:28px 0 6px}
-h1 span{color:var(--brass)}
-.sub{color:var(--mut);margin:0 0 18px;max-width:56ch}
-.note{color:var(--mut);font-size:13px;margin:0 0 14px}
-.bar{background:var(--bg);padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:6px}
-.bar button{flex:1;font:600 13px 'IBM Plex Sans',sans-serif;padding:10px 0;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:999px;cursor:pointer}
-.bar button[aria-pressed=true]{background:var(--brass);border-color:var(--brass);color:var(--bg)}
-button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
-.c{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px;text-align:left;color:var(--fg);font:inherit;cursor:pointer}
-.c[aria-pressed=true]{border-color:var(--brass);box-shadow:inset 0 0 0 1px var(--brass)}
-.c b{font:500 11px Unbounded,sans-serif;color:var(--mut)}
-.c .n{display:flex;justify-content:space-between;font-weight:600;margin-top:6px;font-size:15px}
-.u{color:var(--up)}.d{color:var(--dn)}
-.sp{height:6px;border-radius:3px;background:var(--dn);margin-top:8px;overflow:hidden}.sp i{display:block;height:100%;background:var(--up)}
-.cv{display:flex;flex-direction:column;align-items:center;margin-top:14px}
-canvas{max-width:100%;touch-action:none}
-.info{min-height:24px;color:var(--mut);font-size:13px;text-align:center}
-.big{font:800 clamp(22px,6vw,34px) Unbounded,sans-serif;text-align:center;margin-top:4px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
-th{font:500 12px Unbounded,sans-serif;padding:8px 4px}
-td.r{text-align:right;font-weight:600}td.k{color:var(--mut);width:22px}
-td small{color:var(--mut);display:block;font-size:11px}
-.pie{display:grid;grid-template-columns:minmax(220px,1fr) 1.2fr;gap:20px;align-items:center}
-.lg{display:grid;grid-template-columns:14px 1fr auto auto auto;gap:6px 10px;font-size:13px;align-items:center}
-.lg .h{color:var(--mut);font-size:11px}
-.sw{width:14px;height:14px;border-radius:3px}
-.hs{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:8px}
-.hs text{fill:var(--mut);font:10px 'IBM Plex Sans',sans-serif}
-.hs text.v{fill:var(--fg);font-weight:600}
-.foot{margin-top:36px;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
-.chips{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px}.chips button{flex:none;font:600 12px 'IBM Plex Sans',sans-serif;padding:7px 12px;border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:999px;cursor:pointer}.chips button[aria-pressed=true]{border-color:var(--brass);background:var(--brass);color:var(--bg)}
-details{margin-top:28px;border-top:1px solid var(--line);padding-top:10px}summary{font:500 15px/1.2 Unbounded,system-ui,sans-serif;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:8px 0}summary::-webkit-details-marker{display:none}summary::after{content:"\2212";color:var(--brass);font-size:20px}details:not([open]) summary::after{content:"+"}summary:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
-#mv td small{max-width:112px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#mv td:nth-child(4),#mv th:nth-child(4){border-left:1px solid var(--line);padding-left:10px}#mv th.g{color:var(--up)}#mv th.l{color:var(--dn)}
-@media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr)}.pie{grid-template-columns:1fr}}
-</style></head>
-<body><div class="w">
-<h1>RUSSELL 2000 <span>COMPASS</span></h1>
-<p class="note" id="proxy"><b>Live proxy, not the index itself.</b> The Russell 2000's own constituent list isn't freely available, so each dot here is a small-cap ETF: the index funds IWM, IWN, IWO, IJR and VB, plus sector and industry funds that hold small companies. Loading prices…</p>
-<p class="sub">One bearing for US small caps. The outer ring shows how many of the tracked small-cap ETFs are up; every dot inside is a fund.</p>
-<div class="bar" id="bar"></div>
-<div class="chips" id="chips" aria-label="Sector filter"></div>
-<div class="cards" id="cards"></div>
-
-<details open><summary>The compass</summary><div class="cv"><canvas id="cv"></canvas>
-<div class="big" id="big"></div><div class="info" id="info">Tap or hover a dot to identify a company.</div></div></details>
-
-<details open><summary>Biggest gainers and losers</summary><p class="note" id="mvnote"></p>
-<table id="mv"></table></details>
-
-<details open><summary>Sector wheel</summary><p class="note">Slice size is each sector’s share of the tracked ETFs. Slice colour is its average return for the selected period. Tap a slice to filter the whole page.</p>
-<div class="pie"><svg id="pie" viewBox="-50 0 300 200" role="img" aria-label="Sector pie chart"></svg><div class="lg" id="lg"></div></div></details>
-
-<details open><summary>Every year since inception</summary><p class="note" id="hnote"></p>
-<div class="hs"><svg id="hist"></svg></div></details>
-
-<p class="foot" id="foot">Loading prices… Educational and historical only, not advice.</p>
+body{margin:0;background:var(--navy);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;border-radius:14px}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sub{color:var(--mute);font-size:.85rem}
+.badge{font-size:.7rem;letter-spacing:.08em;padding:4px 10px;border-radius:99px;border:1px solid var(--gold);color:var(--gold);font-weight:700}
+.badge.live{color:var(--teal);border-color:var(--teal)}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:105px;flex:1}
+.stat b{display:block;font-size:1rem}
+.stat small{color:var(--mute);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em}
+.up{color:var(--g)}.down{color:var(--r)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ctl input,.ctl select{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:.85rem}
+.ctl input{flex:1;min-width:140px}
+.chips{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+.chips button{background:none;border:0;color:var(--mute);padding:6px 12px;border-radius:7px;font-size:.8rem;cursor:pointer;font-weight:600}
+.chips button.on{background:var(--teal);color:#06231f}
+#scroll{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);position:relative}
+table{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:#0d2038;color:var(--mute);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:10px 10px;z-index:2;white-space:nowrap}
+td{padding:7px 10px;text-align:right;border-top:1px solid #16314f;white-space:nowrap}
+th:nth-child(1),td:nth-child(1){text-align:center;width:52px}
+th:nth-child(2),td:nth-child(2),th:nth-child(3),td:nth-child(3){text-align:left}
+tr:hover td{background:#14304f}
+.rk{font-weight:700;color:var(--mute)}
+.r1 .rk{color:#ffd24d}.r2 .rk{color:#cfd8e3}.r3 .rk{color:#d9985a}
+.tk{font-weight:700}
+.sec{color:var(--mute);font-size:.75rem}
+.pc{position:relative;min-width:120px}
+.pc i{position:absolute;left:0;top:50%;height:60%;transform:translateY(-50%);border-radius:0 4px 4px 0;opacity:.22}
+.pc span{position:relative;font-weight:700}
+details{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+summary{cursor:pointer;padding:12px 14px;font-weight:700;font-family:Georgia,serif;font-size:1.05rem;list-style:none;display:flex;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--gold);transition:transform .2s}
+details[open] summary::before{transform:rotate(90deg)}
+summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400;font-size:.75rem}
+.clkbody{padding:4px 14px 16px;text-align:center}
+.clkbody .chips{display:inline-flex;margin-bottom:6px}
+#clk{width:100%;max-width:480px;display:block;margin:4px auto}
+#clk path{stroke:#0b1b2e;stroke-width:.4}
+#clk path:hover{stroke:#fff;stroke-width:1.2}
+#clk .lb{fill:#e8eef5;font-size:12px;font-weight:600}
+#clk .arc{fill:#fff;font-weight:800;stroke:#06231f;stroke-width:3px;paint-order:stroke}
+.sc{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 6px}
+.sc button{background:none;border:1px solid var(--c);color:var(--c);border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer}
+.sc button.on{background:var(--c);color:#0b1b2e}
+.cap{color:var(--mute);font-size:.72rem;margin:14px 0 4px;text-align:left}
+#secsum{text-align:left}
+.sr{display:grid;grid-template-columns:150px 1fr 74px 58px;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:.78rem}
+.sr:hover,.sr.on{background:#14304f}
+.sr.on{outline:1px solid var(--c)}
+.sr .nm{display:flex;align-items:center;gap:6px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .nm i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.sr .bar{height:8px;border-radius:4px;background:#ff5a5a;overflow:hidden;display:block}
+.sr .bar b{display:block;height:100%;background:#2ecc71}
+.sr em{font-style:normal;font-weight:700}
+.sr .ct,.sr .av{text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:640px){.sr{grid-template-columns:128px 1fr 54px 46px;font-size:.68rem;gap:5px}}
+.legend{display:flex;justify-content:center;gap:22px;font-size:.95rem;margin-top:4px}
+#tip{position:fixed;pointer-events:none;background:#06111f;border:1px solid var(--gold);border-radius:8px;padding:8px 11px;font-size:.8rem;display:none;z-index:9}
+.note{margin-top:8px;color:var(--mute);font-size:.7rem;line-height:1.4}
+@media(max-width:640px){.hm{display:none}th,td{padding:7px 6px}.pc{min-width:90px}}
+.hctl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}
+.hctl .chips{margin:0}
+#hbars{width:100%;display:block;margin:6px 0 4px}
+#hbars rect:hover{stroke:#fff;stroke-width:2}
+.hscroll{max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+.ht th:nth-child(2),.ht td:nth-child(2),.ht th:nth-child(3),.ht td:nth-child(3){text-align:right}
+.hnote{color:var(--mute);font-size:.72rem;line-height:1.4;margin-top:10px;text-align:left}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="sub">Best to worst performers <span id="plbl"></span> · <span id="stamp">Loading prices…</span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="badge" class="badge">LOADING</span>
+      <div class="chips per" id="per"><button data-p="day">Day</button><button data-p="week">Week</button><button data-p="month">Month</button><button data-p="year" class="on">Year</button></div></div>
+  </header>
+  <div class="stats">
+    <div class="stat"><small>Advancers</small><b class="up" id="sUp">–</b></div>
+    <div class="stat"><small>Decliners</small><b class="down" id="sDn">–</b></div>
+    <div class="stat"><small>Median stock</small><b id="sMed">–</b></div>
+    <div class="stat"><small>Best</small><b class="up" id="sBest">–</b></div>
+    <div class="stat"><small>Worst</small><b class="down" id="sWorst">–</b></div>
+  </div>
+  <div class="ctl">
+    <input id="q" type="search" placeholder="Search ticker…">
+    <select id="sec"><option value="">All sectors</option></select>
+    <div class="chips" id="view"><button data-v="all" class="on" id="vAll">All stocks</button><button data-v="top">Top 25</button><button data-v="bot">Bottom 25</button></div>
+  </div>
+  <div id="scroll">
+    <table>
+      <thead><tr><th>#</th><th>Ticker</th><th class="hm">Sector</th><th class="hm" id="hBase">Start price</th><th>Price</th><th>Change ($)</th><th>Change (%)</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <details id="clock" open>
+    <summary>Compass <small id="clkLbl"></small></summary>
+    <div class="clkbody">
+      <div class="chips per" id="per2"><button data-p="day">Day</button><button data-p="week">Week</button><button data-p="month">Month</button><button data-p="year" class="on">Year</button></div>
+      <div class="sc" id="sc"></div>
+      <svg id="clk" viewBox="0 0 460 460" role="img" aria-label="Compass"></svg>
+      <div class="legend"><span class="up">● <b id="cUp">–</b> up</span><span class="down">● <b id="cDn">–</b> down</span></div>
+      <div class="cap">Sectors, most stocks up first · tap one to view it on the compass</div>
+      <div id="secsum"></div>
+    </div>
+  </details>
+  <div class="note" id="note"></div>
 </div>
+<div id="tip"></div>
+
 <script>
-const $=id=>document.getElementById(id);let N=0;const PK=['D','W','M','Y'],PN=['Day','Week','Month','Year'];
-let pi=0,sf=-1;
-const SEC=[['Health Care',0],['Financials',0],['Industrials',0],['Technology',0],['Consumer Discretionary',0],['Real Estate',0],['Energy',0],['Materials',0],['Communication',0],['Consumer Staples',0],['Utilities',0],['Broad index',0]];
-const SC=[1.5,3,6,15];
-const ST=[];
-const HY=[43.1,38.6,2,25,29.1,-7.3,31.1,5.7,-8.8,25,16.3,-19.5,46,18.4,18.9,-1.8,28.5,16.5,22.4,-2.5,21.3,-3,2.5,-20.5,47.3,18.3,4.6,18.4,-1.6,-33.8,27.2,26.9,-4.2,16.3,38.8,4.9,-4.4,21.3,14.6,-11,25.5,20,14.8,-20.4,16.9,11.5,12.8];
-const f2=v=>(v>0?'+':'')+v.toFixed(2)+'%',col=v=>v>=0?'var(--up)':'var(--dn)';
-const inS=s=>sf<0||s.s==sf,cnt=p=>{let u=0;ST.forEach(s=>inS(s)&&s.r[p]>0&&u++);return u},tot=()=>sf<0?N:SEC[sf][1];
+const ENDPOINT = "/api/dataviz/russell-compass/live", REFRESH_MS = 300000;
+let UNIVERSE = {}, stocks = [], DATA = null, YEAR = new Date().getFullYear();
+const PER = {
+  day:{lbl:"today",hdr:"Prev. close"},
+  week:{lbl:"over the past week",hdr:"1 week ago"},
+  month:{lbl:"over the past month",hdr:"1 month ago"},
+  year:{lbl:"since 1 January",hdr:"1 Jan price"}};
 
-// toggle + cards
-$('bar').innerHTML=PN.map((n,i)=>`<button data-i="${i}">${n}</button>`).join('');
-function cards(){const T=tot();$('cards').innerHTML=PN.map((n,i)=>{const u=cnt(i);return `<button class="c" data-i="${i}"><b>${n}</b><div class="n"><span class="u">▲ ${u}</span><span class="d">▼ ${T-u}</span></div><div class="sp"><i style="width:${u/T*100}%"></i></div></button>`}).join('');bind()}
-function bind(){document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{pi=+b.dataset.i;render()})}
-function chips(){$('chips').innerHTML=['All sectors',...SEC.map(s=>s[0])].map((n,i)=>`<button data-s="${i-1}" aria-pressed="${sf==i-1}">${n}</button>`).join('');document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{sf=+b.dataset.s;render()})}
+const $=id=>document.getElementById(id);
+const money=v=>"$"+v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const sgn=v=>v>0?"+":v<0?"−":"";
+let rows=[], view="all", period="year", isLive=false;
 
-// compass
-const cv=$('cv'),cx=cv.getContext('2d');let W=0,dpr=1,t0=0,raf=0;
-const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-function size(){W=Math.min($('cards').clientWidth,620);dpr=devicePixelRatio||1;cv.style.width=cv.style.height=W+'px';cv.width=cv.height=W*dpr;layout(false)}
-function layout(anim){const o=ST.filter(inS).sort((a,b)=>b.r[pi]-a.r[pi]),R0=W*.37,M=o.length;ST.forEach(s=>{s.tx=s.ty=W/2});o.forEach((s,i)=>{const r=R0*Math.sqrt((i+.5)/M),a=i*2.39996;s.tx=W/2+r*Math.cos(a);s.ty=W/2+r*Math.sin(a)});ST.forEach(s=>{s.x0=anim&&s.x!=null?s.x:s.tx;s.y0=anim&&s.y!=null?s.y:s.ty});t0=performance.now();cancelAnimationFrame(raf);tick()}
-function tick(){const p=Math.min(1,(performance.now()-t0)/(matchMedia('(prefers-reduced-motion:reduce)').matches?1:750)),e=1-Math.pow(1-p,3);ST.forEach(s=>{s.x=s.x0+(s.tx-s.x0)*e;s.y=s.y0+(s.ty-s.y0)*e});draw();if(p<1)raf=requestAnimationFrame(tick)}
-function draw(){const c=W/2,up=cnt(pi)/N,ring=cssv('--ring'),g=cssv('--up'),d=cssv('--dn'),br=cssv('--brass');cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,W);
-cx.lineCap='butt';cx.lineWidth=W*.016;const a0=-Math.PI/2;
-cx.strokeStyle=ring;cx.globalAlpha=.14;cx.beginPath();cx.arc(c,c,W*.445,0,6.2832);cx.stroke();cx.globalAlpha=1;
-cx.strokeStyle=g;cx.beginPath();cx.arc(c,c,W*.445,a0,a0+up*6.2832);cx.stroke();
-cx.strokeStyle=d;cx.beginPath();cx.arc(c,c,W*.445,a0+up*6.2832,a0+tot()/N*6.2832);cx.stroke();
-cx.strokeStyle=ring;cx.globalAlpha=.55;for(let i=0;i<72;i++){const a=i*Math.PI/36,l=i%18==0?.03:i%9==0?.022:.012;cx.lineWidth=i%9?1:2;cx.beginPath();cx.moveTo(c+Math.cos(a)*W*.488,c+Math.sin(a)*W*.488);cx.lineTo(c+Math.cos(a)*W*(.488-l),c+Math.sin(a)*W*(.488-l));cx.stroke()}cx.globalAlpha=1;
-cx.fillStyle=br;cx.font=`600 ${W*.022}px Unbounded,sans-serif`;cx.textAlign='center';cx.textBaseline='middle';for(let k=1;k<=8;k++){const a=a0+k*Math.PI/4;cx.fillText(Math.round(k*N/8),c+Math.cos(a)*W*.41,c+Math.sin(a)*W*.41)}
-const ja=a0+up*6.2832;cx.fillStyle=br;cx.beginPath();cx.arc(c+Math.cos(ja)*W*.445,c+Math.sin(ja)*W*.445,W*.014,0,6.2832);cx.fill();
-const rad=Math.min(W*.0052*Math.sqrt(2000/tot()),W*.02);ST.forEach(s=>{if(!inS(s))return;const v=s.r[pi],a=.4+.6*Math.min(Math.abs(v)/SC[pi],1);cx.globalAlpha=a;cx.fillStyle=v>=0?g:d;cx.beginPath();cx.arc(s.x,s.y,rad,0,6.2832);cx.fill();if(tot()<=40){cx.globalAlpha=.9;cx.fillStyle=cssv('--fg');cx.font=`600 ${Math.max(9,W*.017)}px 'IBM Plex Sans',sans-serif`;cx.textAlign='center';cx.textBaseline='top';cx.fillText(s.t,s.x,s.y+rad+2);}});cx.globalAlpha=1}
-function pick(e){const b=cv.getBoundingClientRect(),t=e.touches?e.touches[0]:e,x=t.clientX-b.left,y=t.clientY-b.top;let m=null,md=1e9;ST.forEach(s=>{if(!inS(s))return;const q=(s.tx-x)**2+(s.ty-y)**2;if(q<md){md=q;m=s}});if(m&&md<400)$('info').innerHTML=`<b>${m.t}</b> ${m.n} · ${SEC[m.s][0]} · <b style="color:${col(m.r[pi])}">${f2(m.r[pi])}</b>`}
-cv.addEventListener('mousemove',pick);cv.addEventListener('click',pick);cv.addEventListener('touchstart',pick,{passive:true});
+function build(d){
+  rows=stocks.filter(s=>d[s.sym]&&d[s.sym].base>0).map(s=>{
+    const {base,last}=d[s.sym]; return {...s,base,last,chg:last-base,pct:(last/base-1)*100};
+  }).sort((a,b)=>b.pct-a.pct).map((r,i)=>({...r,rank:i+1}));
+  if(!rows.length){$("badge").className="badge";$("badge").textContent="UNAVAILABLE";$("stamp").textContent="Prices are unavailable right now";return}
+  const up=rows.filter(r=>r.pct>0).length, med=rows[Math.floor(rows.length/2)];
+  $("sUp").textContent=up; $("sDn").textContent=rows.length-up;
+  $("sMed").textContent=sgn(med.pct)+Math.abs(med.pct).toFixed(1)+"%"; $("sMed").className=med.pct>=0?"up":"down";
+  $("sBest").textContent=`${rows[0].sym} ${sgn(rows[0].pct)}${Math.abs(rows[0].pct).toFixed(1)}%`;
+  const w=rows.at(-1); $("sWorst").textContent=`${w.sym} ${sgn(w.pct)}${Math.abs(w.pct).toFixed(1)}%`;
+  $("vAll").textContent="All "+rows.length;
+  $("badge").className="badge live"; $("badge").textContent="● LIVE";
+  $("stamp").textContent="Updated "+new Date(DATA.updated_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  $("plbl").textContent=period==="year"?PER.year.lbl+" "+YEAR:PER[period].lbl; $("hBase").textContent=PER[period].hdr;
+  $("note").textContent="Prices are about 15 minutes delayed. Latest session: "+DATA.as_of+". "+
+    (period==="year"?"Starting line is the last close of the previous year. ":
+     period==="day"?"Compared with the previous trading day's close. ":"Compared with the close one "+period+" ago. ")+
+    "Stocks are the holdings of iShares' Russell 2000 ETF (IWM), updated quarterly, so this tracks the index closely but is not the official FTSE Russell list. Rank is by % return; price-only, dividends excluded. Educational and historical information only, not financial advice.";
+  draw(); drawClock();
+}
+function draw(){
+  const q=$("q").value.trim().toUpperCase(), sc=$("sec").value;
+  let list=rows;
+  if(view==="top") list=rows.slice(0,25); else if(view==="bot") list=rows.slice(-25);
+  list=list.filter(r=>(!q||r.sym.includes(q))&&(!sc||r.sector===sc));
+  const max=Math.max(...rows.map(r=>Math.abs(r.pct)),1);
+  $("tb").innerHTML=list.map(r=>{
+    const c=r.pct>=0?"up":"down", col=r.pct>=0?"#3ddc97":"#ff6b6b", bw=Math.min(100,Math.abs(r.pct)/max*100);
+    return `<tr class="${r.rank<=3?"r"+r.rank:""}"><td class="rk">${r.rank}</td><td class="tk">${r.sym}</td><td class="sec hm">${r.sector}</td>
+      <td class="hm">${money(r.base)}</td><td>${money(r.last)}</td>
+      <td class="${c}">${sgn(r.chg)}${money(Math.abs(r.chg))}</td>
+      <td class="pc ${c}"><i style="width:${bw}%;background:${col}"></i><span>${sgn(r.pct)}${Math.abs(r.pct).toFixed(2)}%</span></td></tr>`;
+  }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--mute);padding:24px">No matches</td></tr>`;
+}
+const SC={"Technology":"#4da3ff","Communication":"#8e7dff","Cons. Discretionary":"#ff9f43","Financials":"#f1d84b","Health Care":"#ff6fb5","Cons. Staples":"#26c6da","Energy":"#c08a5b","Industrials":"#9aa7b8","Utilities":"#5c6bc0","Real Estate":"#d05ce3","Materials":"#d4c4a8"};
+let curSec="", cur=[];
+function drawClock(){
+  cur=curSec?rows.filter(r=>r.sector===curSec):rows;
+  if(!cur.length) return;
+  const col=curSec?SC[curSec]:"#d4a84b", N=cur.length, up=cur.filter(r=>r.pct>0).length, dn=N-up, cx=230, cy=230, R=165, r0=50;
+  const rad=a=>a*Math.PI/180, P=(r,a)=>[(cx-r*Math.sin(rad(a))).toFixed(2),(cy-r*Math.cos(rad(a))).toFixed(2)];
+  let s="";
+  cur.forEach((r,i)=>{const a0=i/N*360,a1=(i+1)/N*360,A=P(r0,a0),B=P(R,a0),C=P(R,a1),D=P(r0,a1);
+    s+=`<path data-i="${i}" fill="${r.pct>0?"#2ecc71":"#ff5a5a"}" d="M${A} L${B} A${R} ${R} 0 0 0 ${C} L${D} A${r0} ${r0} 0 0 1 ${A}Z"/>`});
+  if(curSec) s+=`<circle cx="${cx}" cy="${cy}" r="${R+1}" fill="none" stroke="${col}" stroke-width="3"/>`;
+  const M=N>200?50:N>100?20:N>40?10:5, m=M>=10?M/5:1, last=Math.floor((N-1)/M)*M;
+  for(let v=0;v<N;v+=m){
+    const a=v/N*360, major=v%M===0, p1=P(R+4,a), p2=P(R+(major?13:8),a);
+    s+=`<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" stroke="#8da2b8" stroke-width="${major?1.5:.8}"/>`;
+    if(major){const t=P(R+27,a), flip=v===last&&a>340, anc=v===0?"end":(flip?"start":"middle");
+      s+=`<text class="lb" x="${t[0]}" y="${t[1]}" text-anchor="${anc}" dominant-baseline="middle" dx="${v===0?-3:flip?3:0}">${v}</text>`}
+  }
+  const h=P(R+3,up/N*360), h0=P(r0,up/N*360);
+  s+=`<line x1="${h0[0]}" y1="${h0[1]}" x2="${h[0]}" y2="${h[1]}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="${r0-3}" fill="#0b1b2e" stroke="${col}" stroke-width="2"/>
+      <text x="${cx}" y="${cy-3}" text-anchor="middle" dominant-baseline="middle" fill="#e8eef5" font-size="19" font-weight="800">${Math.round(up/N*100)}%</text>
+      <text x="${cx}" y="${cy+15}" text-anchor="middle" fill="#8da2b8" font-size="10">UP</text>`;
+  if(up) {const q=P(112,up/N*180); s+=`<text class="arc" x="${q[0]}" y="${q[1]}" text-anchor="middle" dominant-baseline="middle" font-size="26">${up}</text>`}
+  if(dn) {const q=P(112,(up+dn/2)/N*360); s+=`<text class="arc" x="${q[0]}" y="${q[1]}" text-anchor="middle" dominant-baseline="middle" font-size="26">${dn}</text>`}
+  $("clk").innerHTML=s; $("cUp").textContent=up; $("cDn").textContent=dn;
+  $("clkLbl").textContent=(curSec||"All sectors")+" · "+PER[period].lbl+" · "+N+" stocks";
+  const sm=Object.keys(UNIVERSE).map(k=>{const l=rows.filter(r=>r.sector===k);return{k,n:l.length,u:l.filter(r=>r.pct>0).length,avg:l.reduce((a,r)=>a+r.pct,0)/(l.length||1)}})
+    .filter(x=>x.n).sort((a,b)=>b.u/b.n-a.u/a.n);
+  $("secsum").innerHTML=sm.map(x=>`<div class="sr${x.k===curSec?" on":""}" data-s="${x.k}" style="--c:${SC[x.k]}"><span class="nm"><i></i>${x.k}</span><span class="bar"><b style="width:${x.u/x.n*100}%"></b></span><span class="ct"><em class="up">${x.u}</em> / <em class="down">${x.n-x.u}</em></span><span class="av ${x.avg>=0?"up":"down"}">${sgn(x.avg)}${Math.abs(x.avg).toFixed(1)}%</span></div>`).join("");
+}
+function buildSC(){$("sc").innerHTML=["",...Object.keys(UNIVERSE)].map(k=>`<button data-s="${k}" style="--c:${k?SC[k]:"#d4a84b"}" class="${k===curSec?"on":""}">${k||"All"}</button>`).join("")}
+function pickSec(k){curSec=k; buildSC(); drawClock()}
+$("sc").onclick=e=>{const b=e.target.closest("button"); if(b) pickSec(b.dataset.s)};
+$("secsum").onclick=e=>{const r=e.target.closest(".sr"); if(r) pickSec(r.dataset.s===curSec?"":r.dataset.s)};
+const tip=$("tip");
+function showTip(e){const p=e.target.closest("path"); if(!p){tip.style.display="none";return}
+  const i=+p.dataset.i, r=cur[i]; tip.innerHTML=`<b>#${i+1} ${r.sym}</b> <span style="color:#8da2b8">${r.sector}</span><br><span class="${r.pct>=0?"up":"down"}">${sgn(r.pct)}${Math.abs(r.pct).toFixed(2)}%</span>`;
+  tip.style.display="block"; tip.style.left=Math.min(e.clientX+14,innerWidth-140)+"px"; tip.style.top=(e.clientY+14)+"px"}
+$("clk").addEventListener("mousemove",showTip); $("clk").addEventListener("click",showTip); $("clk").addEventListener("mouseleave",()=>tip.style.display="none");
+$("q").oninput=draw; $("sec").onchange=draw;
+$("view").onclick=e=>{const b=e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#view button").forEach(x=>x.classList.toggle("on",x===b)); view=b.dataset.v; draw(); $("scroll").scrollTop=0};
+document.querySelectorAll(".per").forEach(g=>g.onclick=e=>{const b=e.target.closest("button"); if(!b||!DATA) return;
+  document.querySelectorAll(".per button").forEach(x=>x.classList.toggle("on",x.dataset.p===b.dataset.p)); period=b.dataset.p; build(DATA.periods[period]);
+  if(g.id==="per") $("scroll").scrollTop=0});
+async function load(){
+  try{
+    const r=await fetch(ENDPOINT); if(!r.ok) throw 0;
+    DATA=await r.json(); YEAR=DATA.year; UNIVERSE=DATA.universe;
+    stocks=[]; Object.entries(UNIVERSE).forEach(([sector,l])=>l.forEach(sym=>stocks.push({sym,sector})));
+    if($("sec").options.length<2) Object.keys(UNIVERSE).forEach(k=>$("sec").insertAdjacentHTML("beforeend",`<option>${k}</option>`));
+    buildSC(); build(DATA.periods[period]);
+  }catch(e){ if(!DATA){$("badge").className="badge";$("badge").textContent="UNAVAILABLE";$("stamp").textContent="Prices are unavailable right now"} }
+}
+load(); setInterval(load,REFRESH_MS);
 
-// pie
-function arc(a0,a1,ro,ri){const P=(a,r)=>[(100+r*Math.cos(a)).toFixed(2),(100+r*Math.sin(a)).toFixed(2)],l=a1-a0>Math.PI?1:0,p1=P(a0,ro),p2=P(a1,ro),p3=P(a1,ri),p4=P(a0,ri);return `M${p1}A${ro} ${ro} 0 ${l} 1 ${p2}L${p3}A${ri} ${ri} 0 ${l} 0 ${p4}Z`}
-function shade(v){const m=Math.min(Math.abs(v)/(SC[pi]*.5),1);return (v>=0?'rgba(46,229,154,':'rgba(255,77,98,')+(.35+.65*m).toFixed(2)+')'}
-function pie(){const LB=[],SHORT=['Health Care','Financials','Industrials','Technology','Cons. Disc.','Real Estate','Energy','Materials','Comms','Staples','Utilities','Broad'];let a=-Math.PI/2,h='',l='<i></i><span class="h">Sector</span><span class="h">ETFs</span><span class="h">Share</span><span class="h">'+PN[pi]+'</span>';
-SEC.forEach((s,si)=>{const m=ST.filter(x=>x.s==si),av=m.reduce((t,x)=>t+x.r[pi],0)/m.length,sh=s[1]/N,b=a+sh*6.2832,mid=(a+b)/2;
-h+=`<path data-p="${si}" opacity="${sf<0||sf==si?1:.25}" style="cursor:pointer" d="${arc(a,b-.012,66,26)}" fill="${shade(av)}" stroke="${cssv('--bg')}" stroke-width=".8"><title>${s[0]}</title></path>`;
-LB.push({m:mid,t:SHORT[si]+' '+(sh*100).toFixed(1)+'%'});
-l+=`<div class="sw" style="background:${shade(av)}"></div><span>${s[0]}</span><span>${s[1]}</span><span>${(sh*100).toFixed(1)}%</span><b style="color:${col(av)}">${f2(av)}</b>`;a=b});
-[1,-1].forEach(sd=>{let p=-99;LB.filter(o=>Math.cos(o.m)*sd>=0).sort((u,v)=>Math.sin(u.m)-Math.sin(v.m)).forEach(o=>{let y=Math.max(100+74*Math.sin(o.m),p+10);p=y;const x=100+74*Math.cos(o.m);h+=`<line x1="${100+66*Math.cos(o.m)}" y1="${100+66*Math.sin(o.m)}" x2="${x}" y2="${y}" stroke="${cssv('--mut')}" stroke-width=".5"/><text x="${x+sd*3}" y="${y+3}" text-anchor="${sd>0?'start':'end'}" font-size="8" font-weight="600" fill="${cssv('--fg')}">${o.t}</text>`})});
-$('pie').innerHTML=h+`<text x="100" y="98" text-anchor="middle" font-size="9" font-weight="600" fill="${cssv('--fg')}">${N}</text><text x="100" y="108" text-anchor="middle" font-size="5.5" fill="${cssv('--mut')}">ETFs</text>`;$('lg').innerHTML=l;document.querySelectorAll('[data-p]').forEach(p=>p.onclick=()=>{sf=sf==+p.dataset.p?-1:+p.dataset.p;render()})}
-// history
-function hist(){const n=HY.length,bw=16,gp=6,top=24,sc=4,mxv=Math.max(...HY),mnv=Math.min(...HY),z=top+mxv*sc,H=Math.ceil(z-mnv*sc+14+44),Wd=n*(bw+gp)+36;let h=`<line x1="0" x2="${Wd}" y1="${z}" y2="${z}" stroke="${cssv('--line')}"/>`;
-HY.forEach((v,i)=>{const x=24+i*(bw+gp),ht=Math.abs(v)*sc,y=v>=0?z-ht:z;h+=`<rect x="${x}" y="${y}" width="${bw}" height="${ht}" rx="2" fill="${v>=0?cssv('--up'):cssv('--dn')}"/><text class="v" x="${x+bw/2}" y="${v>=0?y-4:y+ht+10}" text-anchor="middle">${Math.round(v)}</text><text transform="translate(${x+bw/2+3},${H-6}) rotate(-90)" text-anchor="start">${1979+i}</text>`});
-$('hist').setAttribute('viewBox',`0 0 ${Wd} ${H}`);$('hist').setAttribute('width',Wd);$('hist').setAttribute('height',H);$('hist').innerHTML=h;
-const up=HY.filter(v=>v>0).length,bi=HY.indexOf(Math.max(...HY)),wi=HY.indexOf(Math.min(...HY));$('hnote').innerHTML=`${up} up years, ${n-up} down years. Best: ${1979+bi} (${HY[bi]}%). Worst: ${1979+wi} (${HY[wi]}%). Scroll sideways for the full run.`}
-
-function render(){chips();cards();document.querySelectorAll('[data-i]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.i==pi));const u=cnt(pi),T=tot(),s=ST.filter(inS).sort((a,b)=>b.r[pi]-a.r[pi]);
-$('big').innerHTML=`<span class="u">${u.toLocaleString()} up</span> · <span class="d">${(T-u).toLocaleString()} down</span>`;$('mvnote').textContent=PN[pi]+' movers across '+(sf<0?'all '+N+' small-cap ETFs.':T+' '+SEC[sf][0]+' ETFs.');
-const k=Math.min(10,s.length>>1),g=s.slice(0,k),lo=s.slice(-k).reverse(),tt=x=>`${x.n} · ${SEC[x.s][0]}`;$('mv').innerHTML='<tr><th></th><th class="g">Gainers</th><th></th><th class="l">Losers</th><th></th></tr>'+g.map((x,i)=>{const y=lo[i];return `<tr><td class="k">${i+1}</td><td title="${tt(x)}"><b>${x.t}</b><small>${x.n}</small></td><td class="r" style="color:${col(x.r[pi])}">${f2(x.r[pi])}</td><td title="${tt(y)}"><b>${y.t}</b><small>${y.n}</small></td><td class="r" style="color:${col(y.r[pi])}">${f2(y.r[pi])}</td></tr>`}).join('');pie();layout(true)}
-function redraw(){draw();pie();hist()}
-function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"russell-compass"},location.origin)}
-addEventListener('resize',size);matchMedia('(prefers-color-scheme:dark)').addEventListener('change',redraw);
-new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-fetch('/api/dataviz/russell-compass/live').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
-  j.items.forEach(x=>{ST.push({n:x.n,t:x.t,s:x.s,r:x.r});SEC[x.s][1]++});N=ST.length;
-  const t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  $('proxy').innerHTML='<b>Live proxy, not the index itself.</b> The Russell 2000\'s own constituent list isn\'t freely available, so each dot here is a small-cap ETF: the index funds IWM, IWN, IWO, IJR and VB, plus sector and industry funds that hold small companies. '+N+' funds, so the ring and counts show how many of these funds are up, not how many Russell 2000 companies.';
-  $('foot').textContent='Live ETF prices from Yahoo Finance (about 15 minutes delayed). Latest session: '+j.as_of+', refreshed '+t+'. Day, week and month are price changes; Year is year to date. Sector and industry ETFs overlap with each other and are not the Russell 2000 itself. The yearly bars below are approximate total returns for the Russell 2000 index. Educational and historical only, not advice.';
-  size();hist();render();
-}).catch(()=>{$('proxy').innerHTML='<b>Live prices are unavailable right now.</b> Try again shortly.';$('foot').textContent='Educational and historical only, not advice.';hist()});
-new ResizeObserver(postHeight).observe(document.body);postHeight();
-</script></body></html>
+// Tell the host page how tall to make the iframe.
+function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"russell-compass"},location.origin);}
+try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}
+</script>
+</body>
+</html>
