@@ -66,7 +66,24 @@
   var TOOL_MENU_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
     return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
       '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
-  }).join('') + '<li><a href="/tools/data-visualisation">Data Visualisation</a></li>';
+  }).join('');
+
+  // Data Viz menu: its own top-level dropdown between Tools and Arena.
+  var DATAVIZ_PAGES = [
+    ['All visualisations', '/tools/data-visualisation'],
+    ['Global Heat Map', '/tools/data-visualisation/global-heat-map'],
+    ['GCG Market Orbs', '/tools/data-visualisation/market-orbs'],
+    ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'],
+    ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard'],
+    ['Winners League', '/tools/data-visualisation/winners-league'],
+    ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter'],
+    ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
+    ['GCG League and Compass', '/tools/data-visualisation/league-compass'],
+    ['GCG Barrel Map', '/tools/data-visualisation/barrel-map'],
+    ['GCG FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
+    ['GCG Russell 2000 Compass', '/tools/data-visualisation/russell-compass']
+  ];
+  var DATAVIZ_MENU_HTML = DATAVIZ_PAGES.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('');
 
   var NAV_HTML = '' +
 '<nav>' +
@@ -91,6 +108,12 @@
 '      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 TOOL_MENU_HTML +
+'      </ul>' +
+'    </li>' +
+'    <li class="has-dropdown">' +
+'      <a href="/tools/data-visualisation">Data Viz <span class="nav-chevron">▾</span></a>' +
+'      <ul class="nav-dropdown">' +
+DATAVIZ_MENU_HTML +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
