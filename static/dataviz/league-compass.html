@@ -24,7 +24,7 @@ header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:s
 .chips{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
 .chips button{background:none;border:0;color:var(--mute);padding:6px 12px;border-radius:7px;font-size:.8rem;cursor:pointer;font-weight:600}
 .chips button.on{background:var(--teal);color:#06231f}
-#scroll{max-height:72vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);position:relative}
+#scroll{max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);position:relative}
 table{width:100%;border-collapse:collapse;font-size:.85rem;font-variant-numeric:tabular-nums}
 th{position:sticky;top:0;background:#0d2038;color:var(--mute);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:10px 10px;z-index:2;white-space:nowrap}
 td{padding:7px 10px;text-align:right;border-top:1px solid #16314f;white-space:nowrap}
@@ -70,6 +70,7 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
 #tip{position:fixed;pointer-events:none;background:#06111f;border:1px solid var(--gold);border-radius:8px;padding:8px 11px;font-size:.8rem;display:none;z-index:9}
 .note{margin-top:8px;color:var(--mute);font-size:.7rem;line-height:1.4}
 @media(max-width:640px){.hm{display:none}th,td{padding:7px 6px}.pc{min-width:90px}}
+@media(max-width:640px){#scroll th:nth-child(6),#scroll td:nth-child(6){display:none}}
 .hctl{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}
 .hctl .chips{margin:0}
 #hbars{width:100%;display:block;margin:6px 0 4px}
@@ -93,7 +94,10 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
     <div class="stat"><small>Best</small><b class="up" id="sBest">–</b></div>
     <div class="stat"><small>Worst</small><b class="down" id="sWorst">–</b></div>
   </div>
-  <div class="ctl">
+  <details id="listbox">
+    <summary>Stock list <small id="listLbl">best to worst · tap to expand</small></summary>
+    <div class="clkbody" style="text-align:left">
+      <div class="ctl">
     <input id="q" type="search" placeholder="Search ticker…">
     <select id="sec"><option value="">All sectors</option></select>
     <div class="chips" id="view"><button data-v="all" class="on" id="vAll">All stocks</button><button data-v="top">Top 25</button><button data-v="bot">Bottom 25</button></div>
@@ -104,6 +108,8 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
       <tbody id="tb"></tbody>
     </table>
   </div>
+    </div>
+  </details>
   <details id="clock" open>
     <summary>Compass <small id="clkLbl"></small></summary>
     <div class="clkbody">
@@ -156,7 +162,7 @@ function build(d){
   $("sMed").textContent=sgn(med.pct)+Math.abs(med.pct).toFixed(1)+"%"; $("sMed").className=med.pct>=0?"up":"down";
   $("sBest").textContent=`${rows[0].sym} ${sgn(rows[0].pct)}${Math.abs(rows[0].pct).toFixed(1)}%`;
   const w=rows.at(-1); $("sWorst").textContent=`${w.sym} ${sgn(w.pct)}${Math.abs(w.pct).toFixed(1)}%`;
-  $("vAll").textContent="All "+rows.length;
+  $("vAll").textContent="All "+rows.length; $("listLbl").textContent=rows.length+" stocks, best to worst · tap to expand";
   $("badge").className="badge live"; $("badge").textContent="● LIVE";
   $("stamp").textContent="Updated "+new Date(DATA.updated_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
   $("plbl").textContent=period==="year"?PER.year.lbl+" "+YEAR:PER[period].lbl; $("hBase").textContent=PER[period].hdr;
