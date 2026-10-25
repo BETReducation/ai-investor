@@ -36,26 +36,26 @@
   // out until it has some. Page entry: [label, url, description, tag].
   var DV = '/tools/';
   var TOOL_CATEGORIES = [
-    { name: 'Analysis tools', rgb: '59,130,246', blurb: 'Find setups, test them against history and review charts.', pages: [
+    { name: 'Analysis', rgb: '59,130,246', blurb: 'Find setups, test them against history and review charts.', pages: [
       ['Signals', '/tools/signals', 'Configure multi-indicator signals across 30+ technical studies. Filter, score and surface only the setups that match your criteria.', 'Analysis'],
       ['Backtester', '/backtester', 'Run any strategy against years of real market data. Inspect P&L curves, max drawdown, Sharpe ratio and more.', 'Backtest'],
       ['AI Chart Analysis', '/tools/ai-chart-analysis', 'A live chart with ready-made AI prompts for an indicator scan, market information and chart-pattern review. Pro and Founder.', 'Pro & Founder']
     ] },
-    { name: 'Crypto tools', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
+    { name: 'Crypto', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
       ['Crypto Unit Calculator', DV + 'crypto-unit-calculator', 'See how a coin divides into its smallest units, from satoshi to whole coins, with live prices.', 'Live data'],
       ['Crypto Portfolio Donut', DV + 'crypto-portfolio-donut', 'Enter the coins you hold from the top 50 by market cap and see your portfolio as a donut, valued in pounds, dollars, euros or bitcoin.', 'Live data']
     ] },
-    { name: 'Metals tools', rgb: '212,160,23', blurb: 'Precious and industrial metals, priced and compared.', pages: [
+    { name: 'Metals', rgb: '212,160,23', blurb: 'Precious and industrial metals, priced and compared.', pages: [
       ['Metal Calculator', DV + 'metal-calculator', 'Convert troy ounces and grams of gold, silver, platinum, palladium and copper into dollars, pounds, euros and bitcoin.', 'Live data']
     ] },
-    { name: 'Stocks tools', rgb: '0,212,170', blurb: 'Dividends and income from listed companies.', pages: [
+    { name: 'Stocks', rgb: '0,212,170', blurb: 'Dividends and income from listed companies.', pages: [
       ['Dividend Calculator', DV + 'dividend-calculator', 'Enter a ticker and a share count to see a year of dividend income and where the yield sits on a thermometer.', 'Live data'],
-      ['GCG Stock Donut', DV + 'stock-donut', 'Add the shares you own and see your portfolio as a donut, split by stock or sector, with a diversification score.', 'Interactive']
+      ['Stock Donut', DV + 'stock-donut', 'Add the shares you own and see your portfolio as a donut, split by stock or sector, with a diversification score.', 'Interactive']
     ] },
-    { name: 'Forex tools', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [
+    { name: 'Forex', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [
       ['Currency Calculator', DV + 'currency-calculator', 'Convert between 40+ currencies and Bitcoin, with each currency\'s history, inflation and economy snapshot.', 'Live data']
     ] },
-    { name: 'Other tools', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
+    { name: 'Other', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
       ['Freedom Clock', DV + 'freedom-clock', 'Pick what you invest, how often and the return you assume, then watch compounding play out over time.', 'Interactive'],
       ['Price &amp; Value Tracker', DV + 'price-value-tracker', 'Log every purchase and sale like a spreadsheet, then see average buy price, current value and gain or loss for each holding.', 'Tracker'],
       ['Portfolio Manager', '/tools/portfolio', 'Add every investment you hold, then track its value, top-ups and gain/loss over time in one place.', 'Tracker'],
@@ -73,7 +73,7 @@
   var DATAVIZ_CATEGORIES = [
     { name: 'Analysis', pages: [
       ['Global Heat Map', '/tools/data-visualisation/global-heat-map'],
-      ['GCG Market Orbs', '/tools/data-visualisation/market-orbs'],
+      ['Market Orbs', '/tools/data-visualisation/market-orbs'],
       ['Winners League', '/tools/data-visualisation/winners-league'],
       ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter']
     ] },
@@ -85,13 +85,13 @@
     ] },
     { name: 'Stocks', pages: [
       ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
-      ['GCG FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
-      ['GCG Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
-      ['GCG League and Compass', '/tools/data-visualisation/league-compass'],
-      ['GCG Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
+      ['FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
+      ['Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
+      ['League and Compass', '/tools/data-visualisation/league-compass'],
+      ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
     ] },
     { name: 'Other', pages: [
-      ['GCG Barrel Map', '/tools/data-visualisation/barrel-map']
+      ['Barrel Map', '/tools/data-visualisation/barrel-map']
     ] }
   ];
   var DATAVIZ_MENU_HTML = '<li><a href="/tools/data-visualisation">All visualisations</a></li>' + DATAVIZ_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {

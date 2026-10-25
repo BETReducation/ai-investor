@@ -505,7 +505,7 @@ def _ensure_table() -> None:
         # seed insert so its ON CONFLICT DO NOTHING no-ops afterwards.
         cur.execute("UPDATE dataviz_content SET page = 'market-orbs' WHERE page = 'tide-pools'")
         cur.execute("UPDATE dataviz_pages SET slug = 'market-orbs', "
-                    "label = CASE WHEN label IN ('Tide Pools', 'GCG Tide Pools') THEN 'GCG Market Orbs' ELSE label END "
+                    "label = CASE WHEN label IN ('Tide Pools', 'GCG Tide Pools') THEN 'Market Orbs' ELSE label END "
                     "WHERE slug = 'tide-pools' AND NOT EXISTS (SELECT 1 FROM dataviz_pages WHERE slug = 'market-orbs')")
         # viz-1/viz-2/viz-3 were placeholder pages seeded before pages became
         # self-service — never given content, so they sat on the public hub
@@ -520,10 +520,10 @@ def _ensure_table() -> None:
         # above it.
         for slug, label in (("global-heat-map", "Global Heat Map"),
                              ("gold-silver-ratio", "Gold to Silver Ratio"),
-                             ("market-orbs", "GCG Market Orbs"),
+                             ("market-orbs", "Market Orbs"),
                              ("crypto-unit-calculator", "Crypto Unit Calculator"),
                              ("crypto-portfolio-donut", "Crypto Portfolio Donut"),
-                             ("stock-donut", "GCG Stock Donut"),
+                             ("stock-donut", "Stock Donut"),
                              ("dividend-calculator", "Dividend Calculator"),
                              ("freedom-clock", "The Freedom Clock"),
                              ("price-value-tracker", "Price & Value Tracker"),
@@ -535,10 +535,10 @@ def _ensure_table() -> None:
             cur.execute("INSERT INTO dataviz_pages (slug, label) VALUES (%s, %s) ON CONFLICT (slug) DO NOTHING", (slug, label))
         # Seeded as a tool from the start so it never shows in the visualisation hub.
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('currency-calculator', 'Currency Calculator', 'tool') ON CONFLICT (slug) DO NOTHING")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'GCG League and Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'GCG Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'GCG Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'GCG Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'League and Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
         # NOTHING above wouldn't touch it) — these UPDATEs are what actually make
@@ -561,9 +561,11 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'league-compass'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'barrel-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'etf-tracker'")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'GCG FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
+        # Drop the "GCG " prefix from page labels (2026-10-25); only touches labels still at the old default.
+        cur.execute("UPDATE dataviz_pages SET label = substr(label, 5) WHERE label LIKE 'GCG %' AND slug IN ('market-orbs', 'stock-donut', 'league-compass', 'barrel-map', 'etf-tracker', 'ftse-wagon-wheel', 'russell-compass')")
         for slug, desc in _SEED_DATAVIZ_DESCRIPTIONS.items():
             cur.execute("UPDATE dataviz_pages SET description = %s WHERE slug = %s AND (description IS NULL OR description = '')", (desc, slug))
         # Classify the seeded pages once, when the column is first added; after that the
@@ -1554,10 +1556,10 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
 _SEED_DATAVIZ_PAGES = [
     {"slug": "global-heat-map", "label": "Global Heat Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "gold-silver-ratio", "label": "Gold to Silver Ratio", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "market-orbs", "label": "GCG Market Orbs", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "market-orbs", "label": "Market Orbs", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "crypto-unit-calculator", "label": "Crypto Unit Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "crypto-portfolio-donut", "label": "Crypto Portfolio Donut", "author": None, "has_live_widget": True, "kind": "tool"},
-    {"slug": "stock-donut", "label": "GCG Stock Donut", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "stock-donut", "label": "Stock Donut", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "dividend-calculator", "label": "Dividend Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "freedom-clock", "label": "The Freedom Clock", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "price-value-tracker", "label": "Price & Value Tracker", "author": None, "has_live_widget": True, "kind": "tool"},
@@ -1566,11 +1568,11 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "winners-league", "label": "Winners League", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bull-bear-meter", "label": "Bull vs Bear Meter", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "nasdaq-wagon-wheel", "label": "NASDAQ Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "league-compass", "label": "GCG League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "barrel-map", "label": "GCG Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "etf-tracker", "label": "GCG Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "ftse-wagon-wheel", "label": "GCG FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "russell-compass", "label": "GCG Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "league-compass", "label": "League and Compass", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "barrel-map", "label": "Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
 ]
 
@@ -6161,16 +6163,130 @@ def api_nasdaq_wheel_live():
     return jsonify(data)
 
 
+# FTSE 100 Wagon Wheel: day/week/month/year % moves for the wheel's stocks plus the index's recent
+# closes, 52-week range and year-to-date base, from one Yahoo download. Cached briefly.
+_FTSE_WHEEL_TTL_SECONDS = 300
+_ftse_cache: dict = {"at": 0.0, "data": None}
+_ftse_lock = threading.Lock()
+_FTSE_YAHOO_ALIAS = {"BDEV": "BTRW.L"}  # Barratt Redrow trades under a new ticker
+
+
+def _period_moves(c) -> dict:
+    """% change over day/week/month/year-to-date from a daily close series."""
+    last = float(c.iloc[-1])
+    bases = {"d": float(c.iloc[-2])}
+    for k, days in (("w", 7), ("m", 30)):
+        prior = c[c.index <= c.index[-1] - _dt.timedelta(days=days)]
+        if len(prior):
+            bases[k] = float(prior.iloc[-1])
+    prior = c[c.index.year < c.index[-1].year]
+    if len(prior):
+        bases["y"] = float(prior.iloc[-1])
+    return {k: round((last / b - 1) * 100, 2) for k, b in bases.items() if b > 0}
+
+
+@app.route("/api/dataviz/ftse-wheel/live", methods=["GET"])
+def api_ftse_wheel_live():
+    syms = [x for x in (request.args.get("symbols") or "").split(",") if re.fullmatch(r"[A-Z0-9]{1,5}(\.[A-Z])?\.?", x)][:120]
+    if not syms:
+        return jsonify({"error": "symbols required"}), 400
+    key = ",".join(sorted(syms))
+    with _ftse_lock:
+        hit = _ftse_cache.get(key)
+        if hit and time.monotonic() - hit[0] < _FTSE_WHEEL_TTL_SECONDS:
+            return jsonify(hit[1])
+    ysym = {x: _FTSE_YAHOO_ALIAS.get(x) or x.rstrip(".").replace(".", "-") + ".L" for x in syms}
+    try:
+        raw = yf.download(tickers=list(ysym.values()) + ["^FTSE"], period="1y", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    moves = {}
+    for x, y in ysym.items():
+        try:
+            c = raw[y]["Close"].dropna()
+            if len(c) < 2 or (raw.index[-1] - c.index[-1]).days > 5:
+                continue
+            moves[x] = _period_moves(c)
+        except Exception:
+            continue
+    index = None
+    try:
+        ic = raw["^FTSE"]["Close"].dropna()
+        mv = _period_moves(ic)
+        index = {"closes": [round(float(v), 2) for v in ic.iloc[-16:]], "last_date": ic.index[-1].date().isoformat(),
+                 "low": round(float(ic.min()), 2), "high": round(float(ic.max()), 2), "ytd": mv.get("y")}
+    except Exception:
+        pass
+    if len(moves) < 30 or not index:
+        if hit:
+            return jsonify(hit[1])
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "moves": moves, "index": index}
+    with _ftse_lock:
+        _ftse_cache[key] = (time.monotonic(), data)
+    return jsonify(data)
+
+
+# GCG Global ETF Tracker: day/week/month/year-to-date % moves plus calendar-year price returns
+# (2018 on) for the page's ETFs, from one 10-year Yahoo daily download. Cached for ten minutes.
+_ETF_TTL_SECONDS = 600
+_etf_cache: dict = {}
+_etf_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/etf-tracker/live", methods=["GET"])
+def api_etf_tracker_live():
+    syms = [x for x in (request.args.get("symbols") or "").split(",") if re.fullmatch(r"[A-Z0-9.\-^]{1,14}", x)][:150]
+    if not syms:
+        return jsonify({"error": "symbols required"}), 400
+    key = ",".join(sorted(syms))
+    with _etf_lock:
+        hit = _etf_cache.get(key)
+        if hit and time.monotonic() - hit[0] < _ETF_TTL_SECONDS:
+            return jsonify(hit[1])
+    try:
+        raw = yf.download(tickers=syms, period="10y", interval="1d", group_by="ticker", threads=True,
+                          auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    this_year = _dt.date.today().year
+    out = {}
+    for x in syms:
+        try:
+            c = raw[x]["Close"].dropna()
+            if len(c) < 2 or (raw.index[-1] - c.index[-1]).days > 7:
+                continue
+            row = _period_moves(c)
+            years = {}
+            for y in range(2018, this_year):
+                cur, prev = c[c.index.year <= y], c[c.index.year <= y - 1]
+                if len(cur) and len(prev) and cur.index[-1].year == y and prev.index[-1].year == y - 1:
+                    years[y] = round((float(cur.iloc[-1]) / float(prev.iloc[-1]) - 1) * 100, 1)
+            row["h"] = years
+            out[x] = row
+        except Exception:
+            continue
+    if len(out) < 10:
+        if hit:
+            return jsonify(hit[1])
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "etfs": out}
+    with _etf_lock:
+        _etf_cache[key] = (time.monotonic(), data)
+    return jsonify(data)
+
+
 # GCG League and Compass: ranked price performance for ~500 large US stocks over day/week/month/year,
 # built from one Yahoo daily-bar download and cached, so every period switch is instant on the page.
 _LEAGUE_UNIVERSE = {
-    "Technology":"NVDA,AAPL,MSFT,AVGO,ORCL,PLTR,AMD,CSCO,IBM,CRM,NOW,INTU,ADBE,QCOM,TXN,AMAT,MU,LRCX,ANET,KLAC,PANW,APH,CRWD,ADI,INTC,DELL,CDNS,SNPS,MSI,FTNT,ADSK,WDAY,ROP,GLW,TEL,NXPI,DDOG,MPWR,FICO,MCHP,CTSH,HPQ,HPE,STX,TYL,KEYS,SMCI,WDC,IT,PTC,TDY,GDDY,JBL,VRSN,ON,NTAP,CDW,TER,FSLR,GEN,FFIV,TRMB,ZBRA,AKAM,EPAM,SWKS,ENPH,QRVO,TTD,PSTG,NET,SNOW",
-    "Communication":"GOOGL,GOOG,META,NFLX,DIS,TMUS,VZ,T,CMCSA,CHTR,EA,TTWO,WBD,LYV,FOXA,FOX,OMC,NWSA,NWS,PSKY,IPG,MTCH",
+    "Technology":"NVDA,AAPL,MSFT,AVGO,ORCL,PLTR,AMD,CSCO,IBM,CRM,NOW,INTU,ADBE,QCOM,TXN,AMAT,MU,LRCX,ANET,KLAC,PANW,APH,CRWD,ADI,INTC,DELL,CDNS,SNPS,MSI,FTNT,ADSK,WDAY,ROP,GLW,TEL,NXPI,DDOG,MPWR,FICO,MCHP,CTSH,HPQ,HPE,STX,TYL,KEYS,SMCI,WDC,IT,PTC,TDY,GDDY,JBL,VRSN,ON,NTAP,CDW,TER,FSLR,GEN,FFIV,TRMB,ZBRA,AKAM,EPAM,SWKS,ENPH,QRVO,TTD,NET,SNOW",
+    "Communication":"GOOGL,GOOG,META,NFLX,DIS,TMUS,VZ,T,CMCSA,CHTR,EA,TTWO,WBD,LYV,FOXA,FOX,OMC,NWSA,NWS,PSKY,MTCH",
     "Cons. Discretionary":"AMZN,TSLA,HD,MCD,BKNG,LOW,TJX,SBUX,NKE,DASH,ORLY,CMG,MAR,ABNB,RCL,HLT,AZO,GM,ROST,F,DHI,YUM,EBAY,GRMN,LVS,CCL,LEN,TSCO,EXPE,LULU,PHM,ULTA,WSM,NVR,DRI,TPR,RL,GPC,BBY,APTV,DECK,POOL,NCLH,MGM,WYNN,HAS,LKQ,BWA,KMX,CZR",
-    "Financials":"BRK.B,JPM,V,MA,BAC,WFC,MS,GS,AXP,BX,BLK,SCHW,C,SPGI,PGR,COF,KKR,CB,MMC,ICE,CME,HOOD,MCO,AON,AJG,APO,FI,PNC,USB,BK,PYPL,COIN,TRV,TFC,AFL,MET,ALL,NDAQ,AMP,AIG,XYZ,MSCI,PRU,FIS,ACGL,HIG,WTW,STT,FITB,MTB,RJF,BRO,SYF,CINF,WRB,NTRS,HBAN,CPAY,CBOE,GPN,TROW,RF,CFG,KEY,PFG,L,EG,FDS,ERIE,BEN,JKHY,AIZ,GL,MKTX,IVZ",
-    "Health Care":"LLY,UNH,JNJ,ABBV,MRK,ABT,TMO,ISRG,AMGN,PFE,DHR,BSX,SYK,GILD,MDT,VRTX,BMY,HCA,MCK,CVS,CI,REGN,ELV,ZTS,COR,BDX,IDXX,EW,A,RMD,GEHC,CAH,IQV,DXCM,HUM,MTD,WAT,STE,LH,DGX,ZBH,BIIB,PODD,CNC,INCY,MOH,WST,HOLX,VTRS,ALGN,COO,BAX,SOLV,DVA,UHS,MRNA,TECH,RVTY,HSIC,CRL,TFX",
+    "Financials":"BRK.B,JPM,V,MA,BAC,WFC,MS,GS,AXP,BX,BLK,SCHW,C,SPGI,PGR,COF,KKR,CB,MRSH,ICE,CME,HOOD,MCO,AON,AJG,APO,FISV,PNC,USB,BNY,PYPL,COIN,TRV,TFC,AFL,MET,ALL,NDAQ,AMP,AIG,XYZ,MSCI,PRU,FIS,ACGL,HIG,WTW,STT,FITB,MTB,RJF,BRO,SYF,CINF,WRB,NTRS,HBAN,CPAY,CBOE,GPN,TROW,RF,CFG,KEY,PFG,L,EG,FDS,ERIE,BEN,JKHY,AIZ,GL,MKTX,IVZ",
+    "Health Care":"LLY,UNH,JNJ,ABBV,MRK,ABT,TMO,ISRG,AMGN,PFE,DHR,BSX,SYK,GILD,MDT,VRTX,BMY,HCA,MCK,CVS,CI,REGN,ELV,ZTS,COR,BDX,IDXX,EW,A,RMD,GEHC,CAH,IQV,DXCM,HUM,MTD,WAT,STE,LH,DGX,ZBH,BIIB,PODD,CNC,INCY,MOH,WST,VTRS,ALGN,COO,BAX,SOLV,DVA,UHS,MRNA,TECH,RVTY,HSIC,CRL,TFX",
     "Cons. Staples":"WMT,COST,PG,KO,PEP,PM,MO,MDLZ,CL,MNST,TGT,KMB,KDP,KR,SYY,HSY,KVUE,STZ,GIS,KHC,EL,ADM,CHD,MKC,TSN,DG,DLTR,CLX,HRL,BG,BF.B,CAG,SJM,TAP,CPB,LW",
-    "Energy":"XOM,CVX,COP,EOG,WMB,SLB,KMI,OKE,MPC,PSX,VLO,OXY,FANG,BKR,TRGP,EQT,TPL,EXE,DVN,CTRA,HAL,APA",
+    "Energy":"XOM,CVX,COP,EOG,WMB,SLB,KMI,OKE,MPC,PSX,VLO,OXY,FANG,BKR,TRGP,EQT,TPL,EXE,DVN,HAL,APA",
     "Industrials":"GE,CAT,RTX,GEV,HON,UNP,ETN,BA,ADP,DE,LMT,UPS,TT,WM,PH,MMM,TDG,GD,CTAS,NOC,ITW,EMR,HWM,JCI,CSX,PWR,FDX,NSC,CARR,PCAR,CMI,URI,LHX,RSG,AXON,FAST,PAYX,CPRT,AME,VRSK,ROK,DAL,OTIS,ODFL,IR,WAB,XYL,UAL,EFX,ROL,DOV,BR,FTV,LDOS,VLTO,HUBB,LII,SNA,J,PNR,LUV,EXPD,JBHT,TXT,BLDR,IEX,NDSN,MAS,CHRW,SWK,ALLE,PAYC,GNRC,AOS,AAL",
     "Utilities":"NEE,CEG,SO,DUK,VST,AEP,SRE,D,EXC,PEG,XEL,ETR,PCG,ED,WEC,NRG,DTE,AEE,PPL,AWK,ATO,ES,FE,CNP,CMS,NI,LNT,EVRG,PNW,AES",
     "Real Estate":"PLD,WELL,AMT,EQIX,SPG,DLR,PSA,O,CCI,CBRE,VICI,EXR,IRM,CSGP,VTR,AVB,EQR,SBAC,WY,INVH,ESS,MAA,KIM,UDR,REG,DOC,HST,CPT,BXP,ARE,FRT",
@@ -6221,26 +6337,39 @@ def _build_league() -> dict | None:
             "year": newest.year, "universe": {k: v.split(",") for k, v in _LEAGUE_UNIVERSE.items()}, "periods": periods}
 
 
+def _refresh_league() -> None:
+    with _league_build_lock:  # one slow download at a time
+        try:
+            data = _build_league()
+            if data:
+                with _league_lock:
+                    _league_cache.update(at=time.monotonic(), data=data)
+        except Exception:
+            pass
+
+
+def _kick_league_refresh() -> None:
+    if _league_build_lock.locked():
+        return
+    threading.Thread(target=_refresh_league, daemon=True).start()
+
+
+_kick_league_refresh()  # warm at startup so the first visitor doesn't wait on the ~40s download
+
+
 @app.route("/api/dataviz/league-compass/live", methods=["GET"])
 def api_league_compass_live():
-    def fresh():
-        return _league_cache["data"] and time.monotonic() - _league_cache["at"] < _LEAGUE_TTL_SECONDS
     with _league_lock:
-        if fresh():
-            return jsonify(_league_cache["data"])
-    with _league_build_lock:  # one slow download at a time; waiters reuse its result
-        with _league_lock:
-            if fresh():
-                return jsonify(_league_cache["data"])
-        data = _build_league()
-        with _league_lock:
-            if data:
-                _league_cache.update(at=time.monotonic(), data=data)
-            elif _league_cache["data"]:
-                return jsonify(_league_cache["data"])
-            else:
-                return jsonify({"error": "unavailable"}), 502
-    return jsonify(data)
+        data, age = _league_cache["data"], time.monotonic() - _league_cache["at"]
+    if data and age < _LEAGUE_TTL_SECONDS:
+        return jsonify(data)
+    if data:  # stale: answer instantly and refresh behind the scenes
+        _kick_league_refresh()
+        return jsonify(data)
+    _refresh_league()  # nothing cached yet (cold start): wait for the build
+    with _league_lock:
+        data = _league_cache["data"]
+    return jsonify(data) if data else (jsonify({"error": "unavailable"}), 502)
 
 
 # Where Bitcoin gets spent: merchant counts per country from BTC Map's public API (data

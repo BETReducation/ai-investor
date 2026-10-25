@@ -72,7 +72,7 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--grow);ma
         <select id="freq" aria-label="How often"><option value="1">every day</option><option value="7">every week</option><option value="30.4375" selected>every month</option><option value="365">every year</option></select></div>
 <input id="addR" type="range" min="0" max="5000" step="25" value="200" aria-label="Regular amount slider"></div>
       <div class="f"><label for="rate">Yearly return: <span id="rateL">7</span>%</label>
-        <input id="rate" type="range" min="0" max="100" step="0.1" value="7">
+        <input id="rate" type="range" min="0" max="1000" step="1" value="265" aria-label="Yearly return slider">
         <div class="hint" id="rateH">0% to 100% a year, compounded daily.</div></div>
       <div class="f"><label for="time">Time: <span id="timeL"></span></label>
         <input id="time" type="range" min="0" max="1000" step="1" value="776">
@@ -102,7 +102,8 @@ const PRESETS=[["1D",1],["1W",7],["1M",30.4375],["1Y",365.25],["5Y",5*365.25],["
 let days=0, pts=[], hover=null, exact=null;
 const sliderToDays=v=>Math.round(MIND*Math.pow(MAXD/MIND,v/1000));
 const daysToSlider=d=>Math.round(1000*Math.log(d/MIND)/Math.log(MAXD/MIND));
-const num=id=>Math.max(0,parseFloat($(id).value)||0);
+// The return slider is quadratic (0-1000 maps to 0-100%) so the low end, where most real returns sit, is finer to drag.
+const num=id=>{const v=Math.max(0,parseFloat($(id).value)||0);return id==="rate"?Math.round(v*v/1000)/10:v};
 function money(x){const c=$("cur").value;const a=Math.abs(x);
   if(a>=1e15)return c+(x/1e15).toFixed(2)+"qd";
   if(a>=1e12)return c+(x/1e12).toFixed(2)+"tn";

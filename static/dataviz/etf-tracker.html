@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-GB"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GCG Global ETF Tracker</title>
+<title>Global ETF Tracker</title>
 <script>
   // Follow the site's light/dark toggle (same origin as the host page).
   try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
@@ -41,9 +41,9 @@ details{margin-bottom:14px}summary{padding:14px 0;font-weight:700;cursor:pointer
 .lg b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .fn{font-size:11px;color:var(--mut);text-align:center;margin:10px 0 0}
 .ft{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.ft input,.ft select,.ft button{flex:1 1 120px;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font:inherit;font-size:14px}.ft input{flex:2 1 100%}.ft button{cursor:pointer}.ft button.on{background:var(--acc);color:#14213d;border-color:var(--acc);font-weight:700}.row.sel{background:var(--upb)}.fb{width:34px;flex:none;font-size:9px;font-weight:700;text-align:center;border-radius:4px;padding:1px 0}.fb.l{background:var(--upb);color:var(--up)}.fb.h{background:var(--dnb);color:var(--dn)}.cp{background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:13px}.cp table{width:100%;border-collapse:collapse}.cp td{padding:4px 0;border-bottom:1px solid var(--ln)}.cp td:first-child{color:var(--mut);width:34%}.cp .w{color:var(--up);font-weight:700}.hero{background:var(--card);border:1px solid var(--ln);border-radius:14px;overflow:hidden;margin-bottom:12px}.hero svg{display:block;width:100%;height:auto}.cap{padding:8px 14px;font-size:13px;color:var(--mut);border-top:1px solid var(--ln);min-height:38px}.pk{cursor:pointer}.lt{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lt .box{margin-bottom:8px;min-width:0}.lt .hd{padding:8px 10px;font-size:13px}.lt .row{padding:9px 8px;gap:6px}.lt .tk{flex:1;width:auto;font-size:14px}.lt .rk{width:16px}.lt .pc{font-size:13px}@media(max-width:520px){.lt .nm{display:none}.lt .fb{width:8px;height:8px;border-radius:50%;padding:0;font-size:0}}.gw{position:relative}#gcv{width:100%;height:300px;display:block;touch-action:none;cursor:grab;border-radius:12px;background:var(--card)}.gb{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:6px}.gb button{min-width:38px;padding:7px 6px;border-radius:9px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font-weight:700;font-size:11px;cursor:pointer}.gb button.on{background:var(--acc);color:#14213d;border-color:var(--acc)}.tip{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:560px;margin:auto;background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}.tip.on{opacity:1}.q{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:var(--ln);color:var(--mut);font-size:10px;font-style:normal;font-weight:700;cursor:pointer;margin-left:4px}.mood{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:8px 14px;margin-bottom:12px}.mood svg{width:150px;flex:none}.mt{font-size:13px;color:var(--mut)}.mt b:first-child{font-size:17px;color:var(--tx)}.wb{margin-top:10px;width:100%;padding:9px;border-radius:10px;border:1px solid var(--acc);background:none;color:var(--tx);font:inherit;font-weight:700;cursor:pointer}.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}.ov.on{display:flex}.ovb{max-height:100%;overflow:auto;text-align:center}.ovb img{max-width:100%;max-height:68vh;border-radius:12px}.ovr{display:flex;gap:8px;justify-content:center;margin:10px 0}.ovr button{padding:10px 18px;border-radius:10px;border:0;background:var(--acc);color:#14213d;font-weight:700}.ovm{color:#ddd;font-size:12px}.em{padding:14px;color:var(--mut);font-size:13px}</style></head><body>
-<h1>GCG <span>Global ETF Tracker</span></h1>
+<h1><span>Global ETF Tracker</span></h1>
 <p class="sub">Who’s climbing, who’s sinking. Tap any ETF for the full story. <span id="cnt"></span></p>
-<div class="note">Sample figures: performance numbers and yearly histories here are placeholders for design purposes. Connect live data and check fund facts before going live.</div>
+<div class="note" id="dnote">Loading live prices…</div>
 <div class="tg" id="tg"></div>
 <div class="mood" id="mood"></div><div class="tip" id="tip"></div><div class="ov" id="ov"></div>
 <div class="hero"><svg id="hs" viewBox="0 0 400 236"></svg><div class="cap" id="cap"></div></div>
@@ -178,14 +178,27 @@ var E=[["USO","United States Oil Fund LP","Apr 2006","0.60%","North America","En
 ["STX40","Satrix 40 ETF","2000","0.10%","Middle East & Africa","Country Equity"]];
 E.forEach(function(e){if(e.length<7){var s=0,i,sc=[1.5,3.5,7,22];for(i=0;i<e[0].length;i++)s=(s*31+e[0].charCodeAt(i))%9973;for(i=0;i<4;i++){s=(s*7919+104729)%99991;e.push(+(((s%1000)/1000*2-0.8)*sc[i]).toFixed(1))}}});
 document.getElementById("cnt").textContent="Tracking "+E.length+" ETFs from around the world.";
-var P=["Day","Week","Month","Year"],p=0;
+var P=["Day","Week","Month","Year"],p=0,LH={};
+var SUF={"North America":"","Australia":".AX","Canada":".TO","UK / Ireland":".L","Latin America":".SA","Middle East & Africa":".JO"},XS={MEUD:".PA",CAC:".PA",EXS1:".DE",EXSA:".DE",EXV1:".DE","069500":".KS","2800":".HK",ES3:".SI",NIFTYBEES:".NS",GOLDBEES:".NS"};
+function ys(e){return e[0]+(XS[e[0]]!==undefined?XS[e[0]]:SUF[e[4]]||"")}
+// Live moves from our server (Yahoo daily bars). Day/week/month are price changes; Year is year to date.
+function loadLive(){var all=E.slice();
+fetch("/api/dataviz/etf-tracker/live?symbols="+encodeURIComponent(all.map(ys).join(","))).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+var keep=all.filter(function(e){var m=j.etfs[ys(e)];if(!m||m.d==null)return false;e[6]=m.d;e[7]=m.w==null?0:m.w;e[8]=m.m==null?0:m.m;e[9]=m.y==null?0:m.y;LH[e[0]]=m.h||{};return true});
+if(keep.length<10)throw 0;
+E.length=0;keep.forEach(function(e){E.push(e)});pool=E;cmp=[];
+document.getElementById("cnt").textContent="Tracking "+E.length+" ETFs from around the world.";
+var t=new Date(j.updated_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+document.getElementById("dnote").textContent="Live prices from Yahoo Finance (about 15 minutes delayed), refreshed "+t+". Day, week and month are price changes; Year is year to date. Yearly bars are calendar-year price returns and exclude dividends. For education, not financial advice.";
+draw();
+}).catch(function(){document.getElementById("dnote").textContent="Live prices are unavailable right now, so the figures shown are sample placeholders, not real performance."})}
 function f(x){return(x>0?"+":"")+x.toFixed(1)+"%"}
 function ty(e){return e[5]==="Crypto"?"Crypto":e[5]==="Bonds"?"Bond":e[5]==="Commodities"?"Commodity":/^(USO|BNO|DBE|GLD|SGLN|SLV)$/.test(e[0])?"Commodity":"Equity"}
 var cmp=[],cmode=false,pool=E,WL={},wlOnly=false;try{WL=JSON.parse(localStorage.getItem("gcgwl")||"{}")}catch(er){}
 function wsave(){try{localStorage.setItem("gcgwl",JSON.stringify(WL))}catch(er){}}
 var H={launch:"The date the ETF first started trading. Older funds have a longer track record to look at.",fee:"The yearly cost of owning the fund, taken from your money. 0.20% means £20 a year on every £10,000.",region:"Where the fund was created and is run. This is not always where it invests.",sector:"The kind of companies or assets the fund mainly holds.",type:"Equity means company shares, Bond means loans to governments or companies, Commodity means things like gold or oil, Crypto means digital assets.",feecheck:"Low is 0.20% or less and high is 0.60% or more. Fees add up over the years, so small differences matter.",years:"Green bars are years the fund gained and red bars are years it fell.",mood:"The share of ETFs in your current view that are up over the chosen period. It is a snapshot, not a prediction."};
 function Q(k){return' <b class="q" data-h="'+H[k]+'">?</b>'}
-function hist(t,ly){var o=[],s=0,i;for(i=0;i<t.length;i++)s=(s*31+t.charCodeAt(i))%9973;
+function hist(t,ly){var o=[],s=0,i;if(LH[t]){for(i=0;i<8;i++){var v=LH[t][2018+i];o.push(v===undefined?null:v)}return o}for(i=0;i<t.length;i++)s=(s*31+t.charCodeAt(i))%9973;
 for(i=0;i<8;i++){s=(s*7919+104729)%99991;var y=2018+i;o.push(y<ly?null:Math.round((s%6500)/100-22)) }return o}
 function row(e,i,tag){var v=e[6+p],c=v>=0?"u":"d";
 var fe=parseFloat(e[3]),fb=fe<=0.2?'<span class="fb l">LOW</span>':fe>=0.6?'<span class="fb h">HIGH</span>':'<span class="fb"></span>';return'<div class="row'+(cmp.indexOf(E.indexOf(e))>-1?' sel':'')+'" data-i="'+E.indexOf(e)+'"><span class="rk">'+(i+1)+'</span><span class="tk">'+e[0]+(WL[e[0]]?' ★':'')+'</span>'+fb+'<span class="nm">'+e[1]+'</span><span class="pc '+c+'">'+f(v)+'</span></div><div class="dt" id="d'+E.indexOf(e)+'"></div>'}
@@ -268,7 +281,7 @@ function mood(){var n=pool.length,u=pool.filter(function(e){return e[6+p]>0}).le
 document.getElementById("mood").innerHTML='<svg viewBox="0 0 200 118"><defs><linearGradient id="mg"><stop offset="0" stop-color="var(--dn)"/><stop offset=".5" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--up)"/></linearGradient></defs><path d="M20,100 A80,80 0 0 1 180,100" fill="none" stroke="url(#mg)" stroke-width="14" stroke-linecap="round"/><line x1="100" y1="100" x2="'+nx+'" y2="'+ny+'" stroke="var(--tx)" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="var(--tx)"/></svg><div class="mt"><b>'+lb+'</b>'+Q("mood")+'<br><span>'+u+' of '+n+' ETFs are up this '+P[p].toLowerCase()+'</span></div>'}
 function card(){var W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d"),s=pool.slice().sort(function(a,b){return b[6+p]-a[6+p]}),k=Math.min(3,Math.ceil(s.length/2)),t=s.slice(0,k),w=s.slice(s.length-k).reverse(),u=s.filter(function(e){return e[6+p]>0}).length,g=x.createLinearGradient(0,0,0,H);
 g.addColorStop(0,"#0d1526");g.addColorStop(1,"#16213a");x.fillStyle=g;x.fillRect(0,0,W,H);x.textAlign="left";
-x.fillStyle="#e8b84a";x.font="700 46px system-ui,sans-serif";x.fillText("GCG GLOBAL ETF TRACKER",60,100);
+x.fillStyle="#e8b84a";x.font="700 46px system-ui,sans-serif";x.fillText("GLOBAL ETF TRACKER",60,100);
 x.fillStyle="#93a0bd";x.font="30px system-ui,sans-serif";x.fillText("Biggest movers this "+P[p].toLowerCase()+" · "+u+" of "+s.length+" ETFs are up",60,155);
 function blk(y0,ti,col,a){x.textAlign="left";x.fillStyle=col;x.font="700 40px system-ui,sans-serif";x.fillText(ti,60,y0);a.forEach(function(e,i){var y=y0+30+i*170;x.fillStyle="rgba(255,255,255,0.06)";x.fillRect(60,y,960,140);x.fillStyle="#eef2fa";x.font="700 56px system-ui,sans-serif";x.textAlign="left";x.fillText(e[0],90,y+68);x.fillStyle="#93a0bd";x.font="28px system-ui,sans-serif";x.fillText(e[1].slice(0,34),90,y+112);x.fillStyle=col;x.font="700 62px system-ui,sans-serif";x.textAlign="right";x.fillText(f(e[6+p]),990,y+88)})}
 blk(260,"▲ TOP MOVERS","#2fd18d",t);blk(820,"▼ BIGGEST FALLERS","#ff6b61",w);
@@ -285,7 +298,7 @@ var fa=parseFloat(a[3]),fb2=parseFloat(b[3]);
 var h='<div class="cp"><table>'+tr("","<b>"+a[0]+"</b>","<b>"+b[0]+"</b>",0)+tr("Name",a[1],b[1],0)+tr("Launched",a[2],b[2],0)+tr("Fee",a[3],b[3],fa<fb2?1:fa>fb2?2:0)+tr("Region",a[4],b[4],0)+tr("Type",ty(a),ty(b),0);
 [6,7,8,9].forEach(function(i){h+=tr(P[i-6],f(a[i]),f(b[i]),a[i]>b[i]?1:a[i]<b[i]?2:0)});
 h+=tr("Green years (2018–25)",yg(a),yg(b),yg(a)>yg(b)?1:yg(a)<yg(b)?2:0)+'</table></div>';el.innerHTML=h}
-draw();
+draw();loadLive();
 // Tell the host page how tall the content is so the iframe doesn't clip or scroll.
 function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"etf-tracker"},location.origin)}catch(e){}}
 try{new ResizeObserver(postH).observe(document.body)}catch(e){}

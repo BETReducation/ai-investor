@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GCG FTSE 100 Wagon Wheel</title>
+<title>FTSE 100 Wagon Wheel</title>
 <script>
   // Follow the site's light/dark toggle (same origin as the host page).
   try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
@@ -94,17 +94,17 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 <button id="bg" class="on">Top 10 gainers</button><button id="bl">Top 10 losers</button>
 </div>
 <div id="list"></div>
-<details class="hist" id="hist"><summary>Historical returns: 1984 to today</summary><div class="hbody"><div class="cards" id="hcards"></div><div class="seg" id="hseg" role="group" aria-label="Order"><button data-o="y" class="on">By year</button><button data-o="b">Best first</button><button data-o="w">Worst first</button></div><div class="flist" id="hlist"></div><p class="hnote">Calendar-year price returns from year-end closes, starting from the index base of 1,000 on 30 Dec 1983. Dividends are not included, so total returns are higher. *2026 is year to date: +8.0% to 22 Oct 2026. Past returns do not predict future ones.</p></div></details>
-<p class="foot">Illustrative sample moves for each period, simulated and not live prices. Spin to roll a new set. For education, not financial advice.</p>
+<details class="hist" id="hist"><summary>Historical returns: 1984 to today</summary><div class="hbody"><div class="cards" id="hcards"></div><div class="seg" id="hseg" role="group" aria-label="Order"><button data-o="y" class="on">By year</button><button data-o="b">Best first</button><button data-o="w">Worst first</button></div><div class="flist" id="hlist"></div><p class="hnote">Calendar-year price returns from year-end closes, starting from the index base of 1,000 on 30 Dec 1983. Dividends are not included, so total returns are higher. *The latest year is year to date. Past returns do not predict future ones.</p></div></details>
+<p class="foot">Loading prices… For education, not financial advice.</p>
 </main>
 <script>
 const RAW="AZN:AstraZeneca|SHEL:Shell|HSBA:HSBC|ULVR:Unilever|RR.:Rolls-Royce|BP.:BP|RIO:Rio Tinto|GSK:GSK|BATS:British American Tobacco|LSEG:LSE Group|REL:RELX|BARC:Barclays|LLOY:Lloyds|NWG:NatWest|DGE:Diageo|GLEN:Glencore|NG.:National Grid|BA.:BAE Systems|CPG:Compass Group|STAN:Standard Chartered|AAL:Anglo American|EXPN:Experian|IMB:Imperial Brands|TSCO:Tesco|PRU:Prudential|III:3i Group|AHT:Ashtead|SSE:SSE|ANTO:Antofagasta|LGEN:Legal & General|AV.:Aviva|HLN:Haleon|RKT:Reckitt|BT.A:BT Group|VOD:Vodafone|CNA:Centrica|SGE:Sage|WPP:WPP|SMT:Scottish Mortgage|INF:Informa|FRES:Fresnillo|ABF:ABF|ADM:Admiral|MNG:M&G|BNZL:Bunzl|SPX:Spirax Group|SMIN:Smiths Group|NXT:Next|MKS:Marks & Spencer|KGF:Kingfisher|JD.:JD Sports|SBRY:Sainsbury’s|BDEV:Barratt Redrow|PSN:Persimmon|TW.:Taylor Wimpey|LAND:Landsec|SGRO:Segro|UU.:United Utilities|SVT:Severn Trent|PHNX:Phoenix Group|SDR:Schroders|ICG:Intermediate Capital|HIK:Hikma|SN.:Smith & Nephew|CCH:Coca-Cola HBC|DPLM:Diploma|RMV:Rightmove|AUTO:Auto Trader|MRO:Melrose|WEIR:Weir Group|EZJ:easyJet|IAG:IAG|ENT:Entain|BME:B&M|WTB:Whitbread|IHG:IHG Hotels|PSON:Pearson|ITRK:Intertek|CTEC:Convatec|BEZ:Beazley|HSX:Hiscox|LMP:LondonMetric|UTG:Unite Group|BLND:British Land|DCC:DCC|RTO:Rentokil|MNDI:Mondi|EDV:Endeavour Mining|STJ:St James’s Place|PSH:Pershing Square|HWDN:Howden Joinery|IMI:IMI|BKG:Berkeley Group|ABDN:Aberdeen|BRBY:Burberry|CRDA:Croda|JMAT:Johnson Matthey|WISE:Wise|BAB:Babcock|BWY:Bellway";
 const S=RAW.split("|").map(s=>{const[t,n]=s.split(":");return{t,n}});
-const $=q=>document.querySelector(q),N=S.length;
+const $=q=>document.querySelector(q);let N=S.length;
 let mode="perf",view="g",flt="all",sel=null;
 const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 const PER={d:{k:1,m:9,dr:0,t:"today"},w:{k:2.2,m:18,dr:.3,t:"this week"},m:{k:4.5,m:30,dr:.8,t:"this month"},y:{k:12,m:90,dr:6,t:"this year"}};
-let per="d";
+let per="d",liveOn=false,PX=null,PXI=null;
 function apply(){S.forEach(s=>{s.c=s.v[per]})}
 function roll(){
  const r=rng(Date.now()&0xffffff),g=()=>{let s=0;for(let i=0;i<4;i++)s+=r();return(s-2)*1.73};
@@ -158,7 +158,7 @@ $("#chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b
 $("#ord").onclick=()=>{mode=mode==="cap"?"perf":"cap";draw()};
 $("#bg").onclick=()=>{view="g";draw()};$("#bl").onclick=()=>{view="l";draw()};
 $("#spin").onclick=()=>{const g=$("#ring");g.style.transition="transform 1s cubic-bezier(.6,0,.2,1)";g.style.transform="rotate(360deg)";
- setTimeout(()=>{roll();sel=null;draw()},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
+ setTimeout(()=>{(liveOn?loadLive():Promise.resolve(roll())).then(()=>{sel=null;draw()})},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
 const LV=[1232.2,1412.6,1679.0,1712.7,1793.1,2422.7,2143.5,2493.1,2846.5,3418.4,3065.5,3689.3,4118.5,5135.5,5882.6,6930.2,6222.5,5217.4,3940.4,4476.9,4814.3,5618.8,6220.8,6456.9,4434.2,5412.9,5899.9,5572.3,5897.8,6749.1,6566.1,6242.3,7142.8,7687.8,6728.1,7542.4,6460.5,7384.5,7451.7,7733.2,8173.0,9931.4];
 const H=LV.map((v,i)=>({y:1984+i,r:Math.round((v/(i?LV[i-1]:1000)-1)*1000)/10}));
 const FULL=H.slice();H.push({y:2026,r:8.0,p:1});
@@ -172,18 +172,34 @@ function hist(){
  $("#hseg").querySelectorAll("button").forEach(b=>b.className=b.dataset.o===ho?"on":"");
 }
 $("#hseg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){ho=b.dataset.o;hist()}});
-const PX=[10428.27,10461.95,10497.94,10541.69,10458.50,10441.60,10552.05,10656.28,10650.33,10724.86,10840.35,10881.90,10764.69,10733.00,10752.88,10725.03];
 function price(){
- const l=PX[PX.length-1],p=PX[PX.length-2],ch=l-p,pc=ch/p*100,lo=9276.91,hi=10989.45,ytd=(l/9931.38-1)*100;
+ if(!PX){$("#px").innerHTML="";return}
+ const l=PX[PX.length-1],p=PX[PX.length-2],ch=l-p,pc=ch/p*100,lo=Math.min(PXI.low,l),hi=Math.max(PXI.high,l),ytd=PXI.ytd||0;
  const n=x=>x.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2}),sg=x=>(x>0?"+":x<0?"−":"")+Math.abs(x).toFixed(2)+"%";
  const c=ch>=0?"var(--up)":"var(--dn)",mn=Math.min(...PX),mx=Math.max(...PX);
  const pts=PX.map((v,i)=>(i/(PX.length-1)*100).toFixed(1)+","+(29-(v-mn)/(mx-mn)*27).toFixed(1)).join(" ");
- $("#px").innerHTML=`<div><div class="l">FTSE 100 index</div><div class="v">${n(l)}<small>pts</small></div><div class="c" style="color:${c}">${ch>=0?"▲":"▼"} ${n(Math.abs(ch))} (${sg(pc)}) <span style="color:var(--mu);font-weight:600">on the day</span></div></div><svg viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="FTSE 100 closes, 1 to 22 October 2026"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="rg"><div class="tw"><div class="tr"></div><div class="mk" style="left:${((l-lo)/(hi-lo)*100).toFixed(1)}%"></div></div><div class="rl"><span>52-week low ${n(lo)}</span><span>High ${n(hi)}</span></div></div><div class="nt">Year to date ${sg(ytd)} · Last close, 22 Oct 2026 (snapshot, not live). Chart shows closes since 1 Oct.</div>`;
+ $("#px").innerHTML=`<div><div class="l">FTSE 100 index</div><div class="v">${n(l)}<small>pts</small></div><div class="c" style="color:${c}">${ch>=0?"▲":"▼"} ${n(Math.abs(ch))} (${sg(pc)}) <span style="color:var(--mu);font-weight:600">on the day</span></div></div><svg viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="Recent FTSE 100 closes"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="rg"><div class="tw"><div class="tr"></div><div class="mk" style="left:${((l-lo)/(hi-lo)*100).toFixed(1)}%"></div></div><div class="rl"><span>52-week low ${n(lo)}</span><span>High ${n(hi)}</span></div></div><div class="nt">Year to date ${sg(ytd)} · Latest close ${PXI.last_date}. Chart shows the last ${PX.length} closes.</div>`;
 }
-price();
 $("#per").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||b.dataset.p===per)return;per=b.dataset.p;$("#per").querySelectorAll("button").forEach(x=>x.className=x.dataset.p===per?"on":"");const g=$("#ring");g.style.transition="transform .8s cubic-bezier(.6,0,.2,1)";g.style.transform="rotate(360deg)";setTimeout(()=>{apply();draw()},400);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},850)});
 hist();
-roll();draw();
+function note(t){document.querySelector(".foot").textContent=t}
+// Live moves from our server (Yahoo daily bars). Falls back to a simulated sample if unavailable.
+function loadLive(){
+ const q=S.map(s=>s.t).join(",");
+ return fetch("/api/dataviz/ftse-wheel/live?symbols="+encodeURIComponent(q)).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+  const have=S.filter(s=>j.moves[s.t]&&j.moves[s.t].d!=null);
+  if(have.length<30)throw 0;
+  S.forEach(s=>{const m=j.moves[s.t]||{};s.v={d:m.d,w:m.w,m:m.m,y:m.y};});
+  have.forEach(s=>{for(const p in s.v)if(s.v[p]==null)s.v[p]=0});
+  S.splice(0,S.length,...have);N=S.length;
+  PX=j.index.closes;PXI=j.index;
+  if(PXI.ytd!=null){const cur=H.find(x=>x.p);if(cur)cur.r=PXI.ytd;hist()}
+  apply();liveOn=true;price();
+  const t=new Date(j.updated_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  note("Live FTSE 100 prices (about 15 minutes delayed), % change over each period. Latest session: "+PXI.last_date+", refreshed "+t+". Press the spin button to refresh. For education, not financial advice.");
+ }).catch(()=>{liveOn=false;PX=null;roll();price();note("Live prices are unavailable right now, so this is an illustrative sample with simulated moves. For education, not financial advice.")});
+}
+roll();draw();loadLive().then(()=>{sel=null;draw()});
 </script>
 </body>
 </html>
