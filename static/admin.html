@@ -94,6 +94,11 @@ select.tier-founder { border-color: var(--gold); color: var(--gold); }
         <div class="fin-block">
           <div class="section-head">Calendar</div>
           <div class="section-note" id="gcalStatus"></div>
+          <form class="fin-form" id="calIdForm" style="display:none">
+            <label>GCG calendar ID<input name="calid" size="44" placeholder="xxxx@group.calendar.google.com"></label>
+            <button class="btn ghost" type="submit">Save</button>
+            <span class="muted">Google Calendar → GCG calendar settings → Integrate calendar. Only this calendar is read or written.</span>
+          </form>
           <form class="fin-form" id="eventForm" style="display:none">
             <label>Title<input name="title" required size="24"></label>
             <label>Date<input type="date" name="date" required></label>
@@ -547,35 +552,47 @@ const fmtWhen = e => e.all_day ? new Date(e.start + 'T00:00').toLocaleDateString
 async function loadPlanner() {
   const st = await api('/api/planner/state');
   const g = st.google, status = document.getElementById('gcalStatus');
-  document.getElementById('eventForm').style.display = g.connected ? 'flex' : 'none';
+  document.getElementById('calIdForm').style.display = g.connected ? 'flex' : 'none';
+  document.getElementById('calIdForm').calid.value = g.calendar_id;
+  document.getElementById('eventForm').style.display = g.connected && g.calendar_id ? 'flex' : 'none';
+  DONE_EVENTS = new Set(st.done_events);
   if (g.connected) {
-    status.innerHTML = `Connected${g.email ? ' as ' + esc(g.email) : ''}. Next 30 days. <a href="#" id="gcalOff">Disconnect</a>`;
-    loadEvents();
+    status.innerHTML = `Connected${g.email ? ' as ' + esc(g.email) : ''}. GCG calendar only, next 30 days. <a href="#" id="gcalOff">Disconnect</a>`;
+    if (g.calendar_id) loadEvents();
+    else document.getElementById('eventRows').innerHTML = '<tr><td colspan="3" class="muted">Paste the GCG calendar ID above.</td></tr>';
   } else {
     status.innerHTML = g.configured ? '<a class="btn" href="/api/planner/google/connect" style="display:inline-block;text-decoration:none">Connect Google Calendar</a>'
       : `Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the server, with redirect URI <code>${esc(g.redirect_uri)}</code>, then reload.`;
     document.getElementById('eventRows').innerHTML = '<tr><td colspan="3" class="muted">Calendar not connected.</td></tr>';
   }
-  renderTodos(st.todos);
+  TODOS = st.todos;
+  renderTodos();
 }
+
+let TODOS = [], EVENTS = [], DONE_EVENTS = new Set();
 
 async function loadEvents() {
   try {
-    const { events } = await api('/api/planner/events?days=30');
+    EVENTS = (await api('/api/planner/events?days=30')).events;
+    const events = EVENTS;
     document.getElementById('eventRows').innerHTML = events.length ? events.map(e =>
       `<tr><td>${esc(fmtWhen(e))}</td><td><a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.title)}</a></td>
        <td><button class="del-btn" data-evdel="${esc(e.id)}">Delete</button></td></tr>`).join('')
       : '<tr><td colspan="3" class="muted">Nothing in the next 30 days.</td></tr>';
+    renderTodos();
   } catch (err) { showError(err.message); }
 }
 
-function renderTodos(todos) {
-  const sorted = [...todos].sort((a, b) => a.done - b.done || (a.due || '9').localeCompare(b.due || '9'));
-  document.getElementById('todoRows').innerHTML = sorted.length ? sorted.map(t =>
-    `<tr><td><input type="checkbox" data-todo="${t.id}" ${t.done ? 'checked' : ''}></td>
-     <td style="${t.done ? 'text-decoration:line-through;opacity:.55' : ''}">${esc(t.text)}</td>
+// Tasks plus GCG calendar entries added directly in Google (the unlinked ones).
+function renderTodos() {
+  const fromCal = EVENTS.filter(e => !e.linked).map(e => ({ key: 'ev:' + e.id, text: e.title, due: e.start.slice(0, 10), done: DONE_EVENTS.has(e.id), cal: true }));
+  const items = [...TODOS.map(t => ({ key: 't:' + t.id, text: t.text, due: t.due, done: t.done })), ...fromCal];
+  items.sort((a, b) => a.done - b.done || (a.due || '9').localeCompare(b.due || '9'));
+  document.getElementById('todoRows').innerHTML = items.length ? items.map(t =>
+    `<tr><td><input type="checkbox" data-todo="${esc(t.key)}" ${t.done ? 'checked' : ''}></td>
+     <td style="${t.done ? 'text-decoration:line-through;opacity:.55' : ''}">${esc(t.text)} ${t.cal ? '<span class="pill">GCG calendar</span>' : ''}</td>
      <td>${t.due ? esc(new Date(t.due + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })) : ''}</td>
-     <td><button class="del-btn" data-tododel="${t.id}">Delete</button></td></tr>`).join('')
+     <td>${t.cal ? '' : `<button class="del-btn" data-tododel="${esc(t.key.slice(2))}">Delete</button>`}</td></tr>`).join('')
     : '<tr><td colspan="4" class="muted">Nothing to do.</td></tr>';
 }
 
@@ -583,6 +600,11 @@ document.getElementById('todoForm').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
   try { await api('/api/planner/todos', jsonOpts('POST', { text: f.text.value, due: f.due.value })); f.reset(); loadPlanner(); }
+  catch (err) { showError(err.message); }
+});
+document.getElementById('calIdForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { await api('/api/planner/calendar-id', jsonOpts('POST', { id: e.target.calid.value })); loadPlanner(); }
   catch (err) { showError(err.message); }
 });
 document.getElementById('eventForm').addEventListener('submit', async e => {
@@ -605,7 +627,12 @@ document.getElementById('tab-planner').addEventListener('click', async e => {
 });
 document.getElementById('tab-planner').addEventListener('change', async e => {
   if (!e.target.dataset.todo) return;
-  try { await api('/api/planner/todos/' + e.target.dataset.todo, jsonOpts('PATCH', { done: e.target.checked })); loadPlanner(); }
+  const key = e.target.dataset.todo;
+  try {
+    if (key.startsWith('ev:')) await api(`/api/planner/events/${encodeURIComponent(key.slice(3))}/done`, jsonOpts('POST', { done: e.target.checked }));
+    else await api('/api/planner/todos/' + key.slice(2), jsonOpts('PATCH', { done: e.target.checked }));
+    loadPlanner();
+  }
   catch (err) { showError(err.message); }
 });
 
