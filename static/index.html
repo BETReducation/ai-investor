@@ -311,9 +311,9 @@ nav {
 .tagline-text .w.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .tagline-text .w { opacity: 1; transition: none; } }
 
-/* ── HERO ── full-bleed illustrated scene. The ridgeline is a stylised century
-   of market history (built in JS, see sceneHero). Always dark: the text sits on
-   the artwork, not on the page theme. */
+/* ── HERO ── full-bleed painted scene (static/img/hero/mentor-handshake.webp).
+   Always dark: the text sits on the artwork, not on the page theme. The image
+   edges are feathered into the hero's own indigo so no seam shows. */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -322,28 +322,25 @@ nav {
   align-items: center;
   padding: 120px 6% 140px;
   overflow: hidden;
-  background: #0b0a1f;
+  background: linear-gradient(180deg, #272a52 0%, #2a2a55 55%, #231d33 100%);
   color: #fff;
   isolation: isolate;
 }
-.scene { position: absolute; inset: 0; z-index: 0; }
-.scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.scene .layer { transition: transform 0.6s cubic-bezier(.2,.8,.2,1); transform: translate3d(calc(var(--px,0) * var(--d,0) * 1px), calc(var(--py,0) * var(--d,0) * 0.5px), 0); }
-.scene .star { animation: twinkle 4s ease-in-out infinite; }
-@keyframes twinkle { 0%,100% { opacity: var(--o,.8); } 50% { opacity: .15; } }
-.scene .sun-halo { animation: breathe 9s ease-in-out infinite; transform-origin: 1130px 560px; }
-@keyframes breathe { 0%,100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.06); opacity: 1; } }
-.scene .flame { animation: flicker 2.4s ease-in-out infinite; transform-origin: center; }
-@keyframes flicker { 0%,100% { opacity: 1; } 45% { opacity: .75; } 60% { opacity: .95; } }
-.scene .cloud { animation: drift linear infinite; }
-@keyframes drift { from { transform: translateX(-260px); } to { transform: translateX(1900px); } }
-.scene .marker-pulse { animation: markerPulse 3.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes markerPulse { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(2.6); opacity: 0; } }
+.hero-art {
+  position: absolute; z-index: 0; top: 0; bottom: 0; right: 0;
+  width: min(58vw, 112vh);
+  background: url("/static/img/hero/mentor-handshake.webp") right bottom / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 34%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 34%);
+  animation: heroDrift 24s ease-in-out infinite alternate;
+  transform-origin: 70% 60%;
+}
+@keyframes heroDrift { from { transform: scale(1); } to { transform: scale(1.045); } }
 .hero-scrim {
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(8,7,26,0.82) 0%, rgba(8,7,26,0.55) 38%, rgba(8,7,26,0) 68%),
-    linear-gradient(180deg, rgba(8,7,26,0) 62%, var(--bg) 100%);
+    linear-gradient(90deg, rgba(25,24,58,0.78) 0%, rgba(25,24,58,0.45) 34%, rgba(25,24,58,0) 62%),
+    linear-gradient(180deg, rgba(25,24,58,0) 70%, var(--bg) 100%);
 }
 
 .hero-content { position: relative; z-index: 2; max-width: 640px; }
@@ -380,28 +377,21 @@ nav {
 .rise { opacity: 0; filter: blur(10px); transform: translateY(22px); animation: rise 1s cubic-bezier(.32,.72,0,1) forwards; animation-delay: calc(var(--i, 0) * 120ms + 150ms); }
 @keyframes rise { from { opacity: 0; filter: blur(12px); transform: translateY(40px); } to { opacity: 1; filter: blur(0); transform: none; } }
 
-.hero-legend {
-  position: absolute; z-index: 2; right: 5%; bottom: 44px;
-  display: flex; gap: 10px; align-items: center;
-  padding: 9px 16px; border-radius: 100px;
-  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.75); letter-spacing: .03em;
-}
-.hero-legend span { width: 7px; height: 7px; border-radius: 50%; background: #ff8a5c; box-shadow: 0 0 10px #ff8a5c; }
-
 @media (max-width: 760px) {
-  .hero { padding: 104px 6% 150px; align-items: flex-start; }
-  .hero-scrim { background: linear-gradient(180deg, rgba(8,7,26,0.35) 0%, rgba(8,7,26,0.1) 55%, rgba(8,7,26,0) 70%, var(--bg) 100%); }
+  .hero { padding: 104px 6% 0; align-items: flex-start; }
+  .hero-art { top: auto; height: 58vh; width: 100%; background-size: auto 100%; background-position: 72% bottom;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%), linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(180deg, transparent 0, #000 16%), linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+    mask-composite: intersect; }
+  .hero-scrim { background: linear-gradient(180deg, rgba(25,24,58,0.35) 0%, rgba(25,24,58,0) 45%, rgba(25,24,58,0) 80%, var(--bg) 100%); }
   .hero-title { font-size: clamp(40px, 11vw, 60px); margin-bottom: 18px; }
-  .hero-sub { margin-bottom: 26px; }
   .hero-actions { margin-bottom: 20px; }
-  .hero-legend { left: 6%; right: auto; bottom: 28px; font-size: 10px; }
+  .hero-sub, .hero-note { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none; opacity: 1; filter: none; transform: none; }
-  .scene .star, .scene .sun-halo, .scene .flame, .scene .cloud, .scene .marker-pulse { animation: none; }
-  .scene .layer { transition: none; transform: none; }
+  .hero-art { animation: none; }
 }
 
 .btn-hero {
@@ -877,51 +867,7 @@ section.alt-bg { background: var(--bg2); }
 
 <!-- HERO -->
 <section class="hero" id="hero">
-  <div class="scene" aria-hidden="true">
-    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" id="sceneSvg">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0a0a24"/>
-          <stop offset=".38" stop-color="#2a1a5e"/>
-          <stop offset=".62" stop-color="#7a3a8c"/>
-          <stop offset=".78" stop-color="#e2696f"/>
-          <stop offset=".9" stop-color="#ffb26b"/>
-          <stop offset="1" stop-color="#ffd9a0"/>
-        </linearGradient>
-        <radialGradient id="sunGlow" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stop-color="#fff3d0" stop-opacity="1"/>
-          <stop offset=".18" stop-color="#ffd58a" stop-opacity=".95"/>
-          <stop offset=".45" stop-color="#ff9d6c" stop-opacity=".35"/>
-          <stop offset="1" stop-color="#ff7aa8" stop-opacity="0"/>
-        </radialGradient>
-        <linearGradient id="far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9739f"/><stop offset="1" stop-color="#e9908a"/></linearGradient>
-        <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3a86"/><stop offset="1" stop-color="#a24f7e"/></linearGradient>
-        <linearGradient id="near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1b4a"/><stop offset=".5" stop-color="#14123a"/><stop offset="1" stop-color="#0b0a22"/></linearGradient>
-        <filter id="soft"><feGaussianBlur stdDeviation="14"/></filter>
-        <filter id="lampGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="9"/></filter>
-      </defs>
-      <rect x="-200" y="-500" width="2000" height="1400" fill="url(#sky)"/>
-      <g id="stars"></g>
-      <g class="layer" style="--d:-6">
-        <g class="sun-halo"><circle cx="1130" cy="560" r="330" fill="url(#sunGlow)"/></g>
-        <circle cx="1130" cy="560" r="62" fill="#fff0c8"/>
-      </g>
-      <g class="layer" style="--d:-10" opacity=".55" filter="url(#soft)">
-        <ellipse class="cloud" style="animation-duration:90s" cx="0" cy="330" rx="210" ry="22" fill="#ffc9a0"/>
-        <ellipse class="cloud" style="animation-duration:130s;animation-delay:-60s" cx="0" cy="420" rx="300" ry="26" fill="#f4a0b0"/>
-        <ellipse class="cloud" style="animation-duration:110s;animation-delay:-20s" cx="0" cy="250" rx="180" ry="16" fill="#d9a0d8"/>
-      </g>
-      <g class="layer" style="--d:-14"><path id="ridgeFar" fill="url(#far)" opacity=".8"/></g>
-      <g class="layer" style="--d:-22"><path id="ridgeMid" fill="url(#mid)"/></g>
-      <g class="layer" style="--d:-34">
-        <path id="ridgeNear" fill="url(#near)"/>
-        <path id="ridgeLine" fill="none" stroke="#ffb98a" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>
-        <g id="markers"></g>
-        <g id="walker"></g>
-      </g>
-      <rect y="760" width="1600" height="140" fill="#0b0a22" opacity=".0"/>
-    </svg>
-  </div>
+  <div class="hero-art" role="img" aria-label="A first-time investor shakes hands with an experienced investor on a city rooftop at sunset"></div>
   <div class="hero-scrim"></div>
 
   <div class="hero-content">
@@ -944,7 +890,6 @@ section.alt-bg { background: var(--bg2); }
     <p class="hero-note rise" style="--i:6"><b>Education only.</b> Everything here shows what happened historically, never what to do next.</p>
   </div>
 
-  <div class="hero-legend rise" style="--i:7"><span></span>The ridge: a stylised century of market history</div>
 </section>
 
 <!-- STATS BAR — counts come live from /api/site-stats (lessons, visualisations, Alpha posts,
@@ -1194,102 +1139,6 @@ section.alt-bg { background: var(--bg2); }
 <script src="/static/js/footer.js"></script>
 
 <script>
-// ── Hero scene: the near ridgeline is a stylised century of market history,
-// with the big drawdowns marked. Illustrative shape, not real index data.
-(function sceneHero() {
-  const svg = document.getElementById('sceneSvg');
-  if (!svg) return;
-  const NS = 'http://www.w3.org/2000/svg';
-  const el = (tag, attrs, parent) => {
-    const n = document.createElementNS(NS, tag);
-    for (const k in attrs) n.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(n);
-    return n;
-  };
-  let seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-
-  // Stars, only in the upper sky.
-  const stars = document.getElementById('stars');
-  for (let i = 0; i < 150; i++) {
-    const c = el('circle', { cx: rnd() * 1600, cy: -300 + rnd() * 720, r: 0.5 + rnd() * 1.4, fill: '#fff', class: 'star' }, stars);
-    c.style.setProperty('--o', (0.35 + rnd() * 0.6).toFixed(2));
-    c.style.animationDelay = (-rnd() * 4).toFixed(2) + 's';
-    c.style.animationDuration = (3 + rnd() * 4).toFixed(1) + 's';
-  }
-
-  // Interpolated ridge through keyframes [x, y], then jittered so it reads as a chart.
-  function ridge(keys, jitter, step) {
-    const pts = [];
-    for (let i = 0; i < keys.length - 1; i++) {
-      const [x0, y0] = keys[i], [x1, y1] = keys[i + 1];
-      for (let x = x0; x < x1; x += step) {
-        const t = (x - x0) / (x1 - x0);
-        const e = t * t * (3 - 2 * t);
-        pts.push([x, y0 + (y1 - y0) * e + (rnd() - 0.5) * jitter]);
-      }
-    }
-    pts.push(keys[keys.length - 1]);
-    return pts;
-  }
-  const toPath = (pts, close) => 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + (close ? ' L1700 900 L-100 900 Z' : '');
-
-  const far = ridge([[-100,700],[200,640],[480,690],[800,610],[1100,680],[1400,600],[1700,660]], 10, 14);
-  const mid = ridge([[-100,740],[260,700],[560,760],[900,690],[1250,750],[1700,690]], 14, 12);
-  document.getElementById('ridgeFar').setAttribute('d', toPath(far, true));
-  document.getElementById('ridgeMid').setAttribute('d', toPath(mid, true));
-
-  // Near ridge keyframes: [x, y, label?]. Lower y = higher on screen = higher index.
-  const keys = [
-    [-100, 840], [60, 810], [190, 735, 'peak'], [235, 835, '1929'],
-    [330, 815], [560, 770], [760, 700], [850, 640, 'peak'], [895, 705, '1987'],
-    [1010, 640], [1120, 560, 'peak'], [1170, 650, '2000'],
-    [1260, 610], [1330, 560, 'peak'], [1380, 680, '2008'],
-    [1450, 600], [1500, 520, 'peak'], [1530, 590, '2020'],
-    [1590, 500, 'top'], [1700, 520]
-  ];
-  const near = ridge(keys.map(k => [k[0], k[1]]), 9, 6);
-  document.getElementById('ridgeNear').setAttribute('d', toPath(near, true));
-  document.getElementById('ridgeLine').setAttribute('d', toPath(near, false));
-
-  // Crash markers: a pulse and year label at each labelled trough.
-  const markers = document.getElementById('markers');
-  keys.forEach(k => {
-    if (!/^\d{4}$/.test(k[2] || '')) return;
-    const g = el('g', {}, markers);
-    el('circle', { cx: k[0], cy: k[1], r: 5, fill: '#ff8a5c', class: 'marker-pulse' }, g);
-    el('circle', { cx: k[0], cy: k[1], r: 3.5, fill: '#ffd9a0' }, g);
-    const t = el('text', { x: k[0], y: k[1] + 28, 'text-anchor': 'middle', fill: '#ffd9a0', 'fill-opacity': '.85',
-      'font-family': 'JetBrains Mono, monospace', 'font-size': '15', 'letter-spacing': '.08em' }, g);
-    t.textContent = k[2];
-  });
-
-  // A lone walker with a lantern on the last high point, looking back over the history.
-  const wx = 1590, wy = 500;
-  const w = document.getElementById('walker');
-  el('circle', { cx: wx - 20, cy: wy - 34, r: 26, fill: '#ffcf7a', filter: 'url(#lampGlow)', class: 'flame', opacity: '.9' }, w);
-  el('path', { d: `M${wx} ${wy} l-3 -34 q-1 -8 4 -12 q-3 -3 -2 -8 q3 -6 8 -3 q4 3 1 9 q5 4 4 12 l2 36 z`, fill: '#07061a' }, w);
-  el('path', { d: `M${wx - 2} ${wy - 40} l-14 8`, stroke: '#07061a', 'stroke-width': 3, 'stroke-linecap': 'round', fill: 'none' }, w);
-  el('circle', { cx: wx - 17, cy: wy - 32, r: 3.4, fill: '#fff4cf', class: 'flame' }, w);
-
-  // Portrait screens only have room for the right-hand end of the scene (sun, 2020 peak, walker).
-  const fit = () => svg.setAttribute('viewBox', innerWidth / innerHeight < 1 ? '880 -270 860 1170' : '0 0 1600 900');
-  fit();
-  addEventListener('resize', fit);
-
-  // Gentle parallax on pointer move; touch devices and reduced-motion users skip it.
-  const hero = document.getElementById('hero');
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduce && matchMedia('(pointer: fine)').matches) {
-    hero.addEventListener('pointermove', e => {
-      const r = hero.getBoundingClientRect();
-      hero.style.setProperty('--px', ((e.clientX - r.left) / r.width - 0.5).toFixed(3) * 2);
-      hero.style.setProperty('--py', ((e.clientY - r.top) / r.height - 0.5).toFixed(3) * 2);
-    });
-    hero.addEventListener('pointerleave', () => { hero.style.setProperty('--px', 0); hero.style.setProperty('--py', 0); });
-  }
-})();
-
 // Tagline reveal: wrap each word, light it when it crosses 70% down the viewport.
 (function taglineReveal() {
   const p = document.getElementById('taglineText');
