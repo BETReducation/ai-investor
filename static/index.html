@@ -733,6 +733,21 @@ section {
 .tc-blue .tc-link { color: #3b82f6; }
 .tool-card:hover .tc-link { gap: 10px; }
 
+/* Featured Data Viz card spans two columns, with a collage of real visualisations */
+.tool-card.tc-feature { grid-column: span 2; display: grid; grid-template-columns: 1.05fr 1fr; gap: 28px; align-items: center; padding: 32px; }
+.tc-kicker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); margin-bottom: 10px; }
+.tc-feature .tc-title { font-size: clamp(22px, 2.4vw, 28px); line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+.tc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 20px; }
+.tc-chips span { font-size: 11.5px; padding: 4px 10px; border-radius: 100px; background: rgba(45,212,191,0.10); border: 1px solid rgba(45,212,191,0.22); color: var(--teal); }
+.tc-collage { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tc-collage img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); transition: transform .6s cubic-bezier(.32,.72,0,1); }
+.tc-collage img:nth-child(even) { transform: translateY(14px); }
+.tool-card:hover .tc-collage img { transform: scale(1.03); }
+.tool-card:hover .tc-collage img:nth-child(even) { transform: translateY(14px) scale(1.03); }
+.tc-green .tc-icon { background: rgba(0,212,170,0.10); }
+.tc-teal .tc-icon { background: rgba(45,212,191,0.10); }
+@media (max-width: 900px) { .tool-card.tc-feature { grid-column: auto; grid-template-columns: 1fr; } .tc-collage img:nth-child(even) { transform: none; } }
+
 
 /* ── CTA BANNER ── */
 .cta-section {
@@ -1037,72 +1052,69 @@ section.alt-bg { background: var(--bg2); }
     </div>
     <div class="tools-grid reveal">
 
-      <a href="/tools/signals" class="tool-card tc-purple">
-        <div class="tc-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-          </svg>
+      <a href="/tools/data-visualisation" class="tool-card tc-teal tc-feature">
+        <div class="tc-feature-text">
+          <div class="tc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </div>
+          <div class="tc-kicker">Data Visualisations</div>
+          <div class="tc-title">See the market, don't just read it</div>
+          <div class="tc-desc">Live maps, wagon wheels, compasses and bubble charts that turn thousands of prices into one picture, so history and patterns are easy to spot.</div>
+          <div class="tc-chips"><span>Global heat map</span><span>Market orbs</span><span>Wagon wheels</span><span>Compasses</span><span>Bitcoin</span><span>Gold &amp; silver</span></div>
+          <div class="tc-link">Explore the visualisations <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
         </div>
-        <div class="tc-title">Signal Config</div>
-        <div class="tc-desc">Get simple, plain-English alerts about what's happening in the market.</div>
-        <div class="tc-link">Set some signals <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-
-      <a href="/backtester" class="tool-card tc-purple">
-        <div class="tc-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
-          </svg>
+        <div class="tc-collage" aria-hidden="true">
+          <img src="/static/img/features/viz-market-orbs.webp" alt="" loading="lazy">
+          <img src="/static/img/features/viz-ftse-wheel.webp" alt="" loading="lazy">
+          <img src="/static/img/features/viz-russell-compass.webp" alt="" loading="lazy">
+          <img src="/static/img/features/viz-barrel-map.webp" alt="" loading="lazy">
         </div>
-        <div class="tc-title">Backtester</div>
-        <div class="tc-desc">Practice your investing ideas on real market history — no real money required.</div>
-        <div class="tc-link">Test your strategy <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-      </a>
-
-      <a href="/tools/portfolio" class="tool-card tc-purple">
-        <div class="tc-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>
-          </svg>
-        </div>
-        <div class="tc-title">Portfolio Balancer</div>
-        <div class="tc-desc">Learn how to spread your money sensibly across crypto, stocks and ETFs.</div>
-        <div class="tc-link">View portfolio <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
       </a>
 
       <a href="/learn" class="tool-card tc-blue">
         <div class="tc-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
           </svg>
         </div>
         <div class="tc-title">Education Hub</div>
-        <div class="tc-desc">Start here: simple lessons on different assets, reading charts, and the basics of investing.</div>
+        <div class="tc-desc">Start here: simple lessons on different assets, reading charts and the basics of investing.</div>
         <div class="tc-link">Start learning <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
       </a>
 
-      <a href="/alpha/podcast" class="tool-card tc-blue">
+      <a href="/tools" class="tool-card tc-purple">
         <div class="tc-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
           </svg>
         </div>
-        <div class="tc-title">Stories &amp; Podcasts</div>
-        <div class="tc-desc">Real stories and easy-to-follow conversations about getting started with investing.</div>
-        <div class="tc-link">Be entertained <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div class="tc-title">Tools &amp; Calculators</div>
+        <div class="tc-desc">Signals, a backtester, portfolio trackers and calculators for crypto, metals, dividends and currencies.</div>
+        <div class="tc-link">Browse the tools <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
       </a>
 
       <a href="/arena" class="tool-card tc-gold">
         <div class="tc-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="6"/><path d="M8 14l-4 7h16l-4-7"/>
-            <line x1="9" y1="10" x2="12" y2="13"/><line x1="15" y1="10" x2="12" y2="13"/>
+            <circle cx="12" cy="8" r="6"/><path d="M8 14l-4 7h16l-4-7"/><line x1="9" y1="10" x2="12" y2="13"/><line x1="15" y1="10" x2="12" y2="13"/>
           </svg>
         </div>
-        <div class="tc-title">Competitions</div>
-        <div class="tc-desc">Practice your skills in friendly challenges — no real money at risk.</div>
+        <div class="tc-title">Arena</div>
+        <div class="tc-desc">Practice your skills in friendly challenges and Market XI, with no real money at risk.</div>
         <div class="tc-link">Enter the Arena <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </a>
+
+      <a href="/alpha" class="tool-card tc-green">
+        <div class="tc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+          </svg>
+        </div>
+        <div class="tc-title">Alpha</div>
+        <div class="tc-desc">Real stories and easy-to-follow conversations about getting started with investing.</div>
+        <div class="tc-link">Read and listen <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
       </a>
 
     </div>
