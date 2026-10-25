@@ -311,9 +311,8 @@ nav {
 .tagline-text .w.on { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .tagline-text .w { opacity: 1; transition: none; } }
 
-/* ── HERO ── full-bleed painted scene (static/img/hero/mentor-handshake.webp).
-   Always dark: the text sits on the artwork, not on the page theme. The image
-   edges are feathered into the hero's own indigo so no seam shows. */
+/* ── HERO ── full-bleed looping video (static/img/hero/cafe-mentors.mp4).
+   Always dark: the text sits on the artwork, not on the page theme. */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -322,20 +321,16 @@ nav {
   align-items: center;
   padding: 120px 6% 140px;
   overflow: hidden;
-  background: linear-gradient(180deg, #272a52 0%, #2a2a55 55%, #231d33 100%);
+  background: #272a52;
   color: #fff;
   isolation: isolate;
 }
 .hero-art {
-  position: absolute; z-index: 0; top: 0; bottom: 0; right: 0;
-  width: min(58vw, 112vh);
-  background: url("/static/img/hero/mentor-handshake.webp") right bottom / cover no-repeat;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 34%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 34%);
-  animation: heroDrift 24s ease-in-out infinite alternate;
-  transform-origin: 70% 60%;
+  position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 72% center;
+  opacity: 0; transition: opacity 1.2s cubic-bezier(.32,.72,0,1);
 }
-@keyframes heroDrift { from { transform: scale(1); } to { transform: scale(1.045); } }
+.hero-art.ready { opacity: 1; }
 .hero-scrim {
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background:
@@ -379,7 +374,7 @@ nav {
 
 @media (max-width: 760px) {
   .hero { padding: 104px 6% 0; align-items: flex-start; }
-  .hero-art { top: auto; height: 58vh; width: 100%; background-size: auto 100%; background-position: 72% bottom;
+  .hero-art { inset: auto 0 0 0; height: 58vh; object-position: 76% center;
     -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16%), linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
     -webkit-mask-composite: source-in;
     mask-image: linear-gradient(180deg, transparent 0, #000 16%), linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
@@ -391,7 +386,6 @@ nav {
 }
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none; opacity: 1; filter: none; transform: none; }
-  .hero-art { animation: none; }
 }
 
 .btn-hero {
@@ -867,7 +861,7 @@ section.alt-bg { background: var(--bg2); }
 
 <!-- HERO -->
 <section class="hero" id="hero">
-  <div class="hero-art" role="img" aria-label="A first-time investor shakes hands with an experienced investor on a city rooftop at sunset"></div>
+  <video class="hero-art" id="heroVideo" src="/static/img/hero/cafe-mentors.mp4" poster="/static/img/hero/cafe-mentors-poster.webp" autoplay muted loop playsinline preload="auto" aria-label="A first-time investor and an experienced investor talk over coffee and a price chart in a city cafe"></video>
   <div class="hero-scrim"></div>
 
   <div class="hero-content">
@@ -1139,6 +1133,15 @@ section.alt-bg { background: var(--bg2); }
 <script src="/static/js/footer.js"></script>
 
 <script>
+// Hero video: fade in once it's playing; reduced-motion visitors get a still first frame.
+(function heroVideo() {
+  const v = document.getElementById('heroVideo');
+  if (!v) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { v.removeAttribute('autoplay'); v.pause(); }
+  const show = () => v.classList.add('ready');
+  if (v.readyState >= 2) show(); else v.addEventListener('loadeddata', show, { once: true });
+})();
+
 // Tagline reveal: wrap each word, light it when it crosses 70% down the viewport.
 (function taglineReveal() {
   const p = document.getElementById('taglineText');
