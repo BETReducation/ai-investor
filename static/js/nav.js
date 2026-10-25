@@ -80,6 +80,7 @@
     ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
     ['GCG League and Compass', '/tools/data-visualisation/league-compass'],
     ['GCG Barrel Map', '/tools/data-visualisation/barrel-map'],
+    ['GCG Global ETF Tracker', '/tools/data-visualisation/etf-tracker'],
     ['GCG FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
     ['GCG Russell 2000 Compass', '/tools/data-visualisation/russell-compass']
   ];

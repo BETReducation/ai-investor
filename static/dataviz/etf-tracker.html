@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCG Global ETF Tracker</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--tx:#14213d;--mut:#64708a;--ln:#e1e6ef;--up:#12945f;--dn:#d0342c;--acc:#c9951c;--upb:#e3f6ed;--dnb:#fbe7e5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1526;--card:#16213a;--tx:#eef2fa;--mut:#93a0bd;--ln:#27345a;--up:#2fd18d;--dn:#ff6b61;--acc:#e8b84a;--upb:#12392f;--dnb:#40201f}}
+:root[data-theme="dark"]{--bg:#0d1526;--card:#16213a;--tx:#eef2fa;--mut:#93a0bd;--ln:#27345a;--up:#2fd18d;--dn:#ff6b61;--acc:#e8b84a;--upb:#12392f;--dnb:#40201f}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px;max-width:760px;margin-inline:auto;border-radius:14px}
+h1{font-size:22px;margin:4px 0 2px}h1 span{color:var(--acc)}
+.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
+.note{background:var(--card);border:1px dashed var(--acc);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--mut);margin-bottom:14px}
+.tg{display:flex;gap:6px;background:var(--card);padding:4px;border-radius:12px;border:1px solid var(--ln);margin-bottom:14px}
+.tg button{flex:1;border:0;background:none;color:var(--mut);padding:9px 0;border-radius:9px;font-weight:600;font-size:14px;cursor:pointer}
+.tg button.on{background:var(--acc);color:#14213d}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:14px;margin-bottom:14px;overflow:hidden}
+.hd{padding:10px 14px;font-weight:700;display:flex;justify-content:space-between}
+.hd.u{background:var(--upb);color:var(--up)}.hd.d{background:var(--dnb);color:var(--dn)}
+.row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--ln);cursor:pointer}
+.rk{width:20px;color:var(--mut);font-size:13px}.tk{font-weight:700;width:58px}
+.nm{flex:1;color:var(--mut);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc{font-weight:700;font-variant-numeric:tabular-nums}.pc.u{color:var(--up)}.pc.d{color:var(--dn)}
+.dt{display:none;padding:4px 14px 14px;border-top:1px solid var(--ln);font-size:13px}
+.dt.open{display:block}.dt dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:8px 0}
+.dt dt{color:var(--mut)}.dt dd{margin:0;font-weight:600}
+.yr{display:flex;gap:4px;align-items:center;height:70px;margin-top:6px}
+.yr div{flex:1;text-align:center;font-size:10px;color:var(--mut);display:flex;flex-direction:column;justify-content:center;height:100%}
+.yr i{display:block;border-radius:3px;min-height:3px;margin:2px 0}
+.bw{height:26px;display:flex;align-items:flex-end}.bw.n{align-items:flex-start}
+details{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:0 14px}
+details{margin-bottom:14px}summary{padding:14px 0;font-weight:700;cursor:pointer}
+.pie{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;padding-bottom:14px}
+.pie svg{width:210px;height:210px;flex:none}
+.lg{flex:1;min-width:200px;font-size:13px}.lg div{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--ln)}
+.lg b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.fn{font-size:11px;color:var(--mut);text-align:center;margin:10px 0 0}
+.ft{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.ft input,.ft select,.ft button{flex:1 1 120px;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font:inherit;font-size:14px}.ft input{flex:2 1 100%}.ft button{cursor:pointer}.ft button.on{background:var(--acc);color:#14213d;border-color:var(--acc);font-weight:700}.row.sel{background:var(--upb)}.fb{width:34px;flex:none;font-size:9px;font-weight:700;text-align:center;border-radius:4px;padding:1px 0}.fb.l{background:var(--upb);color:var(--up)}.fb.h{background:var(--dnb);color:var(--dn)}.cp{background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:13px}.cp table{width:100%;border-collapse:collapse}.cp td{padding:4px 0;border-bottom:1px solid var(--ln)}.cp td:first-child{color:var(--mut);width:34%}.cp .w{color:var(--up);font-weight:700}.hero{background:var(--card);border:1px solid var(--ln);border-radius:14px;overflow:hidden;margin-bottom:12px}.hero svg{display:block;width:100%;height:auto}.cap{padding:8px 14px;font-size:13px;color:var(--mut);border-top:1px solid var(--ln);min-height:38px}.pk{cursor:pointer}.lt{display:grid;grid-template-columns:1fr 1fr;gap:8px}.lt .box{margin-bottom:8px;min-width:0}.lt .hd{padding:8px 10px;font-size:13px}.lt .row{padding:9px 8px;gap:6px}.lt .tk{flex:1;width:auto;font-size:14px}.lt .rk{width:16px}.lt .pc{font-size:13px}@media(max-width:520px){.lt .nm{display:none}.lt .fb{width:8px;height:8px;border-radius:50%;padding:0;font-size:0}}.gw{position:relative}#gcv{width:100%;height:300px;display:block;touch-action:none;cursor:grab;border-radius:12px;background:var(--card)}.gb{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:6px}.gb button{min-width:38px;padding:7px 6px;border-radius:9px;border:1px solid var(--ln);background:var(--card);color:var(--tx);font-weight:700;font-size:11px;cursor:pointer}.gb button.on{background:var(--acc);color:#14213d;border-color:var(--acc)}.tip{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:560px;margin:auto;background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}.tip.on{opacity:1}.q{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:50%;background:var(--ln);color:var(--mut);font-size:10px;font-style:normal;font-weight:700;cursor:pointer;margin-left:4px}.mood{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:8px 14px;margin-bottom:12px}.mood svg{width:150px;flex:none}.mt{font-size:13px;color:var(--mut)}.mt b:first-child{font-size:17px;color:var(--tx)}.wb{margin-top:10px;width:100%;padding:9px;border-radius:10px;border:1px solid var(--acc);background:none;color:var(--tx);font:inherit;font-weight:700;cursor:pointer}.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}.ov.on{display:flex}.ovb{max-height:100%;overflow:auto;text-align:center}.ovb img{max-width:100%;max-height:68vh;border-radius:12px}.ovr{display:flex;gap:8px;justify-content:center;margin:10px 0}.ovr button{padding:10px 18px;border-radius:10px;border:0;background:var(--acc);color:#14213d;font-weight:700}.ovm{color:#ddd;font-size:12px}.em{padding:14px;color:var(--mut);font-size:13px}</style></head><body>
+<h1>GCG <span>Global ETF Tracker</span></h1>
+<p class="sub">Who’s climbing, who’s sinking. Tap any ETF for the full story. <span id="cnt"></span></p>
+<div class="note">Sample figures: performance numbers and yearly histories here are placeholders for design purposes. Connect live data and check fund facts before going live.</div>
+<div class="tg" id="tg"></div>
+<div class="mood" id="mood"></div><div class="tip" id="tip"></div><div class="ov" id="ov"></div>
+<div class="hero"><svg id="hs" viewBox="0 0 400 236"></svg><div class="cap" id="cap"></div></div>
+<details id="gd" open><summary>World view: spin the globe</summary><div class="gw"><canvas id="gcv"></canvas><div class="gb"><button id="gz1">+</button><button id="gz2">−</button><button id="gsp" class="on">Spin</button><button id="gmd">Invests</button></div></div><div class="cap" id="gcap" style="border:0;padding:8px 0">Drag to spin, pinch or scroll to zoom, tap a region.</div><div class="lg" id="glst" style="padding-bottom:12px"></div></details>
+<div class="ft"><input id="q" type="search" placeholder="Search name or ticker…"><select id="rg"><option>All regions</option><option>North America</option><option>UK / Ireland</option><option>Asia-Pacific</option><option>Canada</option><option>Europe</option><option>Australia</option><option>Latin America</option><option>Middle East &amp; Africa</option></select><select id="ty"><option>All types</option><option>Equity</option><option>Commodity</option><option>Crypto</option><option>Bond</option></select><button id="cm">Compare</button><button id="wl">★ Watchlist</button><button id="sh">Share card</button></div><div id="cp"></div>
+
+<details><summary>Sector gauge: who’s up, who’s down</summary>
+<div class="pie"><svg viewBox="0 0 200 200" id="pie"></svg><div class="lg" id="lg"></div></div>
+<p class="fn" style="margin:0 0 14px">Slice size shows how strong the average move is; green is up, red is down.</p></details>
+<details open><summary>League table: top 10 and bottom 10</summary><div class="lt"><div class="box"><div class="hd u"><span>▲ Top 10</span><span id="l1"></span></div><div id="top"></div></div>
+<div class="box"><div class="hd d"><span>▼ Bottom 10</span><span id="l2"></span></div><div id="bot"></div></div></div></details>
+<p class="fn">Educational use only, not investment advice. Past performance is no guide to the future.</p>
+<script>
+var E=[["USO","United States Oil Fund LP","Apr 2006","0.60%","North America","Energy",1.8,5.2,12.4,94.7],
+["BNO","United States Brent Oil Fund LP","Jun 2010","0.90%","North America","Energy",2.1,6.0,14.1,126.0],
+["DBE","Invesco DB Energy Fund","Jan 2007","0.85%","North America","Energy",1.2,4.1,9.8,116.3],
+["XLE","Energy Select Sector SPDR Fund","Dec 1998","0.08%","North America","Energy",0.9,2.6,6.1,38.2],
+["XLK","Technology Select Sector SPDR Fund","Dec 1998","0.08%","North America","Technology",-0.4,1.1,4.3,21.5],
+["SMH","VanEck Semiconductor ETF","May 2000","0.35%","North America","Technology",-0.8,2.3,7.9,44.6],
+["SOXX","iShares Semiconductor ETF","Jul 2001","0.34%","North America","Technology",-0.7,2.0,7.2,41.3],
+["NDQ","BetaShares NASDAQ 100 ETF","May 2015","0.48%","Australia","Technology",-0.3,0.9,3.9,22.8],
+["ARKK","ARK Innovation ETF","Oct 2014","0.75%","North America","Technology",-1.6,-2.8,-6.5,-12.4],
+["GLD","SPDR Gold Shares","Nov 2004","0.40%","North America","Precious Metals",0.6,1.9,5.5,52.8],
+["SGLN","iShares Physical Gold ETC","Jun 2011","0.12%","UK / Ireland","Precious Metals",0.6,1.9,5.4,52.1],
+["SLV","iShares Silver Trust","Apr 2006","0.50%","North America","Precious Metals",1.4,3.8,9.6,71.9],
+["GDX","VanEck Gold Miners ETF","May 2006","0.51%","North America","Precious Metals",1.1,3.1,8.4,78.5],
+["IBIT","iShares Bitcoin Trust ETF","Jan 2024","0.25%","North America","Crypto",-2.9,-6.4,-11.8,-31.2],
+["ETHA","iShares Ethereum Trust ETF","Jul 2024","0.25%","North America","Crypto",-3.8,-8.1,-15.3,-42.7],
+["XLV","Health Care Select Sector SPDR Fund","Dec 1998","0.08%","North America","Healthcare",0.2,-0.5,1.1,6.8],
+["XBI","SPDR S&P Biotech ETF","Jan 2006","0.35%","North America","Healthcare",-0.9,-2.2,-4.9,3.1],
+["XLF","Financial Select Sector SPDR Fund","Dec 1998","0.08%","North America","Financials",0.3,0.9,2.7,14.4],
+["XLU","Utilities Select Sector SPDR Fund","Dec 1998","0.08%","North America","Utilities",0.5,1.4,3.2,17.9],
+["XLY","Consumer Discretionary Select Sector SPDR","Dec 1998","0.08%","North America","Consumer",-0.6,-1.3,-2.4,9.2],
+["XLI","Industrial Select Sector SPDR Fund","Dec 1998","0.08%","North America","Industrials",0.4,1.2,3.6,19.7],
+["JETS","U.S. Global Jets ETF","Apr 2015","0.60%","North America","Industrials",1.5,4.4,10.3,33.8],
+["ICLN","iShares Global Clean Energy ETF","Jun 2008","0.40%","North America","Clean Energy",-1.3,-3.5,-8.7,-9.6],
+["TAN","Invesco Solar ETF","Apr 2008","0.67%","North America","Clean Energy",-2.2,-5.1,-12.6,-18.9],
+["EWZ","iShares MSCI Brazil ETF","Jul 2000","0.59%","North America","Country Equity",-1.1,-3.9,-9.4,-14.7],
+["INDA","iShares MSCI India ETF","Feb 2012","0.62%","North America","Country Equity",-0.3,-1.0,-2.1,-6.3],
+["KWEB","KraneShares CSI China Internet ETF","Jul 2013","0.70%","North America","Country Equity",1.9,-1.4,-7.8,-5.2],
+["EWJ","iShares MSCI Japan ETF","Mar 1996","0.50%","North America","Country Equity",0.5,1.7,4.8,16.3],
+["EIDO","iShares MSCI Indonesia ETF","May 2010","0.59%","North America","Country Equity",-2.6,-7.3,-18.4,-33.5],
+["069500","KODEX 200 ETF","Oct 2002","0.15%","Asia-Pacific","Country Equity",1.3,3.6,8.9,47.3],
+["ISF","iShares Core FTSE 100 UCITS ETF","2000","0.07%","UK / Ireland","Country Equity",0.2,0.6,1.8,10.1],
+["VWRL","Vanguard FTSE All-World UCITS ETF","May 2012","0.22%","UK / Ireland","Global Equity",0.1,0.8,2.6,15.9],
+["VGS","Vanguard MSCI Index International Shares ETF","Nov 2014","0.18%","Australia","Global Equity",0.1,0.7,2.4,15.4],
+["AGG","iShares Core U.S. Aggregate Bond ETF","Sep 2003","0.03%","North America","Bonds",-0.1,-0.2,0.4,3.2],
+["TLT","iShares 20+ Year Treasury Bond ETF","Jul 2002","0.15%","North America","Bonds",-0.5,-1.1,-2.3,-4.8],
+["SPY","SPDR S&P 500 ETF Trust","Jan 1993","0.09%","North America","Broad Market"],
+["VOO","Vanguard S&P 500 ETF","Sep 2010","0.03%","North America","Broad Market"],
+["IVV","iShares Core S&P 500 ETF","May 2000","0.03%","North America","Broad Market"],
+["QQQ","Invesco QQQ Trust","Mar 1999","0.20%","North America","Technology"],
+["VTI","Vanguard Total Stock Market ETF","May 2001","0.03%","North America","Broad Market"],
+["IWM","iShares Russell 2000 ETF","May 2000","0.19%","North America","Broad Market"],
+["SCHD","Schwab U.S. Dividend Equity ETF","Oct 2011","0.06%","North America","Dividend"],
+["VYM","Vanguard High Dividend Yield ETF","Nov 2006","0.06%","North America","Dividend"],
+["VGT","Vanguard Information Technology ETF","Jan 2004","0.09%","North America","Technology"],
+["VNQ","Vanguard Real Estate ETF","Sep 2004","0.13%","North America","Real Estate"],
+["XLRE","Real Estate Select Sector SPDR Fund","Oct 2015","0.08%","North America","Real Estate"],
+["XLB","Materials Select Sector SPDR Fund","Dec 1998","0.08%","North America","Materials"],
+["XLC","Communication Services Select Sector SPDR","Jun 2018","0.08%","North America","Communications"],
+["XLP","Consumer Staples Select Sector SPDR Fund","Dec 1998","0.08%","North America","Consumer"],
+["ITA","iShares U.S. Aerospace & Defense ETF","May 2006","0.40%","North America","Industrials"],
+["URA","Global X Uranium ETF","Nov 2010","0.69%","North America","Energy"],
+["COPX","Global X Copper Miners ETF","Apr 2010","0.65%","North America","Materials"],
+["UNG","United States Natural Gas Fund","Apr 2007","1.06%","North America","Commodities"],
+["DBC","Invesco DB Commodity Index Tracking Fund","Feb 2006","0.85%","North America","Commodities"],
+["CPER","United States Copper Index Fund","Nov 2011","0.97%","North America","Commodities"],
+["PPLT","abrdn Physical Platinum Shares ETF","Jan 2010","0.60%","North America","Commodities"],
+["BND","Vanguard Total Bond Market ETF","Apr 2007","0.03%","North America","Bonds"],
+["LQD","iShares iBoxx $ Investment Grade Corporate Bond ETF","Jul 2002","0.14%","North America","Bonds"],
+["HYG","iShares iBoxx $ High Yield Corporate Bond ETF","Apr 2007","0.49%","North America","Bonds"],
+["EMB","iShares J.P. Morgan USD Emerging Markets Bond ETF","Dec 2007","0.39%","North America","Bonds"],
+["BITO","ProShares Bitcoin Strategy ETF","Oct 2021","0.95%","North America","Crypto"],
+["FBTC","Fidelity Wise Origin Bitcoin Fund","Jan 2024","0.25%","North America","Crypto"],
+["IBB","iShares Biotechnology ETF","Feb 2001","0.44%","North America","Healthcare"],
+["VEA","Vanguard FTSE Developed Markets ETF","Jul 2007","0.05%","North America","Global Equity"],
+["VXUS","Vanguard Total International Stock ETF","Jan 2011","0.05%","North America","Global Equity"],
+["ACWI","iShares MSCI ACWI ETF","Mar 2008","0.32%","North America","Global Equity"],
+["VWO","Vanguard FTSE Emerging Markets ETF","Mar 2005","0.07%","North America","Emerging Markets"],
+["EEM","iShares MSCI Emerging Markets ETF","Apr 2003","0.70%","North America","Emerging Markets"],
+["EWT","iShares MSCI Taiwan ETF","Jun 2000","0.59%","North America","Country Equity"],
+["EWY","iShares MSCI South Korea ETF","May 2000","0.59%","North America","Country Equity"],
+["EWS","iShares MSCI Singapore ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWH","iShares MSCI Hong Kong ETF","Mar 1996","0.50%","North America","Country Equity"],
+["MCHI","iShares MSCI China ETF","Mar 2011","0.59%","North America","Country Equity"],
+["EPI","WisdomTree India Earnings Fund","Feb 2008","0.85%","North America","Country Equity"],
+["VNM","VanEck Vietnam ETF","Aug 2009","0.66%","North America","Country Equity"],
+["EWA","iShares MSCI Australia ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWG","iShares MSCI Germany ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWQ","iShares MSCI France ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWI","iShares MSCI Italy ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWP","iShares MSCI Spain ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWL","iShares MSCI Switzerland ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EWW","iShares MSCI Mexico ETF","Mar 1996","0.50%","North America","Country Equity"],
+["EZA","iShares MSCI South Africa ETF","Feb 2003","0.59%","North America","Country Equity"],
+["KSA","iShares MSCI Saudi Arabia ETF","Sep 2015","0.74%","North America","Country Equity"],
+["TUR","iShares MSCI Turkey ETF","Mar 2008","0.59%","North America","Country Equity"],
+["EIS","iShares MSCI Israel ETF","Mar 2008","0.59%","North America","Country Equity"],
+["ARGT","Global X MSCI Argentina ETF","Mar 2011","0.59%","North America","Country Equity"],
+["EPOL","iShares MSCI Poland ETF","May 2010","0.59%","North America","Country Equity"],
+["XIU","iShares S&P/TSX 60 Index ETF","1999","0.18%","Canada","Country Equity"],
+["VFV","Vanguard S&P 500 Index ETF","Nov 2012","0.09%","Canada","Broad Market"],
+["XEQT","iShares Core Equity ETF Portfolio","Aug 2019","0.20%","Canada","Global Equity"],
+["ZEB","BMO Equal Weight Banks Index ETF","Oct 2009","0.28%","Canada","Financials"],
+["XEG","iShares S&P/TSX Capped Energy Index ETF","Mar 2001","0.61%","Canada","Energy"],
+["VUSA","Vanguard S&P 500 UCITS ETF","May 2012","0.07%","UK / Ireland","Broad Market"],
+["CSPX","iShares Core S&P 500 UCITS ETF","May 2010","0.07%","UK / Ireland","Broad Market"],
+["SWDA","iShares Core MSCI World UCITS ETF","Sep 2009","0.20%","UK / Ireland","Global Equity"],
+["EIMI","iShares Core MSCI EM IMI UCITS ETF","May 2014","0.18%","UK / Ireland","Emerging Markets"],
+["VUKE","Vanguard FTSE 100 UCITS ETF","Jul 2012","0.09%","UK / Ireland","Country Equity"],
+["IGLT","iShares Core UK Gilts UCITS ETF","2006","0.07%","UK / Ireland","Bonds"],
+["SSLN","iShares Physical Silver ETC","2009","0.20%","UK / Ireland","Commodities"],
+["EQQQ","Invesco EQQQ NASDAQ-100 UCITS ETF","Dec 2009","0.30%","UK / Ireland","Technology"],
+["INRG","iShares Global Clean Energy UCITS ETF","Jul 2007","0.65%","UK / Ireland","Clean Energy"],
+["MEUD","Amundi STOXX Europe 600 UCITS ETF","2009","0.07%","Europe","Broad Market"],
+["EXS1","iShares Core DAX UCITS ETF (DE)","2000","0.16%","Europe","Country Equity"],
+["EXSA","iShares STOXX Europe 600 UCITS ETF (DE)","2000","0.20%","Europe","Broad Market"],
+["CAC","Amundi CAC 40 UCITS ETF","2001","0.25%","Europe","Country Equity"],
+["EXV1","iShares STOXX Europe 600 Banks UCITS ETF (DE)","2002","0.46%","Europe","Financials"],
+["2800","Tracker Fund of Hong Kong","Nov 1999","0.09%","Asia-Pacific","Country Equity"],
+["ES3","SPDR Straits Times Index ETF","Apr 2002","0.30%","Asia-Pacific","Country Equity"],
+["NIFTYBEES","Nippon India ETF Nifty 50 BeES","Dec 2001","0.04%","Asia-Pacific","Country Equity"],
+["GOLDBEES","Nippon India ETF Gold BeES","Mar 2007","0.82%","Asia-Pacific","Commodities"],
+["IOZ","iShares Core S&P/ASX 200 ETF","Dec 2010","0.05%","Australia","Country Equity"],
+["A200","BetaShares Australia 200 ETF","May 2018","0.04%","Australia","Country Equity"],
+["VAS","Vanguard Australian Shares Index ETF","May 2009","0.07%","Australia","Country Equity"],
+["ETHI","BetaShares Global Sustainability Leaders ETF","Jan 2017","0.59%","Australia","Global Equity"],
+["HACK","BetaShares Global Cybersecurity ETF","Aug 2016","0.57%","Australia","Technology"],
+["BOVA11","iShares Ibovespa Fundo de Indice","2008","0.10%","Latin America","Country Equity"],
+["IVVB11","iShares S&P 500 Fundo de Indice","2014","0.23%","Latin America","Broad Market"],
+["STX40","Satrix 40 ETF","2000","0.10%","Middle East & Africa","Country Equity"]];
+E.forEach(function(e){if(e.length<7){var s=0,i,sc=[1.5,3.5,7,22];for(i=0;i<e[0].length;i++)s=(s*31+e[0].charCodeAt(i))%9973;for(i=0;i<4;i++){s=(s*7919+104729)%99991;e.push(+(((s%1000)/1000*2-0.8)*sc[i]).toFixed(1))}}});
+document.getElementById("cnt").textContent="Tracking "+E.length+" ETFs from around the world.";
+var P=["Day","Week","Month","Year"],p=0;
+function f(x){return(x>0?"+":"")+x.toFixed(1)+"%"}
+function ty(e){return e[5]==="Crypto"?"Crypto":e[5]==="Bonds"?"Bond":e[5]==="Commodities"?"Commodity":/^(USO|BNO|DBE|GLD|SGLN|SLV)$/.test(e[0])?"Commodity":"Equity"}
+var cmp=[],cmode=false,pool=E,WL={},wlOnly=false;try{WL=JSON.parse(localStorage.getItem("gcgwl")||"{}")}catch(er){}
+function wsave(){try{localStorage.setItem("gcgwl",JSON.stringify(WL))}catch(er){}}
+var H={launch:"The date the ETF first started trading. Older funds have a longer track record to look at.",fee:"The yearly cost of owning the fund, taken from your money. 0.20% means £20 a year on every £10,000.",region:"Where the fund was created and is run. This is not always where it invests.",sector:"The kind of companies or assets the fund mainly holds.",type:"Equity means company shares, Bond means loans to governments or companies, Commodity means things like gold or oil, Crypto means digital assets.",feecheck:"Low is 0.20% or less and high is 0.60% or more. Fees add up over the years, so small differences matter.",years:"Green bars are years the fund gained and red bars are years it fell.",mood:"The share of ETFs in your current view that are up over the chosen period. It is a snapshot, not a prediction."};
+function Q(k){return' <b class="q" data-h="'+H[k]+'">?</b>'}
+function hist(t,ly){var o=[],s=0,i;for(i=0;i<t.length;i++)s=(s*31+t.charCodeAt(i))%9973;
+for(i=0;i<8;i++){s=(s*7919+104729)%99991;var y=2018+i;o.push(y<ly?null:Math.round((s%6500)/100-22)) }return o}
+function row(e,i,tag){var v=e[6+p],c=v>=0?"u":"d";
+var fe=parseFloat(e[3]),fb=fe<=0.2?'<span class="fb l">LOW</span>':fe>=0.6?'<span class="fb h">HIGH</span>':'<span class="fb"></span>';return'<div class="row'+(cmp.indexOf(E.indexOf(e))>-1?' sel':'')+'" data-i="'+E.indexOf(e)+'"><span class="rk">'+(i+1)+'</span><span class="tk">'+e[0]+(WL[e[0]]?' ★':'')+'</span>'+fb+'<span class="nm">'+e[1]+'</span><span class="pc '+c+'">'+f(v)+'</span></div><div class="dt" id="d'+E.indexOf(e)+'"></div>'}
+function detail(i){var e=E[i],ly=parseInt(e[2].slice(-4)),h=hist(e[0],ly),mx=30,b="";
+h.forEach(function(v,k){var yr=2018+k;if(v===null){b+='<div><span>–</span><span>'+yr+'</span></div>';return}
+var ht=Math.min(Math.abs(v)/mx,1)*24+3,up=v>=0;
+b+='<div><span class="bw'+(up?'':' n')+'"><i style="width:100%;height:'+ht+'px;background:var(--'+(up?'up':'dn')+')"></i></span><span style="color:var(--'+(up?'up':'dn')+')">'+f(v).replace(".0","")+'</span><span>'+String(yr).slice(2)+'</span></div>'});
+return'<dl><dt>Official name</dt><dd>'+e[1]+'</dd><dt>Ticker</dt><dd>'+e[0]+'</dd><dt>Launched'+Q("launch")+'</dt><dd>'+e[2]+'</dd><dt>Annual fee'+Q("fee")+'</dt><dd>'+e[3]+'</dd><dt>Region created'+Q("region")+'</dt><dd>'+e[4]+'</dd><dt>Sector'+Q("sector")+'</dt><dd>'+e[5]+'</dd><dt>Asset type'+Q("type")+'</dt><dd>'+ty(e)+'</dd><dt>Fee check'+Q("feecheck")+'</dt><dd>'+(parseFloat(e[3])<=0.2?"Low fee":parseFloat(e[3])>=0.6?"High fee":"Mid-range fee")+'</dd></dl><div style="color:var(--mut)">Calendar-year gains and losses'+Q("years")+'</div><div class="yr">'+b+'</div><button class="wb" data-t="'+e[0]+'">'+(WL[e[0]]?"★ In your watchlist":"☆ Add to watchlist")+'</button>'}
+function draw(){var q=document.getElementById("q").value.toLowerCase(),rg=document.getElementById("rg").value,tp=document.getElementById("ty").value;pool=E.filter(function(e){return(!q||(e[0]+" "+e[1]).toLowerCase().indexOf(q)>-1)&&(rg==="All regions"||e[4]===rg)&&(tp==="All types"||ty(e)===tp)&&(!wlOnly||WL[e[0]])});var s=pool.slice().sort(function(a,b){return b[6+p]-a[6+p]});
+var t=s.slice(0,Math.min(10,Math.ceil(s.length/2))),w=s.slice(t.length).slice(-10).reverse();
+document.getElementById("top").innerHTML=t.length?t.map(function(e,i){return row(e,i)}).join(""):'<div class="em">No ETFs match. Try loosening the filters.</div>';
+document.getElementById("bot").innerHTML=w.length?w.map(function(e,i){return row(e,i)}).join(""):'<div class="em">Nothing here for this selection.</div>';
+document.getElementById("l1").textContent=P[p];document.getElementById("l2").textContent=P[p];
+var g={};pool.forEach(function(e){(g[e[5]]=g[e[5]]||[]).push(e[6+p])});
+var a=Object.keys(g).map(function(k){var v=g[k];return[k,v.reduce(function(x,y){return x+y},0)/v.length]});
+a.sort(function(x,y){return y[1]-x[1]});
+var tot=a.reduce(function(x,y){return x+Math.abs(y[1])},0),mx=Math.max.apply(0,a.map(function(x){return Math.abs(x[1])})),ang=-Math.PI/2,sv="",lg="";
+a.forEach(function(x){var da=Math.abs(x[1])/tot*2*Math.PI,a2=ang+da,r=92,c=100;
+var X1=c+r*Math.cos(ang),Y1=c+r*Math.sin(ang),X2=c+r*Math.cos(a2),Y2=c+r*Math.sin(a2);
+var col=x[1]>=0?"var(--up)":"var(--dn)",op=(0.45+0.55*Math.abs(x[1])/mx).toFixed(2);
+sv+='<path d="M'+c+','+c+' L'+X1+','+Y1+' A'+r+','+r+' 0 '+(da>Math.PI?1:0)+' 1 '+X2+','+Y2+' Z" fill="'+col+'" fill-opacity="'+op+'" stroke="var(--card)" stroke-width="2"/>';
+lg+='<div><span><b style="background:'+col+';opacity:'+op+'"></b>'+x[0]+'</span><span class="pc '+(x[1]>=0?'u':'d')+'">'+f(x[1])+'</span></div>';ang=a2});
+document.getElementById("pie").innerHTML=sv;document.getElementById("lg").innerHTML=lg;cpan();hero(t,w);glist();gdraw();mood()}
+var tg=document.getElementById("tg");
+P.forEach(function(n,i){var b=document.createElement("button");b.textContent=n;b.className=i?"":"on";b.onclick=function(){p=i;[].forEach.call(tg.children,function(c,k){c.className=k==i?"on":""});draw()};tg.appendChild(b)});
+document.addEventListener("click",function(ev){var qq=ev.target.closest(".q");if(qq){tip(qq.dataset.h);return}var wb=ev.target.closest(".wb");if(wb){var tk=wb.dataset.t;if(WL[tk])delete WL[tk];else WL[tk]=1;wsave();wb.textContent=WL[tk]?"★ In your watchlist":"☆ Add to watchlist";var rw=wb.parentNode.previousElementSibling;if(rw&&rw.querySelector(".tk"))rw.querySelector(".tk").textContent=tk+(WL[tk]?" ★":"");if(wlOnly)draw();return}var pk=ev.target.closest(".pk");if(pk){var e=E[+pk.dataset.i],v=e[6+p];document.getElementById("cap").innerHTML='<b>'+e[0]+'</b> · '+e[1]+' · <b style="color:var(--'+(v>=0?'up':'dn')+')">'+f(v)+'</b> this '+P[p].toLowerCase();return}var r=ev.target.closest(".row");if(!r)return;if(cmode){var k=+r.dataset.i,x=cmp.indexOf(k);if(x>-1)cmp.splice(x,1);else{cmp.push(k);if(cmp.length>2)cmp.shift()}draw();return}var d=document.getElementById("d"+r.dataset.i);
+if(!d.innerHTML)d.innerHTML=detail(+r.dataset.i);d.classList.toggle("open")});
+draw();
+["q","rg","ty"].forEach(function(id){document.getElementById(id).addEventListener("input",draw)});
+document.getElementById("cm").onclick=function(){cmode=!cmode;this.className=cmode?"on":"";this.textContent=cmode?"Compare: pick 2":"Compare";if(!cmode)cmp=[];draw()};
+function hero(t,w){var M=1,Y=118;t.concat(w).forEach(function(e){M=Math.max(M,Math.abs(e[6+p]))});
+function lay(a){return a}
+function build(a){var n=Math.max(a.length,1),sw=Math.min(36,400/n),off=(400-sw*a.length)/2,s="";
+lay(a).forEach(function(e,i){var v=e[6+p],up=v>=0,h=Math.max(3,Math.abs(v)/M*72),x=off+sw*(i+0.5),hw=sw*0.36,tip=up?Y-h:Y+h,c=up?"var(--up)":"var(--dn)";
+s+='<g class="pk" data-i="'+E.indexOf(e)+'"><rect x="'+(x-hw)+'" y="'+(up?tip:Y)+'" width="'+(hw*2)+'" height="'+h+'" rx="2" fill="'+c+'" fill-opacity="'+(0.5+0.5*Math.abs(v)/M).toFixed(2)+'"/><text transform="translate('+(x+3)+','+(up?tip-4:tip+4)+') rotate(-90)" text-anchor="'+(up?'start':'end')+'" font-size="8.5" font-weight="700" fill="var(--tx)">'+e[0]+'</text></g>'});return s}
+var arr=t.concat(w.slice().reverse());
+document.getElementById("hs").innerHTML='<rect width="400" height="'+Y+'" fill="var(--upb)"/><rect y="'+Y+'" width="400" height="118" fill="var(--dnb)"/>'+build(arr)+'<line x1="0" x2="400" y1="'+Y+'" y2="'+Y+'" stroke="var(--acc)" stroke-width="1.5"/><text x="392" y="13" text-anchor="end" font-size="8" font-weight="700" fill="var(--up)">RISING · '+P[p].toUpperCase()+'</text><text x="8" y="231" font-size="8" font-weight="700" fill="var(--dn)">SINKING</text>';
+document.getElementById("cap").textContent="Tap a bar to see who it is."}
+var GD=[["North America",[[-124,48.5,-123,49,-95,49,-89,48,-84,46.5,-83,42,-79,43,-75,45,-67,45,-70,43,-70,41.7,-74,40.5,-76,38,-75.5,35.5,-81,31.5,-80,27,-80.5,25.3,-82.5,27.5,-85,29.8,-89,30,-94,29.5,-97.5,27,-97.5,22,-96,19,-94,18,-91,18.7,-90,21,-87,21.5,-87.5,18,-88.5,16,-92,14.8,-95,16,-99,16.7,-105,19.5,-106,23,-109,25.5,-112.5,29.5,-114.7,31.8,-112.5,28,-110,24,-109.5,23,-112,25,-114.5,28,-115.5,30,-117,32.5,-120.5,34.5,-122.5,37.5,-124,40.3,-124.5,43,-124,46.2],[-141,69.6,-156,71.3,-166,68.5,-163,66,-168,65.6,-161,64.5,-165,62.5,-162,59.5,-158,58.5,-162,55,-153,57.5,-150,61,-146,60.7,-141,60]]],
+["Canada",[[-141,60.3,-141,69.6,-128,70,-115,68.5,-100,68,-95,71.5,-85,69.5,-82,66,-86,64,-93,61,-94.5,59,-92,57,-85,55.2,-82.3,53,-79.5,51.5,-78.8,54,-77,58,-78,62,-73,62.3,-70,59,-65,60.2,-61,56,-57,53,-60,50,-67,49.5,-64.5,47.5,-65,45.5,-66,44.5,-67,45,-70,45.5,-75,45,-79,43,-83,42,-83,46.5,-89,48,-95,49,-123,49,-128,52,-131,54.5,-133,57,-136,59]]],
+["Latin America",[[-80,8.5,-77,8.5,-75,11,-72,12,-68,10.5,-62,10.5,-60,8,-57,6,-52,5,-50,1,-44,-2.5,-39,-3,-35,-5.5,-35,-9,-39,-13,-39,-18,-41,-22,-45,-23.5,-48,-26,-49,-29,-53,-34,-57,-35,-57,-38,-62,-39,-65,-41,-63.5,-42.5,-67,-46,-66,-48,-69,-51,-69,-52.5,-68,-55,-72,-53.5,-74,-52,-75,-47,-73.5,-42,-73.5,-37,-71.5,-30,-70.5,-23,-70.3,-18.5,-76,-14,-79,-8,-81,-5,-80,-2,-80,0.5,-78.5,2.5,-77.5,7]]],
+["Europe",[[-9,37,-9,43,-2,43.4,-1.2,46,-4.7,48.4,-1.5,48.7,1.6,50.9,4.5,52,8.5,54,8.2,57,10.6,57.7,10.2,54.9,14,54,19,54.4,21,57,24,59.4,30,60,28,69.5,40,67,44,68.5,55,68.5,60,69,60,55,60,51,55,50.5,48,47,47,43,40,44,37,45,33,46,30.5,46.5,29.5,44.5,28,42,26,40.8,24,38,23,36.5,21.5,37,19.5,40,18.5,40,16,38,15.7,40.5,12.5,41.5,10,43.5,8.5,44.3,6.5,43.1,3.2,43,3.2,42,0.5,40,-0.3,38.7,-2,36.7,-5.5,36],[5,58.8,5.5,62,10,64.5,14,68,19,70,25,71,30,70.5,30,69.5,29,66,30.5,62.5,28,60.5,23,60,21.5,61.5,21.5,65.5,17.5,62.5,19,60,17.5,58.5,16.5,56.2,13,55.4,11,58.5,8,58]]],
+["UK / Ireland",[[-5.5,50,1.5,51,1.7,52.7,0.2,53.5,-1.5,55,-2,56.5,-1.8,57.6,-3.5,58.6,-5,58.6,-6.2,57,-5.5,55.5,-3,54.8,-3.2,53.3,-4.7,52.7,-5.2,51.7,-3,51.4,-4.2,51],[-10,51.7,-6.2,52.2,-6,54,-5.5,54.8,-8,55.2,-10,54]]],
+["Middle East & Africa",[[-17,21,-17,14.7,-15,11,-13,8.5,-8,4.5,-4,5.2,1.5,6.2,4.5,6.3,6,4.3,9.5,4,9.5,1,9,-1,12,-5,13.5,-12,12,-17.5,14.5,-23,15.5,-27.5,18,-32.5,20,-34.8,25,-34,27,-33.5,32.5,-28.5,35,-24,35.5,-20,40.5,-15,40.5,-10.5,39.5,-5,41,-1.5,44,1.5,51,11.8,43.5,12.5,39,16,37,21,34.5,27.5,32.5,30,32,31.3,34.5,31.5,30,31,20,31.5,10,33,10,36.8,2,36.5,-6,35.8,-9.5,31,-13,27.5],[26.5,40,29,41,36,41.7,41,41,44.5,40,48,38.5,54,37,61,36.5,61,32,62,29,61.5,25.3,57,25.8,56.5,27,52,27.6,50,30,48,30,48,29,50,26,51.5,24.5,54,24,56,26,56.5,24.5,59.5,22.5,57,19,52,16.5,45,13,43,12.7,42.5,15,39.5,21,35,28,34.8,29.5,34.3,31.2,35,33,36,36.2,32,36.2,28,36.6,27,37.2],[49.3,-12,50.5,-15.5,47.5,-25,44.5,-25,43.5,-21,44.5,-16.5,47,-15]]],
+["Asia-Pacific",[[61.5,25.3,66.5,25.4,68.5,23.5,72.5,21,73,16,76,9,78,8.2,80,10,80,15.5,83.5,17.5,87,21.5,89,21.8,92,21.5,94.5,17,97.5,16.5,98.5,10,100,7,103,1.4,104,1.5,103,5,100.5,13.5,102.5,12,105,9,106.5,10.5,109,12,108.5,15.5,106.5,19,108,21.5,111,21.5,117,23.2,121.5,28,122,31,119,34.5,121,37.2,118.5,38,122,40.5,125,39.5,126.5,37,129.5,35.5,129.5,37,128,38.7,127.5,40,131,43,133,48,127,50,120,53,117,49.5,110,49,100,50.5,90,49,85,47,80,45,75,40,71,37.5,71,35.5,66,37.5,61,36.5,61.5,30],[130.5,31.2,132,33.5,135,34,137,34.6,140,35,141,38.5,142,41.5,140,41,139.5,39.5,137,37,135.5,35.7,132,35.5,130.8,33.8],[140,42,141,45.4,145,43.3,143,42],[95.3,5.5,98,4,104,-1,106,-3,105.8,-5.8,102,-4,98.5,0],[105.5,-6.5,114.5,-7.8,114,-8.7,106,-7.6],[109,1.5,111,1.8,115,5,118,5.5,119,1,117.5,-1,116,-3.8,111,-3.5,109,-1],[121,25.2,122,25,121.5,23,120.8,22,120.1,23],[131,-1,135,-3.3,141,-2.6,147,-6,150,-10.5,144,-7.8,141,-9,138,-8,134,-4]]],
+["Australia",[[114,-22,114,-26,115,-34,118,-35,124,-33.7,129,-31.5,134,-32.7,138,-35.5,140,-38,144,-38.5,147,-39,150,-37.5,153,-31,153.5,-26,151,-23.5,146,-19,145.5,-15,143,-11,141.5,-13.5,141,-17,136,-15.5,135,-12,132,-11.3,130,-13,126,-14,123,-17,122,-18],[172.7,-34.5,175,-37,178,-37.7,176,-39.5,175.3,-41.5,174.8,-39.5,173.8,-36.5],[172.7,-40.7,174,-41.5,173,-43,171,-44.5,169,-46.5,166.5,-46,168,-44,171,-42]]],
+["",[[-73,78,-60,82,-30,83.5,-20,81,-20,72,-30,68,-42,60,-50,62,-54,67,-58,75],[60,69,70,73,80,73.5,100,77,113,73.5,130,71.5,150,71,160,69.5,170,70,180,69,180,65,178,64,170,60,163,58,160,54.5,156,51,155,57,150,59.5,143,59,137,54.5,141,52,140,48,135,43.5,133,48,127,50,120,53,117,49.5,110,49,100,50.5,90,49,85,47,80,45,75,40,71,37.5,66,37.5,61,36.5,54,37.5,53,40,51,43,53,46,60,51]]]];
+var LB={"North America":[-100,39],"Canada":[-100,59],"Latin America":[-60,-12],"Europe":[15,50],"UK / Ireland":[-2,54],"Middle East & Africa":[20,5],"Asia-Pacific":[105,32],"Australia":[134,-25]};
+var gm=0,gl=-20,gp=22,gk=1,ga=true,gdr=false,gpt={},gmv=0,gdet=document.getElementById("gd"),gc=document.getElementById("gcv");
+function gavg(){var o={},a=[];E.forEach(function(e){(o[e[4]]=o[e[4]]||[]).push(e)});Object.keys(o).forEach(function(r){var v=o[r];a.push({r:r,a:v.reduce(function(x,e){return x+e[6+p]},0)/v.length,n:v.length})});return a}
+function glist(){var a=gavg().sort(function(x,y){return y.a-x.a});document.getElementById("glst").innerHTML=a.map(function(q){return'<div><span>'+q.r+' <small style="color:var(--mut)">('+q.n+')</small></span><span class="pc '+(q.a>=0?'u':'d')+'">'+f(q.a)+'</span></div>'}).join("")}
+function gpr(lo,la){var l=(lo-gl)*0.017453,a=la*0.017453,q=gp*0.017453;return[Math.cos(a)*Math.sin(l),Math.cos(q)*Math.sin(a)-Math.sin(q)*Math.cos(a)*Math.cos(l),Math.sin(q)*Math.sin(a)+Math.cos(q)*Math.cos(a)*Math.cos(l)]}
+function gpath(r,Rr,cx,cy){var o=[],vis=0,n=r.length/2,i,j;for(i=0;i<n;i++){var a=r[2*i],b=r[2*i+1],a2=r[2*((i+1)%n)],b2=r[2*((i+1)%n)+1],st=Math.max(1,Math.ceil(Math.max(Math.abs(a2-a),Math.abs(b2-b))/4));for(j=0;j<st;j++){var q=gpr(a+(a2-a)*j/st,b+(b2-b)*j/st),X=q[0],Y=q[1];if(q[2]>=0)vis=1;else{var mm=Math.hypot(X,Y)||1;X/=mm;Y/=mm}o.push([cx+Rr*X,cy-Rr*Y])}}return vis?o:null}
+function gdraw(){if(!gdet||!gdet.open)return;var w=gc.clientWidth,h=300,d=window.devicePixelRatio||1;if(!w)return;gc.width=w*d;gc.height=h*d;var x=gc.getContext("2d");x.setTransform(d,0,0,d,0,0);
+var cs=getComputedStyle(document.documentElement),U=cs.getPropertyValue("--up"),N=cs.getPropertyValue("--dn"),L=cs.getPropertyValue("--ln"),B=cs.getPropertyValue("--bg"),T=cs.getPropertyValue("--tx"),Cd=cs.getPropertyValue("--card"),AC=cs.getPropertyValue("--acc"),sel=document.getElementById("rg").value;
+var Rr=Math.min(w,h)/2*0.9*gk,cx=w/2,cy=h/2,M=1,m={};gavg().forEach(function(q){m[q.r]=q.a;M=Math.max(M,Math.abs(q.a))});
+var gr=x.createRadialGradient(cx-Rr*0.3,cy-Rr*0.3,Rr*0.1,cx,cy,Rr);gr.addColorStop(0,Cd);gr.addColorStop(1,B);x.fillStyle=gr;x.beginPath();x.arc(cx,cy,Rr,0,7);x.fill();x.save();x.beginPath();x.arc(cx,cy,Rr,0,7);x.clip();
+grat(x,cx,cy,Rr,L);GD.forEach(function(g){var v=m[g[0]];g[1].forEach(function(ring){var s=gpath(ring,Rr,cx,cy);if(!s)return;x.beginPath();s.forEach(function(q,i){if(i)x.lineTo(q[0],q[1]);else x.moveTo(q[0],q[1])});x.closePath();var hl=g[0]&&g[0]===sel,on=gm?0:1;x.fillStyle=g[0]&&on?(v>=0?U:N):L;x.globalAlpha=g[0]&&on?0.35+0.6*Math.abs(v)/M:0.8;x.fill();x.globalAlpha=1;x.strokeStyle=hl?AC:Cd;x.lineWidth=hl?2.4:0.8;x.stroke()})});
+Object.keys(LB).forEach(function(k){var q=gpr(LB[k][0],LB[k][1]);if(gm||q[2]<0.3||m[k]===undefined)return;x.fillStyle=T;x.font="700 11px system-ui,sans-serif";x.textAlign="center";x.fillText(f(m[k]),cx+Rr*q[0],cy-Rr*q[1]+4)});
+if(gm)gdots().forEach(function(o){var q=gpr(o.lo,o.la);if(q[2]<0.05)return;var px=cx+Rr*q[0],py=cy-Rr*q[1],r=5+3*Math.sqrt(o.n);x.globalAlpha=0.9;x.fillStyle=o.a>=0?U:N;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.globalAlpha=1;x.strokeStyle=T;x.lineWidth=1;x.stroke();x.fillStyle=T;x.font="700 9px system-ui,sans-serif";x.textAlign="center";x.fillText(f(o.a).replace("%",""),px,py-r-3)});x.restore();x.strokeStyle=L;x.lineWidth=1.5;x.beginPath();x.arc(cx,cy,Rr,0,7);x.stroke()}
+function gin(r,lo,la){var n=r.length/2,i,j=n-1,c=false;for(i=0;i<n;i++){var xi=r[2*i],yi=r[2*i+1],xj=r[2*j],yj=r[2*j+1];if((yi>la)!=(yj>la)&&lo<(xj-xi)*(la-yi)/(yj-yi)+xi)c=!c;j=i}return c}
+function ghit(e){var r=gc.getBoundingClientRect(),w=r.width,Rr=Math.min(w,300)/2*0.9*gk,x=(e.clientX-r.left-w/2)/Rr,y=(150-(e.clientY-r.top))/Rr,rho=x*x+y*y,cap=document.getElementById("gcap");if(rho>1)return;if(gm){var bd=null,bs=18;gdots().forEach(function(o){var q=gpr(o.lo,o.la);if(q[2]<0.05)return;var dd=Math.hypot(q[0]-x,q[1]-y)*Rr;if(dd<bs){bs=dd;bd=o}});cap.innerHTML=bd?'<b>'+bd.t.join(", ")+'</b> · '+f(bd.a)+' average this '+P[p].toLowerCase():"Tap a dot to see the country funds there.";return}var z=Math.sqrt(1-rho),q=gp*0.017453,la=Math.asin(z*Math.sin(q)+y*Math.cos(q))/0.017453,lo=gl+Math.atan2(x,z*Math.cos(q)-y*Math.sin(q))/0.017453;lo=((lo%360)+540)%360-180;
+for(var i=0;i<GD.length;i++)for(var j=0;j<GD[i][1].length;j++)if(gin(GD[i][1][j],lo,la)){var nm=GD[i][0];if(!nm){cap.textContent="No ETFs tracked in this area yet.";return}var s=gavg().filter(function(o){return o.r===nm})[0],rgS=document.getElementById("rg");if(rgS.value===nm){rgS.value="All regions";cap.innerHTML='<b>'+nm+'</b> · filter cleared, showing every region.'}else{rgS.value=nm;cap.innerHTML='<b>'+nm+'</b> · '+f(s.a)+' average this '+P[p].toLowerCase()+' across '+s.n+' ETFs. The charts and tables now show this region. Tap it again to clear.'}draw();return}
+cap.textContent="Open ocean."}
+gc.addEventListener("pointerdown",function(e){gc.setPointerCapture(e.pointerId);gpt[e.pointerId]=[e.clientX,e.clientY];gmv=0;ga=false;gdr=true;document.getElementById("gsp").className=""});
+gc.addEventListener("pointermove",function(e){var o=gpt[e.pointerId];if(!o)return;var ids=Object.keys(gpt);if(ids.length==2){var ot=gpt[ids[0]==e.pointerId?ids[1]:ids[0]],d0=Math.hypot(o[0]-ot[0],o[1]-ot[1]),d1=Math.hypot(e.clientX-ot[0],e.clientY-ot[1]);if(d0)gk=Math.min(6,Math.max(0.8,gk*d1/d0));gmv=9}else{var dx=e.clientX-o[0],dy=e.clientY-o[1];gmv+=Math.abs(dx)+Math.abs(dy);gl-=dx*0.35/gk;gp=Math.max(-80,Math.min(80,gp+dy*0.35/gk))}gpt[e.pointerId]=[e.clientX,e.clientY];gdraw()});
+function gup(e){var had=gpt[e.pointerId];delete gpt[e.pointerId];if(!Object.keys(gpt).length)gdr=false;if(had&&gmv<6&&e.type==="pointerup")ghit(e)}
+gc.addEventListener("pointerup",gup);gc.addEventListener("pointercancel",gup);
+gc.addEventListener("wheel",function(e){e.preventDefault();gk=Math.min(6,Math.max(0.8,gk*Math.exp(-e.deltaY*0.001)));gdraw()},{passive:false});
+document.getElementById("gz1").onclick=function(){gk=Math.min(6,gk*1.4);gdraw()};
+document.getElementById("gz2").onclick=function(){gk=Math.max(0.8,gk/1.4);gdraw()};
+document.getElementById("gsp").onclick=function(){ga=!ga;this.className=ga?"on":""};
+gdet.addEventListener("toggle",gdraw);window.addEventListener("resize",gdraw);
+setInterval(function(){if(gdet.open&&ga&&!gdr){gl+=0.3;gdraw()}},40);
+var CL={EWZ:[-52,-12],INDA:[78,22],KWEB:[105,35],EWJ:[138,36],EIDO:[113,-2],"069500":[128,36.5],EWY:[128,36.5],EWT:[121,23.7],EWS:[103.8,1.3],EWH:[114.2,22.3],MCHI:[105,35],EPI:[78,22],VNM:[106,16],EWA:[134,-25],EWG:[10.4,51],EWQ:[2.3,46.6],EWI:[12.5,42.5],EWP:[-3.7,40.3],EWL:[8.2,46.8],EWW:[-102,23.6],EZA:[25,-29],KSA:[45,24],TUR:[35,39],EIS:[34.9,31.5],ARGT:[-64,-34],EPOL:[19,52],XIU:[-100,56],ISF:[-2,54],VUKE:[-2,54],EXS1:[10.4,51],CAC:[2.3,46.6],NIFTYBEES:[78,22],"2800":[114.2,22.3],ES3:[103.8,1.3],IOZ:[134,-25],A200:[134,-25],VAS:[134,-25],BOVA11:[-52,-12],STX40:[25,-29]};
+function gdots(){var o={};E.forEach(function(e){var c=CL[e[0]];if(!c)return;var k=c[0]+","+c[1];if(!o[k])o[k]={lo:c[0],la:c[1],v:[],t:[]};o[k].v.push(e[6+p]);o[k].t.push(e[0])});return Object.keys(o).map(function(k){var d=o[k];d.n=d.v.length;d.a=d.v.reduce(function(x,y){return x+y},0)/d.n;return d})}
+function grat(x,cx,cy,Rr,L){x.save();x.strokeStyle=L;x.globalAlpha=0.4;x.lineWidth=0.6;var a,b,on,q;for(a=-180;a<180;a+=30){x.beginPath();on=0;for(b=-90;b<=90;b+=6){q=gpr(a,b);if(q[2]<0){on=0;continue}if(on)x.lineTo(cx+Rr*q[0],cy-Rr*q[1]);else x.moveTo(cx+Rr*q[0],cy-Rr*q[1]);on=1}x.stroke()}for(b=-60;b<=60;b+=30){x.beginPath();on=0;for(a=-180;a<=180;a+=6){q=gpr(a,b);if(q[2]<0){on=0;continue}if(on)x.lineTo(cx+Rr*q[0],cy-Rr*q[1]);else x.moveTo(cx+Rr*q[0],cy-Rr*q[1]);on=1}x.stroke()}x.restore()}
+function tip(h){var t=document.getElementById("tip");t.textContent=h;t.className="tip on";clearTimeout(tip.t);tip.t=setTimeout(function(){t.className="tip"},6000)}
+function mood(){var n=pool.length,u=pool.filter(function(e){return e[6+p]>0}).length,pc=n?u/n:0.5,th=pc*Math.PI,nx=100-68*Math.cos(th),ny=100-68*Math.sin(th),lb=pc>=0.65?"Bullish mood":pc<=0.35?"Bearish mood":"Mixed mood";
+document.getElementById("mood").innerHTML='<svg viewBox="0 0 200 118"><defs><linearGradient id="mg"><stop offset="0" stop-color="var(--dn)"/><stop offset=".5" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--up)"/></linearGradient></defs><path d="M20,100 A80,80 0 0 1 180,100" fill="none" stroke="url(#mg)" stroke-width="14" stroke-linecap="round"/><line x1="100" y1="100" x2="'+nx+'" y2="'+ny+'" stroke="var(--tx)" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="var(--tx)"/></svg><div class="mt"><b>'+lb+'</b>'+Q("mood")+'<br><span>'+u+' of '+n+' ETFs are up this '+P[p].toLowerCase()+'</span></div>'}
+function card(){var W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;var x=c.getContext("2d"),s=pool.slice().sort(function(a,b){return b[6+p]-a[6+p]}),k=Math.min(3,Math.ceil(s.length/2)),t=s.slice(0,k),w=s.slice(s.length-k).reverse(),u=s.filter(function(e){return e[6+p]>0}).length,g=x.createLinearGradient(0,0,0,H);
+g.addColorStop(0,"#0d1526");g.addColorStop(1,"#16213a");x.fillStyle=g;x.fillRect(0,0,W,H);x.textAlign="left";
+x.fillStyle="#e8b84a";x.font="700 46px system-ui,sans-serif";x.fillText("GCG GLOBAL ETF TRACKER",60,100);
+x.fillStyle="#93a0bd";x.font="30px system-ui,sans-serif";x.fillText("Biggest movers this "+P[p].toLowerCase()+" · "+u+" of "+s.length+" ETFs are up",60,155);
+function blk(y0,ti,col,a){x.textAlign="left";x.fillStyle=col;x.font="700 40px system-ui,sans-serif";x.fillText(ti,60,y0);a.forEach(function(e,i){var y=y0+30+i*170;x.fillStyle="rgba(255,255,255,0.06)";x.fillRect(60,y,960,140);x.fillStyle="#eef2fa";x.font="700 56px system-ui,sans-serif";x.textAlign="left";x.fillText(e[0],90,y+68);x.fillStyle="#93a0bd";x.font="28px system-ui,sans-serif";x.fillText(e[1].slice(0,34),90,y+112);x.fillStyle=col;x.font="700 62px system-ui,sans-serif";x.textAlign="right";x.fillText(f(e[6+p]),990,y+88)})}
+blk(260,"▲ TOP MOVERS","#2fd18d",t);blk(820,"▼ BIGGEST FALLERS","#ff6b61",w);
+x.textAlign="left";x.fillStyle="#93a0bd";x.font="26px system-ui,sans-serif";x.fillText("Sample data · for education only, not investment advice",60,1290);return c}
+document.getElementById("sh").onclick=function(){var c=card(),ov=document.getElementById("ov");ov.innerHTML='<div class="ovb"><img alt="Share card" src="'+c.toDataURL("image/png")+'"><div class="ovr"><button id="ovs">Share</button><button id="ovc">Close</button></div><div class="ovm" id="ovm">Press and hold the image to save it.</div></div>';ov.className="ov on";
+document.getElementById("ovc").onclick=function(){ov.className="ov"};
+document.getElementById("ovs").onclick=function(){c.toBlob(function(b){var no="Sharing isn’t available here. Press and hold the image to save it.";try{var fl=new File([b],"etf-tracker.png",{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[fl]}))navigator.share({files:[fl],title:"GCG Global ETF Tracker"}).catch(function(){});else document.getElementById("ovm").textContent=no}catch(er){document.getElementById("ovm").textContent=no}})}};
+document.getElementById("wl").onclick=function(){wlOnly=!wlOnly;this.className=wlOnly?"on":"";draw()};
+document.getElementById("gmd").onclick=function(){gm=gm?0:1;this.textContent=gm?"Created":"Invests";document.getElementById("gcap").textContent=gm?"Dots show where country funds invest. Tap a dot.":"Drag to spin, pinch or scroll to zoom, tap a region to filter the table.";gdraw()};
+function cpan(){var el=document.getElementById("cp");if(cmp.length<2){el.innerHTML=cmode?'<div class="cp">Tap two ETFs below to compare them side by side.</div>':"";return}
+var a=E[cmp[0]],b=E[cmp[1]];function yg(e){return hist(e[0],parseInt(e[2].slice(-4))).filter(function(v){return v>0}).length}
+function tr(l,x,y,w){return'<tr><td>'+l+'</td><td class="'+(w==1?'w':'')+'">'+x+'</td><td class="'+(w==2?'w':'')+'">'+y+'</td></tr>'}
+var fa=parseFloat(a[3]),fb2=parseFloat(b[3]);
+var h='<div class="cp"><table>'+tr("","<b>"+a[0]+"</b>","<b>"+b[0]+"</b>",0)+tr("Name",a[1],b[1],0)+tr("Launched",a[2],b[2],0)+tr("Fee",a[3],b[3],fa<fb2?1:fa>fb2?2:0)+tr("Region",a[4],b[4],0)+tr("Type",ty(a),ty(b),0);
+[6,7,8,9].forEach(function(i){h+=tr(P[i-6],f(a[i]),f(b[i]),a[i]>b[i]?1:a[i]<b[i]?2:0)});
+h+=tr("Green years (2018–25)",yg(a),yg(b),yg(a)>yg(b)?1:yg(a)<yg(b)?2:0)+'</table></div>';el.innerHTML=h}
+draw();
+// Tell the host page how tall the content is so the iframe doesn't clip or scroll.
+function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"etf-tracker"},location.origin)}catch(e){}}
+try{new ResizeObserver(postH).observe(document.body)}catch(e){}
+</script></body></html>
