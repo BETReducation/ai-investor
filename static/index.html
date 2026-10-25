@@ -302,6 +302,15 @@ nav {
 }
 .btn-primary:hover { background: var(--green2); transform: translateY(-1px); }
 
+
+/* ── TAGLINE REVEAL ── words light up one at a time as they cross the trigger line */
+.tagline { padding: 140px 6%; background: var(--bg); }
+.tagline-inner { max-width: 880px; margin: 0 auto; }
+.tagline-text { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: clamp(32px, 5.2vw, 60px); line-height: 1.15; letter-spacing: -0.025em; text-wrap: balance; color: var(--text); }
+.tagline-text .w { opacity: .28; transition: opacity .8s cubic-bezier(.32,.72,0,1); }
+.tagline-text .w.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .tagline-text .w { opacity: 1; transition: none; } }
+
 /* ── HERO ── full-bleed illustrated scene. The ridgeline is a stylised century
    of market history (built in JS, see sceneHero). Always dark: the text sits on
    the artwork, not on the page theme. */
@@ -348,7 +357,7 @@ nav {
 }
 .hero-eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: #ffc66b; box-shadow: 0 0 10px #ffc66b; }
 .hero-title {
-  font-family: 'Outfit', sans-serif; font-weight: 800;
+  font-family: 'Outfit', sans-serif; font-weight: 700; text-wrap: balance;
   font-size: clamp(44px, 7vw, 92px); line-height: 1.02; letter-spacing: -0.035em;
   color: #fff; margin-bottom: 26px;
 }
@@ -357,7 +366,7 @@ nav {
   background: linear-gradient(95deg, #ffd58a 0%, #ff9d6c 55%, #ff7aa8 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.hero-sub { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.65; color: rgba(255,255,255,0.78); max-width: 520px; margin-bottom: 38px; }
+.hero-sub { text-wrap: pretty; font-size: clamp(16px, 1.6vw, 19px); line-height: 1.65; color: rgba(255,255,255,0.78); max-width: 520px; margin-bottom: 38px; }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 34px; }
 .hero .btn-hero { padding: 14px 28px; font-size: 15px; border-radius: 100px; }
 .hero .btn-hero-primary { background: #fff; color: #14122e; box-shadow: 0 10px 40px rgba(255,190,120,0.28); }
@@ -368,8 +377,8 @@ nav {
 .hero-note b { color: rgba(255,255,255,0.85); font-weight: 600; }
 
 /* Staggered blur-and-rise entrance; skipped entirely for reduced motion. */
-.rise { opacity: 0; filter: blur(10px); transform: translateY(22px); animation: rise 1s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(var(--i, 0) * 120ms + 150ms); }
-@keyframes rise { to { opacity: 1; filter: blur(0); transform: none; } }
+.rise { opacity: 0; filter: blur(10px); transform: translateY(22px); animation: rise 1s cubic-bezier(.32,.72,0,1) forwards; animation-delay: calc(var(--i, 0) * 120ms + 150ms); }
+@keyframes rise { from { opacity: 0; filter: blur(12px); transform: translateY(40px); } to { opacity: 1; filter: blur(0); transform: none; } }
 
 .hero-legend {
   position: absolute; z-index: 2; right: 5%; bottom: 44px;
@@ -971,6 +980,13 @@ section.alt-bg { background: var(--bg2); }
 </div>
 
 <!-- ARM 1: EDUCATION — LEARN -->
+<!-- TAGLINE -->
+<section class="tagline">
+  <div class="tagline-inner">
+    <p class="tagline-text" id="taglineText">Prices change every second. The patterns behind them have been repeating for centuries. Learn the history once, and every chart starts to make sense.</p>
+  </div>
+</section>
+
 <section class="alt-bg">
   <div class="section-inner">
     <div class="feature-row reverse reveal">
@@ -1272,6 +1288,20 @@ section.alt-bg { background: var(--bg2); }
     });
     hero.addEventListener('pointerleave', () => { hero.style.setProperty('--px', 0); hero.style.setProperty('--py', 0); });
   }
+})();
+
+// Tagline reveal: wrap each word, light it when it crosses 70% down the viewport.
+(function taglineReveal() {
+  const p = document.getElementById('taglineText');
+  if (!p) return;
+  p.innerHTML = p.textContent.trim().split(/\s+/).map(w => '<span class="w">' + w + '</span>').join(' ');
+  const words = [...p.querySelectorAll('.w')];
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('on');
+    else if (e.boundingClientRect.top > 0) e.target.classList.remove('on');
+  }), { rootMargin: '0px 0px -30% 0px', threshold: 0.6 });
+  words.forEach(w => io.observe(w));
 })();
 
 // Scroll reveal
