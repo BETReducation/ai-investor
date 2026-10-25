@@ -226,6 +226,7 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
         <div class="section-eyebrow">X draft queue (admin only)</div>
         <div class="xq-actions">
           <label class="section-eyebrow" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="xqHidePosted" checked style="margin:0;width:auto;"> Hide posted</label>
+          <label class="section-eyebrow" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="xqShowRemoved" style="margin:0;width:auto;"> Show removed</label>
           <button class="btn-muted btn-small" id="xqRefresh">Refresh</button>
         </div>
       </div>
@@ -721,7 +722,7 @@ renderButton();
 
 // ---------- X draft queue — admin only ----------
 // Drafts come from socials/X/queue.md (written by the scheduled drafting task). Edits and
-// posted marks live in this browser only, keyed by run + draft title; the file is never written back.
+// posted/removed marks live in this browser only, keyed by run + draft title; the file is never written back.
 const XQ_KEY = 'gcg-xq-state';
 let xqState = {};
 try { xqState = JSON.parse(localStorage.getItem(XQ_KEY) || '{}'); } catch {}
@@ -736,6 +737,7 @@ async function loadXQueue() {
     if (!res.ok) throw new Error(data.error || 'Failed to load');
   } catch (e) { body.textContent = 'Could not load the queue: ' + e.message; return; }
   const hidePosted = document.getElementById('xqHidePosted').checked;
+  const showRemoved = document.getElementById('xqShowRemoved').checked;
   body.innerHTML = '';
   if (!data.runs.length) { body.textContent = 'No drafts yet.'; return; }
   data.runs.forEach((run, ri) => {
@@ -754,9 +756,9 @@ async function loadXQueue() {
     run.drafts.forEach(d => {
       const id = run.heading + '|' + d.title;
       const st = xqState[id] || {};
-      if (st.posted && hidePosted) return;
+      if ((st.posted && hidePosted) || (st.removed && !showRemoved)) return;
       const card = document.createElement('div');
-      card.className = 'xq-card' + (st.posted ? ' posted' : '');
+      card.className = 'xq-card' + (st.posted || st.removed ? ' posted' : '');
       const ta = document.createElement('textarea');
       ta.value = st.text != null ? st.text : d.text;
       const len = document.createElement('span');
@@ -790,7 +792,11 @@ async function loadXQueue() {
       posted.className = 'btn-muted btn-small';
       posted.textContent = st.posted ? 'Unmark posted' : 'Mark posted';
       posted.onclick = () => { xqState[id] = Object.assign(xqState[id] || {}, { posted: !st.posted }); xqSave(); loadXQueue(); };
-      acts.append(copy, x, reset, posted);
+      const remove = document.createElement('button');
+      remove.className = 'btn-muted btn-small';
+      remove.textContent = st.removed ? 'Restore' : 'Remove';
+      remove.onclick = () => { xqState[id] = Object.assign(xqState[id] || {}, { removed: !st.removed }); xqSave(); loadXQueue(); };
+      acts.append(copy, x, reset, posted, remove);
       meta.append(label, acts);
       card.append(ta, meta);
       wrap.appendChild(card);
@@ -808,6 +814,7 @@ async function loadXQueue() {
 }
 document.getElementById('xqRefresh').onclick = loadXQueue;
 document.getElementById('xqHidePosted').onchange = loadXQueue;
+document.getElementById('xqShowRemoved').onchange = loadXQueue;
 
 // ---------- Access gate — partners only ----------
 (async function checkAccess() {
