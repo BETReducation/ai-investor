@@ -46,12 +46,37 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 .ch{text-align:right;font-weight:800}
 .flist{max-height:340px;overflow-y:auto;border:1px solid var(--ln);border-radius:16px;padding:6px;margin-bottom:16px}
 .foot{color:var(--mu);font-size:12px;margin-top:18px;line-height:1.5}
+.px{background:var(--card);border:1px solid var(--ln);border-radius:20px;padding:14px 16px;margin:6px 0 14px;display:grid;grid-template-columns:1fr auto;gap:4px 14px;align-items:end}
+.px .l{font-size:12px;color:var(--mu);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.px .v{font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.px .v small{font-size:13px;color:var(--mu);font-weight:700;margin-left:4px;letter-spacing:0}
+.px .c{font-weight:800;font-size:14px}
+.px svg{width:120px;height:44px;display:block}
+.px .rg{grid-column:1/-1;margin-top:10px}
+.px .tw{position:relative;height:8px}
+.px .tr{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--dn),var(--fl),var(--up));opacity:.55}
+.px .mk{position:absolute;top:-4px;width:4px;height:16px;border-radius:2px;background:var(--tx);transform:translateX(-50%)}
+.px .rl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mu);margin-top:6px}
+.px .nt{grid-column:1/-1;font-size:11.5px;color:var(--mu);margin-top:6px}
+.hist{margin-top:22px;border:1px solid var(--ln);border-radius:20px;background:var(--card);overflow:hidden}
+.hist summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:800;font-size:17px;letter-spacing:-.02em;display:flex;justify-content:space-between;align-items:center;min-height:48px}
+.hist summary::-webkit-details-marker{display:none}
+.hist summary::after{content:"\25BE";color:var(--mu);transition:transform .25s}
+.hist[open] summary::after{transform:rotate(180deg)}
+.hist summary:focus-visible{outline:2px solid var(--tx);outline-offset:-2px}
+.hbody{padding:0 14px 16px}
+.hy{display:grid;grid-template-columns:52px 1fr 64px;align-items:center;gap:8px;padding:6px 8px;border-radius:12px;position:relative;overflow:hidden}
+.hy i{position:absolute;left:0;top:0;bottom:0;opacity:.22;border-radius:12px}
+.hy>*{position:relative}
+.hy b{font-size:14px}
+.hnote{color:var(--mu);font-size:12px;line-height:1.5;margin:10px 0 0}
 @media(prefers-reduced-motion:reduce){#ring path{animation:none}#ring{transition:none!important}}
 </style>
 </head>
 <body>
 <main>
 <p class="sub">Winners on the left, losers on the right. Tap a spoke, spin the day.</p>
+<section class="px" id="px" aria-label="NASDAQ Composite index price"></section>
 <div class="stage" id="stage">
 <svg viewBox="0 0 400 400" role="img" aria-label="Wagon wheel of Nasdaq stocks: green spokes on the left for stocks that are up, red on the right for down, amber at the top for flat">
 <g id="ring"></g><circle cx="200" cy="200" r="195" fill="none" stroke="var(--rim)" stroke-width="6"/><circle cx="200" cy="200" r="197" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.5"/><circle cx="200" cy="200" r="86" fill="var(--bg)" opacity=".92" stroke="var(--rim)" stroke-width="4"/><g id="hub" text-anchor="middle" style="pointer-events:none"></g>
@@ -68,6 +93,7 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 <button id="bg" class="on">Top 10 gainers</button><button id="bl">Top 10 losers</button>
 </div>
 <div id="list"></div>
+<details class="hist" id="hist"><summary>Historical returns: yearly gains and losses</summary><div class="hbody"><div class="cards" id="hcards"></div><div class="seg" id="hseg" role="group" aria-label="Order"><button data-o="y" class="on">By year</button><button data-o="b">Best first</button><button data-o="w">Worst first</button></div><div class="flist" id="hlist"></div><p class="hnote" id="hnote">Calendar-year price returns of the NASDAQ Composite from year-end closes. Dividends are not included. The current year is year to date. Educational and historical information only, not financial advice.</p></div></details>
 <p class="foot">Loading prices… For education, not financial advice.</p>
 </main>
 <script>
@@ -127,6 +153,28 @@ $("#ord").onclick=()=>{mode=mode==="cap"?"perf":"cap";draw()};
 $("#bg").onclick=()=>{view="g";draw()};$("#bl").onclick=()=>{view="l";draw()};
 $("#spin").onclick=()=>{const g=$("#ring");g.style.transition="transform 1s cubic-bezier(.6,0,.2,1)";g.style.transform="rotate(360deg)";
  setTimeout(()=>{(liveOn?loadLive():Promise.resolve(roll())).then(()=>{sel=null;draw()})},500);setTimeout(()=>{g.style.transition="none";g.style.transform="none"},1050)};
+
+let PX=null,HY=[],ho="y";
+function hist(){
+ if(!HY.length){$("#hist").style.display="none";return}
+ $("#hist").style.display="";
+ const done=HY.filter(x=>!x.p),n=done.length,upN=done.filter(x=>x.r>0).length,best=done.reduce((a,b)=>b.r>a.r?b:a),worst=done.reduce((a,b)=>b.r<a.r?b:a),avg=done.reduce((a,x)=>a+x.r,0)/n,cagr=(Math.pow(done.reduce((a,x)=>a*(1+x.r/100),1),1/n)-1)*100;
+ $("#hcards").innerHTML=`<div><b style="color:var(--up)">${upN} of ${n}</b><span>Years up</span></div><div><b style="color:var(--up)">${fmt(best.r)}</b><span>Best year (${best.y})</span></div><div><b style="color:var(--dn)">${fmt(worst.r)}</b><span>Worst year (${worst.y})</span></div><div><b>${fmt(avg)}</b><span>Average per year</span></div><div><b>${fmt(cagr)}</b><span>Annualised ${done[0].y}-${done[n-1].y}</span></div>`;
+ const a=HY.slice();if(ho==="b")a.sort((x,y)=>y.r-x.r);if(ho==="w")a.sort((x,y)=>x.r-y.r);if(ho==="y")a.reverse();
+ const mx=Math.max(...HY.map(x=>Math.abs(x.r)));
+ $("#hlist").innerHTML=a.map(x=>`<div class="hy"><i style="width:${Math.abs(x.r)/mx*100}%;background:${col(x.r)}"></i><b>${x.y}${x.p?"*":""}</b><span></span><span class="ch" style="color:${col(x.r)}">${fmt(x.r)}</span></div>`).join("");
+ $("#hseg").querySelectorAll("button").forEach(b=>b.className=b.dataset.o===ho?"on":"");
+ $("#hnote").textContent="Calendar-year price returns of the NASDAQ Composite from year-end closes, "+HY[0].y+" onwards. Dividends are not included. * Year to date, still in progress. Educational and historical information only, not financial advice.";
+}
+$("#hseg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){ho=b.dataset.o;hist()}});
+function price(){
+ if(!PX){$("#px").innerHTML="";return}
+ const l=PX.last,p=PX.prev,ch=l-p,pc=ch/p*100,lo=Math.min(PX.low,l),hi=Math.max(PX.high,l),ytd=PX.ytd;
+ const n=x=>x.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}),sg=x=>(x>0?"+":x<0?"−":"")+Math.abs(x).toFixed(2)+"%";
+ const c=ch>=0?"var(--up)":"var(--dn)",mn=Math.min(...PX.closes),mx=Math.max(...PX.closes);
+ const pts=PX.closes.map((v,i)=>(i/(PX.closes.length-1)*100).toFixed(1)+","+(29-(v-mn)/(mx-mn||1)*27).toFixed(1)).join(" ");
+ $("#px").innerHTML=`<div><div class="l">NASDAQ Composite</div><div class="v">${n(l)}<small>pts</small></div><div class="c" style="color:${c}">${ch>=0?"▲":"▼"} ${n(Math.abs(ch))} (${sg(pc)}) <span style="color:var(--mu);font-weight:600">on the day</span></div></div><svg viewBox="0 0 100 30" preserveAspectRatio="none" role="img" aria-label="Recent NASDAQ Composite closes"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="rg"><div class="tw"><div class="tr"></div><div class="mk" style="left:${((l-lo)/(hi-lo)*100).toFixed(1)}%"></div></div><div class="rl"><span>52-week low ${n(lo)}</span><span>High ${n(hi)}</span></div></div><div class="nt">${ytd!=null?"Year to date "+sg(ytd)+" · ":""}Latest close ${PX.last_date}. Chart shows the last ${PX.closes.length} closes.</div>`;
+}
 function note(t){document.querySelector(".foot").textContent=t}
 // Live moves from our server (Yahoo daily bars, % change vs previous close). Falls back to a simulated day if unavailable.
 function loadLive(){
@@ -134,10 +182,13 @@ function loadLive(){
   S.forEach(s=>{s.c=j.moves[s.t]!=null?j.moves[s.t]:null});
   const have=S.filter(s=>s.c!=null);
   if(have.length<20)throw 0;
-  IDX=j.index!=null?j.index:null;S.splice(0,S.length,...have);N=S.length;liveOn=true;
+  IDX=j.index!=null?j.index:null;
+  PX=j.px||null;HY=[];
+  if(PX){HY=PX.years.map(([y,r])=>({y,r}));if(PX.ytd!=null)HY.push({y:PX.year,r:PX.ytd,p:1})}
+  price();hist();S.splice(0,S.length,...have);N=S.length;liveOn=true;
   const t=new Date(j.updated_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   note("Live Nasdaq prices (about 15 minutes delayed), % change against the previous close. Latest session: "+j.as_of+", refreshed "+t+". Press the spin button to refresh. For education, not financial advice.");
- }).catch(()=>{liveOn=false;IDX=null;roll();note("Live prices are unavailable right now, so this is an illustrative sample day with simulated moves. For education, not financial advice.")});
+ }).catch(()=>{liveOn=false;IDX=null;PX=null;HY=[];price();hist();roll();note("Live prices are unavailable right now, so this is an illustrative sample day with simulated moves. For education, not financial advice.")});
 }
 roll();draw();loadLive().then(()=>{sel=null;draw()});
 

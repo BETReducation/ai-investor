@@ -87,7 +87,7 @@
       ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
       ['FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
       ['Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
-      ['League and Compass', '/tools/data-visualisation/league-compass'],
+      ['S&amp;P500 Compass', '/tools/data-visualisation/league-compass'],
       ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
     ] },
     { name: 'Other', pages: [

@@ -61,9 +61,9 @@ var ST=[["Moderna","MRNA",702.0],["Sandisk","SNDK",487.6],["Dell Technologies","
 var AN=["S&P 500","Nasdaq","Dow","Gold","Silver","Bitcoin","Oil (WTI)","Russell 2000","FTSE 100"],MN=["Gold","Silver","Copper","Palladium","Platinum"];
 var AD={2010:[12.8,16.9,11.0,29.5,83.7,null,15.1,25.3,9.0],2011:[0.0,-1.8,5.5,10.1,-9.8,1473,8.2,-5.5,-5.6],2012:[13.4,15.9,7.3,7.0,8.3,186,-7.1,14.6,5.8],2013:[29.6,38.3,26.5,-28.0,-36.0,5507,7.2,37.0,14.4],2014:[11.4,13.4,7.5,-1.5,-19.4,-58,-45.9,3.5,-2.7],2015:[-0.7,5.7,-2.2,-10.4,-11.7,35,-30.5,-5.7,-4.9],2016:[9.5,7.5,13.4,8.5,15.8,125,45.0,19.5,14.4],2017:[19.4,28.2,25.1,13.5,6.4,1331,12.5,13.1,7.6],2018:[-6.2,-3.9,-5.6,-1.6,-9.4,-73,-24.8,-12.2,-12.5],2019:[28.9,35.2,22.3,18.3,15.3,92,34.5,23.7,12.1],2020:[16.3,43.6,7.3,24.6,47.4,303,-20.5,18.4,-14.3],2021:[26.9,21.4,18.7,-3.6,-11.7,60,55.0,13.7,14.3],2022:[-19.4,-33.1,-8.8,-0.3,2.9,-64,6.7,-21.6,0.9],2023:[24.2,43.4,13.7,13.1,-0.7,155,-10.7,15.1,3.8],2024:[23.3,28.6,12.9,27.2,21.5,121,0.1,10.0,5.7],2025:[16.4,20.4,13.0,64.6,147.9,-6.5,-19.9,11.3,21.5],2026:[13.1,14.9,8.6,-5,-21,-7,64.0,14,5]};
 var MD={2010:[29.5,83.7,33.0,102.5,20.6],2011:[10.1,-9.8,-22.7,-18.6,-21.3],2012:[7.0,8.3,6.3,8.3,10.6],2013:[-28.0,-36.0,-6.7,1.1,-11.0],2014:[-1.5,-19.4,-17.0,13.5,-11.7],2015:[-10.4,-11.7,-24.6,-30.4,-26.1],2016:[8.5,15.8,17.4,21.0,1.3],2017:[13.5,6.4,31.7,55.8,3.8],2018:[-1.6,-9.4,-20.2,12.8,-14.7],2019:[18.3,15.3,6.3,59.5,22.1],2020:[24.6,47.4,25.8,28.5,10.4],2021:[-3.6,-11.7,26.8,-22.1,-10.4],2022:[-0.3,2.9,-14.4,-10.1,10.7],2023:[13.1,-0.7,-0.4,-35,-7.0],2024:[27.2,21.5,3.4,-19,-9.9],2025:[64.6,147.9,42,76,127],2026:[-5,-21,19,-30,-21]};
-var HN={a:"asset",m:"metal"},mode="live",sub="s";
+var HN={a:"asset",m:"metal"},mode="live",sub="s",ASOF="15 October",MEDTXT="the median member is up about +7.9%",IDXTXT="+13.1%",STATIC_TAIL=true;
 var NOTE={
-ls:"Year-to-date total return (dividends reinvested) for S&P 500 members from the 31 December 2025 close to the 15 October 2026 close. Rankings change daily.",
+ls:"Year-to-date price return (dividends excluded) for S&P 500 members from the 31 December 2025 close to the 15 October 2026 close. Rankings change daily.",
 la:"Calendar-year price returns in USD, excluding dividends, 1 January to 15 October 2026. Gold, silver, Bitcoin, Russell 2000 and FTSE 100 are approximate.",
 lm:"Year-to-date price returns in USD, 1 January to mid-October 2026. Gold, silver, platinum and palladium use spot prices; copper uses COMEX futures. All figures are approximate.",
 ha:"Calendar-year price returns in USD, excluding dividends. Sources: published year-end index, spot and futures data; crypto and metals vary by a few points between providers. Bitcoin has no 2010 figure and its 2011 to 2013 prices are from thin early markets. 2026 is year to date at the 15 October close.",
@@ -80,15 +80,15 @@ var live=mode=="live";
 ["board","lead"].forEach(function(i){document.getElementById(i).style.display=live||i=="lead"?"":"none"});
 document.getElementById("wrap").style.display=live?"none":"";
 document.getElementById("winsec").style.display=live?"none":"";
-document.getElementById("note").textContent=NOTE[(live?"l":"h")+sub];
+document.getElementById("note").textContent=NOTE[(live?"l":"h")+sub].split("15 October").join(ASOF).split("mid-October").join(ASOF);
 if(live)drawLive();else drawHist();}
 function drawLive(){
 var rows=sub=="s"?ST.map(function(x){return[x[0],x[2],x[1]]}):(sub=="a"?AN:MN).map(function(n,i){return[n,(sub=="a"?AD:MD)[2026][i],""]});
 rows.sort(function(a,b){return b[1]-a[1]});var m=Math.max.apply(null,rows.map(function(r){return Math.abs(r[1])})),h="";
 rows.forEach(function(r,i){h+='<div class="lr"><span class="rk">'+(i+1)+'</span><span class="nm">'+r[0]+(r[2]?"<i>"+r[2]+"</i>":"")+'</span><b class="'+(r[1]<0?"dn":"up")+'">'+f(r[1])+'</b><div class="lt"><div class="lf'+(r[1]<0?" neg":"")+'" style="width:'+Math.max(2,Math.abs(r[1])/m*100)+'%"></div></div></div>'});
 document.getElementById("board").innerHTML=h;
-document.getElementById("sub").textContent=sub=="s"?"The ten best S&P 500 stocks of 2026 so far, 1 January to 31 December. Standings to the 15 October close.":"Live "+(sub=="a"?"assets":"metals")+" league, 1 January to 31 December 2026. Standings to mid-October.";
-var tail=sub=="s"?"The S&P 500 index itself is up +13.1%, and the median member is up about +7.9%.":(sub=="a"?"Stocks are up, while gold, silver and Bitcoin are all in the red.":"Only copper is in the green; gold, silver, platinum and palladium are all down.");
+document.getElementById("sub").textContent=sub=="s"?"The ten best S&P 500 stocks of 2026 so far, 1 January to 31 December. Standings to the "+ASOF+" close.":"Live "+(sub=="a"?"assets":"metals")+" league, 1 January to 31 December 2026. Standings to "+ASOF+".";
+var tail=sub=="s"?"The S&P 500 index itself is up "+IDXTXT+", and "+MEDTXT+".":(STATIC_TAIL?(sub=="a"?"Stocks are up, while gold, silver and Bitcoin are all in the red.":"Only copper is in the green; gold, silver, platinum and palladium are all down."):rows.slice(-1)[0][0]+" is the weakest at "+f(rows.slice(-1)[0][1])+".");
 document.getElementById("lead").innerHTML="<b>2026 leader: "+rows[0][0]+" at "+f(rows[0][1])+"</b><small>Then "+rows.slice(1,3).map(function(r){return r[0]+" "+f(r[1])}).join(", ")+". "+tail+"</small>"}
 function drawHist(){
 var A=sub=="a"?AN:MN,D=sub=="a"?AD:MD;document.documentElement.style.setProperty("--mw",(sub=="a"?880:700)+"px");
@@ -106,6 +106,16 @@ A.map(function(n,i){return[n,wins[i],yrs[i]]}).sort(function(a,b){return b[1]-a[
 document.getElementById("bars").innerHTML=b}
 document.addEventListener("click",function(e){var d=e.target.dataset||{};if(d.m){mode=d.m;sub=d.m=="live"?"s":"a"}else if(d.s)sub=d.s;else return;render()});
 render();
+var MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+fetch("/api/dataviz/winners-league/live").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){
+if(j.year!=2026)return;STATIC_TAIL=false;
+if(j.assets&&j.assets.every(function(v){return v!=null}))AD[2026]=j.assets;
+if(j.metals&&j.metals.every(function(v){return v!=null}))MD[2026]=j.metals;
+if(j.stocks&&j.stocks.length==10){var nm={};ST.forEach(function(x){nm[x[1]]=x[0]});ST=j.stocks.map(function(x){return[nm[x[0]]||x[0],x[0],x[1]]})}
+if(j.assets&&j.assets[0]!=null)IDXTXT=f(j.assets[0]);
+if(j.median!=null)MEDTXT="the median member is up about "+f(j.median);
+if(j.as_of){var d=new Date(j.as_of+"T12:00:00");ASOF=d.getDate()+" "+MON[d.getMonth()]}
+render()}).catch(function(){});
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"winners-league"},location.origin);}
 new ResizeObserver(postHeight).observe(document.body);
