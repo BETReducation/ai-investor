@@ -6699,6 +6699,27 @@ def api_gold_silver_ratio_live():
     return jsonify(_fetch_gold_silver_ratio_live(force=force))
 
 
+_site_stats_cache: dict = {"at": 0.0, "data": None}
+
+
+@app.route("/api/site-stats", methods=["GET"])
+def api_site_stats():
+    """Public counts for the homepage stats bar. Cached for a minute."""
+    if _site_stats_cache["data"] and time.monotonic() - _site_stats_cache["at"] < 60:
+        return jsonify(_site_stats_cache["data"])
+    try:
+        data = {
+            "lessons": len(LESSON_PAGES),
+            "visualisations": sum(1 for p in dataviz_pages_list() if p.get("kind") == "viz"),
+            "alpha_posts": len(alpha_content_list(status="published")),
+            "chat_posts": len(gcg_chat.store.read()["messages"]),
+        }
+    except Exception:
+        return jsonify({"error": "unavailable"}), 502
+    _site_stats_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 @app.route("/api/dataviz/pages", methods=["GET", "POST"])
 def api_dataviz_pages():
     if request.method == "GET":

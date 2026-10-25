@@ -533,7 +533,7 @@ nav {
   max-width: 1100px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
@@ -559,6 +559,7 @@ nav {
 .stat-num.purple { color: var(--purple2); }
 .stat-num.teal { color: var(--teal); }
 .stat-num.gold { color: var(--gold); }
+.stat-num.blue { color: var(--blue); }
 .stat-label {
   font-size: 13px;
   color: var(--muted);
@@ -961,26 +962,34 @@ section.alt-bg { background: var(--bg2); }
   </div>
 </section>
 
-<!-- STATS BAR — real counts from the platform itself, not marketing figures.
-     Update these by hand if the underlying content changes materially
-     (new lessons added, a tool added/removed, indicators added). -->
+<!-- STATS BAR — counts come live from /api/site-stats (lessons, visualisations, Alpha posts,
+     chat posts) and from the nav's tool list; the numbers in the markup are fallbacks if that
+     fails. Technical indicators and arms are hand-maintained. -->
 <div class="stats-bar">
   <div class="stats-inner reveal">
     <div class="stat-item">
-      <div class="stat-num green">15</div>
-      <div class="stat-label">Beginner Lessons</div>
+      <div class="stat-num green" id="statLessons">28</div>
+      <div class="stat-label">Lessons</div>
     </div>
     <div class="stat-item">
-      <div class="stat-num purple">5</div>
-      <div class="stat-label">Free Tools</div>
+      <div class="stat-num purple" id="statTools">12</div>
+      <div class="stat-label">Tools</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num blue" id="statViz">12</div>
+      <div class="stat-label">Data Visualisations</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num gold" id="statAlpha">0</div>
+      <div class="stat-label">Alpha Posts</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num green" id="statChat">0</div>
+      <div class="stat-label">Chat Posts</div>
     </div>
     <div class="stat-item">
       <div class="stat-num teal">30+</div>
       <div class="stat-label">Technical Indicators</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-num gold">4</div>
-      <div class="stat-label">Growth Capital Arms</div>
     </div>
   </div>
 </div>
@@ -1300,7 +1309,21 @@ function animateCount(el) {
   requestAnimationFrame(step);
 }
 
-statNums.forEach(el => statsIO.observe(el));
+// Fill the live counts first so the count-up animates to the real numbers.
+(async function () {
+  try {
+    const set = (id, n) => { const el = document.getElementById(id); if (el && n != null) el.textContent = n; };
+    const tools = (window.GCG_TOOL_CATEGORIES || []).reduce((t, c) => t + c.pages.length, 0);
+    if (tools) set('statTools', tools);
+    const res = await fetch('/api/site-stats');
+    if (res.ok) {
+      const d = await res.json();
+      set('statLessons', d.lessons); set('statViz', d.visualisations);
+      set('statAlpha', d.alpha_posts); set('statChat', d.chat_posts);
+    }
+  } catch {}
+  statNums.forEach(el => statsIO.observe(el));
+})();
 
 // ── Auth check on load ──
 (async function checkAuth() {
