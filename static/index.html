@@ -303,14 +303,6 @@ nav {
 .btn-primary:hover { background: var(--green2); transform: translateY(-1px); }
 
 
-/* ── TAGLINE REVEAL ── words light up one at a time as they cross the trigger line */
-.tagline { padding: 140px 6%; background: var(--bg); }
-.tagline-inner { max-width: 880px; margin: 0 auto; }
-.tagline-text { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: clamp(32px, 5.2vw, 60px); line-height: 1.15; letter-spacing: -0.025em; text-wrap: balance; color: var(--text); }
-.tagline-text .w { opacity: .28; transition: opacity .8s cubic-bezier(.32,.72,0,1); }
-.tagline-text .w.on { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .tagline-text .w { opacity: 1; transition: none; } }
-
 /* ── HERO ── full-bleed looping video (static/img/hero/cafe-mentors.mp4).
    Always dark: the text sits on the artwork, not on the page theme. */
 .hero {
@@ -919,13 +911,6 @@ section.alt-bg { background: var(--bg2); }
 </div>
 
 <!-- ARM 1: EDUCATION — LEARN -->
-<!-- TAGLINE -->
-<section class="tagline">
-  <div class="tagline-inner">
-    <p class="tagline-text" id="taglineText">Prices change every second. The patterns behind them have been repeating for centuries. Learn the history once, and every chart starts to make sense.</p>
-  </div>
-</section>
-
 <section class="alt-bg">
   <div class="section-inner">
     <div class="feature-row reverse reveal">
@@ -1140,20 +1125,6 @@ section.alt-bg { background: var(--bg2); }
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { v.removeAttribute('autoplay'); v.pause(); }
   const show = () => v.classList.add('ready');
   if (v.readyState >= 2) show(); else v.addEventListener('loadeddata', show, { once: true });
-})();
-
-// Tagline reveal: wrap each word, light it when it crosses 70% down the viewport.
-(function taglineReveal() {
-  const p = document.getElementById('taglineText');
-  if (!p) return;
-  p.innerHTML = p.textContent.trim().split(/\s+/).map(w => '<span class="w">' + w + '</span>').join(' ');
-  const words = [...p.querySelectorAll('.w')];
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const io = new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) e.target.classList.add('on');
-    else if (e.boundingClientRect.top > 0) e.target.classList.remove('on');
-  }), { rootMargin: '0px 0px -30% 0px', threshold: 0.6 });
-  words.forEach(w => io.observe(w));
 })();
 
 // Scroll reveal
