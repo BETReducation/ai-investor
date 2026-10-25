@@ -7649,6 +7649,52 @@ def social_posts():
         return jsonify({"error": f"Generation failed: {e}"}), 502
 
 
+X_QUEUE_FILE = os.path.join(os.path.dirname(__file__), "socials", "X", "queue.md")
+
+
+def _parse_x_queue(text: str) -> list:
+    """Parses socials/X/queue.md (written by the gcg-x-draft-cycle scheduled task) into
+    runs: [{heading, news, drafts:[{title, status, text}], notes:[{title, text}]}].
+    Newest run first."""
+    runs = []
+    for block in re.split(r"(?m)^## ", text)[1:]:
+        heading, _, rest = block.partition("\n")
+        parts = re.split(r"(?m)^### ", rest)
+        intro = parts[0]
+        news = ""
+        m = re.search(r"News used:\s*(.+)", intro)
+        if m:
+            news = m.group(1).strip()
+        run = {"heading": heading.strip(), "news": news, "drafts": [], "notes": []}
+        for sec in parts[1:]:
+            title, _, body = sec.partition("\n")
+            body = body.strip()
+            if title.lower().startswith("draft"):
+                sm = re.search(r"status:\s*(\w+)", title)
+                run["drafts"].append({
+                    "title": re.sub(r"\s*\(.*\)\s*$", "", title).strip(),
+                    "status": sm.group(1) if sm else "pending",
+                    "text": body,
+                })
+            else:
+                run["notes"].append({"title": title.strip(), "text": body})
+        runs.append(run)
+    return list(reversed(runs))
+
+
+@app.route("/api/x-queue")
+def x_queue():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "Login required"}), 401
+    if not is_admin_user(current_user):
+        return jsonify({"error": "Admin only"}), 403
+    try:
+        with open(X_QUEUE_FILE, encoding="utf-8") as f:
+            return jsonify({"runs": _parse_x_queue(f.read())})
+    except FileNotFoundError:
+        return jsonify({"runs": []})
+
+
 # Pre-written Q&A per lesson, shown as tap-to-ask chips in the lesson bot
 # widget. Answering from here costs no API call and doesn't touch the daily
 # quota — only free-text questions hit the model. Add entries as you notice

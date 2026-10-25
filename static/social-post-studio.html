@@ -181,6 +181,19 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   outline: none; transition: border-color 0.2s;
 }
 .paste-area:focus { border-color: var(--teal); }
+
+/* X DRAFT QUEUE (admin only) */
+.xq-wrap { max-width: 1100px; margin: 0 auto 28px; }
+.xq-run { margin-bottom: 22px; }
+.xq-run-head { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--teal); margin-bottom: 4px; }
+.xq-news { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.xq-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.xq-card.posted { opacity: 0.55; }
+.xq-card textarea { margin-bottom: 8px; min-height: 90px; }
+.xq-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.xq-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.xq-note { font-size: 13px; color: var(--muted); line-height: 1.55; white-space: pre-wrap; margin-top: 6px; }
+.xq-note b { color: var(--text); }
 </style>
 </head>
 <body>
@@ -206,6 +219,17 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
     <div class="gate-box" id="gateNoAccess">
       <p>This account doesn't have Alpha author access. Social Post Studio is only available to the four partners — ask an admin to grant it to your account.</p>
+    </div>
+
+    <div id="xQueue" class="xq-wrap panel" style="display:none;">
+      <div class="section-head">
+        <div class="section-eyebrow">X draft queue (admin only)</div>
+        <div class="xq-actions">
+          <label class="section-eyebrow" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="xqHidePosted" checked style="margin:0;width:auto;"> Hide posted</label>
+          <button class="btn-muted btn-small" id="xqRefresh">Refresh</button>
+        </div>
+      </div>
+      <div id="xqBody"></div>
     </div>
 
     <div id="studioApp" style="display:none;">
@@ -695,6 +719,96 @@ renderTabs();
 renderCard();
 renderButton();
 
+// ---------- X draft queue — admin only ----------
+// Drafts come from socials/X/queue.md (written by the scheduled drafting task). Edits and
+// posted marks live in this browser only, keyed by run + draft title; the file is never written back.
+const XQ_KEY = 'gcg-xq-state';
+let xqState = {};
+try { xqState = JSON.parse(localStorage.getItem(XQ_KEY) || '{}'); } catch {}
+function xqSave() { try { localStorage.setItem(XQ_KEY, JSON.stringify(xqState)); } catch {} }
+
+async function loadXQueue() {
+  const body = document.getElementById('xqBody');
+  let data;
+  try {
+    const res = await fetch('/api/x-queue', { credentials: 'include' });
+    data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load');
+  } catch (e) { body.textContent = 'Could not load the queue: ' + e.message; return; }
+  const hidePosted = document.getElementById('xqHidePosted').checked;
+  body.innerHTML = '';
+  if (!data.runs.length) { body.textContent = 'No drafts yet.'; return; }
+  data.runs.forEach((run, ri) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'xq-run';
+    const head = document.createElement('div');
+    head.className = 'xq-run-head';
+    head.textContent = run.heading;
+    wrap.appendChild(head);
+    if (run.news) {
+      const n = document.createElement('div');
+      n.className = 'xq-news';
+      n.textContent = run.news;
+      wrap.appendChild(n);
+    }
+    run.drafts.forEach(d => {
+      const id = run.heading + '|' + d.title;
+      const st = xqState[id] || {};
+      if (st.posted && hidePosted) return;
+      const card = document.createElement('div');
+      card.className = 'xq-card' + (st.posted ? ' posted' : '');
+      const ta = document.createElement('textarea');
+      ta.value = st.text != null ? st.text : d.text;
+      const len = document.createElement('span');
+      len.className = 'char-count';
+      const upd = () => { len.textContent = ta.value.length + ' / 280'; len.classList.toggle('over', ta.value.length > 280); };
+      ta.oninput = () => { xqState[id] = Object.assign(xqState[id] || {}, { text: ta.value }); xqSave(); upd(); };
+      upd();
+      const meta = document.createElement('div');
+      meta.className = 'xq-meta';
+      const label = document.createElement('div');
+      label.className = 'section-eyebrow';
+      label.textContent = d.title + ' · ';
+      label.appendChild(len);
+      const acts = document.createElement('div');
+      acts.className = 'xq-actions';
+      const copy = document.createElement('button');
+      copy.className = 'btn-outline btn-small';
+      copy.textContent = 'Copy';
+      copy.onclick = () => copyText(ta.value, copy);
+      const x = document.createElement('a');
+      x.className = 'btn-outline btn-small';
+      x.style.textDecoration = 'none';
+      x.target = '_blank'; x.rel = 'noopener';
+      x.textContent = 'Open X composer';
+      x.href = 'https://x.com/compose/post';
+      const reset = document.createElement('button');
+      reset.className = 'btn-muted btn-small';
+      reset.textContent = 'Reset';
+      reset.onclick = () => { delete (xqState[id] || {}).text; xqSave(); loadXQueue(); };
+      const posted = document.createElement('button');
+      posted.className = 'btn-muted btn-small';
+      posted.textContent = st.posted ? 'Unmark posted' : 'Mark posted';
+      posted.onclick = () => { xqState[id] = Object.assign(xqState[id] || {}, { posted: !st.posted }); xqSave(); loadXQueue(); };
+      acts.append(copy, x, reset, posted);
+      meta.append(label, acts);
+      card.append(ta, meta);
+      wrap.appendChild(card);
+    });
+    run.notes.forEach(n => {
+      const d = document.createElement('div');
+      d.className = 'xq-note';
+      const b = document.createElement('b');
+      b.textContent = n.title + ': ';
+      d.append(b, n.text);
+      wrap.appendChild(d);
+    });
+    body.appendChild(wrap);
+  });
+}
+document.getElementById('xqRefresh').onclick = loadXQueue;
+document.getElementById('xqHidePosted').onchange = loadXQueue;
+
 // ---------- Access gate — partners only ----------
 (async function checkAccess() {
   let me;
@@ -707,8 +821,12 @@ renderButton();
     document.getElementById('gateLoggedOut').style.display = 'block';
     return;
   }
+  if (me.is_admin) {
+    document.getElementById('xQueue').style.display = 'block';
+    loadXQueue();
+  }
   if (!me.alpha_role) {
-    document.getElementById('gateNoAccess').style.display = 'block';
+    if (!me.is_admin) document.getElementById('gateNoAccess').style.display = 'block';
     return;
   }
   document.getElementById('studioApp').style.display = 'block';
