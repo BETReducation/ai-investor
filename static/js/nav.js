@@ -63,7 +63,7 @@
     ] }
   ];
   window.GCG_TOOL_CATEGORIES = TOOL_CATEGORIES;
-  var TOOL_MENU_HTML = TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
+  var TOOL_MENU_HTML = '<li><a href="/tools">All tools</a></li>' + TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
     return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
       '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
   }).join('');
@@ -119,13 +119,13 @@
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
-'      <a href="/tools">Tools <span class="nav-chevron">▾</span></a>' +
+'      <a href="#" onclick="return false;">Tools <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 TOOL_MENU_HTML +
 '      </ul>' +
 '    </li>' +
 '    <li class="has-dropdown">' +
-'      <a href="/tools/data-visualisation">Data Viz <span class="nav-chevron">▾</span></a>' +
+'      <a href="#" onclick="return false;">Data Viz <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 DATAVIZ_MENU_HTML +
 '      </ul>' +
