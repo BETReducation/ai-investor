@@ -5799,11 +5799,11 @@ def _build_orb_ath() -> dict:
     inv_syms = {a[0] for _, _, assets in ORB_POOLS for a in assets if len(a) > 3 and a[3]}
     symbols = [a[0] for _, _, assets in ORB_POOLS for a in assets] + [m["symbol"] for m in MARKET_PULSE_INDICES]
     out = {}
-    for i in range(0, len(symbols), 40):
-        chunk = symbols[i:i + 40]
+    for i in range(0, len(symbols), 10):
+        chunk = symbols[i:i + 10]
         try:
             raw = yf.download(tickers=chunk, period="max", interval="1mo", group_by="ticker",
-                              threads=True, auto_adjust=False, progress=False)
+                              threads=False, auto_adjust=False, progress=False)
         except Exception:
             continue
         for sym in chunk:
@@ -5853,6 +5853,7 @@ def _fetch_orb_ath() -> dict:
 
 def _warm_orb_ath():
     global _orb_ath_refreshing
+    time.sleep(90)  # stay clear of the other startup downloads; 512 MB hosts OOM otherwise
     with _orb_ath_lock:
         _orb_ath_refreshing = True
     _refresh_orb_ath()
