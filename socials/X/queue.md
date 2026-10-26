@@ -90,3 +90,21 @@ Beginner explainer (chat, video or Alpha): "What is a liquidation, and how can i
 
 ### Reply target
 None found this run.
+
+## 2026-10-26 (third run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #1, already used). News used: early-October reports of US Treasury yields at 24-year highs alongside an oil price jump (search snippet, check before posting); Bitcoin ETFs reportedly took in $6.3B in Q3 (check figure). Newest coverage found runs to about 16 Oct.
+
+### Draft 11 (status: pending)
+What is a Treasury yield, and why do news reports keep mentioning it? It's the interest the US government pays when it borrows money. Reports in October said these yields hit their highest in 24 years. That matters because when safe borrowing pays more, riskier things like shares can look less appealing by comparison. Worth understanding.
+
+### Draft 12 (status: pending)
+You'll see "Bitcoin ETF" in crypto headlines. What is it? An ETF is a basket you buy through a normal share account, like buying a share. A Bitcoin ETF follows the Bitcoin price, so people can get exposure without setting up a crypto wallet. Reports say these funds took in billions in Q3. Our ETF tracker shows how ETFs work.
+
+### Angle suggestion
+Beginner explainer (Alpha or video): "Why do bond yields move shares?" Walk through the 1980s and 2022 yield rises and what shares did afterwards. Education only.
+
+### Reply target
+None found this run.
