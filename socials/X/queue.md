@@ -72,3 +72,21 @@ Beginner explainer (chat or video): "Why does bad news sometimes lift stocks?" U
 
 ### Reply target
 None found this run.
+
+## 2026-10-26 (second run)
+
+Status: pending
+
+Ideas: none unused (the ideas endpoint returned only #1, already used). News used: September US CPI (inflation) came in hotter than expected on 14 Oct, hitting tech and AI shares; reports of nearly $1B of crypto bets "liquidated" in the mid-October slide (CoinDesk headlines). Newest coverage found runs to about 15-16 Oct, so nothing here claims current prices. Check figures before posting.
+
+### Draft 9 (status: pending)
+What is inflation, and why do markets care so much about one number? It measures how fast prices rise. When it comes in higher than expected, investors guess interest rates may stay high for longer, and that can make share prices wobble. That's what happened on 14 Oct. We have a lesson on interest rates if you're new to this.
+
+### Draft 10 (status: pending)
+Crypto headlines say "$1 billion liquidated". What does that mean? Some traders borrow money to bet on a price move. If the price goes against them, the exchange automatically sells their position to cover the loan. When lots of people get forced out at once, the price drops faster. It's a big reason crypto falls can look so sharp.
+
+### Angle suggestion
+Beginner explainer (chat, video or Alpha): "What is a liquidation, and how can it make a crypto fall steeper?" Walk through borrowing to bet, forced selling and a historical example such as the May 2021 crash. Education only.
+
+### Reply target
+None found this run.
