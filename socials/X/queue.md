@@ -54,3 +54,21 @@ Beginner explainer (Alpha, chat or video): "What actually happens on a market cr
 
 ### Reply target
 None found this run (no specific post URLs surfaced in search).
+
+## 2026-10-26
+
+Status: pending
+
+Ideas: none unused (idea #1 was already covered in the 25 Oct third run). News used: Fed meets 27-28 Oct; early-October reports said hike odds fell after a weaker-than-expected September jobs report and stocks rallied on it (political.org, 4 Oct, dating inconsistent, check before posting); Fed officials publicly split on whether more hikes are needed (Newsquawk). Search found no confirmed index levels for this week.
+
+### Draft 7 (status: pending)
+Fed meeting this week, so what does it actually do? It sets a base interest rate for the US. Banks use it to price loans, so when it rises, mortgages and credit cards tend to get more expensive. That slows spending, which is the point. We have a lesson on interest rates if you want the basics.
+
+### Draft 8 (status: pending)
+Odd thing that confuses beginners: a weak jobs report can make stocks go UP. Why? Investors figure the Fed is less likely to raise rates if the economy cools, and lower rates are usually good for company profits. Bad news for workers, "good" news for markets. Strange, but it has happened many times.
+
+### Angle suggestion
+Beginner explainer (chat or video): "Why does bad news sometimes lift stocks?" Use the Fed-hike history already in the compass and chart tools. Fits the 28 Oct decision without predicting it.
+
+### Reply target
+None found this run.
