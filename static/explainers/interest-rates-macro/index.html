@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{var t=localStorage.getItem("gcg-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<title>Interest Rates and Macro Objectives</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column, an interactive "policy lever" panel in the middle, then history and the petrol question. */
+:root {
+  --bg: #f2f5f8;
+  --surface: #ffffff;
+  --fg: #12202e;
+  --muted: #5a6b7b;
+  --line: #d5dde5;
+  --accent: #1f4fd8;
+  --accent-soft: #e4ebfd;
+  --good: #0c7a6b;
+  --bad: #b4501a;
+  --neutral: #5d6b8a;
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1620; --surface: #16212d; --fg: #e6edf4; --muted: #92a2b3; --line: #2a3a4a;
+    --accent: #7aa2ff; --accent-soft: #1d2d52; --good: #3fc3ae; --bad: #f0905a; --neutral: #9aa8c8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1620; --surface: #16212d; --fg: #e6edf4; --muted: #92a2b3; --line: #2a3a4a;
+  --accent: #7aa2ff; --accent-soft: #1d2d52; --good: #3fc3ae; --bad: #f0905a; --neutral: #9aa8c8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.6;
+  padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.12; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.15rem; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 16px; }
+.question { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--muted); font-size: 0.95rem; }
+.question b { color: var(--fg); font-weight: 600; }
+
+.objectives { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.obj { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.obj .tag { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.obj p { font-size: 0.92rem; color: var(--muted); }
+
+.chain { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.chain .step { flex: 1 1 130px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; font-size: 0.88rem; min-width: 0; }
+.chain .step b { display: block; font-family: var(--display); font-size: 0.95rem; margin-bottom: 2px; }
+.chain .arrow { align-self: center; color: var(--muted); font-family: var(--mono); }
+.channels { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; }
+.channels div { font-size: 0.93rem; }
+.channels h3 { margin-bottom: 2px; }
+.channels p { color: var(--muted); }
+
+.lever { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+.control { display: flex; flex-direction: column; gap: 8px; }
+.control label, .control .lbl { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.readout { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.readout output { font-family: var(--display); font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.readout span { color: var(--muted); font-size: 0.9rem; }
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; }
+.ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg button { flex: 1 1 180px; font: inherit; font-size: 0.92rem; text-align: left; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+.seg button b { display: block; font-family: var(--display); font-size: 0.98rem; }
+.seg button span { color: var(--muted); font-size: 0.82rem; }
+.seg button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rows { display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 150px 1fr; gap: 6px 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; padding-top: 0; }
+.row .name { font-family: var(--display); font-weight: 700; font-size: 0.98rem; }
+.row .name small { display: block; font-family: var(--body); font-weight: 400; font-size: 0.78rem; color: var(--muted); }
+.bar { position: relative; height: 22px; background: var(--bg); border-radius: 3px; }
+.bar::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+.bar i { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; transition: width .25s, left .25s, background-color .25s; }
+.scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.verdict { grid-column: 2; font-size: 0.88rem; color: var(--muted); }
+.verdict b { font-weight: 600; color: var(--fg); }
+.pill { display: inline-block; font-family: var(--mono); font-size: 0.7rem; padding: 1px 7px; border-radius: 99px; border: 1px solid currentColor; margin-right: 6px; }
+.pill.good { color: var(--good); } .pill.bad { color: var(--bad); } .pill.neutral { color: var(--neutral); }
+.note { font-size: 0.82rem; color: var(--muted); }
+.callout { background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; font-size: 0.95rem; }
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+  .verdict { grid-column: 1; }
+}
+
+.history { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.era { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.era .yr { font-family: var(--mono); font-size: 0.75rem; color: var(--accent); }
+.era p { font-size: 0.9rem; color: var(--muted); }
+
+.compare { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 0.92rem; }
+th, td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; border-top: 0; }
+td:first-child { font-weight: 600; width: 28%; }
+.foot { font-size: 0.82rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head><body>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <div class="eyebrow">Macroeconomics explainer</div>
+    <h1>What an interest rate does to a government's targets</h1>
+    <p class="lede">A central bank has one main lever and governments have several goals. This page traces how a change in the policy rate moves each goal, and why the answer depends on what caused the problem.</p>
+    <div class="question"><b>The question this started from:</b> when inflation is driven by petrol, do rate rises work as intended? The last section answers it.</div>
+  </header>
+
+  <section>
+    <h2>The goals being pursued</h2>
+    <p>Most governments judge their economic management against a handful of macroeconomic objectives. Interest rates, set by an independent central bank in the US and UK, touch every one of them, and not always in the same direction.</p>
+    <div class="objectives">
+      <div class="obj"><span class="tag">Price stability</span><h3>Low, steady inflation</h3><p>The US Fed and the Bank of England both target 2% a year.</p></div>
+      <div class="obj"><span class="tag">Growth</span><h3>Output rising sustainably</h3><p>Real GDP growing without overheating.</p></div>
+      <div class="obj"><span class="tag">Employment</span><h3>Low unemployment</h3><p>The Fed has a formal "maximum employment" mandate alongside price stability.</p></div>
+      <div class="obj"><span class="tag">External balance</span><h3>Stable currency and trade</h3><p>An exchange rate and current account that don't swing wildly.</p></div>
+      <div class="obj"><span class="tag">Fiscal position</span><h3>Manageable public debt</h3><p>The government's own borrowing costs follow market rates.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How a rate change travels</h2>
+    <div class="chain" role="list">
+      <div class="step" role="listitem"><b>Policy rate</b>Central bank moves its base rate</div>
+      <div class="arrow">→</div>
+      <div class="step" role="listitem"><b>Market rates</b>Banks reprice loans, mortgages, savings</div>
+      <div class="arrow">→</div>
+      <div class="step" role="listitem"><b>Spending</b>Households and firms borrow and spend less (or more)</div>
+      <div class="arrow">→</div>
+      <div class="step" role="listitem"><b>Objectives</b>Prices, jobs, output, currency, debt costs</div>
+    </div>
+    <div class="channels">
+      <div><h3>Borrowing cost</h3><p>Dearer mortgages, cards and business loans cut demand. Savings pay more, which encourages holding cash over spending.</p></div>
+      <div><h3>Asset prices</h3><p>Higher rates lower the present value of future income, pulling down bond, equity and property prices and the wealth people feel they have.</p></div>
+      <div><h3>Exchange rate</h3><p>Higher rates attract foreign capital, lifting the currency. Imports get cheaper, exports less competitive.</p></div>
+      <div><h3>Expectations</h3><p>A credible bank that acts persuades firms and workers that inflation will stay low, so they ask for smaller price and wage rises.</p></div>
+    </div>
+    <p class="note">The effects arrive with a lag. Estimates for the main impact on inflation typically run from one to two years.</p>
+  </section>
+
+  <section>
+    <h2>Move the lever</h2>
+    <p>Pick a change in the policy rate and a cause of inflation. The bars show the direction and relative size of the typical effect after one to two years, in a stylised model. They illustrate the textbook relationships; they are not forecasts and carry no units.</p>
+    <div class="lever">
+      <div class="control">
+        <label for="delta">Change in policy rate</label>
+        <div class="readout"><output id="deltaOut" for="delta">+1.00 pp</output><span id="deltaCtx">a rise from, say, 3.00% to 4.00%</span></div>
+        <input type="range" id="delta" min="-2" max="2" step="0.25" value="1" aria-describedby="deltaCtx">
+        <div class="ticks" aria-hidden="true"><span>−2 pp</span><span>−1</span><span>0</span><span>+1</span><span>+2 pp</span></div>
+      </div>
+      <div class="control">
+        <span class="lbl" id="srcLbl">What is driving inflation</span>
+        <div class="seg" role="group" aria-labelledby="srcLbl">
+          <button type="button" id="srcDemand" aria-pressed="true" data-src="demand"><b>Strong demand</b><span>Too much spending chasing too few goods</span></button>
+          <button type="button" id="srcCost" aria-pressed="false" data-src="cost"><b>Petrol and energy costs</b><span>A supply shock set abroad</span></button>
+        </div>
+      </div>
+      <div class="rows" id="rows"></div>
+      <div class="callout" id="summary" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Does it work when petrol is the cause?</h2>
+    <p>Partly, and at a higher price. A rate rise cannot make crude oil cheaper. Global supply and demand set that price, and a single central bank's rate barely registers. What it can do is shrink everyone's other spending until the overall price index stops rising.</p>
+    <div class="compare">
+      <table>
+        <thead><tr><th>Question</th><th>Demand-driven inflation</th><th>Energy-driven inflation</th></tr></thead>
+        <tbody>
+          <tr><td>What is wrong</td><td>Spending outruns the economy's capacity to supply.</td><td>A key input costs more. Capacity itself has shrunk.</td></tr>
+          <tr><td>What a hike does to the cause</td><td>Removes it directly by cooling demand.</td><td>Leaves it untouched. Only demand elsewhere is squeezed.</td></tr>
+          <tr><td>Cost in output and jobs</td><td>Smaller per point of inflation removed.</td><td>Larger. Households already poorer from fuel bills cut back further.</td></tr>
+          <tr><td>Where it does help</td><td>Across the board.</td><td>Stopping second-round effects: wage claims and price-setting that bake the shock in. A firmer currency also trims the local-currency cost of imported oil.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>This is why economists debate "looking through" supply shocks. Once the first price jump has passed, headline inflation falls on its own as the base effect drops out. The risk is expectations: if people start assuming higher inflation is permanent, the temporary shock becomes a lasting one, and that is the part rates can influence.</p>
+  </section>
+
+  <section>
+    <h2>Two episodes from the record</h2>
+    <div class="history">
+      <div class="era"><span class="yr">1973–1982, United States</span><h3>Oil shocks and Volcker</h3><p>Two oil shocks lifted inflation into double digits. Under Chair Paul Volcker the Fed pushed its policy rate to around 20% in 1981. Inflation fell sharply, but unemployment rose above 10% in 1982, the deepest US recession of the postwar era to that point.</p></div>
+      <div class="era"><span class="yr">2022–2023, United States</span><h3>Post-pandemic and energy spike</h3><p>Energy prices jumped after Russia invaded Ukraine, on top of strong post-lockdown demand. The Fed raised its target range from 0–0.25% in March 2022 to 5.25–5.50% by July 2023. US CPI inflation peaked near 9% in mid-2022 and then fell, while unemployment stayed historically low.</p></div>
+    </div>
+    <p class="note">The two outcomes differ partly because the 2022 shock mixed demand and supply causes, and partly because expectations were better anchored by then. Historians and economists still argue about how much credit the rate rises deserve compared with easing supply chains and falling energy prices.</p>
+  </section>
+
+  <p class="foot">Educational material on how monetary policy works and what has happened historically. It is not personal financial advice or a forecast of any central bank decision. Historical figures are rounded; check the Federal Reserve, BLS and Bank of England for exact series.</p>
+</div>
+
+<script>
+(function () {
+  // Stylised responses per +2pp over 1-2 years, scaled to a -1..+1 bar. aim: -1 lower is better, +1 higher is better, 0 neutral.
+  var ROWS = [
+    { key: 'inf', name: 'Inflation', sub: 'price level growth', aim: -1, demand: -0.85, cost: -0.35,
+      why: 'Weaker demand and steadier expectations slow price rises.',
+      costWhy: 'The oil price itself does not move, so only second-round effects and a firmer currency help.' },
+    { key: 'gdp', name: 'Output growth', sub: 'real GDP', aim: 1, demand: -0.7, cost: -0.7,
+      why: 'Dearer credit lowers investment and consumer spending.' },
+    { key: 'unemp', name: 'Unemployment', sub: 'jobless rate', aim: -1, demand: 0.5, cost: 0.5,
+      why: 'Firms hire less when demand slows. The effect lags output by several months.' },
+    { key: 'fx', name: 'Currency', sub: 'exchange rate value', aim: 0, demand: 0.6, cost: 0.6,
+      why: 'Higher returns attract capital. Imports get cheaper while exports lose competitiveness.' },
+    { key: 'debt', name: 'Public borrowing cost', sub: 'government interest bill', aim: -1, demand: 0.55, cost: 0.55,
+      why: 'New and refinanced government debt is issued at higher yields.' }
+  ];
+  var state = { delta: 1, src: 'demand' };
+  var rowsEl = document.getElementById('rows');
+  var els = {};
+
+  ROWS.forEach(function (r) {
+    var d = document.createElement('div');
+    d.className = 'row';
+    d.innerHTML = '<div class="name">' + r.name + '<small>' + r.sub + '</small></div>' +
+      '<div><div class="bar" role="img" id="bar-' + r.key + '"><i></i></div>' +
+      '<div class="scale" aria-hidden="true"><span>falls</span><span>rises</span></div></div>' +
+      '<div class="verdict" id="v-' + r.key + '"></div>';
+    rowsEl.appendChild(d);
+    els[r.key] = { bar: d.querySelector('.bar'), fill: d.querySelector('.bar i'), v: d.querySelector('.verdict') };
+  });
+
+  function fmt(n) { return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(2) + ' pp'; }
+  function colour(aim, score) {
+    if (aim === 0 || score === 0) return 'neutral';
+    return (aim * score > 0) ? 'good' : 'bad';
+  }
+
+  function render() {
+    var d = state.delta, k = d / 2;
+    document.getElementById('deltaOut').textContent = fmt(d);
+    document.getElementById('deltaCtx').textContent =
+      d === 0 ? 'no change in the policy rate' :
+      d > 0 ? 'a rise from, say, 3.00% to ' + (3 + d).toFixed(2) + '%' :
+              'a cut from, say, 3.00% to ' + (3 + d).toFixed(2) + '%';
+
+    ROWS.forEach(function (r) {
+      var score = Math.max(-1, Math.min(1, r[state.src] * k));
+      var cls = colour(r.aim, score);
+      var e = els[r.key];
+      var w = Math.abs(score) * 50;
+      e.fill.style.width = w + '%';
+      e.fill.style.left = (score >= 0 ? 50 : 50 - w) + '%';
+      e.fill.style.background = 'var(--' + cls + ')';
+      var dir = score === 0 ? 'No change' : (score > 0 ? 'Rises' : 'Falls');
+      var rel = cls === 'good' ? 'toward the usual goal' : cls === 'bad' ? 'away from the usual goal' : (score === 0 ? '' : 'neither good nor bad on its own');
+      var why = (state.src === 'cost' && r.costWhy) ? r.costWhy : r.why;
+      if (score === 0) { e.v.innerHTML = 'Nothing moves.'; }
+      else {
+        e.v.innerHTML = '<span class="pill ' + cls + '">' + dir + '</span>' + (rel ? '<b>' + rel + '.</b> ' : '') + why +
+          (d < 0 ? ' (Reverse of the hike case.)' : '');
+      }
+      e.bar.setAttribute('aria-label', r.name + ': ' + dir.toLowerCase());
+    });
+
+    var s = document.getElementById('summary');
+    var inf = Math.abs(ROWS[0][state.src] * k), gdp = Math.abs(ROWS[1].demand * k);
+    if (d === 0) {
+      s.textContent = 'With no change, the rate stays where it is and the other objectives are left to other forces.';
+    } else if (d < 0) {
+      s.textContent = 'A cut works the opposite way: it supports output and jobs and eases debt costs, at the price of more inflation pressure and a weaker currency. Cuts are more usually associated with slumps than with energy shocks.';
+    } else if (state.src === 'demand') {
+      s.textContent = 'Where demand is the cause, the rate rise addresses it directly. Inflation falls by a decent margin (' + (inf * 100).toFixed(0) + ' on this scale) for a similar-sized hit to output (' + (gdp * 100).toFixed(0) + ').';
+    } else {
+      s.textContent = 'Where energy is the cause, inflation falls by far less (' + (inf * 100).toFixed(0) + ' on this scale) while the hit to output and jobs is the same (' + (gdp * 100).toFixed(0) + '). That is the trade-off behind the debate about how hard to respond to a supply shock.';
+    }
+  }
+
+  document.getElementById('delta').addEventListener('input', function (e) { state.delta = parseFloat(e.target.value); render(); });
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.src = b.dataset.src;
+      document.querySelectorAll('.seg button').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      render();
+    });
+  });
+  render();
+})();
+</script>
+
+<script src="/static/js/explainer-cats.js"></script>
+<script src="/static/js/explainer-pills.js"></script>
+</body></html>

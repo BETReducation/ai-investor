@@ -3460,6 +3460,9 @@ def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 # part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
 # static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
+    {"slug": "interest-rates-macro", "categories": ["markets-in-context"], "part": "basics",
+     "title": "Interest Rates and Macro Objectives",
+     "desc": "How a policy rate change moves inflation, growth, jobs, the currency and public debt costs, with a slider, and why energy-driven inflation responds less than demand-driven."},
     {"slug": "oil-inflation-regimes", "categories": ["markets-in-context"], "part": "in-depth",
      "title": "Oil Shocks and Inflation: 1973–74 and 2008",
      "desc": "What stocks, 10-year bonds and gold did when oil surged and inflation climbed, month by month, nominal and CPI-adjusted. Two historical windows with oil and inflation underneath."},
