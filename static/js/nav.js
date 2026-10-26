@@ -193,6 +193,10 @@ DATAVIZ_MENU_HTML +
 '  </div>' +
 '</nav>';
 
+  // Pages may not load the site fonts themselves; the nav must look identical everywhere.
+  if (!document.querySelector('link[href*="fonts.googleapis.com/css2"][href*="Space+Grotesk"]')) {
+    document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">');
+  }
   document.write(NAV_HTML);
 
   // Apply the arm-coloured background tint + bottom border immediately, so
