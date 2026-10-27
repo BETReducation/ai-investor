@@ -144,3 +144,21 @@ Beginner explainer (Alpha or video): "Month on month vs year on year: how to rea
 
 ### Reply target
 None found this run.
+
+## 2026-10-27 (third run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #1, already used). News used: Fed decision due 28 Oct, markets pricing roughly 87% for no change and 13% for a 25 basis point rise per CME FedWatch (check figure); reports that chip stocks fell about 11% in the week of 12-16 Oct and the Nasdaq dropped 2.6% on 22 Oct amid worries over AI spending costs (check figures, sources disagree). No decision result yet, so nothing here claims it.
+
+### Draft 17 (status: pending)
+Before the Fed announces a rate decision, you'll hear that a result is "priced in". It means most people already expect it, so their buying and selling has already reflected it. This week the market was widely expecting no change. Historically, the surprises, not the expected outcomes, are what move prices most. Our interest rates lesson explains why.
+
+### Draft 18 (status: pending)
+One week in October, chip company shares reportedly fell around 11%. Why does that matter if you don't own them? Because a few big companies make up a large slice of the main stock indexes, so when they drop, the whole index feels it. That's called concentration. It's worth knowing what's inside the index you follow.
+
+### Angle suggestion
+Beginner explainer (Alpha or video): "What's actually inside an index? How a handful of big companies can sway the S&P 500 and Nasdaq." Use the dot-com era (2000) as the historical example. Education only.
+
+### Reply target
+None found this run.
