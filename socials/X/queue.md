@@ -162,3 +162,27 @@ Beginner explainer (Alpha or video): "What's actually inside an index? How a han
 
 ### Reply target
 None found this run.
+
+## 2026-10-27 (fourth run)
+
+Status: pending
+
+Ideas: covers idea #2 (AI bubble). News used: bubble-warning commentary (Capital Economics, Wharton) and debt-funded AI spending worries (Oracle borrowing), undated search results so treat as general background (check figure). No coverage found dated today, so nothing here claims current prices. Last runs were all type C, so this run mixes A, B and D.
+
+### Draft 19 (type: A viz/tool showcase, status: pending)
+Spent a while on the Mining Globe this month. It shows where the world's gold and other metals are mined and stockpiled, and you can flip the price strip between day, week, month and year to date. Central bank gold holdings are the bit I keep going back to. 
+https://www.growthcapitalgroup.co/tools/data-visualisation/mining-globe
+Image: Mining Globe, globe view with the metal price strip set to YTD and the central bank gold leaderboard visible beside it.
+
+### Draft 20 (type: B thoughts/take, status: pending)
+Covers idea #2.
+Every few years the question comes back: is this an AI bubble? The honest historical answer is that a real technology and an overpriced stock can both be true. Plenty of dot-com companies were real businesses. The Nasdaq still took about 15 years to get back to its 2000 peak. The tech worked. The prices were the problem.
+
+### Draft 21 (type: D question, status: pending)
+Which market crash do you think taught people the most? 1987, 2000, 2008, 2020, or an older one? I'm curious which one people reach for first.
+
+### Angle suggestion
+Alpha or video: "What happened after the dot-com bubble burst, company by company." Who survived (Amazon, eBay), who didn't (Pets.com), and how long the index took to recover. Pairs with idea #2. Education only.
+
+### Reply target
+None found this run.
