@@ -538,6 +538,7 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('league-compass', 'S&P500 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('mining-globe', 'The Mining Globe', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -561,6 +562,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'league-compass'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'barrel-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'etf-tracker'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'mining-globe'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
@@ -1551,6 +1553,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "etf-tracker": "Around 130 ETFs from every region ranked by their day, week, month or year, with a spin-the-globe regional view, fee checks and side-by-side comparison (sample data).",
+    "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
@@ -1573,6 +1576,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "league-compass", "label": "S&P500 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "barrel-map", "label": "Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "mining-globe", "label": "The Mining Globe", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},

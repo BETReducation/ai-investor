@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Mining Globe</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Spline+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede6;--fg:#1d1a16;--mut:#6d655b;--card:#fbf9f5;--ln:#d6cfc3;--up:#17803d;--dn:#c0392b;--sea:#e4dfd5;--land:#cfc6b6;--grat:#00000014;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12100e;--fg:#f0e9dd;--mut:#a39a8c;--card:#1b1815;--ln:#332e28;--up:#3ddc84;--dn:#ff6b5b;--sea:#0b0a09;--land:#2a251f;--grat:#ffffff12;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12100e;--fg:#f0e9dd;--mut:#a39a8c;--card:#1b1815;--ln:#332e28;--up:#3ddc84;--dn:#ff6b5b;--sea:#0b0a09;--land:#2a251f;--grat:#ffffff12;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 'Spline Sans',system-ui,sans-serif;max-width:1000px;margin:0 auto;padding:16px}
+h1{font:900 clamp(44px,12vw,92px)/.86 'Big Shoulders Display',Impact,sans-serif;margin:8px 0 6px;letter-spacing:-.01em}
+h2{font:700 24px 'Big Shoulders Display',Impact,sans-serif;margin:0}
+.sub{color:var(--mut);max-width:60ch;margin:0 0 14px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--ln)}
+button{font:inherit;cursor:pointer;color:var(--fg);background:var(--card);border:1px solid var(--ln);border-radius:4px;padding:6px 12px}
+button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible,summary:focus-visible{outline:2px solid #e0a526;outline-offset:2px}
+details{border:1px solid var(--ln);background:var(--card);margin:14px 0;border-radius:6px}
+summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}summary:after{content:"+";font-size:22px;color:var(--mut)}details[open]>summary:after{content:"–"}
+.in{padding:0 14px 14px}
+#wheel{width:100%;max-width:640px;display:block;margin:0 auto}
+#wheel text{font-family:'Spline Sans',sans-serif;fill:var(--fg)}
+.dot{cursor:pointer}.dot:hover{stroke:var(--fg);stroke-width:2}
+#gl{width:100%;max-width:560px;aspect-ratio:1;display:block;margin:0 auto;touch-action:none;cursor:grab}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.row{border-top:1px solid var(--ln)}
+.rh{display:grid;grid-template-columns:62px 1fr auto;gap:8px;padding:10px 2px;cursor:pointer;align-items:center;width:100%;background:none;border:0;text-align:left;border-radius:0}
+.rh b{font:700 18px 'Big Shoulders Display',sans-serif}.rh small{color:var(--mut)}
+.pct{font-weight:600;font-variant-numeric:tabular-nums;min-width:68px;text-align:right;padding:2px 8px;border-radius:3px}
+.ex{display:none;padding:0 2px 12px 70px;color:var(--mut)}.row.open .ex{display:block}.ex b{color:var(--fg)}
+.bars{display:grid;gap:6px}.br{display:grid;grid-template-columns:100px 1fr 64px;gap:8px;align-items:center;font-size:13px}
+.br div{height:10px;background:var(--ln);position:relative}.br div i{position:absolute;top:0;bottom:0}
+.note{font-size:12px;color:var(--mut);margin-top:24px}
+@media (prefers-reduced-motion:no-preference){.row .ex{animation:o .2s}@keyframes o{from{opacity:0}}}
+.gsph{fill:var(--sea)}.ggr{fill:none;stroke:var(--grat)}.grim{fill:none;stroke:var(--ln);stroke-width:2;pointer-events:none}.datamaps-subunit{fill:var(--land)!important;stroke:var(--bg)!important;stroke-width:.5px!important;cursor:pointer}.datamaps-subunit.sel{fill:#f2b632!important}.gsph{fill:#0d3b66}.datamaps-subunit{fill:#3a9a82!important;stroke:#0d3b66!important;stroke-width:.6px!important}.datamaps-subunit:hover{fill:#52b89d!important}.grim{stroke:#5ab4ff;stroke-width:2.5}#gl svg{filter:drop-shadow(0 0 16px rgba(90,180,255,.4))}
+#lb{max-height:520px;overflow:auto}
+</style></head><body>
+<h1>The Mining Globe</h1>
+<p class="sub">Spin the globe, tap any country for its stockpiles, rank the world’s vaults, then read every mining stock and ETF on one dial.</p>
+<div class="bar" role="group" aria-label="Time period"><span style="color:var(--mut)">Period</span>
+<button data-p="0">Day</button><button data-p="1">Week</button><button data-p="2">Month</button><button data-p="3">Year</button></div>
+
+<details open><summary><h2>The Mining and Stockpile Globe</h2></summary><div class="in">
+<div class="chips" id="gt"></div>
+<div id="gl" role="img" aria-label="Globe of mining company headquarters and metal regions"></div>
+<p class="sub" style="text-align:center;margin:6px 0 0">Drag to spin, tap a country for its stockpiles. Rings are company HQs; glowing patches are major deposit regions for the selected metal.</p><div id="cp" aria-live="polite"></div></div></details>
+
+<details open><summary><h2>The Stockpile Leaderboard</h2></summary><div class="in"><div class="chips" id="lt"></div><div class="chips" id="ls"></div><div class="chips" id="lc"></div><div class="bars" id="lb"></div><p class="note" id="ln"></p></div></details>
+
+<details open><summary><h2>The Wheel</h2></summary><div class="in">
+<svg id="wheel" viewBox="0 0 600 600" role="img" aria-label="Mining wheel"></svg>
+<p class="sub" style="text-align:center;margin:0">Each wedge is a metal. Dots are companies; the wedge tint is the group average. Tap a dot.</p></div></details>
+
+<details open><summary><h2>Mining stocks</h2></summary><div class="in"><div class="chips" id="sf"></div><div id="stocks"></div></div></details>
+<details open><summary><h2>Mining ETFs</h2></summary><div class="in"><div id="etfs"></div></div></details>
+
+<details open><summary><h2>Leaders and laggards</h2></summary><div class="in"><div class="bars" id="bars"></div></div></details>
+
+<details><summary><h2>Cheat sheet: how to read a miner</h2></summary><div class="in"><p><b>Producers</b> dig and sell metal, so profits swing with the commodity price. <b>Royalty and streaming</b> firms fund mines in return for a slice of output, with lower costs and steadier cash. <b>Juniors</b> explore and are far riskier. <b>All-in sustaining cost</b> (AISC) is what it costs to produce an ounce or pound; the wider the gap to the metal price, the fatter the margin. Miners tend to move with a bigger beat than the metal itself, up and down.</p></div></details>
+<details open><summary><h2>The Coin Vault</h2></summary><div class="in"><p class="sub">Government-issued bullion coins and old gold and silver favourites from around the world. Tap a coin to read its story.</p><div class="chips" id="cf"></div><div id="cl"></div><p class="note">Dates, purities and tax notes are summaries and may be out of date. Tax treatment varies by country and is not tax advice, so check current rules before buying or publishing.</p></div></details>
+<p class="note">Sample data: prices and moves shown are illustrative placeholders, not live quotes. For education and historical context only, not financial advice.</p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.all.min.js"></script>
+<script>
+const SEC={Gold:'#e0a526',Silver:'#b9c2cc',Copper:'#c8703a',Lithium:'#a78bfa',Uranium:'#b7d333',Diversified:'#4aa3a8','Critical metals':'#e0568f',ETFs:'#e8e0d0'};
+const D=`NEM|Newmont|Gold|US|39.7|-104.9|World's largest gold miner, with mines across the Americas, Australia and Africa.
+GOLD|Barrick|Gold|CA|43.65|-79.4|Toronto-based gold and copper major with Nevada and Africa operations.
+AEM|Agnico Eagle|Gold|CA|43.65|-79.4|Canadian gold producer prized for operating in stable jurisdictions.
+KGC|Kinross Gold|Gold|CA|43.65|-79.4|Mid-sized gold producer in the Americas and West Africa.
+AU|AngloGold Ashanti|Gold|ZA|-26.2|28.0|Long-running African gold name, now with global mines.
+GFI|Gold Fields|Gold|ZA|-26.2|28.0|Johannesburg gold miner with mines in Australia, Ghana, Peru and South Africa.
+HMY|Harmony Gold|Gold|ZA|-26.2|28.0|South Africa's biggest gold producer, deep-level mines plus copper growth.
+AGI|Alamos Gold|Gold|CA|43.65|-79.4|Mid-tier producer with mines in Canada, Turkey and Mexico.
+NST|Northern Star|Gold|AU|-31.95|115.86|Perth miner running Kalgoorlie's Super Pit, a huge open pit.
+EVN|Evolution Mining|Gold|AU|-33.87|151.2|Australian gold and copper miner.
+WPM|Wheaton Precious Metals|Gold|CA|49.28|-123.1|Streaming firm: pays upfront for a share of other miners' silver and gold.
+FNV|Franco-Nevada|Gold|CA|43.65|-79.4|Royalty giant, collects a slice of revenue without running mines.
+PAAS|Pan American Silver|Silver|CA|49.28|-123.1|Major silver producer across Latin America.
+HL|Hecla Mining|Silver|US|47.7|-116.8|Oldest US-listed miner, largest US silver producer.
+CDE|Coeur Mining|Silver|US|41.88|-87.6|Gold and silver miner, mainly North America.
+FSM|Fortuna Mining|Silver|CA|49.28|-123.1|Silver and gold miner in West Africa and Latin America.
+FCX|Freeport-McMoRan|Copper|US|33.45|-112.0|Runs the giant Grasberg mine in Indonesia plus big US and Chile copper.
+SCCO|Southern Copper|Copper|US|33.45|-112.0|Holds some of the world's largest copper reserves in Peru and Mexico.
+TECK|Teck Resources|Copper|CA|49.28|-123.1|Canadian copper and zinc producer after exiting coal.
+ANTO|Antofagasta|Copper|GB|51.5|-0.12|London-listed Chilean copper miner.
+IVN|Ivanhoe Mines|Copper|CA|49.28|-123.1|Developing Kamoa-Kakula copper in the DR Congo.
+HBM|Hudbay Minerals|Copper|CA|43.65|-79.4|Copper and zinc miner in Canada and Peru.
+ALB|Albemarle|Lithium|US|35.2|-80.8|Top lithium chemicals maker for EV batteries.
+SQM|SQM|Lithium|CL|-33.45|-70.67|Chilean lithium from the Atacama salt flat.
+PLS|Pilbara Minerals|Lithium|AU|-31.95|115.86|Hard-rock lithium (spodumene) producer in Western Australia.
+LAC|Lithium Americas|Lithium|CA|49.28|-123.1|Developing Thacker Pass lithium in Nevada.
+CCJ|Cameco|Uranium|CA|52.13|-106.67|One of the world's largest uranium suppliers, mines in Saskatchewan.
+KAP|Kazatomprom|Uranium|KZ|51.17|71.43|Kazakhstan's state miner, the largest uranium producer.
+UEC|Uranium Energy|Uranium|US|27.8|-97.4|US uranium producer using in-situ recovery.
+NXE|NexGen Energy|Uranium|CA|49.28|-123.1|Developer of the Rook I deposit in Saskatchewan.
+RIO|Rio Tinto|Diversified|GB|51.5|-0.12|Giant of iron ore, aluminium, copper and lithium.
+BHP|BHP|Diversified|AU|-37.81|144.96|World's largest miner by value: iron ore, copper, coal, potash.
+VALE|Vale|Diversified|BR|-22.9|-43.2|Brazilian iron ore and nickel powerhouse.
+GLEN|Glencore|Diversified|CH|47.4|8.5|Miner and commodity trader: copper, cobalt, coal, zinc.
+AAL|Anglo American|Diversified|GB|51.5|-0.12|Copper, iron ore, platinum and diamonds.
+FMG|Fortescue|Diversified|AU|-31.95|115.86|Pure iron ore in Pilbara, pushing into green energy.
+MP|MP Materials|Critical metals|US|36.1|-115.1|Runs Mountain Pass, the main US rare earth mine.
+SBSW|Sibanye Stillwater|Critical metals|ZA|-26.2|28.0|Platinum, palladium and rhodium from South Africa and Montana.
+AA|Alcoa|Critical metals|US|40.44|-80.0|Aluminium maker from bauxite to metal.
+CLF|Cleveland-Cliffs|Critical metals|US|41.5|-81.7|Largest US flat-rolled steel producer, with iron ore mines.
+GDX|VanEck Gold Miners ETF|ETFs|US|40.7|-74|Large gold miners in one fund.
+GDXJ|VanEck Junior Gold Miners|ETFs|US|40.7|-74|Smaller, riskier gold explorers and producers.
+SIL|Global X Silver Miners|ETFs|US|40.7|-74|Basket of silver mining companies.
+SILJ|Junior Silver Miners ETF|ETFs|US|40.7|-74|Smaller silver explorers and producers.
+COPX|Global X Copper Miners|ETFs|US|40.7|-74|Copper miners worldwide.
+URA|Global X Uranium ETF|ETFs|US|40.7|-74|Uranium miners plus nuclear related firms.
+URNM|Sprott Uranium Miners|ETFs|US|40.7|-74|Pure-play uranium miners.
+LIT|Global X Lithium & Battery|ETFs|US|40.7|-74|Lithium miners and battery makers.
+REMX|VanEck Rare Earth/Strategic|ETFs|US|40.7|-74|Rare earths, strategic and critical metals.
+PICK|iShares MSCI Global Metals|ETFs|US|40.7|-74|Broad metals and mining across the world.
+XME|SPDR S&P Metals & Mining|ETFs|US|40.7|-74|US metals and mining, steel to coal.
+RING|iShares MSCI Global Gold Miners|ETFs|US|40.7|-74|Global gold miners, lower cost.`.split('\n').map(l=>{const a=l.split('|');return{t:a[0],n:a[1],s:a[2],c:a[3],la:+a[4],lo:+a[5],x:a[6]}});
+const VOL=[2.2,4.5,9,38],BIAS={Gold:.4,Silver:.5,Copper:.2,Lithium:-.3,Uranium:.5,Diversified:0,'Critical metals':.1,ETFs:.2};
+const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return(h>>>0)%2000/1000-1};
+let P=0;const pf=(d,p=P)=>+((hs(d.t+p)+BIAS[d.s]*(p+1)*.4)*VOL[p]*.7).toFixed(2);
+const col=(v,a)=>(v>=0?'rgba(46,204,113,':'rgba(231,76,60,')+Math.min(1,.2+Math.abs(v)/VOL[P]*.8*(a||1))+')';
+const f=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
+const secs=Object.keys(SEC),CN={US:'USA',CA:'Canada',ZA:'South Africa',AU:'Australia',GB:'UK',CL:'Chile',KZ:'Kazakhstan',BR:'Brazil',CH:'Switzerland'};
+const $=s=>document.querySelector(s),avg=a=>a.reduce((x,y)=>x+pf(y),0)/a.length;
+function wheel(){const W=$('#wheel');let h='';const N=secs.length,cx=300,cy=300;
+const pt=(r,a)=>[cx+r*Math.sin(a),cy-r*Math.cos(a)];
+secs.forEach((s,i)=>{const a1=i/N*6.2832,a2=(i+1)/N*6.2832-.012,m=D.filter(d=>d.s==s),av=avg(m);
+const [x1,y1]=pt(150,a1),[x2,y2]=pt(290,a1),[x3,y3]=pt(290,a2),[x4,y4]=pt(150,a2);
+h+=`<path d="M${x1} ${y1}L${x2} ${y2}A290 290 0 0 1 ${x3} ${y3}L${x4} ${y4}A150 150 0 0 0 ${x1} ${y1}Z" fill="${col(av,.45)}" stroke="${SEC[s]}" stroke-width="2"/>`;
+const [lx,ly]=pt(168,(a1+a2)/2);const am=(a1+a2)/2*57.2958;
+h+=`<text x="${lx}" y="${ly}" font-size="11" font-weight="600" text-anchor="middle" transform="rotate(${am>90&&am<270?am+180:am} ${lx} ${ly})">${s}</text>`;
+m.forEach((d,j)=>{const a=a1+(a2-a1)*(j+.5)/m.length,r=205+(j%3)*30,[x,y]=pt(r,a);
+h+=`<circle class="dot" tabindex="0" role="button" aria-label="${d.t}" data-t="${d.t}" cx="${x}" cy="${y}" r="9" fill="${col(pf(d))}" stroke="${SEC[s]}" stroke-width="2"><title>${d.t} ${f(pf(d))}</title></circle>`;
+h+=`<text x="${x}" y="${y+3}" font-size="6.5" text-anchor="middle" pointer-events="none">${d.t.slice(0,4)}</text>`});});
+const st=D.filter(d=>d.s!='ETFs'),all=avg(D);
+h+=`<circle cx="300" cy="300" r="128" fill="var(--card)" stroke="var(--ln)" stroke-width="2"/><g id="ctr"><text x="300" y="290" font-size="13" text-anchor="middle" style="fill:var(--mut)">All miners</text><text x="300" y="330" font-size="38" font-weight="600" text-anchor="middle" style="fill:${all>=0?'var(--up)':'var(--dn)'}">${f(all)}</text><text x="300" y="352" font-size="12" text-anchor="middle" style="fill:var(--mut)">${['today','this week','this month','this year'][P]}</text></g>`;
+W.innerHTML=h;
+W.querySelectorAll('.dot').forEach(e=>{const go=()=>openRow(e.dataset.t);e.onclick=go;e.onkeydown=k=>k.key=='Enter'&&go();
+e.onmouseenter=()=>{const d=D.find(x=>x.t==e.dataset.t),g=$('#ctr');g.innerHTML=`<text x="300" y="282" font-size="14" text-anchor="middle" style="fill:var(--mut)">${d.n}</text><text x="300" y="325" font-size="36" font-weight="600" text-anchor="middle">${d.t}</text><text x="300" y="352" font-size="20" font-weight="600" text-anchor="middle" style="fill:${pf(d)>=0?'var(--up)':'var(--dn)'}">${f(pf(d))}</text>`}})}
+let SF='All';
+function rows(list,el){el.innerHTML=list.map(d=>{const v=pf(d);return`<div class="row" id="r-${d.t}"><button class="rh" aria-expanded="false"><b>${d.t}</b><span>${d.n}<br><small>${d.s} · ${CN[d.c]||d.c}</small></span><span class="pct" style="background:${col(v)}">${f(v)}</span></button><div class="ex"><b>${d.n}.</b> ${d.x} HQ: ${CN[d.c]||d.c}. Moves with the price of ${d.s=='ETFs'?'its underlying miners':d.s.toLowerCase()}, so a ${P==3?'year':'period'} like this tells you how the metal and the market are feeling about it.</div></div>`}).join('');
+el.querySelectorAll('.rh').forEach(b=>b.onclick=()=>{const r=b.parentNode;r.classList.toggle('open');b.setAttribute('aria-expanded',r.classList.contains('open'))})}
+function openRow(t){const r=document.getElementById('r-'+t);let p=r.closest('details');p.open=true;r.classList.add('open');r.scrollIntoView({behavior:'smooth',block:'center'})}
+function lists(){const sf=$('#sf');sf.innerHTML=['All',...secs.slice(0,-1)].map(s=>`<button class="${s==SF?'on':''}" data-s="${s}">${s}</button>`).join('');
+sf.querySelectorAll('button').forEach(b=>b.onclick=()=>{SF=b.dataset.s;lists()});
+rows(D.filter(d=>d.s!='ETFs'&&(SF=='All'||d.s==SF)).sort((a,b)=>pf(b)-pf(a)),$('#stocks'));rows(D.filter(d=>d.s=='ETFs').sort((a,b)=>pf(b)-pf(a)),$('#etfs'))}
+function bars(){const m=Math.max(...secs.map(s=>Math.abs(avg(D.filter(d=>d.s==s)))));
+$('#bars').innerHTML=secs.map(s=>{const v=avg(D.filter(d=>d.s==s));return`<div class="br"><span>${s}</span><div><i style="${v>=0?'left:50%':'right:50%'};width:${Math.abs(v)/m*50}%;background:${v>=0?'var(--up)':'var(--dn)'}"></i></div><span style="text-align:right">${f(v)}</span></div>`}).join('')}
+function setP(p){P=p;document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',+b.dataset.p==p));const o=new Set([...document.querySelectorAll('.row.open')].map(r=>r.id));wheel();lists();bars();o.forEach(i=>document.getElementById(i)?.classList.add('open'))}
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>setP(+b.dataset.p));
+/* globe */
+const REG={Gold:[[-27,26,11],[-31,121,10],[41,-116,9],[-10,-76,8],[50,80,12],[5,-1,8]],Silver:[[23,-103,10],[-12,-76,9],[-24,-66,6],[50,100,8]],Copper:[[-23,-69,9],[-12,-75,6],[-12,27,9],[40,-112,7],[-6,138,5]],Lithium:[[-23,-68,8],[-26,121,7],[39,-117,6],[30,102,7]],Uranium:[[58,-105,9],[48,68,10],[-22,16,6],[-27,135,7]],Diversified:[[-23,119,9],[-20,-45,7],[-25,26,9],[60,90,12]],'Critical metals':[[41,110,9],[-26,28,8],[35,-115,5],[-14,28,7]]};
+const UN={cb:['Central bank gold','t'],Au:['Gold reserves in ground','t'],Ag:['Silver reserves','kt'],Cu:['Copper reserves','Mt'],Li:['Lithium reserves','kt'],U:['Uranium resources','kt'],REE:['Rare earth reserves','Mt'],Fe:['Iron ore reserves','Gt'],PGM:['Platinum group metals','t'],Ni:['Nickel reserves','Mt'],BTC:['Government-held bitcoin','BTC'],AuP:['Gold mine output','t/yr'],AgP:['Silver mine output','t/yr'],CuP:['Copper mine output','Mt/yr']};
+const ST={HU:{cb:110},SE:{cb:126},GR:{cb:114},RO:{cb:104},DK:{cb:67},RS:{cb:49},FI:{cb:49},CZ:{cb:45},BG:{cb:40},SK:{cb:32},PH:{cb:160},KR:{cb:104},PK:{cb:64},IQ:{cb:130},LB:{cb:287},KW:{cb:79},QA:{cb:100},AE:{cb:75},JO:{cb:42},MY:{cb:38},EG:{cb:125},DZ:{cb:174},LY:{cb:117},MA:{cb:22},NG:{cb:21},GH:{cb:9,Au:1000},VE:{cb:161},BO:{cb:22,Ag:22},CO:{cb:10},UA:{cb:27,BTC:46000},BT:{BTC:13000},SV:{BTC:6200},US:{BTC:198000,cb:8133,Au:3000,Ag:23,Cu:50,Li:1100,U:184,REE:1.9,Fe:3,PGM:900,Ni:.34},DE:{cb:3351},IT:{cb:2452},FR:{cb:2437},RU:{cb:2330,Au:12000,Ag:45,Cu:80,U:480,REE:3.8,Fe:25,PGM:3900,Ni:8.3},CN:{BTC:190000,cb:2280,Au:3000,Ag:72,Cu:41,Li:3000,REE:44,Fe:20,Ni:4.2},CH:{cb:1040},JP:{cb:846},IN:{cb:880,REE:6.9,Fe:5.5},NL:{cb:612},TR:{cb:640},TW:{cb:422},PT:{cb:382},UZ:{cb:380,Au:1800},SA:{cb:323},GB:{BTC:61000,cb:310},KZ:{cb:300,U:815,Cu:20},ES:{cb:281},AT:{cb:280},TH:{cb:235},SG:{cb:230},BE:{cb:227},PL:{cb:515,Ag:61,Cu:34},AU:{cb:80,Au:12000,Ag:94,Cu:100,Li:6200,U:1700,REE:5.7,Fe:51,Ni:24},CA:{Au:3200,Cu:7.6,Li:1200,U:589,Fe:6,PGM:310,Ni:2.2},CL:{Ag:26,Cu:190,Li:9300},PE:{cb:35,Au:2700,Ag:140,Cu:120},AR:{cb:61,Li:4000},MX:{cb:120,Au:1400,Ag:37,Cu:53},ZA:{cb:125,Au:5000,U:320,PGM:63000},ID:{cb:80,Au:3600,Cu:24,Ni:55},BR:{cb:130,Au:2400,Li:390,U:280,REE:21,Fe:34,Ni:16},VN:{REE:22},NA:{U:470},CD:{Cu:80},ZM:{Cu:21},ZW:{Li:310,PGM:1200}};
+const PR={AuP:{CN:370,RU:320,AU:310,CA:190,US:170,GH:130,ID:130,MX:130,KZ:120,ZA:100,PE:100,UZ:100,BR:80},AgP:{MX:6300,CN:3300,PE:3100,CL:1400,PL:1300,AU:1300,BO:1300,RU:1100,AR:1000,US:1000,KZ:1000},CuP:{CL:5.3,PE:2.6,CD:2.5,CN:1.7,US:1.1,ID:1.1,RU:.9,AU:.8,ZM:.8,MX:.7,KZ:.6,CA:.5,PL:.4}};for(const k in PR)for(const c in PR[k])(ST[c]=ST[c]||{})[k]=PR[k][c];
+ST.BR.Cu=31;
+const PX={AgP:{CA:300,IN:700,SE:300,MA:250,TR:300},AuP:{ML:60,SD:60,TZ:55,PG:70,AR:55,CO:50},Au:{PG:1200,KZ:2300},CuP:{BR:.3,MN:.4,IR:.3}};for(const k in PX)for(const c in PX[k])(ST[c]=ST[c]||{})[k]=PX[k][c];
+const EST=new Set(['AgP:CA','AgP:IN','AgP:SE','AgP:MA','AgP:TR','AuP:ML','AuP:SD','AuP:TZ','AuP:PG','AuP:AR','AuP:CO','Au:PG','Au:KZ','CuP:MN','CuP:IR']),es=(c,k)=>EST.has(k+':'+c),ESN='Estimate. This country does not publish an official figure, so this is a rough industry estimate and may be well off.';
+const MX={};Object.values(ST).forEach(o=>{for(const k in o)MX[k]=Math.max(MX[k]||0,o[k])});
+const I3={US:'USA',CA:'CAN',DE:'DEU',IT:'ITA',FR:'FRA',RU:'RUS',CN:'CHN',CH:'CHE',JP:'JPN',IN:'IND',NL:'NLD',TR:'TUR',TW:'TWN',PT:'PRT',UZ:'UZB',SA:'SAU',GB:'GBR',KZ:'KAZ',ES:'ESP',AT:'AUT',TH:'THA',SG:'SGP',BE:'BEL',PL:'POL',AU:'AUS',CL:'CHL',PE:'PER',AR:'ARG',MX:'MEX',ZA:'ZAF',ID:'IDN',BR:'BRA',VN:'VNM',NA:'NAM',CD:'COD',ZM:'ZMB',ZW:'ZWE',UA:'UKR',AM:'ARM',SO:'SOM',ML:'MLI',SD:'SDN',TZ:'TZA',PG:'PNG',MN:'MNG',IR:'IRN',HU:'HUN',SE:'SWE',GR:'GRC',RO:'ROU',DK:'DNK',RS:'SRB',FI:'FIN',CZ:'CZE',BG:'BGR',SK:'SVK',PH:'PHL',KR:'KOR',PK:'PAK',IQ:'IRQ',LB:'LBN',KW:'KWT',QA:'QAT',AE:'ARE',JO:'JOR',MY:'MYS',EG:'EGY',DZ:'DZA',LY:'LBY',MA:'MAR',NG:'NGA',GH:'GHA',VE:'VEN',BO:'BOL',CO:'COL',BT:'BTN',SV:'SLV'},R3={};for(const k in I3)R3[I3[k]]=k;
+let G='Gold',rot=[-20,20],drag=null,SEL=null,tg=null,mv=0,pj,pa,svg,ov;const RM=matchMedia('(prefers-reduced-motion:reduce)').matches,GK=Object.keys(REG);
+function gt(){$('#gt').innerHTML=GK.concat(['Off']).map(k=>`<button class="chip ${k==G?'on':''}" data-k="${k}"><i style="background:${SEC[k]||'#888'}"></i>${k=='Off'?'HQs only':k}</button>`).join('');
+$('#gt').querySelectorAll('button').forEach(b=>b.onclick=()=>{G=b.dataset.k;gt()})}
+let CGID='',PK='All',CG=null,LM='Gold',LSM={Gold:'cb'};
+const NM={AM:'Armenia',SO:'Somalia',IM:'Isle of Man',ML:'Mali',SD:'Sudan',TZ:'Tanzania',PG:'Papua New Guinea',MN:'Mongolia',IR:'Iran',HU:'Hungary',SE:'Sweden',GR:'Greece',RO:'Romania',DK:'Denmark',RS:'Serbia',FI:'Finland',CZ:'Czechia',BG:'Bulgaria',SK:'Slovakia',PH:'Philippines',KR:'South Korea',PK:'Pakistan',IQ:'Iraq',LB:'Lebanon',KW:'Kuwait',QA:'Qatar',AE:'UAE',JO:'Jordan',MY:'Malaysia',EG:'Egypt',DZ:'Algeria',LY:'Libya',MA:'Morocco',NG:'Nigeria',GH:'Ghana',VE:'Venezuela',BO:'Bolivia',CO:'Colombia',US:'United States',CA:'Canada',DE:'Germany',IT:'Italy',FR:'France',RU:'Russia',CN:'China',CH:'Switzerland',JP:'Japan',IN:'India',NL:'Netherlands',TR:'Türkiye',TW:'Taiwan',PT:'Portugal',UZ:'Uzbekistan',SA:'Saudi Arabia',GB:'United Kingdom',KZ:'Kazakhstan',ES:'Spain',AT:'Austria',TH:'Thailand',SG:'Singapore',BE:'Belgium',PL:'Poland',AU:'Australia',CL:'Chile',PE:'Peru',AR:'Argentina',MX:'Mexico',ZA:'South Africa',ID:'Indonesia',BR:'Brazil',VN:'Vietnam',NA:'Namibia',CD:'DR Congo',ZM:'Zambia',ZW:'Zimbabwe',UA:'Ukraine',BT:'Bhutan',SV:'El Salvador'};
+const MG=[['Gold',['cb','Au','AuP'],SEC.Gold],['Silver',['Ag','AgP'],SEC.Silver],['Copper',['Cu','CuP'],SEC.Copper],['Lithium',['Li'],SEC.Lithium],['Uranium',['U'],SEC.Uranium],['Rare earths',['REE'],SEC.Diversified],['Iron ore',['Fe'],SEC.Diversified],['Platinum group',['PGM'],SEC.Diversified],['Nickel',['Ni'],SEC.Diversified],['Bitcoin',['BTC'],'#f7931a']];
+const KC=k=>{const g=MG.find(x=>x[1].includes(k));return g?g[2]:SEC.Diversified};
+const flag=c=>String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)));
+function big(k,v){const all=Object.values(ST).filter(o=>o[k]!=null),rk=all.filter(o=>o[k]>v).length+1;
+return`<div style="padding:6px 0"><div class="sub" style="margin:0">${UN[k][0]}${CGID&&es(CGID,k)?'*':''}</div><div style="font:900 52px/1 'Big Shoulders Display',sans-serif;color:${KC(k)}">${v.toLocaleString()} <span style="font-size:22px">${UN[k][1]}</span></div><div class="br" style="grid-template-columns:1fr 48px;margin-top:8px"><div><i style="left:0;width:${Math.max(2,v/MX[k]*100)}%;background:${KC(k)}"></i></div><span style="text-align:right">${Math.round(v/MX[k]*100)}%</span></div><p class="sub" style="margin:6px 0 0">Ranks #${rk} of ${all.length} countries on file. The bar shows the share of the leader.</p></div>`}
+function info(g){CG=g;const p=$('#cp');if(!g){p.innerHTML='<p class="sub" style="text-align:center">Tap a country to see its stockpiles.</p>';return}
+const id=R3[g.id]||'';CGID=id;const s=ST[id]||{},m=D.filter(d=>d.c==id&&d.s!='ETFs'),has=k=>s[k]!=null,nm=g.properties.name;
+let h=`<h2 style="margin:4px 0 8px">${nm}</h2><div class="chips"><button class="chip ${PK=='All'?'on':''}" data-k="All">All</button>${MG.map(x=>`<button class="chip ${PK==x[0]?'on':''}" data-k="${x[0]}" style="${x[1].some(has)?'':'opacity:.5'}"><i style="background:${x[2]}"></i>${x[0]}</button>`).join('')}</div>`;
+if(PK=='All'){const ks=Object.keys(UN).filter(has);h+=ks.length?`<div class="bars">${ks.map(k=>`<div class="br"><span>${UN[k][0]}${es(id,k)?'*':''}</span><div><i style="left:0;width:${Math.max(3,s[k]/MX[k]*100)}%;background:${KC(k)}"></i></div><span style="text-align:right">${s[k].toLocaleString()} ${UN[k][1]}</span></div>`).join('')}</div>`:'<p class="sub">No stockpile figures on file for this country.</p>'}
+else{const gp=MG.find(x=>x[0]==PK),ks=gp[1].filter(has);h+=ks.length?ks.map(k=>big(k,s[k])).join(''):`<p class="sub">No public ${PK.toLowerCase()} stockpile figure on file for ${nm}. Few countries publish national stockpiles of metals other than gold, so we show central bank holdings and mine reserves where they exist.</p>`}
+const cc=CO.map((x,i)=>[x,i]).filter(e=>e[0].c==id);if(cc.length)h+=`<div class="chips">Coins from here: ${cc.map(e=>`<button data-co="${e[1]}">${e[0].n}</button>`).join('')}</div>`;
+if(m.length)h+=`<div class="chips">Listed miners based here: ${m.map(d=>`<button data-t="${d.t}">${d.t}</button>`).join('')}</div>`;
+h+=(Object.keys(s).some(k=>es(id,k))?'<p class="note" style="margin-top:8px">* '+ESN+'</p>':'')+'<p class="note" style="margin-top:8px">Rounded, approximate figures from USGS Mineral Commodity Summaries, World Gold Council, WNA and public bitcoin trackers. Check against the latest release before publishing.</p>';
+p.innerHTML=h;p.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{PK=b.dataset.k;info(CG)});p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openRow(b.dataset.t));p.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCoin(+b.dataset.co))}
+function selC(i3){if(!svg)return;const q=svg.selectAll('.datamaps-subunit').filter(x=>x.id==i3);if(q.empty())return;SEL=q.datum();svg.selectAll('.datamaps-subunit').classed('sel',x=>x.id==SEL.id);const c=d3.geo.centroid(SEL);tg=[-c[0],Math.max(-60,Math.min(60,c[1]))];info(SEL);$('#gl').scrollIntoView({behavior:'smooth',block:'center'})}
+const LB={Gold:[['cb','Central bank vaults'],['Au','Reserves in the ground'],['AuP','Mine output per year']],Silver:[['Ag','Reserves in the ground'],['AgP','Mine output per year']],Copper:[['Cu','Reserves in the ground'],['CuP','Mine output per year']],Bitcoin:[['BTC','Held by governments']]},LN={AuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',AgP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',CuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',cb:'Central bank holdings, rounded, from World Gold Council data.',Au:'Mine reserves, rounded, from USGS data.',Ag:'Countries rarely publish national silver stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',Cu:'Countries rarely publish national copper stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',BTC:'Wallets and seizures linked to governments, approximate, from public trackers. These change often.'};
+const CTS={Europe:'DE IT FR RU CH NL PT GB ES AT BE PL HU SE GR RO DK RS FI CZ BG SK UA',Asia:'MN IR CN JP IN TW UZ SA KZ TH SG TR PH KR ID PK IQ LB KW QA AE JO MY VN BT',Africa:'ML SD TZ ZA EG DZ LY MA NG GH NA CD ZM ZW','N. America':'US MX CA SV','S. America':'BR VE AR PE BO CO CL',Oceania:'AU PG'},CT={};for(const c in CTS)CTS[c].split(' ').forEach(x=>CT[x]=c);
+let LC='All';
+function lb(){const k=LSM[LM]||LB[LM][0][0];
+$('#lt').innerHTML=Object.keys(LB).map(x=>`<button class="chip ${x==LM?'on':''}" data-m="${x}"><i style="background:${x=='Bitcoin'?'#f7931a':SEC[x]}"></i>${x}</button>`).join('');
+$('#ls').innerHTML=LB[LM].length>1?LB[LM].map(x=>`<button class="${x[0]==k?'on':''}" data-s="${x[0]}">${x[1]}</button>`).join(''):'';
+$('#lc').innerHTML=['All',...Object.keys(CTS)].map(x=>`<button class="${x==LC?'on':''}" data-z="${x}">${x=='All'?'World':x}</button>`).join('');
+const r=Object.entries(ST).filter(e=>e[1][k]!=null&&(LC=='All'||CT[e[0]]==LC)).sort((a,b)=>b[1][k]-a[1][k]).slice(0,50),mx=r.length?r[0][1][k]:1;
+$('#lb').innerHTML=r.length?r.map((e,i)=>`<button class="br" data-c="${e[0]}" style="grid-template-columns:160px 1fr 96px;background:none;border:0;border-radius:0;text-align:left;width:100%;padding:3px 0"><span>${i+1}. ${flag(e[0])} ${NM[e[0]]||e[0]}${es(e[0],k)?'*':''}</span><div><i style="left:0;width:${e[1][k]/mx*100}%;background:${KC(k)}"></i></div><span style="text-align:right">${e[1][k].toLocaleString()} ${UN[k][1]}</span></button>`).join(''):'<p class="sub">No figures on file for this continent.</p>';
+$('#ln').textContent=`Showing ${r.length} ${r.length==1?'nation':'nations'}. `+LN[k]+' Tap a country to jump to it on the globe.'+(r.some(e=>es(e[0],k))?' * '+ESN:'');
+$('#lt').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{LM=b.dataset.m;lb()});$('#ls').querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{LSM[LM]=b.dataset.s;lb()});$('#lc').querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>{LC=b.dataset.z;lb()});$('#lb').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>selC(I3[b.dataset.c]))}
+const CO=`American Eagle|US|US Mint|1986|Gold, silver, platinum|22 carat gold|The US flagship bullion coin, launched under the Gold Bullion Coin Act of 1985. The gold version is 22 carat, so the copper and silver alloy makes it tougher than pure gold, and carries Saint-Gaudens's Liberty. The silver Eagle uses the Walking Liberty design and a platinum Eagle followed in 1997.|Backed by the US government for weight and purity, and among the most traded bullion coins in the world.
+American Gold Buffalo|US|US Mint|2006|Gold|24 carat|The US Mint's first pure 24 carat gold coin. The design comes from James Earle Fraser's Buffalo nickel of 1913, with a Native American portrait on one side and a bison on the other.|Pure gold from the US Mint without the 22 carat alloy of the Eagle.
+Canadian Maple Leaf|CA|Royal Canadian Mint|1979|Gold, silver, platinum, palladium|.9999 pure|Launched in 1979 at .999 gold and now .9999 pure. It carries security features such as radial lines and a laser micro-engraved maple leaf to deter fakes. Silver arrived in 1988, and platinum and palladium versions exist too.|One of the easiest coins to sell anywhere, with some of the purest gold on the market.
+Britannia|GB|Royal Mint|1987 (gold), 1997 (silver)|Gold, silver, platinum|24 carat gold|The UK bullion coin, showing Britannia in a design by Philip Nathan. Gold was 22 carat at first and is now .9999 pure, and silver is .999. Recent issues add security features such as animated surface patterns. It is legal tender in the UK.|UK tax: UK legal tender coins such as the Britannia and Sovereign have generally been exempt from Capital Gains Tax, while many foreign coins are not. Check current HMRC rules.
+Sovereign|GB|Royal Mint|1817 (modern)|Gold|22 carat|The sovereign dates to Henry VII in 1489, and the modern coin from 1817 shows Benedetto Pistrucci's St George and the dragon. It holds about a quarter of an ounce of gold (roughly 7.3 g) and also comes as a half sovereign.|Small, instantly recognised and legal tender in the UK, so it has generally been treated as exempt from Capital Gains Tax. Check current HMRC rules.
+Krugerrand|ZA|South African Mint|1967|Gold, silver, platinum|22 carat gold|The first modern bullion coin, made in 1967 to help South Africa sell its gold. It is named after Paul Kruger and the rand, with a springbok on the back. It weighs about 34 g to hold exactly one ounce of gold in a 22 carat alloy. A silver version arrived in 2017.|Very liquid and recognised worldwide, and a pioneer that other mints copied.
+Chinese Panda|CN|China Mint|1982 (gold), 1983 (silver)|Gold, silver|.999 pure|The giant panda design changes every year, which is unusual for a bullion coin. Since 2016 it has been sold in metric weights such as 30 g rather than ounces.|The yearly design drives collector demand, so prices can sit well above the metal value.
+Vienna Philharmonic|AT|Austrian Mint|1989 (gold), 2008 (silver)|Gold, silver, platinum|.9999 gold|Shows the great organ of Vienna's Musikverein on one side and orchestra instruments on the other. It is priced in euros and is often among Europe's best-selling gold bullion coins.|A very popular coin in Europe with a low premium over the metal price.
+Australian Kangaroo|AU|Perth Mint|1986|Gold, silver|.9999 pure|Launched in 1986 as the Gold Nugget and renamed the Kangaroo in 1989. The kangaroo design changes every year. The silver version arrived in 2016.|Very pure, and each year's design appeals to collectors.
+Kookaburra|AU|Perth Mint|1990|Silver, gold|.999 or better|The silver coin first appeared in 1990 and shows a kookaburra on a branch, with a new pose each year.|A popular silver coin with annual collector appeal.
+Koala|AU|Perth Mint|2007|Silver, gold|.999 or better|A koala design that changes each year, from the same mint behind the Kangaroo and Kookaburra.|Rounds out Perth's range of Australian animal coins.
+Perth Lunar Series|AU|Perth Mint|1990s|Gold, silver|.9999 pure|Each coin features a Chinese zodiac animal for the lunar year, so the series runs through the full cycle of twelve animals and then starts again.|Popular in Asia and with collectors, especially first-year designs.
+Mexican Libertad|MX|Casa de Moneda de Mexico|1981 (gold), 1982 (silver)|Gold, silver|.999 pure|Shows the Winged Victory from Mexico City's Angel of Independence monument. The silver Libertad started in 1982 as a one ounce coin.|Silver Libertads are usually cheap to buy relative to the metal price.
+Mexican 50 Peso Centenario|MX|Casa de Moneda de Mexico|1921 (restrikes since 1949)|Gold|.900|Made to mark a hundred years of Mexican independence. It holds about 1.2 troy ounces of gold, and the mint has restruck it ever since. Mexicans have long used it as savings.|A bigger gold coin without a face value, valued by its gold content.
+Swiss Vreneli|CH|Swiss Mint|1897 to 1949|Gold|.900|The Swiss 20 franc gold coin, nicknamed Vreneli (little Verena), with Helvetia and the Alps. It holds about 5.8 g of gold, around 0.187 troy ounces.|A small, trusted coin that has lasted well in Swiss and European markets.
+French Napoleon 20 Francs|FR|Monnaie de Paris|1803 to 1914|Gold|.900|The 20 franc gold coin first struck under Napoleon, with the famous rooster (Coq) design on later pieces. France, Belgium, Italy and Switzerland standardised on it through the Latin Monetary Union of 1865. It holds about 5.8 g of gold.|One of the most traded old gold coins in Europe.
+Saint-Gaudens Double Eagle|US|US Mint|1907 to 1933|Gold|.900|The US 20 dollar gold piece, often called America's most beautiful coin. It holds about 0.97 troy ounces of gold. The 1933 pieces were recalled when the US left the gold standard, and one sold for about 19 million dollars in 2021.|A famous collector coin with prices far above its metal value.
+Morgan Dollar|US|US Mint|1878 to 1921|Silver|.900|Named after designer George T. Morgan. It holds about 0.77 troy ounces of silver, much of it from the Comstock Lode in Nevada. Many were melted down in 1918 under the Pittman Act.|A staple of US collecting, valued above the silver content in good condition.
+Austrian 100 Corona|AT|Austrian Mint|1908 (restrikes since)|Gold|.900|A gold coin from the Austro-Hungarian era showing Emperor Franz Joseph I. It holds about 0.98 troy ounces of gold. The Austrian Mint still restrikes it.|Close to a full ounce of gold with a collector appeal.
+Saint George the Victorious|RU|Bank of Russia|2006|Gold, silver|High purity|Russian bullion coin showing St George slaying a dragon, an old symbol of Moscow. Sanctions since 2022 have limited how it trades in many Western markets.|A reminder that politics can change how easily a coin sells.
+Armenian Noah's Ark|AM|Central Bank of Armenia|2011|Silver, gold|.999 silver|Shows Noah's Ark resting on Mount Ararat, a national symbol of Armenia even though the mountain lies in modern Turkey today. The silver coin is legal tender and is issued in ounce sizes.|A smaller, newer bullion coin, so it may be harder to resell than the big names.
+Somali Elephant|SO|Licensed issue in Somalia's name|2004|Silver, gold|.999 silver|African wildlife designs, with a new design each year, issued under licence in the name of Somalia. It is often seen as a private issue rather than a mainstream government bullion coin.|Check the issuer, mint and how easily it sells before buying.
+Isle of Man Noble|IM|Pobjoy Mint|1980s|Platinum, gold|High purity|The Noble was introduced in the 1980s as platinum bullion by the Isle of Man government, a Crown Dependency that issues its own coins. Designs draw on Manx heritage.|A niche coin that adds platinum to the range of government issues.
+Queen's Beasts|GB|Royal Mint|2016 to 2021|Gold, silver, platinum|.9999 gold|A ten coin series based on the heraldic beasts that stood outside Westminster Abbey at the 1953 coronation, such as the Lion of England and the Red Dragon of Wales. It was completed in 2021.|Series coins are collected as sets, and the first-year beasts are often the most sought after.
+Turkish Ata Gold|TR|Turkish Mint|1920s onward|Gold|22 carat|Gold coins bearing Ataturk's image, sold in quarter, half and full sizes. Many Turkish households hold them as savings.|Shows how gold coins work as everyday savings in some countries.
+Maria Theresa Thaler|AT|Austrian Mint|1780 (restrikes since)|Silver|.833|A silver coin dated 1780 that the Austrian Mint still restrikes. It has about 23.4 g of silver and was long used as trade money across East Africa and the Middle East.|One of the longest-running trade coins in history.`.split('\n').map(l=>{const a=l.split('|');return{n:a[0],c:a[1],m:a[2],y:a[3],me:a[4],p:a[5],x:a[6],w:a[7]}});
+const HIST=new Set(['Sovereign','Mexican 50 Peso Centenario','Swiss Vreneli','French Napoleon 20 Francs','Saint-Gaudens Double Eagle','Morgan Dollar','Austrian 100 Corona','Maria Theresa Thaler','Turkish Ata Gold']);let CF='All';
+function coins(){$('#cf').innerHTML=['All','Gold','Silver','Platinum','Historic'].map(x=>`<button class="${x==CF?'on':''}" data-f="${x}">${x}</button>`).join('');
+const l=CO.map((c,i)=>[c,i]).filter(e=>CF=='All'||(CF=='Historic'?HIST.has(e[0].n):e[0].me.includes(CF)));
+$('#cl').innerHTML=l.map(e=>{const c=e[0],i=e[1];return`<div class="row" id="c-${i}"><button class="rh" aria-expanded="false"><b style="font-size:28px">${flag(c.c)}</b><span>${c.n}<br><small>${c.m} · ${c.y} · ${c.me}</small></span><span class="pct" style="background:var(--ln);min-width:0">${c.p}</span></button><div class="ex"><p style="margin:0 0 6px">${c.x}</p><p style="margin:0 0 8px"><b>Why it matters:</b> ${c.w}</p>${I3[c.c]?`<button data-g="${c.c}">See ${NM[c.c]||c.c} on the globe</button>`:''}</div></div>`}).join('');
+$('#cf').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{CF=b.dataset.f;coins()});
+$('#cl').querySelectorAll('.rh').forEach(b=>b.onclick=()=>{const r=b.parentNode;r.classList.toggle('open');b.setAttribute('aria-expanded',r.classList.contains('open'))});
+$('#cl').querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>selC(I3[b.dataset.g]))}
+function openCoin(i){CF='All';coins();const r=document.getElementById('c-'+i);r.closest('details').open=true;r.classList.add('open');r.scrollIntoView({behavior:'smooth',block:'center'})}
+function frame(){if(svg){pj.rotate([rot[0],-rot[1]]);svg.selectAll('.datamaps-subunit,.gsph,.ggr,.grim').attr('d',pa);
+const c=[-rot[0],rot[1]],vs=(lo,la)=>d3.geo.distance([lo,la],c)<1.5;let h='';
+if(G!='Off')REG[G].forEach(r=>{if(!vs(r[1],r[0]))return;const q=pj([r[1],r[0]]);h+=`<circle cx="${q[0]}" cy="${q[1]}" r="${r[2]*7}" fill="url(#rg${GK.indexOf(G)})" opacity=".85" pointer-events="none"/>`});
+const seen={};D.forEach(d=>{if(d.s=='ETFs'||!vs(d.lo,d.la))return;const q=pj([d.lo,d.la]),k=d.la+d.lo,n=seen[k]=(seen[k]||0)+1,o=n>1?5*n:0,a=n*1.3;h+=`<circle cx="${q[0]+Math.cos(a)*o}" cy="${q[1]+Math.sin(a)*o}" r="4" fill="var(--bg)" stroke="${SEC[d.s]}" stroke-width="2" pointer-events="none"/>`});
+ov.node().innerHTML=h}
+if(tg){rot[0]+=(((tg[0]-rot[0]+540)%360)-180)*.1;rot[1]+=(tg[1]-rot[1])*.1;if(Math.abs(rot[1]-tg[1])<.2)tg=null}
+else if(!drag&&!SEL&&!RM)rot[0]+=.15;requestAnimationFrame(frame)}
+gt();setP(0);info(null);lb();coins();
+try{new Datamap({element:$('#gl'),fills:{defaultFill:'#888'},geographyConfig:{highlightOnHover:false,popupOnHover:false,borderWidth:.5},
+setProjection:()=>{pj=d3.geo.orthographic().scale(250).translate([280,280]).clipAngle(90).rotate([rot[0],-rot[1]]);pa=d3.geo.path().projection(pj);return{path:pa,projection:pj}},
+done:m=>{svg=m.svg;svg.attr('viewBox','0 0 560 560').attr('width','100%').attr('height','100%');
+svg.insert('path',':first-child').attr('class','gsph').datum({type:'Sphere'});
+svg.insert('defs',':first-child').node().innerHTML=GK.map((k,i)=>`<radialGradient id="rg${i}"><stop offset="0" stop-color="${SEC[k]}"/><stop offset="1" stop-color="${SEC[k]}" stop-opacity="0"/></radialGradient>`).join('');
+ov=svg.append('g');svg.append('path').attr('class','grim').datum({type:'Sphere'});
+svg.selectAll('.datamaps-subunit').on('click',g=>{if(mv>5)return;SEL=SEL&&SEL.id==g.id?null:g;svg.selectAll('.datamaps-subunit').classed('sel',x=>!!SEL&&x.id==SEL.id);if(SEL){const c=d3.geo.centroid(SEL);tg=[-c[0],Math.max(-60,Math.min(60,c[1]))]}info(SEL)});
+frame()}});
+const el=$('#gl');el.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY,rot[0],rot[1]];mv=0;tg=null});
+addEventListener('pointermove',e=>{if(!drag)return;mv=Math.max(mv,Math.abs(e.clientX-drag[0])+Math.abs(e.clientY-drag[1]));rot[0]=drag[2]+(e.clientX-drag[0])*.4;rot[1]=Math.max(-70,Math.min(70,drag[3]+(e.clientY-drag[1])*.3))});
+addEventListener('pointerup',()=>{drag=null})}catch(e){$('#gl').textContent='The globe could not load. Please refresh.'}
+// Tell the host page how tall the content is so the iframe doesn't clip or scroll.
+function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"mining-globe"},location.origin)}catch(e){}}
+try{new ResizeObserver(postH).observe(document.body)}catch(e){}
+</script></body></html>

@@ -81,7 +81,8 @@
       ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard']
     ] },
     { name: 'Metals', pages: [
-      ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio']
+      ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'],
+      ['The Mining Globe', '/tools/data-visualisation/mining-globe']
     ] },
     { name: 'Stocks', pages: [
       ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
