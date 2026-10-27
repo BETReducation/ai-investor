@@ -6358,7 +6358,7 @@ def api_mining_globe_spot():
         if hit and time.monotonic() - _spot_cache["at"] < _SPOT_TTL_SECONDS:
             return jsonify(hit)
     try:
-        raw = yf.download(tickers=list(_SPOT_SYMBOLS.values()), period="10d", interval="1d", group_by="ticker",
+        raw = yf.download(tickers=list(_SPOT_SYMBOLS.values()), start=f"{_dt.date.today().year - 1}-12-10", interval="1d", group_by="ticker",
                           threads=True, auto_adjust=False, progress=False)
     except Exception:
         raw = None
@@ -6367,7 +6367,7 @@ def api_mining_globe_spot():
         try:
             c = raw[sym]["Close"].dropna()
             if len(c) >= 2:
-                out[name] = {"price": round(float(c.iloc[-1]), 2), "day": round((float(c.iloc[-1]) / float(c.iloc[-2]) - 1) * 100, 2)}
+                out[name] = {"price": round(float(c.iloc[-1]), 2), **_period_moves(c)}
         except Exception:
             continue
     if len(out) < 3:
