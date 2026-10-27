@@ -2615,8 +2615,16 @@ function updateStrategyStatus() {
     }).join('');
     return `<div style="display:flex;justify-content:space-between;"><span style="color:${color};font-weight:700;">${label}</span><span style="color:${lineColor};">${state} · ${d.matchedCount}/${d.total}</span></div><div style="margin:3px 0 6px;font-size:8px;line-height:1.6;">${items}</div>`;
   };
+  // Conditions are scored on the strategy timeframe, which is separate from the chart's —
+  // spell that out so a chart RSI that disagrees with a condition isn't a mystery.
+  const tfSel = document.getElementById('timeframe');
+  const stratTf = tfSel?.value;
+  const tfLabel = tfSel?.selectedOptions?.[0]?.textContent?.trim() || stratTf;
+  const tfMismatch = stratTf && stratTf !== chartTf;
+  const chartTfLabel = (chartTf || '').toUpperCase();
   statusEl.innerHTML = `
-    <div style="letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">LIVE · ${currentAsset}</div>
+    <div style="letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">LIVE · ${currentAsset} · ${tfLabel} BARS</div>
+    ${tfMismatch ? `<div style="color:var(--accent-amber);margin-bottom:4px;">Chart is on ${chartTfLabel} — conditions are scored on ${tfLabel}, so indicator values can differ from the chart.</div>` : ''}
     ${dirLine('BUY', result.buy, 'var(--accent-green)') || '<div style="color:var(--text-muted);">No Buy-tagged conditions</div>'}
     ${dirLine('SELL', result.sell, 'var(--accent-red)') || '<div style="color:var(--text-muted);">No Sell-tagged conditions</div>'}`;
 
