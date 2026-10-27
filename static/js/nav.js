@@ -166,7 +166,7 @@ DATAVIZ_MENU_HTML +
 '        <li><a href="/partners">Partners</a></li>' +
 '      </ul>' +
 '    </li>' +
-'    <li id="navAdminMobileLi" class="nav-admin-mobile-li" style="display:none;"><a href="/admin">Admin</a></li>' +
+'    <li id="navAdminMobileLi" class="nav-admin-mobile-li"><a href="/admin">Admin</a></li>' +
 '  </ul>' +
 '  </div>' +
 '  <div class="nav-cta">' +
@@ -228,7 +228,7 @@ DATAVIZ_MENU_HTML +
             const adminLink = document.getElementById('navAdminLink');
             if (adminLink) adminLink.style.display = '';
             const adminMobileLi = document.getElementById('navAdminMobileLi');
-            if (adminMobileLi) adminMobileLi.style.display = 'list-item';
+            if (adminMobileLi) adminMobileLi.classList.add('is-admin');
             const studioLinkAdmin = document.getElementById('navStudioLi');
             if (studioLinkAdmin) studioLinkAdmin.style.display = '';
             const newsletterStudioLi = document.getElementById('navNewsletterStudioLi');
