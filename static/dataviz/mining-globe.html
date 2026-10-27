@@ -45,7 +45,7 @@ summary::-webkit-details-marker{display:none}summary:after{content:"+";font-size
 <h1>The Mining Globe</h1>
 <p class="sub">Spin the globe, tap any country for its stockpiles, rank the world’s vaults, then read every mining stock and ETF on one dial.</p>
 <div class="bar" role="group" aria-label="Time period"><span style="color:var(--mut)">Period</span>
-<button data-p="0">Day</button><button data-p="1">Week</button><button data-p="2">Month</button><button data-p="3">Year</button></div>
+<button data-p="0">Day</button><button data-p="1">Week</button><button data-p="2">Month</button><button data-p="3">Year to date</button></div>
 
 <details open><summary><h2>The Mining and Stockpile Globe</h2></summary><div class="in">
 <div class="chips" id="gt"></div>
@@ -65,7 +65,7 @@ summary::-webkit-details-marker{display:none}summary:after{content:"+";font-size
 
 <details><summary><h2>Cheat sheet: how to read a miner</h2></summary><div class="in"><p><b>Producers</b> dig and sell metal, so profits swing with the commodity price. <b>Royalty and streaming</b> firms fund mines in return for a slice of output, with lower costs and steadier cash. <b>Juniors</b> explore and are far riskier. <b>All-in sustaining cost</b> (AISC) is what it costs to produce an ounce or pound; the wider the gap to the metal price, the fatter the margin. Miners tend to move with a bigger beat than the metal itself, up and down.</p></div></details>
 <details open><summary><h2>The Coin Vault</h2></summary><div class="in"><p class="sub">Government-issued bullion coins and old gold and silver favourites from around the world. Tap a coin to read its story.</p><div class="chips" id="cf"></div><div id="cl"></div><p class="note">Dates, purities and tax notes are summaries and may be out of date. Tax treatment varies by country and is not tax advice, so check current rules before buying or publishing.</p></div></details>
-<p class="note">Sample data: prices and moves shown are illustrative placeholders, not live quotes. For education and historical context only, not financial advice.</p>
+<p class="note" id="dnote">Loading live prices…</p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.all.min.js"></script>
@@ -125,7 +125,10 @@ XME|SPDR S&P Metals & Mining|ETFs|US|40.7|-74|US metals and mining, steel to coa
 RING|iShares MSCI Global Gold Miners|ETFs|US|40.7|-74|Global gold miners, lower cost.`.split('\n').map(l=>{const a=l.split('|');return{t:a[0],n:a[1],s:a[2],c:a[3],la:+a[4],lo:+a[5],x:a[6]}});
 const VOL=[2.2,4.5,9,38],BIAS={Gold:.4,Silver:.5,Copper:.2,Lithium:-.3,Uranium:.5,Diversified:0,'Critical metals':.1,ETFs:.2};
 const hs=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return(h>>>0)%2000/1000-1};
-let P=0;const pf=(d,p=P)=>+((hs(d.t+p)+BIAS[d.s]*(p+1)*.4)*VOL[p]*.7).toFixed(2);
+// Yahoo symbols where the listing differs from the ticker shown; moves come from /api/dataviz/etf-tracker/live.
+const YS={GOLD:'B',NST:'NST.AX',EVN:'EVN.AX',PLS:'PLS.AX',FMG:'FMG.AX',ANTO:'ANTO.L',GLEN:'GLEN.L',AAL:'AAL.L',IVN:'IVN.TO',KAP:'KAP.IL'},ys=t=>YS[t]||t,PK4=['d','w','m','y'];
+let LIVE=null;
+let P=0;const pf=(d,p=P)=>LIVE?LIVE[d.t][PK4[p]]??0:+((hs(d.t+p)+BIAS[d.s]*(p+1)*.4)*VOL[p]*.7).toFixed(2);
 const col=(v,a)=>(v>=0?'rgba(46,204,113,':'rgba(231,76,60,')+Math.min(1,.2+Math.abs(v)/VOL[P]*.8*(a||1))+')';
 const f=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
 const secs=Object.keys(SEC),CN={US:'USA',CA:'Canada',ZA:'South Africa',AU:'Australia',GB:'UK',CL:'Chile',KZ:'Kazakhstan',BR:'Brazil',CH:'Switzerland'};
@@ -141,7 +144,7 @@ m.forEach((d,j)=>{const a=a1+(a2-a1)*(j+.5)/m.length,r=205+(j%3)*30,[x,y]=pt(r,a
 h+=`<circle class="dot" tabindex="0" role="button" aria-label="${d.t}" data-t="${d.t}" cx="${x}" cy="${y}" r="9" fill="${col(pf(d))}" stroke="${SEC[s]}" stroke-width="2"><title>${d.t} ${f(pf(d))}</title></circle>`;
 h+=`<text x="${x}" y="${y+3}" font-size="6.5" text-anchor="middle" pointer-events="none">${d.t.slice(0,4)}</text>`});});
 const st=D.filter(d=>d.s!='ETFs'),all=avg(D);
-h+=`<circle cx="300" cy="300" r="128" fill="var(--card)" stroke="var(--ln)" stroke-width="2"/><g id="ctr"><text x="300" y="290" font-size="13" text-anchor="middle" style="fill:var(--mut)">All miners</text><text x="300" y="330" font-size="38" font-weight="600" text-anchor="middle" style="fill:${all>=0?'var(--up)':'var(--dn)'}">${f(all)}</text><text x="300" y="352" font-size="12" text-anchor="middle" style="fill:var(--mut)">${['today','this week','this month','this year'][P]}</text></g>`;
+h+=`<circle cx="300" cy="300" r="128" fill="var(--card)" stroke="var(--ln)" stroke-width="2"/><g id="ctr"><text x="300" y="290" font-size="13" text-anchor="middle" style="fill:var(--mut)">All miners</text><text x="300" y="330" font-size="38" font-weight="600" text-anchor="middle" style="fill:${all>=0?'var(--up)':'var(--dn)'}">${f(all)}</text><text x="300" y="352" font-size="12" text-anchor="middle" style="fill:var(--mut)">${['today','this week','this month','year to date'][P]}</text></g>`;
 W.innerHTML=h;
 W.querySelectorAll('.dot').forEach(e=>{const go=()=>openRow(e.dataset.t);e.onclick=go;e.onkeydown=k=>k.key=='Enter'&&go();
 e.onmouseenter=()=>{const d=D.find(x=>x.t==e.dataset.t),g=$('#ctr');g.innerHTML=`<text x="300" y="282" font-size="14" text-anchor="middle" style="fill:var(--mut)">${d.n}</text><text x="300" y="325" font-size="36" font-weight="600" text-anchor="middle">${d.t}</text><text x="300" y="352" font-size="20" font-weight="600" text-anchor="middle" style="fill:${pf(d)>=0?'var(--up)':'var(--dn)'}">${f(pf(d))}</text>`}})}
@@ -239,6 +242,14 @@ ov.node().innerHTML=h}
 if(tg){rot[0]+=(((tg[0]-rot[0]+540)%360)-180)*.1;rot[1]+=(tg[1]-rot[1])*.1;if(Math.abs(rot[1]-tg[1])<.2)tg=null}
 else if(!drag&&!SEL&&!RM)rot[0]+=.15;requestAnimationFrame(frame)}
 gt();setP(0);info(null);lb();coins();
+// Day, week and month are price changes; Year is year to date. Companies Yahoo can't return are dropped.
+fetch('/api/dataviz/etf-tracker/live?symbols='+encodeURIComponent(D.map(d=>ys(d.t)).join(','))).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+const keep=D.filter(d=>{const m=j.etfs[ys(d.t)];return m&&m.d!=null&&(d.__m=m)});
+if(keep.length<10)throw 0;
+const L={};keep.forEach(d=>{L[d.t]=d.__m});D.splice(0,D.length,...keep);LIVE=L;
+const t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+$('#dnote').textContent='Live prices from Yahoo Finance (about 15 minutes delayed), refreshed '+t+'. '+D.length+' stocks and ETFs shown; any Yahoo could not return are left out. Day, week and month are price changes; Year is year to date. Stockpile and coin figures are rounded reference data, not live. For education and historical context only, not financial advice.';
+setP(P)}).catch(()=>{$('#dnote').textContent='Live prices are unavailable right now, so the stock and ETF moves shown are sample placeholders, not real performance. Stockpile and coin figures are rounded reference data. For education and historical context only, not financial advice.'});
 try{new Datamap({element:$('#gl'),fills:{defaultFill:'#888'},geographyConfig:{highlightOnHover:false,popupOnHover:false,borderWidth:.5},
 setProjection:()=>{pj=d3.geo.orthographic().scale(250).translate([280,280]).clipAngle(90).rotate([rot[0],-rot[1]]);pa=d3.geo.path().projection(pj);return{path:pa,projection:pj}},
 done:m=>{svg=m.svg;svg.attr('viewBox','0 0 560 560').attr('width','100%').attr('height','100%');
