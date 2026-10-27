@@ -126,3 +126,21 @@ Beginner explainer (Alpha or video): "Stablecoins and bank tokens: how a digital
 
 ### Reply target
 None found this run.
+
+## 2026-10-27 (second run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #1, already used). News used: September CPI reported at +0.6% on the month and 3.7% on the year (check figure); a $11.69B Bitcoin options expiry reported for 30 Oct (check figure); Fed decision due 28 Oct, no result yet so nothing here claims it.
+
+### Draft 15 (status: pending)
+Inflation reports quote two numbers that sound similar. "Month on month" compares this month with last month. "Year on year" compares with the same month a year ago. September's US figures were reported as 0.6% and 3.7%. A big one-month jump can look small once you zoom out to a year, and the reverse. Our inflation lesson explains the maths.
+
+### Draft 16 (status: pending)
+Crypto news mentions a Bitcoin "options expiry" this Friday. What's that? An option is a contract giving someone the right to buy or sell at a set price by a set date. When lots of them end on the same day, traders often adjust their positions around it. That's why prices sometimes get choppy near expiry days. Worth knowing the word.
+
+### Angle suggestion
+Beginner explainer (Alpha or video): "Month on month vs year on year: how to read an inflation headline." Use 1970s and 2021-22 inflation as historical examples. Education only.
+
+### Reply target
+None found this run.
