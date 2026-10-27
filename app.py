@@ -539,6 +539,7 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('mining-globe', 'The Mining Globe', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('reit-map', 'REIT Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -563,6 +564,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'barrel-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'etf-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'mining-globe'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'reit-map'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
@@ -1554,6 +1556,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "etf-tracker": "Around 130 ETFs from every region ranked by their day, week, month or year, with a spin-the-globe regional view, fee checks and side-by-side comparison (sample data).",
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
+    "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
@@ -1577,6 +1580,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "barrel-map", "label": "Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "mining-globe", "label": "The Mining Globe", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "reit-map", "label": "REIT Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GCG REIT Map</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<style>
+:root{--bg:#fff;--fg:#14202b;--mut:#5b6b7a;--card:#f2f5f8;--bd:#d6dde4;--ac:#e8730c;--up:#12834a;--dn:#c63a3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1620;--fg:#e8eef4;--mut:#93a3b3;--card:#17222e;--bd:#2a3a4a;--up:#3ccf85;--dn:#ff6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1620;--fg:#e8eef4;--mut:#93a3b3;--card:#17222e;--bd:#2a3a4a;--up:#3ccf85;--dn:#ff6b6b;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px;max-width:900px;margin:auto}
+h1{font-size:24px;margin:0 0 2px}h1 span{color:var(--ac)}
+.sub,.note{color:var(--mut);font-size:13px}
+details{border:1px solid var(--bd);border-radius:12px;margin:14px 0;background:var(--card)}
+summary{cursor:pointer;padding:14px;font-weight:700;font-size:17px}
+.in{padding:0 14px 14px}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+button{font:inherit;font-size:13px;padding:6px 11px;border-radius:999px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);cursor:pointer}
+button.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.sc{overflow-x:auto}
+.leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin-top:8px}
+.leg i{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(230 85% 50%),hsl(180 85% 50%),hsl(120 85% 50%),hsl(60 85% 50%),hsl(0 85% 50%))}
+.panel{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-top:10px}
+.panel h3{margin:0 0 6px;font-size:17px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:8px 0}
+.g div{background:var(--card);border-radius:8px;padding:8px;font-size:12px;color:var(--mut)}
+.g b{display:block;font-size:16px;color:var(--fg)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:420px}
+td,th{padding:7px 6px;border-bottom:1px solid var(--bd);text-align:left}
+tr.r{cursor:pointer}tr.r:hover{background:var(--card)}
+.up{color:var(--up);font-weight:600}.dn{color:var(--dn);font-weight:600}
+.h{display:grid;grid-template-columns:42px 1fr 60px;gap:8px;align-items:center;font-size:12px;padding:2px 0;cursor:pointer}
+.bar{position:relative;height:14px}
+.bar i{position:absolute;top:0;height:100%;border-radius:3px}
+.bar:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--bd)}
+#map{position:relative;aspect-ratio:1;overflow:hidden;max-width:520px;margin:auto;border-radius:10px}details{overflow:hidden}select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);max-width:100%}html,body{overflow-x:hidden}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.all.min.js"></script>
+</head><body>
+<h1>GCG <span>REIT Map</span></h1>
+<div class="sub">Growth Capital Group · property around the world, and the REITs that own it</div>
+
+<details open><summary>🌍 World property map</summary><div class="in">
+<div class="btns" id="mb"></div>
+<div class="btns" id="rg"></div><div id="map" style="width:100%"></div><div class="btns" id="sm"></div>
+<div class="leg"><span id="lo">Low</span><i></i><span id="hi">High</span></div>
+<div class="note" id="mn"></div>
+<div class="panel" id="cp"></div><div class="panel" id="rk"></div>
+</div></details>
+
+<details><summary>📊 REIT league tables</summary><div class="in">
+<div class="btns" id="pb"></div>
+<div class="btns" id="db"></div>
+<div class="panel" id="rp">Tap any REIT for a quick explainer.</div>
+<div class="sc"><table id="rt"></table></div>
+<h3 style="margin:18px 0 4px">Sector scoreboard</h3><div class="note">Average move per property type for the period selected above.</div><div id="ss"></div>
+<h3 style="margin:18px 0 4px">Historic league: US equity REITs, annual total return since 2000</h3>
+<div class="note">Tap a year for context.</div>
+<div id="hs"></div>
+<div class="panel" id="hp">Tap a year.</div>
+</div></details>
+
+<details><summary>🏠 Rent vs buy</summary><div class="in"><select id="rbc"></select><p>REIT return a year: <b id="rbrl"></b><input id="rbr" type="range" min="2" max="12" value="7" style="width:100%"></p><p>House price growth a year: <b id="rbgl"></b><input id="rbg" type="range" min="0" max="8" value="3" style="width:100%"></p><div class="panel" id="rbo"></div><div class="note">Simplified: 20% deposit, 80% interest-only mortgage, 1% upkeep, no taxes or fees. A what-if, not advice.</div></div></details>
+<details><summary>💷 Dividend income calculator and snowball</summary><div class="in">Amount $ <input id="ia" type="number" value="10000" style="width:110px"> <select id="is"></select><div class="panel" id="io"></div><div class="note">Uses typical sector yields (indicative). Dividends can be cut.</div><h3 style="margin:18px 0 4px">❄️ Dividend snowball</h3>Start $ <input id="sa" type="number" value="10000" style="width:90px"> Yield % <input id="sy" type="number" value="4" style="width:54px"> Price growth % <input id="sg" type="number" value="2" style="width:54px"><p>Years: <b id="sl"></b><input id="sj" type="range" min="5" max="30" value="20" style="width:100%"></p><div class="panel" id="so"></div><div class="note">A what-if, not a forecast. Ignores tax and fees.</div></div></details>
+<details><summary>🧺 Build your own REIT portfolio</summary><div class="in"><div class="note">Tap REITs to add or remove them and see the blended yield and sector mix.</div><div class="btns" id="pc"></div><div class="panel" id="po">Pick some REITs.</div></div></details>
+<details><summary>⚖️ Property vs other assets</summary><div class="in">What $10,000 grows to over <b id="avl"></b> years<input id="ay" type="range" min="5" max="30" value="15" style="width:100%"><div id="ai"></div><div id="ao" style="margin-top:8px"></div><div class="note">What-if tool: the yearly returns are assumptions you can change, not forecasts. Real returns vary a lot, and Bitcoin is far riskier than the rest.</div></div></details>
+<details><summary>📉 Crash timeline</summary><div class="in"><div class="btns" id="cb"></div><div class="panel" id="cc"></div><div class="note">Rounded US figures for REITs (FTSE Nareit All Equity) and house prices.</div></div></details>
+<details><summary>🫧 Bubble risk gauge</summary><div class="in"><div id="bg"></div><div class="note">A simple score from price-to-income and rental yield. A rough indicator, not a prediction.</div></div></details>
+<details><summary>🎚️ Interest rate sensitivity</summary><div class="in">Rates change by <b id="rl"></b> points<input id="rt2" type="range" min="-2" max="4" step="0.5" value="0" style="width:100%"><div class="panel" id="ro"></div><div class="note">Simplified: starts at a 5% mortgage and a 6% property yield, and assumes yields move one for one with rates.</div></div></details>
+<details><summary>📚 REIT 101</summary><div class="in"><p><b>What is a REIT?</b> A company that owns income-producing property and pays most of its taxable income out as dividends (rules vary by country).</p><p><b>How do you make money?</b> Dividends, plus any rise in the share price.</p><p><b>Main risks:</b> interest rates, empty buildings and too much debt.</p><p><b>Two types:</b> equity REITs own property; mortgage REITs lend against it.</p><div id="qz"></div></div></details>
+<details><summary>₿ House price in Bitcoin</summary><div class="in"><select id="bc"></select> Bitcoin price $ <input id="bp" type="number" value="100000" style="width:100px"><div class="panel" id="bo"></div><div class="note">No live feed here, so type in today’s Bitcoin price (see the Bitcoin Dashboard).</div></div></details>
+<details id="ud"><summary>🇺🇸 USA state map</summary><div class="in"><div class="btns" id="ub"></div><div id="us" style="position:relative;overflow:hidden;margin:auto;border-radius:10px"></div><div class="note">Blue = lowest, red = highest. Tap a state. Rounded estimates.</div><div class="panel" id="up"></div></div></details>
+<details><summary>🇬🇧 UK regions and UK corner</summary><div class="in"><div class="btns" id="kb"></div><div id="km" style="max-width:360px;margin:auto"></div><div class="note">Tap a region. Shapes are simplified. Blue = lowest, red = highest. Rounded estimates.</div><div class="panel" id="kp"></div><h3>UK corner</h3><p>UK-REITs started in 2007. They must pay out at least 90% of their tax-exempt rental profits, and the tax treatment can differ from normal dividends, so check the rules. Well-known UK-listed REITs include Segro, Landsec, British Land, LondonMetric, Tritax Big Box, Derwent London and Unite Students. UK REIT shares can usually be held in an ISA or SIPP. This is education, not a recommendation.</p></div></details>
+<details><summary>🥊 Country head-to-head</summary><div class="in"><select id="h1"></select> vs <select id="h2"></select><div id="ho" style="margin-top:8px"></div><div class="note">✅ = the more buyer-friendly value (cheaper, higher wage, higher yield).</div></div></details>
+<details><summary>🏭 REIT sector explainers</summary><div class="in" id="se"></div></details>
+
+<details><summary>📤 Nation’s Housing Card</summary><div class="in"><select id="xc"></select> <button id="xb">Copy text</button><div id="xd" style="margin-top:8px"></div><div class="note" id="xm">Screenshot the card to share it.</div></div></details>
+<p class="note">Educational only, not financial advice. Property, mortgage-rate, REIT-market-size and REIT-yield figures are rounded indicative estimates (USD; yield is a typical sector average) and vary by source and city vs national. REIT daily/weekly/monthly/yearly moves are placeholder values until a live feed is connected; the annual history is from FTSE Nareit All Equity REITs (older years rounded; 2026 is year-to-date to May).</p>
+
+<script>
+const RAW=`US|United States|1|1|420|5|65|6|Birthplace of REITs (1960). Deep market; mortgage rates drive affordability.
+CA|Canada|1|0|670|8|67|4|Toronto and Vancouver run far ahead of incomes; strict mortgage stress tests.
+MX|Mexico|1|2|110|6|73|7|Many build on family land; the formal mortgage market is still small.
+CO|Colombia|2|4|90|9|55|6|City prices are high versus wages; renting is common in Bogotá.
+BR|Brazil|3|5|75|7|74|6|High interest rates make mortgages costly; listed property funds (FIIs) are hugely popular.
+CL|Chile|2|6|120|9|64|5|Santiago prices have outpaced pay; mature, pension-backed property market.
+AR|Argentina|3|6|70|8|68|5|Property is often priced in dollars as a hedge against peso inflation.
+IE|Ireland|4|0|440|6|70|5|Chronic housing shortage in Dublin strains both prices and rents.
+UK|United Kingdom|5|0|340|8|65|5|Launched REITs in 2007. London skews the national average.
+NO|Norway|6|0|450|5|83|4|Very high ownership, with many homes held via co-ops.
+SE|Sweden|7|0|380|7|65|4|Rent-controlled flats mean long queues; many buy co-op shares.
+FI|Finland|8|0|230|6|70|4|Housing co-ops are common; Helsinki costs far more than the regions.
+NL|Netherlands|5|1|450|8|57|4|Tight supply keeps prices high; large social housing sector.
+DE|Germany|6|1|380|9|47|3|Europe’s renter nation: stable rents, low ownership, big listed landlords.
+PL|Poland|7|1|140|8|87|5|Very high ownership, many homes inherited or bought outright.
+CZ|Czechia|8|1|190|11|78|4|Prices have surged faster than wages, especially in Prague.
+PT|Portugal|3|2|250|10|74|5|Lisbon prices lifted by tourism and foreign buyers.
+ES|Spain|4|2|230|7|76|5|Ownership is the cultural norm; tourist hotspots are expensive.
+FR|France|5|2|310|7|64|4|Paris is pricey; rents are capped in many cities.
+CH|Switzerland|6|2|1000|9|36|3|Lowest ownership in Europe: renting is normal and respectable.
+AT|Austria|7|2|400|8|50|3|Vienna’s large social housing keeps rents steady.
+IT|Italy|6|3|180|5|74|5|High ownership, lots of inherited homes, flat wage growth.
+GR|Greece|7|3|170|8|71|5|Holiday-let and golden-visa demand has lifted Athens prices.
+TR|Türkiye|8|3|100|8|58|5|High inflation causes big price swings; property is a store of value.
+AE|UAE|9|3|400|8|20|7|Expat-driven; Dubai freehold zones opened up foreign ownership.
+EG|Egypt|8|4|40|7|60|7|Cheap by dollar terms but currency swings dominate returns.
+ZA|South Africa|7|6|70|6|56|8|Strong listed-property sector; high rental yields offset high rates.
+RU|Russia|10|0|65|5|87|6|Ownership is very high after 1990s housing privatisation.
+IN|India|10|2|100|10|87|3|Huge ownership, low yields; REITs only launched in 2019.
+CN|China|11|1|190|20|90|2|Very high ownership; developer debt stress has weighed on the market.
+HK|Hong Kong|12|2|1200|14|50|3|One of the world’s least affordable cities, with tiny flats.
+KR|South Korea|12|1|360|13|58|3|Seoul prices are very high; unique jeonse lump-sum rental deposits.
+JP|Japan|13|1|290|9|61|4|Stable prices and shrinking population; J-REITs are a global pioneer.
+TH|Thailand|11|3|130|11|80|5|Foreign buyers limited to condos; Bangkok drives prices.
+SG|Singapore|11|4|1000|16|88|3|Most residents live in HDB public flats on long leases.
+ID|Indonesia|12|4|50|10|84|5|Young population and rising incomes support long-run demand.
+AU|Australia|13|6|600|9|66|4|Sydney and Melbourne are expensive; A-REITs are among the world’s largest.
+NZ|New Zealand|14|6|560|9|65|4|Prices peaked in 2021 and have since cooled.`;
+const C=RAW.split("\n").map(l=>{const a=l.split("|");return{c:a[0],n:a[1],x:+a[2],y:+a[3],price:+a[4],pi:+a[5],own:+a[6],yld:+a[7],t:a[8]}});
+const M={price:{l:"Avg house price",f:v=>"$"+(v>=1000?(v/1000).toFixed(1)+"m":v+"k"),n:"Blue = lowest, red = highest (average home, USD)."},pi:{l:"Affordability",f:v=>v+"× income",n:"Price-to-income ratio: red = LESS affordable, blue = most affordable (more years of income needed)."},own:{l:"Home ownership",f:v=>v+"%",n:"Share of households that own their home. Red = higher, blue = lower."},yld:{l:"Rental yield",f:v=>v+"%",n:"Gross rent as % of price. Red = higher yield, which is what REIT investors look for."},mort:{l:"Mortgage rate",f:v=>v+"%",n:"Typical home-loan rate. Red = higher, so loans cost more."},reit:{l:"REIT market size",f:v=>v?"$"+v+"bn":"none",n:"Rough size of the listed REIT market. Red = bigger; blue = smallest or none."},wage:{l:"Average wage",f:v=>"$"+v+"k",n:"Typical annual gross wage in USD. Red = higher pay."}};
+const MR={US:6.3,CA:4.8,MX:10.5,CO:12,BR:12,CL:4.8,AR:30,IE:4,UK:4.7,NO:5.5,SE:3.8,FI:3.5,NL:4,DE:3.7,PL:7,CZ:5,PT:3.5,ES:3,FR:3.2,CH:2,AT:3.5,IT:3.2,GR:3.8,TR:35,AE:4.5,EG:25,ZA:11.5,RU:18,IN:8.5,CN:3.5,HK:3.5,KR:4,JP:1.5,TH:6,SG:3,ID:7,AU:6,NZ:5.5},RM={US:1500,JP:110,AU:100,UK:60,SG:60,CA:45,HK:25,BR:25,FR:25,ZA:10,MX:10,IN:10,ES:8,TH:8,KR:7,DE:5,NL:5,TR:2,IE:1};
+const WG={US:80,CA:58,MX:9,CO:7,BR:8,CL:18,AR:8,IE:62,UK:50,NO:68,SE:48,FI:52,NL:62,DE:60,PL:25,CZ:25,PT:22,ES:34,FR:48,CH:100,AT:58,IT:38,GR:22,TR:11,AE:35,EG:4,ZA:11,RU:12,IN:4,CN:17,HK:45,KR:45,JP:38,TH:8,SG:62,ID:4,AU:70,NZ:52};C.forEach(c=>{c.mort=MR[c.c];c.reit=RM[c.c]||0;c.wage=WG[c.c]});
+let mk="price",sel="US";
+const $=id=>document.getElementById(id);
+function btns(id,items,cur,fn){$(id).innerHTML=items.map(([k,l])=>`<button class="${k===cur?"on":""}" data-k="${k}">${l}</button>`).join("");$(id).onclick=e=>{const k=e.target.dataset.k;if(k){fn(k)}}}
+function drawMap(){
+btns("mb",Object.entries(M).map(([k,m])=>[k,m.l]),mk,k=>{mk=k;drawMap()});
+const s=[...C].sort((a,b)=>a[mk]-b[mk]);
+paint(s);const tp=(k,asc)=>[...C].sort((a,b)=>asc?a[k]-b[k]:b[k]-a[k]).slice(0,5).map(c=>c.n+" ("+M[k].f(c[k])+")").join(", ");$("rk").innerHTML="<b>Most affordable:</b> "+tp("pi",1)+"<br><b>Best rental yield:</b> "+tp("yld")+"<br><b>Highest ownership:</b> "+tp("own")+"<br><b>Biggest REIT markets:</b> "+tp("reit")+"<br><b>Highest average wage:</b> "+tp("wage");
+$("sm").innerHTML="<span class='note'>Too small to see:</span>"+["HK","SG"].map(k=>`<button class="${k===sel?"on":""}" data-c="${k}">${C.find(c=>c.c===k).n}</button>`).join("");$("sm").onclick=e=>{const k=e.target.dataset.c;if(k){sel=k;drawMap()}};
+$("lo").textContent=M[mk].f(s[0][mk]).replace(" income","");$("hi").textContent=M[mk].f(s[s.length-1][mk]).replace(" income","");$("mn").textContent=M[mk].n+" Grey = not covered yet. Tap a country to learn more.";
+const c=C.find(x=>x.c===sel);
+$("cp").innerHTML=`<h3>${c.n}</h3><div class="g"><div>Avg house price<b>${M.price.f(c.price)}</b></div><div>Price ÷ income<b>${c.pi}×</b></div><div>Home ownership<b>${c.own}%</b></div><div>Rental yield<b>${c.yld}%</b></div><div>Average wage<b>${M.wage.f(c.wage)}</b></div><div>Rent payback<b>≈${Math.round(100/c.yld)} yrs</b></div><div>Rent vs buy<b>${c.own<55?"Renter market":c.own>75?"Owner market":"Mixed"}</b></div></div>${c.t} A higher yield and lower price-to-income usually mean easier entry for buyers and landlords alike.`}
+var DM=null,PJ=null,VB=null,PATH=null,MV=false,SP=null;
+const I3={US:"USA",CA:"CAN",MX:"MEX",CO:"COL",BR:"BRA",CL:"CHL",AR:"ARG",IE:"IRL",UK:"GBR",NO:"NOR",SE:"SWE",FI:"FIN",NL:"NLD",DE:"DEU",PL:"POL",CZ:"CZE",PT:"PRT",ES:"ESP",FR:"FRA",CH:"CHE",AT:"AUT",IT:"ITA",GR:"GRC",TR:"TUR",AE:"ARE",EG:"EGY",ZA:"ZAF",RU:"RUS",IN:"IND",CN:"CHN",HK:"HKG",KR:"KOR",JP:"JPN",TH:"THA",SG:"SGP",ID:"IDN",AU:"AUS",NZ:"NZL"};
+function paint(s){if(!DM)return;const d={};C.forEach(c=>{const t=s.indexOf(c)/(C.length-1);d[I3[c.c]]={fillColor:`hsl(${230-t*230},85%,50%)`}});DM.updateChoropleth(d,{reset:true});DM.svg.selectAll(".datamaps-subunit").style("stroke",g=>g.id===I3[sel]?"#222":"#fff").style("stroke-width",g=>g.id===I3[sel]?2.5:.5)}
+function initMap(){try{DM=new Datamap({element:$("map"),width:600,height:600,setProjection:el=>{const p=d3.geo.orthographic().scale(250).translate([300,300]).clipAngle(90).rotate([-10,-20]).precision(.5);PJ=p;PATH=d3.geo.path().projection(p);return{path:PATH,projection:p}},fills:{defaultFill:"#c9d1d9"},geographyConfig:{popupOnHover:false,highlightOnHover:false,borderColor:"#fff",borderWidth:.5},done:m=>{m.svg.selectAll(".datamaps-subunit").style("cursor","pointer").on("click",g=>{if(MV){MV=false;return}const k=Object.keys(I3).find(x=>I3[x]===g.id);if(k){sel=k;drawMap()}})}});VB={x:0,y:0,width:600,height:600};DM.svg.attr("viewBox","0 0 600 600").attr("width","100%").attr("height","100%").style("position","absolute").style("left","0").style("top","0").style("touch-action","none");DM.svg.insert("circle","g").attr("cx",300).attr("cy",300).attr("r",250).style("fill","#a9d6f5").style("stroke","#6fb1de");$("map").style.aspectRatio="1";DM.svg.call(d3.behavior.drag().on("dragstart",()=>{MV=false}).on("drag",()=>{MV=true;const r=PJ.rotate();PJ.rotate([r[0]+d3.event.dx*.4,Math.max(-90,Math.min(90,r[1]-d3.event.dy*.4))]);redraw()}));fit();setTimeout(fit,100);setTimeout(fit,700);window.addEventListener("resize",()=>setTimeout(fit,100))}catch(e){$("map").textContent="Map failed to load."}}
+initMap();drawMap();
+const RG={World:null,Europe:null,"N. America":null,"S. America":null,Africa:null,"Middle East":null,Asia:null,Oceania:null};
+function zoomTo(n){spinTo(n);btns("rg",Object.keys(RG).map(k=>[k,k]),n,zoomTo)}
+const GC={World:[10,20,250],Europe:[15,50,340],"N. America":[-100,45,330],"S. America":[-60,-15,330],Africa:[20,2,300],"Middle East":[45,28,360],Asia:[90,35,320],Oceania:[140,-25,330]};
+function fit(){if(!DM)return;const m=$("map"),w=Math.max(200,Math.min(520,m.parentNode.clientWidth-28,window.innerWidth-60)),s=document.querySelector("#map svg");m.style.width=w+"px";m.style.height=w+"px";s.setAttribute("width",w);s.setAttribute("height",w);s.style.width=w+"px";s.style.height=w+"px";s.style.left="0px";s.style.top="0px"}
+function redraw(){DM.svg.selectAll(".datamaps-subunit").attr("d",PATH);DM.svg.select("circle").attr("r",PJ.scale())}
+function spinTo(n){if(!DM||!PJ)return;const t=GC[n],r0=PJ.rotate(),s0=PJ.scale(),dl=((-t[0]-r0[0]+540)%360)-180;let i=0;clearInterval(SP);SP=setInterval(()=>{i++;const f=i/25,e=f*(2-f);PJ.rotate([r0[0]+dl*e,r0[1]+(-t[1]-r0[1])*e]);PJ.scale(s0+(t[2]-s0)*e);redraw();if(i>=25)clearInterval(SP)},20)}
+zoomTo("World");
+
+const RR=`PLD|Prologis|Logistics|Warehouses for e-commerce and supply chains worldwide.
+AMT|American Tower|Cell towers|Leases mobile towers to carriers across the globe.
+EQIX|Equinix|Data centres|Neutral data centres where networks and clouds connect.
+WELL|Welltower|Healthcare|Senior housing and medical facilities.
+SPG|Simon Property|Retail|The largest US owner of malls and outlets.
+PSA|Public Storage|Self-storage|Biggest US self-storage operator.
+O|Realty Income|Net lease|The “monthly dividend company”: long single-tenant leases.
+DLR|Digital Realty|Data centres|Hyperscale data-centre campuses for cloud and AI demand.
+CCI|Crown Castle|Towers|US towers and small cells.
+VICI|VICI Properties|Gaming|Owns Las Vegas casino real estate on long leases.
+AVB|AvalonBay|Apartments|Premium apartments in coastal US cities.
+EQR|Equity Residential|Apartments|Urban rental apartments.
+EXR|Extra Space|Self-storage|Large US storage network.
+IRM|Iron Mountain|Records and data|Document storage that expanded into data centres.
+VTR|Ventas|Healthcare|Senior living, medical offices, life-science labs.
+ARE|Alexandria|Life science|Labs and campuses for biotech tenants.
+INVH|Invitation Homes|Single-family rent|Thousands of rental houses across the Sun Belt.
+MAA|Mid-America Apts|Apartments|Southern US apartment communities.
+SBAC|SBA Communications|Towers|Wireless towers in the Americas.
+KIM|Kimco|Retail|Grocery-anchored shopping centres.
+REG|Regency Centers|Retail|Neighbourhood centres with supermarkets.
+HST|Host Hotels|Hotels|Luxury hotels sensitive to travel demand.
+BXP|BXP|Offices|Premier city office towers; hurt by remote work.
+CPT|Camden|Apartments|Sun Belt apartments.
+UDR|UDR|Apartments|Apartments across US coasts and Sun Belt.
+ESS|Essex|Apartments|West Coast apartments.
+WPC|W. P. Carey|Net lease|Global sale-leaseback properties.
+NNN|NNN REIT|Net lease|Convenience stores and restaurants on long leases.
+AMH|American Homes 4 Rent|Single-family rent|Purpose-built rental homes.
+CUBE|CubeSmart|Self-storage|Urban storage facilities.
+FRT|Federal Realty|Retail|High-income area shopping centres.
+GLPI|Gaming & Leisure|Gaming|Casino landlord with triple-net leases.
+OHI|Omega Healthcare|Healthcare|Skilled nursing facilities.
+STAG|STAG Industrial|Industrial|Smaller warehouses and light industrial.
+REXR|Rexford|Industrial|Southern California infill warehouses.
+SGRO|Segro (UK)|Logistics|UK and European warehouses and data-centre land.
+LAND|Landsec (UK)|Diversified|London offices, retail and Victoria estate.
+BLND|British Land (UK)|Diversified|Broadgate offices and retail parks.
+GMG|Goodman (AU)|Logistics|Global industrial and data-centre developer.
+823|Link REIT (HK)|Retail|Asia’s largest REIT: Hong Kong malls and car parks.`;
+const R=RR.split("\n").map(l=>{const a=l.split("|");return{t:a[0],n:a[1],s:a[2],e:a[3]}});
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const SC={d:3,w:6,m:12,y:40},PL={d:"Day",w:"Week",m:"Month",y:"Year"};
+const V={};Object.keys(SC).forEach((p,pi)=>{const r=rng(7+pi*13);V[p]=R.map(()=>+(((r()-.45)*2*SC[p]).toFixed(1)))});
+const SY={Logistics:3,Towers:3.5,"Data centres":2.8,Healthcare:3,Retail:4.5,"Self-storage":4,"Net lease":5.5,Gaming:6,Apartments:3.8,"Records and data":2.8,"Life science":5,"Single-family rent":3,Hotels:5,Offices:5.5,Diversified:5,Industrial:3.5};
+let per="y",dir="up";
+function drawR(){
+btns("pb",Object.entries(PL),per,k=>{per=k;drawR()});
+btns("db",[["up","▲ Top 20 up"],["dn","▼ Top 20 down"]],dir,k=>{dir=k;drawR()});
+const o=R.map((r,i)=>({...r,v:V[per][i]})).sort((a,b)=>dir==="up"?b.v-a.v:a.v-b.v).slice(0,20);
+$("rt").innerHTML="<tr><th>#</th><th>REIT</th><th>Sector</th><th>Yield*</th><th>"+PL[per]+"</th></tr>"+o.map((r,i)=>`<tr class="r" data-t="${r.t}"><td>${i+1}</td><td><b>${r.t}</b> ${r.n}</td><td>${r.s}</td><td>~${SY[r.s]||4}%</td><td class="${r.v>=0?"up":"dn"}">${r.v>0?"+":""}${r.v}%</td></tr>`).join("");
+const sg={};R.forEach((r,i)=>{(sg[r.s]=sg[r.s]||[]).push(V[per][i])});$("ss").innerHTML=Object.entries(sg).map(([s,a])=>[s,a.reduce((x,y)=>x+y,0)/a.length]).sort((a,b)=>b[1]-a[1]).map(([s,v])=>`<div class="h" style="grid-template-columns:120px 1fr 56px"><span>${s}</span><div class="bar"><i style="${v>=0?"left:50%":"right:50%"};width:${Math.min(50,Math.abs(v)/(SC[per]*.6)*50)}%;background:var(--${v>=0?"up":"dn"})"></i></div><span class="${v>=0?"up":"dn"}">${v>0?"+":""}${v.toFixed(1)}%</span></div>`).join("");
+$("rt").onclick=e=>{const tr=e.target.closest("tr.r");if(!tr)return;const r=R.find(x=>x.t===tr.dataset.t);
+$("rp").innerHTML=`<h3>${r.n} (${r.t})</h3><b>${r.s}</b><br>${r.e} REITs must pay out most of their taxable income as dividends, so income and property values both matter. Yield, debt level and tenant quality are the usual things analysts look at.`}}
+drawR();
+
+const H=[[2000,26.4,"REITs rose while dot-com stocks crashed as investors sought real assets."],[2001,13.9],[2002,3.8],[2003,37.1,"Falling rates and recovery fuelled a big rally."],[2004,31.6],[2005,12.2],[2006,35.1],[2007,-15.7,"Credit tightened as the US housing market cracked."],[2008,-37.7,"Global financial crisis: debt-laden REITs sold off sharply."],[2009,27.1,"Rebound after the crash as equity was raised and credit stabilised."],[2010,27.9],[2011,8.3],[2012,19.7],[2013,2.9,"Taper tantrum: rising yields hit income assets."],[2014,28],[2015,2.8],[2016,8.5],[2017,5.2],[2018,-4,"Rates rose again and retail REITs struggled."],[2019,28.7,"Rate cuts boosted income assets."],[2020,-8,"Covid: hotels and malls slumped, towers, logistics and data centres thrived."],[2021,41.3,"Reopening and cheap money produced a record rally."],[2022,-24.9,"Fast rate hikes drove valuations down."],[2023,11.4],[2024,4.9,"Modest gain as rates stayed high."],[2025,2.3,"Muted year: health care REITs led (about +28.5%) while office REITs fell about 14%. The S&P 500 gained roughly 18%."],[2026,13.2,"Year to date (to end of May): a strong run so far, with the index up about 13%."]];
+$("hs").innerHTML=H.map(([y,v])=>`<div class="h" data-y="${y}"><b>${y}</b><div class="bar"><i style="${v>=0?"left:50%":"right:50%"};width:${Math.abs(v)/42*50}%;background:var(--${v>=0?"up":"dn"})"></i></div><span class="${v>=0?"up":"dn"}">${v>0?"+":""}${v}%</span></div>`).join("");
+$("hs").onclick=e=>{const d=e.target.closest(".h");if(!d)return;const h=H.find(x=>x[0]==d.dataset.y);
+$("hp").innerHTML=`<b>${h[0]}: ${h[1]>0?"+":""}${h[1]}%</b><br>${h[2]||"A more typical year, driven by interest rates, rents and the wider economy."}`};
+const fm=v=>(v<0?"−":"")+"$"+Math.round(Math.abs(v)).toLocaleString();
+$("rbc").innerHTML=C.map(c=>`<option value="${c.c}">${c.n}</option>`).join("");$("rbc").value="UK";
+function rb(){const c=C.find(x=>x.c===$("rbc").value),r=+$("rbr").value,g=+$("rbg").value,p=c.price*1000,buy=p*(.8*c.mort/100+.01-g/100),rent=p*(c.yld/100-.2*r/100);$("rbrl").textContent=r+"%";$("rbgl").textContent=g+"%";$("rbo").innerHTML=`<div class="g"><div>Buying: net cost a year<b>${fm(buy)}</b></div><div>Renting + REITs: net cost a year<b>${fm(rent)}</b></div></div><b>${buy<rent?"Buying":"Renting and holding REITs"}</b> comes out about ${fm(Math.abs(buy-rent))} a year cheaper under these assumptions. Used: mortgage ${c.mort}%, rental yield ${c.yld}%.`}
+["rbc","rbr","rbg"].forEach(i=>$(i).oninput=rb);rb();
+const fm0=v=>"$"+Math.round(v).toLocaleString();
+$("is").innerHTML=Object.keys(SY).map(s=>`<option>${s}</option>`).join("");
+function inc(){const a=+$("ia").value||0,y=SY[$("is").value];$("io").innerHTML=`<div class="g"><div>Typical yield<b>${y}%</b></div><div>Per year<b>${fm0(a*y/100)}</b></div><div>Per month<b>${fm0(a*y/1200)}</b></div></div>`}
+$("ia").oninput=$("is").onchange=inc;inc();
+const PS=new Set();$("pc").innerHTML=R.map(r=>`<button data-t="${r.t}">${r.t}</button>`).join("");
+$("pc").onclick=e=>{const t=e.target.dataset.t;if(!t)return;PS.has(t)?PS.delete(t):PS.add(t);e.target.classList.toggle("on");const L=R.filter(r=>PS.has(r.t));if(!L.length){$("po").textContent="Pick some REITs.";return}const y=L.reduce((a,r)=>a+(SY[r.s]||4),0)/L.length,sec={};L.forEach(r=>sec[r.s]=(sec[r.s]||0)+1);$("po").innerHTML=`<b>${L.length} REITs, blended yield about ${y.toFixed(1)}%</b><br>${L.map(r=>`<b>${r.t}</b> ${r.n} (${r.s})`).join("<br>")}<br>`+Object.entries(sec).map(([s,n])=>`${s}: ${Math.round(n/L.length*100)}%`).join(" · ")+(Object.keys(sec).length<3?"<br>Fewer than 3 sectors is a concentrated mix.":"")};
+const AS=[["REITs",9],["Stocks",10],["Homes",4],["Gold",7],["Bitcoin",30]];
+$("ai").innerHTML=AS.map(([n,r],i)=>`<label style="font-size:12px;margin-right:8px;display:inline-block">${n} %/yr <input type="number" id="ar${i}" value="${r}" style="width:54px"></label>`).join("");
+function asf(){const y=+$("ay").value;$("avl").textContent=y;const o=AS.map(([n],i)=>[n,1e4*Math.pow(1+(+$("ar"+i).value||0)/100,y)]),mx=Math.max(...o.map(x=>x[1]));$("ao").innerHTML=o.map(([n,v])=>`<div class="h" style="grid-template-columns:62px 1fr 90px"><span>${n}</span><div class="bar"><i style="left:0;width:${v/mx*100}%;background:var(--ac)"></i></div><span>${fm0(v)}</span></div>`).join("")}
+$("ay").oninput=$("ai").oninput=asf;asf();
+const CR=[["2000–02 dot-com","Rose about 26% in 2000 and 14% in 2001 while tech shares collapsed.","Kept rising in most major markets.","Property income can hold up when shares crash."],["2007–09 crisis","Fell about 16% in 2007 and 38% in 2008, then bounced 27% in 2009.","US prices fell roughly a quarter from peak to trough.","Too much debt hurts homeowners and REITs alike."],["2020 Covid","Fell about 40% in weeks, ended the year around −8%.","Rose in many countries as rates dropped.","Offices, hotels and malls suffered. Data centres, towers and warehouses thrived."],["2022 rate rises","Fell about 25% over the year.","Cooled but mostly held up, while mortgages got far dearer.","Rising rates hit REIT prices fast. Home prices adjust slowly."]];
+function cr(k){btns("cb",CR.map((c,i)=>[""+i,c[0]]),""+k,cr);const c=CR[k];$("cc").innerHTML=`<b>${c[0]}</b><br><b>REITs:</b> ${c[1]}<br><b>Homes:</b> ${c[2]}<br><b>Lesson:</b> ${c[3]}`}cr(1);
+const rk=k=>{const s=[...C].sort((a,b)=>a[k]-b[k]);return c=>s.indexOf(c)/(C.length-1)},rp=rk("pi"),ry=rk("yld");
+$("bg").innerHTML=C.map(c=>({n:c.n,v:Math.round((rp(c)+1-ry(c))/2*100)})).sort((a,b)=>b.v-a.v).slice(0,10).map(x=>`<div class="h" style="grid-template-columns:110px 1fr 84px"><span>${x.n}</span><div class="bar"><i style="left:0;width:${x.v}%;background:hsl(${120-x.v*1.2},80%,45%)"></i></div><span>${x.v>70?"Stretched":x.v>45?"Watch":"Fair"} ${x.v}</span></div>`).join("");
+function rs(){const d=+$("rt2").value,pay=r=>2.5e5*(r/12)/(1-Math.pow(1+r/12,-300)),m0=pay(.05),m1=pay(.05+d/100),vc=(.06/(.06+d/100)-1)*100;$("rl").textContent=(d>=0?"+":"")+d;$("ro").innerHTML=`<div class="g"><div>Monthly payment, $250k loan over 25 years<b>${fm0(m0)} → ${fm0(m1)}</b></div><div>Simplified REIT value change<b class="${vc>=0?"up":"dn"}">${vc>=0?"+":""}${vc.toFixed(1)}%</b></div></div>`}
+$("rt2").oninput=rs;rs();
+const QZ=[["What do REITs mostly pay out?",["Nothing","Most of their taxable income","Only interest"],1,"They pay out most taxable income as dividends."],["What usually hurts REITs most?",["Falling rates","Rising rates","Higher rents"],1,"Higher rates raise borrowing costs and make other income assets look better."],["Which one is a REIT?",["A property company paying dividends","A savings account","A type of mortgage"],0,"REITs are companies that own (or finance) income-producing property."]];
+$("qz").innerHTML=QZ.map((q,i)=>`<p><b>${i+1}. ${q[0]}</b><br>${q[1].map((o,j)=>`<button data-q="${i}" data-a="${j}">${o}</button>`).join(" ")}<br><span id="qf${i}" class="note"></span></p>`).join("");
+$("qz").onclick=e=>{const d=e.target.dataset;if(d.q===undefined)return;const q=QZ[d.q];$("qf"+d.q).textContent=(+d.a===q[2]?"✅ Correct! ":"❌ Not quite. ")+q[3]};
+$("bc").innerHTML=C.map(c=>`<option value="${c.c}">${c.n}</option>`).join("");$("bc").value="UK";
+function bt(){const c=C.find(x=>x.c===$("bc").value),p=+$("bp").value||1;$("bo").innerHTML=`<div class="g"><div>Average home<b>${M.price.f(c.price)}</b></div><div>In Bitcoin<b>${(c.price*1000/p).toFixed(2)} BTC</b></div></div>`}
+$("bc").onchange=$("bp").oninput=bt;bt();
+const US=`AL|Alabama|230|60|69
+AK|Alaska|340|86|66
+AZ|Arizona|430|75|66
+AR|Arkansas|210|58|66
+CA|California|800|95|55
+CO|Colorado|560|92|67
+CT|Connecticut|380|90|66
+DE|Delaware|340|82|72
+DC|Washington DC|650|101|41
+FL|Florida|410|70|66
+GA|Georgia|340|74|65
+HI|Hawaii|830|95|61
+ID|Idaho|450|78|71
+IL|Illinois|270|78|66
+IN|Indiana|240|70|70
+IA|Iowa|220|72|71
+KS|Kansas|230|72|67
+KY|Kentucky|230|62|68
+LA|Louisiana|220|57|66
+ME|Maine|380|75|72
+MD|Maryland|400|95|67
+MA|Massachusetts|600|100|62
+MI|Michigan|240|70|73
+MN|Minnesota|330|85|72
+MS|Mississippi|190|54|69
+MO|Missouri|240|68|67
+MT|Montana|480|72|70
+NE|Nebraska|270|75|67
+NV|Nevada|440|73|58
+NH|New Hampshire|480|95|71
+NJ|New Jersey|480|98|65
+NM|New Mexico|300|62|68
+NY|New York|450|82|55
+NC|North Carolina|340|70|67
+ND|North Dakota|250|80|63
+OH|Ohio|220|69|67
+OK|Oklahoma|210|64|66
+OR|Oregon|520|82|64
+PA|Pennsylvania|260|73|70
+RI|Rhode Island|460|86|62
+SC|South Carolina|290|66|70
+SD|South Dakota|280|72|69
+TN|Tennessee|330|67|67
+TX|Texas|320|76|62
+UT|Utah|540|89|70
+VT|Vermont|380|80|71
+VA|Virginia|410|88|67
+WA|Washington|600|95|64
+WV|West Virginia|160|55|73
+WI|Wisconsin|270|75|68
+WY|Wyoming|330|74|70`.split("\n").map(l=>{const a=l.split("|");return{c:a[0],n:a[1],price:+a[2],inc:+a[3],own:+a[4],pi:+(a[2]/a[3]).toFixed(1)}});
+const UM={price:["Home price",v=>"$"+v+"k"],inc:["Household income",v=>"$"+v+"k"],pi:["Price ÷ income",v=>v+"×"],own:["Ownership",v=>v+"%"]};
+let um="pi",us="CA",UD=null;
+function hue(a,k,c){const s=[...a].sort((x,y)=>x[k]-y[k]);return `hsl(${230-s.indexOf(c)/(a.length-1)*230},85%,50%)`}
+function usDraw(){btns("ub",Object.entries(UM).map(([k,v])=>[k,v[0]]),um,k=>{um=k;usDraw()});if(UD){const d={};US.forEach(s=>d[s.c]={fillColor:hue(US,um,s)});UD.updateChoropleth(d,{reset:true});UD.svg.selectAll(".datamaps-subunit").style("stroke",g=>g.id===us?"#222":"#fff").style("stroke-width",g=>g.id===us?2:.5)}
+const s=US.find(x=>x.c===us)||US[0];$("up").innerHTML=`<h3>${s.n}</h3><div class="g"><div>Home price<b>$${s.price}k</b></div><div>Household income<b>$${s.inc}k</b></div><div>Price ÷ income<b>${s.pi}×</b></div><div>Ownership<b>${s.own}%</b></div></div>${s.pi>6?"Very stretched: homes cost over 6 years of income.":s.pi>4.5?"Pricey relative to local incomes.":"Relatively affordable against local incomes."}`}
+function fitU(){if(!UD)return;const m=$("us"),w=Math.max(200,Math.min(640,m.parentNode.clientWidth-28,window.innerWidth-60)),h=w*380/600,s=m.querySelector("svg");m.style.width=w+"px";m.style.height=h+"px";s.setAttribute("width",w);s.setAttribute("height",h);s.style.cssText="position:absolute;left:0;top:0;width:"+w+"px;height:"+h+"px"}
+function usInit(){try{UD=new Datamap({element:$("us"),scope:"usa",width:600,height:380,fills:{defaultFill:"#c9d1d9"},setProjection:()=>{const p=d3.geo.albersUsa().scale(760).translate([300,190]);return{path:d3.geo.path().projection(p),projection:p}},geographyConfig:{popupOnHover:false,highlightOnHover:false,borderColor:"#fff",borderWidth:.5},done:m=>{m.svg.selectAll(".datamaps-subunit").style("cursor","pointer").on("click",g=>{us=g.id;usDraw()})}});UD.svg.attr("viewBox","0 0 600 380");fitU()}catch(e){$("us").textContent="Map failed to load."}}
+usInit();usDraw();$("ud").addEventListener("toggle",()=>setTimeout(fitU,50));window.addEventListener("resize",()=>setTimeout(fitU,100));
+const KR=`SCO|Scotland|1|0|215|36|62
+NI|N. Ireland|0|1|200|33|67
+NW|North West|1|1|230|35|64
+NE|North East|2|1|175|34|61
+WAL|Wales|0|2|215|33|68
+WM|West Midlands|1|2|255|35|64
+YH|Yorkshire & Humber|2|2|220|34|64
+EM|East Midlands|2|3|245|35|67
+EE|East of England|3|3|335|37|66
+SW|South West|1|4|320|35|67
+SE|South East|2|4|410|39|66
+LON|London|3|4|560|45|47`.split("\n").map(l=>{const a=l.split("|");return{c:a[0],n:a[1],x:+a[2],y:+a[3],price:+a[4],wage:+a[5],own:+a[6],pi:+(a[4]/a[5]).toFixed(1)}});
+const KM={price:["Home price",v=>"£"+v+"k"],wage:["Typical wage",v=>"£"+v+"k"],pi:["Price ÷ wage",v=>v+"×"],own:["Ownership",v=>v+"%"]};
+const UR={NI:"-8.2,54.5 -7.3,55.2 -6.2,55.2 -5.5,54.7 -5.5,54.2 -6.2,54.0 -7.0,54.1 -8.2,54.3",SCO:"-3.2,54.95 -2.1,55.8 -2.7,56.0 -2.0,57.1 -1.8,57.6 -3.0,58.6 -5.0,58.6 -5.8,57.5 -6.2,56.6 -5.7,55.8 -5.6,55.3 -4.9,54.65",NE:"-2.1,55.8 -1.5,55.4 -1.3,54.9 -1.15,54.55 -2.0,54.45 -2.5,54.9 -2.4,55.4",NW:"-3.2,54.95 -2.5,54.9 -2.0,54.45 -2.2,54.1 -2.1,53.7 -1.9,53.35 -2.4,52.95 -3.1,53.1 -3.2,53.35 -3.0,53.8 -3.2,54.2 -3.6,54.45 -3.4,54.8",YH:"-2.0,54.45 -1.15,54.55 -0.4,54.5 -0.15,54.0 0.1,53.65 -0.7,53.55 -1.2,53.4 -1.9,53.35 -2.1,53.7 -2.2,54.1",EM:"-1.9,53.35 -1.2,53.4 -0.7,53.55 0.1,53.6 0.35,53.2 0.3,52.9 0.0,52.6 -0.3,52.35 -0.7,52.1 -1.2,52.0 -1.4,52.5 -1.8,52.7 -2.0,52.95",WM:"-2.4,52.95 -2.0,52.95 -1.8,52.7 -1.4,52.5 -1.2,52.0 -1.5,51.95 -2.2,51.85 -2.7,52.1 -3.0,52.5 -2.95,52.85",WAL:"-3.3,53.35 -4.3,53.3 -4.7,52.9 -4.1,52.4 -4.7,52.1 -5.2,51.9 -4.5,51.65 -3.2,51.4 -2.7,51.55 -2.65,51.8 -3.0,52.15 -2.95,52.5 -3.0,52.85 -3.0,53.1",SW:"-2.2,51.85 -1.7,51.7 -1.7,51.3 -1.9,51.0 -1.9,50.7 -2.5,50.6 -3.5,50.2 -5.0,50.0 -5.7,50.1 -5.1,50.4 -4.2,51.2 -3.4,51.2 -2.65,51.6",EE:"-0.7,52.1 -0.3,52.35 0.0,52.6 0.3,52.9 0.8,52.95 1.6,52.85 1.75,52.5 1.3,51.95 1.0,51.75 0.7,51.55 0.25,51.65 -0.25,51.7 -0.5,51.85 -0.7,52.05",SE:"-1.9,50.75 -1.9,51.0 -1.7,51.3 -1.7,51.7 -1.2,52.0 -0.7,52.05 -0.5,51.85 -0.25,51.7 0.25,51.65 0.7,51.5 1.4,51.4 1.4,51.1 0.9,50.85 0.3,50.75 -0.8,50.8 -1.4,50.75",LON:"-0.5,51.45 -0.3,51.65 0.2,51.65 0.3,51.5 0.1,51.3 -0.3,51.3"};
+const PJ2=(lo,la)=>[(lo+8.5)*25.65,(59-la)*45];
+const UP=Object.entries(UR).map(([c,s])=>{const p=s.split(" ").map(q=>{const a=q.split(",");return PJ2(+a[0],+a[1])});return [c,"M"+p.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join("L")+"Z",p.reduce((a,q)=>a+q[0],0)/p.length,p.reduce((a,q)=>a+q[1],0)/p.length]});
+let km="pi",ks="LON";
+function ukDraw(){btns("kb",Object.entries(KM).map(([k,v])=>[k,v[0]]),km,k=>{km=k;ukDraw()});$("km").innerHTML=`<svg viewBox="0 0 275 415" style="width:100%;display:block;border-radius:10px;background:#a9d6f5">${UP.map(([c,d])=>{const r=KR.find(x=>x.c===c);return `<path data-c="${c}" d="${d}" fill="${hue(KR,km,r)}" stroke="${c===ks?"#222":"#fff"}" stroke-width="${c===ks?2.5:1}" style="cursor:pointer"/>`}).join("")}${UP.map(([c,d,x,y])=>{const r=KR.find(z=>z.c===c);return `<text x="${x}" y="${y}" text-anchor="middle" font-size="9" font-weight="700" fill="#fff" style="pointer-events:none;paint-order:stroke;stroke:#0009;stroke-width:2px">${c}<tspan x="${x}" dy="10">${KM[km][1](r[km])}</tspan></text>`}).join("")}</svg>`;$("km").onclick=e=>{const t=e.target.closest("path");if(t){ks=t.dataset.c;ukDraw()}};const r=KR.find(x=>x.c===ks);$("kp").innerHTML=`<h3>${r.n}</h3><div class="g"><div>Average home<b>£${r.price}k</b></div><div>Typical wage<b>£${r.wage}k</b></div><div>Price ÷ wage<b>${r.pi}×</b></div><div>Ownership<b>${r.own}%</b></div></div>`}
+ukDraw();
+const HM=[["Avg home price","price",1,v=>M.price.f(v)],["Price ÷ income","pi",1,v=>v+"×"],["Ownership","own",0,v=>v+"%"],["Rental yield","yld",0,v=>v+"%"],["Mortgage rate","mort",1,v=>v+"%"],["Avg wage","wage",0,v=>"$"+v+"k"],["REIT market","reit",0,v=>v?"$"+v+"bn":"none"]];
+["h1","h2","xc"].forEach(id=>$(id).innerHTML=C.map(c=>`<option value="${c.c}">${c.n}</option>`).join(""));$("h1").value="UK";$("h2").value="DE";$("xc").value="UK";
+function h2h(){const a=C.find(c=>c.c===$("h1").value),b=C.find(c=>c.c===$("h2").value);$("ho").innerHTML=`<table style="min-width:0"><tr><th></th><th>${a.n}</th><th>${b.n}</th></tr>`+HM.map(([l,k,lo,f])=>{const aw=lo?a[k]<b[k]:a[k]>b[k],w=a[k]===b[k]?0:aw?1:2;return `<tr><td>${l}</td><td>${w===1?"✅ ":""}${f(a[k])}</td><td>${w===2?"✅ ":""}${f(b[k])}</td></tr>`}).join("")+"</table>"}
+$("h1").onchange=$("h2").onchange=h2h;h2h();
+const SE={Logistics:["Warehouses for online shopping and shipping.","Oversupply or slower trade."],Towers:["Rent mast space to mobile carriers.","Carriers merging or cutting spend."],"Data centres":["Rent secure space and power for cloud and AI.","Huge power costs and fast-changing tech."],Healthcare:["Care homes, hospitals and clinics.","Operator failures and rising care costs."],Retail:["Malls and shopping centres.","Online shopping and weak tenants."],"Self-storage":["Rent units by the month.","New supply and a weak housing market."],"Net lease":["Tenants pay most costs on long leases.","A big tenant failing or leases ending."],Gaming:["Own casino buildings and lease them to operators.","Gambling rules and operator health."],Apartments:["Rent homes to tenants.","Rent controls and oversupply."],"Records and data":["Store records and run data sites.","Paper records shrinking over time."],"Life science":["Labs and campuses for biotech firms.","Funding drying up for tenants."],"Single-family rent":["Rent out houses at scale.","Rising house prices and political limits on rent."],Hotels:["Own hotels run by operators.","Travel slumps hit income fast."],Offices:["Rent office towers to companies.","Remote work and empty space."],Diversified:["A mix of property types.","Spread out, but exposed to each market."],Industrial:["Light industrial and smaller warehouses.","Economic slowdowns."]};
+$("se").innerHTML=Object.keys(SY).map(s=>`<p><b>${s}</b> (about ${SY[s]}% yield). ${SE[s][0]} <i>Risk:</i> ${SE[s][1]}</p>`).join("");
+function sn(){const a=+$("sa").value||0,y=(+$("sy").value||0)/100,g=(+$("sg").value||0)/100,n=+$("sj").value;$("sl").textContent=n;let V=a,P=a,cash=0,inc=0;for(let i=0;i<n;i++){inc=V*(1+g)*y;V=V*(1+g)+inc;P*=1+g;cash+=P*y}$("so").innerHTML=`<div class="g"><div>Reinvesting: value after ${n} years<b>${fm0(V)}</b></div><div>Reinvesting: income in final year<b>${fm0(inc)}</b></div><div>Not reinvesting: shares worth<b>${fm0(P)}</b></div><div>Not reinvesting: cash taken<b>${fm0(cash)}</b></div></div>`}
+$("sa").oninput=$("sy").oninput=$("sg").oninput=$("sj").oninput=sn;sn();
+let SX="";function xcd(){const c=C.find(x=>x.c===$("xc").value);$("xd").innerHTML=`<div style="background:linear-gradient(135deg,#0e3a66,#e8730c);color:#fff;border-radius:14px;padding:16px"><div style="font-size:12px;opacity:.85">GROWTH CAPITAL GROUP · REIT MAP</div><div style="font-size:24px;font-weight:700;margin:4px 0 10px">${c.n}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px"><div>🏠 Avg home<br><b style="font-size:18px">${M.price.f(c.price)}</b></div><div>💼 Avg wage<br><b style="font-size:18px">$${c.wage}k</b></div><div>⚖️ Price ÷ income<br><b style="font-size:18px">${c.pi}×</b></div><div>🔑 Ownership<br><b style="font-size:18px">${c.own}%</b></div></div></div>`;SX=`${c.n}: avg home ${M.price.f(c.price)}, avg wage $${c.wage}k, price ÷ income ${c.pi}×, ownership ${c.own}%. #GrowthCapitalGroup`}
+$("xc").onchange=xcd;xcd();$("xb").onclick=()=>{try{navigator.clipboard.writeText(SX).then(()=>$("xm").textContent="Copied!",()=>$("xm").textContent=SX)}catch(e){$("xm").textContent=SX}};
+// Tell the host page how tall the content is so the iframe doesn't clip or scroll.
+function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"reit-map"},location.origin)}catch(e){}}
+try{new ResizeObserver(postH).observe(document.body)}catch(e){}
+</script></body></html>

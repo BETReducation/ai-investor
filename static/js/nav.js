@@ -91,6 +91,9 @@
       ['S&amp;P500 Compass', '/tools/data-visualisation/league-compass'],
       ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
     ] },
+    { name: 'Property', pages: [
+      ['REIT Map', '/tools/data-visualisation/reit-map']
+    ] },
     { name: 'Other', pages: [
       ['Barrel Map', '/tools/data-visualisation/barrel-map']
     ] }
