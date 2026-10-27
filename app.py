@@ -4728,7 +4728,8 @@ def _market_xi_asset_aliases() -> dict:
 def _auto_link_market_xi_assets(body: str) -> str:
     """Wraps the first mention of each known asset (see
     _market_xi_asset_aliases) in a post body with a [text](url) markdown
-    link to Market XI — the same [text](url) syntax the Studio's own
+    link to Market XI (upload time only — never on Studio saves, or deleted links would
+    come back) — the same [text](url) syntax the Studio's own
     formatting toolbar and renderInlineText() already support, so this
     needs no rendering changes on the public post page.
 
@@ -4755,6 +4756,8 @@ def _auto_link_market_xi_assets(body: str) -> str:
     # match inside one, whether from a previous auto-link pass or an author's
     # own manual link.
     protected = [m.span() for m in re.finditer(r"!?\[[^\]]*\]\([^)]*\)", body)]
+    # Headings (title / section heads) are never linked.
+    protected += [m.span() for m in re.finditer(r"^[ \t]*#{1,6}[^\n]*$", body, re.MULTILINE)]
 
     def is_protected(start, end):
         return any(start < p_end and end > p_start for p_start, p_end in protected)
@@ -4961,8 +4964,10 @@ def api_alpha_content_item(item_id):
         if field in data:
             value = data[field]
             updates[field] = (str(value).strip() or None) if value is not None else None
-    if "body" in updates and updates["body"] and existing.get("kind") == "post":
-        updates["body"] = _auto_link_market_xi_assets(updates["body"])
+    # Titles/subtitles render as plain text, so never let link syntax stick.
+    for f in ("title", "subtitle"):
+        if updates.get(f):
+            updates[f] = _strip_markdown_links(updates[f])
     if "level" in data:
         level = (data["level"] or "").strip().lower()
         if level and level not in ALPHA_LEVELS:
