@@ -3128,21 +3128,60 @@ def _yf_history_with_retry(ticker: "yf.Ticker", **kwargs) -> pd.DataFrame:
     raise ValueError(f"Yahoo Finance data temporarily unavailable — try again in a moment ({last_err})")
 
 
-def _fetch_yf_history_cached(ticker: "yf.Ticker", symbol: str, period: str, fetch_interval: str) -> pd.DataFrame:
-    """Cached wrapper around the period-based branch of _yf_history_with_retry. Not
-    used for the explicit start_date/end_date branch (backtester) — those are one-off
-    historical range queries, not something repeatedly polled, so caching them would
-    only add staleness risk for no benefit. Returns a copy so callers are free to treat
-    the result as theirs alone, even though it's backed by a shared cache entry."""
-    key = (symbol.upper(), period, fetch_interval)
-    now = time.monotonic()
+_OHLCV_CACHE_MAX_ENTRIES = 400
+# Daily-and-longer bars only change on the still-forming bar, which _stitch_live_tail
+# overwrites from the live feed anyway, so they can be reused far longer than intraday.
+_OHLCV_DAILY_TTL_SECONDS = 120
+# Backtester date-range pulls are historical one-offs; several users running the same
+# symbol/range within a few minutes should cost one Yahoo call, not one each.
+_OHLCV_RANGE_TTL_SECONDS = 300
+_ohlcv_inflight: dict[tuple, threading.Lock] = {}
+
+
+def _fetch_yf_history_cached(ticker: "yf.Ticker", symbol: str, period: str, fetch_interval: str,
+                             start: str | None = None, end: str | None = None) -> pd.DataFrame:
+    """Cached wrapper around yfinance history. Period queries use a short TTL for
+    intraday bars and a longer one for daily+; start/end range queries (backtester)
+    use _OHLCV_RANGE_TTL_SECONDS. Identical concurrent misses are collapsed so a burst
+    of users on the same symbol makes one Yahoo call. Returns a copy so callers can
+    mutate it freely."""
+    if start:
+        key = (symbol.upper(), "range", start, end or "", fetch_interval)
+        ttl = _OHLCV_RANGE_TTL_SECONDS
+    else:
+        key = (symbol.upper(), period, fetch_interval)
+        intraday = fetch_interval.endswith(("m", "h"))
+        ttl = _OHLCV_CACHE_TTL_SECONDS if intraday else _OHLCV_DAILY_TTL_SECONDS
+
+    def _hit():
+        with _ohlcv_cache_lock:
+            cached = _ohlcv_cache.get(key)
+        if cached is not None and time.monotonic() - cached[0] < ttl:
+            return cached[1].copy()
+        return None
+
+    df = _hit()
+    if df is not None:
+        return df
     with _ohlcv_cache_lock:
-        cached = _ohlcv_cache.get(key)
-    if cached is not None and now - cached[0] < _OHLCV_CACHE_TTL_SECONDS:
-        return cached[1].copy()
-    df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
+        lock = _ohlcv_inflight.setdefault(key, threading.Lock())
+    with lock:
+        df = _hit()  # another thread may have filled it while we waited
+        if df is not None:
+            return df
+        try:
+            if start:
+                df = _yf_history_with_retry(ticker, start=start, end=end or None, interval=fetch_interval)
+            else:
+                df = _yf_history_with_retry(ticker, period=period, interval=fetch_interval)
+        finally:
+            with _ohlcv_cache_lock:
+                _ohlcv_inflight.pop(key, None)
     with _ohlcv_cache_lock:
-        _ohlcv_cache[key] = (now, df)
+        if len(_ohlcv_cache) >= _OHLCV_CACHE_MAX_ENTRIES:
+            for k, _v in sorted(_ohlcv_cache.items(), key=lambda kv: kv[1][0])[:_OHLCV_CACHE_MAX_ENTRIES // 4]:
+                del _ohlcv_cache[k]
+        _ohlcv_cache[key] = (time.monotonic(), df)
     return df.copy()
 
 
@@ -3351,7 +3390,7 @@ def _fetch_ohlcv(
             # can badly skew RSI/MACD/etc. for anything with a meaningful dividend/distribution
             # history — and it's also what our own price chart plots, so indicators computed
             # here always line up with what's on screen.
-            df = _yf_history_with_retry(ticker, start=start_date, end=end_date or None, interval=fetch_interval)
+            df = _fetch_yf_history_cached(ticker, symbol, period, fetch_interval, start=start_date, end=end_date)
         else:
             df = _fetch_yf_history_cached(ticker, symbol, period, fetch_interval)
         if df.empty:
@@ -7507,7 +7546,7 @@ _last_cache_sweep = 0.0
 
 def _sweep_stale_caches(now: float) -> None:
     """Evict cache entries that haven't been refreshed in a while. Cheap TTL caches
-    (_ohlcv_cache, 4s TTL) never need entries older than a few minutes — anything
+    (_ohlcv_cache, TTLs of 4s-5min) never need entries older than a few minutes — anything
     that old is a symbol/timeframe nobody's actively polling anymore. Same idea for
     the engine's indicator cache: once a job drops out of the desired set, its entry
     just sits there unused."""
