@@ -108,3 +108,21 @@ Beginner explainer (Alpha or video): "Why do bond yields move shares?" Walk thro
 
 ### Reply target
 None found this run.
+
+## 2026-10-27
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #1, already used). News used: Fed meets 27-28 Oct; reports from 2 Oct put the odds of a hike at roughly 18-24% (prediction markets, check before posting); Fed officials publicly split, one wanting 50 basis points or more, another seeing no urgency (Newsquawk); CoinDesk 19 Oct headline that JPMorgan is bringing its JPM Coin to Ethereum. No coverage found dated 27 Oct, so nothing here claims current prices or the decision.
+
+### Draft 13 (status: pending)
+News about the Fed keeps saying "50 basis points". What's that? A basis point is one hundredth of a percentage point. So 100 basis points is 1%, and 50 is half a percent. Rate changes are quoted this way because the moves are small, and tiny gaps matter when millions of loans are priced off them. Our interest rates lesson covers the rest.
+
+### Draft 14 (status: pending)
+Headlines say JPMorgan is putting its "JPM Coin" on Ethereum. What does that mean? It's a digital token that stands for real dollars held at the bank, so money can move on a blockchain instead of through the slow old banking pipes. It isn't Bitcoin and its value isn't meant to swing around. A good example of big banks and crypto overlapping.
+
+### Angle suggestion
+Beginner explainer (Alpha or video): "Stablecoins and bank tokens: how a digital dollar differs from Bitcoin." Cover what backs them, how some stablecoins have lost their peg historically (TerraUSD, 2022), and why banks are interested. Education only.
+
+### Reply target
+None found this run.
