@@ -6376,6 +6376,46 @@ def api_mining_globe_spot():
     return jsonify(data)
 
 
+# Mining Globe: central bank gold holdings from the IMF's reserves template (IRFCL, fine troy ounces),
+# latest month each country has reported. Cached for twelve hours; the page sanity-checks the figures.
+_IMF_GOLD_URL = "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,IRFCL/.IRFCLDT1_IRFCL56V_FTO..M?lastNObservations=1"
+_gold_cache: dict = {"at": 0.0, "data": None}
+_gold_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/mining-globe/gold-reserves", methods=["GET"])
+def api_mining_globe_gold_reserves():
+    import csv, io
+    with _gold_lock:
+        hit = _gold_cache["data"]
+        if hit and time.monotonic() - _gold_cache["at"] < 43200:
+            return jsonify(hit)
+    out = {}
+    try:
+        r = requests.get(_IMF_GOLD_URL, headers={"Accept": "text/csv"}, timeout=60)
+        r.raise_for_status()
+        for row in csv.DictReader(io.StringIO(r.text)):
+            c, period = row.get("COUNTRY", ""), row.get("TIME_PERIOD", "")
+            try:
+                oz = float(row["OBS_VALUE"])
+            except (KeyError, ValueError):
+                continue
+            # Three-letter ISO codes only (the feed also carries aggregates like G163).
+            if not re.fullmatch(r"[A-Z]{3}", c) or oz <= 0 or (c in out and out[c]["as_of"] >= period):
+                continue
+            out[c] = {"tonnes": round(oz / 32150.7466, 1), "as_of": period}
+    except Exception:
+        out = {}
+    if len(out) < 20:
+        if hit:
+            return jsonify(hit)
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "gold": out}
+    with _gold_lock:
+        _gold_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 # GCG League and Compass: ranked price performance for ~500 large US stocks over day/week/month/year,
 # built from one Yahoo daily-bar download and cached, so every period switch is instant on the page.
 _LEAGUE_UNIVERSE = {

@@ -145,6 +145,15 @@ function spotUI(){const el=$('#spot');if(!SPOT){el.innerHTML='';return}
 el.innerHTML=Object.entries(SPOT).map(([k,v])=>`<div class="spot"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${SEC[k]||'#8a8f98'}"></i>${k} <b>$${v.price.toLocaleString()}</b><span style="color:${v.day>=0?'var(--up)':'var(--dn)'}">${f(v.day)}</span></div>`).join('')+'<div class="spot" style="border:0;color:var(--mut);background:none">per oz (copper per lb)</div>';
 const sc=$('#lb').scrollTop;lb();$('#lb').scrollTop=sc;if(CG)info(CG);
 const open=[...document.querySelectorAll('#cl .row.open')].map(x=>x.id);coins();open.forEach(i=>document.getElementById(i)?.classList.add('open'))}
+// Central bank gold from the IMF reserves data. Figures that disagree wildly with our reference table
+// (the feed has unit slips for a few countries) are ignored, so a bad row can never reach the board.
+let CBLIVE=0;
+function loadGold(){fetch('/api/dataviz/mining-globe/gold-reserves').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{let n=0,latest='';
+for(const c in R3){const g=j.gold[c],iso=R3[c];if(!g||!ST[iso]||ST[iso].cb==null)continue;const ratio=g.tonnes/ST[iso].cb;if(ratio<.5||ratio>2)continue;
+if(!ST[iso].cb0)ST[iso].cb0=ST[iso].cb;ST[iso].cb=Math.round(g.tonnes);n++;if(g.as_of>latest)latest=g.as_of}
+if(n<10)return;CBLIVE=n;MX.cb=Math.max(...Object.values(ST).map(o=>o.cb||0));
+LN.cb='Central bank gold from the IMF reserves data for '+n+' countries (latest month each has reported, newest '+latest.replace('-M','/')+'); the rest are rounded World Gold Council figures. Dollar values are tonnes times the live gold price.';
+const sc=$('#lb').scrollTop;lb();$('#lb').scrollTop=sc;if(CG)info(CG)}).catch(()=>{})}
 function loadSpot(){fetch('/api/dataviz/mining-globe/spot').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{SPOT=j.spot;spotUI()}).catch(()=>{})}
 function wheel(){const W=$('#wheel');let h='';const N=secs.length,cx=300,cy=300;
 const pt=(r,a)=>[cx+r*Math.sin(a),cy-r*Math.cos(a)];
@@ -264,7 +273,7 @@ const L={};keep.forEach(d=>{L[d.t]=d.__m});D.splice(0,D.length,...keep);LIVE=L;
 const t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 $('#dnote').textContent='Live prices from Yahoo Finance (about 15 minutes delayed), refreshed '+t+'. '+D.length+' stocks and ETFs shown; any Yahoo could not return are left out. Day, week and month are price changes; Year is year to date. Stockpile and coin figures are rounded reference data, not live. For education and historical context only, not financial advice.';
 setP(P)}).catch(()=>{if(!LIVE)$('#dnote').textContent='Live prices are unavailable right now, so the stock and ETF moves shown are sample placeholders, not real performance. Stockpile and coin figures are rounded reference data. For education and historical context only, not financial advice.'});}
-loadLive();loadSpot();setInterval(()=>{loadLive();loadSpot()},600000);
+loadLive();loadSpot();loadGold();setInterval(()=>{loadLive();loadSpot()},600000);
 try{new Datamap({element:$('#gl'),fills:{defaultFill:'#888'},geographyConfig:{highlightOnHover:false,popupOnHover:false,borderWidth:.5},
 setProjection:()=>{pj=d3.geo.orthographic().scale(250).translate([280,280]).clipAngle(90).rotate([rot[0],-rot[1]]);pa=d3.geo.path().projection(pj);return{path:pa,projection:pj}},
 done:m=>{svg=m.svg;svg.attr('viewBox','0 0 560 560').attr('width','100%').attr('height','100%');
