@@ -39,3 +39,75 @@ def test_yf_history_cache_collapses_calls(monkeypatch):
         A._fetch_yf_history_cached(None, "ZZTEST", "6mo", "1d")
         A._fetch_yf_history_cached(None, "ZZTEST", "6mo", "1d", start="2024-01-01", end="2024-06-01")
     assert len(calls) == 2
+
+
+def test_backtest_busy_cap(monkeypatch):
+    c = A.app.test_client()
+    monkeypatch.setattr(A, "MAX_CONCURRENT_BACKTESTS", 0)
+    r = c.get("/api/backtest?symbol=AAPL")
+    assert r.status_code == 429 and r.get_json()["busy"]
+
+
+def test_backtest_slots_released(monkeypatch):
+    c = A.app.test_client()
+    monkeypatch.setattr(A, "_backtest_impl", lambda: ("ok", 200))
+    for _ in range(5):
+        assert c.get("/api/backtest?symbol=AAPL").status_code == 200
+    assert A._backtest_active == {"total": 0}
+
+
+def test_save_users_writes_only_changed_rows(monkeypatch):
+    writes = []
+
+    class FakeCur:
+        def execute(self, sql, params=None):
+            writes.append(params[0])
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    class FakeConn:
+        def cursor(self, **kw): return FakeCur()
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    monkeypatch.setattr(A, "DATABASE_URL", "postgres://x")
+    monkeypatch.setattr(A, "_db_conn", lambda: FakeConn())
+    u = A._UserDict({"a": {"password_hash": "h", "tier": "free"}, "b": {"password_hash": "h2", "tier": "free"}})
+    u._snapshot = {k: A._user_fingerprint(v) for k, v in u.items()}
+    u["b"]["tier"] = "pro"
+    A._save_users(u)
+    assert writes == ["b"]
+
+
+def test_pooled_conn_commits_and_returns(monkeypatch):
+    events = []
+
+    class FakeConn:
+        closed = 0
+        def commit(self): events.append("commit")
+        def rollback(self): events.append("rollback")
+        def cursor(self):
+            class Cur:
+                def __enter__(s): return s
+                def __exit__(s, *a): return False
+                def execute(s, q): pass
+            return Cur()
+
+    class FakePool:
+        def __init__(self): self.c = FakeConn()
+        def getconn(self): return self.c
+        def putconn(self, conn, close=False): events.append(("put", close))
+
+    pool = FakePool()
+    monkeypatch.setattr(A, "_db_pool", pool)
+    A._db_last_used.clear()
+    with A._db_conn() as conn:
+        assert conn is pool.c
+    assert events == ["rollback", "commit", ("put", False)]  # rollback = idle ping
+    events.clear()
+    try:
+        with A._db_conn():
+            raise ValueError
+    except ValueError:
+        pass
+    assert events == ["rollback", ("put", False)]

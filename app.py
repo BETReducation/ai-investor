@@ -327,11 +327,85 @@ LESSON_PAGES = [
 DATAVIZ_PAGES_FILE = os.path.join(os.path.dirname(__file__), "dataviz_pages.json")
 
 
-def _db_conn():
+_DB_POOL_MAX = 30
+_db_pool = None
+_db_pool_lock = threading.Lock()
+_db_pool_slots = threading.BoundedSemaphore(_DB_POOL_MAX)
+_DB_IDLE_PING_SECONDS = 30  # connections idle longer than this are pinged before reuse
+_db_last_used: dict = {}  # id(conn) -> monotonic time; psycopg2 connections can't carry attributes
+
+
+def _db_url() -> str:
     url = DATABASE_URL
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
-    return psycopg2.connect(url)
+    return url
+
+
+def _get_db_pool():
+    global _db_pool
+    if _db_pool is None:
+        with _db_pool_lock:
+            if _db_pool is None:
+                import psycopg2.pool
+                _db_pool = psycopg2.pool.ThreadedConnectionPool(
+                    2, _DB_POOL_MAX, _db_url(),
+                    keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=3,
+                )
+    return _db_pool
+
+
+class _PooledConn:
+    """Drop-in for the old `with _db_conn() as conn:` pattern: hands out a pooled
+    connection, commits on a clean exit (rolls back on error) like psycopg2's own
+    context manager, then returns it to the pool instead of leaving it open."""
+
+    def __init__(self):
+        if not _db_pool_slots.acquire(timeout=10):
+            raise RuntimeError("database connection pool exhausted")
+        try:
+            pool = _get_db_pool()
+            self.conn = pool.getconn()
+            last = _db_last_used.get(id(self.conn), 0)
+            if self.conn.closed or (time.monotonic() - last > _DB_IDLE_PING_SECONDS and not self._alive()):
+                _db_last_used.pop(id(self.conn), None)
+                pool.putconn(self.conn, close=True)
+                self.conn = pool.getconn()
+        except Exception:
+            _db_pool_slots.release()
+            raise
+
+    def _alive(self) -> bool:
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT 1")
+            self.conn.rollback()
+            return True
+        except Exception:
+            return False
+
+    def __enter__(self):
+        return self.conn
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if not self.conn.closed:
+                if exc_type is None:
+                    self.conn.commit()
+                else:
+                    self.conn.rollback()
+        finally:
+            if self.conn.closed:
+                _db_last_used.pop(id(self.conn), None)
+            else:
+                _db_last_used[id(self.conn)] = time.monotonic()
+            _get_db_pool().putconn(self.conn, close=bool(self.conn.closed))
+            _db_pool_slots.release()
+        return False
+
+
+def _db_conn():
+    return _PooledConn()
 
 
 def _ensure_table() -> None:
@@ -1083,9 +1157,8 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(username: str):
-    users = _load_users()
-    if username in users:
-        u = users[username]
+    u = _load_user(username)
+    if u:
         return User(username, u.get("tier", "free"), u.get("alpha_role"), u.get("entitlements"))
     return None
 
@@ -1107,7 +1180,7 @@ def is_admin_user(user) -> bool:
         return False
     if user.id in ADMIN_USERNAMES:
         return True
-    profile = (_load_users().get(user.id, {}) or {}).get("profile", {}) or {}
+    profile = (_load_user(user.id) or {}).get("profile", {}) or {}
     return (profile.get("email") or "").strip().lower() in ADMIN_EMAILS
 
 
@@ -1183,21 +1256,81 @@ def entitlement_required(feature: str, min_level: str):
 
 # ── User-store helpers ───────────────────────────────────────────────────────
 
+_USER_COLUMNS = "username, password_hash, preferences, tier, profile, alpha_role, entitlements"
+
+
+def _user_row_to_dict(row) -> dict:
+    return {
+        "password_hash": row["password_hash"],
+        "preferences":   row["preferences"] or {},
+        "tier":          row.get("tier", "free"),
+        "profile":       row.get("profile") or {},
+        "alpha_role":    row.get("alpha_role"),
+        "entitlements":  row.get("entitlements") or default_entitlements(row.get("tier", "free")),
+    }
+
+
+class _UserDict(dict):
+    """The result of _load_users() on Postgres. Remembers what each row looked like
+    when loaded so _save_users() writes back only the rows that changed, rather than
+    upserting the whole table (and clobbering other requests' concurrent edits)."""
+    _snapshot: dict = {}
+
+
+def _user_fingerprint(data: dict) -> str:
+    return json.dumps(data, sort_keys=True, default=str)
+
+
+def _load_user(username: str) -> dict | None:
+    """One user's record, or None. Use this instead of _load_users() whenever only
+    the current/target user is needed — it is one indexed row, not the whole table."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT {_USER_COLUMNS} FROM users WHERE username = %s", (username,))
+            row = cur.fetchone()
+            return _user_row_to_dict(row) if row else None
+    return _load_users().get(username)
+
+
+def _find_user_by_login(identifier: str, case_insensitive: bool = False):
+    """(username, record) matching a username exactly, else a profile email
+    (case-insensitive), else (None, None)."""
+    name_match = "lower(username) = lower(%s)" if case_insensitive else "username = %s"
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"SELECT {_USER_COLUMNS} FROM users WHERE {name_match} OR lower(profile->>'email') = lower(%s) "
+                f"ORDER BY ({name_match}) DESC LIMIT 1", (identifier, identifier, identifier))
+            row = cur.fetchone()
+            return (row["username"], _user_row_to_dict(row)) if row else (None, None)
+    users = _load_users()
+    ident = identifier.lower()
+    for uname, udata in users.items():
+        if uname == identifier or (case_insensitive and uname.lower() == ident):
+            return uname, udata
+    for uname, udata in users.items():
+        email = (udata.get("profile", {}) or {}).get("email", "").strip().lower()
+        if email and email == ident:
+            return uname, udata
+    return None, None
+
+
+def _save_user(username: str, data: dict) -> None:
+    if DATABASE_URL:
+        _save_users({username: data})
+        return
+    users = _load_users()
+    users[username] = data
+    _save_users(users)
+
+
 def _load_users() -> dict:
     if DATABASE_URL:
         with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT username, password_hash, preferences, tier, profile, alpha_role, entitlements FROM users")
-            return {
-                row["username"]: {
-                    "password_hash": row["password_hash"],
-                    "preferences":   row["preferences"] or {},
-                    "tier":          row.get("tier", "free"),
-                    "profile":       row.get("profile") or {},
-                    "alpha_role":    row.get("alpha_role"),
-                    "entitlements":  row.get("entitlements") or default_entitlements(row.get("tier", "free")),
-                }
-                for row in cur.fetchall()
-            }
+            cur.execute(f"SELECT {_USER_COLUMNS} FROM users")
+            users = _UserDict({row["username"]: _user_row_to_dict(row) for row in cur.fetchall()})
+        users._snapshot = {u: _user_fingerprint(d) for u, d in users.items()}
+        return users
     if not os.path.exists(USERS_FILE):
         return {}
     with open(USERS_FILE, "r") as f:
@@ -1218,8 +1351,11 @@ def _load_users() -> dict:
 
 def _save_users(users: dict) -> None:
     if DATABASE_URL:
+        snapshot = getattr(users, "_snapshot", {})
         with _db_conn() as conn, conn.cursor() as cur:
             for username, data in users.items():
+                if snapshot.get(username) == _user_fingerprint(data):
+                    continue
                 cur.execute("""
                     INSERT INTO users (username, password_hash, preferences, tier, profile, alpha_role, entitlements)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -3917,12 +4053,11 @@ def api_register():
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    users = _load_users()
-    if username in users:
+    if _load_user(username) is not None:
         return jsonify({"error": "Username already taken"}), 409
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode("utf-8")
-    users[username] = {
+    new_user = {
         "password_hash": pw_hash,
         "preferences": {},
         "tier": "free",
@@ -3936,7 +4071,7 @@ def api_register():
             "newsletter_opt_in": newsletter_opt_in,
         },
     }
-    _save_users(users)
+    _save_user(username, new_user)
     gcg_notify.record("member_joined", username, f"{username} joined", "/admin")
 
     session.permanent = True
@@ -3954,16 +4089,9 @@ def api_login():
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
 
-    users = _load_users()
-    user_data = users.get(username)
-    if not user_data:
-        # Not a username match — try matching by email instead.
-        identifier = username.lower()
-        for uname, udata in users.items():
-            email = (udata.get("profile", {}) or {}).get("email", "").strip().lower()
-            if email and email == identifier:
-                username, user_data = uname, udata
-                break
+    found_username, user_data = _find_user_by_login(username)
+    if user_data:
+        username = found_username
     if not user_data:
         return jsonify({"error": "Invalid credentials"}), 401
 
@@ -3994,24 +4122,16 @@ def api_forgot_password():
     if not identifier:
         return jsonify(generic)
 
-    users = _load_users()
-    match_username = None
-    for username, user_data in users.items():
-        email = (user_data.get("profile", {}) or {}).get("email", "").strip().lower()
-        if username.lower() == identifier or (email and email == identifier):
-            match_username = username
-            break
+    match_username, user_data = _find_user_by_login(identifier, case_insensitive=True)
 
     if match_username:
-        user_data = users[match_username]
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
         profile = dict(user_data.get("profile", {}) or {})
         profile["reset_token_hash"] = token_hash
         profile["reset_token_expires"] = time.time() + 3600  # 1 hour
         user_data["profile"] = profile
-        users[match_username] = user_data
-        _save_users(users)
+        _save_user(match_username, user_data)
 
         reset_link = f"{request.host_url.rstrip('/')}/reset-password?u={match_username}&t={token}"
         to_addr = profile.get("email") or match_username
@@ -4039,8 +4159,7 @@ def api_reset_password():
     if len(new_password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    users = _load_users()
-    user_data = users.get(username)
+    user_data = _load_user(username)
     profile = (user_data.get("profile", {}) or {}) if user_data else {}
     stored_hash = profile.get("reset_token_hash")
     expires = profile.get("reset_token_expires", 0)
@@ -4056,8 +4175,7 @@ def api_reset_password():
     profile.pop("reset_token_hash", None)
     profile.pop("reset_token_expires", None)
     user_data["profile"] = profile
-    users[username] = user_data
-    _save_users(users)
+    _save_user(username, user_data)
 
     return jsonify({"success": True})
 
@@ -5317,7 +5435,7 @@ def _lesson_progress_payload(profile: dict) -> dict:
 @app.route("/api/lesson-progress", methods=["GET"])
 @login_required
 def api_lesson_progress():
-    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    profile = (_load_user(current_user.id) or {}).get("profile", {}) or {}
     return jsonify(_lesson_progress_payload(profile))
 
 
@@ -7699,8 +7817,39 @@ def backtest_quota():
         "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
     })
 
+# A backtest holds a gunicorn thread for ~10s+ and hammers Yahoo, so cap how many run
+# at once overall and per caller. Rejected before the quota is consumed, so a "busy"
+# reply never costs the user one of their tries.
+MAX_CONCURRENT_BACKTESTS = 8
+MAX_CONCURRENT_BACKTESTS_PER_CALLER = 2
+_backtest_lock = threading.Lock()
+_backtest_active: dict = {"total": 0}
+
+
 @app.route("/api/backtest", methods=["GET"])
 def backtest():
+    caller = current_user.id if current_user.is_authenticated else f"ip:{_client_ip()}"
+    with _backtest_lock:
+        if (_backtest_active["total"] >= MAX_CONCURRENT_BACKTESTS
+                or _backtest_active.get(caller, 0) >= MAX_CONCURRENT_BACKTESTS_PER_CALLER):
+            resp = jsonify({"error": "The backtester is busy right now. Please try again in a few seconds.",
+                            "busy": True})
+            resp.status_code = 429
+            resp.headers["Retry-After"] = "10"
+            return resp
+        _backtest_active["total"] += 1
+        _backtest_active[caller] = _backtest_active.get(caller, 0) + 1
+    try:
+        return _backtest_impl()
+    finally:
+        with _backtest_lock:
+            _backtest_active["total"] -= 1
+            _backtest_active[caller] -= 1
+            if _backtest_active[caller] <= 0:
+                del _backtest_active[caller]
+
+
+def _backtest_impl():
     symbol     = request.args.get("symbol", "").strip()
     if symbol and current_user.is_authenticated:
         log_event(current_user.id, "backtest", symbol)
@@ -8743,7 +8892,7 @@ def _newsletter_recipients() -> list:
 
 def _render_for_user(content: dict, username: str, name: str) -> tuple[str, str, str]:
     unsub = newsletter_unsub_url(username, PUBLIC_BASE_URL)
-    progress = _lesson_progress_payload((_load_users().get(username, {}) or {}).get("profile", {}))
+    progress = _lesson_progress_payload((_load_user(username) or {}).get("profile", {}))
     total = sum(l["total"] for l in progress["levels"].values())
     done = sum(l["done"] for l in progress["levels"].values())
     html, text = newsletter_render.render_newsletter(
@@ -8991,7 +9140,7 @@ def api_newsletter_preview():
         return denied
     send_date = _parse_send_date(request.args.get("date", ""))
     issue = _issue_get_or_create(send_date)
-    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    profile = (_load_user(current_user.id) or {}).get("profile", {}) or {}
     html, _, _ = _render_for_user(issue["content"], current_user.id, profile.get("display_name") or current_user.id)
     return html
 
@@ -9004,7 +9153,7 @@ def api_newsletter_test_send():
         return denied
     send_date = _parse_send_date((request.get_json(silent=True) or {}).get("date", ""))
     issue = _issue_get_or_create(send_date)
-    profile = (_load_users().get(current_user.id, {}) or {}).get("profile", {}) or {}
+    profile = (_load_user(current_user.id) or {}).get("profile", {}) or {}
     to_addr = (profile.get("email") or "").strip()
     if not to_addr:
         return jsonify({"error": "Add an email address to your profile first"}), 400

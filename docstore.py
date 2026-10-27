@@ -33,15 +33,11 @@ class DocStore:
     def txn(self):
         """Yields the document; persists it on clean exit, discards it on exception."""
         if self.use_db:
-            conn = self.db_conn()
-            try:
-                with conn, conn.cursor() as cur:
-                    cur.execute(f"SELECT doc FROM {self.table} WHERE id = 1 FOR UPDATE")
-                    doc = self._decode(cur.fetchone()[0])
-                    yield doc
-                    cur.execute(f"UPDATE {self.table} SET doc = %s WHERE id = 1", (json.dumps(doc),))
-            finally:
-                conn.close()
+            with self.db_conn() as conn, conn.cursor() as cur:
+                cur.execute(f"SELECT doc FROM {self.table} WHERE id = 1 FOR UPDATE")
+                doc = self._decode(cur.fetchone()[0])
+                yield doc
+                cur.execute(f"UPDATE {self.table} SET doc = %s WHERE id = 1", (json.dumps(doc),))
             return
         with self._lock:
             doc = self.read()
