@@ -77,6 +77,14 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
 #hbars rect:hover{stroke:#fff;stroke-width:2}
 .hscroll{max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
 .ht th:nth-child(2),.ht td:nth-child(2),.ht th:nth-child(3),.ht td:nth-child(3){text-align:right}
+.bt{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums}
+.bt th{position:static;text-align:right;padding:8px 6px}
+.bt td{padding:6px;border-top:1px solid #16314f;text-align:right}
+.bt th:first-child,.bt td:first-child{text-align:left}
+.bt td:first-child{font-weight:600;white-space:nowrap}
+.bt td:first-child i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;background:var(--c)}
+.bt tr.tot td{border-top:2px solid var(--line);font-weight:800}
+.bt td.cell{font-weight:700;color:#06231f}
 .hnote{color:var(--mute);font-size:.72rem;line-height:1.4;margin-top:10px;text-align:left}
 </style>
 </head>
@@ -119,6 +127,13 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
       <div class="legend"><span class="up">● <b id="cUp">–</b> up</span><span class="down">● <b id="cDn">–</b> down</span></div>
       <div class="cap">Sectors, most stocks up first · tap one to view it on the compass</div>
       <div id="secsum"></div>
+    </div>
+  </details>
+  <details id="breadth">
+    <summary>Breadth <small>% of stocks up, by sector and period</small></summary>
+    <div class="clkbody">
+      <table class="bt"><thead><tr><th>Sector</th><th>Day</th><th>Week</th><th>Month</th><th id="bY">Year</th></tr></thead><tbody id="btb"></tbody></table>
+      <div class="hnote">Share of stocks in each sector with a price gain over the period, using the same prices as the compass. Green is above 50%, red below. Educational and historical information only, not financial advice.</div>
     </div>
   </details>
   <details id="hist">
@@ -170,7 +185,7 @@ function build(d){
     (period==="year"?"Starting line is the last close of the previous year. ":
      period==="day"?"Compared with the previous trading day's close. ":"Compared with the close one "+period+" ago. ")+
     "Rank is by % return; price-only, dividends excluded. Educational and historical information only, not financial advice.";
-  draw(); drawClock();
+  draw(); drawClock(); drawBreadth();
 }
 function draw(){
   const q=$("q").value.trim().toUpperCase(), sc=$("sec").value;
@@ -216,6 +231,18 @@ function drawClock(){
   const sm=Object.keys(UNIVERSE).map(k=>{const l=rows.filter(r=>r.sector===k);return{k,n:l.length,u:l.filter(r=>r.pct>0).length,avg:l.reduce((a,r)=>a+r.pct,0)/(l.length||1)}})
     .filter(x=>x.n).sort((a,b)=>b.u/b.n-a.u/a.n);
   $("secsum").innerHTML=sm.map(x=>`<div class="sr${x.k===curSec?" on":""}" data-s="${x.k}" style="--c:${SC[x.k]}"><span class="nm"><i></i>${x.k}</span><span class="bar"><b style="width:${x.u/x.n*100}%"></b></span><span class="ct"><em class="up">${x.u}</em> / <em class="down">${x.n-x.u}</em></span><span class="av ${x.avg>=0?"up":"down"}">${sgn(x.avg)}${Math.abs(x.avg).toFixed(1)}%</span></div>`).join("");
+}
+function drawBreadth(){
+  const ps=["day","week","month","year"], bySec={};
+  stocks.forEach(s=>(bySec[s.sector]=bySec[s.sector]||[]).push(s.sym));
+  const pct=(syms,p)=>{const d=DATA.periods[p], l=syms.filter(x=>d[x]&&d[x].base>0); return l.length?l.filter(x=>d[x].last>d[x].base).length/l.length*100:null};
+  const cell=v=>{if(v==null) return `<td>–</td>`;
+    const a=Math.min(1,Math.abs(v-50)/40), bg=v>=50?`rgba(61,220,151,${.25+a*.75})`:`rgba(255,107,107,${.25+a*.75})`;
+    return `<td class="cell" style="background:${bg}">${Math.round(v)}%</td>`};
+  const row=(name,syms,c,cls)=>`<tr class="${cls||""}"><td${c?` style="--c:${c}"`:""}>${c?"<i></i>":""}${name}</td>${ps.map(p=>cell(pct(syms,p))).join("")}</tr>`;
+  $("btb").innerHTML=row("All stocks",stocks.map(s=>s.sym),"","tot")+
+    Object.keys(UNIVERSE).map(k=>({k,v:pct(bySec[k],period)})).sort((a,b)=>(b.v??-1)-(a.v??-1)).map(x=>row(x.k,bySec[x.k],SC[x.k])).join("");
+  $("bY").textContent="Year "+YEAR;
 }
 function buildSC(){$("sc").innerHTML=["",...Object.keys(UNIVERSE)].map(k=>`<button data-s="${k}" style="--c:${k?SC[k]:"#d4a84b"}" class="${k===curSec?"on":""}">${k||"All"}</button>`).join("")}
 function pickSec(k){curSec=k; buildSC(); drawClock()}
