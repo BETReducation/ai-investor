@@ -2,6 +2,7 @@
 # marketdata/config.py in particular reads its provider credentials at import
 # time, so this must run first. Absent .env (e.g. in production, where real env
 # vars are set directly), this is a silent no-op.
+import warnings
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -64,6 +65,10 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 # roughly 70-80%. Doesn't touch SSE (text/event-stream isn't in its default mimetype list).
 Compress(app)
 
+# yfinance triggers a pandas inplace deprecation warning on every download; it fills the logs.
+warnings.filterwarnings("ignore", message=".*inplace.*")
+warnings.filterwarnings("ignore", module="yfinance")
+
 
 @app.after_request
 def _static_egress_tuning(resp):
@@ -91,6 +96,8 @@ _BIG_RESPONSE_LOG_BYTES = 100_000
 def _log_big_responses(resp):
     try:
         size = resp.content_length
+        if resp.mimetype == "text/event-stream":
+            return resp  # every SSE connect has unknown length; logging them floods Railway's log quota
         if size is None or size >= _BIG_RESPONSE_LOG_BYTES:
             ip = (request.headers.get("CF-Connecting-IP")
                   or request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip())
