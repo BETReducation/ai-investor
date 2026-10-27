@@ -37,6 +37,7 @@ summary::-webkit-details-marker{display:none}summary:after{content:"+";font-size
 .ex{display:none;padding:0 2px 12px 70px;color:var(--mut)}.row.open .ex{display:block}.ex b{color:var(--fg)}
 .bars{display:grid;gap:6px}.br{display:grid;grid-template-columns:100px 1fr 64px;gap:8px;align-items:center;font-size:13px}
 .br div{height:10px;background:var(--ln);position:relative}.br div i{position:absolute;top:0;bottom:0}
+.spot{border:1px solid var(--ln);background:var(--card);border-radius:4px;padding:4px 10px;font-size:13px;font-variant-numeric:tabular-nums}.spot b{font-weight:600}.spot span{margin-left:6px}
 .note{font-size:12px;color:var(--mut);margin-top:24px}
 @media (prefers-reduced-motion:no-preference){.row .ex{animation:o .2s}@keyframes o{from{opacity:0}}}
 .gsph{fill:var(--sea)}.ggr{fill:none;stroke:var(--grat)}.grim{fill:none;stroke:var(--ln);stroke-width:2;pointer-events:none}.datamaps-subunit{fill:var(--land)!important;stroke:var(--bg)!important;stroke-width:.5px!important;cursor:pointer}.datamaps-subunit.sel{fill:#f2b632!important}.gsph{fill:#0d3b66}.datamaps-subunit{fill:#3a9a82!important;stroke:#0d3b66!important;stroke-width:.6px!important}.datamaps-subunit:hover{fill:#52b89d!important}.grim{stroke:#5ab4ff;stroke-width:2.5}#gl svg{filter:drop-shadow(0 0 16px rgba(90,180,255,.4))}
@@ -47,24 +48,25 @@ summary::-webkit-details-marker{display:none}summary:after{content:"+";font-size
 <div class="bar" role="group" aria-label="Time period"><span style="color:var(--mut)">Period</span>
 <button data-p="0">Day</button><button data-p="1">Week</button><button data-p="2">Month</button><button data-p="3">Year to date</button></div>
 
+<div class="chips" id="spot" aria-live="polite"></div>
 <details open><summary><h2>The Mining and Stockpile Globe</h2></summary><div class="in">
 <div class="chips" id="gt"></div>
 <div id="gl" role="img" aria-label="Globe of mining company headquarters and metal regions"></div>
 <p class="sub" style="text-align:center;margin:6px 0 0">Drag to spin, tap a country for its stockpiles. Rings are company HQs; glowing patches are major deposit regions for the selected metal.</p><div id="cp" aria-live="polite"></div></div></details>
 
-<details open><summary><h2>The Stockpile Leaderboard</h2></summary><div class="in"><div class="chips" id="lt"></div><div class="chips" id="ls"></div><div class="chips" id="lc"></div><div class="bars" id="lb"></div><p class="note" id="ln"></p></div></details>
+<details><summary><h2>The Stockpile Leaderboard</h2></summary><div class="in"><div class="chips" id="lt"></div><div class="chips" id="ls"></div><div class="chips" id="lc"></div><div class="bars" id="lb"></div><p class="note" id="ln"></p></div></details>
 
-<details open><summary><h2>The Wheel</h2></summary><div class="in">
+<details><summary><h2>The Wheel</h2></summary><div class="in">
 <svg id="wheel" viewBox="0 0 600 600" role="img" aria-label="Mining wheel"></svg>
 <p class="sub" style="text-align:center;margin:0">Each wedge is a metal. Dots are companies; the wedge tint is the group average. Tap a dot.</p></div></details>
 
-<details open><summary><h2>Mining stocks</h2></summary><div class="in"><div class="chips" id="sf"></div><div id="stocks"></div></div></details>
-<details open><summary><h2>Mining ETFs</h2></summary><div class="in"><div id="etfs"></div></div></details>
+<details><summary><h2>Mining stocks</h2></summary><div class="in"><div class="chips" id="sf"></div><div id="stocks"></div></div></details>
+<details><summary><h2>Mining ETFs</h2></summary><div class="in"><div id="etfs"></div></div></details>
 
-<details open><summary><h2>Leaders and laggards</h2></summary><div class="in"><div class="bars" id="bars"></div></div></details>
+<details><summary><h2>Leaders and laggards</h2></summary><div class="in"><div class="bars" id="bars"></div></div></details>
 
 <details><summary><h2>Cheat sheet: how to read a miner</h2></summary><div class="in"><p><b>Producers</b> dig and sell metal, so profits swing with the commodity price. <b>Royalty and streaming</b> firms fund mines in return for a slice of output, with lower costs and steadier cash. <b>Juniors</b> explore and are far riskier. <b>All-in sustaining cost</b> (AISC) is what it costs to produce an ounce or pound; the wider the gap to the metal price, the fatter the margin. Miners tend to move with a bigger beat than the metal itself, up and down.</p></div></details>
-<details open><summary><h2>The Coin Vault</h2></summary><div class="in"><p class="sub">Government-issued bullion coins and old gold and silver favourites from around the world. Tap a coin to read its story.</p><div class="chips" id="cf"></div><div id="cl"></div><p class="note">Dates, purities and tax notes are summaries and may be out of date. Tax treatment varies by country and is not tax advice, so check current rules before buying or publishing.</p></div></details>
+<details><summary><h2>The Coin Vault</h2></summary><div class="in"><p class="sub">Government-issued bullion coins and old gold and silver favourites from around the world. Tap a coin to read its story.</p><div class="chips" id="cf"></div><div id="cl"></div><p class="note">Dates, purities and tax notes are summaries and may be out of date. Tax treatment varies by country and is not tax advice, so check current rules before buying or publishing.</p></div></details>
 <p class="note" id="dnote">Loading live prices…</p>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
@@ -133,6 +135,17 @@ const col=(v,a)=>(v>=0?'rgba(46,204,113,':'rgba(231,76,60,')+Math.min(1,.2+Math.
 const f=v=>(v>=0?'+':'')+v.toFixed(1)+'%';
 const secs=Object.keys(SEC),CN={US:'USA',CA:'Canada',ZA:'South Africa',AU:'Australia',GB:'UK',CL:'Chile',KZ:'Kazakhstan',BR:'Brazil',CH:'Switzerland'};
 const $=s=>document.querySelector(s),avg=a=>a.reduce((x,y)=>x+pf(y),0)/a.length;
+/* live metal prices */
+let SPOT=null;const OZ_T=32150.7466,usd=v=>'$'+(v>=1e12?(v/1e12).toFixed(2)+'tn':v>=1e9?(v/1e9).toFixed(1)+'bn':v>=100?Math.round(v).toLocaleString():v.toFixed(2));
+const vault=t=>SPOT&&SPOT.Gold?t*OZ_T*SPOT.Gold.price:null;
+// Coin melt values: [metal, fine troy ounces]. Only coins with a well-known fixed content are listed.
+const MELT={'American Eagle':['Gold',1],'American Gold Buffalo':['Gold',1],'Canadian Maple Leaf':['Gold',1],'Britannia':['Gold',1],'Sovereign':['Gold',.2354],'Krugerrand':['Gold',1],'Chinese Panda':['Gold',.9645],'Vienna Philharmonic':['Gold',1],'Australian Kangaroo':['Gold',1],'Kookaburra':['Silver',1],'Koala':['Silver',1],'Perth Lunar Series':['Gold',1],'Mexican Libertad':['Silver',1],'Mexican 50 Peso Centenario':['Gold',1.2057],'Swiss Vreneli':['Gold',.1867],'French Napoleon 20 Francs':['Gold',.1867],'Saint-Gaudens Double Eagle':['Gold',.9677],'Morgan Dollar':['Silver',.7734],'Austrian 100 Corona':['Gold',.9802],"Armenian Noah's Ark":['Silver',1],'Maria Theresa Thaler':['Silver',.7517]};
+const meltTxt=n=>{const m=MELT[n];if(!m)return'';const s=SPOT&&SPOT[m[0]];return s?` Melt value today: <b>${usd(m[1]*s.price)}</b> (${m[1]} oz ${m[0].toLowerCase()} at spot, before any collector premium).`:''};
+function spotUI(){const el=$('#spot');if(!SPOT){el.innerHTML='';return}
+el.innerHTML=Object.entries(SPOT).map(([k,v])=>`<div class="spot"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${SEC[k]||'#8a8f98'}"></i>${k} <b>$${v.price.toLocaleString()}</b><span style="color:${v.day>=0?'var(--up)':'var(--dn)'}">${f(v.day)}</span></div>`).join('')+'<div class="spot" style="border:0;color:var(--mut);background:none">per oz (copper per lb)</div>';
+const sc=$('#lb').scrollTop;lb();$('#lb').scrollTop=sc;if(CG)info(CG);
+const open=[...document.querySelectorAll('#cl .row.open')].map(x=>x.id);coins();open.forEach(i=>document.getElementById(i)?.classList.add('open'))}
+function loadSpot(){fetch('/api/dataviz/mining-globe/spot').then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{SPOT=j.spot;spotUI()}).catch(()=>{})}
 function wheel(){const W=$('#wheel');let h='';const N=secs.length,cx=300,cy=300;
 const pt=(r,a)=>[cx+r*Math.sin(a),cy-r*Math.cos(a)];
 secs.forEach((s,i)=>{const a1=i/N*6.2832,a2=(i+1)/N*6.2832-.012,m=D.filter(d=>d.s==s),av=avg(m);
@@ -178,7 +191,7 @@ const MG=[['Gold',['cb','Au','AuP'],SEC.Gold],['Silver',['Ag','AgP'],SEC.Silver]
 const KC=k=>{const g=MG.find(x=>x[1].includes(k));return g?g[2]:SEC.Diversified};
 const flag=c=>String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)));
 function big(k,v){const all=Object.values(ST).filter(o=>o[k]!=null),rk=all.filter(o=>o[k]>v).length+1;
-return`<div style="padding:6px 0"><div class="sub" style="margin:0">${UN[k][0]}${CGID&&es(CGID,k)?'*':''}</div><div style="font:900 52px/1 'Big Shoulders Display',sans-serif;color:${KC(k)}">${v.toLocaleString()} <span style="font-size:22px">${UN[k][1]}</span></div><div class="br" style="grid-template-columns:1fr 48px;margin-top:8px"><div><i style="left:0;width:${Math.max(2,v/MX[k]*100)}%;background:${KC(k)}"></i></div><span style="text-align:right">${Math.round(v/MX[k]*100)}%</span></div><p class="sub" style="margin:6px 0 0">Ranks #${rk} of ${all.length} countries on file. The bar shows the share of the leader.</p></div>`}
+return`<div style="padding:6px 0"><div class="sub" style="margin:0">${UN[k][0]}${CGID&&es(CGID,k)?'*':''}</div><div style="font:900 52px/1 'Big Shoulders Display',sans-serif;color:${KC(k)}">${v.toLocaleString()} <span style="font-size:22px">${UN[k][1]}</span></div><div class="br" style="grid-template-columns:1fr 48px;margin-top:8px"><div><i style="left:0;width:${Math.max(2,v/MX[k]*100)}%;background:${KC(k)}"></i></div><span style="text-align:right">${Math.round(v/MX[k]*100)}%</span></div>${k=='cb'&&vault(v)?`<p class="sub" style="margin:6px 0 0">Worth about <b>${usd(vault(v))}</b> at today's gold price.</p>`:''}<p class="sub" style="margin:6px 0 0">Ranks #${rk} of ${all.length} countries on file. The bar shows the share of the leader.</p></div>`}
 function info(g){CG=g;const p=$('#cp');if(!g){p.innerHTML='<p class="sub" style="text-align:center">Tap a country to see its stockpiles.</p>';return}
 const id=R3[g.id]||'';CGID=id;const s=ST[id]||{},m=D.filter(d=>d.c==id&&d.s!='ETFs'),has=k=>s[k]!=null,nm=g.properties.name;
 let h=`<h2 style="margin:4px 0 8px">${nm}</h2><div class="chips"><button class="chip ${PK=='All'?'on':''}" data-k="All">All</button>${MG.map(x=>`<button class="chip ${PK==x[0]?'on':''}" data-k="${x[0]}" style="${x[1].some(has)?'':'opacity:.5'}"><i style="background:${x[2]}"></i>${x[0]}</button>`).join('')}</div>`;
@@ -189,7 +202,7 @@ if(m.length)h+=`<div class="chips">Listed miners based here: ${m.map(d=>`<button
 h+=(Object.keys(s).some(k=>es(id,k))?'<p class="note" style="margin-top:8px">* '+ESN+'</p>':'')+'<p class="note" style="margin-top:8px">Rounded, approximate figures from USGS Mineral Commodity Summaries, World Gold Council, WNA and public bitcoin trackers. Check against the latest release before publishing.</p>';
 p.innerHTML=h;p.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{PK=b.dataset.k;info(CG)});p.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>openRow(b.dataset.t));p.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCoin(+b.dataset.co))}
 function selC(i3){if(!svg)return;const q=svg.selectAll('.datamaps-subunit').filter(x=>x.id==i3);if(q.empty())return;SEL=q.datum();svg.selectAll('.datamaps-subunit').classed('sel',x=>x.id==SEL.id);const c=d3.geo.centroid(SEL);tg=[-c[0],Math.max(-60,Math.min(60,c[1]))];info(SEL);$('#gl').scrollIntoView({behavior:'smooth',block:'center'})}
-const LB={Gold:[['cb','Central bank vaults'],['Au','Reserves in the ground'],['AuP','Mine output per year']],Silver:[['Ag','Reserves in the ground'],['AgP','Mine output per year']],Copper:[['Cu','Reserves in the ground'],['CuP','Mine output per year']],Bitcoin:[['BTC','Held by governments']]},LN={AuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',AgP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',CuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',cb:'Central bank holdings, rounded, from World Gold Council data.',Au:'Mine reserves, rounded, from USGS data.',Ag:'Countries rarely publish national silver stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',Cu:'Countries rarely publish national copper stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',BTC:'Wallets and seizures linked to governments, approximate, from public trackers. These change often.'};
+const LB={Gold:[['cb','Central bank vaults'],['Au','Reserves in the ground'],['AuP','Mine output per year']],Silver:[['Ag','Reserves in the ground'],['AgP','Mine output per year']],Copper:[['Cu','Reserves in the ground'],['CuP','Mine output per year']],Bitcoin:[['BTC','Held by governments']]},LN={AuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',AgP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',CuP:'Annual mine output, rounded, from USGS data. Only countries with a figure on file are listed.',cb:'Central bank holdings, rounded, from World Gold Council data. Dollar values are tonnes times the live gold price.',Au:'Mine reserves, rounded, from USGS data.',Ag:'Countries rarely publish national silver stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',Cu:'Countries rarely publish national copper stockpiles, so this ranks mine reserves in the ground (USGS, rounded).',BTC:'Wallets and seizures linked to governments, approximate, from public trackers. These change often.'};
 const CTS={Europe:'DE IT FR RU CH NL PT GB ES AT BE PL HU SE GR RO DK RS FI CZ BG SK UA',Asia:'MN IR CN JP IN TW UZ SA KZ TH SG TR PH KR ID PK IQ LB KW QA AE JO MY VN BT',Africa:'ML SD TZ ZA EG DZ LY MA NG GH NA CD ZM ZW','N. America':'US MX CA SV','S. America':'BR VE AR PE BO CO CL',Oceania:'AU PG'},CT={};for(const c in CTS)CTS[c].split(' ').forEach(x=>CT[x]=c);
 let LC='All';
 function lb(){const k=LSM[LM]||LB[LM][0][0];
@@ -197,7 +210,7 @@ $('#lt').innerHTML=Object.keys(LB).map(x=>`<button class="chip ${x==LM?'on':''}"
 $('#ls').innerHTML=LB[LM].length>1?LB[LM].map(x=>`<button class="${x[0]==k?'on':''}" data-s="${x[0]}">${x[1]}</button>`).join(''):'';
 $('#lc').innerHTML=['All',...Object.keys(CTS)].map(x=>`<button class="${x==LC?'on':''}" data-z="${x}">${x=='All'?'World':x}</button>`).join('');
 const r=Object.entries(ST).filter(e=>e[1][k]!=null&&(LC=='All'||CT[e[0]]==LC)).sort((a,b)=>b[1][k]-a[1][k]).slice(0,50),mx=r.length?r[0][1][k]:1;
-$('#lb').innerHTML=r.length?r.map((e,i)=>`<button class="br" data-c="${e[0]}" style="grid-template-columns:160px 1fr 96px;background:none;border:0;border-radius:0;text-align:left;width:100%;padding:3px 0"><span>${i+1}. ${flag(e[0])} ${NM[e[0]]||e[0]}${es(e[0],k)?'*':''}</span><div><i style="left:0;width:${e[1][k]/mx*100}%;background:${KC(k)}"></i></div><span style="text-align:right">${e[1][k].toLocaleString()} ${UN[k][1]}</span></button>`).join(''):'<p class="sub">No figures on file for this continent.</p>';
+$('#lb').innerHTML=r.length?r.map((e,i)=>`<button class="br" data-c="${e[0]}" style="grid-template-columns:${k=='cb'&&SPOT?'230px':'160px'} 1fr 96px;background:none;border:0;border-radius:0;text-align:left;width:100%;padding:3px 0"><span>${i+1}. ${flag(e[0])} ${NM[e[0]]||e[0]}${es(e[0],k)?'*':''}${k=='cb'&&SPOT?` <small style="color:var(--mut)">${usd(vault(e[1][k]))}</small>`:''}</span><div><i style="left:0;width:${e[1][k]/mx*100}%;background:${KC(k)}"></i></div><span style="text-align:right">${e[1][k].toLocaleString()} ${UN[k][1]}</span></button>`).join(''):'<p class="sub">No figures on file for this continent.</p>';
 $('#ln').textContent=`Showing ${r.length} ${r.length==1?'nation':'nations'}. `+LN[k]+' Tap a country to jump to it on the globe.'+(r.some(e=>es(e[0],k))?' * '+ESN:'');
 $('#lt').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{LM=b.dataset.m;lb()});$('#ls').querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{LSM[LM]=b.dataset.s;lb()});$('#lc').querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>{LC=b.dataset.z;lb()});$('#lb').querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>selC(I3[b.dataset.c]))}
 const CO=`American Eagle|US|US Mint|1986|Gold, silver, platinum|22 carat gold|The US flagship bullion coin, launched under the Gold Bullion Coin Act of 1985. The gold version is 22 carat, so the copper and silver alloy makes it tougher than pure gold, and carries Saint-Gaudens's Liberty. The silver Eagle uses the Walking Liberty design and a platinum Eagle followed in 1997.|Backed by the US government for weight and purity, and among the most traded bullion coins in the world.
@@ -229,7 +242,7 @@ Maria Theresa Thaler|AT|Austrian Mint|1780 (restrikes since)|Silver|.833|A silve
 const HIST=new Set(['Sovereign','Mexican 50 Peso Centenario','Swiss Vreneli','French Napoleon 20 Francs','Saint-Gaudens Double Eagle','Morgan Dollar','Austrian 100 Corona','Maria Theresa Thaler','Turkish Ata Gold']);let CF='All';
 function coins(){$('#cf').innerHTML=['All','Gold','Silver','Platinum','Historic'].map(x=>`<button class="${x==CF?'on':''}" data-f="${x}">${x}</button>`).join('');
 const l=CO.map((c,i)=>[c,i]).filter(e=>CF=='All'||(CF=='Historic'?HIST.has(e[0].n):e[0].me.includes(CF)));
-$('#cl').innerHTML=l.map(e=>{const c=e[0],i=e[1];return`<div class="row" id="c-${i}"><button class="rh" aria-expanded="false"><b style="font-size:28px">${flag(c.c)}</b><span>${c.n}<br><small>${c.m} · ${c.y} · ${c.me}</small></span><span class="pct" style="background:var(--ln);min-width:0">${c.p}</span></button><div class="ex"><p style="margin:0 0 6px">${c.x}</p><p style="margin:0 0 8px"><b>Why it matters:</b> ${c.w}</p>${I3[c.c]?`<button data-g="${c.c}">See ${NM[c.c]||c.c} on the globe</button>`:''}</div></div>`}).join('');
+$('#cl').innerHTML=l.map(e=>{const c=e[0],i=e[1];return`<div class="row" id="c-${i}"><button class="rh" aria-expanded="false"><b style="font-size:28px">${flag(c.c)}</b><span>${c.n}<br><small>${c.m} · ${c.y} · ${c.me}</small></span><span class="pct" style="background:var(--ln);min-width:0">${c.p}</span></button><div class="ex"><p style="margin:0 0 6px">${c.x}</p><p style="margin:0 0 8px"><b>Why it matters:</b> ${c.w}</p>${MELT[c.n]?`<p style="margin:0 0 8px">${meltTxt(c.n)||''}</p>`:''}${I3[c.c]?`<button data-g="${c.c}">See ${NM[c.c]||c.c} on the globe</button>`:''}</div></div>`}).join('');
 $('#cf').querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{CF=b.dataset.f;coins()});
 $('#cl').querySelectorAll('.rh').forEach(b=>b.onclick=()=>{const r=b.parentNode;r.classList.toggle('open');b.setAttribute('aria-expanded',r.classList.contains('open'))});
 $('#cl').querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>selC(I3[b.dataset.g]))}
@@ -243,13 +256,15 @@ if(tg){rot[0]+=(((tg[0]-rot[0]+540)%360)-180)*.1;rot[1]+=(tg[1]-rot[1])*.1;if(Ma
 else if(!drag&&!SEL&&!RM)rot[0]+=.15;requestAnimationFrame(frame)}
 gt();setP(0);info(null);lb();coins();
 // Day, week and month are price changes; Year is year to date. Companies Yahoo can't return are dropped.
-fetch('/api/dataviz/etf-tracker/live?symbols='+encodeURIComponent(D.map(d=>ys(d.t)).join(','))).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
-const keep=D.filter(d=>{const m=j.etfs[ys(d.t)];return m&&m.d!=null&&(d.__m=m)});
+const ALL=D.slice();
+function loadLive(){fetch('/api/dataviz/etf-tracker/live?symbols='+encodeURIComponent(ALL.map(d=>ys(d.t)).join(','))).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+const keep=ALL.filter(d=>{const m=j.etfs[ys(d.t)];return m&&m.d!=null&&(d.__m=m)});
 if(keep.length<10)throw 0;
 const L={};keep.forEach(d=>{L[d.t]=d.__m});D.splice(0,D.length,...keep);LIVE=L;
 const t=new Date(j.updated_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 $('#dnote').textContent='Live prices from Yahoo Finance (about 15 minutes delayed), refreshed '+t+'. '+D.length+' stocks and ETFs shown; any Yahoo could not return are left out. Day, week and month are price changes; Year is year to date. Stockpile and coin figures are rounded reference data, not live. For education and historical context only, not financial advice.';
-setP(P)}).catch(()=>{$('#dnote').textContent='Live prices are unavailable right now, so the stock and ETF moves shown are sample placeholders, not real performance. Stockpile and coin figures are rounded reference data. For education and historical context only, not financial advice.'});
+setP(P)}).catch(()=>{if(!LIVE)$('#dnote').textContent='Live prices are unavailable right now, so the stock and ETF moves shown are sample placeholders, not real performance. Stockpile and coin figures are rounded reference data. For education and historical context only, not financial advice.'});}
+loadLive();loadSpot();setInterval(()=>{loadLive();loadSpot()},600000);
 try{new Datamap({element:$('#gl'),fills:{defaultFill:'#888'},geographyConfig:{highlightOnHover:false,popupOnHover:false,borderWidth:.5},
 setProjection:()=>{pj=d3.geo.orthographic().scale(250).translate([280,280]).clipAngle(90).rotate([rot[0],-rot[1]]);pa=d3.geo.path().projection(pj);return{path:pa,projection:pj}},
 done:m=>{svg=m.svg;svg.attr('viewBox','0 0 560 560').attr('width','100%').attr('height','100%');

@@ -6340,6 +6340,42 @@ def api_etf_tracker_live():
     return jsonify(data)
 
 
+# Mining Globe: live metal spot prices (front-month futures) for the page's price strip, vault values and coin melt values.
+_SPOT_TTL_SECONDS = 300
+_SPOT_SYMBOLS = {"Gold": "GC=F", "Silver": "SI=F", "Copper": "HG=F", "Platinum": "PL=F", "Palladium": "PA=F"}
+_spot_cache: dict = {"at": 0.0, "data": None}
+_spot_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/mining-globe/spot", methods=["GET"])
+def api_mining_globe_spot():
+    with _spot_lock:
+        hit = _spot_cache["data"]
+        if hit and time.monotonic() - _spot_cache["at"] < _SPOT_TTL_SECONDS:
+            return jsonify(hit)
+    try:
+        raw = yf.download(tickers=list(_SPOT_SYMBOLS.values()), period="10d", interval="1d", group_by="ticker",
+                          threads=True, auto_adjust=False, progress=False)
+    except Exception:
+        raw = None
+    out = {}
+    for name, sym in _SPOT_SYMBOLS.items():
+        try:
+            c = raw[sym]["Close"].dropna()
+            if len(c) >= 2:
+                out[name] = {"price": round(float(c.iloc[-1]), 2), "day": round((float(c.iloc[-1]) / float(c.iloc[-2]) - 1) * 100, 2)}
+        except Exception:
+            continue
+    if len(out) < 3:
+        if hit:
+            return jsonify(hit)
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "spot": out}
+    with _spot_lock:
+        _spot_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 # GCG League and Compass: ranked price performance for ~500 large US stocks over day/week/month/year,
 # built from one Yahoo daily-bar download and cached, so every period switch is instant on the page.
 _LEAGUE_UNIVERSE = {
