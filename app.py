@@ -953,10 +953,42 @@ ADVANCED_ONLY_INDICATOR_KEYS = {
 def _client_ip() -> str:
     # Railway (and most PaaS) sit behind a proxy — the real client IP is the
     # first hop in X-Forwarded-For, not request.remote_addr (which is the proxy).
+    # Cloudflare sits in front of Railway, so the proxy hop seen by ProxyFix is a
+    # Cloudflare edge; CF-Connecting-IP carries the real visitor.
+    cf = request.headers.get("CF-Connecting-IP", "").strip()
+    if cf:
+        return cf
     fwd = request.headers.get("X-Forwarded-For", "")
     if fwd:
         return fwd.split(",")[0].strip()
     return request.remote_addr or "unknown"
+
+
+# In-memory sliding-window limiter for auth endpoints. Per-process, which is fine
+# while the app runs a single gunicorn worker (see Procfile).
+_rate_hits: dict = {}
+_rate_lock = threading.Lock()
+
+
+def _rate_limited(bucket: str, key: str, limit: int, window_seconds: int) -> bool:
+    """Records a hit and returns True if this key has exceeded `limit` hits in the window."""
+    now = time.monotonic()
+    k = (bucket, key)
+    with _rate_lock:
+        hits = [t for t in _rate_hits.get(k, ()) if now - t < window_seconds]
+        hits.append(now)
+        _rate_hits[k] = hits
+        if len(_rate_hits) > 20000:
+            for dk in [dk for dk, v in _rate_hits.items() if not v or now - v[-1] > 3600]:
+                _rate_hits.pop(dk, None)
+        return len(hits) > limit
+
+
+def _too_many_requests(msg: str = "Too many attempts. Please wait a few minutes and try again."):
+    resp = jsonify({"error": msg})
+    resp.status_code = 429
+    resp.headers["Retry-After"] = "300"
+    return resp
 
 
 def _anon_backtest_try(ip: str) -> tuple[bool, int]:
@@ -3822,6 +3854,8 @@ def newsletter_unsubscribe():
 
 @app.route("/api/register", methods=["POST"])
 def api_register():
+    if _rate_limited("register", _client_ip(), 5, 3600):
+        return _too_many_requests()
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
@@ -3866,6 +3900,8 @@ def api_register():
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
+    if _rate_limited("login", _client_ip(), 10, 600):
+        return _too_many_requests()
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
@@ -3906,6 +3942,8 @@ def api_login():
 def api_forgot_password():
     data = request.get_json() or {}
     identifier = data.get("identifier", "").strip().lower()
+    if _rate_limited("forgot", _client_ip(), 5, 3600) or (identifier and _rate_limited("forgot-id", identifier, 3, 3600)):
+        return _too_many_requests()
     generic = {"success": True, "message": "If an account matches that username or email, we've sent a reset link."}
     if not identifier:
         return jsonify(generic)
@@ -7159,6 +7197,12 @@ def prices():
 # reconnect: that keeps any one gunicorn thread from being pinned forever and lets
 # deploys/restarts drain quickly. Requires threaded workers (see Procfile) — a
 # single sync worker would let one open stream block every other request.
+MAX_PRICE_STREAMS = 12
+MAX_PRICE_STREAMS_PER_IP = 3
+_stream_lock = threading.Lock()
+_stream_active: dict = {"total": 0}
+
+
 @app.route("/api/prices/stream", methods=["GET"])
 def prices_stream():
     symbol = request.args.get("symbol", "").strip()
@@ -7167,10 +7211,22 @@ def prices_stream():
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
 
+    # Each stream pins a gunicorn thread for ~55s, so cap them well below the pool
+    # size. A 503 makes EventSource give up, and the client's polling takes over.
+    ip = _client_ip()
+    with _stream_lock:
+        if _stream_active["total"] >= MAX_PRICE_STREAMS or _stream_active.get(ip, 0) >= MAX_PRICE_STREAMS_PER_IP:
+            resp = jsonify({"error": "Live stream capacity reached; using polling."})
+            resp.status_code = 503
+            resp.headers["Retry-After"] = "30"
+            return resp
+        _stream_active["total"] += 1
+        _stream_active[ip] = _stream_active.get(ip, 0) + 1
+
     # Make sure this symbol's provider stream is running (no-op if none covers it).
     marketdata_router.ensure_symbol_watched(symbol)
 
-    def generate():
+    def stream_body():
         last_payload = None
         deadline = time.monotonic() + 55
         yield "retry: 2000\n\n"
@@ -7204,6 +7260,16 @@ def prices_stream():
             except Exception:
                 yield ": err\n\n"
             time.sleep(1)
+
+    def generate():
+        try:
+            yield from stream_body()
+        finally:
+            with _stream_lock:
+                _stream_active["total"] -= 1
+                _stream_active[ip] = _stream_active.get(ip, 1) - 1
+                if _stream_active[ip] <= 0:
+                    _stream_active.pop(ip, None)
 
     resp = Response(generate(), mimetype="text/event-stream")
     resp.headers["Cache-Control"] = "no-cache"
@@ -8291,7 +8357,7 @@ def lesson_qa():
     # instead of re-charging the full lesson text on every single question.
     system_text = (
         "You are a patient tutor helping a student understand ONE specific investing-education "
-        f"lesson, titled \"{lesson['title']}\", on Global Capital Academy. Answer only using the "
+        f"lesson, titled \"{lesson['title']}\", on Growth Capital Group. Answer only using the "
         "lesson text below plus general explanation of the concepts it covers — do not bring in "
         "unrelated strategies or products.\n\n"
         "Rules:\n"
@@ -8324,6 +8390,57 @@ def lesson_qa():
         return jsonify({"answer": answer, "remaining": max(0, limit - used)})
     except Exception as e:
         return jsonify({"error": f"Generation failed: {e}"}), 502
+
+
+# ── Error pages, sitemap, robots ─────────────────────────────────────────────
+
+@app.errorhandler(404)
+def _not_found(_e):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Not found"}), 404
+    return send_from_directory("static", "404.html"), 404
+
+
+@app.route("/favicon.ico")
+def favicon_ico():
+    return send_from_directory("static/logos", "Green Square.png", mimetype="image/png")
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Disallow: /admin\n"
+        "Disallow: /api/\n"
+        "Disallow: /profile\n"
+        "Disallow: /alpha/studio\n"
+        "Disallow: /dataviz-studio\n"
+        "Disallow: /social-post-studio\n"
+        "Disallow: /reset-password\n\n"
+        f"Sitemap: {PUBLIC_BASE_URL}/sitemap.xml\n"
+    )
+    return Response(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    urls = [p["url"] for p in SEARCH_PAGE_INDEX if p["url"] != "/alpha/chat"]
+    urls += [f"/learn/{l['level']}/{l['slug']}" for l in LESSON_PAGES]
+    try:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT slug, kind FROM dataviz_pages")
+            urls += [f"/tools/data-visualisation/{slug}" if kind == "viz" else f"/tools/{slug}"
+                     for slug, kind in cur.fetchall()]
+    except Exception:
+        pass
+    seen, out = set(), []
+    for u in urls:
+        if u not in seen:
+            seen.add(u)
+            out.append(f"<url><loc>{PUBLIC_BASE_URL}{u}</loc></url>")
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "\n".join(out) + "\n</urlset>\n")
+    return Response(xml, mimetype="application/xml")
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
