@@ -82,7 +82,7 @@ tr.r{cursor:pointer}tr.r:hover{background:var(--card)}
 <details><summary>🏭 REIT sector explainers</summary><div class="in" id="se"></div></details>
 
 <details><summary>📤 Nation’s Housing Card</summary><div class="in"><select id="xc"></select> <button id="xb">Copy text</button><div id="xd" style="margin-top:8px"></div><div class="note" id="xm">Screenshot the card to share it.</div></div></details>
-<p class="note">Educational only, not financial advice. Property, mortgage-rate, REIT-market-size and REIT-yield figures are rounded indicative estimates (USD; yield is a typical sector average) and vary by source and city vs national. REIT daily/weekly/monthly/year-to-date moves in the league tables are live Yahoo Finance prices (about 15 minutes delayed, price only, excluding dividends); if the feed is down they fall back to labelled sample values. The annual history is from FTSE Nareit All Equity REITs (older years rounded; 2026 is year-to-date to May).</p>
+<p class="note">Educational only, not financial advice. Property, mortgage-rate, REIT-market-size and sector-yield figures are rounded indicative estimates (USD; the dividend calculator uses typical sector yields, while the league-table yield is each REIT’s trailing 12-month dividends over its latest price) and vary by source and city vs national. REIT daily/weekly/monthly/year-to-date moves in the league tables are live Yahoo Finance prices (about 15 minutes delayed, price only, excluding dividends); if the feed is down they fall back to labelled sample values. The annual history is from FTSE Nareit All Equity REITs (older years rounded; 2026 is year-to-date to May).</p>
 
 <script>
 const RAW=`US|United States|1|1|420|5|65|6|Birthplace of REITs (1960). Deep market; mortgage rates drive affordability.
@@ -196,12 +196,12 @@ function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t
 const SC={d:3,w:6,m:12,y:40},PL={d:"Day",w:"Week",m:"Month",y:"Year"};
 const V={};Object.keys(SC).forEach((p,pi)=>{const r=rng(7+pi*13);V[p]=R.map(()=>+(((r()-.45)*2*SC[p]).toFixed(1)))});
 const SY={Logistics:3,Towers:3.5,"Data centres":2.8,Healthcare:3,Retail:4.5,"Self-storage":4,"Net lease":5.5,Gaming:6,Apartments:3.8,"Records and data":2.8,"Life science":5,"Single-family rent":3,Hotels:5,Offices:5.5,Diversified:5,Industrial:3.5};
-let per="y",dir="up";
+let per="y",dir="up";const LY={};
 function drawR(){
 btns("pb",Object.entries(PL),per,k=>{per=k;drawR()});
 btns("db",[["up","▲ Top 20 up"],["dn","▼ Top 20 down"]],dir,k=>{dir=k;drawR()});
 const o=R.map((r,i)=>({...r,v:V[per][i]})).filter(r=>r.v!=null).sort((a,b)=>dir==="up"?b.v-a.v:a.v-b.v).slice(0,20);
-$("rt").innerHTML="<tr><th>#</th><th>REIT</th><th>Sector</th><th>Yield*</th><th>"+PL[per]+"</th></tr>"+o.map((r,i)=>`<tr class="r" data-t="${r.t}"><td>${i+1}</td><td><b>${r.t}</b> ${r.n}</td><td>${r.s}</td><td>~${SY[r.s]||4}%</td><td class="${r.v>=0?"up":"dn"}">${r.v>0?"+":""}${r.v}%</td></tr>`).join("");
+$("rt").innerHTML="<tr><th>#</th><th>REIT</th><th>Sector</th><th>Yield</th><th>"+PL[per]+"</th></tr>"+o.map((r,i)=>`<tr class="r" data-t="${r.t}"><td>${i+1}</td><td><b>${r.t}</b> ${r.n}</td><td>${r.s}</td><td>${LY[r.t]!=null?LY[r.t]+"%":"~"+(SY[r.s]||4)+"%"}</td><td class="${r.v>=0?"up":"dn"}">${r.v>0?"+":""}${r.v}%</td></tr>`).join("");
 const sg={};R.forEach((r,i)=>{if(V[per][i]!=null)(sg[r.s]=sg[r.s]||[]).push(V[per][i])});$("ss").innerHTML=Object.entries(sg).map(([s,a])=>[s,a.reduce((x,y)=>x+y,0)/a.length]).sort((a,b)=>b[1]-a[1]).map(([s,v])=>`<div class="h" style="grid-template-columns:120px 1fr 56px"><span>${s}</span><div class="bar"><i style="${v>=0?"left:50%":"right:50%"};width:${Math.min(50,Math.abs(v)/(SC[per]*.6)*50)}%;background:var(--${v>=0?"up":"dn"})"></i></div><span class="${v>=0?"up":"dn"}">${v>0?"+":""}${v.toFixed(1)}%</span></div>`).join("");
 $("rt").onclick=e=>{const tr=e.target.closest("tr.r");if(!tr)return;const r=R.find(x=>x.t===tr.dataset.t);
 $("rp").innerHTML=`<h3>${r.n} (${r.t})</h3><b>${r.s}</b><br>${r.e} REITs must pay out most of their taxable income as dividends, so income and property values both matter. Yield, debt level and tenant quality are the usual things analysts look at.`}}
@@ -213,8 +213,14 @@ fetch("/api/dataviz/etf-tracker/live?symbols="+encodeURIComponent(sy.join(",")))
 let n=0;R.forEach((r,i)=>{const m=j.etfs[sy[i]];["d","w","m","y"].forEach(p=>{V[p][i]=m&&m[p]!=null?m[p]:null});if(m&&m.d!=null)n++});
 if(n<10)throw 0;
 const t=new Date(j.updated_at).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-$("dnote").textContent="Live prices from Yahoo Finance (about 15 minutes delayed), refreshed "+t+". Day, week and month are price changes; Year is year to date. Yield is a typical sector average, not the live figure.";
-drawR()}).catch(()=>{$("dnote").textContent="Live prices are unavailable right now, so the moves shown are sample placeholders, not real performance."})}
+$("dnote").textContent="Live prices from Yahoo Finance (about 15 minutes delayed), refreshed "+t+". Day, week and month are price changes; Year is year to date. Yield is the last 12 months of dividends over the latest price (loading…).";
+drawR();loadYields()}).catch(()=>{$("dnote").textContent="Live prices are unavailable right now, so the moves shown are sample placeholders, not real performance."})}
+function loadYields(){const sy=R.map(r=>YS[r.t]||r.t);
+fetch("/api/dataviz/reit-map/yields?symbols="+encodeURIComponent(sy.join(","))).then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+let n=0;R.forEach((r,i)=>{if(j.yields[sy[i]]!=null){LY[r.t]=j.yields[sy[i]];n++}});
+if(n<10)throw 0;
+$("dnote").textContent=$("dnote").textContent.replace("(loading…)","(trailing, not a forecast; ~ marks a sector average where no figure was found).");
+drawR()}).catch(()=>{$("dnote").textContent=$("dnote").textContent.replace("Yield is the last 12 months of dividends over the latest price (loading…).","Yields shown are typical sector averages (~).")})}
 loadLive();setInterval(loadLive,600000);
 
 const H=[[2000,26.4,"REITs rose while dot-com stocks crashed as investors sought real assets."],[2001,13.9],[2002,3.8],[2003,37.1,"Falling rates and recovery fuelled a big rally."],[2004,31.6],[2005,12.2],[2006,35.1],[2007,-15.7,"Credit tightened as the US housing market cracked."],[2008,-37.7,"Global financial crisis: debt-laden REITs sold off sharply."],[2009,27.1,"Rebound after the crash as equity was raised and credit stabilised."],[2010,27.9],[2011,8.3],[2012,19.7],[2013,2.9,"Taper tantrum: rising yields hit income assets."],[2014,28],[2015,2.8],[2016,8.5],[2017,5.2],[2018,-4,"Rates rose again and retail REITs struggled."],[2019,28.7,"Rate cuts boosted income assets."],[2020,-8,"Covid: hotels and malls slumped, towers, logistics and data centres thrived."],[2021,41.3,"Reopening and cheap money produced a record rally."],[2022,-24.9,"Fast rate hikes drove valuations down."],[2023,11.4],[2024,4.9,"Modest gain as rates stayed high."],[2025,2.3,"Muted year: health care REITs led (about +28.5%) while office REITs fell about 14%. The S&P 500 gained roughly 18%."],[2026,13.2,"Year to date (to end of May): a strong run so far, with the index up about 13%."]];

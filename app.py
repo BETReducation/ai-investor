@@ -6344,6 +6344,49 @@ def api_etf_tracker_live():
     return jsonify(data)
 
 
+# REIT Map: trailing 12-month dividend yield (dividends paid over the last year / last close) from one Yahoo download.
+# Dividends and price share a currency (incl. UK pence), so the ratio is unaffected. Cached for six hours.
+_REITY_TTL_SECONDS = 21600
+_reity_cache: dict = {}
+_reity_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/reit-map/yields", methods=["GET"])
+def api_reit_map_yields():
+    syms = [x for x in (request.args.get("symbols") or "").split(",") if re.fullmatch(r"[A-Z0-9.\-^]{1,14}", x)][:80]
+    if not syms:
+        return jsonify({"error": "symbols required"}), 400
+    key = ",".join(sorted(syms))
+    with _reity_lock:
+        hit = _reity_cache.get(key)
+        if hit and time.monotonic() - hit[0] < _REITY_TTL_SECONDS:
+            return jsonify(hit[1])
+    try:
+        raw = yf.download(tickers=syms, period="13mo", interval="1d", group_by="ticker", threads=True,
+                          auto_adjust=False, actions=True, progress=False)
+    except Exception:
+        raw = None
+    out = {}
+    for x in syms:
+        try:
+            df = raw[x].dropna(subset=["Close"])
+            last = float(df["Close"].iloc[-1])
+            since = df.index[-1] - _dt.timedelta(days=365)
+            paid = float(df.loc[df.index > since, "Dividends"].sum())
+            if last > 0 and paid > 0:
+                out[x] = round(paid / last * 100, 2)
+        except Exception:
+            continue
+    if len(out) < 10:
+        if hit:
+            return jsonify(hit[1])
+        return jsonify({"error": "unavailable"}), 502
+    data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "yields": out}
+    with _reity_lock:
+        _reity_cache[key] = (time.monotonic(), data)
+    return jsonify(data)
+
+
 # Mining Globe: live metal spot prices (front-month futures) for the page's price strip, vault values and coin melt values.
 _SPOT_TTL_SECONDS = 300
 _SPOT_SYMBOLS = {"Gold": "GC=F", "Silver": "SI=F", "Copper": "HG=F", "Platinum": "PL=F", "Palladium": "PA=F"}
