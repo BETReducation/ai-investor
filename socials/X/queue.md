@@ -186,3 +186,26 @@ Alpha or video: "What happened after the dot-com bubble burst, company by compan
 
 ### Reply target
 None found this run.
+
+## 2026-10-28
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: Fed decision due 28 Oct with a press conference after; CME FedWatch roughly 87% hold / 13% hike (check figure); sources disagree on the current rate range, so no rate level is quoted; 10-year yield reportedly up about 28 basis points since the September meeting (check figure). No result found yet, so nothing here claims the decision or prices. Types: last run was A, B, D, so this run uses E, A and C.
+
+### Draft 22 (type: E extras, this day in market history, status: pending)
+28 October 1929. The Dow fell nearly 13% in one day, then another 11-12% the next. People call it Black Monday and Black Tuesday. The Dow didn't get back to its 1929 high until 1954. Worth remembering when a bad week feels like the end of everything.
+
+### Draft 23 (type: A viz/tool showcase, status: pending)
+Rate decisions are a good excuse to open the REIT Map. It lines up listed property companies by sector, with a trailing 12-month dividend yield for each, plus a rent vs buy tool. Property is one of the places where rates show up fastest, so it's a handy thing to watch on days like this.
+https://www.growthcapitalgroup.co/tools/data-visualisation/reit-map
+Image: REIT Map, globe view with the league table of sector moves open beside it and a couple of dividend yields visible.
+
+### Draft 24 (type: C beginner explainer, status: pending)
+You'll hear "the 10-year yield rose" in rate news. What's a yield? It's the return you'd get on a government bond if you bought it today and held it, shown as a percent a year. When bond prices fall, yields rise, and the other way round. Mortgages and company loans are often priced off it, which is why it gets quoted so much. Our interest rates lesson goes through it.
+
+### Angle suggestion
+Alpha or video: "Black Monday and Black Tuesday 1929, day by day, and what recovery actually looked like." Pairs with draft 22. Education only.
+
+### Reply target
+None found this run.
