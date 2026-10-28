@@ -209,3 +209,26 @@ Alpha or video: "Black Monday and Black Tuesday 1929, day by day, and what recov
 
 ### Reply target
 None found this run.
+
+## 2026-10-28 (second run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search found nothing dated today; background only: tech/AI-led selloff in the week of 16-23 Oct (S&P 500 reportedly closed 7,659.44 on 16 Oct, Nasdaq down 2.6% on 22 Oct) and Fed meeting 27-28 Oct (check figure). Nothing here claims a decision or current prices. Last run was E, A, C, so this run uses B, D and E.
+
+### Draft 25 (type: B thoughts/take, status: pending)
+Fed week always brings the same worry: what if rates go up and stocks crash? 1994 is the usual example. The Fed roughly doubled rates in a year and bonds had one of their worst years on record. The S&P 500 finished 1994 close to flat. It was rough in between, and the pain showed up in places people weren't watching. Rates matter. The story is rarely as simple as the headline.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 26 (type: D question, status: pending)
+What was the first thing you ever invested in? Mine was a fund I picked mostly because the name sounded sensible. Curious how many of us started like that.
+
+### Draft 27 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's the drop from a peak to the lowest point before a new high. Not a loss you've locked in, just how far it fell on the way. The Nasdaq's drawdown after March 2000 was around 78%. Every long chart has some. Knowing the typical size is half of staying calm.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Short video or Alpha: "1994, the bond market massacre nobody remembers", what the Fed did, who got hurt, and what the S&P 500 did next. Pairs with draft 25. Education only.
+
+### Reply target
+None found this run.
