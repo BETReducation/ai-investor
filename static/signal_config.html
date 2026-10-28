@@ -4042,6 +4042,15 @@ function applyChartTheme() {
       horizontal: { text: { backgroundColor: tipBg, color: text, family, size: legendSize } },
       vertical: { text: { backgroundColor: tipBg, color: text, family, size: legendSize } },
     },
+    // Labels on drawing tools (measure, Fibonacci, channels, position boxes). klinecharts
+    // defaults these to white text on a solid blue box, which hid the red/green values.
+    overlay: {
+      text: {
+        style: 'stroke_fill', color: cssVar('--text-primary', dark ? '#e8eaf0' : '#1a1f2b'), family, size: Math.max(10, legendSize),
+        backgroundColor: cssVar('--bg-card', dark ? '#1b1f2a' : '#ffffff'), borderColor: cssVar('--border', grid),
+        borderSize: 1, borderRadius: 3, paddingLeft: 6, paddingRight: 6, paddingTop: 3, paddingBottom: 3,
+      },
+    },
   });
 }
 
@@ -4750,10 +4759,13 @@ function ensureAdvancedOverlayTypes() {
       const up = dollarChange >= 0;
       const color = up ? cssVar('--accent-green', '#00ff88') : cssVar('--accent-red', '#ff3355');
       const label = `${up ? '+' : ''}${pctChange.toFixed(2)}%   ${up ? '+' : ''}${dollarChange.toFixed(2)}   ${formatDuration(Math.abs(p2.timestamp - p1.timestamp))}`;
+      // Above the box, unless it's near the top where the OHLC/indicator legend sits: then below it.
+      const nearTop = Math.min(c1.y, c2.y) < 70;
+      const labelAttrs = { x: (c1.x + c2.x) / 2, y: nearTop ? Math.max(c1.y, c2.y) + 8 : Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: nearTop ? 'top' : 'bottom' };
       return [
         { type: 'rect', attrs: { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), width: Math.abs(c2.x - c1.x), height: Math.max(1, Math.abs(c2.y - c1.y)) }, styles: { style: 'fill', color: withAlpha(color, 0.12) }, ignoreEvent: true },
         { type: 'line', attrs: { coordinates: [c1, c2] }, styles: { color, size: 1.5 }, ignoreEvent: true },
-        { type: 'text', attrs: { x: (c1.x + c2.x) / 2, y: Math.min(c1.y, c2.y) - 8, text: label, align: 'center', baseline: 'bottom' }, styles: { color, size: 11, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
+        { type: 'text', attrs: labelAttrs, styles: { color, size: 11, family: "'IBM Plex Mono', monospace" }, ignoreEvent: true },
       ];
     },
   });
