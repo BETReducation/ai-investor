@@ -111,3 +111,16 @@ def test_pooled_conn_commits_and_returns(monkeypatch):
     except ValueError:
         pass
     assert events == ["rollback", ("put", False)]
+
+
+def test_alpha_post_share_tags(monkeypatch):
+    item = {"id": 7, "author": "tom", "kind": "post", "status": "published", "title": "Metcalfe's Law",
+            "subtitle": "The value of a network", "snippet": "", "body": "", "image_filename": "x.png"}
+    monkeypatch.setattr(A, "alpha_content_get", lambda i: item)
+    r = A.app.test_client().get("/alpha/tom/post/7")
+    page = r.data.decode()
+    assert "Metcalfe&#x27;s Law — Growth Capital Group</title>" in page
+    assert 'og:image" content="https://www.growthcapitalgroup.co/api/alpha/content/7/image"' in page
+    assert "The value of a network" in page
+    item["status"] = "draft"
+    assert "og-default.jpg" in A.app.test_client().get("/alpha/tom/post/7").data.decode()

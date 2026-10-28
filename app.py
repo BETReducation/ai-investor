@@ -3,6 +3,7 @@
 # time, so this must run first. Absent .env (e.g. in production, where real env
 # vars are set directly), this is a silent no-op.
 import warnings
+from html import escape as html_escape
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -5581,9 +5582,49 @@ def api_lesson_related_alpha(slug):
     ]})
 
 
+def _og_text(text: str, limit: int = 200) -> str:
+    text = re.sub(r"^#+\s*", "", text or "", flags=re.M)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > limit:
+        text = text[:limit].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text
+
+
 @app.route("/alpha/<slug>/post/<int:post_id>")
 def alpha_post_page(slug, post_id):
-    return send_from_directory("static", "alpha-post.html")
+    """Serves the post shell with the post's own title, summary and hero image in the
+    meta/Open Graph tags, since link-preview crawlers don't run the page's JavaScript."""
+    path = os.path.join(app.static_folder, "alpha-post.html")
+    try:
+        item = alpha_content_get(post_id) if slug in ALPHA_ROLES else None
+        if not item or item["author"] != slug or item["kind"] != "post" or item["status"] != "published":
+            return send_from_directory("static", "alpha-post.html")
+        with open(path, encoding="utf-8") as f:
+            page = f.read()
+        title = html_escape(f"{item['title']} — Growth Capital Group", quote=True)
+        desc = html_escape(_og_text(item.get("subtitle") or item.get("snippet") or item.get("body") or ""), quote=True)
+        img = _alpha_public_image_url(item)
+        if img and img.startswith("/"):
+            img = PUBLIC_BASE_URL + img
+        url = f"{PUBLIC_BASE_URL}/alpha/{slug}/post/{post_id}"
+
+        def put(prop_pattern: str, value: str) -> None:
+            nonlocal page
+            page = re.sub(prop_pattern, lambda m: m.group(1) + value + m.group(2), page, count=1)
+
+        put(r"(<title>)[^<]*(</title>)", title)
+        put(r'(<meta property="og:title" content=")[^"]*(">)', title)
+        if desc:
+            put(r'(<meta name="description" content=")[^"]*(">)', desc)
+            put(r'(<meta property="og:description" content=")[^"]*(">)', desc)
+        if img:
+            put(r'(<meta property="og:image" content=")[^"]*(">)', html_escape(img, quote=True))
+        page = page.replace('<meta property="og:type" content="website">',
+                            f'<meta property="og:type" content="article">\n<meta property="og:url" content="{url}">', 1)
+        return Response(page, mimetype="text/html")
+    except Exception:
+        app.logger.exception("alpha post meta injection failed for %s", post_id)
+        return send_from_directory("static", "alpha-post.html")
 
 
 # ── Site search ───────────────────────────────────────────────────────────
