@@ -259,3 +259,26 @@ Alpha or video: "Index vs the average stock: how the 2023-24 market looked wide 
 
 ### Reply target
 None found this run.
+
+## 2026-10-28 (fourth run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search again found no coverage of today's Fed decision, so nothing here claims it; background only: Fed reportedly raised 25bp on 16 Sep, 30-year Treasury yield reportedly hit about 5.62%, highest since 2002 (check figure, low-quality sources). Last run was C, A, E, so this run uses B, D and A. Viz is the Russell 2000 Compass (breadth section added 27 Oct), not the S&P one used in draft 29.
+
+### Draft 31 (type: B thoughts/take, status: pending)
+Long-term yields are back near levels not seen in over 20 years, depending on whose figures you read. For perspective, the 10-year US Treasury yield peaked around 15.8% in September 1981. Mortgage rates were north of 18% that year. Stocks were also cheap enough that the 1982 low started a bull market that ran for almost two decades. Levels alone don't tell you what comes next.
+
+### Draft 32 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first when the news turns ugly? I'm not sure I check the same one twice in a row.
+
+### Draft 33 (type: A viz/tool showcase, status: pending)
+The Russell 2000 Compass ranks the small-cap index's stocks best to worst. We just added a breadth view: what share of stocks are up in each sector over a day, week, month or year. Small caps move differently from the big names, and this makes the gap easy to see.
+https://www.growthcapitalgroup.co/tools/data-visualisation/russell-compass
+Image: Russell 2000 Compass, breadth section visible with the period set to 1 year, sectors sorted by share of stocks up.
+
+### Angle suggestion
+Alpha or video: "1981: when the 10-year yield hit 15.8%, what happened to mortgages, stocks and the dollar, and how long recovery took." Pairs with draft 31. Education only.
+
+### Reply target
+None found this run.
