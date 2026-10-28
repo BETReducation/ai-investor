@@ -346,6 +346,12 @@
   .chart-sidebar .chart-tool-btn[data-tip]:hover::after { display: none; }
   #tvChart { order: 3; flex: 0 0 100%; height: calc(100% - 38px); }
 }
+/* Short landscape phones (any width): the stat strip and positions table used to take the whole
+   panel and squeeze the chart to 0px. Keep the chart at a usable height and let the panel scroll. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .center-panel { overflow-y: auto; }
+  .center-panel .chart-area { flex: 1 0 260px; min-height: 260px; }
+}
 .chart-text-editor { position: absolute; z-index: 20; display: flex; gap: 4px; padding: 4px; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-text-editor input { width: 220px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--text-primary); border: none; outline: none; padding: 3px 4px; }
 .chart-text-editor button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--accent-blue); color: #fff; border: none; border-radius: 3px; cursor: pointer; }
@@ -4200,7 +4206,13 @@ function openToolMenu(btn, kind, html) {
   flyout.innerHTML = html;
   document.body.appendChild(flyout);
   const rect = btn.getBoundingClientRect();
-  flyout.style.left = (rect.right + 8) + 'px';
+  // Cap to the visible area (dvh-aware via innerHeight) and scroll inside it, so tall menus
+  // and phone landscape never push rows or the right edge off screen.
+  flyout.style.maxHeight = (window.innerHeight - 16) + 'px';
+  flyout.style.overflowY = 'auto';
+  flyout.style.maxWidth = (window.innerWidth - 16) + 'px';
+  const left = Math.max(8, Math.min(rect.right + 8, window.innerWidth - flyout.offsetWidth - 8));
+  flyout.style.left = left + 'px';
   flyout.style.top = Math.max(8, Math.min(rect.top, window.innerHeight - flyout.offsetHeight - 8)) + 'px';
   openToolFlyout = flyout;
   setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
@@ -4260,8 +4272,10 @@ function positionFlyoutBelow(flyout, btn, alignRight) {
   document.body.appendChild(flyout);
   const rect = btn.getBoundingClientRect();
   const left = alignRight ? rect.right - flyout.offsetWidth : rect.left;
-  flyout.style.left = Math.max(4, left) + 'px';
-  flyout.style.top = (rect.bottom + 4) + 'px';
+  flyout.style.maxHeight = (window.innerHeight - 16) + 'px';
+  flyout.style.overflowY = 'auto';
+  flyout.style.left = Math.max(4, Math.min(left, window.innerWidth - flyout.offsetWidth - 4)) + 'px';
+  flyout.style.top = Math.max(4, Math.min(rect.bottom + 4, window.innerHeight - flyout.offsetHeight - 4)) + 'px';
   openToolFlyout = flyout;
   setTimeout(() => document.addEventListener('click', onDocClickCloseFlyout), 0);
 }
