@@ -93,6 +93,32 @@ def _static_egress_tuning(resp):
 _BIG_RESPONSE_LOG_BYTES = 100_000
 
 
+# Pages that shouldn't be indexed, so they get no canonical (see robots.txt).
+_NO_CANONICAL_PREFIXES = ("/admin", "/api/", "/profile", "/alpha/studio", "/dataviz-studio",
+                          "/social-post-studio", "/reset-password", "/login", "/newsletter/")
+
+
+@app.after_request
+def _add_canonical_link(resp):
+    """Adds <link rel="canonical"> (path only, no query string) to public HTML pages so
+    ?utm=/?v= variants of a URL don't compete with it in search."""
+    try:
+        if (request.method != "GET" or resp.status_code != 200 or resp.mimetype != "text/html"
+                or request.path.startswith(_NO_CANONICAL_PREFIXES)):
+            return resp
+        if resp.direct_passthrough:
+            resp.direct_passthrough = False
+        page = resp.get_data(as_text=True)
+        if 'rel="canonical"' in page or "</head>" not in page:
+            return resp
+        path = request.path.rstrip("/") or "/"
+        tag = f'<link rel="canonical" href="{PUBLIC_BASE_URL}{html_escape(path, quote=True)}">\n'
+        resp.set_data(page.replace("</head>", tag + "</head>", 1))
+    except Exception:
+        pass
+    return resp
+
+
 @app.after_request
 def _log_big_responses(resp):
     try:
