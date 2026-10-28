@@ -282,3 +282,27 @@ Alpha or video: "1981: when the 10-year yield hit 15.8%, what happened to mortga
 
 ### Reply target
 None found this run.
+
+## 2026-10-28 (fifth run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search again found nothing on today's Fed decision, so nothing here claims it; spot bitcoin ETF flows reported choppy through October (about $679M weekly outflows early in the month, a $527M inflow day on 19 Oct; check figure, secondary sources). Last run was B, D, A, so this run uses C, E (myth vs reality) and A. Viz is the Bitcoin Dashboard, not used recently.
+
+### Draft 34 (type: C beginner explainer, status: pending)
+Crypto headlines keep saying "ETF outflows". What does that mean? A spot bitcoin ETF is a fund that holds real bitcoin and trades like a share. When more people sell their fund shares than buy new ones, the fund is said to have outflows. It's a rough gauge of how many people are buying or leaving through that route, not a price forecast. Our ETFs lesson covers how funds like this work.
+https://www.growthcapitalgroup.co/learn/beginner/etfs
+
+### Draft 35 (type: E extras, myth vs reality, status: pending)
+Myth: "the market always bounces right back after a crash." Reality: 1929 took until 1954 for the Dow to recover. The Nasdaq took about 15 years after 2000. The S&P 500 was back within about 5 years after 2008 (dividends reinvested, sooner). Recovery times vary a lot, which is why the history is worth reading.
+
+### Draft 36 (type: A viz/tool showcase, status: pending)
+The Bitcoin Dashboard has a section I like: Gold vs Bitcoin. It also shows the next halving, how many coins are mined and left to mine, and what an average house or new car costs in bitcoin instead of dollars. Pricing things in a different unit changes how you see them.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+Image: Bitcoin Dashboard, scrolled to the "Average house in Bitcoin" section with the Gold vs Bitcoin panel visible just below if it fits.
+
+### Angle suggestion
+Video or Alpha: "How long did markets really take to recover? 1929, 1973, 2000, 2008, 2020 side by side." Pairs with draft 35. Education only.
+
+### Reply target
+None found this run.
