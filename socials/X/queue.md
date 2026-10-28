@@ -232,3 +232,30 @@ Short video or Alpha: "1994, the bond market massacre nobody remembers", what th
 
 ### Reply target
 None found this run.
+
+## 2026-10-28 (third run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search found no coverage of today's Fed decision, so nothing here claims it; week ending 23 Oct recap reports WTI up about 4.2% near $105 and gold down about 4.0% near $4,000 (check figure, single source). Last run was B, D, E, so this run uses C, A and E (poll). Viz is the S&P500 Compass, updated 27 Oct with a breadth section.
+
+### Draft 28 (type: C beginner explainer, status: pending)
+Market news says "breadth was weak" when the index barely moved. What's breadth? It's how many stocks are going up versus down, not just where the index ends. An index can rise because a few giant companies climb while most stocks fall. When that happens, the headline number hides what's underneath. Worth checking which one you're looking at.
+
+### Draft 29 (type: A viz/tool showcase, status: pending)
+Added a breadth section to the S&P500 Compass this week. Along with ranking about 500 US stocks best to worst, it now shows what share of stocks are up in each sector, over a day, week, month or year. Handy for seeing whether a move is wide or just a few big names.
+https://www.growthcapitalgroup.co/tools/data-visualisation/league-compass
+Image: S&P500 Compass, compass view with the new breadth section visible and the period set to 1 month.
+
+### Draft 30 (type: E extras, poll, status: pending)
+Poll: when markets get shaky, which chart do you open first?
+Gold
+Oil
+Bitcoin
+The S&P 500
+
+### Angle suggestion
+Alpha or video: "Index vs the average stock: how the 2023-24 market looked wide from above and narrow underneath." Pairs with drafts 28-29. Education only.
+
+### Reply target
+None found this run.
