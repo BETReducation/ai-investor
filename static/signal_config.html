@@ -209,11 +209,11 @@
 .chart-ma-custom input { width: 52px; }
 .chart-ma-custom button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 8px; background: rgba(0,136,255,0.16); color: var(--accent-blue); border: 1px solid var(--accent-blue); border-radius: 3px; cursor: pointer; }
 .chart-range-group { display: none; gap: 4px; }
-.chart-legend-backdrop { position: absolute; left: 0; z-index: 0; pointer-events: none; background: rgba(127,127,127,0.12); display: none; }
+.chart-legend-pill { position: absolute; z-index: 2; pointer-events: none; max-width: 78%; padding: 2px 7px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 10px; line-height: 1.5; color: var(--text-secondary); text-align: right; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
+.chart-legend-pill b { color: var(--text-primary); font-weight: 700; }
 #tvChart { position: relative; z-index: 1; }
 @media (max-width: 768px) {
   .chart-range-group { display: flex; }
-  .chart-legend-backdrop { display: block; }
 }
 .chart-freehand-canvas { position: absolute; z-index: 5; cursor: crosshair; touch-action: none; }
 /* Phone: the timeframe/chart-type buttons and drawing tools sit in one toolbar row above
@@ -3749,7 +3749,9 @@ function ensurePriceChart() {
   // RSI(14) matches the default 'period' in INDICATOR_PARAMS' RSI group above — a
   // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
   // needs to swap at runtime, so it doesn't need its own refresh function).
-  priceChart.createIndicator({ name: 'RSI', calcParams: [14], precision: 0 }, false, { height: subPaneHeight(), id: 'rsi_pane' });
+  _legendPillsOn = _legendMobile();
+  priceChart.createIndicator({ name: 'RSI', calcParams: [14], precision: 0, createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'rsi_pane' });
+  priceChart.subscribeAction('onCrosshairChange', (d) => { if (_legendPillsOn) updateLegendPills(d && d.indicatorData); });
   applyBollingerOverlay();
   applyMovingAverages();
   return priceChart;
@@ -3792,30 +3794,61 @@ function fitPriceRange() {
   _redrawAfterRangeChange();
 }
 
-// Phone only: a faint band behind the RSI/volume legend rows so their text stands out
-// from the lines and bars. The chart canvas is transparent, so plain divs behind it work.
-function updateLegendBackdrops() {
+// Phone only: the library's own RSI/volume legends sit on the left, over the lines and
+// bars, where they are hard to read. On a phone they are blanked (see
+// legendTooltipSource) and shown instead as small solid labels at the right of each pane,
+// which also leaves the left free for the chart itself.
+const _legendMobile = () => window.matchMedia('(max-width: 768px)').matches;
+let _legendPillsOn = false;
+const _blankLegend = () => ({ name: '', calcParamsText: '', values: [] });
+function legendTooltipSource() { return _legendPillsOn ? _blankLegend : undefined; }
+
+function _fmtBig(n) {
+  if (!Number.isFinite(n)) return '–';
+  const a = Math.abs(n);
+  if (a >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (a >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (a >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+function _legendHtml(paneId, d) {
+  if (!d) return '';
+  if (paneId === 'rsi_pane') return d.RSI ? `RSI <b>${Math.round(d.RSI.rsi1)}</b>` : '';
+  const v = d.VOL || d.VOL_FOOTPRINT;
+  if (!v) return '';
+  return `VOL <b>${_fmtBig(v.volume)}</b> &nbsp;MA5 ${_fmtBig(v.ma1)} &nbsp;MA10 ${_fmtBig(v.ma2)}`;
+}
+
+function updateLegendPills(indicatorData) {
   const area = document.querySelector('.chart-area');
   const host = document.getElementById('tvChart');
   if (!area || !host || !priceChart) return;
-  const mobile = window.matchMedia('(max-width: 768px)').matches;
   ['rsi_pane', 'volume_pane'].forEach(id => {
-    let el = document.getElementById('legendBackdrop_' + id);
-    if (!mobile) { if (el) el.remove(); return; }
+    let el = document.getElementById('legendPill_' + id);
+    if (!_legendPillsOn) { if (el) el.remove(); return; }
     const size = priceChart.getSize(id, 'main');
     if (!size) return;
+    let data = indicatorData && indicatorData[id];
+    if (!data) {
+      // No crosshair: show the latest bar's values.
+      const last = priceChart.getDataList().length - 1;
+      data = {};
+      const ind = priceChart.getIndicatorByPaneId(id);
+      if (ind) ind.forEach((inst, name) => { data[name] = inst.result && inst.result[last]; });
+    }
     if (!el) {
       el = document.createElement('div');
-      el.id = 'legendBackdrop_' + id;
-      el.className = 'chart-legend-backdrop';
-      area.insertBefore(el, area.firstChild);
+      el.id = 'legendPill_' + id;
+      el.className = 'chart-legend-pill';
+      area.appendChild(el);
     }
-    el.style.top = (host.offsetTop + size.top) + 'px';
-    el.style.width = size.width + 'px';
-    el.style.height = (id === 'volume_pane' ? 36 : 18) + 'px'; // the volume legend wraps to two rows on a phone
+    el.innerHTML = _legendHtml(id, data);
+    el.style.top = (host.offsetTop + size.top + 3) + 'px';
+    el.style.right = (area.clientWidth - (host.offsetLeft + size.width) + 6) + 'px';
   });
 }
-window.addEventListener('resize', () => setTimeout(updateLegendBackdrops, 80));
+window.addEventListener('resize', () => setTimeout(() => updateLegendPills(), 80));
 
 function applyChartTheme() {
   if (!priceChart) return;
@@ -3960,9 +3993,9 @@ function refreshVolumePaneMode() {
   priceChart.removeIndicator({ paneId: 'volume_pane' });
   if (wantFootprint) {
     ensureFootprintIndicator();
-    priceChart.createIndicator('VOL_FOOTPRINT', false, { height: subPaneHeight(), id: 'volume_pane' });
+    priceChart.createIndicator({ name: 'VOL_FOOTPRINT', createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'volume_pane' });
   } else {
-    priceChart.createIndicator('VOL', false, { height: subPaneHeight(), id: 'volume_pane' });
+    priceChart.createIndicator({ name: 'VOL', createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'volume_pane' });
   }
 }
 
@@ -4687,7 +4720,7 @@ async function loadPriceChart(sym) {
       chart.setStyles({ yAxis: { type: 'normal' } });
       chart.applyNewData(rows);
       refreshVolumePaneMode();
-      setTimeout(updateLegendBackdrops, 60);
+      setTimeout(() => updateLegendPills(), 60);
       syncChartStream();
       return;
     } catch (e) {
