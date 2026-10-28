@@ -146,15 +146,6 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   background: var(--bg3); padding: 12px 14px; border-radius: 8px;
 }
 
-.mode-row { display: flex; gap: 8px; margin-bottom: 20px; }
-.mode-btn {
-  flex: 1; font-family: inherit; font-size: 13px; font-weight: 600;
-  padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg3); color: var(--muted); cursor: pointer; text-align: center;
-  transition: border-color 0.2s, color 0.2s;
-}
-.mode-btn.on { border-color: var(--teal); background: rgba(45,212,191,0.1); color: var(--teal); }
-.mode-hint { font-size: 12px; color: var(--muted); margin: -12px 0 18px; line-height: 1.5; }
 
 .manual-step { margin-bottom: 18px; }
 .manual-num {
@@ -205,7 +196,7 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   <div style="position:relative;z-index:2;">
     <div class="section-badge">Partners Only</div>
     <h1 class="hero-title">Social Post <span class="accent">Studio</span></h1>
-    <p class="hero-sub">Type your ideas once. Get platform-ready posts — body, call to action and an AI image prompt — for every channel.</p>
+    <p class="hero-sub">Type your ideas once. We build a ready-to-paste prompt for every channel; paste it into Claude (or any AI chat), then paste the reply back for a platform-ready post with an image prompt.</p>
   </div>
 </div>
 
@@ -266,11 +257,7 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
           <label class="field">Channels</label>
           <div class="chip-row" id="channelRow" style="margin-bottom:20px;"></div>
 
-          <label class="field">Mode</label>
-          <div class="mode-row" id="modeRow"></div>
-          <div class="mode-hint" id="modeHint"></div>
-
-          <button class="generate-btn" id="generateBtn">Generate posts</button>
+          <button class="generate-btn" id="generateBtn">Prepare prompts</button>
           <div class="error-box" id="errorBox" style="display:none;"></div>
         </div>
       </div>
@@ -314,18 +301,12 @@ const PLATFORMS = {
 const TONES = ["Beginner-friendly", "Professional", "Friendly", "Bold", "Playful", "Inspiring", "Positive", "Careful", "Warning", "Relief"];
 const FIXED_BRAND_VOICE = "friendly, plain-English educator writing for complete beginners; no jargon without a short explanation";
 const FIXED_AUDIENCE = "people aged 18-50 who are trying to get into investing as a hobby, a career, or as a necessity";
-const MODES = [
-  { key: "manual", label: "Manual (free)", hint: "No API key needed. We build the prompt for each platform — you paste it into claude.ai (or any Claude chat), then paste the reply back here." },
-  { key: "auto",   label: "Auto (API key)", hint: "Generates instantly via the site's own Claude API key. Requires ANTHROPIC_API_KEY to be configured on the server." },
-];
 
 let tone = "Beginner-friendly";
-let mode = "auto";
 let selected = new Set();
 let results = {};       // platform -> {title, body, cta, image_prompt}
-let loading = {};       // platform -> bool (auto mode only)
-let prompts = {};       // platform -> prompt text (manual mode)
-let parseErrors = {};   // platform -> error string (manual mode)
+let prompts = {};       // platform -> prompt text
+let parseErrors = {};   // platform -> error string
 let activeTab = null;
 
 // ---------- Input widgets ----------
@@ -354,21 +335,6 @@ Object.entries(PLATFORMS).forEach(([key, p]) => {
   channelRow.appendChild(b);
 });
 
-const modeRow = document.getElementById("modeRow");
-const modeHint = document.getElementById("modeHint");
-function renderModeRow() {
-  modeRow.innerHTML = "";
-  MODES.forEach(m => {
-    const b = document.createElement("button");
-    b.className = "mode-btn" + (mode === m.key ? " on" : "");
-    b.textContent = m.label;
-    b.onclick = () => { mode = m.key; renderModeRow(); renderButton(); };
-    modeRow.appendChild(b);
-  });
-  modeHint.textContent = MODES.find(m => m.key === mode).hint;
-}
-renderModeRow();
-
 // ---------- Helpers ----------
 function showError(msg, transient) {
   const box = document.getElementById("errorBox");
@@ -378,7 +344,6 @@ function showError(msg, transient) {
   if (transient) setTimeout(() => { box.style.display = "none"; }, 2500);
 }
 
-function anyLoading() { return Object.values(loading).some(Boolean); }
 
 function assembleFull(r) {
   const parts = [];
@@ -413,7 +378,7 @@ async function sharePost(r) {
   }
 }
 
-// ---------- Manual (copy-paste) mode ----------
+// ---------- Copy-paste flow ----------
 function currentInputs() {
   return {
     ideas: document.getElementById("ideas").value,
@@ -489,60 +454,13 @@ function parseManualResponse(key, raw) {
   renderTabs(); renderCard();
 }
 
-// ---------- API (auto mode) ----------
-async function runOne(key) {
-  loading[key] = true;
-  renderTabs(); renderCard(); renderButton();
-  try {
-    const resp = await fetch("/api/social-posts", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        platform: key,
-        ideas: document.getElementById("ideas").value,
-        ctaGoal: document.getElementById("ctaGoal").value,
-        sourceUrl: document.getElementById("sourceUrl").value,
-        tone,
-      }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error((resp.status === 401 || resp.status === 403) ? "Your session no longer has access — sign in again." : (data.error || "Request failed"));
-    results[key] = data;
-    if (!activeTab) activeTab = key;
-  } catch (e) {
-    console.error(e);
-    showError(e.message.includes("API key") || e.message.includes("sign in")
-      ? e.message
-      : `Couldn't generate the ${PLATFORMS[key].label} post. Try again.`);
-  } finally {
-    loading[key] = false;
-    renderTabs(); renderCard(); renderButton();
-  }
-}
-
-async function runAll() {
-  const ideas = document.getElementById("ideas").value.trim();
-  if (!ideas) { showError("Add some ideas or bullet points first."); return; }
-  showError(null);
-  results = {};
-  const keys = Object.keys(PLATFORMS).filter(k => selected.has(k));
-  if (!keys.length) { showError("Pick at least one channel."); return; }
-  activeTab = keys[0];
-  await Promise.all(keys.map(k => runOne(k)));
-}
-
-document.getElementById("generateBtn").onclick = () => {
-  if (mode === "manual") prepareManual();
-  else runAll();
-};
+document.getElementById("generateBtn").onclick = () => prepareManual();
 
 // ---------- Rendering ----------
 function renderButton() {
   const btn = document.getElementById("generateBtn");
-  btn.disabled = anyLoading();
-  btn.textContent = anyLoading() ? "Writing your posts…"
-    : mode === "manual" ? "Prepare prompts" : "Generate posts";
+  btn.disabled = false;
+  btn.textContent = "Prepare prompts";
 }
 
 function renderTabs() {
@@ -554,8 +472,7 @@ function renderTabs() {
       + (activeTab === key ? " active" : "")
       + (results[key] ? " has-result" : "");
     b.innerHTML = `<span class="dot" style="background:${PLATFORMS[key].dot}"></span>`
-      + PLATFORMS[key].label
-      + (loading[key] ? ' <span style="font-weight:400">…</span>' : "");
+      + PLATFORMS[key].label;
     b.onclick = () => { activeTab = key; renderTabs(); renderCard(); };
     tabs.appendChild(b);
   });
@@ -652,15 +569,13 @@ function renderCard() {
   const r = activeTab && results[activeTab];
 
   if (!r) {
-    if (mode === "manual" && activeTab && prompts[activeTab]) {
+    if (activeTab && prompts[activeTab]) {
       out.appendChild(renderManualCard(activeTab));
       return;
     }
     const ph = document.createElement("div");
     ph.className = "placeholder";
-    ph.textContent = anyLoading()
-      ? "Claude is drafting each channel in parallel…"
-      : "Your generated posts will appear here, one tab per channel.";
+    ph.textContent = "Your posts will appear here, one tab per channel.";
     out.appendChild(ph);
     return;
   }
@@ -693,16 +608,11 @@ function renderCard() {
   shareBtn.onclick = () => sharePost(r);
   const regenBtn = document.createElement("button");
   regenBtn.className = "btn-muted";
-  regenBtn.textContent = loading[activeTab] ? "…" : "Regenerate";
-  regenBtn.disabled = !!loading[activeTab];
+  regenBtn.textContent = "Regenerate";
   regenBtn.onclick = () => {
-    if (mode === "manual") {
-      delete results[activeTab];
-      prompts[activeTab] = buildPrompt(activeTab, currentInputs());
-      renderTabs(); renderCard();
-    } else {
-      runOne(activeTab);
-    }
+    delete results[activeTab];
+    prompts[activeTab] = buildPrompt(activeTab, currentInputs());
+    renderTabs(); renderCard();
   };
   actions.append(copyBtn, shareBtn, regenBtn);
   head.append(title, actions);
