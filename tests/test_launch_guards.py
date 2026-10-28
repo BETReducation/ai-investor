@@ -120,7 +120,19 @@ def test_alpha_post_share_tags(monkeypatch):
     r = A.app.test_client().get("/alpha/tom/post/7")
     page = r.data.decode()
     assert "Metcalfe&#x27;s Law — Growth Capital Group</title>" in page
-    assert 'og:image" content="https://www.growthcapitalgroup.co/api/alpha/content/7/image"' in page
+    assert 'og:image" content="https://www.growthcapitalgroup.co/share-image/alpha/7.jpg"' in page
     assert "The value of a network" in page
     item["status"] = "draft"
     assert "og-default.jpg" in A.app.test_client().get("/alpha/tom/post/7").data.decode()
+
+
+def test_alpha_share_image_resized(monkeypatch):
+    import io
+    from PIL import Image
+    big = io.BytesIO()
+    Image.effect_noise((1600, 2400), 80).convert("RGB").save(big, "PNG")
+    monkeypatch.setattr(A, "alpha_content_get", lambda i: {"id": i, "status": "published"})
+    monkeypatch.setattr(A, "alpha_content_get_image", lambda i: ("x.png", big.getvalue()))
+    r = A.app.test_client().get("/share-image/alpha/7.jpg")
+    assert r.status_code == 200 and r.mimetype == "image/jpeg" and len(r.data) < 300_000
+    assert Image.open(io.BytesIO(r.data)).size == (1200, 630)

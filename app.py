@@ -5582,6 +5582,38 @@ def api_lesson_related_alpha(slug):
     ]})
 
 
+@app.route("/share-image/alpha/<int:item_id>.jpg")
+def alpha_share_image(item_id):
+    """Share-card copy of a published post's hero image: link-preview crawlers skip
+    images over ~300KB and honour robots.txt (which blocks /api/), so the original
+    can't be used directly. Fitted onto a 1200x630 canvas so tall infographics aren't cropped."""
+    item = alpha_content_get(item_id)
+    if not item or item.get("status") != "published":
+        return jsonify({"error": "Not found"}), 404
+    _filename, file_bytes = alpha_content_get_image(item_id)
+    if file_bytes is None:
+        return jsonify({"error": "No image attached"}), 404
+    try:
+        import io
+        from PIL import Image
+        img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        img.thumbnail((1200, 630), Image.LANCZOS)
+        canvas = Image.new("RGB", (1200, 630), (6, 8, 18))
+        canvas.paste(img, ((1200 - img.width) // 2, (630 - img.height) // 2))
+        out = b""
+        for q in (85, 75, 65, 55):
+            buf = io.BytesIO()
+            canvas.save(buf, "JPEG", quality=q, optimize=True)
+            out = buf.getvalue()
+            if len(out) < 250_000:
+                break
+    except Exception:
+        return jsonify({"error": "Image unavailable"}), 404
+    resp = Response(out, mimetype="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    resp.add_etag()
+    return resp.make_conditional(request)
+
+
 def _og_text(text: str, limit: int = 200) -> str:
     text = re.sub(r"^#+\s*", "", text or "", flags=re.M)
     text = re.sub(r"\s+", " ", text).strip()
@@ -5603,9 +5635,12 @@ def alpha_post_page(slug, post_id):
             page = f.read()
         title = html_escape(f"{item['title']} — Growth Capital Group", quote=True)
         desc = html_escape(_og_text(item.get("subtitle") or item.get("snippet") or item.get("body") or ""), quote=True)
-        img = _alpha_public_image_url(item)
-        if img and img.startswith("/"):
-            img = PUBLIC_BASE_URL + img
+        if item.get("image_filename"):
+            img = f"{PUBLIC_BASE_URL}/share-image/alpha/{post_id}.jpg"
+        else:
+            img = item.get("image_url")
+            if img and img.startswith("/"):
+                img = PUBLIC_BASE_URL + img
         url = f"{PUBLIC_BASE_URL}/alpha/{slug}/post/{post_id}"
 
         def put(prop_pattern: str, value: str) -> None:
