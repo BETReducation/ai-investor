@@ -212,14 +212,131 @@
 .chart-legend-pill { position: absolute; z-index: 2; pointer-events: none; max-width: 78%; padding: 2px 7px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 10px; line-height: 1.5; color: var(--text-secondary); text-align: right; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
 .chart-legend-pill b { color: var(--text-primary); font-weight: 700; }
 #tvChart { position: relative; z-index: 1; }
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 520px) and (orientation: landscape) {
   .chart-range-group { display: flex; }
+}
+/* Phone in landscape (wider than 768px but short): gcg.css only switches to the
+   tabbed single-column layout below 768px wide, which leaves the desktop three-column
+   layout here with no height for the chart. This repeats that layout for landscape,
+   scoped to this page because other pages sharing gcg.css have no mobile tab bar. */
+@media (min-width: 769px) and (max-height: 520px) and (orientation: landscape) {
+
+    body { overflow: hidden; }
+
+    .topbar {
+      padding: 0 12px;
+      height: 40px;
+    }
+    .topbar-logo .logo-sub { display: none; }
+    .topbar-ticker-tape    { display: none; }
+    .topbar-status         { gap: 8px; }
+    .topbar-status > *:not(#engineBtn):not(#engineDot):not(#engineStatus):not(.theme-toggle):not(#clock) { display: none; }
+
+    .layout {
+      flex-direction: column;
+      height: calc(100vh - 40px - 38px - 52px - 28px); /* topbar + apex-nav + mobile nav + disclaimer */
+      overflow: hidden;
+    }
+
+    /* hide resizer handles on mobile */
+    .panel-resizer { display: none; }
+
+    /* each panel becomes a full-screen tab */
+    #leftPanel, #rightPanel {
+      width: 100% !important;
+      min-width: unset !important;
+      max-width: unset !important;
+      height: 100%;
+      flex-shrink: 0;
+      display: none;
+      border: none;
+      overflow-y: auto;
+    }
+    #leftPanel.mobile-active,
+    #rightPanel.mobile-active  { display: block; }
+
+    .center-panel {
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .center-panel.mobile-active { display: flex; }
+
+    /* compact stats row — horizontal scroll, never shrink */
+    .stats-row {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+      scrollbar-width: none;
+    }
+    .stats-row::-webkit-scrollbar { display: none; }
+    .stat-cell { min-width: 90px; padding: 8px 10px; }
+
+    /* chart fills remaining space, strictly contained */
+    .chart-area {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #tvChart {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    #tvChart iframe {
+      max-height: 100% !important;
+    }
+
+    /* positions table — horizontal scroll */
+    .positions-table { font-size: 9px; }
+    .positions-table th,
+    .positions-table td { padding: 5px 6px; white-space: nowrap; }
+
+    /* ── MOBILE NAV BAR ── */
+    .mobile-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 52px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      z-index: 10000; /* above TradingView iframe */
+    }
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 1px;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .mobile-nav-btn.active       { color: var(--accent-blue); }
+    .mobile-nav-btn.alert-active { color: var(--accent-amber); }
+  
+  .mobile-nav { display: flex; height: 40px; }
+  .site-nav { height: 44px !important; }
+  .site-nav-logo img { height: 32px; }
+  .layout { height: calc(100vh - 44px - 40px); }
+  .center-panel > :nth-child(1), .center-panel > .stats-row, .center-panel > :nth-child(4),
+  .disclaimer-bar, .tool-footer { display: none !important; }
 }
 .chart-freehand-canvas { position: absolute; z-index: 5; cursor: crosshair; touch-action: none; }
 /* Phone: the timeframe/chart-type buttons and drawing tools sit in one toolbar row above
    the chart instead of floating over it, where they covered the OHLC readout and the
    BOLL/RSI/VOL legend lines. */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 520px) and (orientation: landscape) {
   .chart-area { display: flex; flex-wrap: wrap; align-content: flex-start; }
   .chart-topbar { position: static; order: 1; padding: 4px 0 4px 8px; flex: 0 0 auto; }
   .chart-sidebar { position: static; order: 2; flex: 1 1 0; min-width: 0; flex-direction: row; gap: 4px; padding: 4px 8px 4px 0; overflow-x: auto; scrollbar-width: none; align-items: center; }
@@ -3734,6 +3851,20 @@ function initChart() {
   else showChartPlaceholder();
 }
 
+// A phone in either orientation: narrow portrait, or the short landscape screen (wider than
+// 768px but under ~520px tall) where the desktop three-column layout leaves the chart no height.
+const COMPACT_MQ = '(max-width: 768px), (max-height: 520px) and (orientation: landscape)';
+function isCompactScreen() { return window.matchMedia(COMPACT_MQ).matches; }
+let _compactAtCreate = null;
+window.matchMedia(COMPACT_MQ).addEventListener('change', () => {
+  // The chart's pane heights and legends are chosen at creation, so rebuild it when the
+  // screen flips between phone and desktop layouts (e.g. rotating the phone).
+  if (!priceChart || _compactAtCreate === isCompactScreen()) return;
+  try { klinecharts.dispose('tvChart'); } catch (e) {}
+  priceChart = null;
+  if (currentAsset) loadPriceChart(currentAsset);
+});
+
 function ensurePriceChart() {
   if (priceChart) return priceChart;
   if (typeof klinecharts === 'undefined') return null;
@@ -3741,6 +3872,7 @@ function ensurePriceChart() {
   if (!container) return null;
   container.innerHTML = '';
   priceChart = klinecharts.init('tvChart');
+  _compactAtCreate = isCompactScreen();
   // The volume pane itself (plain VOL vs. the Volume Footprint split) is created by
   // refreshVolumePaneMode(), called after every applyNewData() in loadPriceChart() —
   // not here, so there's a single place that ever creates it (creating it both here
@@ -3759,7 +3891,7 @@ function ensurePriceChart() {
 
 // RSI and volume panes are shorter on phones so the price candles keep most of the height.
 function subPaneHeight() {
-  return window.matchMedia('(max-width: 768px)').matches ? 52 : 80;
+  return (isCompactScreen() ? (window.innerWidth > 768 ? 40 : 52) : 80);
 }
 
 // ---- Price range (phone-friendly) ----------------------------------------------------
@@ -3798,7 +3930,7 @@ function fitPriceRange() {
 // bars, where they are hard to read. On a phone they are blanked (see
 // legendTooltipSource) and shown instead as small solid labels at the right of each pane,
 // which also leaves the left free for the chart itself.
-const _legendMobile = () => window.matchMedia('(max-width: 768px)').matches;
+const _legendMobile = () => isCompactScreen();
 let _legendPillsOn = false;
 const _blankLegend = () => ({ name: '', calcParamsText: '', values: [] });
 function legendTooltipSource() { return _legendPillsOn ? _blankLegend : undefined; }
@@ -3856,7 +3988,7 @@ function applyChartTheme() {
   const cssVar = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
   const grid = dark ? 'rgba(30,42,58,0.6)' : 'rgba(208,216,232,0.6)';
   const text = cssVar('--text-muted', dark ? '#8b98a5' : '#5b6472');
-  const legendSize = window.matchMedia('(max-width: 768px)').matches ? 9 : 12; // smaller legend/axis text on phones
+  const legendSize = isCompactScreen() ? 9 : 12; // smaller legend/axis text on phones
   const up = cssVar('--accent-green', '#00ff88');
   const down = cssVar('--accent-red', '#ff3355');
   const tipBg = dark ? '#0d1117' : '#eef0f5';
@@ -5724,7 +5856,7 @@ checkSession();
 (function () {
   var currentTab = 'chart';
 
-  function isMobile() { return window.innerWidth <= 768; }
+  function isMobile() { return isCompactScreen(); }
 
   function mobileTab(tab) {
     if (!isMobile()) return;
