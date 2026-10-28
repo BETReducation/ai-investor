@@ -209,6 +209,19 @@
 .chart-ma-custom input { width: 52px; }
 .chart-ma-custom button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 8px; background: rgba(0,136,255,0.16); color: var(--accent-blue); border: 1px solid var(--accent-blue); border-radius: 3px; cursor: pointer; }
 .chart-freehand-canvas { position: absolute; z-index: 5; cursor: crosshair; touch-action: none; }
+/* Phone: the timeframe/chart-type buttons and drawing tools sit in one toolbar row above
+   the chart instead of floating over it, where they covered the OHLC readout and the
+   BOLL/RSI/VOL legend lines. */
+@media (max-width: 768px) {
+  .chart-area { display: flex; flex-wrap: wrap; align-content: flex-start; }
+  .chart-topbar { position: static; order: 1; padding: 4px 0 4px 8px; flex: 0 0 auto; }
+  .chart-sidebar { position: static; order: 2; flex: 1 1 0; min-width: 0; flex-direction: row; gap: 4px; padding: 4px 8px 4px 0; overflow-x: auto; scrollbar-width: none; align-items: center; }
+  .chart-sidebar::-webkit-scrollbar { display: none; }
+  .chart-sidebar .chart-tool-btn { flex: 0 0 auto; width: 30px; height: 26px; }
+  .chart-sidebar .chart-tool-sep { display: none; }
+  .chart-sidebar .chart-tool-btn[data-tip]:hover::after { display: none; }
+  #tvChart { order: 3; flex: 0 0 100%; height: calc(100% - 38px); }
+}
 .chart-text-editor { position: absolute; z-index: 20; display: flex; gap: 4px; padding: 4px; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
 .chart-text-editor input { width: 220px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--text-primary); border: none; outline: none; padding: 3px 4px; }
 .chart-text-editor button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--accent-blue); color: #fff; border: none; border-radius: 3px; cursor: pointer; }
@@ -3729,10 +3742,15 @@ function ensurePriceChart() {
   // RSI(14) matches the default 'period' in INDICATOR_PARAMS' RSI group above — a
   // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
   // needs to swap at runtime, so it doesn't need its own refresh function).
-  priceChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { height: 80, id: 'rsi_pane' });
+  priceChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { height: subPaneHeight(), id: 'rsi_pane' });
   applyBollingerOverlay();
   applyMovingAverages();
   return priceChart;
+}
+
+// RSI and volume panes are shorter on phones so the price candles keep most of the height.
+function subPaneHeight() {
+  return window.matchMedia('(max-width: 768px)').matches ? 52 : 80;
 }
 
 function applyChartTheme() {
@@ -3741,6 +3759,7 @@ function applyChartTheme() {
   const cssVar = (name, fallback) => (getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback);
   const grid = dark ? 'rgba(30,42,58,0.6)' : 'rgba(208,216,232,0.6)';
   const text = cssVar('--text-muted', dark ? '#8b98a5' : '#5b6472');
+  const legendSize = window.matchMedia('(max-width: 768px)').matches ? 9 : 12; // smaller legend/axis text on phones
   const up = cssVar('--accent-green', '#00ff88');
   const down = cssVar('--accent-red', '#ff3355');
   const tipBg = dark ? '#0d1117' : '#eef0f5';
@@ -3753,11 +3772,11 @@ function applyChartTheme() {
     candle: {
       bar: { upColor: up, downColor: down, noChangeColor: text, upBorderColor: up, downBorderColor: down, upWickColor: up, downWickColor: down },
       priceMark: { last: { upColor: up, downColor: down, text: { family } } },
-      tooltip: { text: { color: text, family } },
+      tooltip: { text: { color: text, family, size: legendSize } },
     },
-    indicator: { tooltip: { text: { color: text, family } } },
-    xAxis: { axisLine: { color: grid }, tickText: { color: text, family } },
-    yAxis: { axisLine: { color: grid }, tickText: { color: text, family } },
+    indicator: { tooltip: { text: { color: text, family, size: legendSize } } },
+    xAxis: { axisLine: { color: grid }, tickText: { color: text, family, size: legendSize } },
+    yAxis: { axisLine: { color: grid }, tickText: { color: text, family, size: legendSize } },
     crosshair: {
       horizontal: { text: { backgroundColor: tipBg, color: text, family } },
       vertical: { text: { backgroundColor: tipBg, color: text, family } },
@@ -3872,9 +3891,9 @@ function refreshVolumePaneMode() {
   priceChart.removeIndicator({ paneId: 'volume_pane' });
   if (wantFootprint) {
     ensureFootprintIndicator();
-    priceChart.createIndicator('VOL_FOOTPRINT', false, { height: 80, id: 'volume_pane' });
+    priceChart.createIndicator('VOL_FOOTPRINT', false, { height: subPaneHeight(), id: 'volume_pane' });
   } else {
-    priceChart.createIndicator('VOL', false, { height: 80, id: 'volume_pane' });
+    priceChart.createIndicator('VOL', false, { height: subPaneHeight(), id: 'volume_pane' });
   }
 }
 
