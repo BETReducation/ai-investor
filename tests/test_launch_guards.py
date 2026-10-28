@@ -169,3 +169,15 @@ def test_500_handler_alerts_once_and_hides_details(monkeypatch):
     import time as _t
     _t.sleep(0.2)
     assert len(sent) == 1
+
+
+def test_backup_script_encoding_and_prune(tmp_path):
+    import datetime as dt, importlib.util, json, pathlib
+    spec = importlib.util.spec_from_file_location("backup_db", pathlib.Path(A.__file__).parent / "scripts" / "backup_db.py")
+    B = importlib.util.module_from_spec(spec); spec.loader.exec_module(B)
+    row = [1, b"\x00\xff", dt.datetime(2026, 10, 29, 1, 2), None]
+    assert json.loads(json.dumps(row, default=B._encode)) == [1, {"__bytes_b64__": "AP8="}, "2026-10-29T01:02:00", None]
+    for d in ("2026-10-01", "2026-10-02", "2026-10-03"):
+        (tmp_path / d).mkdir()
+    B.prune(tmp_path, keep=2)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["2026-10-02", "2026-10-03"]
