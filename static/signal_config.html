@@ -328,7 +328,7 @@
   .mobile-nav { display: flex; height: 40px; }
   .site-nav { height: 44px !important; }
   .site-nav-logo img { height: 32px; }
-  .layout { height: calc(100vh - 44px - 40px); }
+  .layout { height: calc(100vh - 44px - 40px); height: calc(100dvh - 44px - 40px); } /* dvh: iOS Safari's 100vh ignores its toolbars */
   .center-panel > :nth-child(1), .center-panel > .stats-row, .center-panel > :nth-child(4),
   .disclaimer-bar, .tool-footer { display: none !important; }
 }
@@ -3980,7 +3980,33 @@ function updateLegendPills(indicatorData) {
     el.style.right = (area.clientWidth - (host.offsetLeft + size.width) + 6) + 'px';
   });
 }
-window.addEventListener('resize', () => setTimeout(() => updateLegendPills(), 80));
+// Rotation: phones fire resize before the new layout has settled, so re-measure a few times.
+function _settleChartLayout() {
+  [80, 300, 800, 1500].forEach(ms => setTimeout(() => {
+    if (priceChart) priceChart.resize();
+    // The chart re-measures its panes shortly after resize(), so read the new sizes after that.
+    setTimeout(() => updateLegendPills(), 250);
+  }, ms));
+}
+window.addEventListener('resize', _settleChartLayout);
+window.addEventListener('orientationchange', _settleChartLayout);
+// Rotating changes the chart's container size without always firing a window resize that
+// the chart has finished laying out for, so also watch the container itself.
+// Safety net for any rotation/resize event a phone browser doesn't deliver in time.
+let _lastChartBox = '';
+setInterval(() => {
+  const host = document.getElementById('tvChart');
+  if (!priceChart || !host) return;
+  const box = host.offsetWidth + 'x' + host.offsetHeight;
+  if (box !== _lastChartBox) { _lastChartBox = box; priceChart.resize(); setTimeout(() => updateLegendPills(), 250); }
+}, 700);
+let _chartObsTimer = null;
+if (window.ResizeObserver) {
+  new ResizeObserver(() => {
+    clearTimeout(_chartObsTimer);
+    _chartObsTimer = setTimeout(() => { if (priceChart) { priceChart.resize(); setTimeout(() => updateLegendPills(), 250); } }, 120);
+  }).observe(document.getElementById('tvChart'));
+}
 
 function applyChartTheme() {
   if (!priceChart) return;
