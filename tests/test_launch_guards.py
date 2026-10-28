@@ -146,3 +146,26 @@ def test_canonical_links():
     assert 'rel="canonical"' not in c.get("/login").data.decode()
     assert 'rel="canonical"' not in c.get("/zzz-not-a-page").data.decode()
     assert c.get("/").status_code == 200
+
+
+def test_healthz_ok():
+    r = A.app.test_client().get("/healthz")
+    assert r.status_code == 200 and r.get_json()["ok"] is True
+
+
+def test_500_handler_alerts_once_and_hides_details(monkeypatch):
+    sent = []
+    monkeypatch.setattr(A, "_send_error_alert", lambda s, b: sent.append(s))
+    A._error_alert_state.update(seen={}, day="", count=0)
+
+    def _boom(*a, **k):
+        raise RuntimeError("secret detail")
+
+    monkeypatch.setitem(A.app.view_functions, "api_me", _boom)
+    A.app.config["PROPAGATE_EXCEPTIONS"] = False
+    c = A.app.test_client()
+    r1, r2 = c.get("/api/me"), c.get("/api/me")
+    assert r1.status_code == 500 and b"secret detail" not in r1.data
+    import time as _t
+    _t.sleep(0.2)
+    assert len(sent) == 1

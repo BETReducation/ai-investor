@@ -26,6 +26,7 @@ import contextlib
 import sys
 import re
 import smtplib
+import traceback
 import requests
 from bs4 import BeautifulSoup
 from email.mime.text import MIMEText
@@ -8575,6 +8576,69 @@ def _not_found(_e):
     if request.path.startswith("/api/"):
         return jsonify({"error": "Not found"}), 404
     return send_from_directory("static", "404.html"), 404
+
+
+# Unhandled exceptions get emailed to the admin so outages don't wait for a user report.
+# Throttled per (exception, path) and capped per day so a crash loop can't flood the inbox
+# or burn the email quota. In-memory, so counts reset on restart.
+_ERROR_ALERT_COOLDOWN = 900
+_ERROR_ALERT_DAILY_CAP = 20
+_error_alert_state = {"seen": {}, "day": "", "count": 0}
+_error_alert_lock = threading.Lock()
+
+
+def _error_alert_allowed(key):
+    now = time.time()
+    today = _dt.datetime.utcnow().strftime("%Y-%m-%d")
+    with _error_alert_lock:
+        st = _error_alert_state
+        if st["day"] != today:
+            st["day"], st["count"] = today, 0
+        if st["count"] >= _ERROR_ALERT_DAILY_CAP or now - st["seen"].get(key, 0) < _ERROR_ALERT_COOLDOWN:
+            return False
+        st["seen"][key] = now
+        st["count"] += 1
+        return True
+
+
+def _send_error_alert(subject, body):
+    to_addr = os.environ.get("ERROR_ALERT_EMAIL") or next(iter(ADMIN_EMAILS))
+    sender = os.environ.get("RESEND_FROM_ALERTS", "Growth Capital Group <alerts@growthcapitalgroup.co>")
+    try:
+        _send_email(to_addr, subject, body, sender=sender)
+    except Exception:
+        app.logger.exception("error alert email failed")
+
+
+@app.errorhandler(500)
+def _server_error(e):
+    orig = getattr(e, "original_exception", None) or e
+    try:
+        app.logger.error("Unhandled %s on %s %s", type(orig).__name__, request.method, request.path,
+                         exc_info=(type(orig), orig, orig.__traceback__))
+        if _error_alert_allowed((type(orig).__name__, request.path)):
+            tb = "".join(traceback.format_exception(type(orig), orig, orig.__traceback__))[-3000:]
+            body = f"{request.method} {request.url}\nIP: {_client_ip()}\nTime (UTC): {_dt.datetime.utcnow().isoformat()}\n\n{tb}"
+            threading.Thread(target=_send_error_alert, args=(f"[GCG] 500 on {request.path}: {type(orig).__name__}", body),
+                             daemon=True).start()
+    except Exception:
+        pass
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Something went wrong on our side. Please try again."}), 500
+    return Response("Something went wrong on our side. Please try again in a moment.", status=500, mimetype="text/plain")
+
+
+@app.route("/healthz")
+def healthz():
+    # Uptime monitors hit this: confirms the process is serving and, when Postgres is in use, that the DB answers.
+    if DATABASE_URL:
+        try:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("SELECT 1")
+        except Exception:
+            app.logger.exception("healthz: database check failed")
+            return jsonify({"ok": False, "db": False}), 503
+    return jsonify({"ok": True}), 200
 
 
 @app.route("/favicon.ico")
