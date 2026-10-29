@@ -378,3 +378,28 @@ Alpha or video: "Public ledgers vs private ones: from paper bank books to Bitcoi
 
 ### Reply target
 None found this run.
+
+## 2026-10-29 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search found nothing on the 28 Oct Fed outcome or today's moves, so no claims about either; background only: Nasdaq reportedly lost about 4.5% last week, its worst since June, on AI debt worries (check figure, secondary sources). Last run was C, B, D, so this run uses A, B and E (word of the day). 2000 and 2022 Nasdaq figures from memory (check figure).
+
+### Draft 46 (type: A viz/tool showcase, status: pending)
+The Nasdaq Wagon Wheel puts every stock in the index around a ring, coloured by how it moved. On a rough week you can see whether the damage was a few giants or most of the ring. Worth a look before deciding a headline tells the whole story.
+https://www.growthcapitalgroup.co/tools/data-visualisation/nasdaq-wagon-wheel
+Image: Nasdaq Wagon Wheel, full ring visible with the period set to 1 week.
+
+### Draft 47 (type: B thoughts/take, status: pending)
+The Nasdaq has had worse weeks than this. In 2000 it fell about 78% from peak to trough over roughly two and a half years, and it took until 2015 to close above its March 2000 high. In 2022 it dropped around 33% in a year and recovered within about two years. Same index, very different shapes. Sorting out which kind of fall you're in is only possible afterwards.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 48 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's the fall from a peak to the next low, before a new high. If a stock goes from 100 to 70, that's a 30% drawdown, and it needs a 43% gain just to get back to 100. That asymmetry is why people who study history care so much about it.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Video or Alpha: "The Nasdaq's two big drawdowns, 2000 and 2022, side by side: what fell, how long, and what recovered first." Pairs with drafts 47 and 48. Education only.
+
+### Reply target
+None found this run.
