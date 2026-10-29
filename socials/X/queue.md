@@ -306,3 +306,25 @@ Video or Alpha: "How long did markets really take to recover? 1929, 1973, 2000, 
 
 ### Reply target
 None found this run.
+
+## 2026-10-29
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search returned nothing current on today's markets or Fed, so no news claims are made; drafts use history and recent site changes. Last run was C, E, A, so this run uses B, D and E (build note). 1987 figures from memory (check figure).
+
+### Draft 37 (type: B thoughts/take, status: pending)
+19 October 1987: the Dow fell about 22.6% in a single day, still the biggest one-day drop on record. Most people assume that year was a disaster. The S&P 500 actually finished 1987 slightly up. The crash was brutal, but it sat inside a year that had climbed hard before it. Annual returns can hide a lot.
+
+### Draft 38 (type: D question, status: pending)
+What's the first market crash you remember living through, and what did you do? Or if you weren't around for one, which one do you wish you'd seen up close?
+
+### Draft 39 (type: E extras, behind-the-scenes build note, status: pending)
+Spent the last few days making the Signals chart behave on a phone held sideways. Turns out a chart that looks fine upright can end up with a tiny plot area and menus running off the screen when you rotate it. Fixed the sizing and the flyouts. Small things, but I use it on my phone more than I expected.
+https://www.growthcapitalgroup.co/tools/signals
+
+### Angle suggestion
+Video or Alpha: "1987 vs 1929: two crashes, two very different aftermaths, and what the Fed did differently." Pairs with draft 37. Education only.
+
+### Reply target
+None found this run.
