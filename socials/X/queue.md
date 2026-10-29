@@ -353,3 +353,28 @@ Alpha or video: "29 October 1929, hour by hour: what happened on Black Tuesday a
 
 ### Reply target
 None found this run.
+
+## 2026-10-29 (third run)
+
+Status: pending
+
+Ideas: used #4 (Cardano, trilemma) and #5 (Midnight, privacy). Both reworded as explanation, not as claims that any chain "solves" anything or is the future of finance. News used: search found no coverage dated today; Midnight mainnet reported live since late March 2026 with a federated validator set at launch (check figure). Last run was C, A, E, so this run uses C, B and D.
+
+### Draft 43 (type: C beginner explainer, status: pending)
+The "blockchain trilemma": a network is said to struggle to be secure, decentralised and fast all at once, and improving two tends to cost you the third. Bitcoin leans on security and decentralisation, so it's slow. Cardano is one of several chains that designed around the trade-off from the start. Whether any design really escapes it is still an open debate.
+Covers idea #4.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 44 (type: B thoughts/take, status: pending)
+Your bank statement is private. A public blockchain's isn't: every transaction is visible to anyone. That's fine for a hobbyist and a problem for a company paying suppliers. Midnight, linked to Cardano, is one attempt at "selective disclosure": prove something is true without showing the data. Old tension, new maths.
+Covers idea #5.
+https://www.growthcapitalgroup.co/learn/artifacts
+
+### Draft 45 (type: D question, status: pending)
+Do you want your financial life to be private by default, or open so anyone can check it? Banks chose private, Bitcoin chose public. Which side are you on, and has it changed since you started reading about markets?
+
+### Angle suggestion
+Alpha or video: "Public ledgers vs private ones: from paper bank books to Bitcoin to zero-knowledge proofs, and why privacy keeps coming back as a design problem." Pairs with drafts 43 and 44. Education only.
+
+### Reply target
+None found this run.
