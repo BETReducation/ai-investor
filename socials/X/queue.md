@@ -328,3 +328,28 @@ Video or Alpha: "1987 vs 1929: two crashes, two very different aftermaths, and w
 
 ### Reply target
 None found this run.
+
+## 2026-10-29 (second run)
+
+Status: pending
+
+Ideas: none unused (ideas endpoint returned only #2, already used). News used: search again returned nothing current, so no news claims; drafts use history and existing pages. Last run was B, D, E, so this run uses C, A and E (this day in history). 1929 figures from memory (check figure).
+
+### Draft 40 (type: C beginner explainer, status: pending)
+What's a stock split? A company cuts each share into several smaller ones, say 1 into 4. The price per share drops to a quarter, but you own four times as many, so nothing about the company's value changes. It's like swapping a £20 note for four fivers. Splits make shares easier to buy in small amounts, that's about it.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 41 (type: A viz/tool showcase, status: pending)
+The Global Heat Map colours world markets by how they did over a day, week, month or year. Zoom out to a year and you can see how rarely every country moves in the same direction. Handy for seeing whether a move was global or just one region.
+https://www.growthcapitalgroup.co/tools/data-visualisation/global-heat-map
+Image: Global Heat Map, whole-world view with the period set to 1 year.
+
+### Draft 42 (type: E extras, this day in market history, status: pending)
+This day, 29 October 1929: Black Tuesday. The Dow fell about 12% in one session, after a similar drop the day before. It then kept sliding until July 1932, roughly 89% below its 1929 peak. The recovery took until 1954. Worth remembering that crashes can be a start, not an end.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Alpha or video: "29 October 1929, hour by hour: what happened on Black Tuesday and why the bottom took almost three years." Pairs with draft 42. Education only.
+
+### Reply target
+None found this run.
