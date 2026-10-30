@@ -353,7 +353,7 @@
   .center-panel .chart-area { flex: 1 0 260px; min-height: 260px; }
 }
 .chart-text-editor { position: absolute; z-index: 20; display: flex; gap: 4px; padding: 4px; background: var(--bg-card); border: 1px solid var(--accent-blue); border-radius: 3px; box-shadow: 0 4px 16px rgba(0,0,0,0.35); }
-.chart-text-editor input { width: 220px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--text-primary); border: none; outline: none; padding: 3px 4px; }
+.chart-text-editor input { width: 220px; min-width: 0; flex: 1 1 auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--text-primary); border: none; outline: none; padding: 3px 4px; }
 .chart-text-editor button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 3px 8px; background: var(--accent-blue); color: #fff; border: none; border-radius: 3px; cursor: pointer; }
 /* Price-alert bell — scoped here (not gcg.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
 .stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
@@ -4404,6 +4404,12 @@ function openTextEditor(overlayId, isNew) {
   pop.style.top = Math.max(4, tv.offsetTop + px.y - 40) + 'px';
   pop.innerHTML = '<input type="text" maxlength="120" placeholder="Type a note, press Enter"><button type="button">OK</button>';
   tv.parentElement.appendChild(pop);
+  // Keep the whole popup (input + OK) inside the chart area: near the right edge it used to
+  // spill off screen, leaving an unfinishable text box.
+  const area = tv.parentElement;
+  pop.style.maxWidth = (area.clientWidth - 8) + 'px';
+  pop.style.left = Math.max(4, Math.min(parseFloat(pop.style.left), area.clientWidth - pop.offsetWidth - 4)) + 'px';
+  pop.style.top = Math.max(4, Math.min(parseFloat(pop.style.top), area.clientHeight - pop.offsetHeight - 4)) + 'px';
   textEditorEl = pop;
   const input = pop.querySelector('input');
   input.value = ov.extendData || '';
