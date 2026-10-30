@@ -403,3 +403,26 @@ Video or Alpha: "The Nasdaq's two big drawdowns, 2000 and 2022, side by side: wh
 
 ### Reply target
 None found this run.
+
+## 2026-10-30
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches found nothing dated today; background only: Nasdaq Composite reportedly fell about 2.6% on 22 Oct on AI spending worries, and the Fed met 27-28 Oct (outcome not found, no claims made) (check figure). Last run was A, B, E, so this run uses C, D and E (this day in history). 1929 figures from memory (check figure).
+
+### Draft 49 (type: C beginner explainer, status: pending)
+What's a "bear market rally"? It's a sharp jump in prices in the middle of a longer fall. Stocks drop a lot, bounce 10% or more, then drop again. The trouble is that in real time it looks exactly like a recovery. Only afterwards can you see which one it was. Knowing the term at least stops a good week looking like the end of the story.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 50 (type: D question, status: pending)
+Which market fall do you think taught people the most: 1929, 1987, 2000, 2008 or 2020? Pick one and say why, in a line.
+
+### Draft 51 (type: E extras, this day in market history, status: pending)
+This day, 30 October 1929: the day after Black Tuesday, the Dow jumped about 12%, one of its biggest one-day gains ever. Within weeks it had retraced much of the fall, and then it kept falling until 1932. A huge up day inside a crash is a very old pattern.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Alpha or video: "Biggest up days in history: why so many sit inside bear markets (1929, 2008, 2020)." Pairs with drafts 49 and 51. Education only.
+
+### Reply target
+None found this run.
