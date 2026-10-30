@@ -426,3 +426,31 @@ Alpha or video: "Biggest up days in history: why so many sit inside bear markets
 
 ### Reply target
 None found this run.
+
+## 2026-10-30 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches found no market coverage dated today or the 28 Oct Fed outcome, so no claims about either; background only: a secondary source says the 10-year Treasury yield pushed back above 5% around the September Fed hike (check figure). Yield history from memory (check figure). Earlier runs today used C, D, E, so this run uses A, B and E (poll).
+
+### Draft 52 (type: A viz/tool showcase, status: pending)
+The Bull Bear Meter squeezes a lot of market signals into one dial. What I like is that it shows how mixed things usually are: it's rare for everything to point the same way at once. Worth a glance when the headlines sound very sure of themselves.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bull-bear-meter
+Image: Bull Bear Meter, full dial and the signal breakdown below it in one screenshot.
+
+### Draft 53 (type: B thoughts/take, status: pending)
+The 10-year US Treasury yield touching 5% sounds dramatic, but it has been there before: about 5.3% in 2007, 5% briefly in October 2023, and nearly 16% in 1981. The number matters less than how fast it got there and what else was going on. Context is the whole story with yields.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 54 (type: E extras, poll, status: pending)
+Poll: first thing you check when you open a markets app?
+Stocks
+Bitcoin
+Gold or oil
+I just look at the news
+
+### Angle suggestion
+Alpha or video: "Bond yields in four eras: 1981, 2007, 2020 and now, and what each level meant at the time." Pairs with draft 53. Education only.
+
+### Reply target
+None found this run.
