@@ -6,7 +6,7 @@ single line `DATABASE_URL=...` (use the Postgres service's public/TCP-proxy URL;
 the file lives outside the repo on purpose).
 
 Output: ~/Documents/GCG-Backups/<YYYY-MM-DD>/<table>.jsonl.gz + manifest.json.
-The newest KEEP backups are kept.
+The newest KEEP backups are kept (each is ~200MB, mostly alpha_content).
 """
 import base64
 import datetime as dt
@@ -21,7 +21,7 @@ from pathlib import Path
 
 import psycopg2
 
-KEEP = 14
+KEEP = 7
 ENV_FILE = Path.home() / ".gcg-backup.env"
 BACKUP_ROOT = Path(os.environ.get("GCG_BACKUP_DIR", Path.home() / "Documents" / "GCG-Backups"))
 
