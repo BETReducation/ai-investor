@@ -359,7 +359,7 @@ _DB_POOL_MAX = 30
 _db_pool = None
 _db_pool_lock = threading.Lock()
 _db_pool_slots = threading.BoundedSemaphore(_DB_POOL_MAX)
-_DB_IDLE_PING_SECONDS = 30  # connections idle longer than this are pinged before reuse
+_DB_IDLE_PING_SECONDS = 2  # connections idle longer than this are pinged before reuse (a DB restart kills pooled ones; ping is ~1ms on the private network)
 _db_last_used: dict = {}  # id(conn) -> monotonic time; psycopg2 connections can't carry attributes
 
 
