@@ -454,3 +454,27 @@ Alpha or video: "Bond yields in four eras: 1981, 2007, 2020 and now, and what ea
 
 ### Reply target
 None found this run.
+
+## 2026-10-30 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches again found nothing dated today, so no claims about current prices or the Fed; drafts are evergreen. Earlier runs today used C, D, E then A, B, E, so this run uses A, C and D. Halving dates and 2017/2018 figures from memory (check figure).
+
+### Draft 55 (type: A viz/tool showcase, status: pending)
+The Bitcoin Dashboard is where I go to see where we are in the four-year rhythm: price against the halvings, so you can see how the last few cycles lined up. What stands out is how different each cycle's size was. The pattern repeats loosely, never exactly.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+Image: Bitcoin Dashboard, the long-term price view with halving markers visible, full history if available.
+
+### Draft 56 (type: C beginner explainer, status: pending)
+What's an inverted yield curve? Normally a government pays you more interest to lend for 10 years than for 2, because waiting longer is riskier. Sometimes that flips and 2-year pays more. It happened before the 2001 and 2008 recessions, and again in 2022. It isn't a countdown timer though: the gap between the flip and the downturn has ranged from months to years.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 57 (type: D question, status: pending)
+What was the first thing you ever invested in, and would you do it the same way now? Mine was a bad idea. Curious what yours was.
+
+### Angle suggestion
+Alpha or video: "Yield curve inversions since 1980: every one, what came after, and the cases where the gap was years." Pairs with draft 56. Education only.
+
+### Reply target
+None found this run.
