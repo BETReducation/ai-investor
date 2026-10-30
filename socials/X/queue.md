@@ -478,3 +478,28 @@ Alpha or video: "Yield curve inversions since 1980: every one, what came after, 
 
 ### Reply target
 None found this run.
+
+## 2026-10-30 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search again returned nothing dated today, so drafts are evergreen with no claims about current prices. Earlier runs today used C, D, E, then A, B, E, then A, C, D, so this run uses B, E (myth vs reality) and A. 1994 and monthly-seasonality figures from memory (check figure).
+
+### Draft 58 (type: B thoughts/take, status: pending)
+1994 is the year bond people still bring up. The Fed doubled rates from 3% to 6% in twelve months, bonds had one of their worst years on record, and the stock market ended up roughly flat. Then 1995 was one of the best years in decades. A year that felt awful on the way through wasn't a crash in the end.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 59 (type: E extras, myth vs reality, status: pending)
+Myth: stocks always crash in October. Reality: 1929 and 1987 both happened in October, which is why the idea stuck. But on average, going back decades, September has been the weakest month for US stocks and October's record is mixed. Two famous crashes make a good story, not a pattern.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 60 (type: A viz/tool showcase, status: pending)
+Market Orbs turns the market into bubbles: size for how big, colour for how the day went. It's a quick way to see whether a move is one sector or everything at once. Days where only a couple of big orbs are red look very different from days where the whole screen is.
+https://www.growthcapitalgroup.co/tools/data-visualisation/market-orbs
+Image: Market Orbs, the full bubble view with the largest orbs visible, no filters applied.
+
+### Angle suggestion
+Video or Alpha: "1994, the year bonds broke and stocks shrugged: what the Fed did, what fell, what recovered." Pairs with draft 58. Education only.
+
+### Reply target
+None found this run.
