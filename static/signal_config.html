@@ -4504,10 +4504,20 @@ function deleteSelectedDrawing() {
 }
 
 function clearDrawings() {
-  if (priceChart) priceChart.removeOverlay();
+  if (!priceChart) return;
+  // One tap on a toolbar icon shouldn't wipe an hour of drawing: ask first.
+  if (!window.confirm("Remove ALL drawings (lines, notes, measures) from this chart? This can't be undone.\n\nTip: tap a single drawing, then the bin icon, to remove just that one.")) return;
+  priceChart.removeOverlay();
   selectedOverlayId = null;
   hideBinButton();
 }
+// Desktop shortcut for removing the selected drawing one at a time (the bin button does the same).
+document.addEventListener('keydown', (e) => {
+  if ((e.key !== 'Delete' && e.key !== 'Backspace') || !selectedOverlayId) return;
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  e.preventDefault();
+  deleteSelectedDrawing();
+});
 
 // --- VOLUME FOOTPRINT (approx.) ---
 // True footprint charts need tick-level bid/ask trade data, which yfinance doesn't
