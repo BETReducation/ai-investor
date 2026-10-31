@@ -574,3 +574,30 @@ Alpha or video: "Oil shocks since 1973: 1973, 1979, 1990, 2008, 2022, and what s
 
 ### Reply target
 None found this run.
+
+## 2026-10-31 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing reliably dated 30-31 Oct (only undated bitcoin/oil items); drafts are evergreen with no claims about current prices. Earlier runs today used C/D/E, A/B/D, B/C/E, so this run uses A, D and E (poll). 1987 crash figure from memory (check figure).
+
+### Draft 70 (type: A viz/tool showcase, status: pending)
+The Bitcoin Dashboard puts price, volume and the big long-run swings on one page. What stands out when you zoom all the way out: the drawdowns look enormous up close and a lot smaller on the full chart. Same data, different window, very different feeling.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+Image: Bitcoin Dashboard, the longest time range selected so the full history shows, price chart in view.
+
+### Draft 71 (type: D question, status: pending)
+Which market crash do you think taught people the most? 1929, 1987, 2000, 2008, 2020, or something else? One line on what it taught is plenty.
+
+### Draft 72 (type: E extras, poll, status: pending)
+Poll: when a market you follow drops 10% in a week, what do you usually do first?
+Look at the longer chart
+Read the news
+Check my own holdings
+Close the app and walk away
+
+### Angle suggestion
+Video or Alpha: "Five crashes, five lessons: what actually changed in the rules after 1929, 1987, 2000, 2008 and 2020." Pairs with draft 71. Education only.
+
+### Reply target
+None found this run.
