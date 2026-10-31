@@ -503,3 +503,26 @@ Video or Alpha: "1994, the year bonds broke and stocks shrugged: what the Fed di
 
 ### Reply target
 None found this run.
+
+## 2026-10-31
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches found no coverage of the 30 Oct session; background only: Nasdaq Composite reportedly fell about 2.6% on 22 Oct on AI spending worries (check figure). Correction definition and 2018/2022 drawdown figures from memory (check figure). Last run was B, E, A, and C/D were least recent, so this run uses C, D and E (Market XI prompt, first one in the queue).
+
+### Draft 61 (type: C beginner explainer, status: pending)
+What's a market "correction"? It's when an index falls 10% or more from its recent high, but not 20%, which is where people start saying "bear market". They happen about once every year or two on average, and most end without turning into the bigger thing. The number is just a label. It doesn't tell you what comes next.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 62 (type: D question, status: pending)
+It's Halloween, so: what's the scariest chart you've ever looked at? A crash, a margin call, a coin that went to zero. Describe it in a line.
+
+### Draft 63 (type: E extras, Market XI prompt, status: pending)
+In Market XI you build a team of eleven from the world's markets, pick a formation, and see how it scores over time. It's a different way to think about diversification: nobody wants a team of eleven strikers. What does your XI look like?
+https://www.growthcapitalgroup.co/arena/market-xi
+
+### Angle suggestion
+Video or Alpha: "Corrections since 1980: how often, how deep, how long to recover, and which ones became bear markets." Pairs with draft 61. Education only.
+
+### Reply target
+None found this run.
