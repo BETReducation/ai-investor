@@ -526,3 +526,27 @@ Video or Alpha: "Corrections since 1980: how often, how deep, how long to recove
 
 ### Reply target
 None found this run.
+
+## 2026-10-31 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: reported Nasdaq drop of about 2.6% on 22 Oct on AI spending worries, and big-tech earnings on 30 Oct (check figure). No coverage of the 30 Oct close found. 1998-2000 Nasdaq figures from memory (check figure). Earlier run today used C, D, E, so this run uses A, B and D. REIT Map hasn't appeared in recent entries.
+
+### Draft 64 (type: A viz/tool showcase, status: pending)
+The REIT Map lays out property trusts by sector and region, so you can see offices, warehouses, data centres and homes side by side. Interesting part: the sectors rarely move together. Same interest rates, very different stories underneath.
+https://www.growthcapitalgroup.co/tools/data-visualisation/reit-map
+Image: REIT Map, the main map view with all sectors showing, no filters applied.
+
+### Draft 65 (type: B thoughts/take, status: pending)
+AI spending worries knocked tech lately. The last time a whole industry was being built out ahead of its revenue was telecom and internet in 1998-2000. The Nasdaq roughly quintupled in five years, then fell about 78% peak to trough. The technology did change the world. The prices just got ahead of the timing.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 66 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first? And do you check it more when things are calm or when they're not? Growth Capital Group's account, what's yours?
+
+### Angle suggestion
+Alpha or video: "1998-2000 build-out vs now: what was spent, what was earned, who survived." Pairs with draft 65. Education only.
+
+### Reply target
+None found this run.
