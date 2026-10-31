@@ -550,3 +550,27 @@ Alpha or video: "1998-2000 build-out vs now: what was spent, what was earned, wh
 
 ### Reply target
 None found this run.
+
+## 2026-10-31 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing dated 30-31 Oct, only a 26 Oct outlook saying inflation, jobs and Fed commentary lead into November; drafts are evergreen with no claims about current prices. Earlier runs today used C, D, E then A, B, D, so this run uses B, C and E (word of the day). 1973-74 oil and S&P figures from memory (check figure).
+
+### Draft 67 (type: B thoughts/take, status: pending)
+Oil prices keep getting blamed for stock moves, so here's the biggest case. In late 1973 the oil embargo roughly quadrupled crude in a few months. The S&P 500 then fell around 48% from January 1973 to October 1974. Oil wasn't the only cause, inflation and a weak economy were piling on, but it's the episode every oil spike gets compared to.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 68 (type: C beginner explainer, status: pending)
+What does "market cap" mean? It's the price of one share times the number of shares, so it tells you what the whole company is worth on the market. That's why a $10 share isn't necessarily "cheaper" than a $500 one. A company with 10 billion $10 shares is far bigger than one with 1 million $500 shares. Size and price are different things.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 69 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's how far something has fallen from its previous high, before it recovers. If a stock goes from 100 to 70, that's a 30% drawdown. Worth knowing because it's the number that shows what holding something through a bad stretch actually looked like.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Alpha or video: "Oil shocks since 1973: 1973, 1979, 1990, 2008, 2022, and what stocks did around each." Pairs with draft 67. Education only.
+
+### Reply target
+None found this run.
