@@ -626,3 +626,26 @@ Video or Alpha: "Rate-hiking cycles since 1994: what the Fed did, what bonds did
 
 ### Reply target
 None found this run.
+
+## 2026-11-01 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing reliably dated 31 Oct or 1 Nov; drafts are evergreen with no claims about current prices. Last runs used A/B/C, A/D/E, B/C/E, so this run uses B, D and E (myth vs reality). 1929 and 1954 figures from memory (check figure).
+
+### Draft 76 (type: E extras, myth vs reality, status: pending)
+Myth: a crash means everything is lost. Reality: the 1929 peak in the Dow wasn't passed again until November 1954, about 25 years later, and that's the worst case on record. After 1987 it took roughly two years. After 2020 it took around five months. Crashes differ a lot in how long they last.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 77 (type: D question, status: pending)
+What's the first investing mistake you remember making? Doesn't have to be big. Mine was reading one chart and thinking I understood the whole market.
+
+### Draft 78 (type: B thoughts/take, status: pending)
+Last week was the anniversary of the 1929 crash. What gets forgotten is that the Dow fell about 89% from its 1929 peak to its 1932 low, and most of that came after the headline days in October. The first drop felt like the event. The long grind down was the real damage.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+
+### Angle suggestion
+Video or Alpha: "How long recoveries actually took: 1929, 1973, 1987, 2000, 2008, 2020, side by side." Pairs with drafts 76 and 78. Education only.
+
+### Reply target
+None found this run.
