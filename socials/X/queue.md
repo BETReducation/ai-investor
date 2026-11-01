@@ -642,7 +642,7 @@ What's the first investing mistake you remember making? Doesn't have to be big. 
 
 ### Draft 78 (type: B thoughts/take, status: pending)
 Last week was the anniversary of the 1929 crash. What gets forgotten is that the Dow fell about 89% from its 1929 peak to its 1932 low, and most of that came after the headline days in October. The first drop felt like the event. The long grind down was the real damage.
-https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+https://www.growthcapitalgroup.co/learn/intermediate
 
 ### Angle suggestion
 Video or Alpha: "How long recoveries actually took: 1929, 1973, 1987, 2000, 2008, 2020, side by side." Pairs with drafts 76 and 78. Education only.
