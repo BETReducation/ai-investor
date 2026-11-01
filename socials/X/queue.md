@@ -601,3 +601,28 @@ Video or Alpha: "Five crashes, five lessons: what actually changed in the rules 
 
 ### Reply target
 None found this run.
+
+## 2026-11-01 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing dated 31 Oct or 1 Nov, only older items; drafts are evergreen with no claims about current prices. Last run used A, D, E, so this run uses A, B and C. Signals chart got drawing-tool updates in the last few days. 1994 figures from memory (check figure).
+
+### Draft 73 (type: A viz/tool showcase, status: pending)
+We've been adding to the drawing tools on the Signals chart: trendlines, notes, a measure tool, and a delete key for the selected drawing. Mark up a chart, see what a move actually looked like, and check it against what happened next.
+https://www.growthcapitalgroup.co/tools/signals
+Image: Signals chart with a trendline and a measure-tool box drawn over a clear price move, tool menu open.
+
+### Draft 74 (type: B thoughts/take, status: pending)
+1994 is the year bonds got hurt and nobody saw it coming. The Fed doubled its rate from 3% to 6% in twelve months and bond markets had one of their worst years in decades. The S&P 500 slid about 9% early in the year, then finished roughly flat. Rates were the story. Stocks mostly shrugged.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 75 (type: C beginner explainer, status: pending)
+Why do bond prices fall when interest rates rise? Say you own a bond paying 3%. New bonds start paying 5%. Nobody pays full price for your 3% one anymore, so its price drops until its return looks competitive. The bond didn't get riskier. Better alternatives just appeared.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Video or Alpha: "Rate-hiking cycles since 1994: what the Fed did, what bonds did, what stocks did." Pairs with drafts 74 and 75. Education only.
+
+### Reply target
+None found this run.
