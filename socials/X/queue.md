@@ -649,3 +649,28 @@ Video or Alpha: "How long recoveries actually took: 1929, 1973, 1987, 2000, 2008
 
 ### Reply target
 None found this run.
+
+## 2026-11-01 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search again returned nothing dated 31 Oct or 1 Nov (latest hit was April 2026); drafts are evergreen with no claims about current prices. Last runs used B/D/E, A/B/C, so this run uses A, C and E (word of the day). Barrel Map hasn't appeared in the queue before. Oil figures from memory (check figure).
+
+### Draft 79 (type: A viz/tool showcase, status: pending)
+Oil is one of those markets where the map tells you more than the chart. The Barrel Map on the site shows where the crude actually comes from and where it goes, so a headline about one pipeline or one strait suddenly makes sense.
+https://www.growthcapitalgroup.co/tools/data-visualisation/barrel-map
+Image: Barrel Map at its default world view, zoomed so the main producing regions and flow lines are readable.
+
+### Draft 80 (type: C beginner explainer, status: pending)
+What is inflation, really? It's how fast prices in general rise over time. If it's 3% a year, something that cost 100 last year costs 103 now. Your money didn't shrink, it just buys a bit less. Central banks watch it closely because it's what they raise interest rates to cool down.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 81 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's the drop from a high point to the lowest point that follows, before a new high. The S&P 500 fell about 57% peak to trough in the 2007-09 drawdown. Looking at drawdowns is a good way to see what holding through a bad stretch actually looked like.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Video or Alpha: "Oil on a map: the five chokepoints that show up in every energy headline." Pairs with draft 79. Education only.
+
+### Reply target
+None found this run.
