@@ -716,3 +716,26 @@ https://www.growthcapitalgroup.co/learn/beginner
 
 ### Draft 87 (type: E extras, poll, status: pending)
 Poll: which market crash taught the most? 1987, 2000, 2008 or 2020. Reply with your why if you've got one.
+
+## 2026-11-02 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: web search failed twice this run (cut off), so drafts are evergreen with no claims about current prices. Last runs used A/C/E, A/B/D, A/C/E, so this run uses B, D and E (Market XI prompt). 1973-74 figures from memory (check figure).
+
+### Draft 88 (type: B thoughts/take, status: pending)
+The 1973-74 bear market gets less attention than 1929 or 2008, but the S&P 500 fell around 48% across almost two years. Oil shock, high inflation, a political crisis, all at once. No single crash day. Just a slow grind where every rally failed.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 89 (type: D question, status: pending)
+What's the oldest chart you've ever looked at and actually learned something from? I'll go first: a long-term Dow chart that made 1929 look like a blip next to the 1990s.
+
+### Draft 90 (type: E extras, Market XI prompt, status: pending)
+Market XI is a football team sheet, but for markets. Pick eleven assets, one per position, and see how the lineup scores. Curious what people put in goal: the safe pair of hands or something with a bit of risk to it?
+https://www.growthcapitalgroup.co/arena/market-xi
+
+### Angle suggestion
+Video or Alpha: "The forgotten bear market: 1973-74, what drove it and how long recovery took." Pairs with draft 88. Education only.
+
+### Reply target
+None found this run.
