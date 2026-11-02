@@ -674,3 +674,27 @@ Video or Alpha: "Oil on a map: the five chokepoints that show up in every energy
 
 ### Reply target
 None found this run.
+
+## 2026-11-02 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing dated this week (latest hit Feb 2026); drafts are evergreen with no claims about current prices. Last runs used A/C/E, B/D/E, A/B/C, so this run uses A, B and D. REIT Map hasn't appeared in the queue recently. Nasdaq 2000-2015 figures from memory (check figure).
+
+### Draft 82 (type: A viz/tool showcase, status: pending)
+Real estate is the one asset most people own without ever looking at a chart. The REIT Map shows listed property companies by sector and region, so you can see where data centres, warehouses and offices sit compared with each other. Colour tells you the story faster than a table does.
+https://www.growthcapitalgroup.co/tools/data-visualisation/reit-map
+Image: REIT Map at the default view with the sector breakdown visible, ideally one sector hovered so its tooltip shows.
+
+### Draft 83 (type: B thoughts/take, status: pending)
+The Nasdaq peaked in March 2000 and bottomed in October 2002, down about 78%. It didn't close above that March 2000 high again until 2015. Same index, same companies in many cases, fifteen years apart. A price level on its own says nothing about how long it took to get there.
+https://www.growthcapitalgroup.co/tools/data-visualisation/nasdaq-wagon-wheel
+
+### Draft 84 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first? And is it a habit or do you actually have a reason?
+
+### Angle suggestion
+Video or Alpha: "The dot-com round trip: 1995 to 2015, what the Nasdaq did year by year and who was left standing." Pairs with draft 83. Education only.
+
+### Reply target
+None found this run.
