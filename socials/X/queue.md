@@ -739,3 +739,27 @@ Video or Alpha: "The forgotten bear market: 1973-74, what drove it and how long 
 
 ### Reply target
 None found this run.
+
+## 2026-11-02 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned late Oct 2026 items only (Fed meeting 27-28 Oct, US midterms 3 Nov, payrolls 6 Nov); drafts avoid current prices. Last runs used B/D/E, A/C/E, A/B/D, so this run uses C, A and E. Midterm stat from memory (check figure). Fed meeting outcome unconfirmed (check figure).
+
+### Draft 91 (type: C beginner explainer, status: pending)
+What does it mean when the Fed "raises rates"? It changes the rate banks charge each other for overnight loans. That rate feeds into mortgages, savings and business loans, so borrowing gets pricier or cheaper across the economy. Markets watch it because money costing more tends to cool things down.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 92 (type: A viz/tool showcase, status: pending)
+The Signals page has a proper chart with drawing tools now: trendlines, text notes, a measure tool for checking how far a move ran. We've been tidying it up for phones too, including landscape. Good for marking up a past move and seeing what the indicators were doing at the time.
+https://www.growthcapitalgroup.co/tools/signals
+Image: Signals chart on a daily timeframe with a trendline and the measure tool drawn across one past move, RSI panel visible.
+
+### Draft 93 (type: E extras, this day in market history, status: pending)
+US midterm elections are tomorrow. Looking back, the S&P 500 has been higher twelve months after every midterm election since 1950, even though the run-up to them is usually choppy. History isn't a forecast, but it's a useful reminder of how often the mood before an event differs from what follows.
+
+### Angle suggestion
+Video or Alpha: "How rate decisions have moved markets historically: 1994, 2004-06, 2022." Pairs with draft 91. Education only.
+
+### Reply target
+None found this run.
