@@ -698,3 +698,21 @@ Video or Alpha: "The dot-com round trip: 1995 to 2015, what the Nasdaq did year 
 
 ### Reply target
 None found this run.
+
+## 2026-11-02 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing dated this week (latest hit Jan 2026); drafts are evergreen with no claims about current prices. Last runs used A/B/D, A/C/E, B/D/E, so this run uses A, C and E (poll). Mining Globe hasn't appeared in the queue before. Halving dates and block reward from memory (check figure).
+
+### Draft 85 (type: A viz/tool showcase, status: pending)
+Bitcoin mining isn't spread evenly. The Mining Globe plots where the hash power actually sits, so you can see how much one country's policy can move the whole network. Worth a spin if you've only ever looked at the price chart.
+https://www.growthcapitalgroup.co/tools/data-visualisation/mining-globe
+Image: Mining Globe rotated so the largest mining regions face the camera, with the legend visible.
+
+### Draft 86 (type: C beginner explainer, status: pending)
+What is a bitcoin halving? Roughly every four years the reward miners get for adding a block is cut in half. It went from 50 coins in 2009 to 3.125 after the April 2024 halving. It's built-in scarcity: new supply slows down on a schedule that was fixed from day one.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 87 (type: E extras, poll, status: pending)
+Poll: which market crash taught the most? 1987, 2000, 2008 or 2020. Reply with your why if you've got one.
