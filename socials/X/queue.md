@@ -835,3 +835,27 @@ Video or Alpha: "1994: the year bonds broke and stocks barely noticed." Pairs wi
 
 ### Reply target
 None found this run.
+
+## 2026-11-03 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing reliable dated this week (only earlier-2026 items); drafts are evergreen with no claims about current prices. Last runs used B/D/E, C/E/A, B/D/A, so this run uses C, A and E (word of the day). Barrel Map and drawdown concept not yet in the queue. Rule of thumb for correction/bear thresholds is convention (check figure).
+
+### Draft 103 (type: C beginner explainer, status: pending)
+What's the difference between a correction and a bear market? A correction is a fall of 10% or more from a recent high. A bear market is 20% or more. Those cut-offs are just convention, nobody official decided them, but they give people a shared way to talk about how bad a fall is.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 104 (type: A viz/tool showcase, status: pending)
+The Barrel Map shows oil from a geography angle: who produces it, where it moves. Easy to forget how concentrated supply is until you see it laid out on a map. Worth a look next time oil is in the headlines.
+https://www.growthcapitalgroup.co/tools/data-visualisation/barrel-map
+Image: Barrel Map on the default global view with the largest producers clearly visible and the legend in frame.
+
+### Draft 105 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's how far something has fallen from its previous peak. A 50% drawdown needs a 100% gain just to get back to where it started, which is why the maths of losses is so lopsided. Worth knowing before you read any "best year ever" headline.
+
+### Angle suggestion
+Video or Alpha: "Drawdowns through history: how deep and how long, 1929, 1973, 2000, 2008, 2020." Pairs with drafts 103 and 105. Education only.
+
+### Reply target
+None found this run.
