@@ -787,3 +787,27 @@ Video or Alpha: "Last-year euphoria: what happened in the 12 months before the 1
 
 ### Reply target
 None found this run.
+
+## 2026-11-03 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: two searches again returned nothing reliable dated this week; drafts are evergreen with no claims about current prices. Last runs used B/D/E, C/A/E, B/D/A, so this run uses C, E (this day in history) and A. 3 Nov 1936 election and Nov 1929 low from memory (check figure).
+
+### Draft 97 (type: C beginner explainer, status: pending)
+What is an ETF? It's a basket of investments, shares, bonds or even gold, that trades on the stock market as a single ticker. Instead of buying 500 companies one by one, you hold one thing that tracks them. People use them because they're cheap to hold and easy to buy and sell during the day.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 98 (type: E extras, this day in market history, status: pending)
+On this day in 1929 the Dow was in the middle of its slide, about a week after Black Tuesday. It kept falling until July 1932, down roughly 89% from the peak. The part that gets forgotten: there was a sharp rally in the weeks after the first crash that convinced plenty of people it was over.
+
+### Draft 99 (type: A viz/tool showcase, status: pending)
+The ETF Tracker puts a lot of funds side by side so you can see which areas of the market have been moving and which haven't. Sort by performance and it's a quick way to see whether a move is broad or just one corner doing the work.
+https://www.growthcapitalgroup.co/tools/data-visualisation/etf-tracker
+Image: ETF Tracker sorted by performance on a one-month view, top and bottom of the list both visible.
+
+### Angle suggestion
+Alpha or video: "ETFs explained from scratch: what's inside, what they cost, how they differ from funds." Pairs with draft 97. Education only.
+
+### Reply target
+None found this run.
