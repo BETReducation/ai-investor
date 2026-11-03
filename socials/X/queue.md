@@ -763,3 +763,27 @@ Video or Alpha: "How rate decisions have moved markets historically: 1994, 2004-
 
 ### Reply target
 None found this run.
+
+## 2026-11-03 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing reliable dated this week (latest dated item 7 Oct); drafts are evergreen with no claims about current prices. Last runs used C/A/E, B/D/E, A/C/E, so this run uses B, D and A. Winners League and ETF Tracker haven't appeared in the queue. Nasdaq 1999 gain from memory (check figure).
+
+### Draft 94 (type: B thoughts/take, status: pending)
+The Nasdaq rose roughly 85% in 1999, its best year ever, and then peaked in March 2000. Most of the biggest gains came in the final months, when almost everyone was already talking about it. Looking back, the loudest stretch of a rally and the top sat very close together.
+https://www.growthcapitalgroup.co/tools/data-visualisation/nasdaq-wagon-wheel
+
+### Draft 95 (type: D question, status: pending)
+What's the best lesson a bad trade or investment ever taught you? Mine was learning that being right slowly is still a lot better than being wrong quickly.
+
+### Draft 96 (type: A viz/tool showcase, status: pending)
+Winners League ranks assets against each other over whatever period you pick, like a league table for markets. Flip between a short window and a long one and the leaders change a lot. Good reminder that "best performer" depends entirely on when you start counting.
+https://www.growthcapitalgroup.co/tools/data-visualisation/winners-league
+Image: Winners League on a one-year view, then (if you want a second image) the same table on five years so the order change is obvious.
+
+### Angle suggestion
+Video or Alpha: "Last-year euphoria: what happened in the 12 months before the 1929, 1987, 2000 and 2007 peaks." Pairs with draft 94. Education only.
+
+### Reply target
+None found this run.
