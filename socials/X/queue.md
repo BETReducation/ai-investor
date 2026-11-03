@@ -811,3 +811,27 @@ Alpha or video: "ETFs explained from scratch: what's inside, what they cost, how
 
 ### Reply target
 None found this run.
+
+## 2026-11-03 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing dated this week again (latest item April 2026); drafts are evergreen with no claims about current prices. Last runs used B/D/A, C/E/A, C/A/E, so this run uses B, D and E (build note). 1994 rate and bond figures from memory (check figure).
+
+### Draft 100 (type: B thoughts/take, status: pending)
+In 1994 the Fed took its main rate from 3% to 5.5% in twelve months and the bond market had one of its worst years on record. The S&P 500 finished the year roughly flat. Plenty of people expected a crash that never came, while the damage landed somewhere fewer were watching.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 101 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first when something big happens? Always curious whether people reach for the old safe-haven reflex or the newer one. Bonus points if you can say why.
+
+### Draft 102 (type: E extras, build note, status: pending)
+Added a breadth section to the Russell 2000 Compass this week. It shows what share of stocks in each sector were up over each period, not just the average return. An index can look fine while most of its members aren't, and that's much easier to spot when you can see the split.
+https://www.growthcapitalgroup.co/tools/data-visualisation/russell-compass
+Image: Russell 2000 Compass breadth section, one-month view, so the sector percentages are all visible.
+
+### Angle suggestion
+Video or Alpha: "1994: the year bonds broke and stocks barely noticed." Pairs with draft 100. Education only.
+
+### Reply target
+None found this run.
