@@ -7396,6 +7396,125 @@ def api_bubble_radar_live():
     return jsonify({"data": out, "pending": pending or (1 if _br_worker_on else 0), "as_of": _dt.date.today().isoformat()})
 
 
+# Finance Map live prices: last price, trailing dividend yield and day/week/month/year moves
+# for the listed banks, finance stocks and insurers. Mirrors the Bubble Radar cache + worker pattern.
+_FM_SUFFIX = {"CAN": ".TO", "MEX": ".MX", "BRA": ".SA", "GBR": ".L", "DEU": ".DE", "FRA": ".PA", "CHE": ".SW", "NLD": ".AS",
+              "JPN": ".T", "IND": ".NS", "KOR": ".KS", "SAU": ".SR", "AUS": ".AX", "ZAF": ".JO", "ITA": ".MI", "ESP": ".MC",
+              "SWE": ".ST", "IDN": ".JK", "SGP": ".SI", "TUR": ".IS", "ISR": ".TA", "NZL": ".NZ", "DNK": ".CO", "NOR": ".OL",
+              "FIN": ".HE", "IRL": ".IR", "PRT": ".LS", "BEL": ".BR", "POL": ".WA", "GRC": ".AT", "THA": ".BK", "MYS": ".KL",
+              "PHL": ".PS", "EGY": ".CA", "PAK": ".KA", "CHL": ".SN"}
+_FM_ADR = {"BRA": {"ITUB", "BBD", "BSBR", "XP"}, "CHL": {"BCH", "BSAC"}, "ARG": {"GGAL", "BMA", "BBAR"},
+           "COL": {"CIB"}, "PER": {"BAP", "IFS"}}
+_FM_FIXED = {("FIN", "NDA"): "NDA-FI.HE", ("ARE", "EMIRATESNBD"): "EMIRATESNBD.DU", ("BRA", "BBAS3"): "BBAS3.SA",
+             ("USA", "BRK.B"): "BRK-B", ("GBR", "AV."): "AV.L", ("CAN", "BNS"): "BNS.TO", ("PER", "BNS"): None,
+             ("SWE", "INVE-B"): "INVE-B.ST", ("SWE", "SEB-A"): "SEB-A.ST", ("SWE", "SWED-A"): "SWED-A.ST",
+             ("SWE", "SHB-A"): "SHB-A.ST", ("ARE", "FAB"): "FAB.AD", ("ARE", "ADCB"): "ADCB.AD"}
+_fm_cache: dict = {}   # yahoo symbol -> {"at": ts, "v": {...} or None}
+_fm_cur: dict = {}     # yahoo symbol -> reporting currency
+_fm_queue: set = set()
+_fm_lock = threading.Lock()
+_fm_worker_on = False
+_FM_TTL = 20 * 60
+
+
+def _fm_symbol(iso: str, tk: str) -> str | None:
+    if (iso, tk) in _FM_FIXED:
+        return _FM_FIXED[(iso, tk)]
+    if iso == "USA" or tk in _FM_ADR.get(iso, ()):
+        return tk.replace(".", "-")
+    if iso == "CHN":
+        return tk.zfill(4) + ".HK"
+    suf = _FM_SUFFIX.get(iso)
+    return tk + suf if suf else None
+
+
+def _fm_currency(sym: str) -> str | None:
+    if sym in _fm_cur:
+        return _fm_cur[sym]
+    try:
+        c = yf.Ticker(sym).fast_info["currency"]
+    except Exception:
+        c = None
+    _fm_cur[sym] = c
+    return c
+
+
+def _fm_fetch_batch(syms: list) -> None:
+    try:
+        raw = yf.download(tickers=syms, period="1y", interval="1d", group_by="ticker", threads=True,
+                          auto_adjust=False, actions=True, progress=False)
+    except Exception:
+        raw = None
+    for s in syms:
+        v = None
+        try:
+            df = raw[s] if len(syms) > 1 else raw
+            c = df["Close"].dropna()
+            if len(c) >= 22:
+                last = float(c.iloc[-1])
+                mv = lambda n: round((last / float(c.iloc[-1 - n]) - 1) * 100, 1)
+                divs = df["Dividends"].fillna(0) if "Dividends" in df else None
+                dy = round(float(divs.sum()) / last * 100, 2) if divs is not None and last else None
+                cur = _fm_currency(s)
+                px, k = last, 1.0
+                if cur in ("GBp", "GBX", "ZAc", "ILA"):
+                    k = 0.01
+                    cur = {"GBp": "GBP", "GBX": "GBP", "ZAc": "ZAR", "ILA": "ILS"}[cur]
+                v = {"px": last * k, "cur": cur, "yl": dy, "d": mv(1), "w": mv(5), "m": mv(21),
+                     "y": round((last / float(c.iloc[0]) - 1) * 100, 1) if len(c) >= 240 else None}
+                v = {a: (b if isinstance(b, str) or (isinstance(b, (int, float)) and math.isfinite(b)) else None) for a, b in v.items()}
+        except Exception:
+            v = None
+        with _fm_lock:
+            _fm_cache[s] = {"at": time.monotonic(), "v": v}
+            _fm_queue.discard(s)
+
+
+def _fm_worker() -> None:
+    global _fm_worker_on
+    try:
+        while True:
+            with _fm_lock:
+                todo = list(_fm_queue)[:30]
+            if not todo:
+                break
+            _fm_fetch_batch(todo)
+            with _fm_lock:
+                for s in todo:
+                    _fm_queue.discard(s)
+            time.sleep(1)
+    finally:
+        _fm_worker_on = False
+
+
+@app.route("/api/dataviz/finance-map/live", methods=["GET"])
+def api_finance_map_live():
+    global _fm_worker_on
+    items = [x for x in (request.args.get("items") or "").split(",") if x][:300]
+    out, pending, now = {}, 0, time.monotonic()
+    with _fm_lock:
+        for it in items:
+            iso, _, tk = it.partition("|")
+            if not re.fullmatch(r"[A-Z]{3}", iso) or not re.fullmatch(r"[A-Za-z0-9.&\-]{1,12}", tk):
+                continue
+            sym = _fm_symbol(iso, tk)
+            if not sym:
+                continue
+            e = _fm_cache.get(sym)
+            fresh = e and now - e["at"] < (_FM_TTL if e["v"] else 900)
+            if not fresh:
+                pending += 1
+                _fm_queue.add(sym)
+            if e and e["v"]:
+                out[it] = {**e["v"], "sym": sym}
+        start = bool(_fm_queue) and not _fm_worker_on
+        if start:
+            _fm_worker_on = True
+    if start:
+        threading.Thread(target=_fm_worker, daemon=True).start()
+    return jsonify({"data": out, "pending": pending or (1 if _fm_worker_on else 0), "as_of": _dt.date.today().isoformat()})
+
+
 # Dividend Calculator lookup: trailing-12-month dividends and the latest price for
 # any Yahoo ticker. A bare ticker is tried as-is first, then with .L (LSE) appended.
 _DIV_CACHE_TTL_SECONDS = 3600

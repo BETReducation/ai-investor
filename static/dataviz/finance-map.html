@@ -56,12 +56,12 @@ input[type=range]{padding:0;border:0;margin:6px 0}table th{text-align:left}
 <details class="card"><summary>🌦 Financial weather guide</summary><p>☀️ <b>Sunny:</b> debt under 60% of GDP and growth of 3% or more.</p><p>🌤 <b>Partly sunny:</b> growth of 2% or more with debt up to 90%.</p><p>☁️ <b>Cloudy:</b> everything in between.</p><p>🌫 <b>Foggy:</b> inflation above 8%, so prices are hard to see through.</p><p>🌧 <b>Rainy:</b> debt over 100% of GDP or growth under 1%.</p><p>⛈ <b>Stormy:</b> debt over 100% and growth under 2%.</p></details>
 <details class="card"><summary>⭐ My watchlist</summary><div class="tabs" id="wtabs"></div><div id="wl"></div></details>
 <details class="card"><summary>🥊 Stock face-off</summary><select id="fa"></select><select id="fb"></select><div id="fox"></div></details>
-<details class="card"><summary>🚀 Top 10 bank stocks: up and down</summary><div class="tabs" id="ptabs"></div><div class="rk"><div id="pup"></div><div id="pdn"></div></div><p style="color:var(--mu);font-size:12px">⚠️ Sample performance figures for layout only, not real market moves. A live data feed is needed before launch.</p></details>
+<details class="card"><summary>🚀 Top 10 bank stocks: up and down</summary><div class="tabs" id="ptabs"></div><div class="rk"><div id="pup"></div><div id="pdn"></div></div><p style="color:var(--mu);font-size:12px"><span class="fmst">⚠️ Sample performance figures for layout only, not real market moves.</span></p></details>
 <details class="card"><summary>🎯 Debt vs growth quadrants</summary><div id="quad"></div><p style="color:var(--mu);font-size:12px">Every country as one bubble. Top-left is the sweet spot; bottom-right is the danger zone. Tap a bubble.</p></details>
 <details class="card"><summary>⚖️ Compare two countries</summary><select id="cpa"></select><select id="cpb"></select><div id="cmp"></div></details>
-<details class="card" open><summary>🧭 Stock Compass: who’s up, who’s down</summary><div class="tabs" id="ktabs"></div><div class="tabs" id="qtabs"></div><div id="comp"></div><p style="color:var(--mu);font-size:12px">The dial shows the share of stocks that are up (green) and down (red), starting from north and running clockwise. The numbers around the dial count the stocks. ⚠️ Sample performance figures for layout only, not real market moves.</p></details>
+<details class="card" open><summary>🧭 Stock Compass: who’s up, who’s down</summary><div class="tabs" id="ktabs"></div><div class="tabs" id="qtabs"></div><div id="comp"></div><p style="color:var(--mu);font-size:12px">The dial shows the share of stocks that are up (green) and down (red), starting from north and running clockwise. The numbers around the dial count the stocks. <span class="fmst">⚠️ Sample performance figures for layout only, not real market moves.</span></p></details>
 <details class="card"><summary>📖 Learn: what the numbers mean</summary><p><b>Debt / GDP:</b> what a government owes compared with the size of its economy. Higher means more of future output goes to repayments.</p><p><b>GDP growth:</b> how fast the economy is expanding after inflation. Growth makes debt easier to carry.</p><p><b>Inflation:</b> how fast prices rise. It erodes savings and pushes central banks to raise rates.</p><p><b>Policy rate:</b> the central bank’s main interest rate. It drives bank lending rates and currency strength.</p><p><b>Real rate:</b> policy rate minus inflation. Positive means savers are rewarded; negative means they are losing purchasing power.</p><p><b>Credit rating:</b> an agency’s view of a government’s ability to repay. AAA is the safest; below BBB- is “junk”.</p><p><b>Resilience score:</b> our own simple 0–100 measure of growth against debt. A learning tool, not an official index.</p></details>
-<div class="note">The time machine uses rough decade snapshots, linked economies are simplified and the cash killer score is our own learning measure. Bank prices and dividend yields are indicative snapshots, not live quotes. Currency conversions use fixed approximate exchange rates and an assumed bitcoin price, not live rates. Figures (including inflation, policy rates and ratings) are rounded, approximate estimates for education only (government debt as % of GDP, latest annual real GDP growth). Countries in grey are not covered yet. Map dots show listed banks (gold), finance stocks (blue) and insurers (purple). Not live data and not financial advice.</div>
+<div class="note">The time machine uses rough decade snapshots, linked economies are simplified and the cash killer score is our own learning measure. Prices, dividend yields and price moves for listed stocks come from delayed Yahoo Finance data where available (the rest are indicative snapshots). Currency conversions use fixed approximate exchange rates and an assumed bitcoin price, not live rates. Figures (including inflation, policy rates and ratings) are rounded, approximate estimates for education only (government debt as % of GDP, latest annual real GDP growth). Countries in grey are not covered yet. Map dots show listed banks (gold), finance stocks (blue) and insurers (purple). Country figures are static estimates. Not financial advice.</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"></script>
@@ -412,7 +412,7 @@ const bl2=iso=>B.filter(b=>b.iso===iso).map(b=>`<div style="display:flex;justify
 function bd(q){$('bdir').innerHTML=B.filter(b=>(b.name+b.tk+b.country).toLowerCase().includes(q)).map(b=>`<p style="cursor:pointer;display:flex;justify-content:space-between;gap:8px" onclick="pick('${b.iso}')"><span>${star(b)}${IC[b.type]} <b>${b.name}</b> ${b.tk} · ${b.country}</span><span>${b.px?fmt(b.px,b.cur)+' · '+b.yl+'%':'unlisted'}</span></p>`).join('')||'No match'}
 function wlr(){const L=B.filter(b=>WL.includes(wk(b)));
 $('wtabs').innerHTML=Object.keys(PN).map(k=>`<button data-w="${k}" class="${k===wp?'on':''}">${PN[k]}</button>`).join('');
-$('wl').innerHTML=L.length?L.map(b=>{const v=perf(b,wp);return `<p onclick="pick('${b.iso}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px"><span>${star(b)}<b>${b.tk}</b> <small style="color:var(--mu)">${b.country}</small></span><span>${fmt(b.px,b.cur)} · ${b.yl}% · <b style="color:${v>=0?'#22a06b':'#e05252'}">${v>0?'+':''}${v}%</b></span></p>`}).join('')+`<p>Average move: <b>${(L.reduce((t,b)=>t+perf(b,wp),0)/L.length).toFixed(1)}%</b> · ⚠️ sample performance data</p>`:'<p style="color:var(--mu)">Tap ☆ next to any stock (in a country card or the stock directory) to add it here. Saved in this browser.</p>'}
+$('wl').innerHTML=L.length?L.map(b=>{const v=perf(b,wp)??0;return `<p onclick="pick('${b.iso}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px"><span>${star(b)}<b>${b.tk}</b> <small style="color:var(--mu)">${b.country}</small></span><span>${fmt(b.px,b.cur)} · ${b.yl}% · <b style="color:${v>=0?'#22a06b':'#e05252'}">${v>0?'+':''}${v}%</b></span></p>`}).join('')+`<p>Average move: <b>${(L.reduce((t,b)=>t+(perf(b,wp)??0),0)/L.length).toFixed(1)}%</b> · <span class="fmst">⚠️ sample performance data</span></p>`:'<p style="color:var(--mu)">Tap ☆ next to any stock (in a country card or the stock directory) to add it here. Saved in this browser.</p>'}
 function tmset(y){ty=y;$('tmy').textContent=y;$('tmev').textContent=EV[y]?'· '+EV[y]:'';draw()}
 function shareCard(){
 const cv=document.createElement('canvas');cv.width=cv.height=1080;const g=cv.getContext('2d');
@@ -434,7 +434,7 @@ function pins(){const cnt={};return B.filter(b=>b.px&&(mt==='all'||b.type===mt))
 return {name:b.name+' ('+b.tk+')',radius:3,latitude:c.lat+Math.sin(a)*r,longitude:c.lon+Math.cos(a)*r*1.3,fillColor:COL[b.type],borderWidth:.6,borderColor:'#222',c:{iso:b.iso}}})}
 let ck='bank',cp='d';const KN={bank:'🏦 Banks',fin:'💹 Finance',ins:'🛡 Insurance'};
 function compass(){
-const L=B.filter(b=>b.px&&b.type===ck).map(b=>({b,v:perf(b,cp)})),u=L.filter(x=>x.v>=0).length,n=L.length-u,pu=L.length?u/L.length:0,pg=Math.round(pu*100),
+const L=B.filter(b=>b.px&&hasP(b)&&b.type===ck).map(b=>({b,v:perf(b,cp)})),u=L.filter(x=>x.v>=0).length,n=L.length-u,pu=L.length?u/L.length:0,pg=Math.round(pu*100),
 avg=L.length?+(L.reduce((t,x)=>t+x.v,0)/L.length).toFixed(1):0,C=180,RR=140,pt=(a,r)=>[C+r*Math.sin(a),C-r*Math.cos(a)],ang=pu*2*Math.PI,G='hsl(140,60%,38%)',RD='hsl(0,65%,48%)',e=pt(ang,RR);
 let s='<svg viewBox="0 0 360 360" style="width:100%;max-width:440px;display:block;margin:auto">';
 s+=`<circle cx="180" cy="180" r="${RR}" fill="${pu>=1?G:RD}"/>`;
@@ -448,9 +448,11 @@ $('comp').innerHTML=s+'</svg>'+`<p style="text-align:center"><b style="color:${G
 document.querySelectorAll('#ktabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===ck));
 document.querySelectorAll('#qtabs button').forEach(b=>b.classList.toggle('on',b.dataset.q===cp))}
 function rnd(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}h^=h>>>13;h=Math.imul(h,0x5bd1e995);return ((h>>>0)%10000)/10000}
-const perf=(b,p)=>{const s={d:3,w:6,m:12,y:40}[p];return +(((rnd(b.iso+b.tk+p)+rnd(b.tk+p+b.iso)+rnd(p+b.iso+b.tk+'x'))/3-.45)*2*s).toFixed(1)};
+let liveOn=false;
+const hasP=b=>!liveOn||!!b.L;
+const perf=(b,p)=>{if(liveOn)return b.L?b.L[p]:null;const s={d:3,w:6,m:12,y:40}[p];return +(((rnd(b.iso+b.tk+p)+rnd(b.tk+p+b.iso)+rnd(p+b.iso+b.tk+'x'))/3-.45)*2*s).toFixed(1)};
 let per='d';const PN={d:'Day',w:'Week',m:'Month',y:'Year'};
-function tp(){const L=B.filter(b=>b.px&&b.type==='bank').map(b=>({b,v:perf(b,per)})).sort((a,c)=>c.v-a.v);
+function tp(){const L=B.filter(b=>b.px&&hasP(b)&&b.type==='bank').map(b=>({b,v:perf(b,per)})).sort((a,c)=>c.v-a.v);
 const f=(x,i)=>`<p onclick="pick('${x.b.iso}')"><span>${i+1}. ${x.b.tk} <small style="color:var(--mu)">${x.b.country}</small></span><b style="color:${x.v>=0?'#22a06b':'#e05252'}">${x.v>0?'+':''}${x.v}%</b></p>`;
 $('pup').innerHTML='<h3>🟢 Top 10 up</h3>'+L.slice(0,10).map(f).join('');$('pdn').innerHTML='<h3>🔴 Top 10 down</h3>'+L.slice(-10).reverse().map(f).join('');
 document.querySelectorAll('#ptabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===per))}
@@ -515,11 +517,11 @@ Object.assign(M,{abs:{n:'💰 Debt total',v:c=>GD[c.iso][0]*c.debt/100,f:v=>mone
 {const d=$('comp').closest('details');$('info').closest('details').after(d)}
 function foff(){const a=B[+$('fa').value],b=B[+$('fb').value],ca=R.find(c=>c.iso===a.iso),cb=R.find(c=>c.iso===b.iso),pc=v=>(v>0?'+':'')+v+'%';
 const rows=[['Price',fmt(a.px,a.cur),fmt(b.px,b.cur),0],['Dividend yield',a.yl+'%',b.yl+'%',a.yl-b.yl]];
-Object.keys(PN).forEach(p=>{const x=perf(a,p),y=perf(b,p);rows.push([PN[p]+' move',pc(x),pc(y),x-y])});
+Object.keys(PN).forEach(p=>{const x=perf(a,p),y=perf(b,p),ok=x!==null&&y!==null;rows.push([PN[p]+' move',x===null?'–':pc(x),y===null?'–':pc(y),ok?x-y:0])});
 rows.push(['Country debt / GDP',ca.debt+'%',cb.debt+'%',cb.debt-ca.debt],['Country growth',ca.gr+'%',cb.gr+'%',ca.gr-cb.gr],['Inflation',X[a.iso].inf+'%',X[b.iso].inf+'%',X[b.iso].inf-X[a.iso].inf],['Credit rating',X[a.iso].rt,X[b.iso].rt,rsc(ca)-rsc(cb)]);
 let wa=0,wb=0;rows.forEach(r=>{if(r[3]>0)wa++;else if(r[3]<0)wb++});
 const cl=d=>d>0?'gd':d<0?'bd2':'';
-$('fox').innerHTML=`<div style="overflow-x:auto"><table class="fg"><tr><th></th><th>${IC[a.type]} ${a.tk}<br><small>${a.name}<br>${a.country}</small></th><th>${IC[b.type]} ${b.tk}<br><small>${b.name}<br>${b.country}</small></th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td class="${cl(r[3])}">${r[1]}</td><td class="${cl(-r[3])}">${r[2]}</td></tr>`).join('')+`<tr><td><b>Rounds won</b></td><td class="${cl(wa-wb)}">${wa}</td><td class="${cl(wb-wa)}">${wb}</td></tr></table></div><p style="color:var(--mu);font-size:12px">Green = better, red = worse. ⚠️ Sample performance data, for learning only, not advice.</p>`}
+$('fox').innerHTML=`<div style="overflow-x:auto"><table class="fg"><tr><th></th><th>${IC[a.type]} ${a.tk}<br><small>${a.name}<br>${a.country}</small></th><th>${IC[b.type]} ${b.tk}<br><small>${b.name}<br>${b.country}</small></th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td class="${cl(r[3])}">${r[1]}</td><td class="${cl(-r[3])}">${r[2]}</td></tr>`).join('')+`<tr><td><b>Rounds won</b></td><td class="${cl(wa-wb)}">${wa}</td><td class="${cl(wb-wa)}">${wb}</td></tr></table></div><p style="color:var(--mu);font-size:12px">Green = better, red = worse. <span class="fmst">⚠️ Sample performance data, for learning only, not advice.</span></p>`}
 function cmp(){const a=R.find(c=>c.iso===$('cpa').value),b=R.find(c=>c.iso===$('cpb').value),A=X[a.iso],Y=X[b.iso],ra=real(a),rb=real(b),ga=GD[a.iso],gb=GD[b.iso],da=ga[0]*1e9*a.debt/100,db=gb[0]*1e9*b.debt/100,pa=da/(ga[1]*1e6),pb=db/(gb[1]*1e6),rt=x=>isNaN(parseFloat(x.rate))?'–':x.rate+'%';
 const rows=[['Debt / GDP',a.debt+'%',b.debt+'%',b.debt-a.debt],['National debt',money(da),money(db),0],['Debt per person',money(pa),money(pb),pb-pa],['Economy (GDP)',money(ga[0]*1e9),money(gb[0]*1e9),0],['GDP growth',a.gr+'%',b.gr+'%',a.gr-b.gr],['Inflation',A.inf+'%',Y.inf+'%',Y.inf-A.inf],['Policy rate',rt(A),rt(Y),0],['Real rate',ra===null?'–':ra+'%',rb===null?'–':rb+'%',ra===null||rb===null?0:ra-rb],['Resilience',a.sc+'/100',b.sc+'/100',a.sc-b.sc],['Cash killer',cks(a)+'/100',cks(b)+'/100',cks(b)-cks(a)],['Credit rating',A.rt,Y.rt,rsc(a)-rsc(b)],['Currency',A.cur,Y.cur,0],['Central bank',A.cb,Y.cb,0],['Main index',A.idx,Y.idx,0]];
 let wa=0,wb=0;rows.forEach(r=>{if(r[3]>0)wa++;else if(r[3]<0)wb++});
@@ -667,6 +669,20 @@ if(typeof Datamap==='undefined'){
  draw();
  addEventListener('resize',()=>map.resize());
 }
+
+// Live prices, yields and moves from Yahoo Finance via our own endpoint; stocks it can't find keep their static figures.
+let liveTry=0;
+function loadLive(){
+ const items=B.filter(b=>b.px).map(b=>b.iso+'|'+b.tk).join(',');
+ fetch('/api/dataviz/finance-map/live?items='+encodeURIComponent(items)).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+  let n=0;B.forEach(b=>{const d=j.data[b.iso+'|'+b.tk];if(!d||d.px==null)return;
+   if(d.cur&&FX[d.cur]){b.px=d.px;b.cur=d.cur}else return;
+   if(d.yl!=null)b.yl=d.yl;
+   if(d.d!=null&&d.w!=null&&d.m!=null&&d.y!=null){b.L={d:d.d,w:d.w,m:d.m,y:d.y};n++}});
+  if(n>0){liveOn=true;document.querySelectorAll('.fmst').forEach(e=>e.textContent='Live moves from delayed Yahoo Finance prices ('+n+' stocks; stocks with no feed are left out). As of '+j.as_of+'.');
+   bd($('bsel').value.toLowerCase());wlr();tp();compass();foff();cmp();if(sel)pick(sel.iso);else draw()}
+  if(j.pending>0&&liveTry++<16)setTimeout(loadLive,15000)}).catch(()=>{})}
+loadLive();
 </script>
 <script>
 // Crop the empty polar bands: show roughly 28%-73% of the world map's height.
