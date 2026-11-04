@@ -3710,6 +3710,9 @@ def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 # part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
 # static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
+    {"slug": "finance-map", "categories": ["understanding-markets"], "part": "in-depth",
+     "title": "The Finance Map",
+     "desc": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks."},
     {"slug": "bubble-radar", "categories": ["understanding-markets", "investment-appraisal"], "part": "in-depth",
      "title": "GCG Bubble Radar",
      "desc": "Valuation, run-up and debt clues that tend to show up in bubbles, scored on illustrative data across stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles."},

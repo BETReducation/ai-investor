@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Finance Map</title>
+<style>
+:root{--bg:#f6f4ee;--card:#fff;--tx:#17202a;--mu:#6b7280;--bd:#ddd8cb;--ac:#c8921a;--sea:#dfe9ee;--nd:#c9c6bb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1420;--card:#16202f;--tx:#e8edf3;--mu:#8b97a8;--bd:#263449;--ac:#f0b429;--sea:#0a1a2b;--nd:#2c3a4f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1420;--card:#16202f;--tx:#e8edf3;--mu:#8b97a8;--bd:#263449;--ac:#f0b429;--sea:#0a1a2b;--nd:#2c3a4f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Georgia,'Times New Roman',serif;padding:16px}
+h1{margin:0;font-size:26px;letter-spacing:.5px}h1 span{color:var(--ac)}
+.sub{color:var(--mu);font:13px system-ui,sans-serif;margin:4px 0 14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;font:600 13px system-ui,sans-serif}
+.tabs button{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 12px;border-radius:20px;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#111;border-color:var(--ac)}
+.wrap{background:var(--sea);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+#map{width:100%;aspect-ratio:2/1;position:relative;touch-action:none}
+#map svg{display:block}
+.ATA{display:none}
+.datamaps-subunit{cursor:pointer}.datamaps-subunit:hover{filter:brightness(1.3)}
+.datamaps-bubble{cursor:pointer}
+@keyframes p{50%{opacity:.55}}
+.leg{height:8px;border-radius:4px;margin:10px 0 2px;background:linear-gradient(90deg,var(--l))}
+.ll{display:flex;justify-content:space-between;gap:8px;font:11px system-ui,sans-serif;color:var(--mu)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-top:12px;font:14px/1.5 system-ui,sans-serif}
+.card h2{margin:0 0 6px;font:700 20px Georgia,serif}
+.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.kv div{background:var(--bg);border-radius:10px;padding:8px}.kv b{display:block;font-size:18px}.kv span{color:var(--mu);font-size:11px}
+.rk{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rk div{font-size:13px}.rk h3{margin:0 0 4px;font-size:13px;color:var(--mu)}
+.rk p{margin:2px 0;display:flex;justify-content:space-between;cursor:pointer}
+.note{font:11px system-ui,sans-serif;color:var(--mu);margin-top:12px}
+summary{cursor:pointer;font:700 15px system-ui,sans-serif}details[open]>summary{margin-bottom:10px}
+details p{margin:6px 0}input,select{width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:14px system-ui,sans-serif;margin-bottom:8px}
+#bdir{max-height:320px;overflow-y:auto}
+input[type=range]{padding:0;border:0;margin:6px 0}table th{text-align:left}
+.fl{animation:fl 5s ease-in-out infinite}@keyframes fl{50%{transform:translateY(-4px)}}@media (prefers-reduced-motion:reduce){.fl{animation:none}}
+.bar{height:8px;border-radius:4px}
+.fg{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}.fg th,.fg td{border:1px solid var(--bd);padding:7px 6px;text-align:center}.fg th{background:var(--bg)}.fg td:first-child{text-align:left;color:var(--mu);background:var(--bg)}.gd{background:rgba(34,160,107,.2);color:#22a06b;font-weight:700}.bd2{background:rgba(224,82,82,.2);color:#e05252;font-weight:700}
+</style></head><body>
+<h1>The <span>Finance</span> Map</h1>
+<div class="sub">Pinch, scroll or double-tap to zoom. Tap a country to dive in.</div>
+<div class="tabs" id="tabs"></div>
+<div class="sub" style="margin:0 0 6px">Show bank prices in (approximate fixed rates):</div><div class="tabs" id="ctabs"></div>
+<div class="tabs" id="mtabs" style="display:none"></div>
+<div id="tm" style="display:none;margin:0 0 10px;font:13px system-ui,sans-serif"><button id="tmplay" style="border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:4px 10px;cursor:pointer">▶️</button> ⏳ Time machine: <b id="tmy">2026</b> <span id="tmev" style="color:var(--mu)"></span><input type="range" id="yrs" min="1990" max="2026" value="2026"></div>
+<div class="tabs"><button id="cbtn">🕸 Contagion lines: off</button><button id="gbtn">🌍 Globe mode: off</button><button id="sbtn">📸 Share card</button></div><div class="wrap"><div id="map"></div></div><div class="wrap" id="gwrap" style="display:none"><div id="globe"></div></div>
+<div class="leg" id="leg"></div><div class="ll" id="ll"></div>
+<details class="card" open><summary>🌍 Country info</summary><div id="info"></div></details>
+<details class="card" open><summary>🏆 Rankings: highest and lowest</summary><div class="rk"><div id="top"></div><div id="bot"></div></div></details>
+<details class="card"><summary>🏦 Stock directory (banks, finance, insurance)</summary><input id="bsel" placeholder="Search e.g. HSBC, Japan, JPM…"><div id="bdir"></div></details>
+<details class="card"><summary>🌡 Bank stress thermometer</summary><div id="thm"></div><div id="thl"></div><p style="color:var(--mu);font-size:12px">Our own simple learning score built from rounded capital (CET1) and bad-loan (NPL) figures. It is not an official stress test.</p></details>
+<details class="card"><summary>🫧 Market bubbles: the biggest financial stocks</summary><div class="tabs" id="btabs"></div><div id="bub"></div><p style="color:var(--mu);font-size:12px">Bubble size is approximate market value in US$ billions. Tap a bubble to open its country.</p></details>
+<details class="card"><summary>🌦 Financial weather guide</summary><p>☀️ <b>Sunny:</b> debt under 60% of GDP and growth of 3% or more.</p><p>🌤 <b>Partly sunny:</b> growth of 2% or more with debt up to 90%.</p><p>☁️ <b>Cloudy:</b> everything in between.</p><p>🌫 <b>Foggy:</b> inflation above 8%, so prices are hard to see through.</p><p>🌧 <b>Rainy:</b> debt over 100% of GDP or growth under 1%.</p><p>⛈ <b>Stormy:</b> debt over 100% and growth under 2%.</p></details>
+<details class="card"><summary>⭐ My watchlist</summary><div class="tabs" id="wtabs"></div><div id="wl"></div></details>
+<details class="card"><summary>🥊 Stock face-off</summary><select id="fa"></select><select id="fb"></select><div id="fox"></div></details>
+<details class="card"><summary>🚀 Top 10 bank stocks: up and down</summary><div class="tabs" id="ptabs"></div><div class="rk"><div id="pup"></div><div id="pdn"></div></div><p style="color:var(--mu);font-size:12px">⚠️ Sample performance figures for layout only, not real market moves. A live data feed is needed before launch.</p></details>
+<details class="card"><summary>🎯 Debt vs growth quadrants</summary><div id="quad"></div><p style="color:var(--mu);font-size:12px">Every country as one bubble. Top-left is the sweet spot; bottom-right is the danger zone. Tap a bubble.</p></details>
+<details class="card"><summary>⚖️ Compare two countries</summary><select id="cpa"></select><select id="cpb"></select><div id="cmp"></div></details>
+<details class="card" open><summary>🧭 Stock Compass: who’s up, who’s down</summary><div class="tabs" id="ktabs"></div><div class="tabs" id="qtabs"></div><div id="comp"></div><p style="color:var(--mu);font-size:12px">The dial shows the share of stocks that are up (green) and down (red), starting from north and running clockwise. The numbers around the dial count the stocks. ⚠️ Sample performance figures for layout only, not real market moves.</p></details>
+<details class="card"><summary>📖 Learn: what the numbers mean</summary><p><b>Debt / GDP:</b> what a government owes compared with the size of its economy. Higher means more of future output goes to repayments.</p><p><b>GDP growth:</b> how fast the economy is expanding after inflation. Growth makes debt easier to carry.</p><p><b>Inflation:</b> how fast prices rise. It erodes savings and pushes central banks to raise rates.</p><p><b>Policy rate:</b> the central bank’s main interest rate. It drives bank lending rates and currency strength.</p><p><b>Real rate:</b> policy rate minus inflation. Positive means savers are rewarded; negative means they are losing purchasing power.</p><p><b>Credit rating:</b> an agency’s view of a government’s ability to repay. AAA is the safest; below BBB- is “junk”.</p><p><b>Resilience score:</b> our own simple 0–100 measure of growth against debt. A learning tool, not an official index.</p></details>
+<div class="note">The time machine uses rough decade snapshots, linked economies are simplified and the cash killer score is our own learning measure. Bank prices and dividend yields are indicative snapshots, not live quotes. Currency conversions use fixed approximate exchange rates and an assumed bitcoin price, not live rates. Figures (including inflation, policy rates and ratings) are rounded, approximate estimates for education only (government debt as % of GDP, latest annual real GDP growth). Countries in grey are not covered yet. Map dots show listed banks (gold), finance stocks (blue) and insurers (purple). Not live data and not financial advice.</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"></script>
+<script>
+// iso3|name|debt%GDP|growth%|ticker|bank|city|lat|lon
+const R=`USA|United States|124|2.0|JPM|JPMorgan Chase|New York|40.7|-74
+CAN|Canada|110|1.6|RY|Royal Bank of Canada|Toronto|43.7|-79.4
+MEX|Mexico|57|0.8|GFNORTEO|Banorte|Monterrey|25.7|-100.3
+COL|Colombia|57|2.5|CIB|Bancolombia|Medellín|6.2|-75.6
+PER|Peru|33|3.0|BAP|Credicorp|Lima|-12|-77
+BRA|Brazil|87|2.4|ITUB|Itaú Unibanco|São Paulo|-23.5|-46.6
+CHL|Chile|42|2.4|BCH|Banco de Chile|Santiago|-33.4|-70.6
+ARG|Argentina|85|4.5|GGAL|Grupo Galicia|Buenos Aires|-34.6|-58.4
+IRL|Ireland|40|3.0|BIRG|Bank of Ireland|Dublin|53.3|-6.3
+GBR|United Kingdom|101|1.3|HSBA|HSBC|London|51.5|-0.1
+NLD|Netherlands|44|1.2|INGA|ING Group|Amsterdam|52.4|4.9
+DNK|Denmark|30|2.9|DANSKE|Danske Bank|Copenhagen|55.7|12.6
+NOR|Norway|43|1.5|DNB|DNB Bank|Oslo|59.9|10.7
+SWE|Sweden|34|1.8|SEB-A|SEB|Stockholm|59.3|18.1
+FIN|Finland|82|0.2|NDA|Nordea|Helsinki|60.2|24.9
+RUS|Russia|20|1.0|SBER|Sberbank|Moscow|55.8|37.6
+FRA|France|114|0.7|BNP|BNP Paribas|Paris|48.9|2.4
+BEL|Belgium|105|1.0|KBC|KBC Group|Brussels|50.8|4.4
+DEU|Germany|63|0.2|DBK|Deutsche Bank|Frankfurt|50.1|8.7
+POL|Poland|59|3.2|PKO|PKO Bank Polski|Warsaw|52.2|21
+PRT|Portugal|94|1.9|BCP|Millennium bcp|Lisbon|38.7|-9.1
+ESP|Spain|101|2.6|SAN|Santander|Madrid|40.4|-3.7
+CHE|Switzerland|38|1.3|UBSG|UBS|Zurich|47.4|8.5
+ITA|Italy|136|0.5|ISP|Intesa Sanpaolo|Turin|45.1|7.7
+GRC|Greece|150|2.2|ETE|National Bank of Greece|Athens|38|23.7
+TUR|Türkiye|25|3.0|GARAN|Garanti BBVA|Istanbul|41|29
+MAR|Morocco|68|3.8|ATW|Attijariwafa Bank|Casablanca|33.6|-7.6
+EGY|Egypt|85|4.2|COMI|Commercial Intl Bank|Cairo|30|31.2
+ISR|Israel|69|2.0|LUMI|Bank Leumi|Tel Aviv|32.1|34.8
+SAU|Saudi Arabia|30|3.5|1120|Al Rajhi Bank|Riyadh|24.7|46.7
+ARE|UAE|30|4.0|FAB|First Abu Dhabi Bank|Abu Dhabi|24.5|54.4
+NGA|Nigeria|52|3.5|ZENITHBANK|Zenith Bank|Lagos|6.5|3.4
+KEN|Kenya|70|5.0|KCB|KCB Group|Nairobi|-1.3|36.8
+ZAF|South Africa|77|1.1|SBK|Standard Bank|Johannesburg|-26.2|28
+PAK|Pakistan|70|3.0|HBL|Habib Bank|Karachi|24.9|67
+IND|India|82|6.5|HDFCBANK|HDFC Bank|Mumbai|19.1|72.9
+CHN|China|96|4.8|1398|ICBC|Beijing|39.9|116.4
+KOR|South Korea|54|1.0|105560|KB Financial|Seoul|37.6|127
+JPN|Japan|235|0.7|8306|Mitsubishi UFJ|Tokyo|35.7|139.7
+THA|Thailand|63|2.0|SCB|SCB X|Bangkok|13.8|100.5
+VNM|Vietnam|36|7.0|VCB|Vietcombank|Hanoi|21|105.8
+PHL|Philippines|61|5.5|BDO|BDO Unibank|Manila|14.6|121
+MYS|Malaysia|64|4.5|1155|Maybank|Kuala Lumpur|3.1|101.7
+SGP|Singapore|175|2.8|D05|DBS Group|Singapore|1.3|103.8
+IDN|Indonesia|40|5.0|BBCA|Bank Central Asia|Jakarta|-6.2|106.8
+AUS|Australia|50|1.8|CBA|Commonwealth Bank|Sydney|-33.9|151.2
+NZL|New Zealand|50|0.8|ANZ|ANZ Group|Auckland|-36.8|174.8`.split('\n').map(l=>{const a=l.split('|');
+const c={iso:a[0],name:a[1],debt:+a[2],gr:+a[3],tk:a[4],bank:a[5],city:a[6],lat:+a[7],lon:+a[8]};
+// Resilience score: rewards growth, penalises heavy debt (0-100)
+c.sc=Math.max(0,Math.min(100,Math.round(50+c.gr*7-c.debt*.25)));return c});
+const M={
+debt:{n:'🏛 National Debt',v:c=>c.debt,f:v=>v+'%',h:v=>160-Math.min(v,160),s:'Debt as % of GDP',l:['Low','High'],g:'hsl(160,60%,38%),hsl(80,60%,40%),hsl(0,65%,45%)'},
+gr:{n:'📈 Growth',v:c=>c.gr,f:v=>v.toFixed(1)+'%',h:v=>Math.max(0,Math.min(v,7))/7*140,s:'Real GDP growth',l:['Slow','Fast'],g:'hsl(0,65%,45%),hsl(70,60%,40%),hsl(140,60%,36%)'},
+bk:{n:'🏦 Bank Stocks',v:c=>c.debt,f:v=>v+'%',h:()=>40,s:'',l:['',''],g:'hsl(40,45%,32%),hsl(40,45%,32%)'},
+sc:{n:'🛡 Resilience',v:c=>c.sc,f:v=>v+'/100',h:v=>v/100*140,s:'Resilience score (growth vs debt)',l:['Fragile','Resilient'],g:'hsl(0,65%,45%),hsl(70,60%,40%),hsl(140,60%,36%)'}};
+let mode='debt',sel=null,tf='',map=null;
+const $=id=>document.getElementById(id);
+const rank=k=>[...R].sort((a,b)=>M[k].v(b)-M[k].v(a));
+function dark(){return matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light'||document.documentElement.dataset.theme==='dark'}
+function draw(){
+ const m=M[mode],d={};
+ R.forEach(c=>d[c.iso]={fillColor:mode==='bk'?'hsl(40,45%,32%)':`hsl(${m.h(m.v(c))},62%,40%)`});
+ if(map){
+  map.updateChoropleth(d,{reset:true});
+  map.bubbles(mode==='bk'?pins():[],{popupOnHover:false,highlightOnHover:false});
+  map.svg.selectAll('.datamaps-bubble').on('click',b=>pick(b.c.iso));map.arc(arcsF(),{strokeColor:'#ff4d4d',strokeWidth:1.8,arcSharpness:1.5});wxdraw();therm();if(gOn)grender();
+  map.svg.selectAll('g').attr('transform',tf);
+  map.svg.selectAll('.datamaps-subunit').style('stroke','#fff').style('stroke-width','.4px');
+  if(sel)map.svg.selectAll('.datamaps-subunit.'+sel.iso).style('stroke','#fff').style('stroke-width','2px');
+ }
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===mode));$('mtabs').style.display=mode==='bk'?'flex':'none';$('tm').style.display=mode==='debt'?'block':'none';
+ $('leg').style.setProperty('--l',m.g);$('ll').innerHTML=`<span>${m.l[0]}</span><span>${m.s||'🟡 Banks  🔵 Finance  🟣 Insurance'}</span><span>${m.l[1]}</span>`;
+ const r=rank(mode==='bk'?'debt':mode),f=x=>`<p onclick="pick('${x.iso}')"><span>${x.name}</span><b>${mode==='bk'?x.tk:m.f(m.v(x))}</b></p>`;
+ const t=mode==='bk'?'Debt / GDP':m.s;
+ $('top').innerHTML=`<h3>Highest · ${t}</h3>`+r.slice(0,5).map(f).join('');
+ $('bot').innerHTML=`<h3>Lowest · ${t}</h3>`+r.slice(-5).reverse().map(f).join('');
+}
+function pick(iso){
+ sel=R.find(c=>c.iso===iso)||null;draw();
+ if(!sel){$('info').innerHTML='<h2>Not covered yet</h2><div>We don’t have data for this country yet. Tap a coloured one instead.</div>';return}
+ const c=sel,rd=rank('debt').indexOf(c)+1,rg=rank('gr').indexOf(c)+1;
+ const tip=c.debt>120?'Very heavy debt load: interest costs can squeeze public spending.':c.gr>=5?'Fast-growing economy: growth can help shrink debt relative to GDP.':c.debt<45?'Low debt gives the government room to borrow in a downturn.':'Mid-range debt: growth and interest rates will decide which way it goes.';
+ $('info').innerHTML=`<h2>${c.name}</h2><div>🏦 <b>${c.bank}</b> (${c.tk}) · ${c.city}</div><div class="kv" style="grid-template-columns:repeat(3,1fr)">${xk(c)}</div><p><b>Major financial stocks</b> <small style="color:var(--mu)">(indicative price · dividend yield)</small></p>${bl2(c.iso)}
+ <div class="kv"><div><b>${c.debt}%</b><span>Debt / GDP · #${rd} of ${R.length}</span></div><div><b>${c.gr.toFixed(1)}%</b><span>GDP growth · #${rg} of ${R.length}</span></div>
+ <div><b>${c.sc}/100</b><span>Resilience score</span></div><div><b>${(c.debt/Math.max(c.gr,.1)).toFixed(0)}</b><span>Debt-to-growth ratio (lower is easier)</span></div></div>${ndx(c)}<p>${wxe(c)} <b>Financial weather: ${WXN[wxs(c)]}</b> · 🌡 Bank stress ${strs(c)}/100</p><p>${tip}</p><p>💀 <b>Cash killer score ${cks(c)}/100</b>: ${cks(c)>65?'holding cash here quietly loses buying power.':cks(c)<40?'cash is relatively safe here.':'cash is roughly treading water.'}</p>${links(c)}`}
+const X={};`USA|3.0|3.75|USD|Federal Reserve|S&P 500|AA+|JPMorgan Chase (JPM);Bank of America (BAC);Citigroup (C);Wells Fargo (WFC)
+CAN|2.2|2.25|CAD|Bank of Canada|S&P/TSX|AAA|RBC (RY);TD Bank (TD);Scotiabank (BNS);BMO (BMO)
+MEX|3.8|7.0|MXN|Banxico|IPC|BBB|Banorte (GFNORTEO);BBVA México (BBVA);Santander México (BSMX)
+COL|5.0|9.25|COP|Banco de la República|COLCAP|BB|Bancolombia (CIB);Davivienda (PFDAVVNDA);Banco de Bogotá (BOGOTA)
+PER|2.0|4.25|PEN|BCRP|S&P/BVL Peru|BBB|Credicorp (BAP);Intercorp Financial (IFS);Scotiabank Perú (BNS)
+BRA|5.0|14.5|BRL|Banco Central do Brasil|Ibovespa|BB|Itaú Unibanco (ITUB);Bradesco (BBD);Banco do Brasil (BBAS3);Santander Brasil (BSBR)
+CHL|4.0|4.5|CLP|Banco Central de Chile|IPSA|A|Banco de Chile (BCH);Santander Chile (BSAC);BCI (BCI)
+ARG|25|–|ARS|BCRA|Merval|CCC+|Grupo Galicia (GGAL);Banco Macro (BMA);BBVA Argentina (BBAR)
+IRL|2.0|2.0|EUR|ECB|ISEQ|AA|Bank of Ireland (BIRG);AIB Group (A5G);Permanent TSB (PTSB)
+GBR|3.4|3.75|GBP|Bank of England|FTSE 100|AA|HSBC (HSBA);Barclays (BARC);Lloyds (LLOY);NatWest (NWG)
+NLD|2.5|2.0|EUR|ECB|AEX|AAA|ING (INGA);ABN AMRO (ABN);Van Lanschot Kempen (VLK)
+DNK|1.5|1.75|DKK|Danmarks Nationalbank|OMXC25|AAA|Danske Bank (DANSKE);Jyske Bank (JYSK);Sydbank (SYDB)
+NOR|3.0|4.0|NOK|Norges Bank|OSEBX|AAA|DNB (DNB);SpareBank 1 SR-Bank (SRBANK);SpareBank 1 Nord-Norge (NONG)
+SWE|1.0|1.75|SEK|Riksbank|OMXS30|AAA|SEB (SEB-A);Swedbank (SWED-A);Handelsbanken (SHB-A)
+FIN|2.0|2.0|EUR|ECB|OMXH25|AA+|Nordea (NDA);Aktia (AKTIA);Oma Savings Bank (OMASP)
+RUS|7.0|16.5|RUB|Bank of Russia|MOEX|Unrated|Sberbank (SBER);VTB (VTBR);T-Bank (T)
+FRA|1.0|2.0|EUR|ECB|CAC 40|A+|BNP Paribas (BNP);Crédit Agricole (ACA);Société Générale (GLE)
+BEL|2.5|2.0|EUR|ECB|BEL 20|AA|KBC (KBC);Belfius (state-owned, unlisted);BNP Paribas Fortis (unlisted)
+DEU|2.2|2.0|EUR|ECB|DAX|AAA|Deutsche Bank (DBK);Commerzbank (CBK);Deutsche Pfandbriefbank (PBB)
+POL|3.0|4.0|PLN|NBP|WIG20|A-|PKO BP (PKO);Pekao (PEO);mBank (MBK);ING Bank Śląski (ING)
+PRT|2.2|2.0|EUR|ECB|PSI|A|Millennium bcp (BCP);Caixa Geral (state-owned);Santander Totta (unlisted)
+ESP|2.5|2.0|EUR|ECB|IBEX 35|A+|Santander (SAN);BBVA (BBVA);CaixaBank (CABK);Sabadell (SAB)
+CHE|0.3|0.0|CHF|SNB|SMI|AAA|UBS (UBSG);Julius Baer (BAER);Vontobel (VONN)
+ITA|1.5|2.0|EUR|ECB|FTSE MIB|BBB+|Intesa Sanpaolo (ISP);UniCredit (UCG);Banco BPM (BAMI);Monte dei Paschi (BMPS)
+GRC|3.0|2.0|EUR|ECB|ATHEX|BBB|National Bank of Greece (ETE);Piraeus (TPEIR);Eurobank (EUROB);Alpha Bank (ALPHA)
+TUR|32|40|TRY|CBRT|BIST 100|BB-|Garanti BBVA (GARAN);Akbank (AKBNK);İş Bankası (ISCTR);Yapı Kredi (YKBNK)
+MAR|1.0|2.25|MAD|Bank Al-Maghrib|MASI|BB+|Attijariwafa (ATW);BCP Maroc (BCP);Bank of Africa (BOA)
+EGY|13|22|EGP|CBE|EGX 30|B-|CIB (COMI);QNB Alahli (QNBE);Faisal Islamic (FAIT)
+ISR|3.0|4.25|ILS|Bank of Israel|TA-35|A|Bank Leumi (LUMI);Bank Hapoalim (POLI);Discount Bank (DSCT);Mizrahi Tefahot (MZTF)
+SAU|2.0|4.5|SAR|SAMA|Tadawul (TASI)|A+|Al Rajhi (1120);Saudi National Bank (1180);Riyad Bank (1010)
+ARE|2.0|4.0|AED|CBUAE|ADX / DFM|AA|First Abu Dhabi Bank (FAB);Emirates NBD (EMIRATESNBD);ADCB (ADCB)
+NGA|20|27|NGN|CBN|NGX All-Share|B-|Zenith Bank (ZENITHBANK);GTCO (GTCO);Access Holdings (ACCESSCORP);UBA (UBA)
+KEN|4.5|9.0|KES|CBK|NSE 20|B-|KCB (KCB);Equity Group (EQTY);Co-op Bank (COOP);Absa Kenya (ABSA)
+ZAF|3.5|7.0|ZAR|SARB|JSE Top 40|BB|Standard Bank (SBK);FirstRand (FSR);Absa (ABG);Nedbank (NED)
+PAK|6.0|11.0|PKR|SBP|KSE-100|CCC+|HBL (HBL);UBL (UBL);MCB Bank (MCB);Meezan Bank (MEBL)
+IND|3.0|5.5|INR|RBI|Nifty 50 / Sensex|BBB-|HDFC Bank (HDFCBANK);ICICI Bank (ICICIBANK);SBI (SBIN);Kotak (KOTAKBANK)
+CHN|0.5|3.0|CNY|PBoC|CSI 300|A+|ICBC (1398);China Construction Bank (939);Agricultural Bank (1288);Bank of China (3988)
+KOR|2.0|2.5|KRW|Bank of Korea|KOSPI|AA|KB Financial (105560);Shinhan (055550);Hana (086790);Woori (316140)
+JPN|2.8|0.75|JPY|Bank of Japan|Nikkei 225|A+|MUFG (8306);SMFG (8316);Mizuho (8411);Resona (8308)
+THA|0.5|1.5|THB|Bank of Thailand|SET|A-|SCB X (SCB);Kasikornbank (KBANK);Bangkok Bank (BBL);Krungthai (KTB)
+VNM|3.5|4.5|VND|SBV|VN-Index|BB+|Vietcombank (VCB);BIDV (BID);VietinBank (CTG);Techcombank (TCB)
+PHL|2.0|4.5|PHP|BSP|PSEi|BBB+|BDO (BDO);BPI (BPI);Metrobank (MBT)
+MYS|1.5|2.75|MYR|BNM|FBM KLCI|A-|Maybank (1155);CIMB (1023);Public Bank (1295);RHB (1066)
+SGP|1.0|–|SGD|MAS|STI|AAA|DBS (D05);OCBC (O39);UOB (U11)
+IDN|2.0|4.75|IDR|Bank Indonesia|IDX Composite|BBB|BCA (BBCA);Bank Mandiri (BMRI);BRI (BBRI);BNI (BBNI)
+AUS|3.0|3.6|AUD|RBA|ASX 200|AAA|Commonwealth Bank (CBA);Westpac (WBC);NAB (NAB);ANZ (ANZ)
+NZL|2.5|2.25|NZD|RBNZ|NZX 50|AA+|ANZ New Zealand (ANZ);Kiwibank (state-owned);Heartland (HGH)`.split('\n').forEach(l=>{const a=l.split('|');X[a[0]]={inf:+a[1],rate:a[2],cur:a[3],cb:a[4],idx:a[5],rt:a[6],banks:a[7]}});
+const real=c=>{const r=parseFloat(X[c.iso].rate);return isNaN(r)?null:+(r-X[c.iso].inf).toFixed(1)};
+const xk=c=>{const x=X[c.iso],r=real(c);return [[x.inf+'%','Inflation'],[isNaN(parseFloat(x.rate))?'–':x.rate+'%','Policy rate'],[r===null?'–':r+'%','Real rate'],[x.cur,'Currency'],[x.cb,'Central bank'],[x.idx,'Main index'],[x.rt,'Credit rating']].map(p=>`<div><b style="font-size:14px">${p[0]}</b><span>${p[1]}</span></div>`).join('')};
+const B=[];`USA|300 1.9;50 2.2;100 2.0;80 2.1
+CAN|190 2.7;90 3.8;80 4.6;150 3.6
+MEX|150 4.5;-;-
+COL|45 5.0 USD;25000 3.0;-
+PER|200 4.0 USD;40 3.5 USD;-
+BRA|7.5 4.5 USD;2.7 5.0 USD;25 8.0;5 3.0 USD
+CHL|30 5.5 USD;30 3.5 USD;38000 3.5
+ARG|50 1.0 USD;80 3.0 USD;20 3.0 USD
+IRL|12 5.5;6.5 6.0;2 2.0
+GBR|10 5.0;3.5 2.5;0.9 4.0;5.5 4.5
+NLD|19 5.5;20 5.5;20 5.0
+DNK|300 7.0;600 5.0;400 6.0
+NOR|270 5.8;160 5.0;130 6.0
+SWE|175 5.0;280 6.0;130 5.5
+FIN|14 7.0;11 6.0;10 6.5
+RUS|300 11;80 0;-
+FRA|80 6.0;16 6.5;55 4.5
+BEL|90 4.5;-;-
+DEU|30 3.0;30 3.0;6 6.0
+POL|80 6.0;190 8.0;800 3.0;350 6.0
+PRT|0.6 5.0;-;-
+ESP|9 3.0;17 4.5;8 5.5;3 5.0
+CHE|30 2.5;60 3.5;60 5.5
+ITA|5.5 7.0;70 4.5;10 8.0;8 6.0
+GRC|12 4.5;7 4.0;3 4.0;2.5 3.0
+TUR|140 3.0;75 4.0;15 3.0;40 1.0
+MAR|750 3.5;280 4.0;220 2.5
+EGY|90 2.5;-;-
+ISR|60 4.0;60 4.0;28 4.0;170 3.5
+SAU|100 3.0;40 4.0;28 4.0
+ARE|15 4.0;25 4.5;11 5.0
+NGA|60 10;80 8;25 6;40 9
+KEN|55 8;60 8;20 9;20 8
+ZAF|270 5.5;85 5.0;200 6.0;270 6.0
+PAK|270 6;400 8;350 9;380 5
+IND|1000 1.2;1400 0.8;850 1.8;2100 0.1
+CHN|6.5 5.5 HKD;8 5.5 HKD;5 5.5 HKD;4.5 5.5 HKD
+KOR|100000 3.0;70000 3.5;80000 4.5;20000 5.0
+JPN|2800 2.5;5500 3.0;4500 3.0;1500 3.0
+THA|130 7.0;170 4.0;160 4.0;22 5.0
+VNM|60000 0.5;40000 0.5;35000 0.5;35000 0.5
+PHL|150 3.5;130 4.0;80 4.0
+MYS|10 6.0;7 5.0;4.5 4.5;6 6.0
+SGP|50 5.0;17 5.0;35 5.0
+IDN|8000 3.0;4500 8.0;3800 9.0;4000 6.0
+AUS|170 3.5;35 5.0;40 4.5;35 5.0
+NZL|-;-;1.2 8.0`.split('\n').forEach(l=>{const p=l.split('|'),iso=p[0],e=p[1].split(';'),c=R.find(x=>x.iso===iso);
+X[iso].banks.split(';').forEach((t,i)=>{const m=t.match(/^(.*) \((.*)\)$/),q=e[i].split(' '),ok=q[0]!=='-'&&!/unlisted|state-owned/.test(t);
+B.push({iso,country:c.name,name:m?m[1]:t,tk:ok&&m?m[2]:'',px:ok?+q[0]:0,yl:ok?+q[1]:0,cur:q[2]||X[iso].cur})})});
+const FX={USD:1,GBP:.75,EUR:.86,JPY:150,BTC:1e-5,CAD:1.38,MXN:18.5,COP:4000,PEN:3.6,BRL:5.5,CLP:950,ARS:1400,DKK:6.4,NOK:10.3,SEK:9.5,RUB:85,PLN:3.7,CHF:.82,TRY:42,MAD:9.2,EGP:49,ILS:3.4,SAR:3.75,AED:3.67,NGN:1500,KES:129,ZAR:17.5,PKR:282,INR:87,CNY:7.2,HKD:7.8,KRW:1400,THB:33,VND:26000,PHP:57,MYR:4.3,SGD:1.3,IDR:16300,AUD:1.52,NZD:1.68};
+let disp='LOC';
+const fmt=(p,c)=>{let cur=c,v=p;if(disp!=='LOC'&&FX[c]){v=p/FX[c]*FX[disp];cur=disp}
+if(cur==='BTC')return '₿'+(v>=1?v.toFixed(3):v>=.01?v.toFixed(4):v.toFixed(6));
+try{return new Intl.NumberFormat('en',{style:'currency',currency:cur,maximumFractionDigits:v<10?2:0}).format(v)}catch(e){return cur+' '+v}};
+const IC={bank:'🏦',fin:'💹',ins:'🛡'};B.forEach(b=>b.type='bank');
+[['fin',`USA|BlackRock (BLK) 1100 1.9;Goldman Sachs (GS) 700 1.8;Visa (V) 350 0.7;Charles Schwab (SCHW) 90 1.4
+CAN|Brookfield Corp (BN) 85 0.5;TMX Group (X) 45 1.5
+GBR|London Stock Exchange Group (LSEG) 95 1.4;Schroders (SDR) 3.8 5.5;St James’s Place (SJP) 12 3.0
+FRA|Amundi (AMUN) 65 6.5;Euronext (ENX) 140 2.0
+DEU|Deutsche Börse (DB1) 240 1.7
+NLD|Adyen (ADYEN) 1400 0;EXOR (EXO) 90 0.3
+CHE|Partners Group (PGHN) 1100 3.5
+SWE|Investor AB (INVE-B) 290 1.8;EQT (EQT) 290 1.0
+ITA|FinecoBank (FBK) 20 3.5;Azimut (AZM) 25 5.0
+JPN|Nomura (8604) 1000 3.0;ORIX (8591) 3500 3.0;Japan Exchange Group (8697) 1700 2.0
+KOR|Samsung Securities (016360) 55000 3.5
+CHN|HKEX (388) 420 2.5 HKD;CITIC Securities (6030) 28 3.0 HKD
+IND|Bajaj Finance (BAJFINANCE) 950 0.5;BSE Ltd (BSE) 2500 0.5
+SGP|Singapore Exchange (S68) 14 3.0
+AUS|Macquarie Group (MQG) 210 3.0;ASX Ltd (ASX) 60 3.5
+BRA|B3 (B3SA3) 13 7.0;XP Inc (XP) 17 2.0 USD
+ZAF|Capitec (CPI) 3000 2.5
+SAU|Saudi Tadawul Group (1111) 200 2.0`],['ins',`USA|Berkshire Hathaway (BRK.B) 480 0;Progressive (PGR) 250 0.2;Chubb (CB) 290 1.3
+CAN|Manulife (MFC) 45 3.7;Sun Life (SLF) 80 4.0
+GBR|Aviva (AV.) 6.5 6.0;Legal & General (LGEN) 2.4 8.0;Prudential (PRU) 9 1.5
+FRA|AXA (CS) 38 5.5
+DEU|Allianz (ALV) 350 4.5;Munich Re (MUV2) 550 3.0
+CHE|Zurich Insurance (ZURN) 580 4.5;Swiss Re (SREN) 140 4.0
+ITA|Generali (G) 32 5.5
+ESP|Mapfre (MAP) 3.2 6.0
+NLD|NN Group (NN) 55 5.5
+BEL|Ageas (AGS) 55 5.5
+FIN|Sampo (SAMPO) 9 4.5
+DNK|Tryg (TRYG) 150 4.5
+JPN|Tokio Marine (8766) 5500 3.0;MS&AD (8725) 3300 3.0;Dai-ichi Life (8750) 1400 3.0
+CHN|Ping An (2318) 55 3.5 HKD;China Life (2628) 18 3.0 HKD
+IND|LIC of India (LICI) 900 1.0;HDFC Life (HDFCLIFE) 750 0.3
+KOR|Samsung Life (032830) 130000 3.0
+AUS|QBE (QBE) 20 4.0;Suncorp (SUN) 20 4.5
+ZAF|Sanlam (SLM) 90 5.0;Discovery (DSY) 190 2.0
+BRA|BB Seguridade (BBSE3) 36 8.0`]].forEach(a=>a[1].split('\n').forEach(l=>{const p=l.split('|'),c=R.find(x=>x.iso===p[0]);p[1].split(';').forEach(s=>{const m=s.match(/^(.*) \(([^)]*)\) ([\d.]+) ([\d.]+)(?: ([A-Z]{3}))?$/);if(m)B.push({iso:p[0],country:c.name,name:m[1],tk:m[2],px:+m[3],yl:+m[4],cur:m[5]||X[p[0]].cur,type:a[0]})})}));
+const RT=['AAA','AA+','AA','AA-','A+','A','A-','BBB+','BBB','BBB-','BB+','BB','BB-','B+','B','B-','CCC+'];
+const rsc=c=>{const i=RT.indexOf(X[c.iso].rt);return i<0?0:17-i};
+const avgY=c=>{const a=B.filter(b=>b.iso===c.iso&&b.px);return a.length?+(a.reduce((t,b)=>t+b.yl,0)/a.length).toFixed(1):0};
+const cks=c=>{const x=X[c.iso],r=parseFloat(x.rate),re=isNaN(r)?-x.inf*.5:r-x.inf;return Math.max(0,Math.min(100,Math.round(50-re*4+Math.max(0,c.debt-100)/10)))};
+let ty=2026;const HD={};`USA|55 55 95 132
+CAN|70 80 80 118
+MEX|55 40 42 58
+COL|35 35 40 65
+PER|80 45 25 35
+BRA|40 65 60 88
+CHL|45 38 9 33
+ARG|60 45 45 103
+IRL|95 38 86 58
+GBR|35 38 76 105
+NLD|78 56 59 54
+DNK|58 52 43 42
+NOR|30 30 43 43
+SWE|42 50 37 40
+FIN|14 43 47 75
+RUS|50 90 10 19
+FRA|36 58 85 115
+BEL|125 108 100 112
+DEU|40 60 82 68
+POL|50 37 55 57
+PRT|60 50 96 135
+ESP|42 58 60 120
+CHE|28 52 40 42
+ITA|95 105 119 155
+GRC|70 104 148 205
+TUR|25 40 40 40
+MAR|85 70 50 70
+EGY|100 70 70 90
+ISR|100 75 70 72
+SAU|40 85 10 32
+ARE|10 30 15 40
+NGA|90 70 10 35
+KEN|70 50 45 70
+ZAF|40 45 35 69
+PAK|90 85 60 87
+IND|70 70 67 88
+CHN|10 22 34 70
+KOR|10 18 30 48
+JPN|65 140 205 260
+THA|15 50 40 50
+VNM|30 35 45 45
+PHL|70 55 50 52
+MYS|60 32 53 67
+SGP|90 85 95 135
+IDN|45 90 25 39
+AUS|15 20 12 45
+NZL|55 40 25 45`.split('\n').forEach(l=>{const p=l.split('|');HD[p[0]]=p[1].split(' ').map(Number)});
+const hist=c=>{const a=[...HD[c.iso],c.debt],t=(ty-1990)/10,i=Math.min(Math.floor(t),3),w=i===3?(ty-2020)/6:t-i;return Math.round(a[i]+(a[i+1]-a[i])*w)};
+const EV={1991:'Early-90s recession',1997:'Asian financial crisis',2000:'Dot-com boom',2008:'Global financial crisis',2009:'Great Recession',2010:'Eurozone debt crisis',2020:'Covid-19 shock',2022:'Inflation surge and rate hikes'};
+M.debt.v=c=>ty===2026?c.debt:hist(c);
+const G1='hsl(140,60%,36%),hsl(70,60%,40%),hsl(0,65%,45%)',G2='hsl(0,65%,45%),hsl(70,60%,40%),hsl(140,60%,36%)';
+Object.assign(M,{
+inf:{n:'📉 Inflation',v:c=>X[c.iso].inf,f:v=>v+'%',h:v=>140-Math.min(v,20)/20*140,s:'Annual inflation',l:['Low','High'],g:G1},
+rate:{n:'🏦 Policy rate',v:c=>parseFloat(X[c.iso].rate)||0,f:v=>v+'%',h:v=>210+Math.min(v,25)/25*100,s:'Central bank policy rate',l:['Low','High'],g:'hsl(210,60%,40%),hsl(260,60%,40%),hsl(310,60%,40%)'},
+real:{n:'⚖️ Real rate',v:c=>real(c)??0,f:v=>v+'%',h:v=>(Math.max(-10,Math.min(v,10))+10)/20*140,s:'Policy rate minus inflation',l:['Cash loses','Cash earns'],g:G2},
+yld:{n:'💸 Dividends',v:avgY,f:v=>v+'%',h:v=>Math.min(v,9)/9*140,s:'Average dividend yield of listed stocks',l:['Low','High'],g:G2},
+rt:{n:'⭐ Credit rating',v:rsc,f:v=>v?RT[17-v]:'NR',h:v=>v/17*140,s:'Government credit rating',l:['Weak','Strong'],g:G2},
+cash:{n:'💀 Cash killer',v:cks,f:v=>v+'/100',h:v=>140-v/100*140,s:'Cash killer score (higher = worse place to hold cash)',l:['Safe','Deadly'],g:G1}});
+const LK={};`USA|CAN MEX CHN JPN GBR
+CAN|USA MEX GBR CHN
+MEX|USA CAN CHN BRA
+COL|USA MEX PER BRA
+PER|CHN USA CHL BRA
+BRA|CHN USA ARG DEU
+CHL|CHN USA BRA ARG
+ARG|BRA CHN USA CHL
+IRL|GBR USA DEU NLD
+GBR|USA DEU FRA IRL NLD
+NLD|DEU GBR BEL FRA
+DNK|DEU SWE NOR GBR
+NOR|GBR DEU SWE NLD
+SWE|DEU NOR DNK GBR
+FIN|SWE DEU RUS NLD
+RUS|CHN TUR IND DEU
+FRA|DEU ITA ESP GBR
+BEL|FRA DEU NLD GBR
+DEU|FRA NLD CHN USA
+POL|DEU GBR FRA ITA
+PRT|ESP FRA GBR DEU
+ESP|FRA PRT DEU ITA
+CHE|DEU USA FRA GBR
+ITA|DEU FRA ESP USA
+GRC|DEU ITA FRA TUR
+TUR|DEU RUS ITA GBR
+MAR|FRA ESP ITA USA
+EGY|SAU ARE TUR ITA
+ISR|USA DEU CHN GBR
+SAU|CHN IND JPN USA
+ARE|IND CHN SAU GBR
+NGA|IND CHN USA ZAF
+KEN|GBR USA ARE IND
+ZAF|CHN USA DEU GBR
+PAK|CHN SAU ARE USA
+IND|USA CHN ARE SAU
+CHN|USA JPN KOR AUS
+KOR|CHN USA JPN VNM
+JPN|CHN USA KOR AUS
+THA|CHN JPN USA MYS
+VNM|CHN KOR USA JPN
+PHL|CHN JPN USA SGP
+MYS|SGP CHN USA JPN
+SGP|CHN MYS IDN USA
+IDN|CHN JPN SGP IND
+AUS|CHN JPN KOR USA
+NZL|AUS CHN USA JPN`.split('\n').forEach(l=>{const p=l.split('|');LK[p[0]]=p[1].split(' ')});
+let cg=false;
+const arcsF=()=>{if(!cg||!sel)return [];const a=R.find(c=>c.iso===sel.iso);return (LK[sel.iso]||[]).map(i=>{const b=R.find(c=>c.iso===i);return {origin:{latitude:a.lat,longitude:a.lon},destination:{latitude:b.lat,longitude:b.lon}}})};
+const links=c=>`<p>🕸 <b>Linked economies</b> (most exposed if ${c.name} wobbles): ${(LK[c.iso]||[]).map(i=>`<a href="#" onclick="pick('${i}');return false" style="color:var(--ac)">${R.find(x=>x.iso===i).name}</a>`).join(' · ')}</p>`;
+let WL=[],wp='d';try{WL=JSON.parse(localStorage.getItem('gcfm-wl')||'[]')}catch(e){}
+const wk=b=>b.iso+'|'+b.tk;
+const star=b=>b.px?`<span onclick="event.stopPropagation();wlt('${wk(b)}')" style="cursor:pointer;font-size:16px;color:var(--ac)">${WL.includes(wk(b))?'★':'☆'}</span> `:'';
+function wlt(k){WL=WL.includes(k)?WL.filter(x=>x!==k):[...WL,k];try{localStorage.setItem('gcfm-wl',JSON.stringify(WL))}catch(e){}wlr();bd($('bsel').value.toLowerCase());if(sel)pick(sel.iso)}
+const bl2=iso=>B.filter(b=>b.iso===iso).map(b=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--bd)"><span>${star(b)}${IC[b.type]} ${b.name}${b.tk?` <small style="color:var(--mu)">${b.tk}</small>`:''}</span><span style="text-align:right">${b.px?fmt(b.px,b.cur)+' · '+b.yl+'%':'unlisted'}</span></div>`).join('');
+function bd(q){$('bdir').innerHTML=B.filter(b=>(b.name+b.tk+b.country).toLowerCase().includes(q)).map(b=>`<p style="cursor:pointer;display:flex;justify-content:space-between;gap:8px" onclick="pick('${b.iso}')"><span>${star(b)}${IC[b.type]} <b>${b.name}</b> ${b.tk} · ${b.country}</span><span>${b.px?fmt(b.px,b.cur)+' · '+b.yl+'%':'unlisted'}</span></p>`).join('')||'No match'}
+function wlr(){const L=B.filter(b=>WL.includes(wk(b)));
+$('wtabs').innerHTML=Object.keys(PN).map(k=>`<button data-w="${k}" class="${k===wp?'on':''}">${PN[k]}</button>`).join('');
+$('wl').innerHTML=L.length?L.map(b=>{const v=perf(b,wp);return `<p onclick="pick('${b.iso}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:8px"><span>${star(b)}<b>${b.tk}</b> <small style="color:var(--mu)">${b.country}</small></span><span>${fmt(b.px,b.cur)} · ${b.yl}% · <b style="color:${v>=0?'#22a06b':'#e05252'}">${v>0?'+':''}${v}%</b></span></p>`}).join('')+`<p>Average move: <b>${(L.reduce((t,b)=>t+perf(b,wp),0)/L.length).toFixed(1)}%</b> · ⚠️ sample performance data</p>`:'<p style="color:var(--mu)">Tap ☆ next to any stock (in a country card or the stock directory) to add it here. Saved in this browser.</p>'}
+function tmset(y){ty=y;$('tmy').textContent=y;$('tmev').textContent=EV[y]?'· '+EV[y]:'';draw()}
+function shareCard(){
+const cv=document.createElement('canvas');cv.width=cv.height=1080;const g=cv.getContext('2d');
+const t=(s,x,y,f,c)=>{g.font=f;g.fillStyle=c;g.fillText(s,x,y)};
+g.fillStyle='#0d1420';g.fillRect(0,0,1080,1080);g.fillStyle='#f0b429';g.fillRect(0,0,1080,14);
+t('THE FINANCE MAP',60,120,'bold 64px Georgia','#f0b429');t('Growth Capital Group',60,168,'28px sans-serif','#8b97a8');
+if(sel){const c=sel,x=X[c.iso];t(c.name,60,290,'bold 84px Georgia','#fff');
+[['Debt / GDP',c.debt+'%'],['GDP growth',c.gr+'%'],['Inflation',x.inf+'%'],['Policy rate',isNaN(parseFloat(x.rate))?'–':x.rate+'%'],['Credit rating',x.rt],['Cash killer',cks(c)+'/100']].forEach((r,i)=>{const cx=60+(i%2)*500,cy=400+Math.floor(i/2)*170;g.fillStyle='#16202f';g.fillRect(cx,cy-60,470,140);t(r[0],cx+24,cy-14,'26px sans-serif','#8b97a8');t(r[1],cx+24,cy+52,'bold 56px sans-serif','#fff')});
+t('Major banks: '+x.banks.split(';').slice(0,3).map(s=>s.replace(/ \(.*\)/,'')).join(' · '),60,960,'26px sans-serif','#e8edf3')}
+else{const m=M[mode],r=rank(mode==='bk'?'debt':mode),mf=m.f(0)===undefined?x=>x:m.f;t(m.n+': '+(m.s||'Debt as % of GDP'),60,260,'bold 44px sans-serif','#fff');
+[['Highest',r.slice(0,6)],['Lowest',r.slice(-6).reverse()]].forEach((s,k)=>{t(s[0],60+k*520,350,'bold 32px sans-serif','#f0b429');s[1].forEach((c,i)=>{t(c.name,60+k*520,420+i*88,'30px sans-serif','#e8edf3');t(mf(m.v(c)),380+k*520,420+i*88,'bold 30px sans-serif','#fff')})})}
+t('Indicative figures for education only',60,1030,'22px sans-serif','#8b97a8');
+cv.toBlob(b=>{
+const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='finance-map-card.png';
+const w=document.createElement('div');w.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px';w.innerHTML='<img src="'+cv.toDataURL()+'" style="max-width:100%;max-height:75%;border-radius:12px"><div style="color:#fff;font:14px system-ui">Tap the image to save it (press and hold on a phone), or tap anywhere else to close.</div>';
+w.querySelector('img').onclick=e=>{e.stopPropagation();a.click()};w.onclick=()=>w.remove();document.body.appendChild(w)})}
+let mt='all';const COL={bank:'#ffd84a',fin:'#4cc9f0',ins:'#c77dff'};
+function pins(){const cnt={};return B.filter(b=>b.px&&(mt==='all'||b.type===mt)).map(b=>{const c=R.find(x=>x.iso===b.iso),n=cnt[b.iso]=(cnt[b.iso]||0)+1,a=n*2.4,r=.5+n*.12;
+return {name:b.name+' ('+b.tk+')',radius:3,latitude:c.lat+Math.sin(a)*r,longitude:c.lon+Math.cos(a)*r*1.3,fillColor:COL[b.type],borderWidth:.6,borderColor:'#222',c:{iso:b.iso}}})}
+let ck='bank',cp='d';const KN={bank:'🏦 Banks',fin:'💹 Finance',ins:'🛡 Insurance'};
+function compass(){
+const L=B.filter(b=>b.px&&b.type===ck).map(b=>({b,v:perf(b,cp)})),u=L.filter(x=>x.v>=0).length,n=L.length-u,pu=L.length?u/L.length:0,pg=Math.round(pu*100),
+avg=L.length?+(L.reduce((t,x)=>t+x.v,0)/L.length).toFixed(1):0,C=180,RR=140,pt=(a,r)=>[C+r*Math.sin(a),C-r*Math.cos(a)],ang=pu*2*Math.PI,G='hsl(140,60%,38%)',RD='hsl(0,65%,48%)',e=pt(ang,RR);
+let s='<svg viewBox="0 0 360 360" style="width:100%;max-width:440px;display:block;margin:auto">';
+s+=`<circle cx="180" cy="180" r="${RR}" fill="${pu>=1?G:RD}"/>`;
+if(pu>0&&pu<1)s+=`<path d="M180,180 L180,${C-RR} A${RR},${RR} 0 ${pu>.5?1:0} 1 ${e[0].toFixed(1)},${e[1].toFixed(1)} Z" fill="${G}"/>`;
+for(let i=0;i<36;i++){const a=i*Math.PI/18,p=pt(a,RR+6),q=pt(a,RR+(i%9?12:20));s+=`<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" style="stroke:var(--mu)" stroke-width="${i%9?1:2}"/>`}
+[['0',0],[Math.round(L.length/4),90],[Math.round(L.length/2),180],[Math.round(L.length*3/4),270]].forEach(d=>{const p=pt(d[1]*Math.PI/180,RR+30);s+=`<text x="${p[0].toFixed(1)}" y="${(p[1]+4).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" style="fill:var(--tx)">${d[0]}</text>`});
+const lab=(a,t)=>{const p=pt(a,92);return `<text x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#fff">${t}</text>`};
+if(pu>.08)s+=lab(ang/2,'▲ '+pg+'%');if(pu<.92)s+=lab(ang+(2*Math.PI-ang)/2,'▼ '+(100-pg)+'%');
+const nd=pt(ang,RR+10);s+=`<line x1="180" y1="180" x2="${nd[0].toFixed(1)}" y2="${nd[1].toFixed(1)}" style="stroke:var(--tx)" stroke-width="3" stroke-linecap="round"/><circle cx="180" cy="180" r="40" style="fill:var(--card);stroke:var(--tx)" stroke-width="2"/><text x="180" y="186" font-size="22" font-weight="700" text-anchor="middle" style="fill:var(--tx)">${pg}%</text><text x="180" y="202" font-size="9" text-anchor="middle" style="fill:var(--mu)">UP</text>`;
+$('comp').innerHTML=s+'</svg>'+`<p style="text-align:center"><b style="color:${G}">${u} up</b> · <b style="color:${RD}">${n} down</b> · average move <b>${avg>0?'+':''}${avg}%</b> across ${L.length} stocks</p>`;
+document.querySelectorAll('#ktabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===ck));
+document.querySelectorAll('#qtabs button').forEach(b=>b.classList.toggle('on',b.dataset.q===cp))}
+function rnd(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}h^=h>>>13;h=Math.imul(h,0x5bd1e995);return ((h>>>0)%10000)/10000}
+const perf=(b,p)=>{const s={d:3,w:6,m:12,y:40}[p];return +(((rnd(b.iso+b.tk+p)+rnd(b.tk+p+b.iso)+rnd(p+b.iso+b.tk+'x'))/3-.45)*2*s).toFixed(1)};
+let per='d';const PN={d:'Day',w:'Week',m:'Month',y:'Year'};
+function tp(){const L=B.filter(b=>b.px&&b.type==='bank').map(b=>({b,v:perf(b,per)})).sort((a,c)=>c.v-a.v);
+const f=(x,i)=>`<p onclick="pick('${x.b.iso}')"><span>${i+1}. ${x.b.tk} <small style="color:var(--mu)">${x.b.country}</small></span><b style="color:${x.v>=0?'#22a06b':'#e05252'}">${x.v>0?'+':''}${x.v}%</b></p>`;
+$('pup').innerHTML='<h3>🟢 Top 10 up</h3>'+L.slice(0,10).map(f).join('');$('pdn').innerHTML='<h3>🔴 Top 10 down</h3>'+L.slice(-10).reverse().map(f).join('');
+document.querySelectorAll('#ptabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===per))}
+$('ptabs').innerHTML=Object.keys(PN).map(k=>`<button data-p="${k}">${PN[k]}</button>`).join('');
+$('ptabs').onclick=e=>{if(e.target.dataset.p){per=e.target.dataset.p;tp()}};tp();
+$('ktabs').innerHTML=Object.keys(KN).map(k=>`<button data-k="${k}">${KN[k]}</button>`).join('');$('qtabs').innerHTML=Object.keys(PN).map(k=>`<button data-q="${k}">${PN[k]}</button>`).join('');
+$('ktabs').onclick=e=>{if(e.target.dataset.k){ck=e.target.dataset.k;compass()}};$('qtabs').onclick=e=>{if(e.target.dataset.q){cp=e.target.dataset.q;compass()}};compass();
+const MN={all:'All',bank:'🏦 Banks',fin:'💹 Finance',ins:'🛡 Insurance'};
+function mmark(){document.querySelectorAll('#mtabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===mt))}
+$('mtabs').innerHTML=Object.keys(MN).map(k=>`<button data-m="${k}">${MN[k]}</button>`).join('');mmark();
+$('mtabs').onclick=e=>{if(e.target.dataset.m){mt=e.target.dataset.m;mmark();draw()}};
+const GD={};`USA|30500 342
+CAN|2300 41
+MEX|1900 130
+COL|430 53
+PER|290 34
+BRA|2300 213
+CHL|350 20
+ARG|650 46
+IRL|600 5.3
+GBR|3800 69
+NLD|1300 18
+DNK|430 6
+NOR|500 5.6
+SWE|620 10.6
+FIN|310 5.6
+RUS|2200 144
+FRA|3300 68
+BEL|700 11.8
+DEU|4800 84
+POL|950 37
+PRT|320 10.4
+ESP|1800 49
+CHE|950 9
+ITA|2500 59
+GRC|280 10.3
+TUR|1400 87
+MAR|160 38
+EGY|350 117
+ISR|560 10
+SAU|1300 35
+ARE|600 11
+NGA|300 230
+KEN|130 56
+ZAF|430 64
+PAK|370 250
+IND|4200 1450
+CHN|19500 1410
+KOR|1900 51
+JPN|4400 123
+THA|550 71
+VNM|480 101
+PHL|480 115
+MYS|440 35
+SGP|560 6
+IDN|1500 280
+AUS|1800 27
+NZL|270 5.3`.split('\n').forEach(l=>{const p=l.split('|'),q=p[1].split(' ');GD[p[0]]=[+q[0],+q[1]]});
+const money=u=>{const cur=disp==='LOC'?'USD':disp,v=u*FX[cur];if(cur==='BTC')return '₿'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:4}).format(v);try{return new Intl.NumberFormat('en',{style:'currency',currency:cur,notation:'compact',maximumFractionDigits:2}).format(v)}catch(e){return cur+' '+Math.round(v)}};
+const ndx=c=>{const g=GD[c.iso],d=g[0]*1e9*c.debt/100,s='font-size:15px';return `<div class="kv" style="grid-template-columns:repeat(3,1fr)"><div><b style="${s}">${money(d)}</b><span>National debt</span></div><div><b style="${s}">${money(d/(g[1]*1e6))}</b><span>Debt per person</span></div><div><b style="${s}">${money(g[0]*1e9)}</b><span>Economy (GDP)</span></div></div>`};
+Object.assign(M,{abs:{n:'💰 Debt total',v:c=>GD[c.iso][0]*c.debt/100,f:v=>money(v*1e9),h:v=>140-Math.max(0,Math.min(1,(Math.log10(v)-1.3)/3.3))*140,s:'Total national debt (log colour scale)',l:['Small','Huge'],g:G1}});
+{const d=$('comp').closest('details');$('info').closest('details').after(d)}
+function foff(){const a=B[+$('fa').value],b=B[+$('fb').value],ca=R.find(c=>c.iso===a.iso),cb=R.find(c=>c.iso===b.iso),pc=v=>(v>0?'+':'')+v+'%';
+const rows=[['Price',fmt(a.px,a.cur),fmt(b.px,b.cur),0],['Dividend yield',a.yl+'%',b.yl+'%',a.yl-b.yl]];
+Object.keys(PN).forEach(p=>{const x=perf(a,p),y=perf(b,p);rows.push([PN[p]+' move',pc(x),pc(y),x-y])});
+rows.push(['Country debt / GDP',ca.debt+'%',cb.debt+'%',cb.debt-ca.debt],['Country growth',ca.gr+'%',cb.gr+'%',ca.gr-cb.gr],['Inflation',X[a.iso].inf+'%',X[b.iso].inf+'%',X[b.iso].inf-X[a.iso].inf],['Credit rating',X[a.iso].rt,X[b.iso].rt,rsc(ca)-rsc(cb)]);
+let wa=0,wb=0;rows.forEach(r=>{if(r[3]>0)wa++;else if(r[3]<0)wb++});
+const cl=d=>d>0?'gd':d<0?'bd2':'';
+$('fox').innerHTML=`<div style="overflow-x:auto"><table class="fg"><tr><th></th><th>${IC[a.type]} ${a.tk}<br><small>${a.name}<br>${a.country}</small></th><th>${IC[b.type]} ${b.tk}<br><small>${b.name}<br>${b.country}</small></th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td class="${cl(r[3])}">${r[1]}</td><td class="${cl(-r[3])}">${r[2]}</td></tr>`).join('')+`<tr><td><b>Rounds won</b></td><td class="${cl(wa-wb)}">${wa}</td><td class="${cl(wb-wa)}">${wb}</td></tr></table></div><p style="color:var(--mu);font-size:12px">Green = better, red = worse. ⚠️ Sample performance data, for learning only, not advice.</p>`}
+function cmp(){const a=R.find(c=>c.iso===$('cpa').value),b=R.find(c=>c.iso===$('cpb').value),A=X[a.iso],Y=X[b.iso],ra=real(a),rb=real(b),ga=GD[a.iso],gb=GD[b.iso],da=ga[0]*1e9*a.debt/100,db=gb[0]*1e9*b.debt/100,pa=da/(ga[1]*1e6),pb=db/(gb[1]*1e6),rt=x=>isNaN(parseFloat(x.rate))?'–':x.rate+'%';
+const rows=[['Debt / GDP',a.debt+'%',b.debt+'%',b.debt-a.debt],['National debt',money(da),money(db),0],['Debt per person',money(pa),money(pb),pb-pa],['Economy (GDP)',money(ga[0]*1e9),money(gb[0]*1e9),0],['GDP growth',a.gr+'%',b.gr+'%',a.gr-b.gr],['Inflation',A.inf+'%',Y.inf+'%',Y.inf-A.inf],['Policy rate',rt(A),rt(Y),0],['Real rate',ra===null?'–':ra+'%',rb===null?'–':rb+'%',ra===null||rb===null?0:ra-rb],['Resilience',a.sc+'/100',b.sc+'/100',a.sc-b.sc],['Cash killer',cks(a)+'/100',cks(b)+'/100',cks(b)-cks(a)],['Credit rating',A.rt,Y.rt,rsc(a)-rsc(b)],['Currency',A.cur,Y.cur,0],['Central bank',A.cb,Y.cb,0],['Main index',A.idx,Y.idx,0]];
+let wa=0,wb=0;rows.forEach(r=>{if(r[3]>0)wa++;else if(r[3]<0)wb++});
+const cl=d=>d>0?'gd':d<0?'bd2':'';
+$('cmp').innerHTML=`<div style="overflow-x:auto"><table class="fg"><tr><th></th><th>${a.name}</th><th>${b.name}</th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td class="${cl(r[3])}">${r[1]}</td><td class="${cl(-r[3])}">${r[2]}</td></tr>`).join('')+`<tr><td><b>Rounds won</b></td><td class="${cl(wa-wb)}">${wa}</td><td class="${cl(wb-wa)}">${wb}</td></tr></table></div><p style="color:var(--mu);font-size:12px">Green = better, red = worse. Neutral rows are left uncoloured.</p>`}
+$('ctabs').addEventListener('click',()=>setTimeout(()=>{cmp();foff();wlr()},0));
+function quad(){const X0=34,W=316,Y0=10,H=200,px=d=>X0+Math.min(d,250)/250*W,py=g=>Y0+H-Math.min(g,8)/8*H,mu='style="fill:var(--mu)"';
+let s=`<svg viewBox="0 0 360 246" style="width:100%"><rect x="${X0}" y="${Y0}" width="${px(80)-X0}" height="${py(3)-Y0}" fill="hsl(140,50%,40%)" opacity=".15"/><rect x="${px(80)}" y="${py(3)}" width="${X0+W-px(80)}" height="${Y0+H-py(3)}" fill="hsl(0,60%,45%)" opacity=".15"/>`;
+[0,2,4,6,8].forEach(v=>{s+=`<line x1="${X0}" x2="${X0+W}" y1="${py(v)}" y2="${py(v)}" style="stroke:var(--bd)" stroke-width=".4"/><text x="${X0-4}" y="${py(v)+3}" font-size="8" text-anchor="end" ${mu}>${v}%</text>`});
+[0,50,100,150,200,250].forEach(v=>{s+=`<line y1="${Y0}" y2="${Y0+H}" x1="${px(v)}" x2="${px(v)}" style="stroke:var(--bd)" stroke-width=".4"/><text x="${px(v)}" y="${Y0+H+11}" font-size="8" text-anchor="middle" ${mu}>${v}%</text>`});
+s+=`<line x1="${px(80)}" x2="${px(80)}" y1="${Y0}" y2="${Y0+H}" style="stroke:var(--tx)" stroke-dasharray="3" stroke-width=".7"/><line x1="${X0}" x2="${X0+W}" y1="${py(3)}" y2="${py(3)}" style="stroke:var(--tx)" stroke-dasharray="3" stroke-width=".7"/><text x="${px(80)+3}" y="${Y0+9}" font-size="8" ${mu}>80% debt</text><text x="${X0+W-3}" y="${py(3)-3}" font-size="8" text-anchor="end" ${mu}>3% growth</text><text x="${X0+4}" y="${Y0+22}" font-size="9" ${mu}>Sweet spot</text><text x="${X0+W-4}" y="${Y0+H-6}" font-size="9" text-anchor="end" ${mu}>Danger zone</text><text x="190" y="243" font-size="9" text-anchor="middle" ${mu}>Debt % of GDP →</text><text x="8" y="110" font-size="9" transform="rotate(-90 8 110)" text-anchor="middle" ${mu}>Growth % →</text>`;
+R.forEach(c=>{s+=`<g onclick="pick('${c.iso}')" style="cursor:pointer"><circle cx="${px(c.debt)}" cy="${py(c.gr)}" r="6" fill="hsl(${c.sc*1.4},62%,40%)"><title>${c.name}: debt ${c.debt}% of GDP, growth ${c.gr}%</title></circle><text x="${px(c.debt)}" y="${py(c.gr)+2.5}" font-size="5.5" fill="#fff" text-anchor="middle">${c.iso}</text></g>`});$('quad').innerHTML=s+'</svg>'}
+const WXN=['Stormy','Rainy','Foggy','Cloudy','Partly sunny','Sunny'],WXE=['⛈','🌧','🌫','☁️','🌤','☀️'];
+const wxs=c=>{const x=X[c.iso];if(c.debt>100&&c.gr<2)return 0;if(x.inf>8)return 2;if(c.debt>100||c.gr<1)return 1;if(c.debt<60&&c.gr>=3)return 5;if(c.gr>=2&&c.debt<=90)return 4;return 3},wxe=c=>WXE[wxs(c)];
+const CN={};`USA|12.5 0.9
+CAN|13 0.5
+MEX|14 2.2
+COL|12 4.5
+PER|13 3.8
+BRA|13 3.3
+CHL|12.5 2.2
+ARG|20 3.0
+IRL|17 2.5
+GBR|14 1.7
+NLD|15.5 1.2
+DNK|18 1.5
+NOR|18 1.0
+SWE|18 0.8
+FIN|17 1.4
+RUS|12 4.0
+FRA|14 2.0
+BEL|15 1.8
+DEU|16 1.4
+POL|17 4.0
+PRT|16 2.8
+ESP|13.5 3.0
+CHE|14.5 0.8
+ITA|15.5 2.5
+GRC|16 4.0
+TUR|14 1.5
+MAR|12.5 8.0
+EGY|17 3.5
+ISR|11.5 0.7
+SAU|17 1.2
+ARE|14 3.5
+NGA|14 5.0
+KEN|16 16.0
+ZAF|13 4.5
+PAK|17 7.0
+IND|14 2.5
+CHN|11 1.6
+KOR|13.5 0.5
+JPN|12 1.1
+THA|17 3.0
+VNM|10 4.5
+PHL|15 3.5
+MYS|14.5 1.5
+SGP|15 1.0
+IDN|22 2.3
+AUS|12.5 0.6
+NZL|13 0.5`.split('\n').forEach(l=>{const p=l.split('|'),q=p[1].split(' ');CN[p[0]]=[+q[0],+q[1]]});
+const strs=c=>{const k=CN[c.iso];return Math.max(0,Math.min(100,Math.round(k[1]*8+Math.max(0,17-k[0])*4)))};
+Object.assign(M,{wx:{n:'🌦 Weather',v:wxs,f:v=>WXN[v],h:v=>v/5*140,s:'Financial weather (debt, growth and inflation)',l:['Stormy','Sunny'],g:G2},stress:{n:'🌡 Bank stress',v:strs,f:v=>v+'/100',h:v=>140-v/100*140,s:'Bank stress score (higher = more stress)',l:['Calm','Stressed'],g:G1}});
+function wxdraw(){if(!map)return;map.svg.selectAll('g.wx').remove();if(mode!=='wx')return;const g=map.svg.append('g').attr('class','wx');R.forEach(c=>{const p=map.latLngToXY(c.lat,c.lon);if(p)g.append('text').attr('x',p[0]).attr('y',p[1]+5).attr('font-size',13).attr('text-anchor','middle').style('cursor','pointer').text(wxe(c)).on('click',()=>pick(c.iso))})}
+function therm(){const c=sel||R[0],k=CN[c.iso],s=strs(c),col='hsl('+(140-s*1.4)+',70%,45%)',z=s<25?'Calm':s<50?'Watch':s<75?'Stressed':'Danger',H=160,fh=Math.max(6,s/100*H);
+$('thm').innerHTML=`<div style="display:flex;gap:16px;align-items:center"><svg viewBox="0 0 90 216" style="width:90px;flex:none"><rect x="30" y="10" width="26" height="${H}" rx="13" style="fill:var(--bg);stroke:var(--tx)" stroke-width="2"/><rect x="34" y="${10+H-fh}" width="18" height="${fh}" rx="9" fill="${col}"/><circle cx="43" cy="${H+34}" r="18" fill="${col}" style="stroke:var(--tx)" stroke-width="2"/>${[0,25,50,75,100].map(v=>`<line x1="58" x2="64" y1="${10+H-v/100*H}" y2="${10+H-v/100*H}" style="stroke:var(--mu)"/><text x="67" y="${13+H-v/100*H}" font-size="8" style="fill:var(--mu)">${v}</text>`).join('')}</svg><div><b style="font-size:18px">${c.name}</b><br><b style="font-size:26px;color:${col}">${s}/100 · ${z}</b><p>CET1 capital ratio: <b>${k[0]}%</b><br><small style="color:var(--mu)">the buffer banks hold against losses; higher is safer</small></p><p>Bad loans (NPL): <b>${k[1]}%</b><br><small style="color:var(--mu)">loans not being repaid; lower is safer</small></p></div></div><p style="color:var(--mu);font-size:12px">Tap a country on the map to read its thermometer.</p>`;
+$('thl').innerHTML='<div style="max-height:240px;overflow-y:auto;margin-top:10px">'+[...R].sort((a,b)=>strs(b)-strs(a)).map(x=>`<div onclick="pick('${x.iso}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0"><span style="width:100px;flex:none">${x.name}</span><div class="bar" style="flex:1;background:var(--bg)"><div class="bar" style="width:${strs(x)}%;background:hsl(${140-strs(x)*1.4},70%,45%)"></div></div><b style="width:26px;text-align:right">${strs(x)}</b></div>`).join('')+'</div>'}
+const MC={};`USA|JPM 800;BAC 350;C 180;WFC 270;BLK 170;GS 220;V 650;SCHW 170;BRK.B 1000;PGR 150;CB 110
+CAN|RY 200;TD 130;BNS 80;BMO 85;MFC 55;SLF 40
+GBR|HSBA 230;BARC 60;LLOY 50;NWG 55;LSEG 70
+FRA|BNP 90;ACA 60;GLE 40;CS 95
+DEU|DBK 60;CBK 40;DB1 45;ALV 150;MUV2 90
+CHE|UBSG 110;ZURN 90;SREN 50
+ESP|SAN 130;BBVA 100;CABK 60
+ITA|ISP 100;UCG 100;G 55
+NLD|INGA 70;ADYEN 60
+CHN|1398 280;939 230;1288 220;3988 190;2318 170;2628 120;388 55
+IND|HDFCBANK 160;ICICIBANK 110;SBIN 100
+JPN|8306 160;8316 110;8411 70;8766 85
+KOR|105560 30
+SGP|D05 100
+AUS|CBA 190;WBC 90;NAB 75;ANZ 60;MQG 55
+BRA|ITUB 70
+SAU|1120 100;1180 55
+ARE|FAB 50
+RUS|SBER 75
+FIN|NDA 55`.split('\n').forEach(l=>{const p=l.split('|');p[1].split(';').forEach(s=>{const q=s.split(' ');MC[p[0]+' '+q[0]]=+q[1]})});
+let bt='all';
+function bub(){const items=B.filter(b=>MC[b.iso+' '+b.tk]&&(bt==='all'||b.type===bt)).map(b=>({b,v:MC[b.iso+' '+b.tk]}));
+const nodes=d3.layout.pack().size([360,300]).padding(2).value(d=>d.v).nodes({children:items}).filter(n=>!n.children);
+$('bub').innerHTML='<svg viewBox="0 0 360 300" style="width:100%">'+nodes.map((n,i)=>`<g class="fl" style="animation-delay:${(i%7)*.4}s;cursor:pointer" onclick="pick('${n.b.iso}')"><circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${n.r.toFixed(1)}" fill="${COL[n.b.type]}" fill-opacity=".85" stroke="#222" stroke-width=".5"><title>${n.b.name}: about $${n.v}bn</title></circle>${n.r>11?`<text x="${n.x.toFixed(1)}" y="${(n.y+3).toFixed(1)}" font-size="${Math.min(12,n.r/2.2).toFixed(1)}" font-weight="700" text-anchor="middle" fill="#111">${n.b.tk}</text>`:''}${n.r>20?`<text x="${n.x.toFixed(1)}" y="${(n.y+14).toFixed(1)}" font-size="8" text-anchor="middle" fill="#111">$${n.v}bn</text>`:''}</g>`).join('')+'</svg>';
+document.querySelectorAll('#btabs button').forEach(b=>b.classList.toggle('on',b.dataset.b===bt))}
+$('btabs').innerHTML=Object.keys(MN).map(k=>`<button data-b="${k}">${MN[k]}</button>`).join('');
+$('btabs').onclick=e=>{if(e.target.dataset.b){bt=e.target.dataset.b;bub()}};
+let gOn=false,gTimer=null,gRot=[0,-20],gSvg=null,gPr=null,gPath=null,gDrag=false;
+function gbuild(){try{const fe=topojson.feature(map.worldTopo,map.worldTopo.objects.world).features.filter(f=>f.id!=='ATA');
+gPr=d3.geo.orthographic().scale(180).translate([200,200]).clipAngle(90);gPath=d3.geo.path().projection(gPr);
+gSvg=d3.select('#globe').html('').append('svg').attr('viewBox','0 0 400 400').style('width','100%').style('max-width','460px').style('display','block').style('margin','auto').style('touch-action','none');
+gSvg.append('circle').attr({cx:200,cy:200,r:180}).style('fill','var(--sea)');
+gSvg.selectAll('path.c').data(fe).enter().append('path').attr('class','c').style('cursor','pointer').style('stroke','#fff').style('stroke-width',.3).on('click',f=>pick(f.id));
+gSvg.append('g').attr('class','gp');
+gSvg.call(d3.behavior.drag().on('dragstart',()=>{gDrag=true}).on('drag',()=>{gRot[0]+=d3.event.dx*.4;gRot[1]=Math.max(-70,Math.min(70,gRot[1]-d3.event.dy*.4));grender()}).on('dragend',()=>{gDrag=false}))}catch(e){$('globe').innerHTML='<p style="padding:20px;font:14px system-ui">The globe could not load. Please use the flat map.</p>'}}
+$('gbtn').onclick=()=>{gOn=!gOn;$('gbtn').textContent='🌍 Globe mode: '+(gOn?'on':'off');$('map').parentNode.style.display=gOn?'none':'';$('gwrap').style.display=gOn?'block':'none';
+if(gOn){if(!gSvg)gbuild();grender();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)gTimer=setInterval(()=>{if(!gDrag){gRot[0]+=.5;grender()}},50)}else{clearInterval(gTimer);gTimer=null;if(map)map.resize()}};
+bub();
+const gp=(lon,lat)=>gPr([lon,lat])||[-99,-99],gvis=(lon,lat)=>d3.geo.distance([lon,lat],[-gRot[0],-gRot[1]])<1.5;
+function grender(){if(!gSvg)return;gPr.rotate([gRot[0],gRot[1]]);const m=M[mode],cm={};R.forEach(c=>cm[c.iso]=c);
+if(gSvg.select('g.ga').empty()){gSvg.append('g').attr('class','ga');gSvg.append('g').attr('class','gw')}
+gSvg.selectAll('path.c').attr('d',gPath).style('fill',f=>{const c=cm[f.id];return c?(mode==='bk'?'hsl(40,45%,32%)':'hsl('+m.h(m.v(c))+',62%,40%)'):'var(--nd)'}).style('stroke',f=>sel&&f.id===sel.iso?'#ffd84a':'#fff').style('stroke-width',f=>sel&&f.id===sel.iso?1.6:.3);
+const P=gSvg.select('g.gp').selectAll('circle').data(mode==='bk'?pins():[],d=>d.name);
+P.enter().append('circle').attr('r',3).style('stroke','#222').style('stroke-width',.5).style('cursor','pointer').on('click',d=>pick(d.c.iso)).append('title').text(d=>d.name);P.exit().remove();
+P.style('fill',d=>d.fillColor).attr('cx',d=>gp(d.longitude,d.latitude)[0]).attr('cy',d=>gp(d.longitude,d.latitude)[1]).style('display',d=>gvis(d.longitude,d.latitude)?null:'none');
+const W=gSvg.select('g.gw').selectAll('text').data(mode==='wx'?R:[],c=>c.iso);
+W.enter().append('text').attr('font-size',15).attr('text-anchor','middle').style('cursor','pointer').on('click',c=>pick(c.iso)).text(c=>wxe(c));W.exit().remove();
+W.attr('x',c=>gp(c.lon,c.lat)[0]).attr('y',c=>gp(c.lon,c.lat)[1]+5).style('display',c=>gvis(c.lon,c.lat)?null:'none');
+const L=(cg&&sel)?(LK[sel.iso]||[]).map(i=>cm[i]):[];const A=gSvg.select('g.ga').selectAll('path').data(L,c=>c.iso);
+A.enter().append('path').style('fill','none').style('stroke','#ff4d4d').style('stroke-width',1.8);A.exit().remove();
+A.attr('d',c=>gPath({type:'LineString',coordinates:[[sel.lon,sel.lat],[c.lon,c.lat]]}))}
+$('yrs').oninput=e=>tmset(+e.target.value);let tmt=null;
+$('tmplay').onclick=()=>{if(tmt){clearInterval(tmt);tmt=null;$('tmplay').textContent='▶️';return}$('tmplay').textContent='⏸';if(ty>=2026){ty=1990}tmt=setInterval(()=>{if(ty>=2026){clearInterval(tmt);tmt=null;$('tmplay').textContent='▶️';return}$('yrs').value=ty+1;tmset(ty+1)},500)};
+$('cbtn').onclick=()=>{cg=!cg;$('cbtn').textContent='🕸 Contagion lines: '+(cg?'on':'off');if(cg&&!sel)$('info').innerHTML='<h2>Contagion lines on</h2><div>Tap a country to see which economies are linked to it.</div>';draw()};
+$('sbtn').onclick=shareCard;
+$('wtabs').onclick=e=>{if(e.target.dataset.w){wp=e.target.dataset.w;wlr()}};wlr();
+{const o=B.map((b,i)=>b.px?`<option value="${i}">${IC[b.type]} ${b.tk} · ${b.name} (${b.country})</option>`:'').join('');$('fa').innerHTML=o;$('fb').innerHTML=o;$('fa').value=B.findIndex(b=>b.tk==='JPM');$('fb').value=B.findIndex(b=>b.tk==='HSBA');$('fa').onchange=$('fb').onchange=foff;foff()}
+$('bsel').oninput=e=>bd(e.target.value.toLowerCase());bd('');
+const CT={LOC:'Local',USD:'$',GBP:'£',EUR:'€',JPY:'¥',BTC:'₿'};
+function cmark(){document.querySelectorAll('#ctabs button').forEach(b=>b.classList.toggle('on',b.dataset.c===disp))}
+$('ctabs').innerHTML=Object.keys(CT).map(k=>`<button data-c="${k}">${CT[k]}</button>`).join('');cmark();
+$('ctabs').onclick=e=>{if(e.target.dataset.c){disp=e.target.dataset.c;cmark();bd($('bsel').value.toLowerCase());if(sel)pick(sel.iso)}};
+{const o=R.map(c=>`<option value="${c.iso}">${c.name}</option>`).join('');$('cpa').innerHTML=o;$('cpb').innerHTML=o;$('cpb').value='GBR';$('cpa').onchange=$('cpb').onchange=cmp;cmp();quad()}
+$('tabs').innerHTML=Object.keys(M).map(k=>`<button data-k="${k}">${M[k].n}</button>`).join('');
+$('tabs').onclick=e=>{if(e.target.dataset.k){mode=e.target.dataset.k;draw()}};
+$('info').innerHTML='<h2>Pick a country</h2><div>Tap any coloured country to see its flagship bank, debt, growth and resilience score.</div>';
+if(typeof Datamap==='undefined'){
+ $('map').innerHTML='<p style="padding:20px;font:14px system-ui">The map could not load. Please refresh the page.</p>';draw();
+}else{
+ const nd=()=>dark()?'#2c3a4f':'#c9c6bb';
+ map=new Datamap({element:$('map'),responsive:true,fills:{defaultFill:nd()},
+  geographyConfig:{highlightOnHover:false,popupOnHover:false,borderColor:'#ffffff',borderWidth:.4},
+  done:dm=>{
+   dm.svg.selectAll('.datamaps-subunit').on('click',g=>pick(g.id));
+   const z=d3.behavior.zoom().scaleExtent([1,8]).on('zoom',()=>{tf='translate('+d3.event.translate+')scale('+d3.event.scale+')';dm.svg.selectAll('g').attr('transform',tf)});
+   dm.svg.call(z);
+  }});
+ draw();
+ addEventListener('resize',()=>map.resize());
+}
+</script>
+<script src="/static/js/explainer-cats.js"></script>
+<script src="/static/js/explainer-pills.js"></script>
+</body></html>
