@@ -931,3 +931,28 @@ Video or Alpha: "Black Monday 1987: the day, the weeks after, and the year-end l
 
 ### Reply target
 None found this run.
+
+## 2026-11-04 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing reliably dated this week; drafts are evergreen with no claims about current prices. Last runs used A/B/D, A/C/E, B/C/D, so this run uses A, C and E (build note). AI Tracker and Finance Map are new this week and haven't been in the queue. Dividend yield definition standard (check figure).
+
+### Draft 115 (type: A viz/tool showcase, status: pending)
+AI Tracker puts the stocks tied to AI on a world map, so you can see where the companies actually sit. Chips, cloud, software, data centres. It's a quick way to see how much of the story comes from a handful of places.
+https://www.growthcapitalgroup.co/tools/data-visualisation/ai-tracker
+Image: AI Tracker world map on the default view with the markers and legend in frame.
+
+### Draft 116 (type: C beginner explainer, status: pending)
+What is a dividend yield? It's the yearly dividend divided by the share price. A share at 100 paying 3 a year has a 3% yield. Watch the catch: if the price falls, the yield goes up without the company paying a penny more. A very high yield can be a warning sign, not a bonus.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 117 (type: E extras, behind-the-scenes build note, status: pending)
+Spent a chunk of the week wiring live prices into the Finance Map. Day, week, month and year moves plus dividend yields, all pulled from Yahoo Finance. The slow part wasn't the data, it was deciding what to leave off the screen so it stays readable.
+https://www.growthcapitalgroup.co/tools/data-visualisation/finance-map
+
+### Angle suggestion
+Video or Alpha: "Who owns the AI trade? A map of where the companies sit." Pairs with draft 115. Education only.
+
+### Reply target
+None found this run.
