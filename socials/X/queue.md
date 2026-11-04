@@ -882,3 +882,28 @@ Video or Alpha: "Politics vs plumbing: what actually drove markets around US ele
 
 ### Reply target
 None found this run.
+
+## 2026-11-04 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches again returned nothing reliable dated this week (conflicting Fed items); drafts are evergreen with no claims about current prices or rates. Last runs used B/C/D, C/A/E, B/D/E, so this run uses A, C and E (myth vs reality). Bubble Radar is new this week and hasn't been in the queue. P/E and Nasdaq 2000 figures from memory (check figure).
+
+### Draft 109 (type: A viz/tool showcase, status: pending)
+Bubble Radar lines up the things that tend to show up near bubbles: big run-ups, high valuations, lots of debt. It pulls live figures for about 280 stocks, metals and crypto, and sets them beside nine historic bubbles. The interesting bit is how often the old ones look alike on paper.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bubble-radar
+Image: Bubble Radar main view with the scores visible, plus the historic bubbles panel if it fits in frame.
+
+### Draft 110 (type: C beginner explainer, status: pending)
+What is a P/E ratio? It's a company's share price divided by its yearly profit per share. A P/E of 20 means you're paying 20 for every 1 of profit it makes. Higher usually means people expect fast growth. Lower can mean slower growth or more worry. It's a starting point, not a verdict.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 111 (type: E extras, myth vs reality, status: pending)
+Myth: if something has fallen 80%, it must be cheap. Reality: the Nasdaq fell about 78% from its 2000 peak and took until 2015 to get back above it. Plenty of individual names never recovered at all. A big fall tells you what happened, not what it's worth.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bubble-radar
+
+### Angle suggestion
+Video or Alpha: "Nine bubbles side by side: what the numbers looked like at the top." Pairs with drafts 109 and 111. Education only.
+
+### Reply target
+None found this run.
