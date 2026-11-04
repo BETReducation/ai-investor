@@ -45,6 +45,10 @@ svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(
 <div class="fact">Green on the left = up, red on the right = down. Each slice is one coin, and the rim counts all 50. Tap any slice.</div>
 <div class="fact" id="fact" style="margin-top:8px"></div></div>
 
+<div class="card"><details open><summary>🔍 Search for a coin</summary>
+<input id="qs" type="search" autocomplete="off" placeholder="Type a name or ticker: Bitcoin, SOL, doge…" style="width:100%;box-sizing:border-box;margin:10px 0 6px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:16px">
+<div id="qr"></div><div class="note">Searches the 50 coins in the compass plus the top 250 by market cap when the live feed is available. Tap a result for details.</div></details></div>
+
 <div class="card"><details><summary>Top 25 up &amp; bottom 25 down</summary><div class="tg" id="tg2"></div><div class="cols" style="margin-top:10px"><div><h3 class="up">▲ Top 25</h3><div id="top"></div></div><div><h3 class="dn">▼ Bottom 25</h3><div id="bot"></div></div></div></details></div>
 
 <div class="card"><details open><summary>Market dominance: the top 10</summary><div id="domh" class="fact" style="margin:8px 0"></div><div id="dom" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note" id="domNote">Share of the total crypto market cap. Approximate snapshot (demo data because the live feed could not be reached). The rest of the market is split across thousands of smaller coins.</div></details></div>
@@ -303,9 +307,24 @@ const dlg=E("dlg");
 document.addEventListener("click",e=>{const g=e.target.closest("[data-i]");if(!g)return;const c=D.concat(EX)[+g.dataset.i];
  E("dc").innerHTML=`<h2 style="margin:0">${flg(c.c)} ${c.n} <small style="color:var(--mute)">${c.s}</small></h2><p>${c.b}</p><p><b>${fp(c.p)}</b> · ${c.i<50?"rank #"+(c.i+1):"outside the top 50"}<br>${ath(c)}Origin: ${flg(c.c)} ${NM[c.c]}</p>`+Object.keys(TF).map(k=>`<span class="chip ${c.ch[k]>=0?"up":"dn"}">${TF[k]} ${fc(c.ch[k])}</span> `).join("");dlg.showModal()});
 E("thermo").append(E("gauge"),E("mood"),E("moodsub"));E("moodsub").style.display="none";E("mood").style.fontSize="11px";E("moodcard").remove();const wr=document.querySelector(".w");wr.insertBefore(E("hist").closest(".card"),wr.lastElementChild);wr.insertBefore(E("wlcard"),wr.lastElementChild);
+// Coin search
+const LV={};
+function srch(){const q=E("qs").value.trim().toLowerCase(),box=E("qr");
+ if(!q){box.innerHTML='<div class="fact">Start typing to find a coin.</div>';return}
+ const sc=(s,n)=>{s=s.toLowerCase();n=(n||"").toLowerCase();return s===q?0:n===q?1:s.startsWith(q)?2:n.startsWith(q)?3:s.includes(q)?4:n.includes(q)?5:9};
+ const loc=D.concat(EX).map(c=>({c,k:sc(c.s,c.n)})).filter(x=>x.k<9);
+ const have=new Set(loc.map(x=>x.c.s));
+ const lv=Object.keys(LV).filter(s=>!have.has(s)).map(s=>({v:LV[s],k:sc(s,LV[s].n)})).filter(x=>x.k<9);
+ const all=[...loc.map(x=>({k:x.k,h:`<div class="row" data-i="${x.c.i}"><b>${x.c.s}</b><i>${x.c.n}</i><span>${fp(x.c.p)}</span><span class="${x.c.ch.d>=0?"up":"dn"}">${fc(x.c.ch.d)}</span></div>`})),
+  ...lv.map(x=>({k:x.k,h:`<div class="row" data-l="${x.v.s}"><b>${x.v.s}</b><i>${x.v.n||""}</i><span>${fp(x.v.p)}</span><span class="${(x.v.d||0)>=0?"up":"dn"}">${x.v.d==null?"–":fc(x.v.d)}</span></div>`}))]
+  .sort((a,b)=>a.k-b.k).slice(0,10);
+ box.innerHTML=all.length?all.map(x=>x.h).join(""):'<div class="fact">No coin found. Check the spelling or try the ticker.</div>'}
+E("qs").oninput=srch;srch();
+document.addEventListener("click",e=>{const g=e.target.closest("[data-l]");if(!g)return;const v=LV[g.dataset.l];if(!v)return;
+ E("dc").innerHTML=`<h2 style="margin:0">${v.n||v.s} <small style="color:var(--mute)">${v.s}</small></h2><p><b>${fp(v.p)}</b>${v.rank?" · rank #"+v.rank+" by market cap":""}</p>`+[["d","Day"],["w","Week"],["m","Month"],["y","Year"]].filter(k=>v[k[0]]!=null).map(k=>`<span class="chip ${v[k[0]]>=0?"up":"dn"}">${k[1]} ${fc(v[k[0]])}</span> `).join("")+`<p class="note">Live data only: this coin isn't one of the 50 in the compass, so there's no description or origin here.</p>`;dlg.showModal()});
 // Live feed: replaces the demo prices, moves, all-time highs and dominance when /api/dataviz/crypto-compass/live answers.
 fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
- const K=j.coins||{};let hit=0,noY=0;
+ const K=j.coins||{};let hit=0,noY=0;for(const s in K)LV[s]={s,...K[s]};
  D.concat(EX).forEach(c=>{const x=K[c.s];if(!x)return;hit++;c.p=x.p;
   for(const k in TF){if(x[k]!=null)c.ch[k]=x[k];else if(k==="y"&&j.source==="CoinMarketCap"){c.ch.y=0;noY++}}
   if(x.ath&&x.ath_date){const dt=new Date(x.ath_date);ATH[c.s]=[x.ath,dt.toLocaleString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})]}});
@@ -313,7 +332,7 @@ fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()
  const dm=j.dominance||{},cols={BTC:"#f7931a",ETH:"#627eea",USDT:"#26a17b",XRP:"#6b7ba4",BNB:"#f3ba2f",SOL:"#9945ff",USDC:"#2775ca",DOGE:"#c2a633",TRX:"#ff060a",ADA:"#3468d1"};
  const top=Object.keys(dm).sort((a,b)=>dm[b]-dm[a]).slice(0,10).map(k=>[k,+dm[k].toFixed(1),cols[k]||"#8d97b3"]);
  if(top.length>=5)domChart(top);
- winners();draw();
+ winners();draw();srch();
  const up=j.updated_at?new Date(j.updated_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
  E("liveNote").innerHTML="Live prices and moves from "+(j.source||"CoinGecko")+(up?", updated "+up:"")+" (cached for a few minutes)."+(noY?" Year change is unavailable for "+noY+" coins, which show as flat on the Year view.":"")+" Year-end prices and the winners table are historical approximations. Educational and historical only, not financial advice.";
  E("domNote").textContent="Share of the total crypto market cap, live from "+(j.source||"CoinGecko")+". The rest of the market is split across thousands of smaller coins."}).catch(()=>{});

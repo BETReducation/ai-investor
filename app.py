@@ -7108,7 +7108,7 @@ def _fetch_crypto_compass_cg() -> dict | None:
         sym = (c.get("symbol") or "").upper()
         if not sym or sym in coins or not c.get("current_price"):
             continue  # first hit per symbol is the highest-cap one
-        coins[sym] = {"p": c["current_price"], "mc": c.get("market_cap"), "rank": c.get("market_cap_rank"),
+        coins[sym] = {"n": c.get("name"), "p": c["current_price"], "mc": c.get("market_cap"), "rank": c.get("market_cap_rank"),
                       "d": c.get("price_change_percentage_24h_in_currency"),
                       "w": c.get("price_change_percentage_7d_in_currency"),
                       "m": c.get("price_change_percentage_30d_in_currency"),
@@ -7163,7 +7163,7 @@ def _fetch_crypto_compass_cmc(key: str) -> dict | None:
         q = (c.get("quote") or {}).get("USD") or {}
         if not sym or sym in coins or not q.get("price"):
             continue  # listings come ranked by market cap, so the first hit per symbol is the real one
-        coins[sym] = {"p": q["price"], "mc": q.get("market_cap"), "rank": c.get("cmc_rank"),
+        coins[sym] = {"n": c.get("name"), "p": q["price"], "mc": q.get("market_cap"), "rank": c.get("cmc_rank"),
                       "d": q.get("percent_change_24h"), "w": q.get("percent_change_7d"), "m": q.get("percent_change_30d")}
     if not coins:
         return None
