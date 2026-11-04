@@ -7119,14 +7119,16 @@ def _fetch_crypto_compass_cg() -> dict | None:
                       "y": c.get("price_change_percentage_1y_in_currency"),
                       "ath": c.get("ath"), "ath_date": c.get("ath_date")}
     dom = {}
+    total_mc = None
     try:
         g = requests.get("https://api.coingecko.com/api/v3/global", headers=hdr, timeout=15).json().get("data", {})
+        total_mc = (g.get("total_market_cap") or {}).get("usd")
         dom = {k.upper(): v for k, v in (g.get("market_cap_percentage") or {}).items()}
     except Exception:
         pass
     if not coins:
         return None
-    return {"coins": coins, "dominance": dom, "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+    return {"coins": coins, "dominance": dom, "total_mc": total_mc, "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
 
 
 _cc_year: dict = {"at": 0.0, "v": {}}
@@ -7172,6 +7174,7 @@ def _fetch_crypto_compass_cmc(key: str) -> dict | None:
     if not coins:
         return None
     dom = {}
+    total = None
     try:
         g = requests.get(base + "/global-metrics/quotes/latest", headers=hdr, timeout=15).json().get("data", {})
         total = ((g.get("quote") or {}).get("USD") or {}).get("total_market_cap")
@@ -7183,7 +7186,7 @@ def _fetch_crypto_compass_cmc(key: str) -> dict | None:
     for s, y in _cc_year_changes(list(coins)[:90]).items():
         if s in coins:
             coins[s]["y"] = y
-    return {"coins": coins, "dominance": dom, "source": "CoinMarketCap",
+    return {"coins": coins, "dominance": dom, "total_mc": total, "source": "CoinMarketCap",
             "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
 
 

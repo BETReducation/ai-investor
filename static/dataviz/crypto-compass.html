@@ -52,6 +52,7 @@ svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(
 <div class="card"><details><summary>Top 25 up &amp; bottom 25 down</summary><div class="tg" id="tg2"></div><div class="cols" style="margin-top:10px"><div><h3 class="up">▲ Top 25</h3><div id="top"></div></div><div><h3 class="dn">▼ Bottom 25</h3><div id="bot"></div></div></div></details></div>
 
 <div class="card"><details open><summary>Market dominance: the top 10</summary><div id="domh" class="fact" style="margin:8px 0"></div><div id="dom" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note" id="domNote">Share of the total crypto market cap. Approximate snapshot (demo data because the live feed could not be reached). The rest of the market is split across thousands of smaller coins.</div></details></div>
+<div class="card"><details open><summary>Market dominance: top 10 excluding stables and derivatives</summary><div id="domh2" class="fact" style="margin:8px 0"></div><div id="dom2" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note" id="domNote2">Share of the total crypto market cap (stablecoins still count in the total). Left out: stablecoins, plus staked, wrapped and restaked tokens that are claims on a coin already counted, such as stETH or WBTC, and gold-backed tokens. Approximate snapshot (demo data because the live feed could not be reached).</div></details></div>
 <div class="card"><details open><summary>Most decentralised: Edinburgh Decentralisation Index</summary>
 <div class="fact" style="margin:8px 0">The <b>Nakamoto coefficient</b> is the smallest number of independent miners or validators who together control more than half of a network. The higher it is, the more parties would have to cooperate to take control. The Edinburgh Decentralisation Index, from the University of Edinburgh's Blockchain Technology Lab, tracks this and other measures for a handful of chains.</div>
 <div id="edi" style="margin:10px 0"></div>
@@ -286,10 +287,14 @@ const ATH={};"BTC|126000|Oct 2025;ETH|4950|Aug 2025;XRP|3.65|Jul 2025;BNB|1370|O
 const flg=k=>k==="WW"?"🌐":String.fromCodePoint(...[...(k==="UK"?"GB":k)].map(ch=>127397+ch.charCodeAt(0)));
 function ath(c){const a=ATH[c.s];if(!a)return"";const dd=(c.p/a[0]-1)*100;return `🏔️ All-time high: <b>${fp(a[0])}</b> (${a[1]}) · <span class="${dd>=0?"up":"dn"}">${dd.toFixed(0)}% from ATH</span><br>`}
 const DM0=[["BTC",58.4,"#f7931a"],["ETH",11.9,"#627eea"],["USDT",5.6,"#26a17b"],["XRP",3.9,"#6b7ba4"],["BNB",3.2,"#f3ba2f"],["SOL",2.4,"#9945ff"],["USDC",1.9,"#2775ca"],["DOGE",1,"#c2a633"],["TRX",.8,"#ff060a"],["ADA",.7,"#3468d1"]];
-function domChart(DM){const mx=DM[0][1],tot=DM.reduce((s,d)=>s+d[1],0);
- E("domh").innerHTML=`Top 10 hold <b style="color:var(--acc)">${tot.toFixed(1)}%</b> of the market · Bitcoin alone <b>${mx}%</b>`;
- E("dom").innerHTML=DM.map(d=>`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:9px;font-weight:700;margin-bottom:3px">${d[1]}%</div><div style="width:100%;max-width:20px;height:${Math.max(4,d[1]/mx*170)}px;background:${d[2]};border-radius:8px 8px 0 0;box-shadow:0 0 12px ${d[2]}55;transform-origin:bottom;animation:grow .9s ease both"></div><div style="font-size:9px;color:var(--mute);margin-top:4px;font-weight:700">${d[0]}</div></div>`).join("")}
+function domChart(DM,x){x=x||"";const mx=DM[0][1],tot=DM.reduce((s,d)=>s+d[1],0);
+ E("domh"+(x?"2":"")).innerHTML=`Top 10 hold <b style="color:var(--acc)">${tot.toFixed(1)}%</b> of the market · Bitcoin alone <b>${mx}%</b>`;
+ E("dom"+(x?"2":"")).innerHTML=DM.map(d=>`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:9px;font-weight:700;margin-bottom:3px">${d[1]}%</div><div style="width:100%;max-width:20px;height:${Math.max(4,d[1]/mx*170)}px;background:${d[2]};border-radius:8px 8px 0 0;box-shadow:0 0 12px ${d[2]}55;transform-origin:bottom;animation:grow .9s ease both"></div><div style="font-size:9px;color:var(--mute);margin-top:4px;font-weight:700">${d[0]}</div></div>`).join("")}
 domChart(DM0);
+const NOTV=new Set("USDT USDC DAI USDE USDS FDUSD PYUSD USD1 USDD TUSD USDG RLUSD USDY BUIDL USDF USDTB SUSDE SUSDS STETH WSTETH WETH WBTC WBNB WEETH WBETH CBBTC CBETH RETH EZETH RSETH METH TBTC LBTC SOLVBTC JITOSOL MSOL BNSOL XAUT PAXG BSC-USD".split(" "));
+const NOTN=/staked|wrapped|restaked|liquid staking|bridged|stablecoin|\busd\b|tether|gold/i;
+const DM2=[["BTC",58.4,"#f7931a"],["ETH",11.9,"#627eea"],["XRP",3.9,"#6b7ba4"],["BNB",3.2,"#f3ba2f"],["SOL",2.4,"#9945ff"],["DOGE",1,"#c2a633"],["TRX",.8,"#ff060a"],["ADA",.7,"#3468d1"],["BCH",.4,"#8dc351"],["HYPE",.3,"#97fce4"]];
+domChart(DM2,"2");
 function winners(){
  const wins={},all=[];
  for(let j=1;j<9;j++){let b=null;D.forEach(c=>{const p=P[c.s];if(!p)return;const a=p[j],z=p[j-1];if(a&&z){const g=a/z-1;all.push({k:c.s,y:Y[j],g});if(!b||g>b.g)b={k:c.s,g}}});if(b&&b.g>0)(wins[b.k]=wins[b.k]||[]).push(Y[j])}
@@ -332,6 +337,8 @@ fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()
  const dm=j.dominance||{},cols={BTC:"#f7931a",ETH:"#627eea",USDT:"#26a17b",XRP:"#6b7ba4",BNB:"#f3ba2f",SOL:"#9945ff",USDC:"#2775ca",DOGE:"#c2a633",TRX:"#ff060a",ADA:"#3468d1"};
  const top=Object.keys(dm).sort((a,b)=>dm[b]-dm[a]).slice(0,10).map(k=>[k,+dm[k].toFixed(1),cols[k]||"#8d97b3"]);
  if(top.length>=5)domChart(top);
+ if(j.total_mc){const T=j.total_mc,r2=Object.keys(K).filter(k=>K[k].mc&&!NOTV.has(k)&&!NOTN.test(K[k].n||"")).sort((a,b)=>K[b].mc-K[a].mc).slice(0,10).map(k=>[k,+(K[k].mc/T*100).toFixed(1),cols[k]||"#8d97b3"]);
+  if(r2.length>=5){domChart(r2,"2");E("domNote2").textContent="Share of the total crypto market cap (stablecoins still count in the total), live from "+(j.source||"CoinGecko")+". Left out: stablecoins, plus staked, wrapped and restaked tokens that are claims on a coin already counted, such as stETH or WBTC, and gold-backed tokens."}}
  winners();draw();srch();
  const up=j.updated_at?new Date(j.updated_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
  E("liveNote").innerHTML="Live prices and moves from "+(j.source||"CoinGecko")+(up?", updated "+up:"")+" (cached for a few minutes)."+(noY?" Year change is unavailable for "+noY+" coins, which show as flat on the Year view.":"")+" Year-end prices and the winners table are historical approximations. Educational and historical only, not financial advice.";
