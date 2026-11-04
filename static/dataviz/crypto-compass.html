@@ -47,7 +47,7 @@ svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(
 
 <div class="card"><details><summary>Top 25 up &amp; bottom 25 down</summary><div class="tg" id="tg2"></div><div class="cols" style="margin-top:10px"><div><h3 class="up">▲ Top 25</h3><div id="top"></div></div><div><h3 class="dn">▼ Bottom 25</h3><div id="bot"></div></div></div></details></div>
 
-<div class="card"><details open><summary>Market dominance: the top 10</summary><div id="domh" class="fact" style="margin:8px 0"></div><div id="dom" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note">Share of the total crypto market cap. Approximate snapshot (demo data until the live feed is connected). The rest of the market is split across thousands of smaller coins.</div></details></div>
+<div class="card"><details open><summary>Market dominance: the top 10</summary><div id="domh" class="fact" style="margin:8px 0"></div><div id="dom" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note" id="domNote">Share of the total crypto market cap. Approximate snapshot (demo data because the live feed could not be reached). The rest of the market is split across thousands of smaller coins.</div></details></div>
 <div class="card"><details><summary>Year-end prices (31 Dec)</summary><div class="sc" style="margin-top:10px"><table id="hist"></table></div>
 <div class="note">Approximate USD year-end closing levels for the coins in the compass (USDT and USDC aren’t shown). “–” = not launched yet or no reliable year-end price. Recent years, 2025 especially, are approximate. Green = up on the previous year-end, red = down.</div></details></div>
 
@@ -56,7 +56,7 @@ svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(
 <div id="maplist" class="fact"></div></details></div>
 
 <div class="card" id="wlcard"><details><summary>Winners League</summary><div class="sub" style="margin:8px 0 12px">Number of years each coin finished top of the 50, 2018 to 2026 YTD.</div><div id="wl" style="background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:14px"></div><h3 style="margin:20px 0 2px;font-size:17px">Biggest single-year gains</h3><div class="note" style="margin:0 0 6px">Bars use a log scale so the huge moves don’t flatten the rest.</div><div id="wl2" style="background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:6px 14px 14px"></div><div class="note">A win = the best performer of the 50 compass coins from one year-end to the next, and only years where it actually gained count. Coins are skipped in their launch year. Based on the approximate year-end table; 2026 YTD uses the page’s current prices, which are demo values until the live feed is connected.</div></details></div>
-<div class="note">Demo snapshot for layout &amp; design: prices and moves are illustrative until a live data feed is connected. Educational and historical only, not financial advice.</div>
+<div class="note" id="liveNote">Demo snapshot: prices and moves are illustrative because the live feed could not be reached. Educational and historical only, not financial advice.</div>
 </div>
 <dialog id="dlg"><div id="dc"></div><p style="text-align:right"><button onclick="dlg.close()">Close</button></p></dialog>
 <script>window.jsVectorMap={maps:{},addMap:function(n,m){this.maps[n]=m}};</script><script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.7.0/dist/maps/world.js"></script><script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"></script>
@@ -277,10 +277,12 @@ E("hist").innerHTML="<tr><th>Coin</th>"+Y.map(y=>`<th>${y}</th>`).join("")+"</tr
 const ATH={};"BTC|126000|Oct 2025;ETH|4950|Aug 2025;XRP|3.65|Jul 2025;BNB|1370|Oct 2025;SOL|294|Jan 2025;TRX|0.45|Dec 2024;DOGE|0.74|May 2021;ADA|3.1|Sep 2021;HYPE|59|Sep 2025;LINK|52.7|May 2021;XLM|0.94|Jan 2018;BCH|3785|Dec 2017;SUI|5.35|Jan 2025;AVAX|146|Nov 2021;LTC|410|May 2021;HBAR|0.57|Sep 2021;TON|8.25|Jun 2024;SHIB|0.0000886|Oct 2021;DOT|55|Nov 2021;XMR|542|Jan 2018;UNI|45|May 2021;AAVE|660|May 2021;NEAR|20.4|Jan 2022;ICP|700|May 2021;ETC|167|May 2021;APT|19.9|Jan 2023;ONDO|2.14|Dec 2024;POL|2.92|Dec 2021;ARB|2.39|Jan 2024;ATOM|44.5|Sep 2021;ALGO|3.56|Jun 2019;FIL|237|Apr 2021;VET|0.28|Apr 2021;RENDER|13.6|Mar 2024;INJ|53|Mar 2024;CRO|0.97|Nov 2021;KAS|0.19|Aug 2024;TAO|767|Mar 2024;PEPE|0.000028|Dec 2024;BONK|0.0000590|Nov 2024;SEI|1.14|Mar 2024;OP|4.85|Mar 2024;IMX|9.52|Nov 2021;STX|3.83|Apr 2024;FET|3.47|Mar 2024;GRT|2.84|Feb 2021;LDO|7.3|Nov 2021;MNT|2.5|Oct 2025;JUP|2|Jan 2024;SAND|8.4|Nov 2021".split(";").forEach(s=>{const[k,p,d]=s.split("|");ATH[k]=[+p,d]});
 const flg=k=>k==="WW"?"🌐":String.fromCodePoint(...[...(k==="UK"?"GB":k)].map(ch=>127397+ch.charCodeAt(0)));
 function ath(c){const a=ATH[c.s];if(!a)return"";const dd=(c.p/a[0]-1)*100;return `🏔️ All-time high: <b>${fp(a[0])}</b> (${a[1]}) · <span class="${dd>=0?"up":"dn"}">${dd.toFixed(0)}% from ATH</span><br>`}
-(function(){const DM=[["BTC",58.4,"#f7931a"],["ETH",11.9,"#627eea"],["USDT",5.6,"#26a17b"],["XRP",3.9,"#6b7ba4"],["BNB",3.2,"#f3ba2f"],["SOL",2.4,"#9945ff"],["USDC",1.9,"#2775ca"],["DOGE",1,"#c2a633"],["TRX",.8,"#ff060a"],["ADA",.7,"#3468d1"]],mx=DM[0][1],tot=DM.reduce((s,d)=>s+d[1],0);
+const DM0=[["BTC",58.4,"#f7931a"],["ETH",11.9,"#627eea"],["USDT",5.6,"#26a17b"],["XRP",3.9,"#6b7ba4"],["BNB",3.2,"#f3ba2f"],["SOL",2.4,"#9945ff"],["USDC",1.9,"#2775ca"],["DOGE",1,"#c2a633"],["TRX",.8,"#ff060a"],["ADA",.7,"#3468d1"]];
+function domChart(DM){const mx=DM[0][1],tot=DM.reduce((s,d)=>s+d[1],0);
  E("domh").innerHTML=`Top 10 hold <b style="color:var(--acc)">${tot.toFixed(1)}%</b> of the market · Bitcoin alone <b>${mx}%</b>`;
- E("dom").innerHTML=DM.map(d=>`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:9px;font-weight:700;margin-bottom:3px">${d[1]}%</div><div style="width:100%;max-width:20px;height:${Math.max(4,d[1]/mx*170)}px;background:${d[2]};border-radius:8px 8px 0 0;box-shadow:0 0 12px ${d[2]}55;transform-origin:bottom;animation:grow .9s ease both"></div><div style="font-size:9px;color:var(--mute);margin-top:4px;font-weight:700">${d[0]}</div></div>`).join("")})();
-(function(){
+ E("dom").innerHTML=DM.map(d=>`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:9px;font-weight:700;margin-bottom:3px">${d[1]}%</div><div style="width:100%;max-width:20px;height:${Math.max(4,d[1]/mx*170)}px;background:${d[2]};border-radius:8px 8px 0 0;box-shadow:0 0 12px ${d[2]}55;transform-origin:bottom;animation:grow .9s ease both"></div><div style="font-size:9px;color:var(--mute);margin-top:4px;font-weight:700">${d[0]}</div></div>`).join("")}
+domChart(DM0);
+function winners(){
  const wins={},all=[];
  for(let j=1;j<9;j++){let b=null;D.forEach(c=>{const p=P[c.s];if(!p)return;const a=p[j],z=p[j-1];if(a&&z){const g=a/z-1;all.push({k:c.s,y:Y[j],g});if(!b||g>b.g)b={k:c.s,g}}});if(b&&b.g>0)(wins[b.k]=wins[b.k]||[]).push(Y[j])}
  {let b=null;D.forEach(c=>{const p=P[c.s];if(p&&p[8]){const g=c.p/p[8]-1;if(!b||g>b.g)b={k:c.s,g}}});if(b&&b.g>0)(wins[b.k]=wins[b.k]||[]).push("2026 YTD")}
@@ -288,12 +290,27 @@ function ath(c){const a=ATH[c.s];if(!a)return"";const dd=(c.p/a[0]-1)*100;return
  E("wl").innerHTML=ks.map((k,i)=>{const w=wins[k]||[],c=D[ix(k)];return `<div data-i="${c.i}" style="display:grid;grid-template-columns:96px 1fr 28px;gap:8px;align-items:center;margin-top:${i?16:0}px;cursor:pointer"><span style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.n}</span><span style="background:var(--card);border-radius:12px;height:26px;display:block"><span style="display:block;height:26px;border-radius:12px;min-width:8px;width:${w.length/mx*100}%;background:${i===0?"#e8b84a":"#31c4c0"}"></span></span><b style="text-align:right;font-size:17px">${w.length}</b>${w.length?`<span style="grid-column:2/4;font-size:12px;color:var(--mute);margin-top:-6px">${w.slice().reverse().join(", ")}</span>`:""}</div>`}).join("");
  const top=all.sort((a,b)=>b.g-a.g).slice(0,10),lm=Math.log10(1+top[0].g);
  E("wl2").innerHTML=top.map(t=>`<div data-i="${ix(t.k)}" style="display:grid;grid-template-columns:90px 1fr 66px;gap:8px;align-items:center;margin-top:10px;cursor:pointer"><span style="font-size:13px;white-space:nowrap">${t.k} <span style="color:var(--mute)">${t.y}</span></span><span style="background:var(--card);border-radius:10px;height:14px;display:block"><span style="display:block;height:14px;border-radius:10px;width:${Math.max(4,Math.log10(1+t.g)/lm*100)}%;background:var(--up)"></span></span><b class="up" style="text-align:right;font-size:12px">+${Math.round(t.g*100).toLocaleString()}%</b></div>`).join("");
-})();
+}
+winners();
 // explainer
 const dlg=E("dlg");
 document.addEventListener("click",e=>{const g=e.target.closest("[data-i]");if(!g)return;const c=D.concat(EX)[+g.dataset.i];
  E("dc").innerHTML=`<h2 style="margin:0">${flg(c.c)} ${c.n} <small style="color:var(--mute)">${c.s}</small></h2><p>${c.b}</p><p><b>${fp(c.p)}</b> · ${c.i<50?"rank #"+(c.i+1):"outside the top 50"}<br>${ath(c)}Origin: ${flg(c.c)} ${NM[c.c]}</p>`+Object.keys(TF).map(k=>`<span class="chip ${c.ch[k]>=0?"up":"dn"}">${TF[k]} ${fc(c.ch[k])}</span> `).join("");dlg.showModal()});
 E("thermo").append(E("gauge"),E("mood"),E("moodsub"));E("moodsub").style.display="none";E("mood").style.fontSize="11px";E("moodcard").remove();const wr=document.querySelector(".w");wr.insertBefore(E("hist").closest(".card"),wr.lastElementChild);wr.insertBefore(E("wlcard"),wr.lastElementChild);
+// Live feed: replaces the demo prices, moves, all-time highs and dominance when /api/dataviz/crypto-compass/live answers.
+fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+ const K=j.coins||{};let hit=0;
+ D.concat(EX).forEach(c=>{const x=K[c.s];if(!x)return;hit++;c.p=x.p;
+  for(const k in TF)if(x[k]!=null)c.ch[k]=x[k];
+  if(x.ath&&x.ath_date){const dt=new Date(x.ath_date);ATH[c.s]=[x.ath,dt.toLocaleString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})]}});
+ if(hit<D.length*.6)return;
+ const dm=j.dominance||{},cols={BTC:"#f7931a",ETH:"#627eea",USDT:"#26a17b",XRP:"#6b7ba4",BNB:"#f3ba2f",SOL:"#9945ff",USDC:"#2775ca",DOGE:"#c2a633",TRX:"#ff060a",ADA:"#3468d1"};
+ const top=Object.keys(dm).sort((a,b)=>dm[b]-dm[a]).slice(0,10).map(k=>[k,+dm[k].toFixed(1),cols[k]||"#8d97b3"]);
+ if(top.length>=5)domChart(top);
+ winners();draw();
+ const up=j.updated_at?new Date(j.updated_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+ E("liveNote").innerHTML="Live prices and moves from CoinGecko"+(up?", updated "+up:"")+" (cached for a few minutes). Year-end prices and the winners table are historical approximations. Educational and historical only, not financial advice.";
+ E("domNote").textContent="Share of the total crypto market cap, live from CoinGecko. The rest of the market is split across thousands of smaller coins."}).catch(()=>{});
 draw();
 </script>
 <script>function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"crypto-compass"},location.origin);}try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}</script>

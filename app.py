@@ -7089,6 +7089,62 @@ def api_bitcoin_dashboard_live():
     return jsonify(data)
 
 
+# Crypto Compass live board: top 250 coins by market cap from CoinGecko (price, 24h/7d/30d/1y change,
+# all-time high) plus global market-cap dominance. One call each, cached for 5 minutes; a stale copy is
+# served if CoinGecko rate-limits us, so the page only falls back to its demo numbers when we have nothing.
+_cc_cache: dict = {"at": 0.0, "data": None}
+_cc_lock = threading.Lock()
+_CC_TTL = 300
+
+
+def _fetch_crypto_compass() -> dict | None:
+    hdr = {"accept": "application/json", "user-agent": "GCG-CryptoCompass/1.0"}
+    r = requests.get("https://api.coingecko.com/api/v3/coins/markets",
+                     params={"vs_currency": "usd", "order": "market_cap_desc", "per_page": 250, "page": 1,
+                             "price_change_percentage": "24h,7d,30d,1y"}, headers=hdr, timeout=15)
+    r.raise_for_status()
+    coins = {}
+    for c in r.json():
+        sym = (c.get("symbol") or "").upper()
+        if not sym or sym in coins or not c.get("current_price"):
+            continue  # first hit per symbol is the highest-cap one
+        coins[sym] = {"p": c["current_price"], "mc": c.get("market_cap"), "rank": c.get("market_cap_rank"),
+                      "d": c.get("price_change_percentage_24h_in_currency"),
+                      "w": c.get("price_change_percentage_7d_in_currency"),
+                      "m": c.get("price_change_percentage_30d_in_currency"),
+                      "y": c.get("price_change_percentage_1y_in_currency"),
+                      "ath": c.get("ath"), "ath_date": c.get("ath_date")}
+    dom = {}
+    try:
+        g = requests.get("https://api.coingecko.com/api/v3/global", headers=hdr, timeout=15).json().get("data", {})
+        dom = {k.upper(): v for k, v in (g.get("market_cap_percentage") or {}).items()}
+    except Exception:
+        pass
+    if not coins:
+        return None
+    return {"coins": coins, "dominance": dom, "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+
+
+@app.route("/api/dataviz/crypto-compass/live", methods=["GET"])
+def api_crypto_compass_live():
+    with _cc_lock:
+        cached, at = _cc_cache["data"], _cc_cache["at"]
+        if cached and time.monotonic() - at < _CC_TTL:
+            return jsonify(cached)
+    try:
+        data = _fetch_crypto_compass()
+    except Exception as e:
+        app.logger.warning("crypto-compass live fetch failed: %s", e)
+        data = None
+    if data:
+        with _cc_lock:
+            _cc_cache.update(at=time.monotonic(), data=data)
+        return jsonify(data)
+    if cached:
+        return jsonify(cached)
+    return jsonify({"error": "unavailable"}), 502
+
+
 # Dividend Calculator lookup: trailing-12-month dividends and the latest price for
 # any Yahoo ticker. A bare ticker is tried as-is first, then with .L (LSE) appended.
 _DIV_CACHE_TTL_SECONDS = 3600
