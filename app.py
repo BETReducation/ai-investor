@@ -679,6 +679,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('bubble-radar', 'Bubble Radar', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bubble-radar'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ai-tracker', 'AI Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ai-tracker'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('finance-map', 'The Finance Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'finance-map'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('crypto-compass', 'Crypto Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
@@ -1767,6 +1769,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
+    "ai-tracker": "About 90 AI stocks across every country on one world map, coloured by return over a day to five years, with market temperature, supply chain links, a compass, league table and AI spend vs profit (illustrative sample data).",
     "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored from live Yahoo Finance data across about 280 stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
     "finance-map": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks.",
     "crypto-compass": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year.",
@@ -1796,6 +1799,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "ai-tracker", "label": "AI Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bubble-radar", "label": "Bubble Radar", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "finance-map", "label": "The Finance Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "crypto-compass", "label": "Crypto Compass", "author": None, "has_live_widget": True, "kind": "viz"},

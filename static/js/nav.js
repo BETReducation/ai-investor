@@ -91,7 +91,8 @@
       ['FTSE 100 Wagon Wheel', '/tools/data-visualisation/ftse-wagon-wheel'],
       ['Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
       ['S&amp;P500 Compass', '/tools/data-visualisation/league-compass'],
-      ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker']
+      ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker'],
+      ['AI Tracker', '/tools/data-visualisation/ai-tracker']
     ] },
     { name: 'Property', pages: [
       ['REIT Map', '/tools/data-visualisation/reit-map']
