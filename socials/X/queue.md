@@ -859,3 +859,26 @@ Video or Alpha: "Drawdowns through history: how deep and how long, 1929, 1973, 2
 
 ### Reply target
 None found this run.
+
+## 2026-11-04 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing dated this week (latest items early 2026); drafts are evergreen with no claims about current prices. Last runs used C/A/E, B/D/A, C/E/A, B/D/E, C/A/E, so this run uses B, C and D. 2008 election-week S&P moves from memory (check figure). CPI definition standard (check figure).
+
+### Draft 106 (type: B thoughts/take, status: pending)
+Election week 2008: the S&P 500 rose about 5% on election day, then fell about 5% the day after. Whatever the vote meant, the market was busy with banks and credit. It kept falling into March 2009. Big political events get the headlines, but in a crisis the money plumbing usually does the steering.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 107 (type: C beginner explainer, status: pending)
+What is CPI? It's the Consumer Price Index, a monthly measure of what a typical basket of everyday things costs: food, rent, fuel, clothes. If the basket costs 3% more than a year ago, that's 3% inflation. Markets watch it because it shapes what central banks do with interest rates.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 108 (type: D question, status: pending)
+If you could sit in the room for one day in market history, which would it be? Black Monday 1987, the dot-com peak, Lehman weekend, March 2020? I'd pick 1987, just to see how fast it all unravelled.
+
+### Angle suggestion
+Video or Alpha: "Politics vs plumbing: what actually drove markets around US elections in 1980, 2000, 2008 and 2016." Pairs with draft 106. Education only.
+
+### Reply target
+None found this run.
