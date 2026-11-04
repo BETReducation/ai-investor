@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>try{var t=localStorage.getItem("gcg-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<title>Crypto Compass</title>
+<style>
+:root{--bg:#0b0e17;--card:#141a2a;--ink:#eef1f8;--mute:#8d97b3;--up:#19e68c;--dn:#ff4d6d;--acc:#ffa31a;--line:#26304a;--o1:#0a1f3a;--o2:#0e3358;--land:#2a3a5c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f3f5fb;--card:#fff;--ink:#141a2a;--mute:#5b6580;--up:#0aa866;--dn:#e0284a;--acc:#e08600;--line:#dde2ef;--o1:#cfe6fb;--o2:#a9d0f3;--land:#e3e8f3}}
+:root[data-theme="light"]{--bg:#f3f5fb;--card:#fff;--ink:#141a2a;--mute:#5b6580;--up:#0aa866;--dn:#e0284a;--acc:#e08600;--line:#dde2ef;--o1:#cfe6fb;--o2:#a9d0f3;--land:#e3e8f3}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+.w{max-width:980px;margin:0 auto;padding:16px}
+h1{margin:0;font-size:clamp(26px,6vw,40px);letter-spacing:-.5px}h1 span{color:var(--acc)}
+.sub{color:var(--mute);margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0}
+.tg{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;width:max-content;max-width:100%;margin:10px auto}
+.tg button{border:0;background:none;color:var(--mute);font:600 14px inherit;padding:8px 18px;border-radius:999px;cursor:pointer}
+.tg button.on{background:var(--acc);color:#111}
+.strip{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+details>summary{cursor:pointer;font-weight:700;font-size:18px;list-style:none}
+details>summary::before{content:"▸ ";color:var(--acc)}details[open]>summary::before{content:"▾ "}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.row i{display:none}.row{gap:4px;padding:6px 4px;font-size:13px}.row b{width:auto;flex:1}.row>span:first-child{width:18px!important}.cols h3{font-size:15px;margin:6px 0}}
+.row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:10px;cursor:pointer}
+.row:hover{background:var(--bg)}.row b{width:52px}.row i{flex:1;color:var(--mute);font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:5px;border-radius:3px;margin-top:2px}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--acc);border-radius:18px;max-width:420px;width:92%}dialog::backdrop{background:#000a}
+dialog button{background:var(--acc);border:0;border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer}
+.fact{text-align:center;color:var(--mute);font-size:14px}.note{color:var(--mute);font-size:12px;margin-top:8px}
+svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(0)}}
+</style></head><body><div class="w">
+<h1>Crypto <span>Compass</span></h1>
+<div class="sub">Top 50 cryptos. Which way is the market pointing?</div>
+<div class="tg" id="tg"></div>
+
+<div class="card" id="moodcard"><div style="text-align:center;font-weight:700;font-size:14px">Market Mood Meter</div>
+<svg id="gauge" viewBox="0 0 300 175" style="width:100%;max-width:230px;display:block;margin:0 auto"></svg>
+<div id="mood" style="text-align:center;font-size:16px;font-weight:800"></div>
+<div id="moodsub" class="fact"></div><div class="note" style="text-align:center">Needle leans right when green slices dominate the compass.</div></div>
+
+<div class="card"><div class="strip" id="strip"></div>
+<div style="display:flex;align-items:center;gap:6px"><svg id="compass" viewBox="-235 -235 470 470" style="flex:1;min-width:0;max-width:560px;margin:8px auto"></svg><div id="thermo" style="width:68px;text-align:center;font-size:11px;font-weight:700">Market Mood Meter</div></div>
+<div class="fact">Green on the left = up, red on the right = down. Each slice is one coin, and the rim counts all 50. Tap any slice.</div>
+<div class="fact" id="fact" style="margin-top:8px"></div></div>
+
+<div class="card"><details><summary>Top 25 up &amp; bottom 25 down</summary><div class="tg" id="tg2"></div><div class="cols" style="margin-top:10px"><div><h3 class="up">▲ Top 25</h3><div id="top"></div></div><div><h3 class="dn">▼ Bottom 25</h3><div id="bot"></div></div></div></details></div>
+
+<div class="card"><details open><summary>Market dominance: the top 10</summary><div id="domh" class="fact" style="margin:8px 0"></div><div id="dom" style="display:flex;align-items:flex-end;gap:3px;height:240px;margin-top:6px"></div><div class="note">Share of the total crypto market cap. Approximate snapshot (demo data until the live feed is connected). The rest of the market is split across thousands of smaller coins.</div></details></div>
+<div class="card"><details><summary>Year-end prices (31 Dec)</summary><div class="sc" style="margin-top:10px"><table id="hist"></table></div>
+<div class="note">Approximate USD year-end closing levels for the coins in the compass (USDT and USDC aren’t shown). “–” = not launched yet or no reliable year-end price. Recent years, 2025 especially, are approximate. Green = up on the previous year-end, red = down.</div></details></div>
+
+<div class="card"><details id="mapd"><summary>Where cryptos come from</summary>
+<svg id="map" viewBox="0 0 900 440" style="width:100%;margin-top:10px;border-radius:14px;background:linear-gradient(180deg,var(--o1),var(--o2))"></svg>
+<div id="maplist" class="fact"></div></details></div>
+
+<div class="card" id="wlcard"><details><summary>Winners League</summary><div class="sub" style="margin:8px 0 12px">Number of years each coin finished top of the 50, 2018 to 2026 YTD.</div><div id="wl" style="background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:14px"></div><h3 style="margin:20px 0 2px;font-size:17px">Biggest single-year gains</h3><div class="note" style="margin:0 0 6px">Bars use a log scale so the huge moves don’t flatten the rest.</div><div id="wl2" style="background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:6px 14px 14px"></div><div class="note">A win = the best performer of the 50 compass coins from one year-end to the next, and only years where it actually gained count. Coins are skipped in their launch year. Based on the approximate year-end table; 2026 YTD uses the page’s current prices, which are demo values until the live feed is connected.</div></details></div>
+<div class="note">Demo snapshot for layout &amp; design: prices and moves are illustrative until a live data feed is connected. Educational and historical only, not financial advice.</div>
+</div>
+<dialog id="dlg"><div id="dc"></div><p style="text-align:right"><button onclick="dlg.close()">Close</button></p></dialog>
+<script>window.jsVectorMap={maps:{},addMap:function(n,m){this.maps[n]=m}};</script><script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.7.0/dist/maps/world.js"></script><script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"></script>
+<script>
+const D=`BTC|Bitcoin|98000|WW|The original crypto. Fixed 21 million supply, often called digital gold.
+ETH|Ethereum|3100|CH|Programmable blockchain powering apps, DeFi and NFTs.
+XRP|XRP|2.1|US|Built for fast, cheap cross-border payments.
+BNB|BNB|880|MT|Native coin of the Binance ecosystem.
+SOL|Solana|165|US|Very fast, low-fee blockchain for apps and memecoins.
+TRX|TRON|0.28|SG|Popular network for stablecoin transfers.
+DOGE|Dogecoin|0.17|US|The meme that became a household name.
+ADA|Cardano|0.45|US|Research-led proof-of-stake blockchain.
+HYPE|Hyperliquid|34|US|Chain built around fast on-chain derivatives trading.
+LINK|Chainlink|15|US|Oracle network feeding real-world data to smart contracts.
+XLM|Stellar|0.3|US|Low-cost payments network for moving money globally.
+BCH|Bitcoin Cash|480|WW|A 2017 Bitcoin fork aiming for cheaper everyday payments.
+SUI|Sui|3.1|US|Fast Layer 1 designed for games and consumer apps.
+AVAX|Avalanche|24|US|Speedy smart-contract platform with custom subnets.
+LTC|Litecoin|88|US|“Silver to Bitcoin’s gold”: older, faster, simpler.
+HBAR|Hedera|0.2|US|Enterprise-focused network run by a council of big firms.
+TON|Toncoin|2.6|AE|Blockchain tied to the Telegram messaging app.
+SHIB|Shiba Inu|0.000013|WW|Dogecoin-inspired community token with its own ecosystem.
+DOT|Polkadot|3.9|CH|Connects many blockchains into one network.
+XMR|Monero|190|WW|Privacy-first coin with hidden transactions.
+UNI|Uniswap|7.5|US|Leading decentralised exchange for swapping tokens.
+AAVE|Aave|230|FI|Decentralised lending and borrowing protocol.
+NEAR|NEAR|2.9|US|User-friendly, scalable Layer 1 chain.
+ICP|Internet Computer|6.2|CH|Runs apps fully on-chain, no cloud needed.
+ETC|Ethereum Classic|18|WW|The original Ethereum chain after the 2016 split.
+APT|Aptos|4.8|US|Layer 1 built by ex-Meta Diem engineers.
+ONDO|Ondo|0.85|US|Brings tokenised treasuries and real-world assets on-chain.
+POL|Polygon|0.22|IN|Scaling network for Ethereum.
+ARB|Arbitrum|0.4|US|Popular Ethereum Layer 2 for cheaper transactions.
+ATOM|Cosmos|4.3|DE|The “internet of blockchains”.
+ALGO|Algorand|0.17|US|Pure proof-of-stake chain created by an MIT professor.
+FIL|Filecoin|2.4|US|Decentralised file storage marketplace.
+VET|VeChain|0.02|CN|Supply-chain tracking on blockchain.
+RENDER|Render|3.2|US|Shares spare GPU power for graphics and AI.
+INJ|Injective|9.5|US|Finance-focused chain for on-chain trading.
+CRO|Cronos|0.12|SG|Chain of the Crypto.com ecosystem.
+KAS|Kaspa|0.06|IL|Very fast proof-of-work network using BlockDAG tech.
+TAO|Bittensor|310|CA|A marketplace for decentralised AI.
+PEPE|Pepe|0.000008|WW|Meme coin riding the frog meme.
+BONK|Bonk|0.00002|WW|Solana’s dog-themed community memecoin.
+SEI|Sei|0.28|US|Layer 1 built for speedy trading.
+OP|Optimism|0.7|US|Ethereum Layer 2 with a strong public-goods focus.
+IMX|Immutable|0.6|AU|Scaling and tools for blockchain games.
+STX|Stacks|0.7|US|Brings smart contracts to Bitcoin.
+FET|Fetch.ai|0.55|UK|AI agents on blockchain.
+GRT|The Graph|0.11|US|The “Google of blockchains”: indexes on-chain data.
+LDO|Lido DAO|0.8|WW|Governance for the biggest liquid-staking service.
+MNT|Mantle|0.8|SG|Ethereum Layer 2 backed by a big exchange treasury.
+JUP|Jupiter|0.55|WW|Top swap aggregator on Solana.
+SAND|The Sandbox|0.3|HK|Virtual world where players own and trade land.`.split("\n").map((l,i)=>{const[s,n,p,c,b]=l.split("|");return{i,s,n,p:+p,c,b}});
+const P={"BTC":[13860,3740,7200,29000,46300,16500,42300,93400,87500],"ETH":[757,133,129,737,3680,1196,2282,3335,2970],"XRP":[2.3,.35,.19,.23,.84,.34,.62,2.08,1.85],"BNB":[8.5,6.1,13.8,38,515,245,312,710,860],"SOL":[0,0,0,1.5,170,10,101,190,125],"DOGE":[.0003,.002,.002,.0047,.17,.07,.09,.32,.12],"ADA":[.25,.04,.033,.18,1.37,.25,.6,.89,.37],"TRX":[.03,.02,.019,.027,.065,.05,.108,.25,.28],"LTC":[225,31,42,125,146,70,73,103,75],"LINK":[.3,.5,1.8,11.5,19.7,5.2,15.2,21.7,12]};
+const LOC={US:[-98,39],UK:[-1,52],CH:[8,47],SG:[104,1],CN:[104,35],HK:[114,22],AE:[54,24],DE:[10,51],IL:[35,31],CA:[-106,56],MT:[14,36],FI:[25,62],IN:[78,22],AU:[134,-25],WW:[-30,12],JP:[138,36],KR:[127.8,36.5],RU:[37.6,55.7],FR:[2.3,46.6],RO:[25,45.9],VN:[106,16],AR:[-64,-34],TH:[100.9,15.8]};
+const NM={US:"United States",UK:"United Kingdom",CH:"Switzerland",SG:"Singapore",CN:"China",HK:"Hong Kong",AE:"UAE",DE:"Germany",IL:"Israel",CA:"Canada",MT:"Malta",FI:"Finland",IN:"India",AU:"Australia",WW:"Anonymous / global",JP:"Japan",KR:"South Korea",RU:"Russia",FR:"France",RO:"Romania",VN:"Vietnam",AR:"Argentina",TH:"Thailand"};
+const TF={d:"Day",w:"Week",m:"Month",y:"Year"},SC={d:3,w:7,m:15,y:60},DR={d:.4,w:1,m:3,y:-6};
+const EX=`NEO|NEO|7|CN|Often called China's Ethereum: a smart-contract platform started in 2014.
+ONT|Ontology|0.18|CN|Blockchain focused on digital identity and data.
+CFX|Conflux|0.15|CN|Public chain built to work within China's regulations.
+CKB|Nervos Network|0.012|CN|Flexible, secure Layer 1 from a Chinese team.
+QTUM|Qtum|2.4|SG|Blends Bitcoin's design with smart contracts.
+ZIL|Zilliqa|0.012|SG|One of the first blockchains to use sharding.
+ENJ|Enjin|0.12|SG|Tokens and tools for blockchain games and NFTs.
+IOTA|IOTA|0.18|DE|Feeless network for machines and the Internet of Things.
+XTZ|Tezos|0.65|FR|Self-upgrading blockchain with on-chain voting.
+EGLD|MultiversX|14|RO|Fast sharded blockchain from Romania.
+KAIA|Kaia|0.1|KR|Merged Klaytn and Finschia chain, backed by Kakao and LINE.
+WEMIX|WEMIX|0.5|KR|Gaming chain from Korean studio Wemade.
+ICX|ICON|0.1|KR|Early Korean network for connecting blockchains.
+LUNC|Terra Classic|0.00004|KR|The original Terra chain that collapsed in 2022.
+XEM|NEM|0.006|JP|Early blockchain popular in Japan, ancestor of Symbol.
+ASTR|Astar|0.05|JP|Japan's flagship smart-contract hub on Polkadot.
+WAVES|Waves|0.9|RU|Russian-founded platform for tokens and trading.
+MANA|Decentraland|0.3|AR|Virtual world where land is owned as NFTs, founded in Argentina.
+AXS|Axie Infinity|2.2|VN|Play-to-earn game from Vietnam that popularised GameFi.
+CHZ|Chiliz|0.06|MT|Fan-token platform used by sports clubs.
+KUB|Bitkub Coin|1.2|TH|Token of the chain run by Thailand's biggest exchange.
+FLOW|Flow|0.4|CA|NFT-focused chain from Vancouver, home of NBA Top Shot.
+BAT|Basic Attention Token|0.15|US|Rewards users for attention in the Brave browser.
+ZEC|Zcash|45|US|Privacy coin using zero-knowledge proofs.
+DASH|Dash|30|US|Early Bitcoin offshoot built for quick payments.
+GALA|Gala|0.015|US|Blockchain gaming platform.
+STRK|Starknet|0.15|IL|Ethereum Layer 2 built by Israeli team StarkWare.
+BICO|Biconomy|0.06|IN|Tools that make Web3 transactions simpler, from India.
+CAKE|PancakeSwap|2.2|WW|Popular exchange on BNB Chain built by anonymous developers.
+RUNE|THORChain|1.5|WW|Cross-chain swap network built by pseudonymous developers.
+NIGHT|Midnight|0.08|US|Privacy-focused chain from the team behind Cardano, built around selective data protection.
+HNT|Helium|2.1|US|Community-built wireless network paid for with crypto.
+LPT|Livepeer|6|US|Decentralised network for streaming and processing video.
+THETA|Theta Network|0.8|US|Decentralised video delivery and AI network.
+COMP|Compound|40|US|Pioneer of on-chain lending, born in San Francisco.
+CELO|Celo|0.35|US|Mobile-first payments chain started in San Francisco.
+MINA|Mina|0.12|US|Tiny blockchain that stays a fixed size using zero-knowledge proofs.
+KAVA|Kava|0.3|US|DeFi chain in the Cosmos ecosystem.
+ZRX|0x|0.3|US|Open protocol for trading tokens between apps.
+EIGEN|EigenLayer|1|US|Lets staked ETH be reused to secure other networks.`.split("\n").map((l,i)=>{const[s,n,p,c,b]=l.split("|");return{i:50+i,s,n,p:+p,c,b}});
+EX.forEach(c=>{c.ch={};for(const k in TF){const base=gz(c.i*7+1),own=gz(c.i*31+k.charCodeAt(0));c.ch[k]=DR[k]+SC[k]*(.55*base+.6*own)}});
+let tf="d",lt="d";
+function rnd(a){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}
+function gz(s){return(rnd(s)+rnd(s+99)+rnd(s+198)-1.5)*2}
+D.forEach(c=>{c.ch={};for(const k in TF){const base=gz(c.i*7+1),own=gz(c.i*31+k.charCodeAt(0));c.ch[k]=DR[k]+SC[k]*(.55*base+.6*own)*(1+.0*c.i)}});
+const fp=p=>p>=1000?"$"+Math.round(p).toLocaleString():p>=1?"$"+p.toFixed(2):p>=.01?"$"+p.toFixed(3):p>=.0001?"$"+p.toFixed(5):"$"+p.toFixed(8).replace(/0+$/,"");
+const fc=v=>(v>=0?"+":"")+v.toFixed(1)+"%";
+const E=id=>document.getElementById(id);
+E("tg").innerHTML=Object.keys(TF).map(k=>`<button data-k="${k}">${TF[k]}</button>`).join("");
+E("tg2").innerHTML=E("tg").innerHTML;E("tg2").onclick=e=>{if(e.target.dataset.k){lt=e.target.dataset.k;lists()}};
+E("tg").onclick=e=>{if(e.target.dataset.k){tf=lt=e.target.dataset.k;draw()}};
+const FACTS=["Only 21 million bitcoin will ever exist.","Bitcoin’s first real-world purchase was two pizzas in 2010.","Ethereum’s creator, Vitalik Buterin, was 19 when he proposed it.","Dogecoin started in 2013 as a joke.","Over 10,000 different cryptocurrencies exist, but most are tiny."];
+function draw(){
+ document.querySelectorAll("#tg button").forEach(b=>b.classList.toggle("on",b.dataset.k===tf));
+ const L=[...D].sort((a,b)=>b.ch[tf]-a.ch[tf]),n=D.length;
+ const avg=D.reduce((s,c)=>s+c.ch[tf],0)/n,gr=D.filter(c=>c.ch[tf]>=0).length;
+ const score=Math.max(0,Math.min(100,.6*(gr/n*100)+.4*(50+avg*(40/SC[tf]*2))));
+ const lab=score>=80?"Extreme Greed 🚀":score>=60?"Bullish 🐂":score>=40?"Neutral 😐":score>=20?"Bearish 🐻":"Extreme Fear 😱";
+ const ang=-90+score*1.8,pt=(a,r)=>[150+r*Math.cos(a*Math.PI/180),150+r*Math.sin(a*Math.PI/180)];
+ let g="";const cols=["#ff4d6d","#ff8a3d","#ffd23d","#9be34a","#19e68c"];
+ cols.forEach((c,i)=>{const a0=180+i*36,a1=a0+36,[x0,y0]=pt(a0,120),[x1,y1]=pt(a1,120),[x2,y2]=pt(a1,85),[x3,y3]=pt(a0,85);g+=`<path d="M${x0} ${y0}A120 120 0 0 1 ${x1} ${y1}L${x2} ${y2}A85 85 0 0 0 ${x3} ${y3}Z" fill="${c}"/>`});
+ const[nx,ny]=pt(ang-90,95);
+ g+=`<line x1="150" y1="150" x2="${nx}" y2="${ny}" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" style="transition:all .6s"/><circle cx="150" cy="150" r="9" fill="var(--ink)"/><text x="22" y="170" fill="var(--dn)" font-size="12" font-weight="700">BEAR</text><text x="240" y="170" fill="var(--up)" font-size="12" font-weight="700">BULL</text><text x="150" y="128" text-anchor="middle" fill="var(--ink)" font-size="26" font-weight="800" opacity=".0">.</text>`;
+ E("gauge").innerHTML=g;
+ E("mood").textContent=lab+" · "+Math.round(score)+"/100";
+ E("moodsub").textContent=`${gr} of ${n} coins are up this ${TF[tf].toLowerCase()} (avg ${fc(avg)})`;
+ // compass
+ const mx=Math.max(...D.map(c=>Math.abs(c.ch[tf]))),R=185;
+ let s=`<circle r="${R+12}" fill="var(--card)" stroke="var(--line)" stroke-width="3"/><path d="M-${R} 0H${R}M0 -${R}V${R}" stroke="var(--line)"/><circle r="${R*.5}" fill="none" stroke="var(--line)" stroke-dasharray="3 5"/>`;
+ s+=`<text y="-196" text-anchor="middle" fill="var(--up)" font-weight="800" font-size="12">N · BULL</text><text y="205" text-anchor="middle" fill="var(--dn)" font-weight="800" font-size="12">S · BEAR</text>`;
+ const na=(100-score)*1.8-90,[ex,ey]=[Math.cos(na*Math.PI/180)*R*.6,Math.sin(na*Math.PI/180)*R*.6];
+ s+=`<line x1="0" y1="0" x2="${ex}" y2="${ey}" stroke="var(--acc)" stroke-width="3" stroke-dasharray="6 4" opacity=".7"/>`;
+ D.forEach(c=>{const v=c.ch[tf],y=-(v/mx)*R*.82,w=Math.sqrt(Math.max(R*R*.9-y*y,100)),x=(((c.i*.618034)%1)-.5)*2*w*.92,r=Math.max(9,24-c.i*.3);
+  s+=`<g data-i="${c.i}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="${r}" fill="${v>=0?"var(--up)":"var(--dn)"}" opacity=".85" stroke="var(--bg)" stroke-width="2"/><text x="${x}" y="${y+3}" text-anchor="middle" font-size="${r>14?8:6}" font-weight="700" fill="#111">${c.s}</text></g>`});
+ s+=`<circle r="7" fill="var(--acc)"/>`;E("compass").innerHTML=s;
+ {const A=360/n,R2=175,r0=62,pp=(r,t)=>[-r*Math.sin(t*Math.PI/180),-r*Math.cos(t*Math.PI/180)];
+ let q=`<circle r="${R2+36}" fill="var(--card)" stroke="var(--line)" stroke-width="2"/>`;
+ L.forEach((c,k)=>{const t0=k*A,t1=t0+A,v=c.ch[tf],op=.4+.6*Math.abs(v)/mx,[a,b]=pp(R2,t0),[d,e]=pp(R2,t1),[f,g]=pp(r0,t1),[h,j]=pp(r0,t0),[px,py]=pp((R2+r0)/2+8,t0+A/2);let an=Math.atan2(py,px)*180/Math.PI;if(px<0)an+=180;
+  q+=`<g data-i="${c.i}" style="cursor:pointer"><path d="M${a} ${b}A${R2} ${R2} 0 0 0 ${d} ${e}L${f} ${g}A${r0} ${r0} 0 0 1 ${h} ${j}Z" fill="${v>=0?"var(--up)":"var(--dn)"}" opacity="${op}" stroke="var(--bg)" stroke-width="1.5"/><text transform="translate(${px} ${py}) rotate(${an})" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="var(--ink)">${c.s}</text></g>`});
+ for(let k=0;k<n;k+=5){const[x1,y1]=pp(R2+2,k*A),[x2,y2]=pp(R2+9,k*A),[x3,y3]=pp(R2+22,k*A);q+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--mute)" stroke-width="2"/><text x="${x3}" y="${y3+4}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">${k||n}</text>`}
+ q+=`<circle r="${r0-2}" fill="var(--card)"/><text y="-8" text-anchor="middle" font-size="24" font-weight="800" fill="var(--up)">▲ ${gr}</text><text y="24" text-anchor="middle" font-size="24" font-weight="800" fill="var(--dn)">▼ ${n-gr}</text>`;E("compass").innerHTML=q}
+ E("strip").innerHTML=`<span class="chip">🏆 ${L[0].s} <b class="up">${fc(L[0].ch[tf])}</b></span><span class="chip">💥 ${L[n-1].s} <b class="dn">${fc(L[n-1].ch[tf])}</b></span><span class="chip">Avg <b class="${avg>=0?"up":"dn"}">${fc(avg)}</b></span>`;
+ E("fact").textContent="💡 "+FACTS[new Date().getDate()%FACTS.length];
+ {const ly=175-score/100*165,bc=score>=60?"#19e68c":score>=40?"#ffd23d":"#ff4d6d",tv=E("gauge");tv.setAttribute("viewBox","0 0 70 215");tv.style.maxWidth="56px";
+ tv.innerHTML=`<defs><linearGradient id="tgd" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff4d6d"/><stop offset=".5" stop-color="#ffd23d"/><stop offset="1" stop-color="#19e68c"/></linearGradient><clipPath id="tcl"><rect x="0" y="${ly}" width="70" height="${215-ly}"/></clipPath></defs><rect x="25" y="8" width="16" height="176" rx="8" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/><g clip-path="url(#tcl)"><rect x="28" y="8" width="10" height="190" fill="url(#tgd)"/></g><circle cx="33" cy="195" r="18" fill="${bc}" stroke="var(--line)" stroke-width="2"/><text x="33" y="200" text-anchor="middle" font-size="14" font-weight="800" fill="#111">${Math.round(score)}</text><line x1="21" y1="${ly}" x2="45" y2="${ly}" stroke="var(--ink)" stroke-width="2"/><text x="50" y="18" font-size="12">🐂</text><text x="50" y="178" font-size="12">🐻</text>`}
+ lists();
+}
+function lists(){const L=[...D].sort((a,b)=>b.ch[lt]-a.ch[lt]);
+ document.querySelectorAll("#tg2 button").forEach(b=>b.classList.toggle("on",b.dataset.k===lt));
+ const r=a=>a.map((c,j)=>`<div class="row" data-i="${c.i}"><span style="width:22px;color:var(--mute)">${j+1}</span><b>${c.s}</b><i>${c.n}</i><span class="${c.ch[lt]>=0?"up":"dn"}">${fc(c.ch[lt])}</span></div>`).join("");
+ E("top").innerHTML=r(L.slice(0,25));E("bot").innerHTML=r(L.slice(25).reverse())}
+// history
+`HYPE|–,–,–,–,–,–,–,25.8,25
+XLM|0.30,0.11,0.045,0.13,0.29,0.08,0.12,0.34,0.23
+BCH|2420,163,205,345,425,108,258,435,590
+SUI|–,–,–,–,–,–,1.64,4.5,1.45
+AVAX|–,–,–,4.6,109,11,40,38,12.5
+HBAR|–,–,0.04,0.12,0.29,0.05,0.09,0.29,0.12
+TON|–,–,–,–,1.95,1.27,2.25,5.3,1.55
+SHIB|–,–,–,–,0.0000335,0.0000079,0.0000087,0.000022,0.0000075
+DOT|–,–,–,8.6,27.6,4.4,8.4,6.6,2.1
+XMR|340,44,47,156,215,152,163,210,450
+UNI|–,–,–,3.4,14.5,5.9,6.6,12.2,5.5
+AAVE|–,–,–,89,255,66,100,325,175
+NEAR|–,–,–,–,11.3,1.4,3.5,5.2,1.6
+ICP|–,–,–,–,36,3.9,12.4,10.5,3.1
+ETC|29,4.6,4.7,5.9,32,15.5,20,24,12.5
+APT|–,–,–,–,–,3.2,10.7,9,1.8
+ONDO|–,–,–,–,–,–,–,1.1,0.4
+POL|–,–,0.01,0.019,2.46,0.8,0.9,0.47,0.12
+ARB|–,–,–,–,–,–,1.65,0.55,0.2
+ATOM|–,–,3.4,5.1,33,9.9,10,4.4,2
+ALGO|–,–,0.2,0.36,1.5,0.24,0.19,0.36,0.12
+FIL|–,–,–,24,36,3.8,7.9,3.8,1.4
+VET|–,0.005,0.004,0.011,0.059,0.021,0.039,0.044,0.011
+RENDER|–,–,–,–,–,0.34,4,5.5,1.5
+INJ|–,–,–,–,–,1.2,38,20,5.5
+CRO|–,–,–,0.14,0.4,0.07,0.09,0.15,0.1
+KAS|–,–,–,–,–,–,0.1,0.12,0.04
+TAO|–,–,–,–,–,–,390,505,270
+PEPE|–,–,–,–,–,–,0.0000009,0.0000174,0.000004
+BONK|–,–,–,–,–,–,0.0000011,0.0000204,0.000008
+SEI|–,–,–,–,–,–,0.63,0.38,0.12
+OP|–,–,–,–,–,1.1,3.4,2,0.35
+IMX|–,–,–,–,–,–,1.9,1.4,0.25
+STX|–,–,–,–,–,–,1.7,1.9,0.3
+FET|–,–,–,–,–,–,0.7,1.2,0.22
+GRT|–,–,–,–,–,–,0.17,0.21,0.04
+LDO|–,–,–,–,–,1.1,2.9,1.1,0.5
+MNT|–,–,–,–,–,–,–,1.1,1
+JUP|–,–,–,–,–,–,–,0.75,0.2
+SAND|–,–,–,–,5.2,0.6,–,–,–`.split("\n").forEach(l=>{const[k,v]=l.split("|");P[k]=v.split(",").map(x=>+x||0)});
+const Y=[2017,2018,2019,2020,2021,2022,2023,2024,2025];
+E("hist").innerHTML="<tr><th>Coin</th>"+Y.map(y=>`<th>${y}</th>`).join("")+"</tr>"+D.map(c=>c.s).filter(k=>P[k]).map(k=>`<tr><td><b>${k}</b></td>`+P[k].map((v,j)=>{const pv=P[k][j-1];return `<td${v&&pv?` class="${v>=pv?"up":"dn"}"`:""}>${v?fp(v):"–"}</td>`}).join("")+"</tr>").join("");
+// map
+(function(){
+ const by={};D.forEach(c=>(by[c.c]=by[c.c]||[]).push(c));
+ EX.forEach(c=>(by[c.c]=by[c.c]||[]).push(c));
+ const ISO={UK:"GB"},rank=Object.keys(by).sort((a,b)=>by[b].length-by[a].length),cc={};
+ for(const k in by)cc[ISO[k]||k]=k;
+ const flag=k=>k==="WW"?"🌐":String.fromCodePoint(...[...(ISO[k]||k)].map(ch=>127397+ch.charCodeAt(0)));
+ function paint(sel){const mxn=by[rank[0]].length;
+  E("maplist").innerHTML=(sel?`<div style="text-align:left;margin:8px 0"><b>${flag(sel)} ${NM[sel]}</b> · ${by[sel].length} coin${by[sel].length>1?"s":""}<br>${by[sel].map(c=>`<span class="chip" data-i="${c.i}" style="cursor:pointer;display:inline-block;margin:3px 3px 0 0">${c.s}</span>`).join("")}</div>`:`<div style="margin:8px 0">Tap a country to meet its coins</div>`)+rank.map(k=>`<div data-c="${k}" style="display:flex;align-items:center;gap:8px;margin:5px 0;cursor:pointer;color:var(--ink)"><span style="width:125px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${flag(k)} ${NM[k]}</span><span style="flex:1;background:var(--line);border-radius:6px;height:8px"><span style="display:block;height:8px;border-radius:6px;background:var(--acc);width:${by[k].length/mxn*100}%"></span></span><b>${by[k].length}</b></div>`).join("")}
+ paint();
+ E("map").onclick=E("maplist").onclick=e=>{const g=e.target.closest("[data-c]");if(g)paint(g.dataset.c)};
+ const M=window.jsVectorMap&&jsVectorMap.maps&&jsVectorMap.maps.world,sv=E("map");
+ if(!M||!M.paths){E("maplist").insertAdjacentHTML("afterbegin","<div class=\"note\">Map data couldn’t load. The country list below still works.</div>");return}
+ const I=(M.insets||[{}])[0],bb=I.bbox||[{x:-20004297.15,y:-12671671.12},{x:20026572.39,y:6930392.03}],W=I.width||900,H=I.height||440.7,Rr=6381372;
+ const proj=(lo,la)=>{const X=Rr*lo*Math.PI/180,Y=Rr*1.25*Math.log(Math.tan(Math.PI/4+.4*la*Math.PI/180));return[(X-bb[0].x)/(bb[1].x-bb[0].x)*W,(-Y-bb[0].y)/(bb[1].y-bb[0].y)*H]};
+ let g="",land="",hot="",mk="";
+ for(let lo=-150;lo<=180;lo+=30){const a=proj(lo,83),b=proj(lo,-56);g+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#fff" stroke-opacity=".07"/>`}
+ for(let la=-45;la<=75;la+=15){const a=proj(-180,la),b=proj(180,la);g+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#fff" stroke-opacity=".07"/>`}
+ for(const k in M.paths){const p=M.paths[k],o=cc[k],n=o?by[o].length:0,nm=p.name||k;
+  if(n)hot+=`<path d="${p.path}" data-c="${o}" fill="var(--acc)" fill-opacity="${Math.min(1,.5+n*.1)}" stroke="#fff" stroke-opacity=".5" stroke-width=".5" style="cursor:pointer;filter:drop-shadow(0 0 4px var(--acc))"><title>${nm}: ${n} coin${n>1?"s":""}</title></path>`;
+  else land+=`<path d="${p.path}" fill="var(--land)" stroke="#fff" stroke-opacity=".18" stroke-width=".4"><title>${nm}</title></path>`}
+ for(const k in by){const[lo,la]=k==="WW"?[-38,24]:LOC[k],[x,y]=proj(lo,la),n=by[k].length;
+  mk+=`<g data-c="${k}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="9" fill="none" stroke="var(--acc)" stroke-width="1.5"><animate attributeName="r" values="9;20;9" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".9;0;.9" dur="2.6s" repeatCount="indefinite"/></circle><circle cx="${x}" cy="${y}" r="10" fill="var(--acc)" stroke="#fff" stroke-width="1.5" ${k==="WW"?"stroke-dasharray=\"3 2\"":""}/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="800" fill="#111">${n}</text>${k==="WW"?`<text x="${x}" y="${y+24}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Anonymous / global</text>`:""}</g>`}
+ sv.setAttribute("viewBox",`0 0 ${W} ${H}`);sv.innerHTML=g+land+hot+mk;
+})();
+const ATH={};"BTC|126000|Oct 2025;ETH|4950|Aug 2025;XRP|3.65|Jul 2025;BNB|1370|Oct 2025;SOL|294|Jan 2025;TRX|0.45|Dec 2024;DOGE|0.74|May 2021;ADA|3.1|Sep 2021;HYPE|59|Sep 2025;LINK|52.7|May 2021;XLM|0.94|Jan 2018;BCH|3785|Dec 2017;SUI|5.35|Jan 2025;AVAX|146|Nov 2021;LTC|410|May 2021;HBAR|0.57|Sep 2021;TON|8.25|Jun 2024;SHIB|0.0000886|Oct 2021;DOT|55|Nov 2021;XMR|542|Jan 2018;UNI|45|May 2021;AAVE|660|May 2021;NEAR|20.4|Jan 2022;ICP|700|May 2021;ETC|167|May 2021;APT|19.9|Jan 2023;ONDO|2.14|Dec 2024;POL|2.92|Dec 2021;ARB|2.39|Jan 2024;ATOM|44.5|Sep 2021;ALGO|3.56|Jun 2019;FIL|237|Apr 2021;VET|0.28|Apr 2021;RENDER|13.6|Mar 2024;INJ|53|Mar 2024;CRO|0.97|Nov 2021;KAS|0.19|Aug 2024;TAO|767|Mar 2024;PEPE|0.000028|Dec 2024;BONK|0.0000590|Nov 2024;SEI|1.14|Mar 2024;OP|4.85|Mar 2024;IMX|9.52|Nov 2021;STX|3.83|Apr 2024;FET|3.47|Mar 2024;GRT|2.84|Feb 2021;LDO|7.3|Nov 2021;MNT|2.5|Oct 2025;JUP|2|Jan 2024;SAND|8.4|Nov 2021".split(";").forEach(s=>{const[k,p,d]=s.split("|");ATH[k]=[+p,d]});
+const flg=k=>k==="WW"?"🌐":String.fromCodePoint(...[...(k==="UK"?"GB":k)].map(ch=>127397+ch.charCodeAt(0)));
+function ath(c){const a=ATH[c.s];if(!a)return"";const dd=(c.p/a[0]-1)*100;return `🏔️ All-time high: <b>${fp(a[0])}</b> (${a[1]}) · <span class="${dd>=0?"up":"dn"}">${dd.toFixed(0)}% from ATH</span><br>`}
+(function(){const DM=[["BTC",58.4,"#f7931a"],["ETH",11.9,"#627eea"],["USDT",5.6,"#26a17b"],["XRP",3.9,"#6b7ba4"],["BNB",3.2,"#f3ba2f"],["SOL",2.4,"#9945ff"],["USDC",1.9,"#2775ca"],["DOGE",1,"#c2a633"],["TRX",.8,"#ff060a"],["ADA",.7,"#3468d1"]],mx=DM[0][1],tot=DM.reduce((s,d)=>s+d[1],0);
+ E("domh").innerHTML=`Top 10 hold <b style="color:var(--acc)">${tot.toFixed(1)}%</b> of the market · Bitcoin alone <b>${mx}%</b>`;
+ E("dom").innerHTML=DM.map(d=>`<div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%"><div style="font-size:9px;font-weight:700;margin-bottom:3px">${d[1]}%</div><div style="width:100%;max-width:20px;height:${Math.max(4,d[1]/mx*170)}px;background:${d[2]};border-radius:8px 8px 0 0;box-shadow:0 0 12px ${d[2]}55;transform-origin:bottom;animation:grow .9s ease both"></div><div style="font-size:9px;color:var(--mute);margin-top:4px;font-weight:700">${d[0]}</div></div>`).join("")})();
+(function(){
+ const wins={},all=[];
+ for(let j=1;j<9;j++){let b=null;D.forEach(c=>{const p=P[c.s];if(!p)return;const a=p[j],z=p[j-1];if(a&&z){const g=a/z-1;all.push({k:c.s,y:Y[j],g});if(!b||g>b.g)b={k:c.s,g}}});if(b&&b.g>0)(wins[b.k]=wins[b.k]||[]).push(Y[j])}
+ {let b=null;D.forEach(c=>{const p=P[c.s];if(p&&p[8]){const g=c.p/p[8]-1;if(!b||g>b.g)b={k:c.s,g}}});if(b&&b.g>0)(wins[b.k]=wins[b.k]||[]).push("2026 YTD")}
+ const ix=k=>D.findIndex(c=>c.s===k),ks=Object.keys(wins).sort((a,b)=>wins[b].length-wins[a].length||ix(a)-ix(b)).concat(["BTC","ETH","XRP","BNB"].filter(k=>!wins[k])),mx=Math.max(1,...ks.map(k=>(wins[k]||[]).length));
+ E("wl").innerHTML=ks.map((k,i)=>{const w=wins[k]||[],c=D[ix(k)];return `<div data-i="${c.i}" style="display:grid;grid-template-columns:96px 1fr 28px;gap:8px;align-items:center;margin-top:${i?16:0}px;cursor:pointer"><span style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.n}</span><span style="background:var(--card);border-radius:12px;height:26px;display:block"><span style="display:block;height:26px;border-radius:12px;min-width:8px;width:${w.length/mx*100}%;background:${i===0?"#e8b84a":"#31c4c0"}"></span></span><b style="text-align:right;font-size:17px">${w.length}</b>${w.length?`<span style="grid-column:2/4;font-size:12px;color:var(--mute);margin-top:-6px">${w.slice().reverse().join(", ")}</span>`:""}</div>`}).join("");
+ const top=all.sort((a,b)=>b.g-a.g).slice(0,10),lm=Math.log10(1+top[0].g);
+ E("wl2").innerHTML=top.map(t=>`<div data-i="${ix(t.k)}" style="display:grid;grid-template-columns:90px 1fr 66px;gap:8px;align-items:center;margin-top:10px;cursor:pointer"><span style="font-size:13px;white-space:nowrap">${t.k} <span style="color:var(--mute)">${t.y}</span></span><span style="background:var(--card);border-radius:10px;height:14px;display:block"><span style="display:block;height:14px;border-radius:10px;width:${Math.max(4,Math.log10(1+t.g)/lm*100)}%;background:var(--up)"></span></span><b class="up" style="text-align:right;font-size:12px">+${Math.round(t.g*100).toLocaleString()}%</b></div>`).join("");
+})();
+// explainer
+const dlg=E("dlg");
+document.addEventListener("click",e=>{const g=e.target.closest("[data-i]");if(!g)return;const c=D.concat(EX)[+g.dataset.i];
+ E("dc").innerHTML=`<h2 style="margin:0">${flg(c.c)} ${c.n} <small style="color:var(--mute)">${c.s}</small></h2><p>${c.b}</p><p><b>${fp(c.p)}</b> · ${c.i<50?"rank #"+(c.i+1):"outside the top 50"}<br>${ath(c)}Origin: ${flg(c.c)} ${NM[c.c]}</p>`+Object.keys(TF).map(k=>`<span class="chip ${c.ch[k]>=0?"up":"dn"}">${TF[k]} ${fc(c.ch[k])}</span> `).join("");dlg.showModal()});
+E("thermo").append(E("gauge"),E("mood"),E("moodsub"));E("moodsub").style.display="none";E("mood").style.fontSize="11px";E("moodcard").remove();const wr=document.querySelector(".w");wr.insertBefore(E("hist").closest(".card"),wr.lastElementChild);wr.insertBefore(E("wlcard"),wr.lastElementChild);
+draw();
+</script>
+<script src="/static/js/explainer-cats.js"></script>
+<script src="/static/js/explainer-pills.js"></script>
+</body></html>
