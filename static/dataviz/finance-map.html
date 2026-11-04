@@ -17,6 +17,7 @@ h1{margin:0;font-size:26px;letter-spacing:.5px}h1 span{color:var(--ac)}
 .wrap{background:var(--sea);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
 #map{width:100%;aspect-ratio:2/1;position:relative;touch-action:none}
 #map svg{display:block}
+#mclip{overflow:hidden}
 .ATA{display:none}
 .datamaps-subunit{cursor:pointer}.datamaps-subunit:hover{filter:brightness(1.3)}
 .datamaps-bubble{cursor:pointer}
@@ -45,7 +46,7 @@ input[type=range]{padding:0;border:0;margin:6px 0}table th{text-align:left}
 <div class="sub" style="margin:0 0 6px">Show bank prices in (approximate fixed rates):</div><div class="tabs" id="ctabs"></div>
 <div class="tabs" id="mtabs" style="display:none"></div>
 <div id="tm" style="display:none;margin:0 0 10px;font:13px system-ui,sans-serif"><button id="tmplay" style="border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:16px;padding:4px 10px;cursor:pointer">▶️</button> ⏳ Time machine: <b id="tmy">2026</b> <span id="tmev" style="color:var(--mu)"></span><input type="range" id="yrs" min="1990" max="2026" value="2026"></div>
-<div class="tabs"><button id="cbtn">🕸 Contagion lines: off</button><button id="gbtn">🌍 Globe mode: off</button><button id="sbtn">📸 Share card</button></div><div class="wrap"><div id="map"></div></div><div class="wrap" id="gwrap" style="display:none"><div id="globe"></div></div>
+<div class="tabs"><button id="cbtn">🕸 Contagion lines: off</button><button id="gbtn">🌍 Globe mode: off</button><button id="sbtn">📸 Share card</button></div><div class="wrap"><div id="mclip"><div id="map"></div></div></div><div class="wrap" id="gwrap" style="display:none"><div id="globe"></div></div>
 <div class="leg" id="leg"></div><div class="ll" id="ll"></div>
 <details class="card" open><summary>🌍 Country info</summary><div id="info"></div></details>
 <details class="card" open><summary>🏆 Rankings: highest and lowest</summary><div class="rk"><div id="top"></div><div id="bot"></div></div></details>
@@ -666,6 +667,11 @@ if(typeof Datamap==='undefined'){
  draw();
  addEventListener('resize',()=>map.resize());
 }
+</script>
+<script>
+// Crop the empty polar bands: show roughly 28%-73% of the world map's height.
+(function(){var m=document.getElementById('map'),c=document.getElementById('mclip');function fit(){var h=m.offsetHeight;if(!h)return;c.style.height=h*.45+'px';m.style.marginTop=-h*.28+'px'}
+try{new ResizeObserver(fit).observe(m)}catch(e){}addEventListener('resize',fit);addEventListener('load',fit)})();
 </script>
 <script>function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"finance-map"},location.origin);}try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}</script>
 </body></html>
