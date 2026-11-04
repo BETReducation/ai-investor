@@ -907,3 +907,27 @@ Video or Alpha: "Nine bubbles side by side: what the numbers looked like at the 
 
 ### Reply target
 None found this run.
+
+## 2026-11-04 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned only 2025 items, nothing dated this week; drafts are evergreen with no claims about current prices. Last runs used C/A/E, B/C/D, A/C/E, so this run uses A, B and D. 1987 full-year S&P figure from memory (check figure).
+
+### Draft 112 (type: A viz/tool showcase, status: pending)
+Crypto Compass: live prices, 24h and 7d moves, all-time highs and Bitcoin dominance in one view, and you can search the top 250 coins. The part I keep coming back to is how far most coins sit below their old highs. Same chart, very different stories.
+https://www.growthcapitalgroup.co/tools/data-visualisation/crypto-compass
+Image: Crypto Compass main view showing the ATH distance and dominance, search box visible.
+
+### Draft 113 (type: B thoughts/take, status: pending)
+Black Monday, October 1987: the S&P 500 fell about 20% in a single day. By the end of that year it was roughly flat to slightly up. It didn't feel like that at the time. Looking at the full-year line afterwards, a day that felt like the end barely shows up as a dent.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 114 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first when markets get jumpy? And has the answer changed in the last five years?
+
+### Angle suggestion
+Video or Alpha: "Black Monday 1987: the day, the weeks after, and the year-end line." Pairs with draft 113. Education only.
+
+### Reply target
+None found this run.
