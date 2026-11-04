@@ -1767,7 +1767,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
-    "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored on illustrative data across stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
+    "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored from live Yahoo Finance data across about 280 stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
     "finance-map": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks.",
     "crypto-compass": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
@@ -7143,6 +7143,183 @@ def api_crypto_compass_live():
     if cached:
         return jsonify(cached)
     return jsonify({"error": "unavailable"}), 502
+
+
+# Bubble Radar live inputs. The page sends the tickers (and countries) it knows; we map each to a Yahoo
+# symbol, pull 5 years of monthly closes in batches (12-month gain, price vs 5-year average) and, for
+# stocks, valuation and leverage from Yahoo's company info (P/E, price/sales, debt/equity, capex/profit).
+# Results are cached per symbol and filled in by a background worker, so a first visit returns what is
+# ready and the page polls until nothing is pending. Hype/sentiment has no data source and stays an estimate.
+_BR_SUFFIX = {"CA": ".TO", "MX": ".MX", "BR": ".SA", "UK": ".L", "DE": ".DE", "FR": ".PA", "CH": ".SW", "NL": ".AS",
+              "JP": ".T", "IN": ".NS", "KR": ".KS", "TW": ".TW", "SA": ".SR", "AU": ".AX", "ZA": ".JO", "IT": ".MI",
+              "ES": ".MC", "SE": ".ST", "ID": ".JK", "SG": ".SI", "TR": ".IS", "IL": ".TA", "NZ": ".NZ", "DK": ".CO"}
+_BR_FIXED = {"XAU": "GC=F", "XAG": "SI=F", "XPT": "PL=F", "XPD": "PA=F", "HG": "HG=F",
+             "BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD", "XRP": "XRP-USD", "DOGE": "DOGE-USD", "BNB": "BNB-USD",
+             "ADA": "ADA-USD", "SHIB": "SHIB-USD", "PEPE": "PEPE24478-USD", "LINK": "LINK-USD",
+             "SPX": "SPY", "QQQ": "QQQ", "BRK": "BRK-B", "0700": "0700.HK", "9984": "9984.T", "7203": "7203.T",
+             "005930": "005930.KS", "2222": "2222.SR", "MC": "MC.PA", "SND": "SU.PA", "RHM": "RHM.DE", "RR": "RR.L",
+             "NVO": "NVO", "SHOP": "SHOP", "ASML": "ASML", "SAP": "SAP", "TSM": "TSM", "BABA": "BABA"}
+_BR_US_LISTED = {"PBR", "VALE", "ITUB", "BBD", "NU", "ABEV", "ERJ", "SUZ", "AMX", "FMX", "CX", "TX", "TEVA", "CHKP", "WIX", "MNDY",
+                 "CYBR", "NICE", "ESLT", "SEA", "GRAB", "SPOT", "MELI", "YPF", "GGAL", "VIST", "PAM", "TEO", "BMA", "LOMA",
+                 "CRESY", "CEPU", "SQM", "BSAC", "CCU", "GFI", "ANG", "SSL"}
+_BR_FIXED.update({"ABX": "GOLD", "GMEXICO": "GMEXICOB.MX", "GFNORTE": "GFNORTEO.MX", "BIMBO": "BIMBOA.MX", "LTM": "LTM.SN",
+                  "ANTO": "ANTO.L", "ASM": "ASM.AS", "CFR": "CFR.SW", "NAB": "NAB.AX"})
+_BR_NONSTOCK = {"XAU", "XAG", "XPT", "XPD", "HG", "BTC", "ETH", "SOL", "XRP", "DOGE", "BNB", "ADA", "SHIB", "PEPE", "LINK"}
+_br_cache: dict = {}          # yahoo symbol -> {"at": ts, "v": {...}} (v None = tried, nothing found)
+_br_lock = threading.Lock()
+_br_queue: set = set()
+_br_worker_on = False
+_BR_TTL = 12 * 3600
+
+
+def _br_symbol(tk: str, cc: str) -> str | None:
+    if tk in _BR_FIXED:
+        return _BR_FIXED[tk]
+    if tk in _BR_US_LISTED:
+        return tk
+    if cc in ("US", "", None) or cc not in _BR_SUFFIX and cc not in ("CN", "AR", "CL", "AE", "NG"):
+        return tk.replace(".", "-")
+    if cc == "CN":
+        if tk.isdigit() and len(tk) == 6:
+            return tk + (".SS" if tk[0] == "6" else ".SZ")
+        return tk.zfill(4) + ".HK" if tk.isdigit() else tk
+    if cc == "AR":
+        return tk  # US-listed ADRs
+    if cc == "CL":
+        return tk + ".SN"
+    if cc in ("AE", "NG"):
+        return None  # no reliable Yahoo coverage
+    return tk + _BR_SUFFIX[cc]
+
+
+def _br_fetch_batch(syms: list) -> None:
+    try:
+        raw = yf.download(tickers=syms, period="5y", interval="1mo", group_by="ticker", threads=True,
+                          auto_adjust=True, progress=False)
+    except Exception:
+        raw = None
+    def one(s):
+        v = None
+        try:
+            try:
+                c = raw[s]["Close"].dropna()
+            except Exception:
+                c = raw["Close"].dropna()
+            if len(c) >= 14:
+                last = float(c.iloc[-1])
+                v = {"gain": round((last / float(c.iloc[-13]) - 1) * 100, 1),
+                     "avg5": round(last / float(c.mean()), 2)}
+        except Exception:
+            v = None
+        if v is None:  # the batch download drops symbols when Yahoo rate-limits it, so retry one at a time
+            try:
+                c = yf.Ticker(s).history(period="5y", interval="1mo", auto_adjust=True)["Close"].dropna()
+                if len(c) >= 14:
+                    last = float(c.iloc[-1])
+                    v = {"gain": round((last / float(c.iloc[-13]) - 1) * 100, 1), "avg5": round(last / float(c.mean()), 2)}
+            except Exception:
+                v = None
+        if v is not None and s not in _BR_NONSTOCK_SYMS:
+            try:
+                t = yf.Ticker(s)
+                i = {}
+                for _try in range(3):  # a throttled Yahoo answers with an empty dict rather than an error
+                    try:
+                        i = t.info or {}
+                    except Exception:
+                        i = {}
+                    if len(i) >= 10:
+                        break
+                    time.sleep(2 * (_try + 1))
+                if len(i) < 10:
+                    raise ValueError("no company info")
+                pe, ps, de, ni = i.get("trailingPE"), i.get("priceToSalesTrailing12Months"), i.get("debtToEquity"), i.get("netIncomeToCommon")
+                sp = None
+                try:
+                    cf = t.cashflow
+                    if ni and ni > 0 and "Capital Expenditure" in cf.index:
+                        sp = round(min(abs(float(cf.loc["Capital Expenditure"].iloc[0])) / ni, 20), 2)
+                except Exception:
+                    pass
+                v.update(pe=round(pe, 1) if isinstance(pe, (int, float)) and 0 < pe < 1000 else None,
+                         ps=round(ps, 2) if isinstance(ps, (int, float)) and ps > 0 else None,
+                         de=round(de / 100, 2) if isinstance(de, (int, float)) and de >= 0 else None,
+                         sp=sp)
+            except Exception:
+                pass
+        if v:  # NaN is not valid JSON, so anything non-finite becomes null
+            v = {k: (x if isinstance(x, (int, float)) and math.isfinite(x) else None) for k, x in v.items()}
+            if v.get("gain") is None or v.get("avg5") is None:
+                v = None
+        ok = bool(v) and (s in _BR_NONSTOCK_SYMS or "pe" in v)
+        with _br_lock:
+            _br_cache[s] = {"at": time.monotonic(), "v": v, "ok": ok}
+            _br_queue.discard(s)
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        list(ex.map(one, syms))
+
+
+_BR_NONSTOCK_SYMS = {_BR_FIXED[k] for k in _BR_NONSTOCK}
+
+
+def _br_worker() -> None:
+    global _br_worker_on
+    failed: set = set()
+    try:
+        while True:
+            with _br_lock:
+                todo = list(_br_queue)[:25]
+            if not todo:
+                break
+            _br_fetch_batch(todo)
+            with _br_lock:
+                for s in todo:
+                    _br_queue.discard(s)
+                failed.update(s for s in todo if not (_br_cache.get(s) or {}).get("ok"))
+            time.sleep(1)
+        # One slower second pass for symbols Yahoo throttled, so a first visit isn't left with gaps for 15 minutes.
+        for k in range(0, 2):
+            retry = [s for s in failed if not (_br_cache.get(s) or {}).get("ok")]
+            if not retry:
+                break
+            time.sleep(25)
+            for j in range(0, len(retry), 20):
+                _br_fetch_batch(retry[j:j + 20])
+    finally:
+        _br_worker_on = False
+
+
+@app.route("/api/dataviz/bubble-radar/live", methods=["GET"])
+def api_bubble_radar_live():
+    global _br_worker_on
+    items = [x for x in (request.args.get("items") or "").split(",") if x][:450]
+    out, pending, now = {}, 0, time.monotonic()
+    with _br_lock:
+        for it in items:
+            tk, _, cc = it.partition(":")
+            if not re.fullmatch(r"[A-Za-z0-9.&\-]{1,12}", tk):
+                continue
+            sym = _br_symbol(tk, cc)
+            if not sym:
+                continue
+            e = _br_cache.get(sym)
+            fresh = e and now - e["at"] < (_BR_TTL if e.get("ok") else 900)  # failures are retried after 15 minutes
+            if fresh:
+                if e["v"]:
+                    out[tk] = {**e["v"], "sym": sym}
+            else:
+                pending += 1
+                _br_queue.add(sym)
+                if e and e["v"]:
+                    out[tk] = {**e["v"], "sym": sym}  # stale beats nothing while refreshing
+        start = bool(_br_queue) and not _br_worker_on
+        if start:
+            _br_worker_on = True
+    if start:
+        threading.Thread(target=_br_worker, daemon=True).start()
+    return jsonify({"data": out, "pending": pending or (1 if _br_worker_on else 0), "as_of": _dt.date.today().isoformat()})
 
 
 # Dividend Calculator lookup: trailing-12-month dividends and the latest price for
