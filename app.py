@@ -7089,15 +7089,15 @@ def api_bitcoin_dashboard_live():
     return jsonify(data)
 
 
-# Crypto Compass live board: top 250 coins by market cap from CoinGecko (price, 24h/7d/30d/1y change,
-# all-time high) plus global market-cap dominance. One call each, cached for 5 minutes; a stale copy is
+# Crypto Compass live board: top 250 coins by market cap from CoinMarketCap (set CMC_API_KEY; price, 24h/7d/30d
+# change, dominance from market caps, 1y from Yahoo) or, without a key, CoinGecko (also gives 1y and all-time highs). One call each, cached for 5 minutes; a stale copy is
 # served if CoinGecko rate-limits us, so the page only falls back to its demo numbers when we have nothing.
 _cc_cache: dict = {"at": 0.0, "data": None}
 _cc_lock = threading.Lock()
 _CC_TTL = 300
 
 
-def _fetch_crypto_compass() -> dict | None:
+def _fetch_crypto_compass_cg() -> dict | None:
     hdr = {"accept": "application/json", "user-agent": "GCG-CryptoCompass/1.0"}
     r = requests.get("https://api.coingecko.com/api/v3/coins/markets",
                      params={"vs_currency": "usd", "order": "market_cap_desc", "per_page": 250, "page": 1,
@@ -7123,6 +7123,80 @@ def _fetch_crypto_compass() -> dict | None:
     if not coins:
         return None
     return {"coins": coins, "dominance": dom, "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+
+
+_cc_year: dict = {"at": 0.0, "v": {}}
+
+
+def _cc_year_changes(syms: list) -> dict:
+    """1-year price change per symbol from Yahoo (CoinMarketCap's free plan has no 1y field). Cached 6 hours."""
+    if _cc_year["v"] and time.monotonic() - _cc_year["at"] < 6 * 3600:
+        return _cc_year["v"]
+    out = {}
+    try:
+        raw = yf.download(tickers=[s + "-USD" for s in syms], period="1y", interval="1wk", group_by="ticker",
+                          threads=True, auto_adjust=True, progress=False)
+        for s in syms:
+            try:
+                c = raw[s + "-USD"]["Close"].dropna()
+                if len(c) > 40:
+                    v = (float(c.iloc[-1]) / float(c.iloc[0]) - 1) * 100
+                    if math.isfinite(v):
+                        out[s] = round(v, 2)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    if out:
+        _cc_year.update(at=time.monotonic(), v=out)
+    return out or _cc_year["v"]
+
+
+def _fetch_crypto_compass_cmc(key: str) -> dict | None:
+    hdr = {"X-CMC_PRO_API_KEY": key, "Accept": "application/json"}
+    base = "https://pro-api.coinmarketcap.com/v1"
+    r = requests.get(base + "/cryptocurrency/listings/latest", params={"limit": 250, "convert": "USD"}, headers=hdr, timeout=15)
+    r.raise_for_status()
+    coins = {}
+    for c in r.json().get("data", []):
+        sym = (c.get("symbol") or "").upper()
+        q = (c.get("quote") or {}).get("USD") or {}
+        if not sym or sym in coins or not q.get("price"):
+            continue  # listings come ranked by market cap, so the first hit per symbol is the real one
+        coins[sym] = {"p": q["price"], "mc": q.get("market_cap"), "rank": c.get("cmc_rank"),
+                      "d": q.get("percent_change_24h"), "w": q.get("percent_change_7d"), "m": q.get("percent_change_30d")}
+    if not coins:
+        return None
+    dom = {}
+    try:
+        g = requests.get(base + "/global-metrics/quotes/latest", headers=hdr, timeout=15).json().get("data", {})
+        total = ((g.get("quote") or {}).get("USD") or {}).get("total_market_cap")
+        if total:
+            top = sorted(coins.items(), key=lambda kv: -(kv[1]["mc"] or 0))[:10]
+            dom = {k: (v["mc"] or 0) / total * 100 for k, v in top}
+    except Exception:
+        pass
+    for s, y in _cc_year_changes(list(coins)[:90]).items():
+        if s in coins:
+            coins[s]["y"] = y
+    return {"coins": coins, "dominance": dom, "source": "CoinMarketCap",
+            "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+
+
+def _fetch_crypto_compass() -> dict | None:
+    """CoinMarketCap when CMC_API_KEY is set (and answering), otherwise CoinGecko."""
+    key = os.environ.get("CMC_API_KEY", "").strip()
+    if key:
+        try:
+            d = _fetch_crypto_compass_cmc(key)
+            if d:
+                return d
+        except Exception as e:
+            app.logger.warning("crypto-compass CMC fetch failed, falling back to CoinGecko: %s", e)
+    d = _fetch_crypto_compass_cg()
+    if d:
+        d["source"] = "CoinGecko"
+    return d
 
 
 @app.route("/api/dataviz/crypto-compass/live", methods=["GET"])

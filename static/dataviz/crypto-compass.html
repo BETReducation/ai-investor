@@ -299,9 +299,9 @@ document.addEventListener("click",e=>{const g=e.target.closest("[data-i]");if(!g
 E("thermo").append(E("gauge"),E("mood"),E("moodsub"));E("moodsub").style.display="none";E("mood").style.fontSize="11px";E("moodcard").remove();const wr=document.querySelector(".w");wr.insertBefore(E("hist").closest(".card"),wr.lastElementChild);wr.insertBefore(E("wlcard"),wr.lastElementChild);
 // Live feed: replaces the demo prices, moves, all-time highs and dominance when /api/dataviz/crypto-compass/live answers.
 fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
- const K=j.coins||{};let hit=0;
+ const K=j.coins||{};let hit=0,noY=0;
  D.concat(EX).forEach(c=>{const x=K[c.s];if(!x)return;hit++;c.p=x.p;
-  for(const k in TF)if(x[k]!=null)c.ch[k]=x[k];
+  for(const k in TF){if(x[k]!=null)c.ch[k]=x[k];else if(k==="y"&&j.source==="CoinMarketCap"){c.ch.y=0;noY++}}
   if(x.ath&&x.ath_date){const dt=new Date(x.ath_date);ATH[c.s]=[x.ath,dt.toLocaleString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})]}});
  if(hit<D.length*.6)return;
  const dm=j.dominance||{},cols={BTC:"#f7931a",ETH:"#627eea",USDT:"#26a17b",XRP:"#6b7ba4",BNB:"#f3ba2f",SOL:"#9945ff",USDC:"#2775ca",DOGE:"#c2a633",TRX:"#ff060a",ADA:"#3468d1"};
@@ -309,8 +309,8 @@ fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()
  if(top.length>=5)domChart(top);
  winners();draw();
  const up=j.updated_at?new Date(j.updated_at).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
- E("liveNote").innerHTML="Live prices and moves from CoinGecko"+(up?", updated "+up:"")+" (cached for a few minutes). Year-end prices and the winners table are historical approximations. Educational and historical only, not financial advice.";
- E("domNote").textContent="Share of the total crypto market cap, live from CoinGecko. The rest of the market is split across thousands of smaller coins."}).catch(()=>{});
+ E("liveNote").innerHTML="Live prices and moves from "+(j.source||"CoinGecko")+(up?", updated "+up:"")+" (cached for a few minutes)."+(noY?" Year change is unavailable for "+noY+" coins, which show as flat on the Year view.":"")+" Year-end prices and the winners table are historical approximations. Educational and historical only, not financial advice.";
+ E("domNote").textContent="Share of the total crypto market cap, live from "+(j.source||"CoinGecko")+". The rest of the market is split across thousands of smaller coins."}).catch(()=>{});
 draw();
 </script>
 <script>function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"crypto-compass"},location.origin);}try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}</script>
