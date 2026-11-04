@@ -677,6 +677,12 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('bubble-radar', 'Bubble Radar', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bubble-radar'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('finance-map', 'The Finance Map', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'finance-map'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('crypto-compass', 'Crypto Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-compass'")
         # Drop the "GCG " prefix from page labels (2026-10-25); only touches labels still at the old default.
         cur.execute("UPDATE dataviz_pages SET label = substr(label, 5) WHERE label LIKE 'GCG %' AND slug IN ('market-orbs', 'stock-donut', 'league-compass', 'barrel-map', 'etf-tracker', 'ftse-wagon-wheel', 'russell-compass')")
         # League and Compass renamed (2026-10-25); only touches the old default label.
@@ -1761,6 +1767,9 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
+    "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored on illustrative data across stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
+    "finance-map": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks.",
+    "crypto-compass": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year.",
     "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
@@ -1787,6 +1796,9 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
+    {"slug": "bubble-radar", "label": "Bubble Radar", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "finance-map", "label": "The Finance Map", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "crypto-compass", "label": "Crypto Compass", "author": None, "has_live_widget": True, "kind": "viz"},
 ]
 
 
@@ -3710,12 +3722,6 @@ def learn_artifacts(): return send_from_directory("static", "artifacts.html")
 # part is "basics" (The basics) or "in-depth" (In-depth). slug is the folder under
 # static/explainers/. The page itself just loads explainer-cats.js + explainer-pills.js.
 EXPLAINERS = [
-    {"slug": "finance-map", "categories": ["understanding-markets"], "part": "in-depth",
-     "title": "The Finance Map",
-     "desc": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks."},
-    {"slug": "bubble-radar", "categories": ["understanding-markets", "investment-appraisal"], "part": "in-depth",
-     "title": "GCG Bubble Radar",
-     "desc": "Valuation, run-up and debt clues that tend to show up in bubbles, scored on illustrative data across stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles."},
     {"slug": "interest-rates-macro", "categories": ["markets-in-context"], "part": "basics",
      "title": "Interest Rates and Macro Objectives",
      "desc": "How a policy rate change moves inflation, growth, jobs, the currency and public debt costs, with a slider, and why energy-driven inflation responds less than demand-driven."},
@@ -3737,9 +3743,6 @@ EXPLAINERS = [
     {"slug": "trading-in-depth", "categories": ["basic-trading"], "part": "in-depth",
      "title": "Basic Trading: Orders, Risk and Position Sizing",
      "desc": "Trade replay with trailing stops, costs, leverage and margin, position sizing, expectancy and what a run of losses does to an account."},
-    {"slug": "crypto-compass", "categories": ["understanding-markets", "markets-in-context"], "part": "basics",
-     "title": "Crypto Compass",
-     "desc": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year."},
     {"slug": "markets-basics", "categories": ["understanding-markets"], "part": "basics",
      "title": "Understanding Markets: The Basics",
      "desc": "How supply and demand set prices, how bids and asks are matched, who takes part and why markets move in cycles. Four small interactives."},

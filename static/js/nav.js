@@ -75,10 +75,12 @@
       ['Global Heat Map', '/tools/data-visualisation/global-heat-map'],
       ['Market Orbs', '/tools/data-visualisation/market-orbs'],
       ['Winners League', '/tools/data-visualisation/winners-league'],
-      ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter']
+      ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter'],
+      ['Bubble Radar', '/tools/data-visualisation/bubble-radar']
     ] },
     { name: 'Crypto', pages: [
-      ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard']
+      ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard'],
+      ['Crypto Compass', '/tools/data-visualisation/crypto-compass']
     ] },
     { name: 'Metals', pages: [
       ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'],
@@ -95,7 +97,8 @@
       ['REIT Map', '/tools/data-visualisation/reit-map']
     ] },
     { name: 'Other', pages: [
-      ['Barrel Map', '/tools/data-visualisation/barrel-map']
+      ['Barrel Map', '/tools/data-visualisation/barrel-map'],
+      ['The Finance Map', '/tools/data-visualisation/finance-map']
     ] }
   ];
   var DATAVIZ_MENU_HTML = '<li><a href="/tools/data-visualisation">All visualisations</a></li>' + DATAVIZ_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
