@@ -1004,3 +1004,27 @@ Video or Alpha: "1929 vs 1987: two crashes, two very different recoveries." Pair
 
 ### Reply target
 None found this run.
+
+## 2026-11-05 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned almost nothing reliably dated this week (only a technical crypto outlook for 2-8 Nov and a US jobs report due Fri 6 Nov); drafts are evergreen with no claims about current prices. Last runs used B/D/E, A/C/E, A/C/E, so this run uses B, D and A. Nasdaq 2000 peak/trough and 2015 recovery figures from memory (check figure).
+
+### Draft 124 (type: B thoughts/take, status: pending)
+Nasdaq, March 2000: peak. By October 2002 it was down about 78%. It didn't get back to that old high until 2015. The crash took two and a half years. The wait to get even took fifteen. People remember the fall; the long climb back is the part that gets skipped.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 125 (type: D question, status: pending)
+Which market crash do you think taught people the most? And did the lesson actually stick?
+
+### Draft 126 (type: A viz/tool showcase, status: pending)
+The Barrel Map takes a barrel of oil and shows what it effectively costs at the pump in each country. Tap one and its barrel fills. The gap between the cheapest and the most expensive is bigger than I expected, mostly down to tax and subsidy.
+https://www.growthcapitalgroup.co/tools/data-visualisation/barrel-map
+Image: Barrel Map world view with one expensive and one cheap country's barrel filled, legend (blue cheap, red painful) in frame.
+
+### Angle suggestion
+Video or Alpha: "Nasdaq 2000: fifteen years to get back to even." Pairs with draft 124. Education only.
+
+### Reply target
+None found this run.
