@@ -956,3 +956,26 @@ Video or Alpha: "Who owns the AI trade? A map of where the companies sit." Pairs
 
 ### Reply target
 None found this run.
+
+## 2026-11-05 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned nothing dated this week; drafts are evergreen with no claims about current prices. Last runs used A/B/D, A/C/E, so this run uses B, D and E (word of the day). 1994 rate and S&P figures from memory (check figure).
+
+### Draft 118 (type: B thoughts/take, status: pending)
+1994: the Fed doubled interest rates in a year, from 3% to 6%, and bond markets had one of their worst years on record. Stocks, oddly, finished the year roughly flat. The scare was real, it just landed somewhere other than where most people were looking.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 119 (type: D question, status: pending)
+What's the first thing you ever invested in? And would you buy it again knowing what you know now?
+
+### Draft 120 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's how far something has fallen from its previous peak. If a stock goes from 100 to 70, that's a 30% drawdown. It's a useful number because it shows what holding through the bad stretch would actually have felt like.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Video or Alpha: "1994: the bond crash nobody remembers." Pairs with draft 118. Education only.
+
+### Reply target
+None found this run.
