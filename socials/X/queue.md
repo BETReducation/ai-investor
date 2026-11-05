@@ -1028,3 +1028,28 @@ Video or Alpha: "Nasdaq 2000: fifteen years to get back to even." Pairs with dra
 
 ### Reply target
 None found this run.
+
+## 2026-11-05 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search again returned nothing dated this week; drafts are evergreen with no claims about current prices. Last runs used B/D/A, A/C/E, B/D/E, so this run uses C, E (myth vs reality) and A (AI Tracker, newly added). Dot-com and diversification claims from memory (check figure).
+
+### Draft 127 (type: C beginner explainer, status: pending)
+What is a dividend? When a company makes a profit, it can keep it or hand some of it to shareholders. The handout is the dividend, usually paid every quarter. Dividend yield is that year's payout divided by the share price, so a 3% yield means 3 pounds a year for every 100 pounds of stock.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 128 (type: E extras, myth vs reality, status: pending)
+Myth: a high dividend yield means a great company. Reality: yield is payout divided by price, so when the price falls the yield goes up. Some of the highest yields in history sat on stocks that were collapsing. A big number can be a warning light, not a gold star.
+https://www.growthcapitalgroup.co/tools/data-visualisation/finance-map
+
+### Draft 129 (type: A viz/tool showcase, status: pending)
+We put the AI trade on a world map. Each company sits where it's based, so you can see how concentrated it is: a handful of places hold most of the weight, and a few names turn up that you wouldn't expect. Worth a look just to see the shape of it.
+https://www.growthcapitalgroup.co/tools/data-visualisation/ai-tracker
+Image: AI Tracker world map, zoomed out so every cluster of companies is in frame, with the legend visible.
+
+### Angle suggestion
+Alpha or video: "Dividend yield traps: when a bigger number meant trouble." Pairs with drafts 127 and 128. Education only.
+
+### Reply target
+None found this run.
