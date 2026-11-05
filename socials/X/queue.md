@@ -979,3 +979,28 @@ Video or Alpha: "1994: the bond crash nobody remembers." Pairs with draft 118. E
 
 ### Reply target
 None found this run.
+
+## 2026-11-05 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: search returned almost nothing reliably dated this week (only a vague "bitcoin under pressure" outlook); drafts are evergreen with no claims about current prices. Last runs used B/D/E, A/C/E, A/B/D, so this run uses A, C and E (this day in history). 5 Nov 1929 / Oct 1929 crash figures from memory (check figure).
+
+### Draft 121 (type: A viz/tool showcase, status: pending)
+Bull/Bear Meter squashes a pile of market signals into one dial. I like it less for the reading and more for watching how fast the needle moves between a calm week and a rough one. Easy to forget how quickly the mood swings.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bull-bear-meter
+Image: Bull/Bear Meter main dial with the signal breakdown visible underneath.
+
+### Draft 122 (type: C beginner explainer, status: pending)
+What is a bear market? It's when an index falls 20% or more from its recent high. Sounds scary, but since World War II the S&P 500 has had a dozen or so of them and recovered from every one. The 20% line is just a convention, nobody official decided it.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 123 (type: E extras, this day in market history, status: pending)
+This week in 1929: the Dow had already lost roughly a quarter of its value in a few days of late October. Then it kept falling into November. The headline crash day is the one everyone remembers. The slow grind lower for the next three years is the part that actually did the damage.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Video or Alpha: "1929 vs 1987: two crashes, two very different recoveries." Pairs with drafts 113 and 123. Education only.
+
+### Reply target
+None found this run.
