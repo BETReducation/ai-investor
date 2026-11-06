@@ -1131,3 +1131,27 @@ Video or Alpha: "1929, 1987, 2000: three crashes, three very different recoverie
 
 ### Reply target
 None found this run.
+
+## 2026-11-06 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: web search returned nothing reliably dated this week, so drafts are evergreen with no claims about current prices. Last runs used C/B/A, D/A/E, B/C/E, so this run uses D, A (AI Tracker, new this week) and E (word of the day). Drawdown definition standard; no figures claimed.
+
+### Draft 139 (type: D question, status: pending)
+What was the first thing you ever invested in, and would you do it the same way now?
+
+### Draft 140 (type: A viz/tool showcase, status: pending)
+We built a world map of AI stocks. Each company sits where it's based, with live moves on top. Fun to see how much of the AI story is clustered in a handful of places, and how many names you'd never think of sit outside the US.
+https://www.growthcapitalgroup.co/tools/data-visualisation/ai-tracker
+Image: AI Tracker world map, zoomed so the US, Taiwan and China clusters are all visible.
+
+### Draft 141 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's how far something has fallen from its previous peak, before it recovers. A stock that went from 100 to 70 is in a 30% drawdown. It's a better measure of what holding something actually felt like than the average return ever is.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Video or Alpha: "Drawdowns: the number nobody puts on the brochure." Pairs with draft 141. Education only.
+
+### Reply target
+None found this run.
