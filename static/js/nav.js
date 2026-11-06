@@ -82,7 +82,7 @@
       ['Market Orbs', '/tools/data-visualisation/market-orbs'],
       ['Winners League', '/tools/data-visualisation/winners-league'],
       ['Bull vs Bear Meter', '/tools/data-visualisation/bull-bear-meter'],
-      ['Bubble Radar', '/tools/data-visualisation/bubble-radar']
+      ['Bubble Tracker', '/tools/data-visualisation/bubble-radar']
     ] },
     { name: 'Crypto', pages: [
       ['Bitcoin Dashboard', '/tools/data-visualisation/bitcoin-dashboard'],

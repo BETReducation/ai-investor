@@ -96,6 +96,7 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
       <div class="chips per" id="per"><button data-p="day">Day</button><button data-p="week">Week</button><button data-p="month">Month</button><button data-p="year" class="on">Year</button></div></div>
   </header>
   <div class="stats">
+    <div class="stat" style="flex:2"><small>S&amp;P 500 index <span id="spxT"></span></small><b id="spxP" style="font-size:1.25rem">–</b><span id="spxC" class="sub"></span></div>
     <div class="stat"><small>Advancers</small><b class="up" id="sUp">–</b></div>
     <div class="stat"><small>Decliners</small><b class="down" id="sDn">–</b></div>
     <div class="stat"><small>Median stock</small><b id="sMed">–</b></div>
@@ -127,6 +128,15 @@ summary small{color:var(--mute);font-family:system-ui,sans-serif;font-weight:400
       <div class="legend"><span class="up">● <b id="cUp">–</b> up</span><span class="down">● <b id="cDn">–</b> down</span></div>
       <div class="cap">Sectors, most stocks up first · tap one to view it on the compass</div>
       <div id="secsum"></div>
+    </div>
+  </details>
+  <details id="weights">
+    <summary>Index weights <small id="wLbl">how much each stock makes up of the 500</small></summary>
+    <div class="clkbody" style="text-align:left">
+      <div class="stats" id="wTop"></div>
+      <div class="ctl"><input id="wq" type="search" placeholder="Search ticker…"><div class="chips" id="wView"><button data-n="25" class="on">Top 25</button><button data-n="100">Top 100</button><button data-n="0">All</button></div></div>
+      <div class="hscroll"><table class="bt"><thead><tr><th>#</th><th>Ticker</th><th class="hm">Sector</th><th>Mkt cap</th><th>Weight</th></tr></thead><tbody id="wtb"></tbody></table></div>
+      <div class="hnote" id="wNote">Loading weights…</div>
     </div>
   </details>
   <details id="breadth">
@@ -302,6 +312,27 @@ async function load(){
 }
 load(); setInterval(load,REFRESH_MS);
 
+
+// Live index level
+async function loadIdx(){try{const j=await(await fetch("/api/dataviz/league-compass/index")).json();if(!j.price)return;
+  $("spxP").textContent=j.price.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const u=j.change>=0;$("spxC").className="sub "+(u?"up":"down");$("spxC").textContent=" "+(u?"+":"")+j.change.toFixed(2)+" ("+(u?"+":"")+j.pct.toFixed(2)+"%) today";
+  $("spxT").textContent="· "+new Date(j.updated_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}catch(e){}}
+loadIdx(); setInterval(loadIdx,60000);
+// Index weights
+let WT=null,wN=25,wTry=0;
+function renderW(){if(!WT)return;const q=$("wq").value.trim().toUpperCase(),t=WT.weights;
+  const rows=t.map((r,i)=>[i+1,...r]).filter(r=>q?r[1].includes(q):(!wN||r[0]<=wN));
+  $("wtb").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}${r[5].length?" + "+r[5].join(", "):""}</td><td class="hm">${r[2]}</td><td>$${r[3]>=1000?(r[3]/1000).toFixed(2)+"tn":r[3].toFixed(0)+"bn"}</td><td>${r[4].toFixed(2)}%</td></tr>`).join("");}
+async function loadW(){try{const r=await fetch("/api/dataviz/league-compass/weights");const j=await r.json();
+  if(j.pending){$("wNote").textContent="Calculating weights from live market caps, back in a moment…";if(wTry++<12)setTimeout(loadW,10000);return}
+  WT=j;const t=j.weights,sum=n=>t.slice(0,n).reduce((a,x)=>a+x[3],0);
+  $("wTop").innerHTML=[["Top 5",5],["Top 10",10],["Top 50",50]].map(([l,n])=>`<div class="stat"><small>${l} share</small><b>${sum(n).toFixed(1)}%</b></div>`).join("");
+  $("wNote").textContent="Weights are each company's share of the combined market value of the "+j.count+" stocks on this page, from live market caps (updated "+new Date(j.updated_at).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})+"). Share classes of one company are counted once. The official S&P 500 adjusts for free float, so published index weights differ slightly. Educational and historical information only, not financial advice.";
+  renderW()}catch(e){$("wNote").textContent="Weights are unavailable right now."}}
+$("wq").addEventListener("input",renderW);
+$("wView").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;wN=+b.dataset.n;[...$("wView").children].forEach(x=>x.classList.toggle("on",x===b));renderW()});
+$("weights").addEventListener("toggle",()=>{if($("weights").open&&!WT)loadW()},{once:true});
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"league-compass"},location.origin);}
 try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}

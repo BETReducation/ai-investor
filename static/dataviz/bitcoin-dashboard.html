@@ -94,6 +94,7 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <button type="button" data-t="s-gold">Gold</button>
   <button type="button" data-t="s-maps">House maps</button>
   <button type="button" data-t="s-acceptance">Where it’s spent</button>
+  <button type="button" data-t="s-holders">Top holders</button>
   <button type="button" data-t="s-extras">Extras</button>
 </nav>
 
@@ -199,6 +200,14 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   </div>
   <div class="wm-stats" style="margin-top:12px" id="wmGlob"></div>
   <div class="mut" id="wmSrc" style="margin-top:10px">Indicative estimates only: merchant counts are rounded orders of magnitude based on public map projects (e.g. BTC Map, Coinmap), and the usage score is a rough illustrative blend of retail acceptance and everyday use. Grey countries have no data yet.</div>
+</section>
+
+<section class="card" id="s-holders">
+  <h2>Top holders: companies &amp; nations</h2>
+  <div class="grid" id="hTot" style="margin-bottom:12px"></div>
+  <div class="row" id="hTabs" style="margin-bottom:8px"><button class="on" data-k="co">Companies</button><button data-k="na">Nations</button></div>
+  <div class="scroll"><table class="ss" id="hTable"></table></div>
+  <div class="mut" style="margin-top:10px">Approximate holdings reported around September 2026, compiled from public treasury trackers (BitcoinTreasuries.net, Arkham, company filings). Totals move whenever a holder buys or sells, and government figures are estimates: the US figure varies by source (shown as a range) and China's comes largely from a past fraud seizure. Values use the live price above in the selected currency. Historical and educational only, not financial advice.</div>
 </section>
 
 <section class="card" id="s-extras">
@@ -485,7 +494,21 @@ function renderExtras(){
   var d=(price/126000-1)*100;$('ath').textContent=(d>=0?'+':'')+d.toFixed(1)+'%';
   $('four').innerHTML=['USD','GBP','EUR','JPY'].map(function(k){return money(price,k)}).join('<br>');
 }
-function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderCar();renderGold();renderMaps();renderExtras()}
+
+// ---- top holders ----
+// name, BTC held (midpoint for ranges), label shown, note
+var HOLD={co:[['Strategy (MicroStrategy)',846000,'846,000','Largest corporate holder'],['Twenty One Capital',43500,'43,500','Tether/Cantor-backed treasury company'],['Metaplanet (Japan)',37000,'35,000–40,000','Sources differ'],['MARA Holdings',50000,'~50,000','Miner, last widely reported figure'],['Bullish',22000,'~22,000','Exchange operator'],['Tesla',11500,'~11,500','Unchanged for years']],
+na:[['United States',263000,'198,000–328,000','Seized coins; estimates vary by source'],['China',192000,'190,000–194,000','Mostly from the PlusToken seizure'],['United Kingdom',61000,'~61,000','Seized in a fraud case'],['Ukraine',46000,'~46,000','Officials’ declared holdings'],['UAE',6800,'~6,800','Held via mining operations'],['El Salvador',6300,'~6,300','Bought and seized'],['Bhutan',3200,'~3,200','Down from ~6,000 earlier in 2026']]};
+var hTab='co';
+function renderHolders(){
+  var list=HOLD[hTab],tot=list.reduce(function(a,x){return a+x[1]},0),max=list[0][1];
+  var all=HOLD.co.reduce(function(a,x){return a+x[1]},0),gov=HOLD.na.reduce(function(a,x){return a+x[1]},0);
+  $('hTot').innerHTML='<div class="stat"><span class="mut">Companies listed hold</span><b>'+fmt(all)+' BTC</b><span class="mut">'+(all/21e6*100).toFixed(1)+'% of max supply</span></div><div class="stat"><span class="mut">Nations listed hold</span><b>'+fmt(gov)+' BTC</b><span class="mut">'+(gov/21e6*100).toFixed(1)+'% of max supply</span></div>';
+  $('hTable').innerHTML='<tr><th style="text-align:left">#</th><th style="text-align:left">'+(hTab=='co'?'Company':'Nation')+'</th><th>BTC held</th><th>% of 21M</th><th>Value</th><th style="text-align:left">Note</th></tr>'+
+    list.map(function(x,i){return '<tr><td style="text-align:left">'+(i+1)+'</td><td style="text-align:left"><b>'+x[0]+'</b></td><td>'+x[2]+'</td><td>'+(x[1]/21e6*100).toFixed(2)+'%</td><td>'+money(x[1]*price,cur)+'</td><td style="text-align:left;white-space:normal">'+x[3]+'</td></tr>'}).join('');
+}
+[].forEach.call($('hTabs').children,function(b){b.onclick=function(){hTab=b.dataset.k;[].forEach.call($('hTabs').children,function(x){x.className=x===b?'on':''});renderHolders()}});
+function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderCar();renderGold();renderMaps();renderHolders();renderExtras()}
 
 // Jump to a section: open it if collapsed, then scroll the page (the dashboard sits in an iframe, so scroll the parent).
 function jump(el,offset){

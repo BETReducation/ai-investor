@@ -677,8 +677,9 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
-        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('bubble-radar', 'Bubble Radar', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('bubble-radar', 'Bubble Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'bubble-radar'")
+        cur.execute("UPDATE dataviz_pages SET label = 'Bubble Tracker' WHERE slug = 'bubble-radar' AND label = 'Bubble Radar'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ai-tracker', 'AI Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ai-tracker'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('finance-map', 'The Finance Map', 'viz') ON CONFLICT (slug) DO NOTHING")
@@ -1800,7 +1801,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "currency-calculator", "label": "Currency Calculator", "author": None, "has_live_widget": True, "kind": "tool"},
     {"slug": "ai-tracker", "label": "AI Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
-    {"slug": "bubble-radar", "label": "Bubble Radar", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "bubble-radar", "label": "Bubble Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "finance-map", "label": "The Finance Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "crypto-compass", "label": "Crypto Compass", "author": None, "has_live_widget": True, "kind": "viz"},
 ]
@@ -6900,6 +6901,183 @@ def api_league_compass_live():
     return _league_board.response()
 
 
+# S&P500 Compass: live index level, and approximate index weights from Yahoo market caps.
+_spx_cache: dict = {"at": 0.0, "data": None}
+_spx_lock = threading.Lock()
+
+
+@app.route("/api/dataviz/league-compass/index", methods=["GET"])
+def api_league_compass_index():
+    with _spx_lock:
+        if _spx_cache["data"] and time.monotonic() - _spx_cache["at"] < 60:
+            return jsonify(_spx_cache["data"])
+    try:
+        c = yf.download(tickers="^GSPC", period="10d", interval="1d", auto_adjust=False, progress=False)["Close"]
+        c = (c["^GSPC"] if hasattr(c, "columns") else c).dropna()
+        last, prev = float(c.iloc[-1]), float(c.iloc[-2])
+        try:  # fast_info carries the intraday last price while the market is open
+            live = float(yf.Ticker("^GSPC").fast_info["last_price"])
+            if live > 0:
+                last = live
+        except Exception:
+            pass
+        data = {"price": round(last, 2), "prev_close": round(prev, 2), "change": round(last - prev, 2),
+                "pct": round((last / prev - 1) * 100, 2), "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+    except Exception:
+        with _spx_lock:
+            if _spx_cache["data"]:
+                return jsonify(_spx_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    with _spx_lock:
+        _spx_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
+# Second share classes are folded into the primary line so a company isn't counted twice
+# (Yahoo reports the whole company's cap on each class).
+_SPX_DUAL = {"GOOG": "GOOGL", "FOX": "FOXA", "NWS": "NWSA"}
+_spx_w: dict = {"at": 0.0, "data": None, "busy": False}
+
+
+def _spx_weights_build() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    try:
+        rows = [(s, sec) for sec, l in _league_board.universe.items() for s in l]
+
+        def cap(r):
+            try:
+                v = yf.Ticker(r[0].replace(".", "-")).fast_info["market_cap"]
+                return (r[0], r[1], float(v)) if v and v > 0 else None
+            except Exception:
+                return None
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            got = [x for x in ex.map(cap, rows) if x]
+        if len(got) < 300:
+            return
+        merged: dict = {}
+        for s, sec, v in got:
+            k = _SPX_DUAL.get(s, s)
+            if k in merged:
+                merged[k][2] = max(merged[k][2], v)
+                merged[k][3].append(s) if s != k else None
+            else:
+                merged[k] = [k, sec, v, [s] if s != k else []]
+        # a dual-class parent that was fetched after its second class keeps its own cap
+        tot = sum(m[2] for m in merged.values())
+        out = sorted(([m[0], m[1], round(m[2] / 1e9, 1), round(m[2] / tot * 100, 3), m[3]] for m in merged.values()),
+                     key=lambda x: -x[3])
+        _spx_w.update(at=time.monotonic(), data={"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                                                 "count": len(out), "weights": out})
+    finally:
+        _spx_w["busy"] = False
+
+
+@app.route("/api/dataviz/league-compass/weights", methods=["GET"])
+def api_league_compass_weights():
+    stale = not _spx_w["data"] or time.monotonic() - _spx_w["at"] > 12 * 3600
+    if stale and not _spx_w["busy"]:
+        _spx_w["busy"] = True
+        threading.Thread(target=_spx_weights_build, daemon=True).start()
+    if _spx_w["data"]:
+        return jsonify(_spx_w["data"])
+    return jsonify({"pending": True}), 202
+
+
+# AI Tracker live feed: price, period returns, distance below all-time high and market cap (USD) for the
+# page's stocks. The page sends "SYM:CC" items; static judgement fields (AI class, capex, profit) stay on the page.
+_AI_FIXED = {"ARM": "ARM", "MBLY": "MBLY", "IREN": "IREN", "277810": "277810.KQ",
+             "TOTS3": "TOTS3.SA", "SCOM": None}
+_ai_cache: dict = {"at": 0.0, "data": None, "key": None}
+_ai_lock = threading.Lock()
+
+
+def _ai_live_build(items: list) -> dict | None:
+    from concurrent.futures import ThreadPoolExecutor
+    m = {}
+    for it in items:
+        tk, _, cc = it.partition(":")
+        sym = _AI_FIXED[tk] if tk in _AI_FIXED else _br_symbol(tk, cc)
+        if sym:
+            m[tk] = sym
+    syms = sorted(set(m.values()))
+
+    def dl(**kw):
+        out = {}
+        for k in range(0, len(syms), 60):
+            part = syms[k:k + 60]
+            try:
+                raw = yf.download(tickers=part, group_by="ticker", threads=True, auto_adjust=False, progress=False, **kw)
+            except Exception:
+                continue
+            for s in part:
+                try:
+                    out[s] = raw[s] if len(part) > 1 else raw
+                except Exception:
+                    pass
+        return out
+    daily, monthly = dl(period="5y", interval="1d"), dl(period="max", interval="1mo")
+
+    def info(s):
+        try:
+            fi = yf.Ticker(s).fast_info
+            return s, float(fi["market_cap"]), str(fi["currency"])
+        except Exception:
+            return s, None, None
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        caps = {s: (c, cur) for s, c, cur in ex.map(info, syms)}
+    curs = {cur for c, cur in caps.values() if cur and cur != "USD"} | {"GBP", "EUR", "JPY"}
+    fx = {"USD": 1.0}
+    for cur in curs:
+        code = "GBP" if cur == "GBp" else cur
+        try:
+            fx[cur] = float(yf.download(f"USD{code}=X", period="5d", progress=False)["Close"].dropna().iloc[-1].item())
+            if cur == "GBp":
+                fx[cur] *= 100
+        except Exception:
+            pass
+    res = {}
+    for tk, s in m.items():
+        try:
+            c = daily[s]["Close"].dropna()
+            if len(c) < 30:
+                continue
+            last = float(c.iloc[-1])
+
+            def back(days):
+                p = c[c.index <= c.index[-1] - _dt.timedelta(days=days)]
+                return (last / float(p.iloc[-1]) - 1) * 100 if len(p) else None
+            rets = [(last / float(c.iloc[-2]) - 1) * 100, back(7), back(30), back(365), back(730), back(1780)]
+            ath = max(float(monthly[s]["High"].dropna().max()), float(daily[s]["High"].dropna().max()))
+            cap, cur = caps.get(s, (None, None))
+            res[tk] = {"price": round(last, 2), "currency": cur or "USD", "ret": [round(r, 2) if r is not None else None for r in rets],
+                       "below": round(max(0, (1 - last / ath) * 100), 1),
+                       "mcap": round(cap / fx[cur] / 1e9, 1) if cap and cur in fx else None}
+        except Exception:
+            continue
+    if len(res) < len(m) * 0.5:
+        return None
+    return {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "stocks": res,
+            "fx": {k: round(v, 4) for k, v in fx.items() if k in ("USD", "GBP", "EUR", "JPY")}}
+
+
+@app.route("/api/dataviz/ai-tracker/live", methods=["GET"])
+def api_ai_tracker_live():
+    items = sorted(x for x in (request.args.get("items") or "").split(",")
+                   if re.fullmatch(r"[A-Za-z0-9.&\-]{1,12}(:[A-Z]{2})?", x))[:200]
+    with _ai_lock:
+        if _ai_cache["data"] and time.monotonic() - _ai_cache["at"] < 600:
+            return jsonify(_ai_cache["data"])
+    if not items:
+        return jsonify({"error": "no items"}), 400
+    data = _ai_live_build(items)
+    with _ai_lock:
+        if data:
+            _ai_cache.update(at=time.monotonic(), data=data)
+        elif _ai_cache["data"]:
+            return jsonify(_ai_cache["data"])
+    return jsonify(data) if data else (jsonify({"error": "unavailable"}), 502)
+
+
 # Russell 2000 Compass: the index's ~2,000 stocks, from iShares' IWM holdings file (downloaded by hand
 # and reduced to tickers + sectors in russell2000_constituents.json; refresh it after Russell's
 # June reconstitution and each quarter). Prices are the same Yahoo daily bars as League and Compass.
@@ -7250,7 +7428,10 @@ _BR_US_LISTED = {"PBR", "VALE", "ITUB", "BBD", "NU", "ABEV", "ERJ", "SUZ", "AMX"
                  "CRESY", "CEPU", "SQM", "BSAC", "CCU", "GFI", "ANG", "SSL"}
 _BR_FIXED.update({"ABX": "GOLD", "GMEXICO": "GMEXICOB.MX", "GFNORTE": "GFNORTEO.MX", "BIMBO": "BIMBOA.MX", "LTM": "LTM.SN",
                   "ANTO": "ANTO.L", "ASM": "ASM.AS", "CFR": "CFR.SW", "NAB": "NAB.AX"})
-_BR_NONSTOCK = {"XAU", "XAG", "XPT", "XPD", "HG", "BTC", "ETH", "SOL", "XRP", "DOGE", "BNB", "ADA", "SHIB", "PEPE", "LINK"}
+_BR_FIXED.update({"AVAX": "AVAX-USD", "DOT": "DOT-USD", "TRX": "TRX-USD", "LTC": "LTC-USD", "BCH": "BCH-USD", "XLM": "XLM-USD",
+                  "NEAR": "NEAR-USD", "SUI": "SUI20947-USD", "HBAR": "HBAR-USD", "ATOM": "ATOM-USD"})
+_BR_NONSTOCK = {"XAU", "XAG", "XPT", "XPD", "HG", "BTC", "ETH", "SOL", "XRP", "DOGE", "BNB", "ADA", "SHIB", "PEPE", "LINK",
+                "AVAX", "DOT", "TRX", "LTC", "BCH", "XLM", "NEAR", "SUI", "HBAR", "ATOM"}
 _br_cache: dict = {}          # yahoo symbol -> {"at": ts, "v": {...}} (v None = tried, nothing found)
 _br_lock = threading.Lock()
 _br_queue: set = set()
