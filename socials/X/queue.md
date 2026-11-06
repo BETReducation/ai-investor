@@ -1053,3 +1053,28 @@ Alpha or video: "Dividend yield traps: when a bigger number meant trouble." Pair
 
 ### Reply target
 None found this run.
+
+## 2026-11-06 (first run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned little dated this week; only reliable item is the US October CPI report due Tue 10 Nov (check figure/date). Drafts are otherwise evergreen with no claims about current prices. Last runs used B/D/A, A/C/E, so this run uses B, C and E (build note). 1970s/1980 inflation and Fed rate figures from memory (check figure).
+
+### Draft 130 (type: B thoughts/take, status: pending)
+US inflation peaked around 14% in 1980. The Fed pushed its main rate up to roughly 20% to break it, and the economy went through two recessions in three years. Inflation did fall, to about 3% by 1983. The cure and the pain arrived together, which is why people still argue about it.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 131 (type: C beginner explainer, status: pending)
+What is CPI? It's a monthly number from a government survey that prices a fixed basket of everyday things: food, rent, fuel, clothes. If the basket costs 3% more than a year ago, that's 3% inflation. The new US figure is due Tuesday, and markets tend to move around it because it feeds into what central banks do with interest rates.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 132 (type: E extras, build note, status: pending)
+Spent a while on the Crypto Compass this week. Added a coin search, live prices and a top 10 by dominance with stablecoins and derivatives taken out. The hard part was deciding what not to count. A chart of "the biggest coins" tells a different story depending on those choices.
+https://www.growthcapitalgroup.co/tools/data-visualisation/crypto-compass
+Image: Crypto Compass main view with the dominance top 10 visible.
+
+### Angle suggestion
+Video or Alpha: "1980: the Fed that broke inflation, and what it cost." Pairs with drafts 130 and 131. Education only.
+
+### Reply target
+None found this run.
