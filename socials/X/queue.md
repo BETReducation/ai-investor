@@ -1078,3 +1078,31 @@ Video or Alpha: "1980: the Fed that broke inflation, and what it cost." Pairs wi
 
 ### Reply target
 None found this run.
+
+## 2026-11-06 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: searches returned nothing reliably dated this week; drafts are evergreen with no claims about current prices. Last runs used B/C/E, C/E/A, B/D/A, so this run uses D, A (Bubble Radar, recently updated with live data) and E (poll). Dot-com stat from memory (check figure).
+
+### Draft 133 (type: D question, status: pending)
+Gold, oil or bitcoin: which chart do you check first when something big happens in the news?
+
+### Draft 134 (type: A viz/tool showcase, status: pending)
+Bubble Radar scores stocks, metals and crypto on the things that tend to show up in bubbles: big run-ups, stretched valuations, lots of debt. Then it lines them up against nine historic bubbles. The interesting bit is how many of the old ones looked ordinary on the way up.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bubble-radar
+Image: Bubble Radar main scoreboard with the highest-scoring names at the top, plus the historic bubbles comparison if it fits in frame.
+
+### Draft 135 (type: E extras, poll, status: pending)
+Poll: in the dot-com years, which came first for most people, the price rising or the story that explained why it should?
+Price first
+Story first
+Both together
+Only noticed afterwards
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Video or Alpha: "How the story gets written after the price moves." Pairs with drafts 134 and 135. Education only.
+
+### Reply target
+None found this run.
