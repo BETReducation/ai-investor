@@ -14,6 +14,12 @@
 // tint and bottom border follow whichever logo is showing, so the header
 // always matches the logo's colour, not just the icon itself.
 (function () {
+  var a = document.createElement('script');
+  a.src = '/static/js/analytics.js'; a.defer = true;
+  document.head.appendChild(a);
+})();
+
+(function () {
   var thisScript = document.currentScript;
   var logoFile = (thisScript && thisScript.getAttribute('data-logo')) || 'Green Square.png';
 
