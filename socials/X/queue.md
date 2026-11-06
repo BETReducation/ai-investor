@@ -1106,3 +1106,28 @@ Video or Alpha: "How the story gets written after the price moves." Pairs with d
 
 ### Reply target
 None found this run.
+
+## 2026-11-06 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: web search failed this run, so drafts are evergreen with no claims about current prices. Last runs used B/C/E, D/A/E, so this run uses C, B and A (Bitcoin Dashboard, top holders newly added). 1929 and 1987 figures from memory (check figure).
+
+### Draft 136 (type: C beginner explainer, status: pending)
+What is a stock market crash, actually? Nobody officially defines it, but a fall of 20% or more from a recent high is usually called a bear market, and a very fast drop in a day or two gets called a crash. The word is about speed and fear as much as size. On 19 October 1987 the Dow fell about 22% in a single day.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 137 (type: B thoughts/take, status: pending)
+After 1929 the Dow took until 1954 to get back to its old high. After 1987 it took about two years. Both started with a scary day. What came after depended on the economy underneath, not on how bad the headline looked at the time.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 138 (type: A viz/tool showcase, status: pending)
+The Bitcoin Dashboard now has a top holders view. It shows how much of the supply sits with the biggest wallets and entities, and how fast that share is changing. Interesting to see how concentrated it is compared with what most people assume.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+Image: Bitcoin Dashboard top holders tab, the full ranking in frame.
+
+### Angle suggestion
+Video or Alpha: "1929, 1987, 2000: three crashes, three very different recoveries." Pairs with drafts 136 and 137. Education only.
+
+### Reply target
+None found this run.
