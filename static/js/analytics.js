@@ -2,7 +2,7 @@
 // GA4 sets cookies, so it loads only after the visitor accepts the banner.
 // Fill in the two IDs below; an empty ID disables that tool.
 (function () {
-  var GA_ID = '';       // GA4 measurement ID, e.g. G-XXXXXXXXXX
+  var GA_ID = 'G-DLD7SPSHBC';       // GA4 measurement ID, e.g. G-XXXXXXXXXX
   var CF_TOKEN = '';    // Cloudflare Web Analytics beacon token
   var KEY = 'gcg-analytics-consent';
 
