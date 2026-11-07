@@ -1155,3 +1155,28 @@ Video or Alpha: "Drawdowns: the number nobody puts on the brochure." Pairs with 
 
 ### Reply target
 None found this run.
+
+## 2026-11-07
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: US jobs report (Fri 6 Nov) and Bitcoin's reported second straight losing October (check figure, 7.3% per one search result); search results were mostly stale or low quality so no price claims are made. Last runs used D/A/E, C/B/A, D/A/E, so this run uses C, B and A (Global Heat Map, not featured recently). 2018 and 2022 bitcoin drawdowns from memory (check figure).
+
+### Draft 142 (type: C beginner explainer, status: pending)
+What is a jobs report? Once a month the US government counts how many jobs were added or lost and what share of people looking for work can't find it. Markets watch it because a strong or weak job market changes what people expect central banks to do with interest rates. It's less about the number itself and more about the surprise against what was expected.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 143 (type: B thoughts/take, status: pending)
+Bitcoin has had long slumps before. After the 2017 peak it fell about 84% and took around three years to get back. After the 2021 peak it fell about 77%. Both times the quiet stretch in between was where most of the building and most of the giving up happened.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bitcoin-dashboard
+
+### Draft 144 (type: A viz/tool showcase, status: pending)
+The Global Heat Map puts the world's markets on one screen, coloured by how they've moved. Easy way to see whether a day was a global move or just one country having its own bad afternoon. Most days it's more mixed than the headlines make it sound.
+https://www.growthcapitalgroup.co/tools/data-visualisation/global-heat-map
+Image: Global Heat Map full world view, day timeframe, with both green and red regions visible.
+
+### Angle suggestion
+Video or Alpha: "Why markets care about one jobs number." Pairs with draft 142. Education only.
+
+### Reply target
+None found this run.
