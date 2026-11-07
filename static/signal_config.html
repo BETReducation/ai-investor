@@ -4366,58 +4366,94 @@ function startFreehand() {
   tv.parentElement.appendChild(canvas);
   const ctx = canvas.getContext('2d');
   const color = FREEHAND_COLOR;
-  let pts = null;
+  let pts = null, pane = null; // pane = { id, top, bottom } of the pane the stroke started in
   // clientX/Y minus the canvas rect rather than offsetX/Y, which can be relative to a different box.
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  // Strokes stay inside the pane they began in (price, RSI or volume).
+  const paneAt = (y) => {
+    for (const id of ['candle_pane', 'rsi_pane', 'volume_pane']) {
+      const sz = priceChart.getSize(id, 'root');
+      if (sz && y >= sz.top && y <= sz.top + sz.height) return { id, top: sz.top, bottom: sz.top + sz.height };
+    }
+    return null;
+  };
+  const redraw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, pane.top, canvas.width, pane.bottom - pane.top); ctx.clip();
+    ctx.strokeStyle = color; ctx.lineWidth = FREEHAND_WIDTH; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    // Quadratic curve through segment midpoints: smooth like pen ink instead of a polyline.
+    for (let i = 1; i < pts.length - 1; i++) {
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+    }
+    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    ctx.stroke();
+    ctx.restore();
+  };
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || !priceChart) return;
+    const p = at(e);
+    pane = paneAt(p.y);
+    if (!pane) return;
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic/untracked pointer */ }
-    pts = [at(e)];
+    pts = [p];
   });
   canvas.addEventListener('pointermove', (e) => {
     if (!pts) return;
     const last = pts[pts.length - 1], cur = at(e);
-    if (Math.hypot(cur.x - last.x, cur.y - last.y) < 3) return;
+    cur.y = Math.min(pane.bottom, Math.max(pane.top, cur.y));
+    if (Math.hypot(cur.x - last.x, cur.y - last.y) < 1.5) return;
     pts.push(cur);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = color; ctx.lineWidth = FREEHAND_WIDTH; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
-    pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-    ctx.stroke();
+    redraw();
   });
   const finish = () => {
     const stroke = pts; pts = null;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!stroke || stroke.length < 3 || !priceChart) return;
-    const raw = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.value) && (Number.isFinite(p.timestamp) || Number.isFinite(p.dataIndex)));
-    // Store each point as a real (time, price) pair, extrapolating past the last bar, so the
-    // stroke stays put when new candles arrive or the timeframe changes.
-    const times = raw.map(p => Number.isFinite(p.timestamp) ? p.timestamp : freehandIndexToTime(p.dataIndex));
-    if (raw.length < 3 || times.some(t => !Number.isFinite(t))) return;
-    const data = raw.map((p, i) => ({ t: times[i], v: p.value }));
-    const id = priceChart.createOverlay({ name: 'freehand', points: freehandPoints(data), extendData: data, lock: false, ...overlayHandlers() });
+    const data = [];
+    for (const sp of stroke) {
+      const f = freehandFloatIndex(sp.x);
+      const t = freehandIndexToTime(f);
+      const v = priceChart.convertFromPixel({ y: sp.y }, { paneId: pane.id, absolute: true }).value;
+      if (Number.isFinite(t) && Number.isFinite(v)) data.push({ t, v });
+    }
+    if (data.length < 3) return;
+    const id = priceChart.createOverlay({ name: 'freehand', points: freehandPoints(data), extendData: data, lock: false, ...overlayHandlers() }, pane.id);
     if (id) freehandIds.add(id);
   };
   canvas.addEventListener('pointerup', finish);
   canvas.addEventListener('pointercancel', () => { pts = null; ctx.clearRect(0, 0, canvas.width, canvas.height); });
   freehandState = { canvas };
 }
-// Bar spacing for extrapolating times beyond the last candle (and back).
-function freehandBarMs() {
-  const d = priceChart ? priceChart.getDataList() : [];
-  return d.length > 1 ? (d[d.length - 1].timestamp - d[d.length - 2].timestamp) : 0;
+// Strokes are stored as (time, value) with a *fractional* bar position, so the curve isn't
+// snapped to whole candles (that was what made handwriting look blocky).
+function freehandFloatIndex(x) {
+  const px = (i) => priceChart.convertToPixel({ dataIndex: i }, { paneId: 'candle_pane' }).x;
+  const i = priceChart.convertFromPixel({ x }, { paneId: 'candle_pane' }).dataIndex;
+  const c0 = px(i), c1 = px(i + 1);
+  return c1 === c0 ? i : i + (x - c0) / (c1 - c0);
 }
-function freehandIndexToTime(idx) {
-  const d = priceChart.getDataList(), ms = freehandBarMs();
-  if (!d.length || !ms) return NaN;
-  return d[d.length - 1].timestamp + (idx - (d.length - 1)) * ms;
+function freehandIndexToTime(f) {
+  const d = priceChart.getDataList(), n = d.length;
+  if (!n) return NaN;
+  const step = n > 1 ? d[n - 1].timestamp - d[n - 2].timestamp : 0;
+  if (f >= n - 1) return d[n - 1].timestamp + (f - (n - 1)) * step;
+  if (f <= 0) return d[0].timestamp + f * (n > 1 ? d[1].timestamp - d[0].timestamp : 0);
+  const i = Math.floor(f);
+  return d[i].timestamp + (f - i) * (d[i + 1].timestamp - d[i].timestamp);
+}
+function freehandTimeToIndex(t) {
+  const d = priceChart.getDataList(), n = d.length;
+  if (!n) return 0;
+  if (t >= d[n - 1].timestamp) return n - 1 + (n > 1 ? (t - d[n - 1].timestamp) / (d[n - 1].timestamp - d[n - 2].timestamp) : 0);
+  if (t <= d[0].timestamp) return n > 1 ? (t - d[0].timestamp) / (d[1].timestamp - d[0].timestamp) : 0;
+  let lo = 0, hi = n - 1; // last bar with timestamp <= t
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (d[m].timestamp <= t) lo = m; else hi = m; }
+  return lo + (t - d[lo].timestamp) / (d[lo + 1].timestamp - d[lo].timestamp);
 }
 function freehandPoints(data) {
-  const d = priceChart.getDataList(), ms = freehandBarMs();
-  const last = d.length ? d[d.length - 1].timestamp : 0;
-  return data.map(p => (p.t <= last || !ms)
-    ? { timestamp: p.t, value: p.v }
-    : { dataIndex: d.length - 1 + (p.t - last) / ms, value: p.v });
+  return data.map(p => ({ dataIndex: freehandTimeToIndex(p.t), value: p.v }));
 }
 // Re-pin every freehand stroke after the data changes (new candle, new timeframe/symbol data).
 const freehandIds = new Set(); // this klinecharts build has no getOverlays(), so track strokes ourselves
