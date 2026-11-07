@@ -4053,6 +4053,7 @@ function applyChartTheme() {
     // Labels on drawing tools (measure, Fibonacci, channels, position boxes). klinecharts
     // defaults these to white text on a solid blue box, which hid the red/green values.
     overlay: {
+      line: { color: '#ff6a00', size: 3 },
       text: {
         style: 'stroke_fill', color: cssVar('--text-primary', dark ? '#e8eaf0' : '#1a1f2b'), family, size: Math.max(10, legendSize),
         backgroundColor: cssVar('--bg-card', dark ? '#1b1f2a' : '#ffffff'), borderColor: cssVar('--border', grid),
@@ -4348,6 +4349,8 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && activeDr
 // Freehand: klinecharts has no brush, so a transparent canvas sits over the chart while
 // the tool is armed, records the stroke in pixels, and on release converts it to
 // (timestamp, price) points so the line stays pinned to the chart when it scrolls/zooms.
+// Bold orange reads on both light and dark themes; thick enough to stand out from candles.
+const FREEHAND_COLOR = '#ff6a00', FREEHAND_WIDTH = 4;
 let freehandState = null;
 function startFreehand() {
   const tv = document.getElementById('tvChart');
@@ -4360,7 +4363,7 @@ function startFreehand() {
   canvas.style.width = tv.clientWidth + 'px'; canvas.style.height = tv.clientHeight + 'px';
   tv.parentElement.appendChild(canvas);
   const ctx = canvas.getContext('2d');
-  const color = cssVar('--accent-amber', '#f59e0b');
+  const color = FREEHAND_COLOR;
   let pts = null;
   // clientX/Y minus the canvas rect rather than offsetX/Y, which can be relative to a different box.
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
@@ -4375,7 +4378,7 @@ function startFreehand() {
     if (Math.hypot(cur.x - last.x, cur.y - last.y) < 3) return;
     pts.push(cur);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = color; ctx.lineWidth = FREEHAND_WIDTH; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
     pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
     ctx.stroke();
@@ -4384,7 +4387,9 @@ function startFreehand() {
     const stroke = pts; pts = null;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!stroke || stroke.length < 3 || !priceChart) return;
-    const points = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.timestamp) && Number.isFinite(p.value));
+    const points = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.value) && (Number.isFinite(p.timestamp) || Number.isFinite(p.dataIndex)))
+      // Past the last bar there is no timestamp, only a bar index: keep the index so the stroke still pins.
+      .map(p => Number.isFinite(p.timestamp) ? p : { dataIndex: p.dataIndex, value: p.value });
     if (points.length < 3) return;
     priceChart.createOverlay({ name: 'freehand', points, lock: false, ...overlayHandlers() });
   };
@@ -4747,7 +4752,7 @@ function ensureAdvancedOverlayTypes() {
     needDefaultXAxisFigure: false,
     needDefaultYAxisFigure: false,
     createPointFigures: ({ coordinates }) => (coordinates && coordinates.length > 1
-      ? [{ type: 'line', attrs: { coordinates }, styles: { color: cssVar('--accent-amber', '#f59e0b'), size: 2 } }]
+      ? [{ type: 'line', attrs: { coordinates }, styles: { color: FREEHAND_COLOR, size: FREEHAND_WIDTH } }]
       : []),
   });
 
