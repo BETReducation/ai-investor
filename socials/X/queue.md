@@ -1180,3 +1180,27 @@ Video or Alpha: "Why markets care about one jobs number." Pairs with draft 142. 
 
 ### Reply target
 None found this run.
+
+## 2026-11-07 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News: web search returned nothing reliably dated this week, so drafts are evergreen with no current price claims. Last runs used C/B/A and D/A/E, so this run uses D, A (Crypto Compass, updated this week with dominance and Edinburgh Decentralisation Index) and E (myth vs reality). 1987 crash detail from memory (check figure).
+
+### Draft 145 (type: D question, status: pending)
+Which market crash do you think taught people the most, and what did it teach?
+
+### Draft 146 (type: A viz/tool showcase, status: pending)
+Crypto Compass sorts coins by what they've actually done over the past year. We just added dominance with stablecoins and derivatives stripped out, so you can see how much of the market really sits in the top few names. It's a smaller number than most people guess.
+https://www.growthcapitalgroup.co/tools/data-visualisation/crypto-compass
+Image: Crypto Compass main view with the dominance top 10 panel visible.
+
+### Draft 147 (type: E extras, myth vs reality, status: pending)
+Myth: a stock market crash means the economy is about to collapse. Reality: it sometimes does, and sometimes doesn't. The US market fell over 20% in a single day in October 1987, and the US didn't have a recession in the years after. Markets and the real economy move together often, not always.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Angle suggestion
+Alpha post: "Crashes that weren't recessions, and recessions that weren't crashes." Pairs with draft 147. Education only.
+
+### Reply target
+None found this run.
