@@ -3212,11 +3212,13 @@ async function refreshLiveChartBar() {
 function mergeLiveBar(bar) {
   if (!priceChart || !currentChartBars.length) return;
   const lastLoaded = currentChartBars[currentChartBars.length - 1];
+  let appended = false;
   if (bar.timestamp === lastLoaded.timestamp) currentChartBars[currentChartBars.length - 1] = bar;
-  else if (bar.timestamp > lastLoaded.timestamp) currentChartBars.push(bar);
+  else if (bar.timestamp > lastLoaded.timestamp) { currentChartBars.push(bar); appended = true; }
   else return; // stale/out-of-order response, ignore
 
   priceChart.updateData(bar);
+  if (appended) resyncFreehand();
   _volProfileCache.clear();
   _vwapCache.clear();
 }
@@ -4387,15 +4389,41 @@ function startFreehand() {
     const stroke = pts; pts = null;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (!stroke || stroke.length < 3 || !priceChart) return;
-    const points = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.value) && (Number.isFinite(p.timestamp) || Number.isFinite(p.dataIndex)))
-      // Past the last bar there is no timestamp, only a bar index: keep the index so the stroke still pins.
-      .map(p => Number.isFinite(p.timestamp) ? p : { dataIndex: p.dataIndex, value: p.value });
-    if (points.length < 3) return;
-    priceChart.createOverlay({ name: 'freehand', points, lock: false, ...overlayHandlers() });
+    const raw = priceChart.convertFromPixel(stroke, { paneId: 'candle_pane' }).filter(p => p && Number.isFinite(p.value) && (Number.isFinite(p.timestamp) || Number.isFinite(p.dataIndex)));
+    // Store each point as a real (time, price) pair, extrapolating past the last bar, so the
+    // stroke stays put when new candles arrive or the timeframe changes.
+    const times = raw.map(p => Number.isFinite(p.timestamp) ? p.timestamp : freehandIndexToTime(p.dataIndex));
+    if (raw.length < 3 || times.some(t => !Number.isFinite(t))) return;
+    const data = raw.map((p, i) => ({ t: times[i], v: p.value }));
+    priceChart.createOverlay({ name: 'freehand', points: freehandPoints(data), extendData: data, lock: false, ...overlayHandlers() });
   };
   canvas.addEventListener('pointerup', finish);
   canvas.addEventListener('pointercancel', () => { pts = null; ctx.clearRect(0, 0, canvas.width, canvas.height); });
   freehandState = { canvas };
+}
+// Bar spacing for extrapolating times beyond the last candle (and back).
+function freehandBarMs() {
+  const d = priceChart ? priceChart.getDataList() : [];
+  return d.length > 1 ? (d[d.length - 1].timestamp - d[d.length - 2].timestamp) : 0;
+}
+function freehandIndexToTime(idx) {
+  const d = priceChart.getDataList(), ms = freehandBarMs();
+  if (!d.length || !ms) return NaN;
+  return d[d.length - 1].timestamp + (idx - (d.length - 1)) * ms;
+}
+function freehandPoints(data) {
+  const d = priceChart.getDataList(), ms = freehandBarMs();
+  const last = d.length ? d[d.length - 1].timestamp : 0;
+  return data.map(p => (p.t <= last || !ms)
+    ? { timestamp: p.t, value: p.v }
+    : { dataIndex: d.length - 1 + (p.t - last) / ms, value: p.v });
+}
+// Re-pin every freehand stroke after the data changes (new candle, new timeframe/symbol data).
+function resyncFreehand() {
+  if (!priceChart) return;
+  (priceChart.getOverlays({ name: 'freehand' }) || []).forEach(o => {
+    if (Array.isArray(o.extendData)) priceChart.overrideOverlay({ id: o.id, points: freehandPoints(o.extendData) });
+  });
 }
 function stopFreehand() {
   if (freehandState) { freehandState.canvas.remove(); freehandState = null; }
@@ -4932,6 +4960,7 @@ async function loadPriceChart(sym) {
       // yAxis type re-enables auto-ranging (the library's own reset path).
       chart.setStyles({ yAxis: { type: 'normal' } });
       chart.applyNewData(rows);
+      resyncFreehand();
       refreshVolumePaneMode();
       setTimeout(() => updateLegendPills(), 60);
       syncChartStream();
