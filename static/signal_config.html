@@ -4395,7 +4395,8 @@ function startFreehand() {
     const times = raw.map(p => Number.isFinite(p.timestamp) ? p.timestamp : freehandIndexToTime(p.dataIndex));
     if (raw.length < 3 || times.some(t => !Number.isFinite(t))) return;
     const data = raw.map((p, i) => ({ t: times[i], v: p.value }));
-    priceChart.createOverlay({ name: 'freehand', points: freehandPoints(data), extendData: data, lock: false, ...overlayHandlers() });
+    const id = priceChart.createOverlay({ name: 'freehand', points: freehandPoints(data), extendData: data, lock: false, ...overlayHandlers() });
+    if (id) freehandIds.add(id);
   };
   canvas.addEventListener('pointerup', finish);
   canvas.addEventListener('pointercancel', () => { pts = null; ctx.clearRect(0, 0, canvas.width, canvas.height); });
@@ -4419,10 +4420,13 @@ function freehandPoints(data) {
     : { dataIndex: d.length - 1 + (p.t - last) / ms, value: p.v });
 }
 // Re-pin every freehand stroke after the data changes (new candle, new timeframe/symbol data).
+const freehandIds = new Set(); // this klinecharts build has no getOverlays(), so track strokes ourselves
 function resyncFreehand() {
   if (!priceChart) return;
-  (priceChart.getOverlays({ name: 'freehand' }) || []).forEach(o => {
-    if (Array.isArray(o.extendData)) priceChart.overrideOverlay({ id: o.id, points: freehandPoints(o.extendData) });
+  freehandIds.forEach(id => {
+    const o = priceChart.getOverlayById(id);
+    if (!o) { freehandIds.delete(id); return; } // deleted by the user
+    if (Array.isArray(o.extendData)) priceChart.overrideOverlay({ id, points: freehandPoints(o.extendData) });
   });
 }
 function stopFreehand() {
