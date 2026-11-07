@@ -1233,3 +1233,27 @@ Video or Alpha: "How one monthly inflation number moves everything." Pairs with 
 
 ### Reply target
 None found this run.
+
+## 2026-11-07 (fourth run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News: web search returned nothing reliably dated this week, so drafts are evergreen with no current price claims. Last runs used C/A/E, D/A/E, C/B/A, so this run uses B, D and A (Winners League, not featured recently). Nasdaq 2000 peak and 2015 recovery from memory (check figure).
+
+### Draft 151 (type: B thoughts/take, status: pending)
+The Nasdaq peaked in March 2000 at just over 5,000 and didn't close above that level again until 2015. Fifteen years. The index recovered, but plenty of the companies that made up that peak never did. Worth remembering that "the market came back" and "your holding came back" aren't always the same sentence.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 152 (type: D question, status: pending)
+What's the worst investing advice you've heard repeated with total confidence?
+
+### Draft 153 (type: A viz/tool showcase, status: pending)
+Winners League ranks assets like a football table, by how they've performed over a chosen period. What's interesting is how rarely the same name stays on top. Switch the timeframe and the leaderboard reshuffles almost completely.
+https://www.growthcapitalgroup.co/tools/data-visualisation/winners-league
+Image: Winners League table, 1 year view, then the same table on a shorter period if you want a side-by-side.
+
+### Angle suggestion
+Video or Alpha: "Index recovered, holdings didn't: the 15-year Nasdaq story." Pairs with draft 151. Education only.
+
+### Reply target
+None found this run.
