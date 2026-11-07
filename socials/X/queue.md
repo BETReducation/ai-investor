@@ -1204,3 +1204,32 @@ Alpha post: "Crashes that weren't recessions, and recessions that weren't crashe
 
 ### Reply target
 None found this run.
+
+## 2026-11-07 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News used: US October CPI due Tue 10 Nov, 8:30am ET, and the Nasdaq's reported 5.3% October drop (check figure; search results were mixed quality, so no price claims in posts). Last runs used C/B/A and D/A/E, so this run uses C, A (Market Orbs, not featured recently) and E (poll).
+
+### Draft 148 (type: C beginner explainer, status: pending)
+What is CPI? It stands for consumer price index. Each month the government prices a fixed basket of everyday things, like food, rent, fuel and clothes, and tracks how much the total cost has changed. That change is what people mean by inflation. The next US reading lands Tuesday, and markets watch it because central banks use it when deciding on interest rates.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 149 (type: A viz/tool showcase, status: pending)
+Market Orbs turns the market into bubbles: size shows how big a company is, colour shows how it's moving. Easy way to spot when one giant is dragging the whole index while most of the others barely moved.
+https://www.growthcapitalgroup.co/tools/data-visualisation/market-orbs
+Image: Market Orbs main view, day timeframe, with the largest orbs and a mix of green and red in frame.
+
+### Draft 150 (type: E extras, poll, status: pending)
+Which chart do you check first in the morning?
+S&P 500
+Nasdaq
+Bitcoin
+Gold
+Poll options: S&P 500 / Nasdaq / Bitcoin / Gold. Replies for "something else" welcome.
+
+### Angle suggestion
+Video or Alpha: "How one monthly inflation number moves everything." Pairs with draft 148. Education only.
+
+### Reply target
+None found this run.
