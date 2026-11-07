@@ -3896,7 +3896,7 @@ function ensurePriceChart() {
   // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
   // needs to swap at runtime, so it doesn't need its own refresh function).
   _legendPillsOn = _legendMobile();
-  priceChart.createIndicator({ name: 'RSI', calcParams: [14], precision: 0, createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'rsi_pane' });
+  priceChart.createIndicator({ name: 'RSI', calcParams: [14], precision: 0, styles: { lastValueMark: { show: true, text: { show: true, color: '#ffffff', size: 11, paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2, borderRadius: 2 } } }, createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'rsi_pane' });
   priceChart.subscribeAction('onCrosshairChange', (d) => { if (_legendPillsOn) updateLegendPills(d && d.indicatorData); });
   applyBollingerOverlay();
   applyMovingAverages();
