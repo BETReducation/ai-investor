@@ -218,6 +218,7 @@ button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
         <div class="xq-actions">
           <label class="section-eyebrow" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="xqHidePosted" checked style="margin:0;width:auto;"> Hide posted</label>
           <label class="section-eyebrow" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="xqShowRemoved" style="margin:0;width:auto;"> Show removed</label>
+          <button class="btn-muted btn-small" id="xqClear">Clear all drafts</button>
           <button class="btn-muted btn-small" id="xqRefresh">Refresh</button>
         </div>
       </div>
@@ -648,6 +649,7 @@ let xqState = {};
 try { xqState = JSON.parse(localStorage.getItem(XQ_KEY) || '{}'); } catch {}
 function xqSave() { try { localStorage.setItem(XQ_KEY, JSON.stringify(xqState)); } catch {} }
 
+let xqRuns = [];
 async function loadXQueue() {
   const body = document.getElementById('xqBody');
   let data;
@@ -659,6 +661,7 @@ async function loadXQueue() {
   const hidePosted = document.getElementById('xqHidePosted').checked;
   const showRemoved = document.getElementById('xqShowRemoved').checked;
   body.innerHTML = '';
+  xqRuns = data.runs;
   if (!data.runs.length) { body.textContent = 'No drafts yet.'; return; }
   data.runs.forEach((run, ri) => {
     const wrap = document.createElement('div');
@@ -673,6 +676,7 @@ async function loadXQueue() {
       n.textContent = run.news;
       wrap.appendChild(n);
     }
+    let shownCount = 0;
     run.drafts.forEach(d => {
       const id = run.heading + '|' + d.title;
       const st = xqState[id] || {};
@@ -720,7 +724,9 @@ async function loadXQueue() {
       meta.append(label, acts);
       card.append(ta, meta);
       wrap.appendChild(card);
+      shownCount++;
     });
+    if (run.drafts.length && !shownCount) return; // everything cleared/posted: hide the run's heading and notes too
     run.notes.forEach(n => {
       const d = document.createElement('div');
       d.className = 'xq-note';
@@ -783,6 +789,15 @@ document.getElementById('xqIdeaAdd').onclick = async () => {
 };
 document.getElementById('xqIdeaInput').onkeydown = e => { if (e.key === 'Enter') document.getElementById('xqIdeaAdd').click(); };
 
+document.getElementById('xqClear').onclick = () => {
+  if (!confirm('Clear every draft from the queue? You can bring them back with "Show removed".')) return;
+  xqRuns.forEach(run => run.drafts.forEach(d => {
+    const id = run.heading + '|' + d.title;
+    xqState[id] = Object.assign(xqState[id] || {}, { removed: true });
+  }));
+  xqSave();
+  loadXQueue();
+};
 document.getElementById('xqRefresh').onclick = () => { loadXQueue(); loadIdeas(); xqScheduleNote(); };
 document.getElementById('xqHidePosted').onchange = loadXQueue;
 document.getElementById('xqShowRemoved').onchange = loadXQueue;
