@@ -6,6 +6,7 @@ import math, random, struct, sys, wave
 SR, DUR = 44100, 10.0
 FLIPS = [2.0, 2.9, 3.8, 4.7]          # keep in sync with CFG.flips in intro.html
 T_BOOM = 7.4                          # keep in sync with T_BOOM
+FIREWORKS = False                     # crackle sounds for the firework bursts (keep in sync with CFG.fireworks)
 BEAT, G0 = .45, .2
 N = int(SR * DUR)
 random.seed(4)
@@ -102,7 +103,7 @@ put(4.6, gen(2.8, riser))
 kick808(T_BOOM, 49, 1.8, 1.0)
 put(T_BOOM, gen(.6, lambda t: (random.random() * 2 - 1) * env(t, .002, .14)), .55)             # crash
 strum(T_BOOM, [A2, E3, A3, C4], .34, .018, 1.2)                                                # big open-A hit
-for bt in (7.62, 7.8, 8.0, 8.2, 8.45, 8.6, 8.75):
+for bt in ((7.62, 7.8, 8.0, 8.2, 8.45, 8.6, 8.75) if FIREWORKS else ()):
     put(bt, gen(.6, lambda t: (random.random() * 2 - 1) * env(t, .002, .09)), .2, random.uniform(-.7, .7))
     put(bt, gen(.4, lambda t, hz=2200 + 900 * random.random(): math.sin(TAU * hz * t) * env(t, .002, .05)), .09, random.uniform(-.5, .5))
 # outro groove (half-bar) and final western strum on the wordmark

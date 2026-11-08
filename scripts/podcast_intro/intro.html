@@ -21,6 +21,7 @@ const CFG = {
   logoSeq: ['gcg', 'gct', 'gce', 'arena', 'gcg'],
   wordmark: 'GROWTH CAPITAL GROUP',
   tagline: 'Learn to invest with confidence and clarity',
+  fireworks: false,                                   // sparks + firework bursts; the panel blast and flash stay either way
 };
 const LOGOS = {
   gcg:   { src: '../../static/logos/Green Square.png', glow: '#00d6ac' },
@@ -167,6 +168,7 @@ function drawFireworks(t) {
       const f = Math.max(0, 1 - tau / .35); if (f > 0) { const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, 900); g.addColorStop(0, `rgba(255,255,255,${.55 * f})`); g.addColorStop(.4, hexA(CFG.green, .22 * f)); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
       const kr = eo(clamp(tau / .9)); ctx.strokeStyle = `rgba(255,255,255,${.5 * (1 - kr)})`; ctx.lineWidth = 6 * (1 - kr) + 1; ctx.beginPath(); ctx.arc(b.x, b.y, 80 + 1500 * kr, 0, 7); ctx.stroke();
     }
+    if (!CFG.fireworks) continue;                                 // flash + shockwave above still play
     for (const q of b.p) {
       const x1 = b.x + pos(q.vx, tau, 0), y1 = b.y + pos(q.vy, tau, 340), t0 = Math.max(0, tau - .13);
       const x0 = b.x + pos(q.vx, t0, 0), y0 = b.y + pos(q.vy, t0, 340);
