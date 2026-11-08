@@ -185,15 +185,19 @@ all();hist();pk();gstart();document.getElementById('tq').oninput=tbl;document.ge
 matchMedia('(prefers-color-scheme: dark)').onchange=all;
 /* Live inputs from /api/dataviz/bubble-radar/live (Yahoo Finance via our server). Anything it can't find keeps the page's estimate. */
 var INP0=JSON.parse(JSON.stringify(INP)),LIVEF={},LIVE_AS='',liveTry=0;
-function applyLive(j){var n=0,tot=0,fx=j.data||{};LIVE_AS=j.as_of||'';
+function applyLive(j,quiet){var n=0,tot=0,fx=j.data||{};LIVE_AS=j.as_of||'';
 D.forEach(function(d,i){if(d[5])return;tot++;var x=fx[d[1]],o=INP0[d[1]];if(!x||!o||x.gain==null||x.avg5==null)return;
 var full=d[2]=='s'&&('pe' in x),a=full?[x.gain,x.avg5,x.pe,x.ps,x.sp,x.de!=null?x.de:o[5],o[6]]:[x.gain,x.avg5,o[2],o[3],o[4],o[5],o[6]];
 INP[d[1]]=a;d[3]=calc(a);LIVEF[d[1]]=full?'price history, P/E, price ÷ sales, spend ÷ profit and debt ÷ equity':'12-month gain and price vs 5-year average';n++});
-var msg=n?'Live data: '+n+' of '+tot+' assets scored from Yahoo Finance'+(LIVE_AS?' ('+LIVE_AS+')':'')+(j.pending?', still loading '+j.pending+' more…':'')+'. Hype is an estimate, and assets without a live match keep illustrative figures.':'Loading live data…';
-document.getElementById('ds').textContent=msg;if(n){all();pk()}}
+var msg=n?'Live data: '+n+' of '+tot+' assets scored from Yahoo Finance'+(LIVE_AS?' ('+LIVE_AS+')':'')+(j.pending?', still loading '+j.pending+' more…':'')+'. Crypto updates every 5 minutes, around the clock; stocks and metals follow their market hours. Hype is an estimate, and assets without a live match keep illustrative figures.':'Loading live data…';
+if(!quiet)document.getElementById('ds').textContent=msg;if(n){all();pk()}}
 function loadLive(){var items=D.filter(function(d){return !d[5]}).map(function(d){return d[1]+':'+(MAJ[d[1]]||'')}).join(',');
 fetch('/api/dataviz/bubble-radar/live?items='+encodeURIComponent(items)).then(function(r){return r.ok?r.json():Promise.reject()}).then(function(j){applyLive(j);if(j.pending>0&&liveTry++<16)setTimeout(loadLive,15000)}).catch(function(){document.getElementById('ds').textContent='Demo data: the live feed could not be reached, so figures are illustrative.'})}
 loadLive();
+/* Crypto never closes, so re-poll just the coins every 5 minutes (stocks and metals keep their daily figures). */
+function loadCrypto(){var items=D.filter(function(d){return !d[5]&&d[2]=='c'}).map(function(d){return d[1]+':'}).join(',');if(!items||document.hidden)return;
+fetch('/api/dataviz/bubble-radar/live?items='+encodeURIComponent(items)).then(function(r){return r.ok?r.json():Promise.reject()}).then(function(j){applyLive(j,1)}).catch(function(){})}
+setInterval(loadCrypto,300000);
 </script>
 <script>function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bubble-radar"},location.origin);}try{new ResizeObserver(postHeight).observe(document.body)}catch(e){}</script>
 </body></html>

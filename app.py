@@ -7483,6 +7483,7 @@ _br_lock = threading.Lock()
 _br_queue: set = set()
 _br_worker_on = False
 _BR_TTL = 12 * 3600
+_BR_CRYPTO_TTL = 5 * 60
 
 
 def _br_symbol(tk: str, cc: str) -> str | None:
@@ -7618,7 +7619,8 @@ def api_bubble_radar_live():
             if not sym:
                 continue
             e = _br_cache.get(sym)
-            fresh = e and now - e["at"] < (_BR_TTL if e.get("ok") else 900)  # failures are retried after 15 minutes
+            ttl = _BR_CRYPTO_TTL if sym.endswith("-USD") else _BR_TTL  # crypto trades 24/7, so it refreshes far more often
+            fresh = e and now - e["at"] < (ttl if e.get("ok") else 900)  # failures are retried after 15 minutes
             if fresh:
                 if e["v"]:
                     out[tk] = {**e["v"], "sym": sym}
