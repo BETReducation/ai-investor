@@ -6620,6 +6620,54 @@ def api_ftse_wheel_live():
     return jsonify(data)
 
 
+# Market-cap weights for the Nasdaq and FTSE wagon wheels: each stock's share of the combined market cap of
+# the wheel's own names (the Nasdaq-100 for the first, effectively the whole FTSE 100 for the second).
+# Built in the background from Yahoo and cached for 12 hours.
+_wheel_w: dict = {}
+_wheel_w_lock = threading.Lock()
+
+
+def _wheel_weights_build(key: str, syms: list, yahoo) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    def cap(x):
+        try:
+            v = yf.Ticker(yahoo(x)).fast_info["market_cap"]
+            return (x, float(v)) if v and v > 0 else None
+        except Exception:
+            return None
+    try:
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            got = [r for r in ex.map(cap, syms) if r]
+        if len(got) >= len(syms) * 0.6:
+            tot = sum(v for _, v in got)
+            _wheel_w[key].update(at=time.monotonic(), data={
+                "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                "weights": {x: round(v / tot * 100, 3) for x, v in got}})
+    finally:
+        _wheel_w[key]["busy"] = False
+
+
+@app.route("/api/dataviz/wheel-weights/<idx>", methods=["GET"])
+def api_wheel_weights(idx):
+    if idx == "nasdaq":
+        syms, yahoo = list(_NASDAQ_WHEEL_SYMBOLS), (lambda x: x)
+    elif idx == "ftse":
+        syms = [x for x in (request.args.get("symbols") or "").split(",") if re.fullmatch(r"[A-Z0-9]{1,5}(\.[A-Z])?\.?", x)][:120]
+        if not syms:
+            return jsonify({"error": "symbols required"}), 400
+        yahoo = lambda x: _FTSE_YAHOO_ALIAS.get(x) or x.rstrip(".").replace(".", "-") + ".L"
+    else:
+        return jsonify({"error": "unknown index"}), 404
+    with _wheel_w_lock:
+        st = _wheel_w.setdefault(idx, {"at": 0.0, "data": None, "busy": False})
+        if (not st["data"] or time.monotonic() - st["at"] > 12 * 3600) and not st["busy"]:
+            st["busy"] = True
+            threading.Thread(target=_wheel_weights_build, args=(idx, syms, yahoo), daemon=True).start()
+        data = st["data"]
+    return jsonify(data) if data else (jsonify({"pending": True}), 202)
+
+
 # GCG Global ETF Tracker: day/week/month/year-to-date % moves plus calendar-year price returns
 # (2018 on) for the page's ETFs, from one 10-year Yahoo daily download. Cached for ten minutes.
 _ETF_TTL_SECONDS = 600

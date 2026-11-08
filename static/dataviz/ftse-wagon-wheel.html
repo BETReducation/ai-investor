@@ -94,6 +94,7 @@ h2{font-size:20px;margin:0 0 8px;letter-spacing:-.02em}
 <button id="bg" class="on">Top 10 gainers</button><button id="bl">Top 10 losers</button>
 </div>
 <div id="list"></div>
+<div id="wts"></div>
 <details class="hist" id="hist"><summary>Historical returns: 1984 to today</summary><div class="hbody"><div class="cards" id="hcards"></div><div class="seg" id="hseg" role="group" aria-label="Order"><button data-o="y" class="on">By year</button><button data-o="b">Best first</button><button data-o="w">Worst first</button></div><div class="flist" id="hlist"></div><p class="hnote">Calendar-year price returns from year-end closes, starting from the index base of 1,000 on 30 Dec 1983. Dividends are not included, so total returns are higher. *The latest year is year to date. Past returns do not predict future ones.</p></div></details>
 <p class="foot">Loading prices… For education, not financial advice.</p>
 </main>
@@ -133,7 +134,7 @@ function draw(){
  const mood=pct>=70?"Bull rush":pct>=55?"Green tide":pct>=45?"Tug of war":pct>=30?"Red tide":"Bear hug";
  $("#stage").style.setProperty("--glow",pct>=55?"var(--up)":pct>=45?"var(--fl)":"var(--dn)");
  const h=$("#hub"),s=S.find(x=>x.t===sel);
- h.innerHTML=s?`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>`
+ h.innerHTML=s?`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>${W[s.t]!=null?`<text x="200" y="274" font-size="12" fill="var(--mu)">${W[s.t].toFixed(2)}% of ${WL}</text>`:""}`
  :`<text x="200" y="170" font-size="15" font-weight="600" fill="var(--mu)">${mood}</text><text x="200" y="214" font-size="46" font-weight="800" fill="var(--tx)">${pct}%</text><text x="200" y="234" font-size="12" fill="var(--mu)">of stocks up ${PER[per].t}</text><text x="200" y="256" font-size="13" font-weight="600"><tspan fill="var(--up)">▲${up} </tspan><tspan fill="var(--fl)">●${fl} </tspan><tspan fill="var(--dn)">▼${dn}</tspan></text>`;
  $("#chips").innerHTML=[["all","All",N,"var(--tx)"],["up","Up",up,"var(--up)"],["fl","Flat",fl,"var(--fl)"],["dn","Down",dn,"var(--dn)"]].map(c=>`<button data-f="${c[0]}" class="${flt===c[0]?"on":""}"><span class="dot" style="background:${c[3]}"></span>${c[1]} ${c[2]}</button>`).join("");
  const cs=S.slice().sort((a,b)=>b.c-a.c);
@@ -141,17 +142,27 @@ function draw(){
  $("#ord").textContent=mode==="cap"?"Peak the big movers":"Sort by company size";
  $("#bg").className=view==="g"?"on":"";$("#bl").className=view==="l"?"on":"";
  const top=view==="g"?cs.slice(0,10):cs.slice(-10).reverse(),mx=Math.max(...top.map(s=>Math.abs(s.c)),.01);
- $("#list").innerHTML=top.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/mx*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join("");
+ $("#list").innerHTML=top.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/mx*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}${wl(s)}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join("");
  const fs=$("#flist .flist"),sc=fs?fs.scrollTop:0;
  const fl2=S.filter(s=>flt==="up"?s.c>0:flt==="dn"?s.c<0:flt==="fl"?s.c===0:false).sort((a,b)=>flt==="dn"?a.c-b.c:flt==="fl"?a.t.localeCompare(b.t):b.c-a.c);
  const fm=Math.max(...fl2.map(s=>Math.abs(s.c)),.01);
- $("#flist").innerHTML=flt==="all"?"":`<h2>${{up:"Stocks that are up",dn:"Stocks that are down",fl:"Stocks that are flat"}[flt]} (${fl2.length})</h2><div class="flist">${fl2.length?fl2.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/fm*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join(""):'<p class="sub" style="padding:8px">None right now. Spin again.</p>'}</div>`;
+ $("#flist").innerHTML=flt==="all"?"":`<h2>${{up:"Stocks that are up",dn:"Stocks that are down",fl:"Stocks that are flat"}[flt]} (${fl2.length})</h2><div class="flist">${fl2.length?fl2.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${Math.abs(s.c)/fm*100}%;background:${col(s.c)}"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}${wl(s)}</small></span><span class="ch" style="color:${col(s.c)}">${fmt(s.c)}</span></div>`).join(""):'<p class="sub" style="padding:8px">None right now. Spin again.</p>'}</div>`;
  const f2=$("#flist .flist");if(f2)f2.scrollTop=sc;
+ drawW();
 }
+let W={};const WL="FTSE 100";
+const wl=s=>W[s.t]!=null?" · "+W[s.t].toFixed(1)+"% wt":"";
+function drawW(){
+ const top=S.filter(s=>W[s.t]!=null).sort((a,b)=>W[b.t]-W[a.t]).slice(0,10);if(!top.length){$("#wts").innerHTML="";return}
+ const mx=W[top[0].t],sum=top.reduce((a,s)=>a+W[s.t],0);
+ $("#wts").innerHTML=`<h2 style="margin-top:22px">Biggest weights</h2><p class="sub" style="margin:0 0 8px">Share of total market cap across the FTSE 100. The top 10 make up ${sum.toFixed(1)}%.</p>`+top.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${W[s.t]/mx*100}%;background:var(--tx);opacity:.12"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch">${W[s.t].toFixed(1)}%</span></div>`).join("");
+}
+function loadW(n){return fetch("/api/dataviz/wheel-weights/ftse?symbols="+encodeURIComponent(S.map(s=>s.t).join(","))).then(r=>r.status===202&&(n||0)<12?new Promise(ok=>setTimeout(ok,5000)).then(()=>loadW((n||0)+1)):r.ok?r.json():null).then(j=>{if(j&&j.weights){W=j.weights;draw();}}).catch(()=>{})}
 function pick(t){sel=sel===t?null:t;draw()}
 $("#ring").addEventListener("click",e=>{const p=e.target.closest("path");if(p)pick(p.dataset.t)});
 $("#ring").addEventListener("mouseover",e=>{const p=e.target.closest("path");if(p&&sel!==p.dataset.t){sel=p.dataset.t;$("#ring").querySelectorAll("path").forEach(x=>x.classList.toggle("sel",x.dataset.t===p.dataset.t));draw2()}});
-function draw2(){const s=S.find(x=>x.t===sel),h=$("#hub");h.innerHTML=`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>`}
+function draw2(){const s=S.find(x=>x.t===sel),h=$("#hub");h.innerHTML=`<text x="200" y="190" font-size="30" font-weight="800" fill="var(--tx)">${s.t}</text><text x="200" y="212" font-size="12" fill="var(--mu)">${s.n.length>22?s.n.slice(0,21)+"…":s.n}</text><text x="200" y="250" font-size="30" font-weight="800" fill="${col(s.c)}">${fmt(s.c)}</text>${W[s.t]!=null?`<text x="200" y="274" font-size="12" fill="var(--mu)">${W[s.t].toFixed(2)}% of ${WL}</text>`:""}`}
+$("#wts").addEventListener("click",e=>{const r=e.target.closest(".row");if(r)pick(r.dataset.t)});
 $("#list").addEventListener("click",e=>{const r=e.target.closest(".row");if(r)pick(r.dataset.t)});
 $("#flist").addEventListener("click",e=>{const r=e.target.closest(".row");if(r)pick(r.dataset.t)});
 $("#chips").addEventListener("click",e=>{const b=e.target.closest("button");if(b){flt=flt===b.dataset.f?"all":b.dataset.f;draw()}});
@@ -199,7 +210,7 @@ function loadLive(){
   note("Live FTSE 100 prices (about 15 minutes delayed), % change over each period. Latest session: "+PXI.last_date+", refreshed "+t+". Press the spin button to refresh. For education, not financial advice.");
  }).catch(()=>{liveOn=false;PX=null;roll();price();note("Live prices are unavailable right now, so this is an illustrative sample with simulated moves. For education, not financial advice.")});
 }
-roll();draw();loadLive().then(()=>{sel=null;draw()});
+roll();draw();loadLive().then(()=>{sel=null;draw();loadW()});
 </script>
 </body>
 </html>

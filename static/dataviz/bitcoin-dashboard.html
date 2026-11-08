@@ -206,8 +206,10 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <h2>Top holders: companies &amp; nations</h2>
   <div class="grid" id="hTot" style="margin-bottom:12px"></div>
   <div class="row" id="hTabs" style="margin-bottom:8px"><button class="on" data-k="co">Companies</button><button data-k="na">Nations</button></div>
+  <div class="pwrap" id="hPie" style="margin:6px 0 12px"></div>
   <div class="scroll"><table class="ss" id="hTable"></table></div>
   <div class="mut" style="margin-top:10px">Approximate holdings reported around September 2026, compiled from public treasury trackers (BitcoinTreasuries.net, Arkham, company filings). Totals move whenever a holder buys or sells, and government figures are estimates: the US figure varies by source (shown as a range) and China's comes largely from a past fraud seizure. Values use the live price above in the selected currency. Historical and educational only, not financial advice.</div>
+  <div class="mut" style="margin-top:8px"><b>Why no Satoshi?</b> The coins widely attributed to Satoshi Nakamoto (around 1.1 million BTC, traced to early mining patterns) belong to no known company or government, and nobody has proved who controls them or that they are one person's. They have never moved, so they sit outside these lists. If they were counted they would be the largest holding by far.</div>
 </section>
 
 <section class="card" id="s-extras">
@@ -501,9 +503,17 @@ var HOLD={co:[['Strategy (MicroStrategy)',846000,'846,000','Largest corporate ho
 na:[['United States',263000,'198,000–328,000','Seized coins; estimates vary by source'],['China',192000,'190,000–194,000','Mostly from the PlusToken seizure'],['United Kingdom',61000,'~61,000','Seized in a fraud case'],['Ukraine',46000,'~46,000','Officials’ declared holdings'],['UAE',6800,'~6,800','Held via mining operations'],['El Salvador',6300,'~6,300','Bought and seized'],['Bhutan',3200,'~3,200','Down from ~6,000 earlier in 2026']]};
 var hTab='co';
 function renderHolders(){
-  var list=HOLD[hTab],tot=list.reduce(function(a,x){return a+x[1]},0),max=list[0][1];
+  var list=HOLD[hTab].slice().sort(function(a,b){return b[1]-a[1]}),tot=list.reduce(function(a,x){return a+x[1]},0);
   var all=HOLD.co.reduce(function(a,x){return a+x[1]},0),gov=HOLD.na.reduce(function(a,x){return a+x[1]},0);
   $('hTot').innerHTML='<div class="stat"><span class="mut">Companies listed hold</span><b>'+fmt(all)+' BTC</b><span class="mut">'+(all/21e6*100).toFixed(1)+'% of max supply</span></div><div class="stat"><span class="mut">Nations listed hold</span><b>'+fmt(gov)+' BTC</b><span class="mut">'+(gov/21e6*100).toFixed(1)+'% of max supply</span></div>';
+  var cols=['#f7931a','#3b82f6','#10b981','#a855f7','#ef4444','#eab308','#14b8a6','#ec4899'],a0=-Math.PI/2,paths='',leg='';
+  list.forEach(function(x,i){
+    var f=x[1]/tot,a1=a0+f*2*Math.PI,c=cols[i%cols.length],lg=f>.5?1:0,P=function(r,a){return (60+r*Math.cos(a)).toFixed(2)+' '+(60+r*Math.sin(a)).toFixed(2)};
+    paths+='<path d="M'+P(56,a0)+'A56 56 0 '+lg+' 1 '+P(56,a1-.0001)+'L'+P(32,a1-.0001)+'A32 32 0 '+lg+' 0 '+P(32,a0)+'Z" fill="'+c+'"><title>'+x[0]+': '+(f*100).toFixed(1)+'%</title></path>';
+    leg+='<div style="display:flex;gap:8px;align-items:center;font-size:13px;margin:3px 0"><i style="width:11px;height:11px;border-radius:3px;background:'+c+';flex:none"></i><span style="flex:1">'+x[0]+'</span><b>'+(f*100).toFixed(1)+'%</b></div>';
+    a0=a1;
+  });
+  $('hPie').innerHTML='<svg viewBox="0 0 120 120" style="width:100%;max-width:220px;margin:0 auto;display:block" role="img" aria-label="Share of BTC held by the listed '+(hTab=='co'?'companies':'nations')+'">'+paths+'<text x="60" y="58" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor">'+fmt(tot)+'</text><text x="60" y="68" text-anchor="middle" font-size="5.5" fill="var(--mut)">BTC listed</text></svg><div>'+leg+'<div class="mut" style="margin-top:6px">Share of the '+(hTab=='co'?'companies':'nations')+' listed here, not of all bitcoin.</div></div>';
   $('hTable').innerHTML='<tr><th style="text-align:left">#</th><th style="text-align:left">'+(hTab=='co'?'Company':'Nation')+'</th><th>BTC held</th><th>% of 21M</th><th>Value</th><th style="text-align:left">Note</th></tr>'+
     list.map(function(x,i){return '<tr><td style="text-align:left">'+(i+1)+'</td><td style="text-align:left"><b>'+x[0]+'</b></td><td>'+x[2]+'</td><td>'+(x[1]/21e6*100).toFixed(2)+'%</td><td>'+money(x[1]*price,cur)+'</td><td style="text-align:left;white-space:normal">'+x[3]+'</td></tr>'}).join('');
 }
