@@ -10,3 +10,5 @@ ffmpeg -framerate 30 -i frames/%04d.png -i intro.wav -c:v libx264 -crf 14 -pix_f
 ```
 
 `node render.js out 1 2.4,5.5` renders single stills at those times for quick checks. Exports go in `Podcast Recording/Intro/` (git-ignored).
+
+The `shots/` folder (page screenshots used as panels) is git-ignored to keep the repo light. Re-capture them with Puppeteer or drop your own PNGs in, named as in `SHOTS` at the top of `intro.html`.
