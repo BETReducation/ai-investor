@@ -409,7 +409,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
-}, { threshold: 0.12 });
+}, { threshold: 0 }); // threshold 0: a tall grid can never be 12% on screen, so it stayed invisible
 revealEls.forEach(el => io.observe(el));
 
 const ALLOC_PRESETS = {

@@ -8788,6 +8788,25 @@ def _backtest_impl():
 
 X_QUEUE_FILE = os.path.join(os.path.dirname(__file__), "socials", "X", "queue.md")
 
+_GCG_LINK_RE = re.compile(r"https?://(?:www\.)?growthcapitalgroup\.co[^\s)\]]*")
+
+
+def _utm_tag_links(text: str, campaign: str) -> str:
+    """Adds utm_source/medium/campaign to our own links so Google Analytics can credit visits to the
+    specific X draft (X's in-app browser often strips the referrer, so these show up as Direct otherwise).
+    Applied when the queue is served, so queue.md itself stays clean. Skips links that already carry utm_ params."""
+    def tag(m):
+        url = m.group(0)
+        trail = ""
+        while url and url[-1] in ".,;:!?":
+            trail = url[-1] + trail
+            url = url[:-1]
+        if "utm_" in url:
+            return url + trail
+        sep = "&" if "?" in url else "?"
+        return f"{url}{sep}utm_source=x&utm_medium=social&utm_campaign={campaign}{trail}"
+    return _GCG_LINK_RE.sub(tag, text)
+
 
 def _parse_x_queue(text: str) -> list:
     """Parses socials/X/queue.md (written by the gcg-x-draft-cycle scheduled task) into
@@ -8808,10 +8827,12 @@ def _parse_x_queue(text: str) -> list:
             body = body.strip()
             if title.lower().startswith("draft"):
                 sm = re.search(r"status:\s*(\w+)", title)
+                clean_title = re.sub(r"\s*\(.*\)\s*$", "", title).strip()
+                campaign = re.sub(r"[^a-z0-9]+", "-", f"x {heading} {clean_title}".lower()).strip("-")
                 run["drafts"].append({
-                    "title": re.sub(r"\s*\(.*\)\s*$", "", title).strip(),
+                    "title": clean_title,
                     "status": sm.group(1) if sm else "pending",
-                    "text": body,
+                    "text": _utm_tag_links(body, campaign),
                 })
             else:
                 run["notes"].append({"title": title.strip(), "text": body})
