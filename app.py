@@ -96,7 +96,7 @@ _BIG_RESPONSE_LOG_BYTES = 100_000
 
 # Pages that shouldn't be indexed, so they get no canonical (see robots.txt).
 _NO_CANONICAL_PREFIXES = ("/admin", "/api/", "/profile", "/alpha/studio", "/dataviz-studio",
-                          "/social-post-studio", "/reset-password", "/login", "/newsletter/")
+                          "/reset-password", "/login", "/newsletter/")
 
 
 @app.after_request
@@ -3843,8 +3843,6 @@ def alpha_chat(): return send_from_directory("static", "alpha-chat.html")
 @app.route("/partners")
 def partners(): return send_from_directory("static", "partners.html")
 
-@app.route("/social-post-studio")
-def social_post_studio(): return send_from_directory("static", "social-post-studio.html")
 
 
 # ── Portfolio Balancer — live price feed ──────────────────────────────────────
@@ -8786,73 +8784,6 @@ def _backtest_impl():
         return jsonify({"error": f"Backtest failed: {str(e)}"}), 500
 
 
-X_QUEUE_FILE = os.path.join(os.path.dirname(__file__), "socials", "X", "queue.md")
-
-_GCG_LINK_RE = re.compile(r"https?://(?:www\.)?growthcapitalgroup\.co[^\s)\]]*")
-
-
-def _utm_tag_links(text: str, campaign: str) -> str:
-    """Adds utm_source/medium/campaign to our own links so Google Analytics can credit visits to the
-    specific X draft (X's in-app browser often strips the referrer, so these show up as Direct otherwise).
-    Applied when the queue is served, so queue.md itself stays clean. Skips links that already carry utm_ params."""
-    def tag(m):
-        url = m.group(0)
-        trail = ""
-        while url and url[-1] in ".,;:!?":
-            trail = url[-1] + trail
-            url = url[:-1]
-        if "utm_" in url:
-            return url + trail
-        sep = "&" if "?" in url else "?"
-        return f"{url}{sep}utm_source=x&utm_medium=social&utm_campaign={campaign}{trail}"
-    return _GCG_LINK_RE.sub(tag, text)
-
-
-def _parse_x_queue(text: str) -> list:
-    """Parses socials/X/queue.md (written by the gcg-x-draft-cycle scheduled task) into
-    runs: [{heading, news, drafts:[{title, status, text}], notes:[{title, text}]}].
-    Newest run first."""
-    runs = []
-    for block in re.split(r"(?m)^## ", text)[1:]:
-        heading, _, rest = block.partition("\n")
-        parts = re.split(r"(?m)^### ", rest)
-        intro = parts[0]
-        news = ""
-        m = re.search(r"News used:\s*(.+)", intro)
-        if m:
-            news = m.group(1).strip()
-        run = {"heading": heading.strip(), "news": news, "drafts": [], "notes": []}
-        for sec in parts[1:]:
-            title, _, body = sec.partition("\n")
-            body = body.strip()
-            if title.lower().startswith("draft"):
-                sm = re.search(r"status:\s*(\w+)", title)
-                clean_title = re.sub(r"\s*\(.*\)\s*$", "", title).strip()
-                campaign = re.sub(r"[^a-z0-9]+", "-", f"x {heading} {clean_title}".lower()).strip("-")
-                run["drafts"].append({
-                    "title": clean_title,
-                    "status": sm.group(1) if sm else "pending",
-                    "text": _utm_tag_links(body, campaign),
-                })
-            else:
-                run["notes"].append({"title": title.strip(), "text": body})
-        runs.append(run)
-    return list(reversed(runs))
-
-
-@app.route("/api/x-queue")
-def x_queue():
-    if not current_user.is_authenticated:
-        return jsonify({"error": "Login required"}), 401
-    if not is_admin_user(current_user):
-        return jsonify({"error": "Admin only"}), 403
-    try:
-        with open(X_QUEUE_FILE, encoding="utf-8") as f:
-            return jsonify({"runs": _parse_x_queue(f.read())})
-    except FileNotFoundError:
-        return jsonify({"runs": []})
-
-
 # Pre-written Q&A per lesson, shown as tap-to-ask chips in the lesson bot
 # widget. Answering from here costs no API call and doesn't touch the daily
 # quota — only free-text questions hit the model. Add entries as you notice
@@ -9307,7 +9238,6 @@ def robots_txt():
         "Disallow: /profile\n"
         "Disallow: /alpha/studio\n"
         "Disallow: /dataviz-studio\n"
-        "Disallow: /social-post-studio\n"
         "Disallow: /reset-password\n\n"
         f"Sitemap: {PUBLIC_BASE_URL}/sitemap.xml\n"
     )
@@ -9910,17 +9840,14 @@ import gcg_chat
 import gcg_finance
 import gcg_notify
 import gcg_planner
-import gcg_ideas
 gcg_notify.init(_db_conn, DATABASE_URL, is_admin_user)
 gcg_chat.init(_db_conn, DATABASE_URL)
 gcg_finance.init(_db_conn, DATABASE_URL, is_admin_user, _load_users)
 gcg_planner.init(_db_conn, DATABASE_URL)
-gcg_ideas.init(_db_conn, DATABASE_URL, is_admin_user)
 app.register_blueprint(gcg_chat.bp)
 app.register_blueprint(gcg_finance.bp)
 app.register_blueprint(gcg_notify.bp)
 app.register_blueprint(gcg_planner.bp)
-app.register_blueprint(gcg_ideas.bp)
 _ensure_default_user()
 
 

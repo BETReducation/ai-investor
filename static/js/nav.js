@@ -167,7 +167,6 @@ DATAVIZ_MENU_HTML +
 '      <a href="#" onclick="return false;">Studio <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 '        <li><a href="/alpha/studio">Alpha Studio</a></li>' +
-'        <li><a href="/social-post-studio">Social Post Studio</a></li>' +
 '        <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>' +
 '        <li id="navNewsletterStudioLi" style="display:none;"><a href="/admin/newsletter">Newsletter</a></li>' +
 '      </ul>' +
