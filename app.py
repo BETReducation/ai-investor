@@ -1766,7 +1766,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "ftse-wagon-wheel": "A wheel of FTSE 100 stocks with winners on the left and losers on the right, plus the index's calendar-year returns since 1984 (illustrative simulated moves).",
     "league-compass": "Roughly 500 large US stocks ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
-    "etf-tracker": "Around 130 ETFs from every region ranked by their day, week, month or year, with a spin-the-globe regional view, fee checks and side-by-side comparison (sample data).",
+    "etf-tracker": "Around 400 ETFs, stocks and indices from every region ranked by their day, week, month or year, with a spin-the-globe country view, fee and overlap checkers, watchlist and side-by-side comparison (live prices).",
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
