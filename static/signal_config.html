@@ -3142,7 +3142,7 @@ function updateChartOverlay() {
   const a = assets[currentAsset];
   if (!a || !a.price) return;
   const chgPct = a.change * 100;
-  document.getElementById('chartPrice').textContent = getCurrencySymbol() + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('chartPrice').textContent = priceSymbol(currentAsset) + a.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('chartChange').textContent = `${chgPct >= 0 ? '▲' : '▼'} ${Math.abs(chgPct).toFixed(2)}% VS PREV CLOSE`;
   document.getElementById('chartPrice').className = 'chart-price-display' + (chgPct < 0 ? ' down' : '');
 }
@@ -3284,7 +3284,7 @@ function fireAlert(sym, sig) {
   document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 
   const col = sig.type === 'BUY' ? 'signal' : 'err';
-  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ ${getCurrencySymbol()}${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
+  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ ${priceSymbol(sym)}${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
 
   if (notificationSettings.sound_enabled) playAlertTone(sig.type);
@@ -3294,7 +3294,7 @@ function fireAlert(sym, sig) {
   const key = (sig.strategy || '') + ':' + sym + ':' + sig.type;
   if (emailBox && emailBox.checked && Date.now() - (_lastSignalEmail[key] || 0) > 15 * 60 * 1000) {
     _lastSignalEmail[key] = Date.now();
-    sendAlertEmail('signal', sym, { strategyName: sig.strategy || sig.type + ' strategy', triggers: sig.reasons, direction: sig.type, price: getCurrencySymbol() + price.toFixed(2), confidence: conf });
+    sendAlertEmail('signal', sym, { strategyName: sig.strategy || sig.type + ' strategy', triggers: sig.reasons, direction: sig.type, price: priceSymbol(sym) + price.toFixed(2), confidence: conf });
   }
 }
 const _lastSignalEmail = {};
@@ -3423,7 +3423,7 @@ function showSignalToast(a) {
       <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
     </div>
     <div class="signal-toast-body">
-      <span class="signal-toast-asset">${a.sym}</span> @ ${getCurrencySymbol()}${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
+      <span class="signal-toast-asset">${a.sym}</span> @ ${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)} — ${a.conf}% confidence
     </div>`;
   stack.appendChild(el);
   setTimeout(() => {
@@ -3474,7 +3474,7 @@ function renderPriceAlertsList() {
   } else {
     list.innerHTML = symAlerts.map(a => `
       <div class="price-alert-row">
-        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${getCurrencySymbol()}${formatPrice(a.price, currentAsset)}${a.email ? ' ✉' : ''}</span>
+        <span>${a.direction === 'above' ? '▲ above' : '▼ below'} ${priceSymbol(currentAsset)}${formatPrice(a.price, currentAsset)}${a.email ? ' ✉' : ''}</span>
         <button class="pa-remove" title="Remove" onclick="removePriceAlert('${currentAsset}', '${a.id}')">✕</button>
       </div>`).join('');
   }
@@ -3491,7 +3491,7 @@ function addPriceAlert() {
   document.getElementById('paPrice').value = '';
   renderPriceAlertsList();
   startPriceAlertPolling();
-  addLog('info', 'ALERT', `Price alert set: ${currentAsset} ${direction} ${getCurrencySymbol()}${price}`);
+  addLog('info', 'ALERT', `Price alert set: ${currentAsset} ${direction} ${priceSymbol(currentAsset)}${price}`);
 }
 
 function removePriceAlert(sym, id) {
@@ -3559,8 +3559,8 @@ async function evaluatePriceAlerts() {
       a.active = false;
       anyFired = true;
       showPriceAlertToast(sym, a, price);
-      if (a.email) sendAlertEmail('price', sym, { direction: a.direction, targetPrice: getCurrencySymbol() + formatPrice(a.price, sym), currentPrice: getCurrencySymbol() + formatPrice(price, sym) });
-      addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${getCurrencySymbol()}${a.price} (now ${getCurrencySymbol()}${formatPrice(price, sym)})`);
+      if (a.email) sendAlertEmail('price', sym, { direction: a.direction, targetPrice: priceSymbol(sym) + formatPrice(a.price, sym), currentPrice: priceSymbol(sym) + formatPrice(price, sym) });
+      addLog('signal', 'PRICE ALERT', `${sym} crossed ${a.direction} ${priceSymbol(sym)}${a.price} (now ${priceSymbol(sym)}${formatPrice(price, sym)})`);
     }
   }
   updatePriceAlertBadge();
@@ -3599,7 +3599,7 @@ function showPriceAlertToast(sym, alertObj, currentPrice) {
         <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
       </div>
       <div class="signal-toast-body">
-        <span class="signal-toast-asset">${sym}</span> crossed ${alertObj.direction} ${getCurrencySymbol()}${formatPrice(alertObj.price, sym)} — now ${getCurrencySymbol()}${formatPrice(currentPrice, sym)}
+        <span class="signal-toast-asset">${sym}</span> crossed ${alertObj.direction} ${priceSymbol(sym)}${formatPrice(alertObj.price, sym)} — now ${priceSymbol(sym)}${formatPrice(currentPrice, sym)}
       </div>`;
     stack.appendChild(el);
     setTimeout(() => { el.classList.add('closing'); setTimeout(() => el.remove(), 260); }, 8000);
@@ -3623,9 +3623,9 @@ function renderAlerts() {
       </div>
       <div class="alert-body">
         <div class="alert-price-row">
-          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">${getCurrencySymbol()}${formatPrice(a.price, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)}</div></div>
-          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">ENTRY</div><div class="alert-price-val">${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">TARGET</div><div class="alert-price-val green">${priceSymbol(a.sym)}${formatPrice(a.target, a.sym)}</div></div>
+          <div class="alert-price-item"><div class="alert-price-key">STOP</div><div class="alert-price-val red">${priceSymbol(a.sym)}${formatPrice(a.sl, a.sym)}</div></div>
           <div class="alert-price-item"><div class="alert-price-key">QTY</div><div class="alert-price-val">${a.qty.toFixed(4)}</div></div>
         </div>
         <div class="alert-reasons">${a.reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}</div>
@@ -3658,11 +3658,11 @@ function openModal(alertId) {
   document.getElementById('modalSummary').innerHTML = `
     <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
     <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
-    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">${getCurrencySymbol()}${formatPrice(a.price, a.sym)}</div></div>
+    <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}</div></div>
     <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
     <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">${getCurrencySymbol()}${invested.toFixed(2)}</div></div>
-    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">${getCurrencySymbol()}${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
-    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">${getCurrencySymbol()}${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
+    <div class="order-row"><div class="order-key">TARGET PRICE</div><div class="order-val green">${priceSymbol(a.sym)}${formatPrice(a.target, a.sym)} (+${getConfig().targetGain}%)</div></div>
+    <div class="order-row"><div class="order-key">STOP LOSS</div><div class="order-val red">${priceSymbol(a.sym)}${formatPrice(a.sl, a.sym)} (-${getConfig().stopLoss}%)</div></div>
     <div class="order-row"><div class="order-key">MAX PROFIT</div><div class="order-val green">+${getCurrencySymbol()}${profit.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">MAX RISK</div><div class="order-val red">-${getCurrencySymbol()}${risk.toFixed(2)}</div></div>
     <div class="order-row"><div class="order-key">CONFIDENCE</div><div class="order-val">${a.conf}%</div></div>
@@ -3692,8 +3692,8 @@ function confirmTrade() {
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ ${getCurrencySymbol()}${formatPrice(a.price, a.sym)}`);
-  addLog('info', 'ORDER', `Target: ${getCurrencySymbol()}${formatPrice(a.target, a.sym)} | Stop: ${getCurrencySymbol()}${formatPrice(a.sl, a.sym)}`);
+  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ ${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}`);
+  addLog('info', 'ORDER', `Target: ${priceSymbol(a.sym)}${formatPrice(a.target, a.sym)} | Stop: ${priceSymbol(a.sym)}${formatPrice(a.sl, a.sym)}`);
 }
 
 // --- DISMISS ALERT ---
@@ -3746,11 +3746,11 @@ function updatePositionsTable() {
     return `<tr>
       <td style="color:var(--text-primary);font-weight:600;">${pos.sym}</td>
       <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side}</td>
-      <td>${getCurrencySymbol()}${formatPrice(pos.entry, pos.sym)}</td>
-      <td style="color:var(--accent-cyan);">${getCurrencySymbol()}${formatPrice(pos.current, pos.sym)}</td>
+      <td>${priceSymbol(pos.sym)}${formatPrice(pos.entry, pos.sym)}</td>
+      <td style="color:var(--accent-cyan);">${priceSymbol(pos.sym)}${formatPrice(pos.current, pos.sym)}</td>
       <td>${getCurrencySymbol()}${pos.invested.toFixed(0)}</td>
-      <td style="color:var(--accent-green);">${getCurrencySymbol()}${formatPrice(pos.target, pos.sym)}</td>
-      <td style="color:var(--accent-red);">${getCurrencySymbol()}${formatPrice(pos.sl, pos.sym)}</td>
+      <td style="color:var(--accent-green);">${priceSymbol(pos.sym)}${formatPrice(pos.target, pos.sym)}</td>
+      <td style="color:var(--accent-red);">${priceSymbol(pos.sym)}${formatPrice(pos.sl, pos.sym)}</td>
       <td class="pos-pnl ${pnlCls}">${pnlStr} (${pos.pnlPct.toFixed(2)}%)</td>
       <td><button onclick="manualClose('${pos.id}')" style="background:rgba(255,51,85,0.1);border:1px solid var(--accent-red);color:var(--accent-red);padding:3px 7px;font-family:inherit;font-size:9px;cursor:pointer;border-radius:2px;">CLOSE</button></td>
     </tr>`;
@@ -5044,7 +5044,7 @@ function renderWatchlist() {
         <div class="wl-name">${assets[sym].category.toUpperCase()}</div>
       </div>
       <div class="wl-right">
-        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'}</div>
+        <div class="wl-price ${getChgClass(assets[sym].change)}" id="wl-price-${sym.replace('/','_')}">${assets[sym].price ? priceSymbol(sym) + formatPrice(assets[sym].price, sym) : '—'}</div>
         <div class="wl-chg ${getChgClass(assets[sym].change)}" id="wl-chg-${sym.replace('/','_')}">${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
       </div>
     </div>
@@ -5055,12 +5055,12 @@ function updateWatchlist() {
   Object.keys(assets).forEach(sym => {
     const el    = document.getElementById('wl-price-' + sym.replace('/','_'));
     const chgEl = document.getElementById('wl-chg-'   + sym.replace('/','_'));
-    if (el)    { el.textContent = assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
+    if (el)    { el.textContent = assets[sym].price ? priceSymbol(sym) + formatPrice(assets[sym].price, sym) : '—'; el.className = 'wl-price ' + getChgClass(assets[sym].change); }
     if (chgEl) { chgEl.textContent = `${assets[sym].change >= 0 ? '▲' : '▼'} ${Math.abs(assets[sym].change * 100).toFixed(2)}%`; chgEl.className = 'wl-chg ' + getChgClass(assets[sym].change); }
     // also refresh price column inside dropdown if open
     if (wlDropdownOpen) {
       const dp = document.getElementById('wl-dp-' + sym.replace('/','_'));
-      if (dp) { dp.textContent = assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
+      if (dp) { dp.textContent = assets[sym].price ? priceSymbol(sym) + formatPrice(assets[sym].price, sym) : '—'; dp.className = 'wl-check-price ' + getChgClass(assets[sym].change); }
     }
   });
 }
@@ -5077,7 +5077,7 @@ function renderWlDropdown() {
     const a = assets[sym];
     const checked = watchlistEnabled[sym];
     const isActive = sym === currentAsset;
-    const price = a.price ? getCurrencySymbol() + formatPrice(a.price, sym) : '—';
+    const price = a.price ? priceSymbol(sym) + formatPrice(a.price, sym) : '—';
     const removeBtn = customSymbolKeys.has(sym)
       ? `<button class="wl-check-remove" onclick="removeCustomSymbol('${sym}', event)" title="Remove from my list">✕</button>`
       : `<span></span>`;
@@ -5405,7 +5405,7 @@ function updateTicker() {
   tape.innerHTML = Object.keys(assets).filter(sym => watchlistEnabled[sym]).slice(0, 6).map(sym => `
     <div class="ticker-item">
       <div class="ticker-sym">${sym.split('/')[0]}</div>
-      <div class="ticker-price">${assets[sym].price ? getCurrencySymbol() + formatPrice(assets[sym].price, sym) : '—'}</div>
+      <div class="ticker-price">${assets[sym].price ? priceSymbol(sym) + formatPrice(assets[sym].price, sym) : '—'}</div>
       <div class="ticker-chg ${assets[sym].change >= 0 ? 'up' : 'down'}">${assets[sym].change >= 0 ? '▲' : '▼'}${Math.abs(assets[sym].change * 100).toFixed(2)}%</div>
     </div>
   `).join('');
@@ -5581,6 +5581,18 @@ function applyStopLossCcy() {
 function syncFixedTargetsFromPositionValue() {
   if (document.getElementById('targetGainCcyMode').checked) applyTargetGainCcy();
   if (document.getElementById('stopLossCcyMode').checked) applyStopLossCcy();
+}
+
+// Prices are raw Yahoo quotes in the instrument's own currency, so label them by that
+// currency rather than the Currency dropdown (which only drives capital / P&L).
+function priceSymbol(sym) {
+  const y = String(symbolMap[sym] || sym || '').toUpperCase();
+  if (/=X$/.test(y) || /^[A-Z]{3}\/[A-Z]{3}$/.test(y)) return '';
+  if (/\.L$/.test(y)) return '';  // LSE quotes are in pence
+  if (/\.(DE|PA|AS|MI|MC|BR|HE|LS|VI)$/.test(y) || /-EUR$/.test(y)) return '€';
+  if (/-GBP$/.test(y)) return '£';
+  if (/\.T$/.test(y)) return '¥';
+  return '$';
 }
 
 function formatPrice(p, sym) {
