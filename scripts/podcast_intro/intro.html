@@ -1,0 +1,217 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GCG podcast intro</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#060812;overflow:hidden}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+// Deterministic 10s intro: window.draw(t) renders any frame, so render.js can step through time.
+const Q = new URLSearchParams(location.search);
+const S = +(Q.get('s') || 1);               // 1 = 1080p, 2 = 4K
+const W = 1920, H = 1080, DUR = 10;
+const cv = document.getElementById('c'); cv.width = W * S; cv.height = H * S;
+cv.style.width = W + 'px'; cv.style.height = H + 'px';
+const ctx = cv.getContext('2d');
+
+// ---- tweakable settings -------------------------------------------------
+const CFG = {
+  bg: '#060812',
+  green: '#00d6ac', purple: '#7c3aed', purpleLight: '#a78bfa', up: '#00d6ac', down: '#ff4d5e',
+  flips: [2.0, 2.9, 3.8, 4.7],                       // logo change times (GCT, GCE, Arena, back to GCG)
+  logoSeq: ['gcg', 'gct', 'gce', 'arena', 'gcg'],
+  wordmark: 'GROWTH CAPITAL GROUP',
+  tagline: 'Learn to invest with confidence and clarity',
+};
+const LOGOS = {
+  gcg:   { src: '../../static/logos/Green Square.png', glow: '#00d6ac' },
+  gct:   { src: '../../static/logos/GCT Square.png',   glow: '#a855f7' },
+  gce:   { src: '../../static/logos/GCE Square.png',   glow: '#3b82f6' },
+  arena: { src: '../../static/logos/Arena Square.png', glow: '#f59e0b' },
+};
+const SHOTS = ['finance-map', 'crypto-compass', 'mining-globe', 'etf-tracker', 'bubble-radar', 'ftse-wagon-wheel']
+  .map(n => ({ n, src: 'shots/' + n + '.png' }));
+
+// ---- helpers -------------------------------------------------------------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, k) => a + (b - a) * k;
+const eio = k => k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
+const eo = k => 1 - Math.pow(1 - k, 3);
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n>>16},${n>>8&255},${n&255},${a})`; }
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+// ---- assets --------------------------------------------------------------
+const IMG = {};
+function load(src) { return new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; }); }
+window.ready = (async () => {
+  for (const k in LOGOS) IMG[k] = await load(LOGOS[k].src);
+  for (const s of SHOTS) s.img = await load(s.src);
+  await document.fonts.load('600 40px Outfit'); await document.fonts.load('300 30px Outfit');
+  buildChart();
+  return true;
+})();
+
+// ---- candlestick data (seeded so every render is identical) --------------
+function makeSeries(seed, n, drift, vol) {
+  const r = rng(seed); let p = 100; const out = [];
+  for (let i = 0; i < n; i++) {
+    const o = p, c = o * (1 + drift + (r() - .5) * vol), hi = Math.max(o, c) * (1 + r() * vol * .5), lo = Math.min(o, c) * (1 - r() * vol * .5);
+    out.push({ o, c, h: hi, l: lo, v: .25 + r() * .75 }); p = c;
+  }
+  return out;
+}
+let CH = [];
+function buildChart() {
+  CH = [
+    { d: makeSeries(11, 56, .0025, .085), x: 0, y: 470, w: W, h: 540, a: 1, t0: 1.8, t1: 7.2 },
+    { d: makeSeries(29, 40, .002, .09), x: 1020, y: 90, w: 820, h: 300, a: .45, t0: 2.6, t1: 7.6 },
+  ];
+  for (const c of CH) { c.min = Math.min(...c.d.map(k => k.l)); c.max = Math.max(...c.d.map(k => k.h)); }
+}
+function drawChart(c, t, alpha) {
+  const p = eio(seg(t, c.t0, c.t1)); if (p <= 0) return;
+  const n = c.d.length, shown = p * n, cw = c.w / n;
+  const Y = v => c.y + c.h * (1 - (v - c.min) / (c.max - c.min)) * .78 + c.h * .02;
+  ctx.save(); ctx.globalAlpha = alpha * c.a;
+  // faint horizontal levels
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+  for (let i = 0; i < 5; i++) { const yy = c.y + (c.h * .8) * i / 4; ctx.beginPath(); ctx.moveTo(c.x, yy); ctx.lineTo(c.x + c.w, yy); ctx.stroke(); }
+  // volume
+  for (let i = 0; i < Math.ceil(shown); i++) {
+    const k = c.d[i], f = clamp(shown - i), up = k.c >= k.o;
+    ctx.fillStyle = hexA(up ? CFG.up : CFG.down, .18);
+    const vh = k.v * c.h * .16 * f; ctx.fillRect(c.x + i * cw + cw * .2, c.y + c.h - vh, cw * .6, vh);
+  }
+  // candles
+  for (let i = 0; i < Math.ceil(shown); i++) {
+    const k = c.d[i], f = eo(clamp(shown - i)), up = k.c >= k.o, col = up ? CFG.up : CFG.down;
+    const x = c.x + i * cw + cw / 2, mid = (k.o + k.c) / 2;
+    const yo = lerp(Y(mid), Y(k.o), f), yc = lerp(Y(mid), Y(k.c), f), yh = lerp(Y(mid), Y(k.h), f), yl = lerp(Y(mid), Y(k.l), f);
+    ctx.strokeStyle = hexA(col, .85); ctx.lineWidth = Math.max(1.5, cw * .08);
+    ctx.beginPath(); ctx.moveTo(x, yh); ctx.lineTo(x, yl); ctx.stroke();
+    ctx.fillStyle = hexA(col, .9); ctx.shadowColor = col; ctx.shadowBlur = 14;
+    ctx.fillRect(x - cw * .3, Math.min(yo, yc), cw * .6, Math.max(2, Math.abs(yc - yo))); ctx.shadowBlur = 0;
+  }
+  // glowing moving-average line
+  ctx.beginPath(); let started = false;
+  for (let i = 0; i < Math.ceil(shown); i++) {
+    const w = c.d.slice(Math.max(0, i - 5), i + 1), m = w.reduce((s, k) => s + k.c, 0) / w.length;
+    const x = c.x + i * cw + cw / 2, y = Y(m); started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true);
+  }
+  ctx.strokeStyle = hexA(CFG.purpleLight, .9); ctx.lineWidth = 3; ctx.shadowColor = CFG.purple; ctx.shadowBlur = 22; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+// ---- floating tool/dataviz panels ----------------------------------------
+// x centre, y from -> to, z depth (size + blur + dim), start/end time, tilt
+const PANELS = [
+  { i: 0, x: 330,  y0: 1240, y1: -240, z: 1.00, a: 2.3, b: 8.0, rot: -4 },
+  { i: 1, x: 1590, y0: -250, y1: 1250, z: 1.00, a: 2.6, b: 8.2, rot:  3 },
+  { i: 2, x: 640,  y0: 1260, y1: -260, z: .62,  a: 2.9, b: 8.2, rot:  2 },
+  { i: 3, x: 1290, y0: -240, y1: 1240, z: .66,  a: 3.1, b: 8.3, rot: -3 },
+  { i: 4, x: 170,  y0: -240, y1: 1250, z: .80,  a: 3.3, b: 8.4, rot:  4 },
+  { i: 5, x: 1760, y0: 1240, y1: -240, z: .78,  a: 3.5, b: 8.4, rot: -2 },
+];
+function drawPanel(P, t, conv) {
+  const s = SHOTS[P.i]; if (!s.img) return;
+  const k = seg(t, P.a, P.b); if (k <= 0 || k >= 1) return;
+  const w = 560 * P.z, h = w * (s.img.height / s.img.width);
+  const sway = Math.sin(t * .9 + P.i) * 14 * P.z;
+  let x = P.x + sway, y = lerp(P.y0, P.y1, k);
+  x = lerp(x, W / 2, conv * .8); y = lerp(y, H / 2, conv * .8);
+  const alpha = Math.min(seg(k, 0, .12), 1 - seg(k, .88, 1)) * (.55 + .45 * P.z) * (1 - conv);
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate((P.rot + Math.sin(t * .6 + P.i) * 1.2) * Math.PI / 180);
+  ctx.scale(1 - conv * .4, 1 - conv * .4);
+  if (P.z < .7) ctx.filter = `blur(${(1 - P.z) * 9}px)`;
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
+  rr(-w / 2, -h / 2, w, h, 18); ctx.fillStyle = '#0d1020'; ctx.fill(); ctx.shadowColor = 'transparent';
+  ctx.save(); rr(-w / 2, -h / 2, w, h, 18); ctx.clip(); ctx.globalAlpha = alpha * .92; ctx.drawImage(s.img, -w / 2, -h / 2, w, h);
+  const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2); g.addColorStop(0, 'rgba(255,255,255,.16)'); g.addColorStop(.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,214,172,.10)');
+  ctx.fillStyle = g; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.fillStyle = 'rgba(6,8,18,.22)'; ctx.fillRect(-w / 2, -h / 2, w, h); ctx.restore();
+  rr(-w / 2, -h / 2, w, h, 18); ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+}
+
+// ---- background ----------------------------------------------------------
+const PART = (() => { const r = rng(5); return Array.from({ length: 70 }, () => ({ x: r() * W, y: r() * H, s: .6 + r() * 1.8, v: .15 + r() * .5, c: r() > .5 ? CFG.green : CFG.purpleLight, o: .15 + r() * .35 })); })();
+const NOISE = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), d = g.createImageData(256, 256), r = rng(9); for (let i = 0; i < d.data.length; i += 4) { const v = r() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; } g.putImageData(d, 0, 0); return c; })();
+function drawBG(tm, glow) {
+  ctx.fillStyle = CFG.bg; ctx.fillRect(0, 0, W, H);
+  let g = ctx.createRadialGradient(380 + Math.sin(tm * .4) * 80, 260, 0, 380, 260, 900); g.addColorStop(0, hexA(CFG.green, .16)); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(1560, 860 + Math.cos(tm * .4) * 60, 0, 1560, 860, 900); g.addColorStop(0, hexA(CFG.purple, .20)); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 620); g.addColorStop(0, hexA(glow.c, glow.a)); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.035)'; ctx.lineWidth = 1; const off = (tm * 7) % 90;
+  for (let x = -90 + off; x < W; x += 90) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = -90 + off; y < H; y += 90) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  for (const p of PART) { const y = (p.y - tm * 22 * p.v * 3 + H * 4) % H; ctx.fillStyle = hexA(p.c, p.o); ctx.beginPath(); ctx.arc(p.x, y, p.s, 0, 7); ctx.fill(); }
+}
+
+// ---- logo ----------------------------------------------------------------
+const OFF = document.createElement('canvas'); OFF.width = OFF.height = 640; const octx = OFF.getContext('2d');
+function logoState(t) {
+  let idx = 0, flip = 0;
+  for (let i = 0; i < CFG.flips.length; i++) {
+    const k = seg(t, CFG.flips[i], CFG.flips[i] + .55);
+    if (t >= CFG.flips[i]) { idx = i + (k >= .5 ? 1 : 0); flip = k; }
+  }
+  const key = CFG.logoSeq[idx];
+  const ang = flip > 0 && flip < 1 ? flip * Math.PI : 0;       // 0..PI flip about the vertical axis
+  return { key, sx: flip > 0 && flip < 1 ? Math.abs(Math.cos(ang)) : 1, flip };
+}
+function drawLogo(t, tm, st, cy, size, a) {
+  const L = LOGOS[st.key], img = IMG[st.key]; if (!img) return;
+  octx.clearRect(0, 0, 640, 640); octx.drawImage(img, 0, 0, 640, 640 * img.height / img.width);
+  // light sweep across the logo on entry
+  const sw = seg(t, .5, 1.6);
+  if (sw > 0 && sw < 1) {
+    octx.save(); octx.globalCompositeOperation = 'source-atop';
+    const x = lerp(-300, 940, eio(sw)), g = octx.createLinearGradient(x - 120, 0, x + 120, 640);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(.5, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    octx.fillStyle = g; octx.fillRect(0, 0, 640, 640); octx.restore();
+  }
+  const pulse = 1 + Math.sin(tm * 2.2) * .008 + (st.flip > 0 && st.flip < 1 ? .05 * Math.sin(st.flip * Math.PI) : 0);
+  const sz = size * pulse * lerp(.86, 1, eo(seg(t, .2, 1.4)));
+  ctx.save(); ctx.globalAlpha = a * eo(seg(t, .2, 1.0)); ctx.translate(W / 2, cy);
+  ctx.shadowColor = hexA(L.glow, .75); ctx.shadowBlur = 70;
+  ctx.drawImage(OFF, -sz * st.sx / 2, -sz / 2, sz * st.sx, sz * 640 / 640);
+  ctx.restore();
+}
+function drawRings(t, cy) {
+  for (const f of CFG.flips) {
+    const k = seg(t, f + .25, f + 1.3); if (k <= 0 || k >= 1) continue;
+    const idx = CFG.flips.indexOf(f) + 1, col = LOGOS[CFG.logoSeq[idx]].glow;
+    ctx.strokeStyle = hexA(col, .55 * (1 - k)); ctx.lineWidth = 3 * (1 - k) + 1;
+    rr(W / 2 - (170 + 420 * eo(k)), cy - (170 + 420 * eo(k)), 2 * (170 + 420 * eo(k)), 2 * (170 + 420 * eo(k)), 60 + 200 * eo(k)); ctx.stroke();
+  }
+}
+
+// ---- main ----------------------------------------------------------------
+window.draw = function (t) {
+  const tm = Math.min(t, 9.5);                                   // everything holds still for the last half second
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const st = logoState(t);
+  const conv = eio(seg(t, 8.0, 9.0));                              // pull-together
+  const logoY = lerp(H / 2, H / 2 - 70, eio(seg(t, 8.6, 9.4)));
+  const glowCol = LOGOS[st.key].glow;
+  drawBG(tm, { c: glowCol, a: .22 * eo(seg(t, .2, 1.2)) });
+  const chartFade = (1 - .8 * eio(seg(t, 8.0, 9.0)));
+  for (const c of CH) drawChart(c, tm, chartFade);
+  for (const P of PANELS) drawPanel(P, tm, conv);
+  drawRings(t, logoY);
+  drawLogo(t, tm, st, logoY, 320 + 40 * conv * (1 - seg(t, 9, 9.5)), 1);
+  // wordmark + tagline
+  const wk = eo(seg(t, 8.8, 9.5));
+  if (wk > 0) {
+    ctx.save(); ctx.textAlign = 'center'; ctx.globalAlpha = wk; ctx.fillStyle = '#fff';
+    ctx.font = '600 54px Outfit'; ctx.letterSpacing = (lerp(24, 10, wk)) + 'px'; ctx.fillText(CFG.wordmark, W / 2 + 5, logoY + 280);
+    const tk = eo(seg(t, 9.1, 9.8)); ctx.globalAlpha = tk * .75; ctx.font = '300 30px Outfit'; ctx.letterSpacing = '3px'; ctx.fillStyle = CFG.purpleLight; ctx.fillText(CFG.tagline, W / 2, logoY + 345);
+    ctx.restore();
+  }
+  // vignette + grain + fades
+  const v = ctx.createRadialGradient(W / 2, H / 2, 380, W / 2, H / 2, 1150); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = .05; ctx.globalCompositeOperation = 'overlay'; const gx = (Math.floor(tm * 30) * 53) % 256, gy = (Math.floor(tm * 30) * 97) % 256; ctx.fillStyle = ctx.createPattern(NOISE, 'repeat'); ctx.translate(-gx, -gy); ctx.fillRect(0, 0, W + 256, H + 256); ctx.restore();
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const fin = 1 - eo(seg(t, 0, .4)); if (fin > 0) { ctx.fillStyle = `rgba(6,8,18,${fin})`; ctx.fillRect(0, 0, W, H); }
+};
+</script>
