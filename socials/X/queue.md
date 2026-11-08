@@ -1257,3 +1257,28 @@ Video or Alpha: "Index recovered, holdings didn't: the 15-year Nasdaq story." Pa
 
 ### Reply target
 None found this run.
+
+## 2026-11-08
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News: a headline reports a sharp Nasdaq 100 drop led by AI/semiconductor stocks (check figure: reported 6% / $2.3T, single source), and US October CPI is due Tue 10 Nov, 8:30am ET. No price claims in posts. Last runs used B/D/A, C/A/E, D/A/E, so this run uses C, A (AI Tracker, updated this week, not featured before) and E (this day in history: 1987 aftermath / 1929 context, from memory, check figure).
+
+### Draft 154 (type: C beginner explainer, status: pending)
+What is a market bubble? It's when prices rise far beyond what the underlying businesses earn, mostly because people expect them to keep rising. Nobody can say for sure it's a bubble until it ends. What history does show is the pattern: a good story, rising debt, new buyers piling in. Tulips in 1637, dot-coms in 1999.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bubble-radar
+
+### Draft 155 (type: A viz/tool showcase, status: pending)
+The AI Tracker maps about 90 AI stocks across every country on one globe, coloured by return. Flip from one day to five years and you can see how much of the AI story is concentrated in a few places. It now pulls a live feed too.
+https://www.growthcapitalgroup.co/tools/data-visualisation/ai-tracker
+Image: AI Tracker world map, 1 year view, with the US and Asia clusters both visible.
+
+### Draft 156 (type: E extras, this day in history, status: pending)
+On 9 November 1989 the Berlin Wall opened. Within a year German markets were repricing everything from industrial stocks to the currency. Big political events rarely land on prices the way the headlines suggest on day one.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Angle suggestion
+Video or Alpha: "How to read a bubble score without calling a top." Pairs with draft 154. Education only.
+
+### Reply target
+None found this run.
