@@ -1282,3 +1282,27 @@ Video or Alpha: "How to read a bubble score without calling a top." Pairs with d
 
 ### Reply target
 None found this run.
+
+## 2026-11-08 (second run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News: web search returned nothing dated this week, so drafts are evergreen with no current price claims. Last runs used C/A/E, B/D/A, C/A/E, so this run uses B, D and A (REIT Map, not featured recently). 1970s oil shock and 1973-74 drawdown from memory (check figure).
+
+### Draft 157 (type: B thoughts/take, status: pending)
+In 1973 the oil embargo roughly quadrupled crude prices in a few months. US stocks fell close to half from the 1973 high to the 1974 low, and inflation stayed stubborn for years after. Energy shocks don't just hit one sector. They leak into almost every cost a business has.
+https://www.growthcapitalgroup.co/tools/data-visualisation/barrel-map
+
+### Draft 158 (type: D question, status: pending)
+Which market crash do you think taught people the most, and what did it teach?
+
+### Draft 159 (type: A viz/tool showcase, status: pending)
+The REIT Map lays out real estate investment trusts by sector and region, coloured by performance. A REIT is a company that owns property, like warehouses, offices or data centres, and pays most of its income out. Interesting to see how differently a data centre REIT and an office REIT can behave in the same week.
+https://www.growthcapitalgroup.co/tools/data-visualisation/reit-map
+Image: REIT Map overview with the sector groups visible, 1 year view, ideally with a clear green and red contrast between sectors.
+
+### Angle suggestion
+Video or Alpha: "What the 1973 oil shock did to everything that wasn't oil." Pairs with draft 157. Education only.
+
+### Reply target
+None found this run.
