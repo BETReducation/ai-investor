@@ -5,7 +5,7 @@ const FPS = 30, N = 10 * FPS;
 (async () => {
   fs.mkdirSync(out, { recursive: true });
   const b = await p.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: 'new', args: ['--allow-file-access-from-files'] });
-  const pg = await b.newPage(); await pg.setViewport({ width: 1920, height: 1080 });
+  const pg = await b.newPage(); await pg.setViewport({ width: 1920, height: 1080, deviceScaleFactor: S });
   await pg.goto('file://' + path.join(__dirname, 'intro.html') + '?s=' + S, { waitUntil: 'networkidle0' });
   await pg.evaluate(() => window.ready);
   const times = only ? only.split(',').map(Number) : Array.from({ length: N }, (_, i) => i / FPS);
