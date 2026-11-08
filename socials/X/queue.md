@@ -1306,3 +1306,28 @@ Video or Alpha: "What the 1973 oil shock did to everything that wasn't oil." Pai
 
 ### Reply target
 None found this run.
+
+## 2026-11-08 (third run)
+
+Status: pending
+
+Ideas: none unused (#4 and #5 already used). News: Nasdaq reportedly fell about 2.9% on Fri 30 Oct, its worst month since March 2025 (check figure), and US October CPI is due Tue 10 Nov, 8:30am ET. No price claims in posts. Last runs used B/D/A, C/A/E, B/D/A, so this run uses C, E (word of the day) and A (Bull/Bear Meter, not featured recently).
+
+### Draft 160 (type: C beginner explainer, status: pending)
+CPI day is Tuesday. CPI is the Consumer Price Index: a government basket of things people actually buy, like rent, food and fuel, priced every month. If the basket costs 3% more than a year ago, that's 3% inflation. Markets care because it shapes what central banks do with interest rates.
+https://www.growthcapitalgroup.co/learn/beginner
+
+### Draft 161 (type: E extras, word of the day, status: pending)
+Word of the day: drawdown. It's the fall from a peak to the lowest point before a new peak. A fund that goes from 100 to 70 has a 30% drawdown, even if it later recovers. It's a better way to see how bad a bad stretch felt than looking at the yearly return.
+https://www.growthcapitalgroup.co/learn/intermediate
+
+### Draft 162 (type: A viz/tool showcase, status: pending)
+The Bull/Bear Meter squeezes a handful of market signals into one dial, from fearful to greedy. It's a quick way to see how the mood has shifted, and it's worth comparing today's reading with a calm week and a rough one.
+https://www.growthcapitalgroup.co/tools/data-visualisation/bull-bear-meter
+Image: Bull/Bear Meter dial on its main view, with the reading and the component signals visible.
+
+### Angle suggestion
+Video or Alpha: "Reading a CPI report in five minutes: headline vs core." Pairs with draft 160. Education only.
+
+### Reply target
+None found this run.
