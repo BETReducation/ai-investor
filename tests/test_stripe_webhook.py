@@ -182,3 +182,17 @@ def test_portal_plan_switch_uses_price_not_stale_metadata(env):
         "metadata": {"username": "sam", "plan": "beginner"},
         "items": {"data": [{"price": {"lookup_key": "gcg_pro_year_20000_exclusive", "recurring": {"interval": "year"}}}]}})
     assert users["sam"]["tier"] == "pro"
+
+
+def test_scheduled_downgrade_recorded_and_keeps_access(env, monkeypatch):
+    users, _ = env
+    send("evt_up", "checkout.session.completed", {"customer": "cus_1", "subscription": "sub_1", "payment_status": "paid",
+                                                  "metadata": {"username": "sam", "plan": "pro"}})
+    when = int(time.time()) + 86400
+    monkeypatch.setattr(A, "_pending_plan_change", lambda sub: {"pending_plan": "beginner", "pending_at": when})
+    send("evt_dg", "customer.subscription.updated", {
+        "id": "sub_1", "customer": "cus_1", "status": "active", "schedule": "sub_sched_1",
+        "metadata": {"username": "sam", "plan": "pro"},
+        "items": {"data": [{"price": {"lookup_key": "gcg_pro_month_2000_exclusive"}}]}})
+    b = users["sam"]["profile"]["billing"]
+    assert users["sam"]["tier"] == "pro" and b["pending_plan"] == "beginner" and b["pending_at"] == when

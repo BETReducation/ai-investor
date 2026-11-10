@@ -58,6 +58,9 @@ async function portal(btn) {
   else if (paid) {
     const per = b.interval === 'year' ? 'annual' : 'monthly';
     h += `<div class="muted">Billed ${per}.${b.renews_at ? (b.cancel_at_period_end ? ` Ends on ${date(b.renews_at)}; you keep access until then.` : ` Renews on ${date(b.renews_at)}.`) : ''}</div>`;
+    if (b.pending_plan_name && b.pending_at && !b.cancel_at_period_end) {
+      h += `<div class="muted">Switching to ${b.pending_plan_name} on ${date(b.pending_at)}. You keep your current plan until then.</div>`;
+    }
     h += b.can_manage ? '<button class="btn" onclick="portal(this)">Manage billing</button><div class="muted">Change plan, update your card, download invoices or cancel.</div>'
                       : '<div class="muted">This plan was set up by our team, so there is no card on file.</div>';
   } else h += '<div class="muted">You are on the free plan.</div><a class="btn" href="/pricing">See plans</a>';

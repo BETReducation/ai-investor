@@ -4450,6 +4450,8 @@ def api_billing():
         "tier": current_user.tier, "plan_name": plans.PLAN_NAMES.get(current_user.tier, "Free"),
         "interval": b.get("interval"), "status": b.get("status"),
         "renews_at": b.get("current_period_end"), "cancel_at_period_end": bool(b.get("cancel_at_period_end")),
+        "pending_plan_name": plans.PLAN_NAMES.get(b.get("pending_plan") or "") if b.get("pending_plan") else None,
+        "pending_at": b.get("pending_at"),
         "can_manage": bool(b.get("customer_id")), "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
     })
 
@@ -4503,6 +4505,28 @@ def _sub_period_end(sub: dict) -> int | None:
     return item.get("current_period_end") or sub.get("current_period_end")
 
 
+def _pending_plan_change(sub: dict) -> dict:
+    """A downgrade set to start at period end lives on a subscription schedule: its next phase holds the
+    new Price. Returns {pending_plan, pending_at}, or Nones when nothing is scheduled."""
+    none = {"pending_plan": None, "pending_at": None}
+    schedule_id = sub.get("schedule")
+    if not schedule_id:
+        return none
+    try:
+        client = _stripe_client()
+        sched = client.v1.subscription_schedules.retrieve(schedule_id)
+        now = time.time()
+        phase = next((ph for ph in (sched.phases or []) if ph.start_date > now), None)
+        if not phase:
+            return none
+        price = client.v1.prices.retrieve(phase["items"][0]["price"])
+        plan = _plan_from_price({"price": {"lookup_key": price.lookup_key}})
+        return {"pending_plan": plan or None, "pending_at": phase.start_date if plan else None}
+    except Exception as e:
+        print(f"[stripe schedule lookup failed] {e}")
+        return none
+
+
 def _stripe_event_user(obj: dict) -> str | None:
     """Resolve the app user from the Stripe customer, falling back to metadata/client_reference_id."""
     meta = obj.get("metadata") or {}
@@ -4540,6 +4564,7 @@ def _handle_stripe_event(kind: str, obj: dict) -> None:
             "interval": (item.get("price") or item.get("plan") or {}).get("interval"),
             "current_period_end": _sub_period_end(obj),
             "cancel_at_period_end": bool(obj.get("cancel_at_period_end")),
+            **(_pending_plan_change(obj) if not ended else {"pending_plan": None, "pending_at": None}),
         })
     elif kind == "invoice.paid":
         _set_user_tier(username, (_load_user(username) or {}).get("tier", "free"), {"status": "active"})
