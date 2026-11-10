@@ -7605,7 +7605,8 @@ class _StockBoard:
 
 
 _league_board = _StockBoard({k: v.split(",") for k, v in _LEAGUE_UNIVERSE.items()}, ttl=300, min_series=100)
-_league_board.kick()  # warm at startup so the first visitor doesn't wait on the ~40s download
+if not os.environ.get("GCG_SKIP_WARM"):
+    _league_board.kick()  # warm at startup so the first visitor doesn't wait on the ~40s download
 
 
 @app.route("/api/dataviz/league-compass/live", methods=["GET"])
