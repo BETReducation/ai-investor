@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center; padding: 48px 20px; }
+.wrap { width: 100%; max-width: 640px; }
+h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 30px; margin-bottom: 8px; }
+.sub { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 30px; }
+.q { margin-bottom: 28px; }
+.q-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.q-hint { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--border2); background: var(--card); color: var(--text); font: inherit; font-size: 14px; padding: 9px 16px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+.chip:hover { border-color: var(--green); }
+.chip.on { background: var(--green); border-color: var(--green); color: #04110d; font-weight: 600; }
+.actions { display: flex; align-items: center; gap: 18px; margin-top: 34px; }
+.go { background: var(--green); color: #04110d; border: 0; border-radius: 10px; padding: 13px 28px; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+.go:disabled { opacity: .6; }
+.skip { background: none; border: 0; color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; }
+.note { font-size: 12px; color: var(--muted); margin-top: 22px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="hello">Welcome</h1>
+  <p class="sub">Four quick taps and your dashboard is tailored to you. It takes about 20 seconds, and you can change any of it later.</p>
+
+  <div class="q">
+    <div class="q-title">What are you into?</div>
+    <div class="q-hint">Pick as many as you like.</div>
+    <div class="chips" id="interests"></div>
+  </div>
+  <div class="q">
+    <div class="q-title">How would you describe your experience?</div>
+    <div class="chips" id="experience"></div>
+  </div>
+  <div class="q">
+    <div class="q-title">Which kind of market history do you find most interesting?</div>
+    <div class="chips" id="riskStyle"></div>
+  </div>
+  <div class="q">
+    <div class="q-title">Which of these sounds most like you?</div>
+    <div class="chips" id="riskScale"></div>
+  </div>
+
+  <div class="actions">
+    <button class="go" id="go" onclick="save(false)">Take me to my dashboard</button>
+    <button class="skip" onclick="save(true)">Skip for now</button>
+  </div>
+  <p class="note">Used only to choose which lessons, Alpha posts and tools we show first. It's educational content about what has happened historically, not financial advice.</p>
+</div>
+<script>
+const state = { interests: new Set(), experience: '', risk_style: '', risk_scale: '' };
+const single = {
+  experience: [['beginner','New to investing'],['intermediate','Some experience'],['pro','Experienced']],
+  riskStyle:  [['steady','Slow and steady long-term growth'],['mixed','A bit of both'],['volatile','Big swings and fast-moving markets']],
+  riskScale:  [['cautious','Cautious'],['balanced','Balanced'],['adventurous','Adventurous']],
+};
+const stateKey = { experience: 'experience', riskStyle: 'risk_style', riskScale: 'risk_scale' };
+
+function chip(label, on, fn) {
+  const b = document.createElement('button');
+  b.className = 'chip' + (on ? ' on' : ''); b.textContent = label; b.type = 'button';
+  b.onclick = () => fn(b); return b;
+}
+function renderSingle(id) {
+  const box = document.getElementById(id); box.innerHTML = '';
+  single[id].forEach(([val, label]) => box.appendChild(chip(label, state[stateKey[id]] === val, () => {
+    state[stateKey[id]] = state[stateKey[id]] === val ? '' : val; renderSingle(id);
+  })));
+}
+
+(async function init() {
+  const res = await fetch('/api/onboarding', { credentials: 'include' });
+  if (res.status === 401) { location.href = '/login?next=/welcome'; return; }
+  const d = await res.json();
+  document.getElementById('hello').textContent = d.first_name ? 'Welcome, ' + d.first_name : 'Welcome';
+  (d.interests || []).forEach(k => state.interests.add(k));
+  state.experience = d.completed ? d.experience : '';
+  state.risk_style = d.risk_style; state.risk_scale = d.risk_scale;
+  const box = document.getElementById('interests');
+  d.options.forEach(o => box.appendChild(chip(o.label, state.interests.has(o.key), b => {
+    state.interests.has(o.key) ? state.interests.delete(o.key) : state.interests.add(o.key);
+    b.classList.toggle('on');
+  })));
+  Object.keys(single).forEach(renderSingle);
+})();
+
+async function save(skip) {
+  const btn = document.getElementById('go'); btn.disabled = true;
+  try {
+    await fetch('/api/onboarding', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(skip ? { skip: true } : { interests: [...state.interests], experience: state.experience, risk_style: state.risk_style, risk_scale: state.risk_scale }),
+    });
+  } catch (e) {}
+  location.href = '/dashboard';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.dash { padding: 100px 4% 70px; max-width: 1500px; margin: 0 auto; }
+.dash-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.dash-head h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 34px; }
+.dash-head p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.tier { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border2); color: var(--green); margin-left: 8px; vertical-align: middle; }
+.btn { display: inline-block; border: 1px solid var(--border2); background: var(--card); color: var(--text); text-decoration: none; font: inherit; font-size: 14px; font-weight: 600; padding: 9px 18px; border-radius: 9px; cursor: pointer; }
+.btn:hover { border-color: var(--green); }
+.btn.primary { background: var(--green); border-color: var(--green); color: #04110d; }
+.banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.35); border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; font-size: 14px; }
+.banner.ok { background: rgba(0,212,170,.10); border-color: rgba(0,212,170,.35); }
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.tile { grid-column: span 4; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; position: relative; }
+.tile.wide { grid-column: span 8; }
+.tile.full { grid-column: span 12; }
+.tile h2 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+.tile h2 a { font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; color: var(--green); text-decoration: none; }
+.muted { color: var(--muted); font-size: 13px; line-height: 1.55; }
+.bar { height: 8px; border-radius: 99px; background: var(--border); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--green); border-radius: 99px; }
+.row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; text-transform: capitalize; }
+.item { display: block; text-decoration: none; color: inherit; padding: 10px 0; border-top: 1px solid var(--border); }
+.item:first-of-type { border-top: 0; padding-top: 0; }
+.item b { font-size: 14px; font-weight: 600; display: block; }
+.item span { font-size: 12px; color: var(--muted); }
+.tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--green); text-transform: uppercase; letter-spacing: .06em; }
+.links { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.links a { text-decoration: none; color: var(--text); border: 1px solid var(--border2); border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 600; background: var(--card); }
+.links a:hover { border-color: var(--green); }
+.links a small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.locked { opacity: .55; filter: grayscale(.8); }
+.locked .lock { position: absolute; top: 18px; right: 20px; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.upgrade { opacity: 1; filter: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips span { font-size: 12px; border: 1px solid var(--border2); border-radius: 99px; padding: 4px 11px; }
+@media (max-width: 1000px) { .tile, .tile.wide { grid-column: span 12; } }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+
+<main class="dash">
+  <div class="dash-head">
+    <div>
+      <h1 id="hello">Dashboard</h1>
+      <p id="subhead"></p>
+    </div>
+    <a class="btn" href="/profile">Profile &amp; settings</a>
+  </div>
+
+  <div id="banners"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script src="/static/js/footer.js"></script>
+<script>
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LEVELS = { beginner: '/learn/beginner', intermediate: '/learn/intermediate', pro: '/learn/pro' };
+
+function ago(iso) {
+  const t = Date.parse(iso); if (!t) return '';
+  const d = Math.floor((Date.now() - t) / 86400000);
+  return d < 1 ? 'today' : d === 1 ? 'yesterday' : d + ' days ago';
+}
+
+function tile(cls, title, link, body, locked) {
+  return `<section class="tile ${cls}${locked ? ' locked' : ''}">
+    ${locked ? '<span class="lock">🔒 ' + esc(locked.label) + '</span>' : ''}
+    <h2><span>${title}</span>${link && !locked ? `<a href="${link[1]}">${link[0]} →</a>` : ''}</h2>${body}
+    ${locked ? `<a class="btn upgrade" style="align-self:flex-start" href="/profile">Unlock with ${esc(locked.label)}</a>` : ''}
+  </section>`;
+}
+
+function up(text) { return `<div class="muted">🔒 ${text}</div><a class="btn" style="align-self:flex-start" href="/profile">See Pro</a>`; }
+
+function usageBar(u) {
+  if (!u) return '<div class="muted">Unlimited on your plan.</div>';
+  const pct = Math.min(100, Math.round(u.used / u.limit * 100));
+  return `<div class="row"><span>Used today</span><span>${u.used} / ${u.limit}</span></div><div class="bar"><i style="width:${pct}%"></i></div>`;
+}
+
+function render(d) {
+  document.getElementById('hello').innerHTML = `Hi ${esc(d.first_name)}<span class="tier">${esc(d.tier)}</span>`;
+  document.getElementById('subhead').textContent = d.interests.length
+    ? 'Tailored to: ' + d.interests.map(i => i.label).join(', ')
+    : 'Your home base for everything on Growth Capital Group.';
+
+  let banners = '';
+  if (new URLSearchParams(location.search).get('verified')) banners += '<div class="banner ok">Email confirmed. Thanks.</div>';
+  else if (!d.email_verified) banners += `<div class="banner"><span>Please confirm your email address. We sent you a link when you signed up.</span><button class="btn" id="resend" onclick="resend()">Resend email</button></div>`;
+  if (d.needs_onboarding) banners += `<div class="banner"><span>Tell us what you're into and we'll tailor this page. It takes about 20 seconds.</span><a class="btn primary" href="/welcome">Personalise</a></div>`;
+  document.getElementById('banners').innerHTML = banners;
+
+  const free = d.tier === 'free';
+  const L = d.learning;
+  const lvl = Object.entries(L.levels).map(([k, v]) =>
+    `<div><div class="row"><span>${k}</span><span>${v.done} / ${v.total}</span></div><div class="bar"><i style="width:${v.total ? v.done / v.total * 100 : 0}%"></i></div></div>`).join('');
+  const next = L.next ? `<a class="btn primary" style="align-self:flex-start" href="/learn/${L.next.level}/${L.next.slug}">Continue: ${esc(L.next.title)}</a>`
+                      : '<div class="muted">You have completed every lesson. Nice work.</div>';
+
+  const alpha = d.alpha.length ? d.alpha.map(p => `<a class="item" href="/alpha/${esc(p.author)}">
+      <span class="tag">${esc(p.topic || 'Alpha')}${p.matched ? ' · for you' : ''}</span><b>${esc(p.title)}</b><span>${esc(p.author)} · ${ago(p.published_at)}</span></a>`).join('')
+    : '<div class="muted">Nothing published yet.</div>';
+
+  const chatItems = d.chat.items.length ? d.chat.items.map(c => `<a class="item" href="/alpha/chat"><b>${esc(c.title)}</b>
+      <span>${d.chat.mode === 'replies' ? esc(c.author) + ' replied: ' + esc(c.body) : 'Started by ' + esc(c.author)} · ${ago(c.at)}</span></a>`).join('')
+    : `<div class="muted">${d.chat.mode === 'replies' ? 'No new replies.' : 'No discussions yet.'}</div>`;
+
+  const m = d.market_xi;
+  const xi = m.registered
+    ? `<div class="muted">Game week score: ${m.gameweek_score == null ? 'coming soon' : esc(m.gameweek_score)}<br>Team deadline: ${m.deadline ? esc(m.deadline) : 'shown here once Market XI is connected'}</div>
+       <a class="btn primary" style="align-self:flex-start" href="${esc(m.url)}">Take me to Market XI</a>`
+    : `<div class="muted">Register with the code you were given when you joined Market XI to see your scores and team deadlines here.</div>
+       <a class="btn primary" style="align-self:flex-start" href="${esc(m.register_url)}">Click here to register</a>`;
+
+  const links = [['Lessons','/learn','Beginner to pro'],['Signals','/tools/signals','Strategy signals'],['Backtester','/backtester','Test historical strategies'],
+    ['Data visualisation','/tools/data-visualisation','Live market maps'],['Alpha','/alpha','Research from the partners'],['Arena','/arena','Competitions & Market XI'],
+    ['Portfolio','/tools/portfolio','Track holdings'],['Explainers','/learn/artifacts','Short visual guides']]
+    .map(([t,h,s]) => `<a href="${h}">${t}<small>${s}</small></a>`).join('');
+
+  const proBt = d.entitlements.backtester === 'pro', proSig = d.entitlements.signals === 'pro';
+
+  document.getElementById('grid').innerHTML =
+    tile('wide', 'Your learning', ['All lessons', '/learn'], `<div style="display:grid;gap:12px">${lvl}</div>${next}`) +
+    tile('', 'Market XI', ['Arena', '/arena/market-xi'], xi) +
+    tile('wide', 'Latest Alpha' + (d.interests.length ? ' for you' : ''), ['All Alpha', '/alpha'], `<div>${alpha}</div>`) +
+    tile('', 'GCG Chat', ['Open', '/alpha/chat'], `<div>${chatItems}</div>`) +
+    tile('full', 'Jump to', null, `<div class="links">${links}</div>`) +
+    tile('', 'Backtester', ['Open', '/backtester'], proBt ? '<div class="muted">Full symbol list and unlimited runs.</div>' : usageBar(d.usage.backtests) + up('Pro unlocks every symbol and unlimited runs.')) +
+    tile('', 'Signals', ['Open', '/tools/signals'], proSig ? '<div class="muted">Full signals suite.</div>' : up('You have basic signals. Pro adds the full signal configuration and saved symbols.')) +
+    tile('', 'Ask the lessons', null, usageBar(d.usage.learn_ai) + (d.entitlements.learn_ai === 'unlimited' ? '' : up('Pro removes the daily limit.')));
+}
+
+async function resend() {
+  const b = document.getElementById('resend'); b.disabled = true;
+  await fetch('/api/resend-verification', { method: 'POST', credentials: 'include' });
+  b.textContent = 'Sent';
+}
+
+(async function () {
+  const res = await fetch('/api/dashboard', { credentials: 'include' });
+  if (res.status === 401) { location.href = '/login?next=/dashboard'; return; }
+  render(await res.json());
+})();
+</script>
+</body>
+</html>

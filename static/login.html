@@ -177,7 +177,7 @@ body::after {
   margin-bottom: 7px;
   display: block;
 }
-.field input {
+.field input, .field select {
   width: 100%;
   background: var(--input-bg);
   border: 1px solid var(--input-border);
@@ -190,7 +190,7 @@ body::after {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .field input::placeholder { color: var(--muted); opacity: 0.6; }
-.field input:focus {
+.field input:focus, .field select:focus {
   border-color: var(--green);
   box-shadow: 0 0 0 3px var(--input-focus);
 }
@@ -323,6 +323,10 @@ body::after {
       <div class="msg error" id="registerError"></div>
       <div class="msg success" id="registerSuccess"></div>
       <div class="field">
+        <label class="field-label" for="regFirstName">First name</label>
+        <input type="text" id="regFirstName" placeholder="What should we call you?" autocomplete="given-name">
+      </div>
+      <div class="field">
         <label class="field-label" for="regUsername">Username</label>
         <input type="text" id="regUsername" placeholder="Choose a username" autocomplete="username">
       </div>
@@ -339,9 +343,37 @@ body::after {
         <input type="password" id="regConfirm" placeholder="Repeat password" autocomplete="new-password"
                onkeydown="if(event.key==='Enter') doRegister()">
       </div>
+      <div class="field">
+        <label class="field-label" for="regCountry">Country <span style="opacity:.6;text-transform:none;">(optional)</span></label>
+        <select id="regCountry">
+          <option value="">Select…</option>
+          <option>United Kingdom</option><option>Ireland</option><option>United States</option><option>Canada</option>
+          <option>Australia</option><option>New Zealand</option><option>Germany</option><option>France</option>
+          <option>Spain</option><option>Italy</option><option>Netherlands</option><option>India</option>
+          <option>Singapore</option><option>UAE</option><option>South Africa</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="regAge">Age band <span style="opacity:.6;text-transform:none;">(optional)</span></label>
+        <select id="regAge">
+          <option value="">Select…</option>
+          <option value="under_18">Under 18</option><option value="18_24">18–24</option><option value="25_34">25–34</option>
+          <option value="35_44">35–44</option><option value="45_54">45–54</option><option value="55_64">55–64</option>
+          <option value="65_plus">65+</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="regReferral">How did you hear about us? <span style="opacity:.6;text-transform:none;">(optional)</span></label>
+        <select id="regReferral">
+          <option value="">Select…</option>
+          <option value="youtube">YouTube</option><option value="tiktok">TikTok</option><option value="instagram">Instagram</option>
+          <option value="x">X / Twitter</option><option value="facebook">Facebook</option><option value="google">Google search</option>
+          <option value="friend">A friend</option><option value="podcast">Podcast</option><option value="other">Other</option>
+        </select>
+      </div>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:22px;font-size:13px;color:var(--muted);line-height:1.5;cursor:pointer;">
         <input type="checkbox" id="regNewsletter" style="margin-top:3px;">
-        <span>Send me the weekly Growth Capital Group newsletter (Sundays). Unsubscribe any time.</span>
+        <span>Send me the weekly Growth Capital Group newsletter (Sundays) and occasional updates. Unsubscribe any time.</span>
       </label>
       <button class="submit-btn" id="registerBtn" onclick="doRegister()"
               style="background:rgba(124,58,237,0.85);color:#fff;box-shadow:0 0 30px rgba(124,58,237,0.20);">
@@ -460,6 +492,7 @@ async function doLogin() {
 // ── Register ──
 async function doRegister() {
   const btn      = document.getElementById('registerBtn');
+  const first_name = document.getElementById('regFirstName').value.trim();
   const username = document.getElementById('regUsername').value.trim();
   const email    = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
@@ -468,6 +501,7 @@ async function doRegister() {
   const okEl     = document.getElementById('registerSuccess');
 
   errEl.style.display = 'none'; okEl.style.display = 'none';
+  if (!first_name)            { showError(errEl, 'Please enter your first name.'); return; }
   if (!username || !password) { showError(errEl, 'Username and password are required.'); return; }
   if (!email)                 { showError(errEl, 'Email address is required.'); return; }
   if (password !== confirm)   { showError(errEl, 'Passwords do not match.'); return; }
@@ -479,14 +513,20 @@ async function doRegister() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ username, email, password, newsletter_opt_in: document.getElementById('regNewsletter').checked }),
+      body: JSON.stringify({
+        first_name, username, email, password,
+        country: document.getElementById('regCountry').value,
+        age_band: document.getElementById('regAge').value,
+        referral_source: document.getElementById('regReferral').value,
+        newsletter_opt_in: document.getElementById('regNewsletter').checked,
+      }),
     });
     const data = await res.json();
     if (!res.ok) { showError(errEl, data.error || 'Registration failed.'); return; }
     localStorage.setItem('gcgSession', '1');
     okEl.textContent = 'Account created! Redirecting…';
     okEl.style.display = 'block';
-    setTimeout(() => { window.location.href = getRedirect(data.landing_page); }, 1000);
+    setTimeout(() => { window.location.href = '/welcome'; }, 800);
   } catch {
     showError(errEl, 'Cannot reach server — please try again.');
   } finally {

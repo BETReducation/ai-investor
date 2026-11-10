@@ -233,7 +233,7 @@ DATAVIZ_MENU_HTML +
           const signIn = document.getElementById('navSignIn');
           if (signIn) {
             signIn.textContent = data.username;
-            signIn.href = '/profile';
+            signIn.href = '/dashboard';
             signIn.style.color = 'var(--green)';
             signIn.style.borderColor = 'var(--green)';
           }

@@ -4090,9 +4090,15 @@ def api_register():
     password = data.get("password", "")
     email    = data.get("email", "").strip()
     newsletter_opt_in = bool(data.get("newsletter_opt_in", False))
+    first_name = _clip(data.get("first_name"), 60)
+    country = _clip(data.get("country"), 60)
+    referral_source = data.get("referral_source") if data.get("referral_source") in REFERRAL_SOURCES else ""
+    age_band = data.get("age_band") if data.get("age_band") in AGE_BANDS else ""
 
     if not username or not password:
         return jsonify({"error": "Username and password required"}), 400
+    if not first_name:
+        return jsonify({"error": "Please tell us your first name"}), 400
     if not email:
         return jsonify({"error": "Email address required"}), 400
     if not _EMAIL_RE.match(email):
@@ -4116,14 +4122,21 @@ def api_register():
             "investor_type": "beginner",
             "profile_picture": "",
             "newsletter_opt_in": newsletter_opt_in,
+            "marketing_consent": newsletter_opt_in,
+            "first_name": first_name,
+            "country": country,
+            "referral_source": referral_source,
+            "age_band": age_band,
+            "email_verified": False,
         },
     }
     _save_user(username, new_user)
     gcg_notify.record("member_joined", username, f"{username} joined", "/admin")
+    _send_verification_email(username, email)
 
     session.permanent = True
     login_user(User(username, "free"), remember=True)
-    return jsonify({"success": True, "username": username, "tier": "free", "preferences": {}, "landing_page": "/"})
+    return jsonify({"success": True, "username": username, "tier": "free", "preferences": {}, "landing_page": "/welcome"})
 
 
 @app.route("/api/login", methods=["POST"])
@@ -4155,7 +4168,206 @@ def api_login():
         "username": username,
         "tier": user_data.get("tier", "basic"),
         "preferences": user_data.get("preferences", {}),
-        "landing_page": user_data.get("profile", {}).get("landing_page", "/"),
+        "landing_page": user_data.get("profile", {}).get("landing_page", "/dashboard"),
+    })
+
+
+# ── Onboarding, email verification, dashboard ───────────────────────────────
+
+REFERRAL_SOURCES = {"youtube", "tiktok", "instagram", "x", "facebook", "google", "friend", "podcast", "other"}
+AGE_BANDS = {"under_18", "18_24", "25_34", "35_44", "45_54", "55_64", "65_plus"}
+EXPERIENCE_LEVELS = {"beginner", "intermediate", "pro"}
+RISK_STYLES = {"steady", "mixed", "volatile"}
+RISK_SCALES = {"cautious", "balanced", "adventurous"}
+
+# key -> (label, Alpha topics it maps to). Interests with no Alpha topic still
+# get stored so they can drive future sections (sports, NFTs/art, education).
+INTEREST_OPTIONS = {
+    "stocks":      ("Stocks", ["Stocks"]),
+    "etfs":        ("ETFs", ["ETFs"]),
+    "crypto":      ("Crypto", ["Crypto"]),
+    "metals":      ("Metals & commodities", ["Metals"]),
+    "long_term":   ("Long-term investing", ["Long-Term Investing", "Simple Investing"]),
+    "technical":   ("Technical analysis", ["Technical Analysis"]),
+    "ai":          ("AI & technology", ["Impact of AI"]),
+    "macro":       ("Global issues & macro", ["Macro & Micro"]),
+    "quant":       ("Data, stats & formulae", ["Quant Statistics", "Finance & Formulae"]),
+    "sports":      ("Sports", []),
+    "nft_art":     ("NFTs & art", []),
+    "education":   ("Learning the basics", []),
+}
+
+MARKET_XI_REGISTER_URL = "https://market-xi-live.vercel.app/"  # TODO: swap for the real code-entry page once Market XI has one
+
+
+def _clip(value, limit: int) -> str:
+    return str(value or "").strip()[:limit]
+
+
+def _verify_token(username: str, email: str) -> str:
+    import hmac
+    return hmac.new(app.secret_key.encode(), f"verify:{username}:{email.lower()}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def _send_verification_email(username: str, email: str) -> None:
+    from urllib.parse import quote
+    base = request.host_url.rstrip("/")
+    link = f"{base}/verify-email?u={quote(username)}&t={_verify_token(username, email)}"
+    _send_email(
+        email,
+        "Confirm your Growth Capital Group email",
+        f"Welcome to Growth Capital Group.\n\nConfirm your email address here:\n{link}\n\n"
+        f"If you didn't create an account, you can ignore this message.",
+        sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
+    )
+
+
+@app.route("/verify-email")
+def verify_email():
+    username = request.args.get("u", "")
+    token = request.args.get("t", "")
+    user = _load_user(username) if username else None
+    email = ((user or {}).get("profile", {}) or {}).get("email", "")
+    if not user or not email or not hmac.compare_digest(token, _verify_token(username, email)):
+        return "This confirmation link isn't valid.", 400
+    profile = user.get("profile", {}) or {}
+    profile["email_verified"] = True
+    user["profile"] = profile
+    _save_user(username, user)
+    return redirect("/dashboard?verified=1")
+
+
+@app.route("/api/resend-verification", methods=["POST"])
+@login_required
+def api_resend_verification():
+    if _rate_limited("verify-resend", current_user.id, 3, 3600):
+        return _too_many_requests()
+    profile = (_load_user(current_user.id) or {}).get("profile", {}) or {}
+    if profile.get("email_verified"):
+        return jsonify({"success": True, "already": True})
+    if profile.get("email"):
+        _send_verification_email(current_user.id, profile["email"])
+    return jsonify({"success": True})
+
+
+@app.route("/welcome")
+def welcome_page():
+    if not current_user.is_authenticated:
+        return redirect("/login?next=/welcome")
+    return send_from_directory("static", "welcome.html")
+
+
+@app.route("/api/onboarding", methods=["GET", "POST"])
+@login_required
+def api_onboarding():
+    user = _load_user(current_user.id) or {}
+    profile = user.get("profile", {}) or {}
+    if request.method == "GET":
+        return jsonify({
+            "first_name": profile.get("first_name", ""),
+            "interests": profile.get("interests", []),
+            "experience": profile.get("investor_type", "beginner"),
+            "risk_style": profile.get("risk_style", ""),
+            "risk_scale": profile.get("risk_scale", ""),
+            "completed": bool(profile.get("onboarding_at")),
+            "options": [{"key": k, "label": v[0]} for k, v in INTEREST_OPTIONS.items()],
+        })
+    data = request.get_json(silent=True) or {}
+    if not data.get("skip"):
+        profile["interests"] = [k for k in data.get("interests", []) if k in INTEREST_OPTIONS]
+        if data.get("experience") in EXPERIENCE_LEVELS:
+            profile["investor_type"] = data["experience"]
+        profile["risk_style"] = data["risk_style"] if data.get("risk_style") in RISK_STYLES else ""
+        profile["risk_scale"] = data["risk_scale"] if data.get("risk_scale") in RISK_SCALES else ""
+    if not (data.get("skip") and profile.get("onboarding_at")):
+        profile["onboarding_at"] = profile.get("onboarding_at") or _dt.datetime.utcnow().isoformat(timespec="seconds")
+        profile["onboarding_skipped"] = bool(data.get("skip"))
+    user["profile"] = profile
+    _save_user(current_user.id, user)
+    return jsonify({"success": True})
+
+
+def _daily_usage(table: str, username: str) -> int:
+    if not DATABASE_URL:
+        return 0
+    try:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute(f"SELECT count FROM {table} WHERE username = %s AND day = %s",
+                        (username, _dt.datetime.utcnow().date()))
+            row = cur.fetchone()
+            return row[0] if row else 0
+    except Exception:
+        return 0
+
+
+def _dashboard_alpha(interests: list) -> list:
+    topics = {t for k in interests for t in INTEREST_OPTIONS.get(k, ("", []))[1]}
+    posts = [i for i in alpha_content_list(status="published") if i.get("kind") == "post"]
+    matched = [p for p in posts if p.get("topic") in topics]
+    pool = matched + [p for p in posts if p not in matched] if len(matched) < 4 else matched
+    return [{"id": p["id"], "author": p["author"], "title": p.get("title"), "subtitle": p.get("subtitle"),
+             "topic": p.get("topic"), "published_at": str(p.get("published_at") or ""),
+             "matched": p in matched} for p in pool[:4]]
+
+
+def _dashboard_chat() -> dict:
+    """Partners see replies to their own messages; everyone else sees the latest
+    topics read-only (posting is partner-only)."""
+    state = gcg_chat.store.read()
+    threads = {t["id"]: t for t in state["threads"]}
+    role = getattr(current_user, "alpha_role", None)
+    if role and current_user.tier == "founder":
+        mine = {m["thread_id"]: m["created_at"] for m in state["messages"] if m["author"] == role}
+        replies = []
+        for m in state["messages"]:
+            t = threads.get(m["thread_id"])
+            since = mine.get(m["thread_id"])
+            if t and since and m["author"] != role and m["created_at"] > since:
+                replies.append({"author": m["author"], "title": t["title"], "body": (m.get("body") or "")[:140],
+                                "at": m["created_at"]})
+        replies.sort(key=lambda r: r["at"], reverse=True)
+        return {"mode": "replies", "items": replies[:5]}
+    topics = sorted((t for t in state["threads"] if not t.get("root_id")), key=lambda t: t["last_activity"], reverse=True)
+    return {"mode": "latest", "items": [{"author": t["author"], "title": t["title"], "at": t["last_activity"]} for t in topics[:4]]}
+
+
+@app.route("/dashboard")
+def dashboard_page():
+    if not current_user.is_authenticated:
+        return redirect("/login?next=/dashboard")
+    return send_from_directory("static", "dashboard.html")
+
+
+@app.route("/api/dashboard")
+@login_required
+def api_dashboard():
+    user = _load_user(current_user.id) or {}
+    profile = user.get("profile", {}) or {}
+    ent = getattr(current_user, "entitlements", None) or default_entitlements(current_user.tier)
+    interests = profile.get("interests", [])
+    progress = _lesson_progress_payload(profile)
+    next_lesson = next((l for l in LESSON_PAGES if l["slug"] not in progress["completed"]), None)
+    pro_qa = ent.get("learn_ai") == "unlimited"
+    return jsonify({
+        "username": current_user.id,
+        "first_name": profile.get("first_name") or profile.get("display_name") or current_user.id,
+        "tier": current_user.tier,
+        "email_verified": bool(profile.get("email_verified")),
+        "needs_onboarding": not profile.get("onboarding_at"),
+        "interests": [{"key": k, "label": INTEREST_OPTIONS[k][0]} for k in interests if k in INTEREST_OPTIONS],
+        "entitlements": ent,
+        "learning": {**progress, "next": next_lesson and {"slug": next_lesson["slug"], "level": next_lesson["level"], "title": next_lesson["title"]}},
+        "alpha": _dashboard_alpha(interests),
+        "chat": _dashboard_chat(),
+        "market_xi": {
+            "registered": ent.get("market_xi") == "entered",
+            "url": MARKET_XI_URL, "register_url": MARKET_XI_REGISTER_URL,
+            "deadline": None, "gameweek_score": None,  # filled once Market XI exposes an API
+        },
+        "usage": {
+            "learn_ai": None if pro_qa else {"used": _daily_usage("learn_qa_daily_usage", current_user.id), "limit": FREE_TIER_DAILY_LEARN_QA_LIMIT},
+            "backtests": None if ent.get("backtester") == "pro" else {"used": _daily_usage("backtest_daily_usage", current_user.id), "limit": FREE_TIER_DAILY_BACKTEST_LIMIT},
+        },
     })
 
 
@@ -4791,7 +5003,7 @@ LANDING_PAGE_CHOICES = {
     "/tools", "/tools/signals", "/backtester", "/tools/ai-chart-analysis", "/tools/portfolio", "/tools/calculator",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
-    "/partners", "/profile",
+    "/partners", "/profile", "/dashboard",
 }
 
 
@@ -4811,7 +5023,7 @@ def api_get_profile():
         "preferred_currency": profile.get("preferred_currency", "GBP"),
         "preferred_region":   profile.get("preferred_region", ""),
         "profile_picture": profile.get("profile_picture", ""),
-        "landing_page":   profile.get("landing_page", "/"),
+        "landing_page":   profile.get("landing_page", "/dashboard"),
         "newsletter_opt_in": newsletter_opted_in(profile),
         "preferences":    user_data.get("preferences", {}),
     })
