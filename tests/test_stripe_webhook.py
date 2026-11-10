@@ -136,7 +136,10 @@ class _FakeClient:
 
         class Products:
             def retrieve(self, pid):
-                return {}
+                return type("Prod", (), {"name": "Growth Capital Group Pro"})()
+
+            def update(self, pid, params):
+                pass
 
         class Sessions:
             def create(self, params):

@@ -537,42 +537,8 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         <div class="card-header-row">
           <div class="card-header-title">Subscription</div>
         </div>
-        <div class="card-header-sub">Current plan highlighted below. Contact us to upgrade.</div>
-        <div class="plan-grid">
-          <div class="plan-card" id="planFree">
-            <div class="plan-name">FREE</div>
-            <div class="plan-price">Free <small>/month</small></div>
-            <ul class="plan-features">
-              <li><span class="feat-tick">✓</span><span>Strategy backtesting</span></li>
-              <li><span class="feat-tick">✓</span><span>Historical analysis</span></li>
-              <li><span class="feat-lock">✕</span><span>Live signal generator</span></li>
-              <li><span class="feat-lock">✕</span><span>Social package</span></li>
-            </ul>
-          </div>
-          <div class="plan-card" id="planPro">
-            <div class="plan-name">PRO</div>
-            <div class="plan-price">£20 <small>/month</small></div>
-            <ul class="plan-features">
-              <li><span class="feat-tick">✓</span><span>Everything in Free</span></li>
-              <li><span class="feat-tick">✓</span><span>Live signal generator</span></li>
-              <li><span class="feat-tick">✓</span><span>Custom strategies</span></li>
-              <li><span class="feat-lock">✕</span><span>Social package</span></li>
-            </ul>
-          </div>
-          <div class="plan-card" id="planFounder">
-            <div class="plan-name">FOUNDER</div>
-            <div class="plan-price">Invite only</div>
-            <ul class="plan-features">
-              <li><span class="feat-tick">✓</span><span>Everything in Pro</span></li>
-              <li><span class="feat-tick">✓</span><span>Alpha authoring</span></li>
-              <li><span class="feat-tick">✓</span><span>Discord integration</span></li>
-              <li><span class="feat-tick">✓</span><span>X (Twitter) posting</span></li>
-            </ul>
-          </div>
-        </div>
-        <div style="margin-top:18px;font-size:12px;color:var(--muted);">
-          To upgrade your plan, <a href="mailto:support@growthcapitalgroup.co" style="color:var(--purple2);text-decoration:none;">contact support</a> — full billing integration coming soon.
-        </div>
+        <div class="card-header-sub">See what each plan includes, or manage your subscription, card and invoices.</div>
+        <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;"><a href="/pricing" style="color:var(--purple2);text-decoration:none;font-weight:600;">Plans and pricing</a><a href="/billing" style="color:var(--purple2);text-decoration:none;font-weight:600;">Billing</a></div>
       </div>
 
       <!-- PAYMENT OPTIONS -->
@@ -902,9 +868,6 @@ function setAvatarDisplay(value, name) {
 }
 
 function highlightCurrentPlan(tier) {
-  document.getElementById('planFree').className    = 'plan-card' + (tier === 'free'    ? ' active' : '');
-  document.getElementById('planPro').className     = 'plan-card' + (tier === 'pro'     ? ' active' : '');
-  document.getElementById('planFounder').className = 'plan-card' + (tier === 'founder' ? ' active' : '');
 
   ['Free','Pro','Founder'].forEach(n => {
     const el = document.getElementById('plan'+n).querySelector('.plan-badge');

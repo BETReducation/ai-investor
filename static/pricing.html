@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plans and Pricing — Growth Capital Group</title>
-<meta name="description" content="Free, Beginner and Pro plans for Growth Capital Group's investing education, tools and research. Educational content only, never advice.">
+<meta name="description" content="Free, Beginner, Intermediate and Pro plans for Growth Capital Group's investing education, tools and research. Educational content only, never advice.">
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <script>
   var _t = localStorage.getItem('gcg-theme') || 'light';
@@ -26,8 +26,8 @@ h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; text-
 .toggle button:first-child { border-radius: 10px 0 0 10px; } .toggle button:last-child { border-radius: 0 10px 10px 0; }
 .toggle button.on { background: var(--green); border-color: var(--green); color: #04110d; }
 .save { font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-left: 6px; }
-.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .card.hot { border-color: var(--green); box-shadow: 0 0 40px rgba(0,212,170,.08); }
 .card h2 { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; }
 .price { font-family: 'Outfit', sans-serif; font-size: 40px; font-weight: 800; }
@@ -45,7 +45,8 @@ th { font-family: 'Outfit', sans-serif; font-size: 16px; }
 td { color: var(--muted); }
 .yes { color: var(--green); font-weight: 700; }
 .fine { color: var(--muted); font-size: 12px; text-align: center; margin-top: 36px; line-height: 1.6; }
-@media (max-width: 800px) { .cards { grid-template-columns: 1fr; } table { font-size: 12px; } th, td { padding: 10px 4px; } }
+@media (max-width: 1000px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } table { font-size: 12px; } th, td { padding: 10px 4px; } }
 </style>
 </head>
 <body>
@@ -78,12 +79,16 @@ function drawCards() {
     const price = p.monthly === 0 ? '$0' : usd(amt);
     const per = p.monthly === 0 ? '' : `<small> / ${yr ? 'year' : 'month'}</small>`;
     const sub = yr && p.annual ? `${usd(Math.round(p.annual / 12))} a month, two months free` : '';
-    let cta;
-    if (p.id === mine) cta = '<button class="btn ghost" disabled>Your current plan</button>';
+    let cta, promoNote = '';
+    const onPromo = P.promo && p.id === P.promo.plan && mine === 'free';
+    if (onPromo) {
+      promoNote = `<div class="sub"><b>Free until ${new Date(P.promo.until).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</b> for registered accounts</div>`;
+      cta = P.me.authenticated ? '<button class="btn ghost" disabled>Included with your account</button>' : '<a class="btn" href="/login?next=/pricing">Sign up free</a>';
+    } else if (p.id === mine) cta = '<button class="btn ghost" disabled>Your current plan</button>';
     else if (p.id === 'free') cta = P.me.authenticated ? '<a class="btn ghost" href="/billing">Manage plan</a>' : '<a class="btn ghost" href="/login">Sign up free</a>';
     else if (myRank >= (P.rank[p.id] || 0) && mine !== 'free') cta = '<a class="btn ghost" href="/billing">Manage plan</a>';
     else cta = `<button class="btn" onclick="buy('${p.id}', this)">Choose ${p.name}</button>`;
-    return `<div class="card ${p.id === 'beginner' ? 'hot' : ''}"><h2>${p.name}</h2><div class="price">${price}${per}</div><div class="sub">${sub}</div><div class="blurb">${p.blurb}</div>${cta}</div>`;
+    return `<div class="card ${p.id === 'intermediate' ? 'hot' : ''}"><h2>${p.name}</h2><div class="price">${price}${per}</div><div class="sub">${onPromo ? '' : sub}</div>${promoNote}<div class="blurb">${p.blurb}</div>${cta}</div>`;
   }).join('');
 }
 
@@ -109,7 +114,7 @@ async function buy(plan, btn) {
   if (q.get('cancelled')) $('notice').innerHTML = '<div class="notice">Checkout cancelled. Nothing was charged.</div>';
   drawCards();
   const head = '<tr><th></th>' + P.plans.map(p => `<th>${p.name}</th>`).join('') + '</tr>';
-  $('cmp').innerHTML = head + P.compare.map(r => `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td>${cell(r[2])}</td><td>${cell(r[3])}</td></tr>`).join('');
+  $('cmp').innerHTML = head + P.compare.map(r => `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td>${cell(r[2])}</td><td>${cell(r[3])}</td><td>${cell(r[4])}</td></tr>`).join('');
 })();
 </script>
 </body>

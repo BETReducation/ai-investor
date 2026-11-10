@@ -10,7 +10,7 @@
     if (u.origin !== location.origin) return null;
     var need = P.gates[u.pathname.replace(/\/$/, '')];
     if (!need) return null;
-    return (P.rank[P.me.tier] || 0) < (P.rank[need] || 0) ? need : null;
+    return (P.rank[P.me.access_tier || P.me.tier] || 0) < (P.rank[need] || 0) ? need : null;
   }
 
   function mark() {

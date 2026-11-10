@@ -471,7 +471,7 @@ def _ensure_table() -> None:
             UPDATE users SET entitlements = %s
             WHERE entitlements = '{}'::jsonb
         """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"]),))
-        for tier in ("pro", "founder"):
+        for tier in ("beginner", "intermediate", "pro", "founder"):
             cur.execute("""
                 UPDATE users SET entitlements = %s
                 WHERE tier = %s AND entitlements = %s
@@ -944,7 +944,8 @@ FEATURE_LEVELS = {
 }
 DEFAULT_ENTITLEMENTS_BY_TIER = {
     "free": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
-    "beginner": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
+    "beginner": {"backtester": "basic", "signals": "basic", "market_xi": "entered", "learn_ai": "free_quota"},
+    "intermediate": {"backtester": "pro", "signals": "basic", "market_xi": "entered", "learn_ai": "free_quota"},
     "pro": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
     "founder": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
 }
@@ -976,11 +977,11 @@ def _clear_custom_symbols_on_downgrade(users: dict, username: str, old_level, ne
 # them to sign up. IP-based limiting is a soft speed bump, not real abuse-proofing
 # — trivially bypassed by VPN/incognito/mobile data — but it stops casual reuse
 # without needing an account, which is the point.
-ANON_BACKTEST_LIMIT = 5
+ANON_BACKTEST_LIMIT = plans.FREE_DAILY_TOOL_TESTS
 
 # Free-tier accounts: N runs per *calendar* day (UTC), not a rolling 24h window —
 # resets at midnight UTC regardless of when the user's first run that day was.
-FREE_TIER_DAILY_BACKTEST_LIMIT = 20
+FREE_TIER_DAILY_BACKTEST_LIMIT = plans.FREE_DAILY_TOOL_TESTS
 
 # Lesson Q&A bot: free-tier gets a small taste per day; pro/founder are
 # "unlimited" per DEFAULT_ENTITLEMENTS_BY_TIER but still get a high sanity
@@ -1208,8 +1209,12 @@ class User(UserMixin):
     def __init__(self, username: str, tier: str = "free", alpha_role: str | None = None, entitlements: dict | None = None):
         self.id = username
         self.tier = tier
+        # access_tier is what gating uses: free accounts get the promo plan while it runs.
+        self.access_tier = plans.access_tier(tier)
         self.alpha_role = alpha_role
-        self.entitlements = entitlements or default_entitlements(tier)
+        self.entitlements = entitlements or default_entitlements(self.access_tier)
+        if self.access_tier != tier and entitlements == default_entitlements(tier):
+            self.entitlements = default_entitlements(self.access_tier)
 
 
 @login_manager.user_loader
@@ -1247,7 +1252,7 @@ def tier_required(min_tier: str):
         def wrapped(*args, **kwargs):
             if not current_user.is_authenticated:
                 return jsonify({"error": "Login required", "tier_required": min_tier}), 401
-            user_rank = TIER_RANKS.get(getattr(current_user, "tier", "basic"), 0)
+            user_rank = TIER_RANKS.get(getattr(current_user, "access_tier", getattr(current_user, "tier", "free")), 0)
             if user_rank < TIER_RANKS.get(min_tier, 0):
                 return jsonify({
                     "error": "Subscription upgrade required",
@@ -4250,7 +4255,59 @@ def _rank(tier: str) -> int:
 
 
 def _user_rank() -> int:
-    return _rank(getattr(current_user, "tier", "free")) if current_user.is_authenticated else 0
+    return _rank(getattr(current_user, "access_tier", getattr(current_user, "tier", "free"))) if current_user.is_authenticated else 0
+
+
+# The first lesson of each level stays open to everyone as the free sample.
+FREE_LESSON_SAMPLES = {
+    (lv, next(l["slug"] for l in LESSON_PAGES if l["level"] == lv))
+    for lv in {l["level"] for l in LESSON_PAGES}
+}
+
+
+def _samples_of(username: str) -> dict:
+    return ((_load_user(username) or {}).get("profile", {}) or {}).get("samples") or {}
+
+
+def _save_samples(username: str, samples: dict) -> None:
+    user = _load_user(username)
+    if user:
+        profile = user.get("profile", {}) or {}
+        profile["samples"] = samples
+        user["profile"] = profile
+        _save_user(username, user)
+
+
+def _dataviz_sample_ok(slug: str, record: bool) -> bool:
+    """Registered accounts below a page's plan can open FREE_DATAVIZ_PAGES distinct data-viz pages."""
+    if not current_user.is_authenticated:
+        return False
+    samples = _samples_of(current_user.id)
+    seen = samples.get("dataviz") or []
+    if slug in seen:
+        return True
+    if len(seen) >= plans.FREE_DATAVIZ_PAGES:
+        return False
+    if record:
+        samples["dataviz"] = seen + [slug]
+        _save_samples(current_user.id, samples)
+    return True
+
+
+def _alpha_sample_ok(level: str, post_id: int) -> bool:
+    """One full Alpha post per level for a registered account below that level's plan."""
+    if not current_user.is_authenticated:
+        return False
+    samples = _samples_of(current_user.id)
+    claimed = samples.get("alpha") or {}
+    if claimed.get(level) == post_id:
+        return True
+    if level in claimed:
+        return False
+    claimed[level] = post_id
+    samples["alpha"] = claimed
+    _save_samples(current_user.id, samples)
+    return True
 
 
 def _gate_map() -> dict:
@@ -4258,7 +4315,7 @@ def _gate_map() -> dict:
     gates = {}
     for l in LESSON_PAGES:
         need = plans.LESSON_LEVEL_MIN_PLAN.get(l["level"], "free")
-        if need != "free":
+        if need != "free" and (l["level"], l["slug"]) not in FREE_LESSON_SAMPLES:
             gates[f"/learn/{l['level']}/{l['slug']}"] = need
     for e in EXPLAINERS:
         need = plans.EXPLAINER_PART_MIN_PLAN.get(e["part"], "free")
@@ -4266,6 +4323,16 @@ def _gate_map() -> dict:
             gates[f"/static/explainers/{e['slug']}/index.html"] = need
     for slug, need in plans.DATAVIZ_MIN_PLAN.items():
         gates[f"/tools/data-visualisation/{slug}"] = need
+    return gates
+
+
+def _user_gate_map() -> dict:
+    """The gate map for the current user: data-viz pages a free account can still open as a sample drop out."""
+    gates = _gate_map()
+    if current_user.is_authenticated:
+        for slug in plans.DATAVIZ_MIN_PLAN:
+            if _dataviz_sample_ok(slug, record=False):
+                gates.pop(f"/tools/data-visualisation/{slug}", None)
     return gates
 
 
@@ -4280,6 +4347,8 @@ def _plan_gate():
         path = "/".join(path.split("/")[:4]) + "/index.html"
     need = _gate_map().get(path)
     if need and _user_rank() < _rank(need):
+        if path.startswith("/tools/data-visualisation/") and _dataviz_sample_ok(path.rsplit("/", 1)[-1], record=True):
+            return None
         from urllib.parse import quote
         return redirect(f"/pricing?need={need}&from={quote(request.path)}")
     return None
@@ -4290,11 +4359,13 @@ def api_plans():
     return jsonify({
         "plans": plans.PLANS,
         "compare": plans.COMPARE,
-        "gates": _gate_map(),
+        "gates": _user_gate_map(),
         "names": plans.PLAN_NAMES,
         "rank": PLAN_RANK,
         "me": {"authenticated": current_user.is_authenticated,
-               "tier": getattr(current_user, "tier", "free") if current_user.is_authenticated else "free"},
+               "tier": getattr(current_user, "tier", "free") if current_user.is_authenticated else "free",
+               "access_tier": getattr(current_user, "access_tier", "free") if current_user.is_authenticated else "free"},
+        "promo": {"plan": plans.PROMO_PLAN, "until": plans.PROMO_UNTIL.isoformat()} if plans.promo_active() else None,
         "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
     })
 
@@ -4340,7 +4411,9 @@ def _stripe_price_id(plan: dict, interval: str) -> str:
     else:
         product_id = f"gcg_{plan['id']}"
         try:
-            client.v1.products.retrieve(product_id)
+            existing = client.v1.products.retrieve(product_id)
+            if getattr(existing, "name", None) != f"Growth Capital Group {plan['name']}":
+                client.v1.products.update(product_id, {"name": f"Growth Capital Group {plan['name']}"})
         except stripe.InvalidRequestError:
             client.v1.products.create({"id": product_id, "name": f"Growth Capital Group {plan['name']}",
                                        "description": plan["blurb"]})
@@ -4390,6 +4463,8 @@ def api_billing_checkout():
         return jsonify({"error": "Choose a paid plan and billing period"}), 400
     if current_user.tier == "founder":
         return jsonify({"error": "Founder accounts don't need a plan"}), 400
+    if plan["id"] == plans.PROMO_PLAN and plans.promo_active():
+        return jsonify({"error": f"{plan['name']} is free for registered accounts until {plans.PROMO_UNTIL.strftime('%d %B %Y').lstrip('0')}."}), 400
     user = _load_user(current_user.id) or {}
     profile = user.get("profile", {}) or {}
     billing = profile.get("billing") or {}
@@ -4453,6 +4528,8 @@ def api_billing():
         "pending_plan_name": plans.PLAN_NAMES.get(b.get("pending_plan") or "") if b.get("pending_plan") else None,
         "pending_at": b.get("pending_at"),
         "can_manage": bool(b.get("customer_id")), "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
+        "promo_plan_name": plans.PLAN_NAMES.get(plans.PROMO_PLAN) if plans.promo_active() and current_user.tier == "free" else None,
+        "promo_until": plans.PROMO_UNTIL.isoformat() if plans.promo_active() else None,
     })
 
 
@@ -6237,12 +6314,14 @@ def api_alpha_public_post(slug, post_id):
     public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
     public_item["image_url"] = _alpha_public_image_url(item)
     public_item["related_lesson"] = _alpha_public_related_lesson(item)
-    if _user_rank() < _rank(plans.ALPHA_FULL_MIN_PLAN):
+    level = item.get("level") if item.get("level") in plans.ALPHA_LEVEL_MIN_PLAN else "beginner"
+    need = plans.ALPHA_LEVEL_MIN_PLAN[level]
+    if _user_rank() < _rank(need) and not _alpha_sample_ok(level, post_id):
         body = public_item.get("body") or ""
         cut = body.rfind("\n\n", 0, plans.ALPHA_PREVIEW_CHARS)
         public_item["body"] = body[:cut if cut > 200 else plans.ALPHA_PREVIEW_CHARS].rstrip()
         public_item["locked"] = True
-        public_item["locked_plan"] = plans.ALPHA_FULL_MIN_PLAN
+        public_item["locked_plan"] = need
     return jsonify(public_item)
 
 

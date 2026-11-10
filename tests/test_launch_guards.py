@@ -140,9 +140,9 @@ def test_alpha_share_image_resized(monkeypatch):
 
 def test_canonical_links():
     c = A.app.test_client()
-    page = c.get("/learn/beginner/stocks?utm=x").data.decode()
+    page = c.get("/learn/beginner/start-early?utm=x").data.decode()
     assert page.count('rel="canonical"') == 1
-    assert 'href="https://www.growthcapitalgroup.co/learn/beginner/stocks"' in page
+    assert 'href="https://www.growthcapitalgroup.co/learn/beginner/start-early"' in page
     assert 'rel="canonical"' not in c.get("/login").data.decode()
     assert 'rel="canonical"' not in c.get("/zzz-not-a-page").data.decode()
     assert c.get("/").status_code == 200
