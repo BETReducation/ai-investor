@@ -170,3 +170,15 @@ def test_checkout_uses_persistent_price_and_tags_integration(env, monkeypatch):
     assert sess_params["line_items"][0]["price"] == "price_1"
     assert "price_data" not in sess_params["line_items"][0]
     assert sess_params["integration_identifier"].startswith("gcg-")
+
+
+def test_portal_plan_switch_uses_price_not_stale_metadata(env):
+    users, _ = env
+    send("evt_up", "checkout.session.completed", {"customer": "cus_1", "subscription": "sub_1", "payment_status": "paid",
+                                                  "metadata": {"username": "sam", "plan": "beginner"}})
+    assert users["sam"]["tier"] == "beginner"
+    send("evt_sw", "customer.subscription.updated", {
+        "id": "sub_1", "customer": "cus_1", "status": "active",
+        "metadata": {"username": "sam", "plan": "beginner"},
+        "items": {"data": [{"price": {"lookup_key": "gcg_pro_year_20000_exclusive", "recurring": {"interval": "year"}}}]}})
+    assert users["sam"]["tier"] == "pro"

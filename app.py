@@ -4352,6 +4352,14 @@ def _stripe_price_id(plan: dict, interval: str) -> str:
     return price_id
 
 
+def _plan_from_price(item: dict) -> str:
+    """Plan id from the subscription item's Price lookup_key (gcg_<plan>_<interval>_...). Metadata set at
+    checkout goes stale when a member switches plan in the portal, the Price doesn't."""
+    key = ((item.get("price") or {}).get("lookup_key") or "")
+    parts = key.split("_")
+    return parts[1] if len(parts) > 2 and parts[0] == "gcg" and parts[1] in PLAN_RANK else ""
+
+
 def _set_user_tier(username: str, tier: str, billing: dict | None = None) -> None:
     """Founders are partner accounts and are never moved by billing events."""
     user = _load_user(username)
@@ -4525,7 +4533,7 @@ def _handle_stripe_event(kind: str, obj: dict) -> None:
         status = "canceled" if kind.endswith("deleted") else obj.get("status", "")
         ended = status in ("canceled", "unpaid", "incomplete_expired")
         item = ((obj.get("items") or {}).get("data") or [{}])[0]
-        plan = meta.get("plan")
+        plan = _plan_from_price(item) or meta.get("plan")
         current = (_load_user(username) or {}).get("tier", "free")
         _set_user_tier(username, "free" if ended else (plan if plan in PLAN_RANK else current), {
             "status": status, "subscription_id": obj.get("id"), "customer_id": obj.get("customer"),
