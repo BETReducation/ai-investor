@@ -4089,7 +4089,7 @@ def newsletter_email_unsub_url(email: str, base_url: str) -> str:
     return f"{base_url.rstrip('/')}/newsletter/unsubscribe?e={quote(email)}&t={newsletter_email_token(email)}"
 
 
-_EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s.]{2,24}$")
+_NL_EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s.]{2,24}$")
 
 
 @app.route("/api/newsletter/signup", methods=["POST"])
@@ -4100,7 +4100,7 @@ def api_newsletter_signup():
     if data.get("website"):  # honeypot field real visitors never see
         return jsonify({"ok": True})
     email = str(data.get("email") or "").strip().lower()
-    if not _EMAIL_RE.match(email) or len(email) > 254:
+    if not _NL_EMAIL_RE.match(email) or len(email) > 254:
         return jsonify({"error": "Please enter a valid email address."}), 400
     if data.get("consent") is not True:
         return jsonify({"error": "Please tick the box to agree to receive the newsletter."}), 400
@@ -6733,7 +6733,8 @@ def _build_orb_pools() -> dict:
     return result
 
 
-threading.Thread(target=lambda: _refresh_orb_pools(), daemon=True).start()  # warm the cache at startup
+if not os.environ.get("GCG_SKIP_WARM"):  # tests set this so importing app makes no market-data calls
+    threading.Thread(target=lambda: _refresh_orb_pools(), daemon=True).start()  # warm the cache at startup
 
 # ── All-time highs for every Market Orbs symbol ───────────────────────────
 # One monthly-bar download of each symbol's full Yahoo history; the max monthly
@@ -6812,7 +6813,8 @@ def _warm_orb_ath():
     _refresh_orb_ath()
 
 
-threading.Thread(target=_warm_orb_ath, daemon=True).start()  # warm at startup
+if not os.environ.get("GCG_SKIP_WARM"):
+    threading.Thread(target=_warm_orb_ath, daemon=True).start()  # warm at startup
 
 
 @app.route("/api/dataviz/market-orbs/ath", methods=["GET"])
@@ -10228,7 +10230,24 @@ def _newsletter_recipients() -> list:
             print(f"[newsletter] skipping {username}: invalid email {email!r}")
             continue
         out.append({"username": username, "email": email, "name": profile.get("display_name") or username})
+    # Email-only subscribers from the site pop-up, minus anyone who is already a member (they get the member version).
+    have = {r["email"].lower() for r in out}
+    for email in _newsletter_list_emails():
+        if email not in have and _EMAIL_RE.match(email):
+            out.append({"username": None, "email": email, "name": ""})
     return out
+
+
+def _newsletter_list_emails() -> list:
+    if not DATABASE_URL:
+        return []
+    try:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT email FROM newsletter_signups WHERE NOT unsubscribed ORDER BY consented_at")
+            return [r[0] for r in cur.fetchall()]
+    except Exception as e:
+        print(f"[newsletter] couldn't read email-only list: {e}")
+        return []
 
 
 def _render_for_user(content: dict, username: str, name: str) -> tuple[str, str, str]:
@@ -10280,7 +10299,12 @@ def send_newsletter(send_date: _dt.date) -> int:
     recipients = _newsletter_recipients()
     messages = []
     for r in recipients:
-        html, text, unsub = _render_for_user(content, r["username"], r["name"])
+        if r["username"]:
+            html, text, unsub = _render_for_user(content, r["username"], r["name"])
+        else:
+            unsub = newsletter_email_unsub_url(r["email"], PUBLIC_BASE_URL)
+            html, text = newsletter_render.render_newsletter(content, name="", activity=None, progress=None,
+                                                             unsubscribe_url=unsub, base_url=PUBLIC_BASE_URL)
         messages.append(_newsletter_message(r["email"], subject, html, text, unsub))
     sent, err = _resend_send_batch(messages)
     # Only mark "sent" once at least one message actually went out — a total
@@ -10332,6 +10356,32 @@ def admin_newsletter_page():
     if not is_admin_user(current_user):
         abort(403)
     return send_from_directory("static", "admin-newsletter.html")
+
+
+@app.route("/api/admin/newsletter/subscribers", methods=["GET"])
+@login_required
+def api_newsletter_subscribers():
+    """Email-only sign-ups from the pop-up / PDF gate. ?format=csv downloads them."""
+    denied = _admin_only()
+    if denied:
+        return denied
+    rows = []
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT email, source, consented_at, unsubscribed FROM newsletter_signups ORDER BY consented_at DESC")
+            rows = cur.fetchall()
+    if request.args.get("format") == "csv":
+        import csv, io
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["email", "source", "consented_at", "unsubscribed"])
+        for e, src, at, un in rows:
+            w.writerow([e, src or "", at.isoformat() if at else "", "yes" if un else "no"])
+        return Response(buf.getvalue(), mimetype="text/csv",
+                        headers={"Content-Disposition": "attachment; filename=newsletter-subscribers.csv"})
+    return jsonify({"active": sum(1 for r in rows if not r[3]), "unsubscribed": sum(1 for r in rows if r[3]),
+                    "recent": [{"email": e, "source": src, "at": at.isoformat() if at else None, "unsubscribed": un}
+                               for e, src, at, un in rows[:50]]})
 
 
 @app.route("/api/admin/newsletter/list", methods=["GET"])

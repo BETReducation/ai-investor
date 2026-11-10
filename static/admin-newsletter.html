@@ -137,6 +137,12 @@ iframe { width: 100%; height: 900px; border: 1px solid var(--border); border-rad
 
   <div class="side">
     <div class="card">
+      <h2>Email-only subscribers</h2>
+      <div class="hint" id="subInfo">Loading…</div>
+      <div class="btns"><a class="btn ghost" href="/api/admin/newsletter/subscribers?format=csv" style="text-decoration:none">Download CSV</a></div>
+      <div class="hint" id="subRecent" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
       <h2>Status <span class="status" id="status">draft</span></h2>
       <div class="hint" id="recipInfo"></div>
       <div class="btns">
@@ -199,7 +205,7 @@ function fill() {
   $('approveBtn').disabled = locked;
   $('resendBtn').style.display = (issue.status === 'sent' || issue.status === 'failed') ? '' : 'none';
   $('sendInfo').textContent = `Sends Sunday ${issue.send_date} at 12:00 UK time` + (issue.sent_at ? ` · sent to ${issue.sent_count}` : '') + (issue.status === 'failed' ? ' · send failed, check Railway logs' : '');
-  $('recipInfo').textContent = `${issue.recipients} opted-in members will receive this once approved. Editing an approved issue returns it to draft.`;
+  $('recipInfo').textContent = `${issue.recipients} recipients (opted-in members plus email-only subscribers) will receive this once approved. Editing an approved issue returns it to draft.`;
 }
 
 function collect() {
@@ -318,6 +324,10 @@ async function loadPastIssues() {
   $('app').style.display = 'grid';
   fill(); preview(); loadPastIssues();
 })();
+fetch('/api/admin/newsletter/subscribers').then(r=>r.json()).then(j=>{
+  $('subInfo').textContent = `${j.active} active (these also get the weekly send, on top of members), ${j.unsubscribed} unsubscribed.`;
+  $('subRecent').innerHTML = (j.recent||[]).slice(0,8).map(x=>`${x.email.replace(/</g,'&lt;')} <span style="opacity:.6">· ${(x.source||'').replace(/</g,'&lt;')}</span>`).join('<br>');
+}).catch(()=>{ $('subInfo').textContent = 'Could not load subscribers.'; });
 </script>
 </body>
 </html>

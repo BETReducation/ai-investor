@@ -1,4 +1,4 @@
-// Email-capture pop-up (newsletter) with four triggers: timed engagement, scroll depth, desktop exit intent,
+// Sign-up pop-up: register free (with the plan options) or just the newsletter by email with four triggers: timed engagement, scroll depth, desktop exit intent,
 // and a gate on lesson-PDF downloads. Loaded from nav.js. Shows at most once per page view, never to signed-in
 // members, and stays quiet for 14 days after a dismissal (365 days after signing up).
 (function () {
@@ -9,7 +9,7 @@
 
   function getC(n) { var m = document.cookie.match('(?:^|; )' + n + '=([^;]*)'); return m ? m[1] : ''; }
   function setC(n, v, days) { document.cookie = n + '=' + v + ';max-age=' + days * 86400 + ';path=/;SameSite=Lax'; }
-  var member = false, shown = false, root = null, gatedHref = null, sawMe = false;
+  var PLANS = null, member = false, shown = false, root = null, gatedHref = null, sawMe = false;
 
   function quiet() { return member || getC('gcg_nl') || getC('gcg_nl_x'); }
 
@@ -21,6 +21,8 @@
     '#gcgNl label.c{display:flex;gap:8px;align-items:flex-start;margin:10px 0 14px;font-size:12.5px;color:var(--gcg-nl-mu,#5b6b80);cursor:pointer}#gcgNl label.c input{margin-top:3px;flex:none}' +
     '#gcgNl .go{width:100%;padding:13px;border:0;border-radius:10px;background:#f7931a;color:#fff;font:inherit;font-weight:700;cursor:pointer}#gcgNl .go[disabled]{opacity:.6}' +
     '#gcgNl .er{color:#d6453d;font-size:13px;margin:8px 0 0;min-height:1em}#gcgNl .hp{position:absolute;left:-9999px;opacity:0}' +
+    '#gcgNl .b{max-height:92vh;overflow:auto}#gcgNl .pls{display:grid;gap:6px;margin:0 0 14px}#gcgNl .pl{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:baseline;border:1px solid var(--gcg-nl-ln,#c9d3df);border-radius:10px;padding:8px 12px}#gcgNl .pl small{grid-column:1/-1;color:var(--gcg-nl-mu,#5b6b80);font-size:12.5px}#gcgNl .pr{justify-self:end;font-weight:800}#gcgNl .pr small{font-weight:400;color:var(--gcg-nl-mu,#5b6b80)}' +
+    '#gcgNl a.go{display:block;text-align:center;text-decoration:none;box-sizing:border-box}#gcgNl .pp{display:block;text-align:center;margin:8px 0 2px;font-size:13px;color:var(--gcg-nl-mu,#5b6b80)}#gcgNl .or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-size:12px;color:var(--gcg-nl-mu,#5b6b80)}#gcgNl .or:before,#gcgNl .or:after{content:"";flex:1;border-top:1px solid var(--gcg-nl-ln,#c9d3df)}#gcgNl .go.alt{background:transparent;color:inherit;border:1.5px solid var(--gcg-nl-ln,#c9d3df)}' +
     '@media(max-width:520px){#gcgNl{align-items:flex-end;padding:0}#gcgNl .b{max-width:none;border-radius:18px 18px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom))}}';
   var dark = '--gcg-nl-bg:#112240;--gcg-nl-tx:#eef2f7;--gcg-nl-mu:#93a4bb;--gcg-nl-ln:#2c4a78;';
   css += ':root[data-theme="dark"] #gcgNl{' + dark + '}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #gcgNl{' + dark + '}}';
@@ -41,19 +43,26 @@
     if (!document.getElementById('gcgNlCss')) { var st = document.createElement('style'); st.id = 'gcgNlCss'; st.textContent = css; document.head.appendChild(st); }
     var gate = mode === 'pdf';
     root = document.createElement('div'); root.id = 'gcgNl';
+    var reg = '/login?tab=register&next=' + encodeURIComponent(location.pathname + location.search);
+    var tiers = (PLANS || [{ id: 'free', name: 'Free', monthly: 0, blurb: 'Explore the basics and see how everything works.' }, { id: 'beginner', name: 'Beginner', monthly: 500, blurb: 'Full Alpha posts, intermediate lessons and the community chat.' }, { id: 'pro', name: 'Pro', monthly: 2000, blurb: 'Everything, including the full Backtester and Signals suite.' }]).map(function (p) {
+      return '<div class="pl"><b>' + p.name + '</b><span class="pr">' + (p.monthly ? '$' + (p.monthly / 100) + '<small>/mo</small>' : 'Free') + '</span><small>' + p.blurb + '</small></div>';
+    }).join('');
     root.innerHTML = '<div class="b" role="dialog" aria-modal="true" aria-labelledby="gcgNlT"><button class="x" type="button" aria-label="Close">×</button>' +
-      '<h2 id="gcgNlT">' + (gate ? 'Get your free PDF' : 'Get the weekly GCG newsletter') + '</h2>' +
-      '<p>' + (gate ? 'Enter your email and the download starts straight away. You will also get our weekly newsletter.' : 'Plain-English investing education and market history, once a week. Educational only, never advice.') + '</p>' +
+      '<h2 id="gcgNlT">' + (gate ? 'Free PDF: register or enter your email' : 'Join Growth Capital Group free') + '</h2>' +
+      '<p>' + (gate ? 'Register free and this PDF is yours, or just enter your email below and it downloads straight away.' : 'Create a free account for beginner lessons, selected data visualisations and the basic tools. Upgrade whenever you want more.') + '</p>' +
+      '<div class="pls">' + tiers + '</div>' +
+      '<a class="go reg" href="' + reg + '">Register free</a><a class="pp" href="/pricing">Compare plans in full</a>' +
+      '<div class="or"><span>or just the newsletter</span></div>' +
       '<form novalidate><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
       '<input type="email" name="email" placeholder="you@example.com" autocomplete="email" required aria-label="Email address">' +
       '<label class="c"><input type="checkbox" name="consent"><span>Yes, email me the weekly newsletter. Educational and historical content only. Unsubscribe any time.</span></label>' +
-      '<button class="go" type="submit">' + (gate ? 'Email me &amp; download' : 'Sign me up') + '</button><div class="er" role="alert"></div></form></div>';
+      '<button class="go alt" type="submit">' + (gate ? 'Email me &amp; download' : 'Newsletter only, no account') + '</button><div class="er" role="alert"></div></form></div>';
     document.body.appendChild(root);
     var f = root.querySelector('form'), er = root.querySelector('.er'), go = root.querySelector('.go');
     root.querySelector('.x').onclick = function () { close(true); };
     root.addEventListener('mousedown', function (e) { if (e.target === root) close(true); });
     document.addEventListener('keydown', onKey);
-    root.querySelector('input[type=email]').focus();
+    root.querySelector('.reg').focus();
     f.onsubmit = function (e) {
       e.preventDefault(); er.textContent = ''; go.disabled = true;
       fetch('/api/newsletter/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -97,6 +106,6 @@
     e.preventDefault(); gatedHref = a.href; shown = false; open('pdf');
   }, true);
 
-  fetch('/api/me', { credentials: 'include' }).then(function (r) { return r.json(); })
-    .then(function (d) { member = !!(d && d.authenticated); }).catch(function () {}).then(function () { sawMe = true; });
+  fetch('/api/plans', { credentials: 'include' }).then(function (r) { return r.json(); })
+    .then(function (d) { member = !!(d && d.me && d.me.authenticated); if (d && d.plans && d.plans.length) PLANS = d.plans; }).catch(function () {}).then(function () { sawMe = true; });
 })();

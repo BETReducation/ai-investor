@@ -131,10 +131,17 @@ def render_newsletter(content: dict, *, name: str, activity: dict, progress: dic
     text = [f"GROWTH CAPITAL GROUP: {subject}", "", f"Hi {first},", "", intro, ""]
 
     # 1. Personal stats
-    stats_html, stats_text = _stats_block(activity, progress)
-    parts.append(_section("01", "Your week", "Your week in numbers", GREEN, stats_html,
-                          _button("Open your profile", u("/profile", "stats"), GREEN)))
-    text += ["1. YOUR WEEK IN NUMBERS", stats_text, f"   {base}/profile", ""]
+    if activity is None:  # email-only subscriber: no account, so no personal stats. Point them at the free account instead.
+        msg = "Create a free account to see your own week here: lessons opened, backtests run and signals checked, plus your lesson progress."
+        stats_html = f'<p style="margin:0 0 14px;font-size:14px;color:{MUTED};line-height:1.6;">{escape(msg)}</p>'
+        parts.append(_section("01", "Your week", "Get your own weekly stats", GREEN, stats_html,
+                              _button("Create a free account", u("/login", "stats"), GREEN)))
+        text += ["1. GET YOUR OWN WEEKLY STATS", f"  {msg}", f"   {base}/login", ""]
+    else:
+        stats_html, stats_text = _stats_block(activity, progress)
+        parts.append(_section("01", "Your week", "Your week in numbers", GREEN, stats_html,
+                              _button("Open your profile", u("/profile", "stats"), GREEN)))
+        text += ["1. YOUR WEEK IN NUMBERS", stats_text, f"   {base}/profile", ""]
 
     # 2. Alpha roundup
     alpha = [a for a in content.get("alpha", []) if a.get("include", True)]
