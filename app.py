@@ -15,6 +15,8 @@ import yfinance as yf
 import pandas as pd
 import bcrypt
 import json
+import random
+import string
 import math
 import os
 import secrets
@@ -510,6 +512,14 @@ def _ensure_table() -> None:
                 day      DATE NOT NULL,
                 count    INT NOT NULL DEFAULT 0,
                 PRIMARY KEY (username, day)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS newsletter_signups (
+                email         TEXT PRIMARY KEY,
+                source        TEXT,
+                consented_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                unsubscribed  BOOLEAN NOT NULL DEFAULT FALSE
             )
         """)
         cur.execute("""
@@ -4069,11 +4079,57 @@ def _newsletter_unsub_page(msg: str) -> str:
             f'<p style="line-height:1.6;color:#444">{msg}</p><a href="/" style="color:#7c3aed">Back to the site</a></div>')
 
 
+def newsletter_email_token(email: str) -> str:
+    import hmac, hashlib
+    return hmac.new(app.secret_key.encode(), f"newsletter-email:{email}".encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def newsletter_email_unsub_url(email: str, base_url: str) -> str:
+    from urllib.parse import quote
+    return f"{base_url.rstrip('/')}/newsletter/unsubscribe?e={quote(email)}&t={newsletter_email_token(email)}"
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s.]{2,24}$")
+
+
+@app.route("/api/newsletter/signup", methods=["POST"])
+def api_newsletter_signup():
+    """Email-only newsletter list for the site pop-up and lesson-PDF gate. Stores the address with a
+    consent timestamp and where it was collected; re-subscribing clears a previous unsubscribe."""
+    data = request.get_json(silent=True) or {}
+    if data.get("website"):  # honeypot field real visitors never see
+        return jsonify({"ok": True})
+    email = str(data.get("email") or "").strip().lower()
+    if not _EMAIL_RE.match(email) or len(email) > 254:
+        return jsonify({"error": "Please enter a valid email address."}), 400
+    if data.get("consent") is not True:
+        return jsonify({"error": "Please tick the box to agree to receive the newsletter."}), 400
+    if _rate_limited("nl-signup", _client_ip(), 8, 3600):
+        return _too_many_requests()
+    source = re.sub(r"[^a-z0-9_\-/]", "", str(data.get("source") or "popup").lower())[:60] or "popup"
+    if not DATABASE_URL:
+        return jsonify({"error": "Sign-ups are unavailable right now."}), 503
+    with _db_conn() as conn, conn.cursor() as cur:
+        cur.execute("""INSERT INTO newsletter_signups (email, source) VALUES (%s, %s)
+                       ON CONFLICT (email) DO UPDATE SET unsubscribed = FALSE, consented_at = NOW()""", (email, source))
+    return jsonify({"ok": True})
+
+
 @app.route("/newsletter/unsubscribe", methods=["GET", "POST"])
 def newsletter_unsubscribe():
     import hmac
-    username = request.args.get("u", "")
     token = request.args.get("t", "")
+    email = request.args.get("e", "").strip().lower()
+    if email:
+        if not hmac.compare_digest(token, newsletter_email_token(email)):
+            return _newsletter_unsub_page("This unsubscribe link isn't valid."), 400
+        if DATABASE_URL:
+            with _db_conn() as conn, conn.cursor() as cur:
+                cur.execute("UPDATE newsletter_signups SET unsubscribed = TRUE WHERE email = %s", (email,))
+        if request.method == "POST":
+            return "", 200
+        return _newsletter_unsub_page("You're unsubscribed from the newsletter.")
+    username = request.args.get("u", "")
     if not username or not hmac.compare_digest(token, newsletter_unsub_token(username)):
         return _newsletter_unsub_page("This unsubscribe link isn't valid. You can change your preference any time in your profile."), 400
     users = _load_users()
@@ -4184,7 +4240,9 @@ def api_login():
 
 # ── Plans, gating and Stripe billing ────────────────────────────────────────
 
-STRIPE_API = "https://api.stripe.com/v1"
+STRIPE_API_VERSION = "2026-10-28.endive"
+_stripe_client_cache: dict = {}
+_stripe_price_cache: dict = {}
 
 
 def _rank(tier: str) -> int:
@@ -4253,13 +4311,45 @@ def billing_page():
     return send_from_directory("static", "billing.html")
 
 
-def _stripe(method: str, path: str, data: dict | None = None) -> dict:
-    resp = requests.request(method, STRIPE_API + path, data=data,
-                            auth=(os.environ["STRIPE_SECRET_KEY"], ""), timeout=15)
-    body = resp.json()
-    if resp.status_code >= 300:
-        raise RuntimeError(body.get("error", {}).get("message", "Stripe error"))
-    return body
+def _stripe_client():
+    """One client per key. Use a restricted key (rk_) with write access to Checkout Sessions,
+    Customers, Customer portal, Products and Prices, and Subscriptions."""
+    import stripe
+    key = os.environ["STRIPE_SECRET_KEY"]
+    if key not in _stripe_client_cache:
+        _stripe_client_cache.clear()
+        _stripe_client_cache[key] = stripe.StripeClient(key, stripe_version=STRIPE_API_VERSION)
+    return _stripe_client_cache[key]
+
+
+def _stripe_price_id(plan: dict, interval: str) -> str:
+    """One Product per plan, one Price per interval, found by lookup_key and created on first use.
+    Amount and tax behaviour are in the key because a Price can't be edited: change plans.py
+    or STRIPE_TAX_BEHAVIOR and a fresh Price is made, old subscribers keep theirs."""
+    import stripe
+    amount = plan["annual"] if interval == "year" else plan["monthly"]
+    behavior = "inclusive" if os.environ.get("STRIPE_TAX_BEHAVIOR") == "inclusive" else "exclusive"
+    key = f"gcg_{plan['id']}_{interval}_{amount}_{behavior}"
+    cache_key = (os.environ.get("STRIPE_SECRET_KEY", ""), key)
+    if cache_key in _stripe_price_cache:
+        return _stripe_price_cache[cache_key]
+    client = _stripe_client()
+    found = client.v1.prices.list({"lookup_keys": [key], "active": True, "limit": 1}).data
+    if found:
+        price_id = found[0].id
+    else:
+        product_id = f"gcg_{plan['id']}"
+        try:
+            client.v1.products.retrieve(product_id)
+        except stripe.InvalidRequestError:
+            client.v1.products.create({"id": product_id, "name": f"Growth Capital Group {plan['name']}",
+                                       "description": plan["blurb"]})
+        price_id = client.v1.prices.create({
+            "product": product_id, "currency": "usd", "unit_amount": amount,
+            "recurring": {"interval": interval}, "lookup_key": key, "tax_behavior": behavior,
+        }).id
+    _stripe_price_cache[cache_key] = price_id
+    return price_id
 
 
 def _set_user_tier(username: str, tier: str, billing: dict | None = None) -> None:
@@ -4298,41 +4388,34 @@ def api_billing_checkout():
     if billing.get("subscription_id") and billing.get("status") in ("active", "trialing", "past_due"):
         return jsonify({"error": "You already have a subscription. Use Manage billing to change it.", "manage": True}), 409
     base = request.host_url.rstrip("/")
-    form = {
-        "mode": "subscription",
-        "success_url": f"{base}/billing?success=1",
-        "cancel_url": f"{base}/pricing?cancelled=1",
-        "client_reference_id": current_user.id,
-        "allow_promotion_codes": "true",
-        "line_items[0][quantity]": 1,
-        "line_items[0][price_data][currency]": "usd",
-        "line_items[0][price_data][unit_amount]": plan["annual"] if interval == "year" else plan["monthly"],
-        "line_items[0][price_data][recurring][interval]": interval,
-        "line_items[0][price_data][product_data][name]": f"Growth Capital Group {plan['name']} ({'annual' if interval == 'year' else 'monthly'})",
-        "metadata[username]": current_user.id, "metadata[plan]": plan["id"],
-        "subscription_data[metadata][username]": current_user.id, "subscription_data[metadata][plan]": plan["id"],
-    }
-    # Stripe Tax: opt in once registrations are set up in the dashboard (STRIPE_AUTOMATIC_TAX=1).
-    # Prices are treated as tax-exclusive unless STRIPE_TAX_BEHAVIOR=inclusive.
-    if os.environ.get("STRIPE_AUTOMATIC_TAX") == "1":
-        form["automatic_tax[enabled]"] = "true"
-        form["billing_address_collection"] = "required"
-        form["tax_id_collection[enabled]"] = "true"
-        form["line_items[0][price_data][tax_behavior]"] = (
-            "inclusive" if os.environ.get("STRIPE_TAX_BEHAVIOR") == "inclusive" else "exclusive")
-        if billing.get("customer_id"):
-            form["customer_update[address]"] = "auto"
-            form["customer_update[name]"] = "auto"
-    if billing.get("customer_id"):
-        form["customer"] = billing["customer_id"]
-    elif profile.get("email"):
-        form["customer_email"] = profile["email"]
     try:
-        session_obj = _stripe("POST", "/checkout/sessions", form)
+        form = {
+            "mode": "subscription",
+            "success_url": f"{base}/billing?success=1",
+            "cancel_url": f"{base}/pricing?cancelled=1",
+            "client_reference_id": current_user.id,
+            "allow_promotion_codes": True,
+            "line_items": [{"price": _stripe_price_id(plan, interval), "quantity": 1}],
+            "metadata": {"username": current_user.id, "plan": plan["id"]},
+            "subscription_data": {"metadata": {"username": current_user.id, "plan": plan["id"]}},
+            "integration_identifier": "gcg-" + "".join(random.choices(string.ascii_lowercase, k=8)),
+        }
+        # Stripe Tax: opt in once registrations exist in the Dashboard (STRIPE_AUTOMATIC_TAX=1).
+        if os.environ.get("STRIPE_AUTOMATIC_TAX") == "1":
+            form["automatic_tax"] = {"enabled": True}
+            form["billing_address_collection"] = "required"
+            form["tax_id_collection"] = {"enabled": True}
+            if billing.get("customer_id"):
+                form["customer_update"] = {"address": "auto", "name": "auto"}
+        if billing.get("customer_id"):
+            form["customer"] = billing["customer_id"]
+        elif profile.get("email"):
+            form["customer_email"] = profile["email"]
+        session_obj = _stripe_client().v1.checkout.sessions.create(form)
     except Exception as e:
         print(f"[stripe checkout failed] {e}")
         return jsonify({"error": "We couldn't start checkout. Please try again."}), 502
-    return jsonify({"url": session_obj["url"]})
+    return jsonify({"url": session_obj.url})
 
 
 @app.route("/api/billing/portal", methods=["POST"])
@@ -4342,12 +4425,12 @@ def api_billing_portal():
     if not os.environ.get("STRIPE_SECRET_KEY") or not billing.get("customer_id"):
         return jsonify({"error": "No billing account found"}), 404
     try:
-        portal = _stripe("POST", "/billing_portal/sessions",
-                         {"customer": billing["customer_id"], "return_url": request.host_url.rstrip("/") + "/billing"})
+        portal = _stripe_client().v1.billing_portal.sessions.create(
+            {"customer": billing["customer_id"], "return_url": request.host_url.rstrip("/") + "/billing"})
     except Exception as e:
         print(f"[stripe portal failed] {e}")
         return jsonify({"error": "We couldn't open billing. Please try again."}), 502
-    return jsonify({"url": portal["url"]})
+    return jsonify({"url": portal.url})
 
 
 @app.route("/api/billing")
@@ -4361,16 +4444,6 @@ def api_billing():
         "renews_at": b.get("current_period_end"), "cancel_at_period_end": bool(b.get("cancel_at_period_end")),
         "can_manage": bool(b.get("customer_id")), "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
     })
-
-
-def _stripe_signature_ok(payload: bytes, header: str, secret: str) -> bool:
-    parts = [p.split("=", 1) for p in header.split(",") if "=" in p]
-    ts = next((v for k, v in parts if k == "t"), "")
-    sigs = [v for k, v in parts if k == "v1"]
-    if not ts.isdigit() or abs(time.time() - int(ts)) > 300:
-        return False
-    expected = hmac.new(secret.encode(), ts.encode() + b"." + payload, hashlib.sha256).hexdigest()
-    return any(hmac.compare_digest(expected, s) for s in sigs)
 
 
 def _stripe_claim_event(event_id: str) -> bool:
@@ -4471,9 +4544,15 @@ def _handle_stripe_event(kind: str, obj: dict) -> None:
 @app.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
     secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-    if not secret or not _stripe_signature_ok(request.get_data(), request.headers.get("Stripe-Signature", ""), secret):
+    import stripe
+    if not secret:
         return "", 400
-    event = request.get_json(silent=True) or {}
+    payload = request.get_data()
+    try:
+        stripe.Webhook.construct_event(payload, request.headers.get("Stripe-Signature", ""), secret)
+    except (ValueError, stripe.SignatureVerificationError):
+        return "", 400
+    event = json.loads(payload)
     event_id = event.get("id", "")
     if event_id and not _stripe_claim_event(event_id):
         return "", 200
@@ -6989,7 +7068,7 @@ def _bb_compute(sym: str, name: str, kind: str) -> dict | None:
     return {"symbol": sym, "name": name, "as_of": close.index[-1].date().isoformat(), "indicators": ind}
 
 
-# Top 3 / bottom 3 by bull-bear score across every tracked market. Scores each one with the same
+# Top 10 / bottom 10 by bull-bear score across every tracked market. Scores each one with the same
 # calculation as the meter (sharing its cache), in the background, and serves the last result meanwhile.
 _bb_rank: dict = {"at": 0.0, "data": None, "busy": False}
 
@@ -7023,7 +7102,7 @@ def _bb_rank_build() -> None:
         rows = sorted(({"symbol": sym, "name": d["name"], "kind": info[sym][1], "score": _bb_score(d)} for sym, d in got),
                       key=lambda r: (-r["score"], r["name"]))
         _bb_rank.update(at=time.monotonic(), data={"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-                                                   "count": len(rows), "top": rows[:3], "bottom": rows[-3:][::-1]})
+                                                   "count": len(rows), "top": rows[:10], "bottom": rows[-10:][::-1]})
     finally:
         _bb_rank["busy"] = False
 

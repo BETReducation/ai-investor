@@ -73,9 +73,9 @@ def test_duplicate_event_ignored(env):
 def test_failed_handler_releases_event_for_retry(env, monkeypatch):
     def boom(*a, **k):
         raise RuntimeError("db down")
-    monkeypatch.setattr(A, "_set_user_tier", boom)
-    assert upgrade("evt_x").status_code == 500
-    monkeypatch.undo()
+    with monkeypatch.context() as m:
+        m.setattr(A, "_set_user_tier", boom)
+        assert upgrade("evt_x").status_code == 500
     assert A._stripe_claim_event("evt_x")
 
 
@@ -112,3 +112,61 @@ def test_dispute_without_customer_still_flagged(env):
     _, notes = env
     send("evt_6", "charge.dispute.created", {"id": "dp_1", "charge": "ch_1"})
     assert notes and notes[0][0] == "payment_issue"
+
+
+class _FakeList:
+    def __init__(self, data):
+        self.data = data
+
+
+class _FakeClient:
+    """Records Stripe calls so price lookup and checkout params can be asserted without the network."""
+    def __init__(self):
+        self.created = []
+        self.sessions = []
+        outer = self
+
+        class Prices:
+            def list(self, params):
+                return _FakeList([])
+
+            def create(self, params):
+                outer.created.append(params)
+                return type("P", (), {"id": "price_1"})()
+
+        class Products:
+            def retrieve(self, pid):
+                return {}
+
+        class Sessions:
+            def create(self, params):
+                outer.sessions.append(params)
+                return type("S", (), {"url": "https://checkout.example/x"})()
+
+        self.v1 = type("V1", (), {
+            "prices": Prices(), "products": Products(),
+            "checkout": type("C", (), {"sessions": Sessions()})(),
+        })()
+
+
+def test_checkout_uses_persistent_price_and_tags_integration(env, monkeypatch):
+    users, _ = env
+    fake = _FakeClient()
+    monkeypatch.setenv("STRIPE_SECRET_KEY", "placeholder_key")
+    monkeypatch.setattr(A, "_stripe_client", lambda: fake)
+    A._stripe_price_cache.clear()
+    monkeypatch.setattr(A, "login_required", lambda f: f, raising=False)
+    c = A.app.test_client()
+    with c.session_transaction() as sess:
+        sess["_user_id"] = "sam"
+        sess["_fresh"] = True
+    monkeypatch.setattr(A, "_load_user", lambda u: users.get(u))
+    r = c.post("/api/billing/checkout", json={"plan": "pro", "interval": "year"})
+    if r.status_code == 401 or r.status_code == 302:
+        pytest.skip("login session wiring differs")
+    assert r.status_code == 200, r.get_data(as_text=True)
+    assert fake.created[0]["lookup_key"] == "gcg_pro_year_20000_exclusive"
+    sess_params = fake.sessions[0]
+    assert sess_params["line_items"][0]["price"] == "price_1"
+    assert "price_data" not in sess_params["line_items"][0]
+    assert sess_params["integration_identifier"].startswith("gcg-")

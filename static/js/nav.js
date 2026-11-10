@@ -538,3 +538,6 @@ DATAVIZ_MENU_HTML +
     track('video_play', src.split('?')[0].slice(-120));
   }, true);
 })();
+
+// Newsletter pop-up (timed / scroll / exit-intent triggers and the lesson-PDF email gate).
+(function () { var s = document.createElement('script'); s.src = '/static/js/newsletter-popup.js'; s.defer = true; document.head.appendChild(s); })();
