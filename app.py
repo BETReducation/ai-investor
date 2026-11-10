@@ -4305,6 +4305,17 @@ def api_billing_checkout():
         "metadata[username]": current_user.id, "metadata[plan]": plan["id"],
         "subscription_data[metadata][username]": current_user.id, "subscription_data[metadata][plan]": plan["id"],
     }
+    # Stripe Tax: opt in once registrations are set up in the dashboard (STRIPE_AUTOMATIC_TAX=1).
+    # Prices are treated as tax-exclusive unless STRIPE_TAX_BEHAVIOR=inclusive.
+    if os.environ.get("STRIPE_AUTOMATIC_TAX") == "1":
+        form["automatic_tax[enabled]"] = "true"
+        form["billing_address_collection"] = "required"
+        form["tax_id_collection[enabled]"] = "true"
+        form["line_items[0][price_data][tax_behavior]"] = (
+            "inclusive" if os.environ.get("STRIPE_TAX_BEHAVIOR") == "inclusive" else "exclusive")
+        if billing.get("customer_id"):
+            form["customer_update[address]"] = "auto"
+            form["customer_update[name]"] = "auto"
     if billing.get("customer_id"):
         form["customer"] = billing["customer_id"]
     elif profile.get("email"):
@@ -4365,7 +4376,7 @@ def stripe_webhook():
     kind = event.get("type", "")
     meta = obj.get("metadata") or {}
     username, plan = meta.get("username"), meta.get("plan")
-    if kind == "checkout.session.completed" and username and plan in PLAN_RANK:
+    if kind == "checkout.session.completed" and username and plan in PLAN_RANK and obj.get("payment_status") in ("paid", "no_payment_required"):
         _set_user_tier(username, plan, {"customer_id": obj.get("customer"), "subscription_id": obj.get("subscription"),
                                         "status": "active"})
         gcg_notify.record("member_joined", username, f"{username} upgraded to {plan}", "/admin")
