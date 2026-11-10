@@ -49,6 +49,8 @@ from api.backtest import run_backtest
 from api.metrics import calculate_metrics
 from api import patterns as pattern_engine
 from newsletter_render import render_alert_email
+import plans
+from plans import PLAN_RANK, PAID_TIERS
 from api.market_context import enrich_trades_with_sector_context
 
 from marketdata import router as marketdata_router
@@ -911,7 +913,7 @@ def _extract_backtest_calc_params(args) -> dict:
 
 VALID_PERIODS = {"1d", "5d", "60d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 
-TIER_RANKS = {"free": 0, "pro": 1, "founder": 2}
+TIER_RANKS = dict(PLAN_RANK)
 
 # Per-feature entitlement levels, independent of account tier so any one of them
 # can be hand-overridden by admin (comped access, support fixes) without changing
@@ -925,6 +927,7 @@ FEATURE_LEVELS = {
 }
 DEFAULT_ENTITLEMENTS_BY_TIER = {
     "free": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
+    "beginner": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
     "pro": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
     "founder": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
 }
@@ -4172,6 +4175,213 @@ def api_login():
     })
 
 
+# ── Plans, gating and Stripe billing ────────────────────────────────────────
+
+STRIPE_API = "https://api.stripe.com/v1"
+
+
+def _rank(tier: str) -> int:
+    return PLAN_RANK.get(tier or "free", 0)
+
+
+def _user_rank() -> int:
+    return _rank(getattr(current_user, "tier", "free")) if current_user.is_authenticated else 0
+
+
+def _gate_map() -> dict:
+    """{path: minimum plan} for everything locked behind a paid plan."""
+    gates = {}
+    for l in LESSON_PAGES:
+        need = plans.LESSON_LEVEL_MIN_PLAN.get(l["level"], "free")
+        if need != "free":
+            gates[f"/learn/{l['level']}/{l['slug']}"] = need
+    for e in EXPLAINERS:
+        need = plans.EXPLAINER_PART_MIN_PLAN.get(e["part"], "free")
+        if need != "free":
+            gates[f"/static/explainers/{e['slug']}/index.html"] = need
+    for slug, need in plans.DATAVIZ_MIN_PLAN.items():
+        gates[f"/tools/data-visualisation/{slug}"] = need
+    return gates
+
+
+@app.before_request
+def _plan_gate():
+    """Direct visits to a locked page land on the pricing page; the links to it stay
+    visible (greyed, with an upgrade prompt) via static/js/gate.js."""
+    if request.method != "GET" or request.path.startswith("/api/"):
+        return None
+    path = request.path.rstrip("/") or "/"
+    if path.startswith("/static/explainers/"):
+        path = "/".join(path.split("/")[:4]) + "/index.html"
+    need = _gate_map().get(path)
+    if need and _user_rank() < _rank(need):
+        from urllib.parse import quote
+        return redirect(f"/pricing?need={need}&from={quote(request.path)}")
+    return None
+
+
+@app.route("/api/plans")
+def api_plans():
+    return jsonify({
+        "plans": plans.PLANS,
+        "compare": plans.COMPARE,
+        "gates": _gate_map(),
+        "names": plans.PLAN_NAMES,
+        "rank": PLAN_RANK,
+        "me": {"authenticated": current_user.is_authenticated,
+               "tier": getattr(current_user, "tier", "free") if current_user.is_authenticated else "free"},
+        "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
+    })
+
+
+@app.route("/pricing")
+def pricing_page():
+    return send_from_directory("static", "pricing.html")
+
+
+@app.route("/billing")
+def billing_page():
+    if not current_user.is_authenticated:
+        return redirect("/login?next=/billing")
+    return send_from_directory("static", "billing.html")
+
+
+def _stripe(method: str, path: str, data: dict | None = None) -> dict:
+    resp = requests.request(method, STRIPE_API + path, data=data,
+                            auth=(os.environ["STRIPE_SECRET_KEY"], ""), timeout=15)
+    body = resp.json()
+    if resp.status_code >= 300:
+        raise RuntimeError(body.get("error", {}).get("message", "Stripe error"))
+    return body
+
+
+def _set_user_tier(username: str, tier: str, billing: dict | None = None) -> None:
+    """Founders are partner accounts and are never moved by billing events."""
+    user = _load_user(username)
+    if not user or user.get("tier") == "founder":
+        return
+    old_ent = dict(user.get("entitlements") or {})
+    if user.get("tier") != tier:
+        user["tier"] = tier
+        user["entitlements"] = default_entitlements(tier)
+        users = {username: user}
+        for feature in ("backtester", "signals"):
+            _clear_custom_symbols_on_downgrade(users, username, old_ent.get(feature), user["entitlements"].get(feature))
+    profile = user.get("profile", {}) or {}
+    profile["billing"] = {**(profile.get("billing") or {}), **(billing or {})}
+    user["profile"] = profile
+    _save_user(username, user)
+
+
+@app.route("/api/billing/checkout", methods=["POST"])
+@login_required
+def api_billing_checkout():
+    if not os.environ.get("STRIPE_SECRET_KEY"):
+        return jsonify({"error": "Payments aren't switched on yet. Please check back soon."}), 503
+    data = request.get_json(silent=True) or {}
+    plan = next((p for p in plans.PLANS if p["id"] == data.get("plan") and p["monthly"]), None)
+    interval = data.get("interval")
+    if not plan or interval not in ("month", "year"):
+        return jsonify({"error": "Choose a paid plan and billing period"}), 400
+    if current_user.tier == "founder":
+        return jsonify({"error": "Founder accounts don't need a plan"}), 400
+    user = _load_user(current_user.id) or {}
+    profile = user.get("profile", {}) or {}
+    billing = profile.get("billing") or {}
+    if billing.get("subscription_id") and billing.get("status") in ("active", "trialing", "past_due"):
+        return jsonify({"error": "You already have a subscription. Use Manage billing to change it.", "manage": True}), 409
+    base = request.host_url.rstrip("/")
+    form = {
+        "mode": "subscription",
+        "success_url": f"{base}/billing?success=1",
+        "cancel_url": f"{base}/pricing?cancelled=1",
+        "client_reference_id": current_user.id,
+        "allow_promotion_codes": "true",
+        "line_items[0][quantity]": 1,
+        "line_items[0][price_data][currency]": "usd",
+        "line_items[0][price_data][unit_amount]": plan["annual"] if interval == "year" else plan["monthly"],
+        "line_items[0][price_data][recurring][interval]": interval,
+        "line_items[0][price_data][product_data][name]": f"Growth Capital Group {plan['name']} ({'annual' if interval == 'year' else 'monthly'})",
+        "metadata[username]": current_user.id, "metadata[plan]": plan["id"],
+        "subscription_data[metadata][username]": current_user.id, "subscription_data[metadata][plan]": plan["id"],
+    }
+    if billing.get("customer_id"):
+        form["customer"] = billing["customer_id"]
+    elif profile.get("email"):
+        form["customer_email"] = profile["email"]
+    try:
+        session_obj = _stripe("POST", "/checkout/sessions", form)
+    except Exception as e:
+        print(f"[stripe checkout failed] {e}")
+        return jsonify({"error": "We couldn't start checkout. Please try again."}), 502
+    return jsonify({"url": session_obj["url"]})
+
+
+@app.route("/api/billing/portal", methods=["POST"])
+@login_required
+def api_billing_portal():
+    billing = ((_load_user(current_user.id) or {}).get("profile", {}) or {}).get("billing") or {}
+    if not os.environ.get("STRIPE_SECRET_KEY") or not billing.get("customer_id"):
+        return jsonify({"error": "No billing account found"}), 404
+    try:
+        portal = _stripe("POST", "/billing_portal/sessions",
+                         {"customer": billing["customer_id"], "return_url": request.host_url.rstrip("/") + "/billing"})
+    except Exception as e:
+        print(f"[stripe portal failed] {e}")
+        return jsonify({"error": "We couldn't open billing. Please try again."}), 502
+    return jsonify({"url": portal["url"]})
+
+
+@app.route("/api/billing")
+@login_required
+def api_billing():
+    user = _load_user(current_user.id) or {}
+    b = (user.get("profile", {}) or {}).get("billing") or {}
+    return jsonify({
+        "tier": current_user.tier, "plan_name": plans.PLAN_NAMES.get(current_user.tier, "Free"),
+        "interval": b.get("interval"), "status": b.get("status"),
+        "renews_at": b.get("current_period_end"), "cancel_at_period_end": bool(b.get("cancel_at_period_end")),
+        "can_manage": bool(b.get("customer_id")), "payments_ready": bool(os.environ.get("STRIPE_SECRET_KEY")),
+    })
+
+
+def _stripe_signature_ok(payload: bytes, header: str, secret: str) -> bool:
+    parts = [p.split("=", 1) for p in header.split(",") if "=" in p]
+    ts = next((v for k, v in parts if k == "t"), "")
+    sigs = [v for k, v in parts if k == "v1"]
+    if not ts.isdigit() or abs(time.time() - int(ts)) > 300:
+        return False
+    expected = hmac.new(secret.encode(), ts.encode() + b"." + payload, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, s) for s in sigs)
+
+
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+    if not secret or not _stripe_signature_ok(request.get_data(), request.headers.get("Stripe-Signature", ""), secret):
+        return "", 400
+    event = request.get_json(silent=True) or {}
+    obj = (event.get("data") or {}).get("object") or {}
+    kind = event.get("type", "")
+    meta = obj.get("metadata") or {}
+    username, plan = meta.get("username"), meta.get("plan")
+    if kind == "checkout.session.completed" and username and plan in PLAN_RANK:
+        _set_user_tier(username, plan, {"customer_id": obj.get("customer"), "subscription_id": obj.get("subscription"),
+                                        "status": "active"})
+        gcg_notify.record("member_joined", username, f"{username} upgraded to {plan}", "/admin")
+    elif kind in ("customer.subscription.updated", "customer.subscription.deleted") and username:
+        status = "canceled" if kind.endswith("deleted") else obj.get("status", "")
+        ended = status in ("canceled", "unpaid", "incomplete_expired")
+        item = ((obj.get("items") or {}).get("data") or [{}])[0]
+        _set_user_tier(username, "free" if ended else (plan if plan in PLAN_RANK else "free"), {
+            "status": status, "subscription_id": obj.get("id"), "customer_id": obj.get("customer"),
+            "interval": (item.get("price") or item.get("plan") or {}).get("interval"),
+            "current_period_end": obj.get("current_period_end"),
+            "cancel_at_period_end": bool(obj.get("cancel_at_period_end")),
+        })
+    return "", 200
+
+
 # ── Onboarding, email verification, dashboard ───────────────────────────────
 
 REFERRAL_SOURCES = {"youtube", "tiktok", "instagram", "x", "facebook", "google", "friend", "podcast", "other"}
@@ -4315,7 +4525,7 @@ def _dashboard_chat() -> dict:
     topics read-only (posting is partner-only)."""
     state = gcg_chat.store.read()
     threads = {t["id"]: t for t in state["threads"]}
-    role = ("@" + current_user.id) if current_user.tier in ("pro", "founder") else None
+    role = ("@" + current_user.id) if current_user.tier in PAID_TIERS else None
     if role and current_user.tier == "founder" and getattr(current_user, "alpha_role", None):
         role = current_user.alpha_role
     if role:
@@ -5810,6 +6020,12 @@ def api_alpha_public_post(slug, post_id):
     public_item = {k: item.get(k) for k in _ALPHA_PUBLIC_FIELDS}
     public_item["image_url"] = _alpha_public_image_url(item)
     public_item["related_lesson"] = _alpha_public_related_lesson(item)
+    if _user_rank() < _rank(plans.ALPHA_FULL_MIN_PLAN):
+        body = public_item.get("body") or ""
+        cut = body.rfind("\n\n", 0, plans.ALPHA_PREVIEW_CHARS)
+        public_item["body"] = body[:cut if cut > 200 else plans.ALPHA_PREVIEW_CHARS].rstrip()
+        public_item["locked"] = True
+        public_item["locked_plan"] = plans.ALPHA_FULL_MIN_PLAN
     return jsonify(public_item)
 
 
@@ -5933,6 +6149,7 @@ def alpha_post_page(slug, post_id):
 # non-lesson route is added.
 SEARCH_PAGE_INDEX = [
     {"title": "Home", "url": "/", "sub": "Growth Capital Group"},
+    {"title": "Plans and pricing", "url": "/pricing", "sub": "Free, Beginner and Pro plans"},
     {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
     {"title": "Company", "url": "/company", "sub": "Growth Capital Group structure"},
     {"title": "Privacy and cookies", "url": "/privacy", "sub": "Analytics and cookie policy"},

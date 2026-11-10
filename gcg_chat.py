@@ -17,6 +17,7 @@ from flask_login import current_user
 
 import gcg_notify
 from docstore import DocStore
+from plans import PAID_TIERS
 
 bp = Blueprint("gcg_chat", __name__)
 
@@ -143,8 +144,8 @@ def _api(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return jsonify({"error": "Login required"}), 401
-        if getattr(current_user, "tier", None) not in ("pro", "founder"):
-            return jsonify({"error": "Posting in GCG Chat is for paid plans", "tier_required": "pro"}), 403
+        if getattr(current_user, "tier", None) not in PAID_TIERS:
+            return jsonify({"error": "Posting in GCG Chat is for paid plans", "tier_required": "beginner"}), 403
         try:
             return fn(*args, **kwargs)
         except ChatError as e:
@@ -158,7 +159,7 @@ def chat_state():
     """Public read. Posting and every other endpoint stay partner-only."""
     state = _read()
     me = None
-    if current_user.is_authenticated and current_user.tier in ("pro", "founder"):
+    if current_user.is_authenticated and current_user.tier in PAID_TIERS:
         me = _who()
     partner = current_user.is_authenticated and _is_partner()
     return jsonify({"me": me, "partner": partner, "quiet_days": QUIET_DAYS,

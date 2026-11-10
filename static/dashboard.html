@@ -62,7 +62,7 @@ body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: v
       <h1 id="hello">Dashboard</h1>
       <p id="subhead"></p>
     </div>
-    <a class="btn" href="/profile">Profile &amp; settings</a>
+    <a class="btn" href="/billing">Plan &amp; billing</a> <a class="btn" href="/profile">Profile &amp; settings</a>
   </div>
 
   <div id="banners"></div>
@@ -84,11 +84,11 @@ function tile(cls, title, link, body, locked) {
   return `<section class="tile ${cls}${locked ? ' locked' : ''}">
     ${locked ? '<span class="lock">🔒 ' + esc(locked.label) + '</span>' : ''}
     <h2><span>${title}</span>${link && !locked ? `<a href="${link[1]}">${link[0]} →</a>` : ''}</h2>${body}
-    ${locked ? `<a class="btn upgrade" style="align-self:flex-start" href="/profile">Unlock with ${esc(locked.label)}</a>` : ''}
+    ${locked ? `<a class="btn upgrade" style="align-self:flex-start" href="/pricing">Unlock with ${esc(locked.label)}</a>` : ''}
   </section>`;
 }
 
-function up(text) { return `<div class="muted">🔒 ${text}</div><a class="btn" style="align-self:flex-start" href="/profile">See Pro</a>`; }
+function up(text) { return `<div class="muted">🔒 ${text}</div><a class="btn" style="align-self:flex-start" href="/pricing">See plans</a>`; }
 
 function usageBar(u) {
   if (!u) return '<div class="muted">Unlimited on your plan.</div>';

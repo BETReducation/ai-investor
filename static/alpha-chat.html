@@ -160,7 +160,7 @@ const isQuiet = t => !t.closed && (Date.now() - new Date(t.last_activity)) > S.q
 function render() {
   const list = topics();
   let h = `<div class="toolbar"><span class="count">${list.length} topic${list.length === 1 ? '' : 's'}, newest first</span>
-    ${S.me ? `<button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button>` : '<span class="hint">Read-only. Posting is open to Pro and Founder members.</span>'}</div>`;
+    ${S.me ? `<button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button>` : '<span class="hint">Read-only. <a href="/pricing">Posting is open to any paid plan.</a></span>'}</div>`;
   if (composing) h += newTopicForm();
   h += list.length ? list.map(topicHtml).join('') : '<div class="notice">No topics yet.</div>';
   $app.innerHTML = h;

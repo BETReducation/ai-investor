@@ -563,6 +563,7 @@ function buildTableOfContents(bodyEl) {
     const res = await fetch(`/api/alpha/${slug}/post/${postId}`);
     if (!res.ok) { showNotFound(); return; }
     const item = await res.json();
+    if (item.locked) document.getElementById('postBody').insertAdjacentHTML('afterend', '<div style="margin-top:28px;padding:22px;border:1px solid var(--green);border-radius:14px;text-align:center"><b>Keep reading</b><p style="color:var(--muted);margin:8px 0 14px;font-size:14px">The full post is part of the Beginner plan and above.</p><a href="/pricing?need=beginner" style="background:var(--green);color:#04110d;font-weight:700;padding:10px 20px;border-radius:10px;text-decoration:none">See plans</a></div>');
     const authorName = AUTHOR_NAMES[slug];
 
     document.title = `${item.title || 'Post'} — ${authorName} — Growth Capital Group`;

@@ -179,6 +179,7 @@ DATAVIZ_MENU_HTML +
 '        <li><a href="/partners">Partners</a></li>' +
 '      </ul>' +
 '    </li>' +
+'    <li><a href="/pricing">Pricing</a></li>' +
 '    <li id="navAdminMobileLi" class="nav-admin-mobile-li"><a href="/admin">Admin</a></li>' +
 '  </ul>' +
 '  </div>' +
@@ -211,6 +212,7 @@ DATAVIZ_MENU_HTML +
     document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">');
   }
   document.write(NAV_HTML);
+  document.write('<script src="/static/js/gate.js" defer><\/script>');
 
   // Apply the arm-coloured background tint + bottom border immediately, so
   // there's no flash of the neutral default before the scroll listener

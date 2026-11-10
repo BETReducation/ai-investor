@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plans and Pricing — Growth Capital Group</title>
+<meta name="description" content="Free, Beginner and Pro plans for Growth Capital Group's investing education, tools and research. Educational content only, never advice.">
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 110px 5% 80px; }
+h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 40px; text-align: center; }
+.lead { text-align: center; color: var(--muted); margin: 10px auto 26px; max-width: 560px; line-height: 1.6; }
+.notice { background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.35); border-radius: 12px; padding: 12px 18px; margin: 0 auto 22px; max-width: 700px; font-size: 14px; text-align: center; }
+.toggle { display: flex; justify-content: center; gap: 4px; margin-bottom: 30px; }
+.toggle button { font: inherit; font-size: 14px; font-weight: 600; padding: 9px 20px; border: 1px solid var(--border2); background: var(--card); color: var(--muted); cursor: pointer; }
+.toggle button:first-child { border-radius: 10px 0 0 10px; } .toggle button:last-child { border-radius: 0 10px 10px 0; }
+.toggle button.on { background: var(--green); border-color: var(--green); color: #04110d; }
+.save { font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-left: 6px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.card.hot { border-color: var(--green); box-shadow: 0 0 40px rgba(0,212,170,.08); }
+.card h2 { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 800; }
+.price { font-family: 'Outfit', sans-serif; font-size: 40px; font-weight: 800; }
+.price small { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--muted); font-weight: 400; }
+.sub { font-size: 13px; color: var(--muted); min-height: 18px; }
+.blurb { font-size: 14px; color: var(--muted); line-height: 1.55; flex: 1; }
+.btn { border: 0; background: var(--green); color: #04110d; font: inherit; font-weight: 700; font-size: 15px; padding: 12px; border-radius: 10px; cursor: pointer; text-align: center; text-decoration: none; }
+.btn.ghost { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+.btn:disabled { opacity: .55; cursor: default; }
+.err { color: #ff6b81; font-size: 13px; min-height: 16px; text-align: center; }
+table { width: 100%; border-collapse: collapse; margin-top: 56px; font-size: 14px; }
+th, td { padding: 13px 10px; border-bottom: 1px solid var(--border); text-align: center; }
+th:first-child, td:first-child { text-align: left; font-weight: 600; }
+th { font-family: 'Outfit', sans-serif; font-size: 16px; }
+td { color: var(--muted); }
+.yes { color: var(--green); font-weight: 700; }
+.fine { color: var(--muted); font-size: 12px; text-align: center; margin-top: 36px; line-height: 1.6; }
+@media (max-width: 800px) { .cards { grid-template-columns: 1fr; } table { font-size: 12px; } th, td { padding: 10px 4px; } }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+<main class="wrap">
+  <h1>Plans and pricing</h1>
+  <p class="lead">Start free. Upgrade when you want more lessons, the full Alpha research and the complete toolset.</p>
+  <div id="notice"></div>
+  <div class="toggle">
+    <button id="bM" class="on" onclick="setInt('month')">Monthly</button>
+    <button id="bY" onclick="setInt('year')">Annual<span class="save">2 MONTHS FREE</span></button>
+  </div>
+  <div class="cards" id="cards"></div>
+  <div class="err" id="err"></div>
+  <table id="cmp"></table>
+  <p class="fine">Prices in US dollars. Cancel any time from your billing page; you keep access until the end of the period you've paid for. Everything on Growth Capital Group is educational and historical content, not personal financial advice.</p>
+</main>
+<script src="/static/js/footer.js"></script>
+<script>
+let P = null, interval = 'month';
+const $ = id => document.getElementById(id);
+const usd = c => '$' + (c / 100).toFixed(c % 100 ? 2 : 0);
+
+function setInt(i) { interval = i; $('bM').classList.toggle('on', i === 'month'); $('bY').classList.toggle('on', i === 'year'); drawCards(); }
+
+function drawCards() {
+  const mine = P.me.tier, myRank = P.rank[mine] || 0;
+  $('cards').innerHTML = P.plans.map(p => {
+    const yr = interval === 'year', amt = yr ? p.annual : p.monthly;
+    const price = p.monthly === 0 ? '$0' : usd(amt);
+    const per = p.monthly === 0 ? '' : `<small> / ${yr ? 'year' : 'month'}</small>`;
+    const sub = yr && p.annual ? `${usd(Math.round(p.annual / 12))} a month, two months free` : '';
+    let cta;
+    if (p.id === mine) cta = '<button class="btn ghost" disabled>Your current plan</button>';
+    else if (p.id === 'free') cta = P.me.authenticated ? '<a class="btn ghost" href="/billing">Manage plan</a>' : '<a class="btn ghost" href="/login">Sign up free</a>';
+    else if (myRank >= (P.rank[p.id] || 0) && mine !== 'free') cta = '<a class="btn ghost" href="/billing">Manage plan</a>';
+    else cta = `<button class="btn" onclick="buy('${p.id}', this)">Choose ${p.name}</button>`;
+    return `<div class="card ${p.id === 'beginner' ? 'hot' : ''}"><h2>${p.name}</h2><div class="price">${price}${per}</div><div class="sub">${sub}</div><div class="blurb">${p.blurb}</div>${cta}</div>`;
+  }).join('');
+}
+
+function cell(v) { return v === true ? '<span class="yes">✓</span>' : v === false ? '–' : v; }
+
+async function buy(plan, btn) {
+  if (!P.me.authenticated) { location.href = '/login?next=/pricing'; return; }
+  $('err').textContent = ''; btn.disabled = true;
+  try {
+    const r = await fetch('/api/billing/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, interval }) });
+    const d = await r.json();
+    if (d.url) { location.href = d.url; return; }
+    if (d.manage) { location.href = '/billing'; return; }
+    $('err').textContent = d.error || 'Something went wrong.';
+  } catch (e) { $('err').textContent = 'Cannot reach the server. Please try again.'; }
+  btn.disabled = false;
+}
+
+(async function () {
+  P = await (await fetch('/api/plans', { credentials: 'include' })).json();
+  const q = new URLSearchParams(location.search), need = q.get('need');
+  if (need && P.names[need]) $('notice').innerHTML = `<div class="notice">That page is part of the <b>${P.names[need]}</b> plan${q.get('from') ? '. After upgrading, head back to it.' : '.'}</div>`;
+  if (q.get('cancelled')) $('notice').innerHTML = '<div class="notice">Checkout cancelled. Nothing was charged.</div>';
+  drawCards();
+  const head = '<tr><th></th>' + P.plans.map(p => `<th>${p.name}</th>`).join('') + '</tr>';
+  $('cmp').innerHTML = head + P.compare.map(r => `<tr><td>${r[0]}</td><td>${cell(r[1])}</td><td>${cell(r[2])}</td><td>${cell(r[3])}</td></tr>`).join('');
+})();
+</script>
+</body>
+</html>

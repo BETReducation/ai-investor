@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 640px; margin: 0 auto; padding: 120px 5% 80px; }
+h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 32px; margin-bottom: 20px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+.plan { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; }
+.muted { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.ok { background: rgba(0,212,170,.10); border: 1px solid rgba(0,212,170,.35); border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; font-size: 14px; }
+.btn { align-self: flex-start; border: 0; background: var(--green); color: #04110d; font: inherit; font-weight: 700; font-size: 15px; padding: 12px 22px; border-radius: 10px; cursor: pointer; text-decoration: none; }
+.btn.ghost { background: transparent; border: 1px solid var(--border2); color: var(--text); }
+.err { color: #ff6b81; font-size: 13px; }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+<main class="wrap">
+  <h1>Billing</h1>
+  <div id="ok"></div>
+  <div class="card" id="card">Loading…</div>
+</main>
+<script src="/static/js/footer.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const date = t => new Date(t * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+
+async function portal(btn) {
+  btn.disabled = true;
+  const r = await fetch('/api/billing/portal', { method: 'POST', credentials: 'include' });
+  const d = await r.json();
+  if (d.url) { location.href = d.url; return; }
+  $('e').textContent = d.error || 'Something went wrong.'; btn.disabled = false;
+}
+
+(async function () {
+  const r = await fetch('/api/billing', { credentials: 'include' });
+  if (r.status === 401) { location.href = '/login?next=/billing'; return; }
+  const b = await r.json();
+  if (new URLSearchParams(location.search).get('success')) $('ok').innerHTML = '<div class="ok">Thanks for upgrading. Your plan is active; it can take a few seconds to show up here.</div>';
+  const paid = b.tier !== 'free' && b.tier !== 'founder';
+  let h = `<div class="muted">Current plan</div><div class="plan">${b.plan_name}</div>`;
+  if (b.tier === 'founder') h += '<div class="muted">Founder accounts include everything and are never billed.</div>';
+  else if (paid) {
+    const per = b.interval === 'year' ? 'annual' : 'monthly';
+    h += `<div class="muted">Billed ${per}.${b.renews_at ? (b.cancel_at_period_end ? ` Ends on ${date(b.renews_at)}; you keep access until then.` : ` Renews on ${date(b.renews_at)}.`) : ''}</div>`;
+    h += b.can_manage ? '<button class="btn" onclick="portal(this)">Manage billing</button><div class="muted">Change plan, update your card, download invoices or cancel.</div>'
+                      : '<div class="muted">This plan was set up by our team, so there is no card on file.</div>';
+  } else h += '<div class="muted">You are on the free plan.</div><a class="btn" href="/pricing">See plans</a>';
+  h += '<div class="err" id="e"></div>';
+  $('card').innerHTML = h;
+})();
+</script>
+</body>
+</html>
