@@ -26,7 +26,7 @@ details>summary::before{content:"▸ ";color:var(--acc)}details[open]>summary::b
 .row:hover{background:var(--bg)}.row b{width:52px}.row i{flex:1;color:var(--mute);font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar{height:5px;border-radius:3px;margin-top:2px}
 .sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
-dialog{background:var(--card);color:var(--ink);border:1px solid var(--acc);border-radius:18px;max-width:420px;width:92%}dialog::backdrop{background:#000a}
+dialog{position:absolute;left:0;right:0;margin:0 auto;box-shadow:0 12px 40px #0008;z-index:50;background:var(--card);color:var(--ink);border:1px solid var(--acc);border-radius:18px;max-width:420px;width:92%}dialog::backdrop{background:#000a}
 dialog button{background:var(--acc);border:0;border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer}
 .fact{text-align:center;color:var(--mute);font-size:14px}.note{color:var(--mute);font-size:12px;margin-top:8px}
 svg text{font-family:system-ui,sans-serif}@keyframes grow{from{transform:scaleY(0)}}
@@ -310,8 +310,14 @@ winners();
  E("edi").innerHTML=R.map(r=>`<div style="display:grid;grid-template-columns:96px 1fr 34px;gap:8px;align-items:center;margin-top:10px"><span style="font-size:14px">${r[1]} <span style="color:var(--mute)">${r[0]}</span></span><span style="background:var(--bg);border:1px solid var(--line);border-radius:8px;height:18px;overflow:hidden;display:block"><span style="display:block;height:100%;width:${Math.max(2,r[2]/mx*100)}%;background:${r[3]}"></span></span><b>${r[2]}</b></div>`).join("")})();
 // explainer
 const dlg=E("dlg");
+// The page sits in a tall auto-height iframe, so a modal dialog would centre far below the click and grey out the whole page.
+// Open it non-modally at the click's height instead.
+let lastY=0;document.addEventListener("click",e=>{if(!e.target.closest("dialog"))lastY=e.pageY},true);
+function openDlg(){dlg.style.top=Math.max(8,lastY-160)+"px";dlg.show();const h=dlg.offsetHeight;dlg.style.top=Math.max(8,Math.min(lastY-h/2,document.documentElement.scrollHeight-h-8))+"px"}
+document.addEventListener("click",e=>{if(dlg.open&&!e.target.closest("dialog,[data-i],[data-l]"))dlg.close()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&dlg.open)dlg.close()});
 document.addEventListener("click",e=>{const g=e.target.closest("[data-i]");if(!g)return;const c=D.concat(EX)[+g.dataset.i];
- E("dc").innerHTML=`<h2 style="margin:0">${flg(c.c)} ${c.n} <small style="color:var(--mute)">${c.s}</small></h2><p>${c.b}</p><p><b>${fp(c.p)}</b> · ${c.i<50?"rank #"+(c.i+1):"outside the top 50"}<br>${ath(c)}Origin: ${flg(c.c)} ${NM[c.c]}</p>`+Object.keys(TF).map(k=>`<span class="chip ${c.ch[k]>=0?"up":"dn"}">${TF[k]} ${fc(c.ch[k])}</span> `).join("");dlg.showModal()});
+ E("dc").innerHTML=`<h2 style="margin:0">${flg(c.c)} ${c.n} <small style="color:var(--mute)">${c.s}</small></h2><p>${c.b}</p><p><b>${fp(c.p)}</b> · ${c.i<50?"rank #"+(c.i+1):"outside the top 50"}<br>${ath(c)}Origin: ${flg(c.c)} ${NM[c.c]}</p>`+Object.keys(TF).map(k=>`<span class="chip ${c.ch[k]>=0?"up":"dn"}">${TF[k]} ${fc(c.ch[k])}</span> `).join("");openDlg()});
 E("thermo").append(E("gauge"),E("mood"),E("moodsub"));E("moodsub").style.display="none";E("mood").style.fontSize="11px";E("moodcard").remove();const wr=document.querySelector(".w");wr.insertBefore(E("hist").closest(".card"),wr.lastElementChild);wr.insertBefore(E("wlcard"),wr.lastElementChild);
 // Coin search
 const LV={};
@@ -327,7 +333,7 @@ function srch(){const q=E("qs").value.trim().toLowerCase(),box=E("qr");
  box.innerHTML=all.length?all.map(x=>x.h).join(""):'<div class="fact">No coin found. Check the spelling or try the ticker.</div>'}
 E("qs").oninput=srch;srch();
 document.addEventListener("click",e=>{const g=e.target.closest("[data-l]");if(!g)return;const v=LV[g.dataset.l];if(!v)return;
- E("dc").innerHTML=`<h2 style="margin:0">${v.n||v.s} <small style="color:var(--mute)">${v.s}</small></h2><p><b>${fp(v.p)}</b>${v.rank?" · rank #"+v.rank+" by market cap":""}</p>`+[["d","Day"],["w","Week"],["m","Month"],["y","Year"]].filter(k=>v[k[0]]!=null).map(k=>`<span class="chip ${v[k[0]]>=0?"up":"dn"}">${k[1]} ${fc(v[k[0]])}</span> `).join("")+`<p class="note">Live data only: this coin isn't one of the 50 in the compass, so there's no description or origin here.</p>`;dlg.showModal()});
+ E("dc").innerHTML=`<h2 style="margin:0">${v.n||v.s} <small style="color:var(--mute)">${v.s}</small></h2><p><b>${fp(v.p)}</b>${v.rank?" · rank #"+v.rank+" by market cap":""}</p>`+[["d","Day"],["w","Week"],["m","Month"],["y","Year"]].filter(k=>v[k[0]]!=null).map(k=>`<span class="chip ${v[k[0]]>=0?"up":"dn"}">${k[1]} ${fc(v[k[0]])}</span> `).join("")+`<p class="note">Live data only: this coin isn't one of the 50 in the compass, so there's no description or origin here.</p>`;openDlg()});
 // Live feed: replaces the demo prices, moves, all-time highs and dominance when /api/dataviz/crypto-compass/live answers.
 fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()).then(j=>{
  const K=j.coins||{};let hit=0,noY=0;for(const s in K)LV[s]={s,...K[s]};
