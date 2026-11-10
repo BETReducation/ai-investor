@@ -1,4 +1,5 @@
-"""GCG Chat — threaded partner discussion (Alpha section, partners only).
+"""GCG Chat — threaded discussion (Alpha section). Posting is open to paid plans
+(pro and founder); partners are identified by alpha role, members as "@username".
 
 Structure: a topic is a thread with root_id None; its opening post is the first
 message. Replies are one of three types: link (url + manual excerpt), text, or
@@ -89,9 +90,23 @@ def _open_thread(thread):
         raise ChatError("This thread is closed. Reopen it first.")
 
 
-def _author_only(item):
-    if item["author"] != current_user.alpha_role:
-        raise ChatError("Only the author can do that", 403)
+def _who() -> str:
+    """Partners post under their alpha role, other paid members as @username
+    (the @ keeps a member from impersonating a partner called e.g. "gary")."""
+    if current_user.tier == "founder" and getattr(current_user, "alpha_role", None):
+        return current_user.alpha_role
+    return "@" + current_user.id
+
+
+def _is_partner() -> bool:
+    return current_user.tier == "founder" and bool(getattr(current_user, "alpha_role", None))
+
+
+def _author_only(item, moderate=False):
+    """moderate=True lets partners remove members' content (not each other's)."""
+    if item["author"] == _who() or (moderate and _is_partner() and item["author"].startswith("@")):
+        return
+    raise ChatError("Only the author can do that", 403)
 
 
 def _add_message(state, thread, kind, author, fields, opening=False, ts=None) -> dict:
@@ -128,8 +143,8 @@ def _api(fn):
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return jsonify({"error": "Login required"}), 401
-        if getattr(current_user, "tier", None) != "founder" or not getattr(current_user, "alpha_role", None):
-            return jsonify({"error": "GCG Chat is for partners only"}), 403
+        if getattr(current_user, "tier", None) not in ("pro", "founder"):
+            return jsonify({"error": "Posting in GCG Chat is for paid plans", "tier_required": "pro"}), 403
         try:
             return fn(*args, **kwargs)
         except ChatError as e:
@@ -143,9 +158,10 @@ def chat_state():
     """Public read. Posting and every other endpoint stay partner-only."""
     state = _read()
     me = None
-    if current_user.is_authenticated and current_user.tier == "founder":
-        me = current_user.alpha_role
-    return jsonify({"me": me, "quiet_days": QUIET_DAYS,
+    if current_user.is_authenticated and current_user.tier in ("pro", "founder"):
+        me = _who()
+    partner = current_user.is_authenticated and _is_partner()
+    return jsonify({"me": me, "partner": partner, "quiet_days": QUIET_DAYS,
                     "threads": state["threads"], "messages": state["messages"]})
 
 
@@ -157,11 +173,11 @@ def chat_new_topic():
     fields = {"url": None, "body": _clean(data.get("body"), MAX_BODY, "Opening post")}
     with _txn() as state:
         ts = _now()
-        t = {"id": _new_id(state), "root_id": None, "title": title, "author": current_user.alpha_role,
+        t = {"id": _new_id(state), "root_id": None, "title": title, "author": _who(),
              "created_at": ts, "forked_at": None, "last_activity": ts, "closed": False}
         state["threads"].append(t)
-        _add_message(state, t, "post", current_user.alpha_role, fields, opening=True, ts=ts)
-    _notify("chat_topic", f"{current_user.alpha_role} started a topic: {title}")
+        _add_message(state, t, "post", _who(), fields, opening=True, ts=ts)
+    _notify("chat_topic", f"{_who()} started a topic: {title}")
     return jsonify({"thread_id": t["id"]})
 
 
@@ -178,19 +194,19 @@ def chat_reply(tid):
         fields = _fields_for(kind, data)
         topic_title = _thread(state, thread["root_id"] or tid)["title"]
         if kind != "question":
-            msg = _add_message(state, thread, kind, current_user.alpha_role, fields)
+            msg = _add_message(state, thread, kind, _who(), fields)
             verb = "shared a link in" if kind == "link" else "replied in"
-            _notify("chat_reply", f"{current_user.alpha_role} {verb} {topic_title}")
+            _notify("chat_reply", f"{_who()} {verb} {topic_title}")
             return jsonify({"thread_id": tid, "message_id": msg["id"]})
         heading = _clean(data.get("heading"), MAX_TITLE, "Sub-heading")
         root = thread["root_id"] or thread["id"]
         ts = _now()
-        branch = {"id": _new_id(state), "root_id": root, "title": heading, "author": current_user.alpha_role,
+        branch = {"id": _new_id(state), "root_id": root, "title": heading, "author": _who(),
                   "created_at": ts, "forked_at": ts, "last_activity": ts, "closed": False}
         state["threads"].append(branch)
-        _add_message(state, branch, "question", current_user.alpha_role, fields, opening=True, ts=ts)
+        _add_message(state, branch, "question", _who(), fields, opening=True, ts=ts)
         _touch(_thread(state, root), ts)
-    _notify("chat_branch", f"{current_user.alpha_role} opened a branch \"{heading}\" in {topic_title}")
+    _notify("chat_branch", f"{_who()} opened a branch \"{heading}\" in {topic_title}")
     return jsonify({"thread_id": branch["id"]})
 
 
@@ -200,7 +216,7 @@ def chat_message(mid):
     with _txn() as state:
         msg = _message(state, mid)
         thread = _thread(state, msg["thread_id"])
-        _author_only(msg)
+        _author_only(msg, moderate=request.method == "DELETE")
         if request.method == "DELETE":
             if msg["opening"]:
                 raise ChatError("Delete the whole thread instead of its opening post")
@@ -242,7 +258,7 @@ def chat_message_transfer(mid, action):
 def chat_thread(tid):
     with _txn() as state:
         thread = _thread(state, tid)
-        _author_only(thread)
+        _author_only(thread, moderate=request.method == "DELETE")
         if request.method == "PATCH":
             data = request.get_json(silent=True) or {}
             thread["title"] = _clean(data.get("title"), MAX_TITLE, "Heading")
@@ -285,5 +301,7 @@ def chat_close(tid):
     data = request.get_json(silent=True) or {}
     with _txn() as state:
         thread = _thread(state, tid)
+        if thread["author"] != _who() and not _is_partner():
+            raise ChatError("Only the author or a partner can do that", 403)
         thread["closed"] = bool(data.get("closed", True))
     return jsonify({"ok": True})

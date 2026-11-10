@@ -160,7 +160,7 @@ const isQuiet = t => !t.closed && (Date.now() - new Date(t.last_activity)) > S.q
 function render() {
   const list = topics();
   let h = `<div class="toolbar"><span class="count">${list.length} topic${list.length === 1 ? '' : 's'}, newest first</span>
-    ${S.me ? `<button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button>` : '<span class="hint">Read-only. Posting is open to partners.</span>'}</div>`;
+    ${S.me ? `<button class="btn" onclick="toggleCompose()">${composing ? 'Cancel' : '+ New topic'}</button>` : '<span class="hint">Read-only. Posting is open to Pro and Founder members.</span>'}</div>`;
   if (composing) h += newTopicForm();
   h += list.length ? list.map(topicHtml).join('') : '<div class="notice">No topics yet.</div>';
   $app.innerHTML = h;
@@ -189,6 +189,7 @@ function topicBody(topic, br) {
   let h = `<div class="pills"><button class="pill ${cur.id === topic.id ? 'active' : ''}" onclick="pick(${topic.id}, ${topic.id})">Main thread</button>` +
     br.map(b => `<button class="pill ${cur.id === b.id ? 'active' : ''}" onclick="pick(${topic.id}, ${b.id})">${esc(b.title)}</button>`).join('') + '</div>';
   const mine = cur.author === S.me;
+  const canDelT = mine || (S.partner && cur.author[0] === '@');
   const quietNote = isQuiet(cur) ? ` · <span style="color:var(--gold)">no activity for ${S.quiet_days}+ days, consider closing</span>` : '';
   h += `<div class="thread-head"><div><div class="thread-title">${esc(cur.title)}</div>
     <div class="thread-sub">${cur.id === topic.id ? 'Topic' : 'Branch'} by <span style="text-transform:capitalize">${esc(cur.author)}</span> · last activity ${fmt(cur.last_activity)}${quietNote}</div></div>
@@ -197,7 +198,7 @@ function topicBody(topic, br) {
       ${S.me ? `<button class="mini" onclick="transferThread(${cur.id}, 'copy')">Copy</button>` : ''}
       ${mine ? `<button class="mini" onclick="transferThread(${cur.id}, 'move')">Move</button>` : ''}
       ${S.me ? `<button class="mini" onclick="closeThread(${cur.id}, ${!cur.closed})">${cur.closed ? 'Reopen' : 'Close'}</button>` : ''}
-      ${mine ? `<button class="mini danger" onclick="deleteThread(${cur.id})">Delete</button>` : ''}
+      ${canDelT ? `<button class="mini danger" onclick="deleteThread(${cur.id})">Delete</button>` : ''}
     </div></div>`;
 
   // the main thread shows a marker where each branch forked off
@@ -212,6 +213,7 @@ function topicBody(topic, br) {
 
 function msgHtml(m) {
   const mine = m.author === S.me;
+  const canDel = mine || (S.partner && m.author[0] === '@');
   const label = {post: 'Opening post', text: 'Message', link: 'Link', question: 'Question'}[m.kind];
   let body;
   if (editing === m.id) {
@@ -222,7 +224,7 @@ function msgHtml(m) {
   }
   const acts = editing === m.id ? '' : `<span class="msg-actions">
       ${mine ? `<button class="mini" onclick="editing=${m.id};render()">Edit</button>` : ''}
-      ${m.opening || !S.me ? '' : `<button class="mini" onclick="transferMsg(${m.id}, 'copy')">Copy</button>${mine ? `<button class="mini" onclick="transferMsg(${m.id}, 'move')">Move</button><button class="mini danger" onclick="deleteMsg(${m.id})">Delete</button>` : ''}`}
+      ${m.opening || !S.me ? '' : `<button class="mini" onclick="transferMsg(${m.id}, 'copy')">Copy</button>${mine ? `<button class="mini" onclick="transferMsg(${m.id}, 'move')">Move</button>` : ''}${canDel ? `<button class="mini danger" onclick="deleteMsg(${m.id})">Delete</button>` : ''}`}
     </span>`;
   return `<div class="msg ${m.kind === 'question' ? 'q' : ''}"><div class="msg-top"><span class="who">${esc(m.author)}</span><span class="kind">${label}</span><span>${fmt(m.created_at)}${m.edited_at ? ' · edited' : ''}</span>${acts}</div>${body}</div>`;
 }

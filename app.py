@@ -4315,8 +4315,10 @@ def _dashboard_chat() -> dict:
     topics read-only (posting is partner-only)."""
     state = gcg_chat.store.read()
     threads = {t["id"]: t for t in state["threads"]}
-    role = getattr(current_user, "alpha_role", None)
-    if role and current_user.tier == "founder":
+    role = ("@" + current_user.id) if current_user.tier in ("pro", "founder") else None
+    if role and current_user.tier == "founder" and getattr(current_user, "alpha_role", None):
+        role = current_user.alpha_role
+    if role:
         mine = {m["thread_id"]: m["created_at"] for m in state["messages"] if m["author"] == role}
         replies = []
         for m in state["messages"]:
