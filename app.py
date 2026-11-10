@@ -246,6 +246,7 @@ login_manager.session_protection = "basic"
 
 USERS_FILE  = os.path.join(os.path.dirname(__file__), "users.json")
 ANON_BACKTEST_FILE  = os.path.join(os.path.dirname(__file__), "anon_backtest_usage.json")
+STRIPE_EVENTS_FILE  = os.path.join(os.path.dirname(__file__), "stripe_events.json")
 DAILY_BACKTEST_FILE = os.path.join(os.path.dirname(__file__), "backtest_daily_usage.json")
 DAILY_LEARN_QA_FILE = os.path.join(os.path.dirname(__file__), "learn_qa_daily_usage.json")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -483,6 +484,12 @@ def _ensure_table() -> None:
             )
         """)
         cur.execute("CREATE INDEX IF NOT EXISTS user_events_user_time ON user_events (username, created_at)")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS stripe_events (
+                id         TEXT PRIMARY KEY,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+        """)
         cur.execute("""
             CREATE TABLE IF NOT EXISTS anon_backtest_usage (
                 ip    TEXT PRIMARY KEY,
@@ -4366,30 +4373,117 @@ def _stripe_signature_ok(payload: bytes, header: str, secret: str) -> bool:
     return any(hmac.compare_digest(expected, s) for s in sigs)
 
 
+def _stripe_claim_event(event_id: str) -> bool:
+    """True the first time an event id is seen; Stripe retries deliveries, so repeats are skipped."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("INSERT INTO stripe_events (id) VALUES (%s) ON CONFLICT DO NOTHING", (event_id,))
+            return cur.rowcount == 1
+    seen = []
+    if os.path.exists(STRIPE_EVENTS_FILE):
+        with open(STRIPE_EVENTS_FILE) as f:
+            seen = json.load(f)
+    if event_id in seen:
+        return False
+    with open(STRIPE_EVENTS_FILE, "w") as f:
+        json.dump((seen + [event_id])[-500:], f)
+    return True
+
+
+def _stripe_release_event(event_id: str) -> None:
+    """Un-claim after a handler failure so Stripe's retry gets processed."""
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM stripe_events WHERE id = %s", (event_id,))
+    elif os.path.exists(STRIPE_EVENTS_FILE):
+        with open(STRIPE_EVENTS_FILE) as f:
+            seen = json.load(f)
+        with open(STRIPE_EVENTS_FILE, "w") as f:
+            json.dump([e for e in seen if e != event_id], f)
+
+
+def _username_by_stripe_customer(customer_id: str | None) -> str | None:
+    if not customer_id:
+        return None
+    if DATABASE_URL:
+        with _db_conn() as conn, conn.cursor() as cur:
+            cur.execute("SELECT username FROM users WHERE profile->'billing'->>'customer_id' = %s LIMIT 1", (customer_id,))
+            row = cur.fetchone()
+            return row[0] if row else None
+    for uname, udata in _load_users().items():
+        if ((udata.get("profile") or {}).get("billing") or {}).get("customer_id") == customer_id:
+            return uname
+    return None
+
+
+def _sub_period_end(sub: dict) -> int | None:
+    """Current API versions put current_period_end on the subscription item; older ones on the subscription."""
+    item = ((sub.get("items") or {}).get("data") or [{}])[0]
+    return item.get("current_period_end") or sub.get("current_period_end")
+
+
+def _stripe_event_user(obj: dict) -> str | None:
+    """Resolve the app user from the Stripe customer, falling back to metadata/client_reference_id."""
+    meta = obj.get("metadata") or {}
+    return _username_by_stripe_customer(obj.get("customer")) or meta.get("username") or obj.get("client_reference_id")
+
+
+def _handle_stripe_event(kind: str, obj: dict) -> None:
+    if kind in ("charge.refunded", "charge.dispute.created", "radar.early_fraud_warning.created"):
+        # Money-at-risk events need a human decision, so flag rather than auto-revoke.
+        # Disputes and fraud warnings carry a charge id, not a customer, so the user may be unknown.
+        label = {"charge.refunded": "Refund", "charge.dispute.created": "Dispute",
+                 "radar.early_fraud_warning.created": "Fraud warning"}[kind]
+        who = _username_by_stripe_customer(obj.get("customer")) or f"charge {obj.get('charge') or obj.get('id', '?')}"
+        gcg_notify.record("payment_issue", who, f"{label}: {who}", "/admin")
+        return
+    username = _stripe_event_user(obj)
+    if not username:
+        return
+    meta = obj.get("metadata") or {}
+    if kind in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+        plan = meta.get("plan")
+        # Async payment methods complete unpaid; the async_payment_succeeded event grants access later.
+        if plan in PLAN_RANK and obj.get("payment_status") in ("paid", "no_payment_required"):
+            _set_user_tier(username, plan, {"customer_id": obj.get("customer"), "subscription_id": obj.get("subscription"),
+                                            "status": "active"})
+            gcg_notify.record("member_joined", username, f"{username} upgraded to {plan}", "/admin")
+    elif kind in ("customer.subscription.updated", "customer.subscription.deleted"):
+        status = "canceled" if kind.endswith("deleted") else obj.get("status", "")
+        ended = status in ("canceled", "unpaid", "incomplete_expired")
+        item = ((obj.get("items") or {}).get("data") or [{}])[0]
+        plan = meta.get("plan")
+        current = (_load_user(username) or {}).get("tier", "free")
+        _set_user_tier(username, "free" if ended else (plan if plan in PLAN_RANK else current), {
+            "status": status, "subscription_id": obj.get("id"), "customer_id": obj.get("customer"),
+            "interval": (item.get("price") or item.get("plan") or {}).get("interval"),
+            "current_period_end": _sub_period_end(obj),
+            "cancel_at_period_end": bool(obj.get("cancel_at_period_end")),
+        })
+    elif kind == "invoice.paid":
+        _set_user_tier(username, (_load_user(username) or {}).get("tier", "free"), {"status": "active"})
+    elif kind == "invoice.payment_failed":
+        # Access continues while Stripe retries; customer.subscription.updated ends it if retries run out.
+        _set_user_tier(username, (_load_user(username) or {}).get("tier", "free"), {"status": "past_due"})
+        gcg_notify.record("payment_issue", username, f"Payment failed for {username}", "/admin")
+
+
 @app.route("/stripe/webhook", methods=["POST"])
 def stripe_webhook():
     secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     if not secret or not _stripe_signature_ok(request.get_data(), request.headers.get("Stripe-Signature", ""), secret):
         return "", 400
     event = request.get_json(silent=True) or {}
-    obj = (event.get("data") or {}).get("object") or {}
-    kind = event.get("type", "")
-    meta = obj.get("metadata") or {}
-    username, plan = meta.get("username"), meta.get("plan")
-    if kind == "checkout.session.completed" and username and plan in PLAN_RANK and obj.get("payment_status") in ("paid", "no_payment_required"):
-        _set_user_tier(username, plan, {"customer_id": obj.get("customer"), "subscription_id": obj.get("subscription"),
-                                        "status": "active"})
-        gcg_notify.record("member_joined", username, f"{username} upgraded to {plan}", "/admin")
-    elif kind in ("customer.subscription.updated", "customer.subscription.deleted") and username:
-        status = "canceled" if kind.endswith("deleted") else obj.get("status", "")
-        ended = status in ("canceled", "unpaid", "incomplete_expired")
-        item = ((obj.get("items") or {}).get("data") or [{}])[0]
-        _set_user_tier(username, "free" if ended else (plan if plan in PLAN_RANK else "free"), {
-            "status": status, "subscription_id": obj.get("id"), "customer_id": obj.get("customer"),
-            "interval": (item.get("price") or item.get("plan") or {}).get("interval"),
-            "current_period_end": obj.get("current_period_end"),
-            "cancel_at_period_end": bool(obj.get("cancel_at_period_end")),
-        })
+    event_id = event.get("id", "")
+    if event_id and not _stripe_claim_event(event_id):
+        return "", 200
+    try:
+        _handle_stripe_event(event.get("type", ""), (event.get("data") or {}).get("object") or {})
+    except Exception as e:
+        print(f"[stripe webhook failed] {event.get('type')}: {e}")
+        if event_id:
+            _stripe_release_event(event_id)
+        return "", 500
     return "", 200
 
 

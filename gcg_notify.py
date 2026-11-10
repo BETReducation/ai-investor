@@ -16,7 +16,7 @@ bp = Blueprint("gcg_notify", __name__)
 store = DocStore("gcg_notifications", lambda: {"next_id": 1, "events": [], "seen": {}})
 
 MAX_EVENTS = 400
-ADMIN_ONLY = {"member_joined", "login", "newsletter_approved", "newsletter_sent", "newsletter_failed"}
+ADMIN_ONLY = {"payment_issue", "member_joined", "login", "newsletter_approved", "newsletter_sent", "newsletter_failed"}
 _is_admin = lambda user: False
 
 
