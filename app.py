@@ -6884,6 +6884,55 @@ def _bb_compute(sym: str, name: str, kind: str) -> dict | None:
     return {"symbol": sym, "name": name, "as_of": close.index[-1].date().isoformat(), "indicators": ind}
 
 
+# Top 3 / bottom 3 by bull-bear score across every tracked market. Scores each one with the same
+# calculation as the meter (sharing its cache), in the background, and serves the last result meanwhile.
+_bb_rank: dict = {"at": 0.0, "data": None, "busy": False}
+
+
+def _bb_score(d: dict) -> int:
+    return round(sum(i["s"] for i in d["indicators"]) / len(d["indicators"]))
+
+
+def _bb_rank_build() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+    info = _bb_universe()[1]
+
+    def one(sym):
+        with _bb_lock:
+            hit = _bb_cache.get(sym)
+            if hit and time.monotonic() - hit[0] < _BB_TTL_SECONDS:
+                return sym, hit[1]
+        try:
+            d = _bb_compute(sym, info[sym][0], info[sym][1])
+        except Exception:
+            d = None
+        if d:
+            with _bb_lock:
+                _bb_cache[sym] = (time.monotonic(), d)
+        return sym, d
+    try:
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            got = [(sym, d) for sym, d in ex.map(one, list(info)) if d and d.get("indicators")]
+        if len(got) < 20:
+            return
+        rows = sorted(({"symbol": sym, "name": d["name"], "kind": info[sym][1], "score": _bb_score(d)} for sym, d in got),
+                      key=lambda r: (-r["score"], r["name"]))
+        _bb_rank.update(at=time.monotonic(), data={"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                                                   "count": len(rows), "top": rows[:3], "bottom": rows[-3:][::-1]})
+    finally:
+        _bb_rank["busy"] = False
+
+
+@app.route("/api/dataviz/bull-bear-meter/ranking", methods=["GET"])
+def api_bull_bear_ranking():
+    if (not _bb_rank["data"] or time.monotonic() - _bb_rank["at"] > _BB_TTL_SECONDS) and not _bb_rank["busy"]:
+        _bb_rank["busy"] = True
+        threading.Thread(target=_bb_rank_build, daemon=True).start()
+    if _bb_rank["data"]:
+        return jsonify(_bb_rank["data"])
+    return jsonify({"pending": True}), 202
+
+
 @app.route("/api/dataviz/bull-bear-meter/live", methods=["GET"])
 def api_bull_bear_live():
     sym = (request.args.get("symbol") or "").strip()
