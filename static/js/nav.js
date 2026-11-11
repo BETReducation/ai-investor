@@ -59,7 +59,7 @@
       ['Stock Donut', DV + 'stock-donut', 'Add the shares you own and see your portfolio as a donut, split by stock or sector, with a diversification score.', 'Interactive']
     ] },
     { name: 'Forex', rgb: '56,189,248', blurb: 'Currency pairs and pip maths.', pages: [
-      ['Currency Calculator', DV + 'currency-calculator', 'Convert between 40+ currencies and Bitcoin, with each currency\'s history, inflation and economy snapshot.', 'Live data']
+      ['Currency Calculator', DV + 'currency-calculator', 'Convert between 75+ currencies and Bitcoin, with each currency\'s history, inflation and economy snapshot.', 'Live data']
     ] },
     { name: 'Other', rgb: '168,85,247', blurb: 'Planning, portfolio tracking and risk sizing.', pages: [
       ['Freedom Clock', DV + 'freedom-clock', 'Pick what you invest, how often and the return you assume, then watch compounding play out over time.', 'Interactive'],
