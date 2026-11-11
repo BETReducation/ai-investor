@@ -74,8 +74,7 @@ details.sub{margin-top:16px;border-top:1px dashed var(--ln);padding-top:6px}deta
 
 <details class="card btc"><summary>In Bitcoin</summary><div class="inner">
 <div id="btcrows"></div>
-<div class="note"><label for="btcp">Bitcoin price in USD (edit to match today’s market)</label><input id="btcp" type="number" inputmode="decimal" value="75000" min="1"></div>
-</div></details>
+<div class="note" id="btcl">Loading live Bitcoin price…</div><input id="btcp" type="hidden" value="75000"></div></details>
 
 <details class="card"><summary>Currency guide</summary><div class="inner">
 <div class="tabs"><button id="t1" aria-pressed="false"></button><button id="t2" aria-pressed="true"></button></div>
@@ -134,12 +133,45 @@ var D=[
 ["COP","Colombian Peso","$","Colombia",4000,"1837","Banco de la República","$2,000 up to $100,000","$50, 100, 200, 500, 1000","The $100,000 note is the largest.",[7.5,4.3,3.2,3.5,2.5,3.5,10.2,11.7,6.6,5.2]],
 ["PEN","Peruvian Sol","S/","Peru",3.6,"1991 (nuevo sol)","Banco Central de Reserva del Perú","S/10, 20, 50, 100, 200","10, 20, 50 céntimos; S/1, 2, 5","Introduced to end the hyperinflation of the 1980s.",[3.6,2.8,1.3,2.1,1.8,4,7.9,6.3,2.4,1.5]],
 ["FJD","Fijian Dollar","$","Fiji",2.25,"1969","Reserve Bank of Fiji","$5, 10, 20, 50, 100","5, 10, 20, 50c; $1, 2","Managed against a basket of major currencies.",[3.9,3.4,4.1,1.8,-2.6,.2,4.3,5.3,2.2,1.5]],
+["ISK", "Icelandic Króna", "kr", "Iceland", 123, "1981 (current króna)", "Central Bank of Iceland", "500, 1000, 2000, 5000, 10000 kr", "1, 5, 10, 50, 100 kr", "Lost most of its value against the Danish krone in the 20th century.", null],
+["RON", "Romanian Leu", "lei", "Romania", 4.4, "2005 (redenominated)", "National Bank of Romania", "1, 5, 10, 20, 50, 100, 200, 500 lei", "1, 5, 10, 50 bani", "Leu means lion; 10,000 old lei became 1 new leu in 2005.", null],
+["BGN", "Bulgarian Lev", "лв", "Bulgaria", 1.67, "1881; pegged to the euro since 1999", "Bulgarian National Bank", "2, 5, 10, 20, 50, 100 лв", "1, 2, 5, 10, 20, 50 st; 1, 2 лв", "Fixed at 1.95583 per euro under a currency board.", null],
+["RSD", "Serbian Dinar", "din", "Serbia", 100, "2003 (current dinar)", "National Bank of Serbia", "10, 20, 50, 100, 200, 500, 1000, 2000, 5000 din", "1, 2, 5, 10, 20 din", "Replaced the Yugoslav dinar after years of hyperinflation in the 1990s.", null],
+["UAH", "Ukrainian Hryvnia", "₴", "Ukraine", 41.5, "1996", "National Bank of Ukraine", "₴1 to ₴1,000", "1, 2, 5, 10, 25, 50 kopiykas; ₴1, 2, 5, 10", "Replaced the karbovanets at 100,000 to 1.", null],
+["GEL", "Georgian Lari", "₾", "Georgia", 2.7, "1995", "National Bank of Georgia", "₾5, 10, 20, 50, 100, 200", "1, 2, 5, 10, 20, 50 tetri; ₾1, 2", "Lari means a hoard or a unit of weight in old Georgian.", null],
+["KZT", "Kazakhstani Tenge", "₸", "Kazakhstan", 510, "1993", "National Bank of Kazakhstan", "₸200 to ₸20,000", "₸1, 2, 5, 10, 20, 50, 100, 200", "Floated freely in 2015.", null],
+["QAR", "Qatari Riyal", "﷼", "Qatar", 3.64, "1966; pegged to USD since 2001", "Qatar Central Bank", "﷼1, 5, 10, 50, 100, 200, 500", "1, 5, 10, 25, 50 dirhams", "Pegged at 3.64 per US dollar.", null],
+["KWD", "Kuwaiti Dinar", "د.ك", "Kuwait", 0.307, "1961", "Central Bank of Kuwait", "¼, ½, 1, 5, 10, 20 dinars", "5, 10, 20, 50, 100 fils", "Often the highest-valued currency unit in the world.", null],
+["BHD", "Bahraini Dinar", "BD", "Bahrain", 0.376, "1965; pegged to USD since 1980", "Central Bank of Bahrain", "BD½, 1, 5, 10, 20", "5, 10, 25, 50, 100 fils", "Pegged at 0.376 per US dollar.", null],
+["OMR", "Omani Rial", "ر.ع.", "Oman", 0.385, "1970", "Central Bank of Oman", "100, 200, 500 baisa; 1, 5, 10, 20, 50 rials", "5, 10, 25, 50 baisa", "Pegged at 0.3845 per US dollar.", null],
+["JOD", "Jordanian Dinar", "JD", "Jordan", 0.709, "1950; pegged to USD since 1995", "Central Bank of Jordan", "JD1, 5, 10, 20, 50", "¼, ½ dinar; 5, 10 piastres", "Pegged at 0.709 per US dollar.", null],
+["LKR", "Sri Lankan Rupee", "Rs", "Sri Lanka", 300, "1872", "Central Bank of Sri Lanka", "Rs20, 50, 100, 500, 1000, 5000", "Rs1, 2, 5, 10", "Floated in 2022 after the country defaulted on its debt.", null],
+["NPR", "Nepalese Rupee", "Rs", "Nepal", 140, "1932", "Nepal Rastra Bank", "Rs5, 10, 20, 50, 100, 500, 1000", "Rs1, 2, 5, 10", "Pegged at 1.6 per Indian rupee.", null],
+["MMK", "Myanmar Kyat", "K", "Myanmar", 2100, "1952", "Central Bank of Myanmar", "K50 up to K10,000", "Rarely used", "The official rate differs sharply from the market rate.", null],
+["KHR", "Cambodian Riel", "៛", "Cambodia", 4020, "1980 (current riel)", "National Bank of Cambodia", "៛100 to ៛100,000", "Rarely used", "The US dollar circulates alongside the riel in daily life.", null],
+["ETB", "Ethiopian Birr", "Br", "Ethiopia", 125, "1945", "National Bank of Ethiopia", "Br1, 5, 10, 50, 100, 200", "1, 5, 10, 25, 50 santim", "Floated in 2024 and lost much of its value.", null],
+["TZS", "Tanzanian Shilling", "TSh", "Tanzania", 2500, "1966", "Bank of Tanzania", "TSh500 to TSh10,000", "TSh50, 100, 200, 500", "Replaced the East African shilling.", null],
+["UGX", "Ugandan Shilling", "USh", "Uganda", 3600, "1966", "Bank of Uganda", "USh1,000 to USh50,000", "USh50, 100, 200, 500, 1000", "No subunit is used in practice.", null],
+["XOF", "West African CFA Franc", "Fr", "Eight West African countries", 565, "1945", "Central Bank of West African States", "Fr500 to Fr10,000", "Fr1, 5, 10, 25, 50, 100, 250, 500", "Pegged to the euro at 655.957 per euro.", null],
+["DZD", "Algerian Dinar", "دج", "Algeria", 134, "1964", "Bank of Algeria", "DA200, 500, 1000, 2000", "DA5, 10, 20, 50, 100", "Managed against a basket of currencies.", null],
+["TND", "Tunisian Dinar", "DT", "Tunisia", 3, "1960", "Central Bank of Tunisia", "DT5, 10, 20, 30, 50", "10, 20, 50, 100, 200, 500 millimes; DT1, 2, 5", "Divided into 1,000 millimes.", null],
+["UYU", "Uruguayan Peso", "$U", "Uruguay", 40, "1993 (peso uruguayo)", "Banco Central del Uruguay", "$20, 50, 100, 200, 500, 1000, 2000", "$1, 2, 5, 10, 50", "Three zeros were removed in 1993.", null],
+["DOP", "Dominican Peso", "RD$", "Dominican Republic", 60, "1844", "Banco Central de la República Dominicana", "RD$20, 50, 100, 200, 500, 1000, 2000", "RD$1, 5, 10, 25", "One of the oldest currencies still in use in the Americas.", null],
+["CRC", "Costa Rican Colón", "₡", "Costa Rica", 505, "1896", "Banco Central de Costa Rica", "₡1,000 to ₡50,000", "₡5, 10, 25, 50, 100, 500", "Named after Christopher Columbus (Cristóbal Colón).", null],
+["JMD", "Jamaican Dollar", "J$", "Jamaica", 158, "1969", "Bank of Jamaica", "J$50, 100, 500, 1000, 5000", "J$1, 5, 10, 20", "Replaced the Jamaican pound.", null],
+["TTD", "Trinidad and Tobago Dollar", "TT$", "Trinidad and Tobago", 6.8, "1964", "Central Bank of Trinidad and Tobago", "TT$1, 5, 10, 20, 50, 100", "1, 5, 10, 25 cents", "Managed within a tight range against the US dollar.", null],
+["GTQ", "Guatemalan Quetzal", "Q", "Guatemala", 7.7, "1925", "Banco de Guatemala", "Q1, 5, 10, 20, 50, 100, 200", "1, 5, 10, 25, 50 centavos", "Named after the quetzal, the national bird.", null],
+["PYG", "Paraguayan Guaraní", "₲", "Paraguay", 7800, "1943", "Banco Central del Paraguay", "₲2,000 to ₲100,000", "₲50, 100, 500, 1000", "No subunit is used in practice.", null],
+["UZS", "Uzbekistani Som", "soʻm", "Uzbekistan", 12500, "1994", "Central Bank of Uzbekistan", "soʻm1,000 to soʻm200,000", "Rarely used", "Became freely convertible in 2017.", null],
+["MUR", "Mauritian Rupee", "Rs", "Mauritius", 45, "1877", "Bank of Mauritius", "Rs25, 50, 100, 200, 500, 1000, 2000", "5, 20, 50 cents; Rs1, 5, 10, 20", "Floats freely against the major currencies.", null],
+["BWP", "Botswana Pula", "P", "Botswana", 13.6, "1976", "Bank of Botswana", "P10, 20, 50, 100, 200", "5, 10, 25, 50 thebe; P1, 2, 5", "Pula means rain, a blessing in a dry country.", null],
+["ANG", "Netherlands Antillean Guilder", "ƒ", "Curaçao and Sint Maarten", 1.79, "1940; pegged to USD since 1971", "Central Bank of Curaçao and Sint Maarten", "ƒ10, 25, 50, 100, 250", "1, 5, 10, 25, 50 cents; ƒ1, 2½, 5", "Pegged at 1.79 per US dollar.", null],
 ["BTC","Bitcoin","₿","No country (decentralised)",0,"2009 (genesis block)","None; run by a global network","Digital only","Divisible to 1 satoshi (0.00000001 BTC)","Supply is capped at 21 million coins. Not fiat; shown here for comparison.",null]
 ];
 var M={};D.forEach(function(r){M[r[0]]={c:r[0],n:r[1],s:r[2],co:r[3],r:r[4],b:r[5],bk:r[6],no:r[7],cn:r[8],f:r[9],i:r[10]}});
 var $=function(i){return document.getElementById(i)};
 var st={from:"USD",to:"EUR",tab:"to"};
-var FL={USD:"US",EUR:"EU",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",TWD:"TW",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ"};
+var FL={USD:"US",EUR:"EU",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",TWD:"TW",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ",XOF:"SN",ISK:"IS",RON:"RO",BGN:"BG",RSD:"RS",UAH:"UA",GEL:"GE",KZT:"KZ",QAR:"QA",KWD:"KW",BHD:"BH",OMR:"OM",JOD:"JO",LKR:"LK",NPR:"NP",MMK:"MM",KHR:"KH",ETB:"ET",TZS:"TZ",UGX:"UG",DZD:"DZ",TND:"TN",UYU:"UY",DOP:"DO",CRC:"CR",JMD:"JM",TTD:"TT",GTQ:"GT",PYG:"PY",UZS:"UZ",MUR:"MU",BWP:"BW",ANG:"CW"};
 function f2(k){return k?String.fromCodePoint.apply(null,k.split("").map(function(x){return 127397+x.charCodeAt(0)})):"🟠"}
 function fl(c){return f2(FL[c])}
 function btc(){return Math.max(parseFloat($("btcp").value)||75000,1)}
@@ -224,7 +256,7 @@ function calc(){
  if(t!==f)h+='<div class="row"><span>'+fmt(v)+" "+t+"</span><span><b>"+fb(bt)+" BTC</b></span></div>";
  h+='<div class="row"><span>1 BTC buys</span><span>'+fmt(btc()*per(f))+" "+f+"</span></div>";
  h+='<div class="row"><span>1 '+f+" in satoshis</span><span>"+fmt(1/per(f)/btc()*1e8)+" sats</span></div>";
- $("btcrows").innerHTML=h;
+ $("btcrows").innerHTML=h;$("btcl").textContent=(L&&L.btc?"Live Bitcoin price: ":"Indicative Bitcoin price (live feed unavailable): ")+"$"+Math.round(btc()).toLocaleString("en")+" USD";
  $("t1").textContent="From: "+f;$("t2").textContent="To: "+t;
  $("t1").setAttribute("aria-pressed",st.tab==="from");$("t2").setAttribute("aria-pressed",st.tab==="to");
  info()}
@@ -232,7 +264,7 @@ opts($("from"),"USD");opts($("to"),"EUR");
 $("from").onchange=function(){st.from=this.value;st.tab="from";calc()};
 $("to").onchange=function(){st.to=this.value;st.tab="to";calc()};
 $("swap").onclick=function(){var x=st.from;st.from=st.to;st.to=x;$("from").value=st.from;$("to").value=st.to;calc()};
-$("amt").oninput=calc;$("btcp").oninput=calc;
+$("amt").oninput=calc;
 $("t1").onclick=function(){st.tab="from";calc()};$("t2").onclick=function(){st.tab="to";calc()};
 [["USD","EUR"],["GBP","USD"],["EUR","GBP"],["USD","JPY"],["USD","BTC"],["GBP","BTC"],["EUR","TRY"]].forEach(function(p){
  var b=document.createElement("button");b.textContent=p[0]+" → "+p[1];
@@ -292,7 +324,7 @@ $("map").innerHTML=sv;
 $("map").onclick=function(e){var i=e.target.getAttribute&&e.target.getAttribute("data-i");if(!i)return;var m=MP.filter(function(q){return q.i===i})[0];var v=val(i);$("mapinfo").innerHTML=f2(i==="UK"?"GB":i)+" <b>"+m.n+"</b>: "+(v==null?"no World Bank figure":(+v).toFixed(1)+"% annual inflation"+(mode==="wb"?" ("+W[i==="UK"?"GB":i].inf.y+", World Bank)":""))};
 function rows(a){return a.map(function(m){return'<div class="row"><span>'+f2(m.i==="UK"?"GB":m.i)+" "+m.n+'</span><span><b>'+(+val(m.i)).toFixed(1)+'%</b></span></div>'}).join("")}
 
-var mode="snap",W={},L={fx:null,btc:0,wb:0},userBtc=false;
+var mode="snap",W={},L={fx:null,btc:0,wb:0};
 function wbid(i){return i==="UK"?"GB":i}
 function val(i){if(mode==="snap")return V[i].v;var w=W[wbid(i)];return w&&w.inf?w.inf.v:null}
 function lists(){var a=MP.filter(function(m){return val(m.i)!=null}).sort(function(x,y){return val(y.i)-val(x.i)});$("hi").innerHTML=rows(a.slice(0,5));$("lo").innerHTML=rows(a.slice(-5).reverse())}
@@ -300,14 +332,13 @@ function paint(){[].forEach.call($("map").querySelectorAll("[data-i]"),function(
 $("m1").onclick=function(){mode="snap";paint()};
 $("m2").onclick=function(){mode="wb";paint();if(!L.wb)$("mapinfo").textContent="World Bank data has not loaded yet, so the map shows grey. Check your connection and try again."};
 lists();
-var ISO={USD:"US",EUR:"XC",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ"};
+var ISO={USD:"US",EUR:"XC",GBP:"GB",JPY:"JP",CHF:"CH",CAD:"CA",AUD:"AU",NZD:"NZ",CNY:"CN",INR:"IN",KRW:"KR",SGD:"SG",HKD:"HK",SEK:"SE",NOK:"NO",PLN:"PL",TRY:"TR",RUB:"RU",BRL:"BR",MXN:"MX",ARS:"AR",ZAR:"ZA",EGP:"EG",SAR:"SA",AED:"AE",ILS:"IL",THB:"TH",IDR:"ID",NGN:"NG",KES:"KE",MAD:"MA",GHS:"GH",PKR:"PK",BDT:"BD",MYR:"MY",PHP:"PH",VND:"VN",DKK:"DK",CZK:"CZ",HUF:"HU",CLP:"CL",COP:"CO",PEN:"PE",FJD:"FJ",ISK:"IS",RON:"RO",BGN:"BG",RSD:"RS",UAH:"UA",GEL:"GE",KZT:"KZ",QAR:"QA",KWD:"KW",BHD:"BH",OMR:"OM",JOD:"JO",LKR:"LK",NPR:"NP",MMK:"MM",KHR:"KH",ETB:"ET",TZS:"TZ",UGX:"UG",DZD:"DZ",TND:"TN",UYU:"UY",DOP:"DO",CRC:"CR",JMD:"JM",TTD:"TT",GTQ:"GT",PYG:"PY",UZS:"UZ",MUR:"MU",BWP:"BW",ANG:"CW"};
 function jget(u){return fetch(u).then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})}
 function stat(){$("live").textContent=(L.fx?"Live exchange rates (updated "+L.fx+")":"Snapshot exchange rates")+" · "+(L.btc?"live Bitcoin price":"snapshot Bitcoin price")+" · "+(L.wb?"World Bank economy data loaded":"economy data from snapshot")}
 function loadFX(){jget("https://open.er-api.com/v6/latest/USD").then(function(d){if(d.result!=="success")throw 0;D.forEach(function(r){var x=d.rates[r[0]];if(r[0]!=="BTC"&&x>0)M[r[0]].r=x});L.fx=new Date(d.time_last_update_unix*1000).toLocaleDateString("en-GB");calc();stat()}).catch(stat)}
-function loadBTC(){jget("https://api.coinbase.com/v2/prices/BTC-USD/spot").then(function(d){return+d.data.amount}).catch(function(){return jget("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd").then(function(d){return d.bitcoin.usd})}).then(function(v){if(!(v>0))throw 0;if(!userBtc)$("btcp").value=Math.round(v);L.btc=1;calc();stat()}).catch(stat)}
+function loadBTC(){jget("https://api.coinbase.com/v2/prices/BTC-USD/spot").then(function(d){return+d.data.amount}).catch(function(){return jget("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd").then(function(d){return d.bitcoin.usd})}).then(function(v){if(!(v>0))throw 0;$("btcp").value=v;L.btc=1;calc();stat()}).catch(stat)}
 function wb(ind,key){return jget("https://api.worldbank.org/v2/country/all/indicator/"+ind+"?format=json&mrnev=1&per_page=400").then(function(d){(d[1]||[]).forEach(function(x){if(x.value==null||!x.country)return;var id=x.country.id;(W[id]=W[id]||{})[key]={v:x.value,y:x.date}})}).catch(function(){})}
 function loadWB(){Promise.all([wb("FP.CPI.TOTL.ZG","inf"),wb("NY.GDP.MKTP.KD.ZG","gdp"),wb("SL.UEM.TOTL.ZS","une"),wb("GC.DOD.TOTL.GD.ZS","debt")]).then(function(){L.wb=Object.keys(W).length>0?1:0;calc();if(mode==="wb")paint();stat()})}
-$("btcp").addEventListener("input",function(){userBtc=true});
 loadFX();loadBTC();loadWB();setInterval(loadBTC,60000);setInterval(loadFX,1800000);
 // Tell the host page how tall the content is so the iframe doesn't clip or scroll.
 function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"currency-calculator"},location.origin)}catch(e){}}

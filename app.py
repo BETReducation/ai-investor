@@ -1799,7 +1799,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored from live Yahoo Finance data across about 280 stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
     "finance-map": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks.",
     "crypto-compass": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year.",
-    "currency-calculator": "Convert between 40+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
+    "currency-calculator": "Convert between 75+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
 _SEED_DATAVIZ_PAGES = [
