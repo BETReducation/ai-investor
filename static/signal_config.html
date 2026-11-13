@@ -370,6 +370,68 @@
   .layout.right-collapsed .right-reopen { display: block; position: absolute; top: 10px; right: 0; z-index: 8; background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); border-right: none; border-radius: 4px 0 0 4px; padding: 6px 7px; cursor: pointer; font-size: 13px; line-height: 1; }
   .layout.right-collapsed .right-reopen:hover { color: var(--accent-blue); }
 }
+/* ── Strategy set-up pop-up + left summary ── */
+.wz-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 2px; background: var(--accent-blue); color: #fff; border: 1px solid var(--accent-blue); cursor: pointer; }
+.wz-open-btn:hover { filter: brightness(1.1); }
+.sum-wrap { padding: 10px 12px 4px; display: flex; flex-direction: column; gap: 8px; }
+.sum-card { border: 1px solid var(--border); border-radius: 3px; background: var(--bg-secondary); transition: border-color .3s, box-shadow .3s; }
+.sum-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+.sum-title { font-size: 8px; letter-spacing: 2px; color: var(--text-muted); font-weight: 600; }
+.sum-edit { font-family: 'IBM Plex Mono', monospace; font-size: 8px; letter-spacing: 1px; padding: 2px 7px; background: transparent; color: var(--accent-blue); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; }
+.sum-edit:hover { border-color: var(--accent-blue); }
+.sum-body { padding: 8px 10px; font-size: 10px; line-height: 1.7; color: var(--text-secondary); }
+.sum-body .sum-name { font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.sum-body .sum-line { display: flex; justify-content: space-between; gap: 8px; }
+.sum-body .sum-line span:last-child { color: var(--text-primary); text-align: right; }
+.sum-body .sum-cond { display: flex; gap: 6px; align-items: baseline; }
+.sum-tag { font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 0 4px; border-radius: 2px; flex-shrink: 0; }
+.sum-tag.buy { color: var(--accent-green); border: 1px solid var(--accent-green); }
+.sum-tag.sell { color: var(--accent-red, #ef4444); border: 1px solid var(--accent-red, #ef4444); }
+.sum-empty { text-align: center; color: var(--text-muted); padding: 4px 0; }
+.sum-empty button { margin-top: 6px; }
+.sum-card.flash { animation: sumFlash 2.4s ease-out; }
+@keyframes sumFlash { 0%, 35% { border-color: var(--accent-green); box-shadow: 0 0 0 2px rgba(0,255,136,.35); background: rgba(0,255,136,.08); } 100% { border-color: var(--border); box-shadow: none; } }
+
+.wz-overlay { position: fixed; inset: 0; z-index: 9000; background: rgba(5,6,8,.72); backdrop-filter: blur(2px); align-items: center; justify-content: center; padding: 16px; }
+.wz { width: 100%; max-width: 760px; max-height: 100%; display: flex; flex-direction: column; background: var(--bg-panel); border: 1px solid var(--border-bright); border-radius: 6px; box-shadow: 0 12px 48px rgba(0,0,0,.5); overflow: hidden; }
+.wz-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+.wz-title { font-size: 11px; letter-spacing: 3px; font-weight: 700; color: var(--text-primary); }
+.wz-close { background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; padding: 2px 6px; }
+.wz-close:hover { color: var(--text-primary); }
+.wz-steps { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+.wz-steps button { flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .5px; padding: 10px 6px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; }
+.wz-steps button b { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-right: 5px; border-radius: 50%; border: 1px solid var(--border-bright); font-size: 9px; }
+.wz-steps button.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+.wz-steps button.active b { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+.wz-body { flex: 1; overflow-y: auto; padding: 18px 22px; scrollbar-width: thin; }
+.wz-body h3 { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.wz-hint { font-size: 10.5px; line-height: 1.65; color: var(--text-muted); margin: 4px 0 12px; }
+.wz-form { display: flex; flex-direction: column; gap: 4px; max-width: 460px; }
+.wz-form .wz-hint { margin: 0 0 12px; }
+.wz-adv { margin-top: 16px; border: 1px solid var(--border); border-radius: 3px; }
+.wz-adv summary { cursor: pointer; padding: 9px 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--text-secondary); font-weight: 600; }
+.wz-adv-body { padding: 4px 14px 14px; }
+.wz-label { font-size: 9px; letter-spacing: 1.5px; color: var(--text-muted); margin: 14px 0 5px; }
+.wz-save-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.wz-save-row > button { flex: 1 1 200px; width: auto !important; }
+.wz-run { width: 100%; margin-top: 8px; padding: 11px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 2px; background: rgba(0,255,136,.1); border: 1px solid var(--accent-green); color: var(--accent-green); border-radius: 3px; cursor: pointer; }
+.wz-run:hover { background: rgba(0,255,136,.18); }
+.wz-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 18px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+.wz-note { font-size: 9px; color: var(--text-muted); text-align: center; }
+.wz-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; padding: 8px 16px; border-radius: 3px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-bright); cursor: pointer; }
+.wz-btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+.wz-btn:disabled { opacity: .35; cursor: default; }
+.wz-review-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.wz-review-grid .sum-card { background: var(--bg-card); }
+.wz-warn { margin: 0 0 10px; padding: 8px 10px; font-size: 10px; border: 1px solid var(--accent-amber); color: var(--accent-amber); border-radius: 3px; background: rgba(245,158,11,.07); }
+@media (max-width: 768px) {
+  .wz-overlay { padding: 0; }
+  .wz { max-width: none; height: 100%; border-radius: 0; border: none; }
+  .wz-steps button { font-size: 0; padding: 10px 2px; }
+  .wz-steps button b { margin: 0; font-size: 10px; width: 22px; height: 22px; }
+  .wz-body { padding: 14px 14px; }
+  .wz-note { display: none; }
+}
 .pane-ctl { position: absolute; z-index: 3; display: flex; gap: 3px; }
 .pane-ctl button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 3px; background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; opacity: .75; }
 .pane-ctl button:hover { opacity: 1; color: var(--accent-blue); border-color: var(--accent-blue); }
@@ -652,11 +714,11 @@ window.addEventListener('resize', () => {
 <!-- MAIN LAYOUT -->
 <div class="layout" id="mainLayout">
 
-  <!-- LEFT PANEL: Config -->
+  <!-- LEFT PANEL: summary of the strategy + Run (editing happens in the setup pop-up) -->
   <div class="panel" id="leftPanel">
     <div class="panel-header">
-      <div class="panel-title">STRATEGY CONFIG</div>
-      <div class="panel-badge">DAY TRADE</div>
+      <div class="panel-title">STRATEGY</div>
+      <button type="button" class="wz-open-btn" onclick="openWizard(1)" title="Open the strategy set-up guide">SET UP</button>
     </div>
 
     <!-- WATCHLIST -->
@@ -693,207 +755,20 @@ window.addEventListener('resize', () => {
     </div>
     <div class="wl-active-list" id="watchlist"></div>
 
-    <!-- CAPITAL -->
-    <div class="section">
-      <div class="section-label">CAPITAL & RISK</div>
-      <div class="control-row">
-        <div class="control-label">Currency</div>
-        <div class="input-group">
-          <select id="currency" onchange="setCurrency(this.value)" style="font-size:10px;padding:4px 6px;">
-            <option value="USD">USD ($)</option>
-            <option value="GBP">GBP (£)</option>
-            <option value="EUR">EUR (€)</option>
-            <option value="JPY">JPY (¥)</option>
-            <option value="CAD">CAD (C$)</option>
-            <option value="AUD">AUD (A$)</option>
-            <option value="CHF">CHF (Fr)</option>
-            <option value="INR">INR (₹)</option>
-            <option value="CUSTOM">Custom…</option>
-          </select>
-        </div>
-      </div>
-      <div class="control-row" id="customCurrencyRow" style="display:none;">
-        <div class="control-label">Symbol</div>
-        <div class="input-group">
-          <input type="text" id="customCurrencySymbol" value="$" maxlength="4" style="width:90px" onchange="setCustomCurrencySymbol(this.value)">
-        </div>
-      </div>
-      <div class="control-row">
-        <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
-        <div class="input-group">
-          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
-        </div>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-label">Position Size in Currency</div>
-        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked); syncFixedTargetsFromPositionValue()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="range-row" id="posSizePctRow">
-        <div class="range-header">
-          <div class="control-label">Position Size</div>
-          <div class="range-value" id="posSizeVal">20%</div>
-        </div>
-        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'; syncFixedTargetsFromPositionValue()">
-      </div>
-      <div class="control-row" id="posSizeGbpRow" style="display:none;">
-        <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
-        <div class="input-group">
-          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
-        </div>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-label">Target Gain in Currency</div>
-        <label class="toggle"><input type="checkbox" id="targetGainCcyMode" onchange="onToggleTargetGainMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="range-row" id="targetGainPctRow">
-        <div class="range-header">
-          <div class="control-label">Target Gain <span>(per trade)</span> <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">?</span></div>
-          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
-        </div>
-        <input type="range" id="targetGain" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('targetGain','targetVal')">
-      </div>
-      <div class="control-row" id="targetGainCcyRow" style="display:none;">
-        <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
-        <div class="input-group">
-          <input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()">
-        </div>
-      </div>
-      <div class="sep"></div>
-      <div class="toggle-row">
-        <div class="toggle-label">Fixed Stop-Loss</div>
-        <label class="toggle"><input type="checkbox" id="fixedSL" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-label">Stop-Loss in Currency</div>
-        <label class="toggle"><input type="checkbox" id="stopLossCcyMode" onchange="onToggleStopLossMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="range-row" id="stopLossPctRow">
-        <div class="range-header">
-          <div class="control-label">Stop-Loss % <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">?</span></div>
-          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
-        </div>
-        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('stopLoss','slVal')">
-      </div>
-      <div class="control-row" id="stopLossCcyRow" style="display:none;">
-        <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>
-        <div class="input-group">
-          <input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()">
-        </div>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-label">Trailing Stop-Loss</div>
-        <label class="toggle"><input type="checkbox" id="trailSL"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
-      </div>
-      <div class="range-row" id="trailSLRow" style="opacity:0.3;pointer-events:none;">
-        <div class="range-header">
-          <div class="control-label">Trail Distance %</div>
-          <div class="range-value tag-amber" id="trailVal">0.3%</div>
-        </div>
-        <input type="range" id="trailDist" min="0.1" max="2" step="0.1" value="0.3" oninput="document.getElementById('trailVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
-      </div>
-    </div>
 
-    <!-- STRATEGY BUILDER -->
-    <div class="section">
-      <div class="section-label">SIGNAL STRATEGY</div>
-
-      <!-- Saved strategies dropdown -->
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
-        <select id="strategySelect" onchange="loadSavedStrategy(this.value)"
-          style="flex:1;font-size:10px;padding:4px 6px;">
-          <option value="">— New Strategy —</option>
-        </select>
-        <button onclick="deleteCurrentStrategy()" title="Delete selected strategy"
-          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 8px;border-radius:2px;line-height:1;transition:all 0.15s;font-family:'IBM Plex Mono',monospace;"
-          onmouseover="this.style.borderColor='var(--accent-red)';this.style.color='var(--accent-red)'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">×</button>
+    <!-- SUMMARY CARDS (filled by renderSummary) -->
+    <div class="sum-wrap">
+      <div class="sum-card" id="sumCard1">
+        <div class="sum-head"><span class="sum-title">1 · STRATEGY</span><button type="button" class="sum-edit" onclick="openWizard(1)">EDIT</button></div>
+        <div class="sum-body" id="sumBody1"></div>
       </div>
-
-      <button type="button" onclick="openImportBacktestModal()"
-        title="Import a strategy you saved on the Backtester page — its indicators/conditions get translated into this page's condition builder"
-        style="width:100%;margin-bottom:10px;padding:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;background:rgba(0,255,136,0.06);border:1px dashed var(--accent-green);color:var(--accent-green);cursor:pointer;border-radius:2px;">⇩ IMPORT FROM BACKTESTER</button>
-
-      <!-- Strategy name — Buy/Sell is set per-condition now (see the toggle on
-           each condition card below), not as one whole-strategy setting. -->
-      <div style="margin-bottom:10px;">
-        <input type="text" id="strategyName" placeholder="My Strategy" style="width:100%;font-size:10px;">
+      <div class="sum-card" id="sumCard2">
+        <div class="sum-head"><span class="sum-title">2 · CAPITAL &amp; RISK</span><button type="button" class="sum-edit" onclick="openWizard(2)">EDIT</button></div>
+        <div class="sum-body" id="sumBody2"></div>
       </div>
-
-      <!-- Match logic -->
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
-        <span>Fire when</span>
-        <select id="stratMatch" style="width:auto;font-size:10px;padding:3px 6px;">
-          <option value="all">ALL conditions</option>
-          <option value="any">ANY condition</option>
-        </select>
-        <span>are met</span>
-      </div>
-
-      <!-- Min confidence -->
-      <div class="range-row" style="margin-bottom:10px;">
-        <div class="range-header">
-          <div class="control-label">Min Confidence <span class="info-dot" tabindex="0" data-tip="Confidence is the % of your active conditions currently pointing the same way. For 'ANY condition', a trade only fires once at least this % of conditions agree — raise it to demand stronger agreement, lower it to let weaker, single-condition setups through. No effect on 'ALL conditions' (that mode always needs 100% agreement to fire).">?</span></div>
-          <div class="range-value" id="minConfidenceVal">60%</div>
-        </div>
-        <input type="range" id="minConfidence" min="50" max="100" step="5" value="60"
-               oninput="document.getElementById('minConfidenceVal').textContent=this.value+'%'; updateStrategyStatus();"
-               title="Confidence is the % of your active conditions currently pointing the same way. For 'ANY condition', a trade only fires once at least this % of conditions agree — raise it to demand stronger agreement, lower it to let weaker, single-condition setups through. No effect on 'ALL conditions' (that mode always needs 100% agreement to fire).">
-      </div>
-
-      <!-- Quick start templates -->
-      <div style="margin-bottom:10px;">
-        <div style="font-size:8px;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:5px;">QUICK START <span style="opacity:0.7;">— one-click starter strategies</span></div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          <button type="button" class="qs-chip" onclick="applyTemplate('oversold_bounce')" title="BUY when RSI is oversold and price is near the lower Bollinger Band — a mean-reversion bounce setup.">Oversold Bounce</button>
-          <button type="button" class="qs-chip" onclick="applyTemplate('momentum_breakout')" title="BUY on a MACD bull cross while price holds above its 50-period MA on a volume spike — a momentum breakout.">Momentum Breakout</button>
-          <button type="button" class="qs-chip" id="qsGoldenCross" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow. Requires Pro (uses ADX).">Golden Cross Trend</button>
-          <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
-          <button type="button" class="qs-chip" id="qsInverseHs" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike. Requires Pro (uses Inverse H&amp;S).">Inverse H&amp;S Breakout</button>
-        </div>
-      </div>
-
-      <!-- Conditions list -->
-      <div id="conditionsList" style="display:flex;flex-direction:column;gap:6px;"></div>
-
-      <!-- Add condition -->
-      <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
-
-      <!-- Live condition status for current asset -->
-      <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
-
-      <!-- Save strategy -->
-      <button id="saveStratBtn" onclick="saveStrategy()"
-        title="Save these conditions as a named, reloadable strategy"
-        style="width:100%;margin-top:10px;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;border-radius:2px;transition:all 0.15s;"
-        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE THIS STRATEGY</button>
-    </div>
-
-    <!-- TIMEFRAME -->
-    <div class="section">
-      <div class="section-label">TIMEFRAME</div>
-      <div class="control-row">
-        <div class="control-label">Candle Period</div>
-        <select id="timeframe" style="width:auto;">
-          <optgroup label="Minutes">
-            <option value="1m">1 MIN</option>
-            <option value="2m">2 MIN</option>
-            <option value="5m" selected>5 MIN</option>
-            <option value="15m">15 MIN</option>
-            <option value="30m">30 MIN</option>
-            <option value="60m">60 MIN</option>
-            <option value="90m">90 MIN</option>
-          </optgroup>
-          <optgroup label="Hours / Days">
-            <option value="1h">1 HOUR</option>
-            <option value="1d">1 DAY</option>
-            <option value="5d">5 DAY</option>
-          </optgroup>
-          <optgroup label="Weeks / Months">
-            <option value="1wk">1 WEEK</option>
-            <option value="1mo">1 MONTH</option>
-            <option value="3mo">3 MONTH</option>
-          </optgroup>
-        </select>
+      <div class="sum-card" id="sumCard3">
+        <div class="sum-head"><span class="sum-title">3 · TIMEFRAME</span><button type="button" class="sum-edit" onclick="openWizard(3)">EDIT</button></div>
+        <div class="sum-body" id="sumBody3"></div>
       </div>
     </div>
 
@@ -902,9 +777,6 @@ window.addEventListener('resize', () => {
       <button class="btn-engine start" id="engineBtn" onclick="toggleEngine()">▶ RUN STRATEGY</button>
     </div>
     <div id="runnerList" style="display:none;padding:0 12px 8px;"></div>
-    <div class="save-btn-wrap">
-      <button class="btn-engine" id="saveBtn" onclick="savePreferences()" title="Save your capital, risk, watchlist and timeframe as your defaults" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE MY DEFAULTS</button>
-    </div>
 
     <!-- LOG -->
     <div class="log-area" id="logArea">
@@ -6101,6 +5973,119 @@ checkSession();
   });
 })();
 
+
+// ── Strategy set-up pop-up + left-panel summary ─────────────────────────────
+let wzStep = 1, wzSnap = null;
+const WZ_LAST = 4;
+const _esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function _sumStrategy() {
+  const name = (document.getElementById('strategyName')?.value || '').trim();
+  if (!strategyConditions.length) {
+    return `<div class="sum-empty">No conditions yet.<br><button type="button" class="wz-open-btn" onclick="openWizard(1)">CHOOSE A STRATEGY</button></div>`;
+  }
+  const match = document.getElementById('stratMatch')?.value === 'any' ? 'ANY condition' : 'ALL conditions';
+  const rows = strategyConditions.map(c => {
+    const d = CONDITION_DEFS[c.type] || {};
+    const val = d.inputLabel ? ` · ${_esc(d.inputLabel)} ${_esc(c.value)}${_esc(d.suffix || '')}` : '';
+    const dir = c.direction === 'sell' ? 'sell' : 'buy';
+    return `<div class="sum-cond"><span class="sum-tag ${dir}">${dir.toUpperCase()}</span><span>${_esc(d.label || c.type)}${val}</span></div>`;
+  }).join('');
+  return `${name ? `<div class="sum-name">${_esc(name)}</div>` : ''}${rows}<div class="sum-line" style="margin-top:4px;"><span>Fires when</span><span>${match}</span></div>`;
+}
+
+function _sumRisk() {
+  const v = id => document.getElementById(id);
+  const sym = getCurrencySymbol();
+  const money = n => sym + (parseFloat(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const line = (k, val) => `<div class="sum-line"><span>${k}</span><span>${val}</span></div>`;
+  const pos = v('posSizeGbpMode')?.checked ? money(v('posSizeGbp').value) : v('posSize').value + '% of capital';
+  const tgt = v('targetGainCcyMode')?.checked ? '+' + money(v('targetGainCcy').value) : '+' + v('targetVal').value + '%';
+  const stop = !v('fixedSL')?.checked ? 'Off' : (v('stopLossCcyMode')?.checked ? '−' + money(v('stopLossCcy').value) : '−' + v('slVal').value + '%');
+  return line('Capital', money(v('capital').value)) + line('Per trade', pos) + line('Target gain', tgt) + line('Stop-loss', stop)
+    + (v('trailSL')?.checked ? line('Trailing stop', parseFloat(v('trailDist').value).toFixed(1) + '%') : '');
+}
+
+function _sumTimeframe() {
+  const sel = document.getElementById('timeframe');
+  return `<div class="sum-line"><span>Candle period</span><span>${_esc(sel?.selectedOptions?.[0]?.textContent?.trim() || '')}</span></div>`;
+}
+
+function sumSnapshot() { return [_sumStrategy(), _sumRisk(), _sumTimeframe()]; }
+
+// Cheap enough to run on a timer: only touches the DOM when a card's text changed, so edits made
+// anywhere (pop-up, saved-preference load, template, backtester import) reach the left panel.
+function renderSummary() {
+  if (typeof getCurrencySymbol !== 'function') return;
+  let snap;
+  try { snap = sumSnapshot(); } catch (e) { return; }
+  snap.forEach((html, i) => {
+    const el = document.getElementById('sumBody' + (i + 1));
+    if (el && el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  });
+}
+setInterval(renderSummary, 600);
+renderSummary();
+
+function openWizard(step) {
+  wzSnap = sumSnapshot();
+  try { localStorage.setItem('gcgWizardSeen', '1'); } catch (e) {}
+  document.getElementById('wzOverlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  wzGo(step || 1);
+}
+
+function closeWizard() {
+  document.getElementById('wzOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+  renderSummary();
+  const now = sumSnapshot();
+  now.forEach((html, i) => {
+    if (!wzSnap || wzSnap[i] === html) return;
+    const card = document.getElementById('sumCard' + (i + 1));
+    if (!card) return;
+    card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+  });
+  if (isCompactScreen && isCompactScreen() && typeof mobileTab === 'function') mobileTab('strategy');
+}
+
+function wzGo(n) {
+  wzStep = Math.max(1, Math.min(WZ_LAST, n));
+  document.querySelectorAll('#wzOverlay .wz-step').forEach(el => { el.style.display = +el.dataset.step === wzStep ? '' : 'none'; });
+  document.querySelectorAll('#wzSteps button').forEach(b => b.classList.toggle('active', +b.dataset.step === wzStep));
+  document.getElementById('wzBack').disabled = wzStep === 1;
+  document.getElementById('wzNext').innerHTML = wzStep === WZ_LAST ? '&#10003; DONE' : 'NEXT &rarr;';
+  document.querySelector('#wzOverlay .wz-body').scrollTop = 0;
+  if (wzStep === WZ_LAST) renderWizardReview();
+  if (wzStep === 1) { renderConditions(); updateStrategyStatus(); }
+}
+function wzNext() { if (wzStep >= WZ_LAST) closeWizard(); else wzGo(wzStep + 1); }
+function wzDone(run) { closeWizard(); if (run) toggleEngine(); }
+
+function renderWizardReview() {
+  const [a, b, c] = sumSnapshot();
+  const assets = Object.values(watchlistEnabled || {}).filter(Boolean).length;
+  const warns = [];
+  if (!strategyConditions.length) warns.push('This strategy has no conditions yet, so it cannot produce signals. Go back to step 1.');
+  if (!assets) warns.push('No assets are selected in the watchlist on the left, so there is nothing to scan.');
+  const card = (t, body, step) => `<div class="sum-card"><div class="sum-head"><span class="sum-title">${t}</span><button type="button" class="sum-edit" onclick="wzGo(${step})">EDIT</button></div><div class="sum-body">${body}</div></div>`;
+  document.getElementById('wzReview').innerHTML =
+    warns.map(w => `<div class="wz-warn">${w}</div>`).join('') +
+    `<div class="wz-review-grid">${card('STRATEGY', a, 1)}${card('CAPITAL &amp; RISK', b, 2)}${card('TIMEFRAME', c, 3)}</div>` +
+    `<div class="wz-hint" style="margin-top:10px;">Scanning ${assets} watchlist asset${assets === 1 ? '' : 's'}. Results show what the strategy would have signalled. This is a simulation for learning, not advice.</div>`;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('wzOverlay').style.display !== 'none') closeWizard();
+});
+
+// First visit: signed-in user with no strategy gets the guide once, after saved preferences have loaded.
+setTimeout(() => {
+  let seen = false;
+  try { seen = localStorage.getItem('gcgWizardSeen') === '1'; } catch (e) {}
+  if (!seen && userAuthenticated && !strategyConditions.length) openWizard(1);
+}, 3500);
+
 // ── Right panel: collapse + drag-resize (desktop) ───────────────────────────
 (function () {
   const layout = document.getElementById('mainLayout');
@@ -6136,6 +6121,282 @@ checkSession();
 })();
 
 </script>
+
+<!-- STRATEGY SET-UP POP-UP: the existing controls live here (same ids); the left panel shows a summary -->
+<div class="wz-overlay" id="wzOverlay" style="display:none;" onclick="if(event.target===this)closeWizard()">
+  <div class="wz" role="dialog" aria-modal="true" aria-labelledby="wzTitle">
+    <div class="wz-head">
+      <div class="wz-title" id="wzTitle">SET UP YOUR STRATEGY</div>
+      <button type="button" class="wz-close" onclick="closeWizard()" aria-label="Close">&#10005;</button>
+    </div>
+    <div class="wz-steps" id="wzSteps">
+      <button type="button" data-step="1" onclick="wzGo(1)"><b>1</b> Strategy</button>
+      <button type="button" data-step="2" onclick="wzGo(2)"><b>2</b> Capital &amp; risk</button>
+      <button type="button" data-step="3" onclick="wzGo(3)"><b>3</b> Timeframe</button>
+      <button type="button" data-step="4" onclick="wzGo(4)"><b>4</b> Review</button>
+    </div>
+    <div class="wz-body">
+
+      <section class="wz-step" data-step="1">
+        <h3>What should the strategy look for?</h3>
+        <div class="wz-hint">A strategy is a short list of conditions about the price chart, such as &ldquo;RSI is low&rdquo;. When they are all true, the tool logs a simulated signal. Nothing real is bought or sold. Pick a starter below, or build your own.</div>
+      <!-- Quick start templates -->
+      <div style="margin-bottom:10px;">
+        <div style="font-size:8px;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:5px;">QUICK START <span style="opacity:0.7;">— one-click starter strategies</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          <button type="button" class="qs-chip" onclick="applyTemplate('oversold_bounce')" title="BUY when RSI is oversold and price is near the lower Bollinger Band — a mean-reversion bounce setup.">Oversold Bounce</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('momentum_breakout')" title="BUY on a MACD bull cross while price holds above its 50-period MA on a volume spike — a momentum breakout.">Momentum Breakout</button>
+          <button type="button" class="qs-chip" id="qsGoldenCross" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow. Requires Pro (uses ADX).">Golden Cross Trend</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
+          <button type="button" class="qs-chip" id="qsInverseHs" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike. Requires Pro (uses Inverse H&amp;S).">Inverse H&amp;S Breakout</button>
+        </div>
+      </div>
+
+
+      <!-- Conditions list -->
+      <div id="conditionsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+
+      <!-- Add condition -->
+      <button class="add-cond-btn" onclick="addCondition()">+ ADD CONDITION</button>
+
+      <!-- Live condition status for current asset -->
+      <div id="stratLiveStatus" style="display:none;margin-top:10px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:2px;font-size:9px;"></div>
+
+
+        <details class="wz-adv">
+          <summary>Advanced options</summary>
+          <div class="wz-adv-body">
+            <div class="wz-hint">Fire when: ALL means every condition must be true together (stricter). ANY means one is enough (more signals).</div>
+      <!-- Match logic -->
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
+        <span>Fire when</span>
+        <select id="stratMatch" style="width:auto;font-size:10px;padding:3px 6px;">
+          <option value="all">ALL conditions</option>
+          <option value="any">ANY condition</option>
+        </select>
+        <span>are met</span>
+      </div>
+
+
+      <!-- Min confidence -->
+      <div class="range-row" style="margin-bottom:10px;">
+        <div class="range-header">
+          <div class="control-label">Min Confidence <span class="info-dot" tabindex="0" data-tip="Confidence is the % of your active conditions currently pointing the same way. For 'ANY condition', a trade only fires once at least this % of conditions agree — raise it to demand stronger agreement, lower it to let weaker, single-condition setups through. No effect on 'ALL conditions' (that mode always needs 100% agreement to fire).">?</span></div>
+          <div class="range-value" id="minConfidenceVal">60%</div>
+        </div>
+        <input type="range" id="minConfidence" min="50" max="100" step="5" value="60"
+               oninput="document.getElementById('minConfidenceVal').textContent=this.value+'%'; updateStrategyStatus();"
+               title="Confidence is the % of your active conditions currently pointing the same way. For 'ANY condition', a trade only fires once at least this % of conditions agree — raise it to demand stronger agreement, lower it to let weaker, single-condition setups through. No effect on 'ALL conditions' (that mode always needs 100% agreement to fire).">
+      </div>
+
+
+            <div class="wz-hint">Saved strategies and imports.</div>
+      <!-- Saved strategies dropdown -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <select id="strategySelect" onchange="loadSavedStrategy(this.value)"
+          style="flex:1;font-size:10px;padding:4px 6px;">
+          <option value="">— New Strategy —</option>
+        </select>
+        <button onclick="deleteCurrentStrategy()" title="Delete selected strategy"
+          style="background:none;border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:14px;padding:2px 8px;border-radius:2px;line-height:1;transition:all 0.15s;font-family:'IBM Plex Mono',monospace;"
+          onmouseover="this.style.borderColor='var(--accent-red)';this.style.color='var(--accent-red)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">×</button>
+      </div>
+
+
+      <button type="button" onclick="openImportBacktestModal()"
+        title="Import a strategy you saved on the Backtester page — its indicators/conditions get translated into this page's condition builder"
+        style="width:100%;margin-bottom:10px;padding:6px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.5px;background:rgba(0,255,136,0.06);border:1px dashed var(--accent-green);color:var(--accent-green);cursor:pointer;border-radius:2px;">⇩ IMPORT FROM BACKTESTER</button>
+
+
+          </div>
+        </details>
+      </section>
+
+      <section class="wz-step" data-step="2" style="display:none;">
+        <h3>How much would each simulated trade use?</h3>
+        <div class="wz-hint">These numbers shape the paper trades. They are simulated, so change them freely and see what would have happened.</div>
+        <div class="wz-form">
+      <div class="control-row">
+        <div class="control-label">Currency</div>
+        <div class="input-group">
+          <select id="currency" onchange="setCurrency(this.value)" style="font-size:10px;padding:4px 6px;">
+            <option value="USD">USD ($)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CAD">CAD (C$)</option>
+            <option value="AUD">AUD (A$)</option>
+            <option value="CHF">CHF (Fr)</option>
+            <option value="INR">INR (₹)</option>
+            <option value="CUSTOM">Custom…</option>
+          </select>
+        </div>
+      </div>
+      <div class="control-row" id="customCurrencyRow" style="display:none;">
+        <div class="control-label">Symbol</div>
+        <div class="input-group">
+          <input type="text" id="customCurrencySymbol" value="$" maxlength="4" style="width:90px" onchange="setCustomCurrencySymbol(this.value)">
+        </div>
+      </div>
+      <div class="control-row">
+        <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
+        <div class="input-group">
+          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
+        </div>
+      </div>
+
+          <div class="wz-hint">Capital is the pretend pot of money your simulated trades are made from.</div>
+      <div class="range-row" id="posSizePctRow">
+        <div class="range-header">
+          <div class="control-label">Position Size</div>
+          <div class="range-value" id="posSizeVal">20%</div>
+        </div>
+        <input type="range" id="posSize" min="5" max="100" value="20" oninput="document.getElementById('posSizeVal').textContent=this.value+'%'; syncFixedTargetsFromPositionValue()">
+      </div>
+      <div class="control-row" id="posSizeGbpRow" style="display:none;">
+        <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
+        </div>
+      </div>
+
+          <div class="wz-hint">Position size is how much of your capital goes into each trade. Smaller means less risk per trade.</div>
+      <div class="range-row" id="targetGainPctRow">
+        <div class="range-header">
+          <div class="control-label">Target Gain <span>(per trade)</span> <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">?</span></div>
+          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
+        </div>
+        <input type="range" id="targetGain" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('targetGain','targetVal')">
+      </div>
+      <div class="control-row" id="targetGainCcyRow" style="display:none;">
+        <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()">
+        </div>
+      </div>
+
+          <div class="wz-hint">Target gain: the trade closes in profit once it has gained this much.</div>
+      <div class="range-row" id="stopLossPctRow">
+        <div class="range-header">
+          <div class="control-label">Stop-Loss % <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">?</span></div>
+          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
+        </div>
+        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('stopLoss','slVal')">
+      </div>
+      <div class="control-row" id="stopLossCcyRow" style="display:none;">
+        <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>
+        <div class="input-group">
+          <input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()">
+        </div>
+      </div>
+
+          <div class="wz-hint">Stop-loss: the trade closes at a loss once it has fallen this much. It caps how much one trade can lose.</div>
+        </div>
+        <details class="wz-adv">
+          <summary>Advanced options</summary>
+          <div class="wz-adv-body wz-form">
+            <div class="wz-hint">Enter amounts as money instead of a percentage.</div>
+      <div class="toggle-row">
+        <div class="toggle-label">Position Size in Currency</div>
+        <label class="toggle"><input type="checkbox" id="posSizeGbpMode" onchange="togglePosSizeMode(this.checked); syncFixedTargetsFromPositionValue()"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Target Gain in Currency</div>
+        <label class="toggle"><input type="checkbox" id="targetGainCcyMode" onchange="onToggleTargetGainMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Stop-Loss in Currency</div>
+        <label class="toggle"><input type="checkbox" id="stopLossCcyMode" onchange="onToggleStopLossMode(this.checked)"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+
+            <div class="wz-hint">Fixed stop-loss switches the stop on or off. A trailing stop follows the price up and sells if it drops by the trail distance.</div>
+      <div class="toggle-row">
+        <div class="toggle-label">Fixed Stop-Loss</div>
+        <label class="toggle"><input type="checkbox" id="fixedSL" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">Trailing Stop-Loss</div>
+        <label class="toggle"><input type="checkbox" id="trailSL"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="range-row" id="trailSLRow" style="opacity:0.3;pointer-events:none;">
+        <div class="range-header">
+          <div class="control-label">Trail Distance %</div>
+          <div class="range-value tag-amber" id="trailVal">0.3%</div>
+        </div>
+        <input type="range" id="trailDist" min="0.1" max="2" step="0.1" value="0.3" oninput="document.getElementById('trailVal').textContent=parseFloat(this.value).toFixed(1)+'%'">
+      </div>
+
+          </div>
+        </details>
+      </section>
+
+      <section class="wz-step" data-step="3" style="display:none;">
+        <h3>How long is each candle?</h3>
+        <div class="wz-hint">Each candle on the chart covers one period. Short periods (minutes) react fast and give many signals. Long periods (days, weeks) give fewer, slower ones. Your conditions are checked on these candles.</div>
+        <div class="wz-form">
+      <div class="control-row">
+        <div class="control-label">Candle Period</div>
+        <select id="timeframe" style="width:auto;">
+          <optgroup label="Minutes">
+            <option value="1m">1 MIN</option>
+            <option value="2m">2 MIN</option>
+            <option value="5m" selected>5 MIN</option>
+            <option value="15m">15 MIN</option>
+            <option value="30m">30 MIN</option>
+            <option value="60m">60 MIN</option>
+            <option value="90m">90 MIN</option>
+          </optgroup>
+          <optgroup label="Hours / Days">
+            <option value="1h">1 HOUR</option>
+            <option value="1d">1 DAY</option>
+            <option value="5d">5 DAY</option>
+          </optgroup>
+          <optgroup label="Weeks / Months">
+            <option value="1wk">1 WEEK</option>
+            <option value="1mo">1 MONTH</option>
+            <option value="3mo">3 MONTH</option>
+          </optgroup>
+        </select>
+      </div>
+
+        </div>
+      </section>
+
+      <section class="wz-step" data-step="4" style="display:none;">
+        <h3>Check it over</h3>
+        <div id="wzReview"></div>
+        <div class="wz-name">
+          <div class="wz-label">Strategy name</div>
+      <!-- Strategy name — Buy/Sell is set per-condition now (see the toggle on
+           each condition card below), not as one whole-strategy setting. -->
+      <div style="margin-bottom:10px;">
+        <input type="text" id="strategyName" placeholder="My Strategy" style="width:100%;font-size:10px;">
+      </div>
+
+
+        </div>
+        <div class="wz-save-row">
+      <!-- Save strategy -->
+      <button id="saveStratBtn" onclick="saveStrategy()"
+        title="Save these conditions as a named, reloadable strategy"
+        style="width:100%;margin-top:0;padding:7px;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:2px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;border-radius:2px;transition:all 0.15s;"
+        onmouseover="this.style.background='rgba(0,136,255,0.16)'" onmouseout="this.style.background='rgba(0,136,255,0.08)'">↓ SAVE THIS STRATEGY</button>
+
+          <button class="btn-engine" id="saveBtn" onclick="savePreferences()" title="Save your capital, risk, watchlist and timeframe as your defaults" style="background:rgba(0,136,255,0.08);color:var(--accent-blue);border-color:var(--accent-blue);">↓ SAVE MY DEFAULTS</button>
+        </div>
+        <div class="wz-hint">Save strategy keeps these conditions under a name so you can reload them. Save my defaults remembers your capital, risk, watchlist and timeframe for next time.</div>
+        <button type="button" class="wz-run" onclick="wzDone(true)">&#9654; DONE &amp; RUN STRATEGY</button>
+      </section>
+
+    </div>
+    <div class="wz-foot">
+      <button type="button" class="wz-btn" id="wzBack" onclick="wzGo(wzStep-1)">&larr; BACK</button>
+      <span class="wz-note">Educational paper trading. No real orders are placed.</span>
+      <button type="button" class="wz-btn primary" id="wzNext" onclick="wzNext()">NEXT &rarr;</button>
+    </div>
+  </div>
+</div>
 
 <!-- MOBILE NAV BAR -->
 <nav class="mobile-nav" id="mobileNav">
