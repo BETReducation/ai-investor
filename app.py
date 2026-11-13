@@ -3820,6 +3820,35 @@ def _dataviz_page_url(page: dict) -> str:
 # Pages that take user input (kind "tool") live at /tools/<slug>; view-only ones (kind
 # "viz") at /tools/data-visualisation/<slug>; "both" is served at either. The fixed
 # /tools/... routes above take precedence over the <slug> catch-all.
+def _dataviz_page_shell(page: dict):
+    """Serves the shared page shell with this page's own title/description/image in the
+    meta tags, since link-preview crawlers don't run the page's JavaScript."""
+    try:
+        with open(os.path.join(app.static_folder, "data-visualisation-page.html"), encoding="utf-8") as f:
+            html = f.read()
+        title = html_escape(f"{page['label']} — Growth Capital Group", quote=True)
+        desc = html_escape(_og_text(page.get("description") or ""), quote=True)
+        url = f"{PUBLIC_BASE_URL}{_dataviz_page_url(page)}"
+
+        def put(pattern, value):
+            nonlocal html
+            html = re.sub(pattern, lambda m: m.group(1) + value + m.group(2), html, count=1)
+
+        put(r"(<title>)[^<]*(</title>)", title)
+        put(r'(<meta property="og:title" content=")[^"]*(">)', title)
+        if desc:
+            put(r'(<meta name="description" content=")[^"]*(">)', desc)
+            put(r'(<meta property="og:description" content=")[^"]*(">)', desc)
+        if page.get("has_header_image"):
+            put(r'(<meta property="og:image" content=")[^"]*(">)', f"{PUBLIC_BASE_URL}/api/dataviz/pages/{page['slug']}/header-image")
+        html = html.replace('<meta property="og:type" content="website">',
+                            f'<meta property="og:type" content="website">\n<meta property="og:url" content="{url}">', 1)
+        return Response(html, mimetype="text/html")
+    except Exception:
+        app.logger.exception("dataviz meta injection failed for %s", page.get("slug"))
+        return send_from_directory("static", "data-visualisation-page.html")
+
+
 @app.route("/tools/data-visualisation/<slug>")
 def tools_data_visualisation_page(slug):
     page = dataviz_page_get(slug)
@@ -3827,14 +3856,14 @@ def tools_data_visualisation_page(slug):
         return send_from_directory("static", "data-visualisation.html"), 404
     if page["kind"] == "tool":
         return redirect(f"/tools/{slug}", code=301)
-    return send_from_directory("static", "data-visualisation-page.html")
+    return _dataviz_page_shell(page)
 
 @app.route("/tools/<slug>")
 def tools_page(slug):
     page = dataviz_page_get(slug)
     if not page or page["kind"] == "viz":
         return send_from_directory("static", "tools.html"), 404
-    return send_from_directory("static", "data-visualisation-page.html")
+    return _dataviz_page_shell(page)
 
 @app.route("/arena")
 def arena(): return send_from_directory("static", "arena.html")
