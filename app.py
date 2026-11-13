@@ -703,6 +703,8 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ai-tracker'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('finance-map', 'The Finance Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'finance-map'")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-wallet-xray', 'ETF Wallet X-Ray', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'etf-wallet-xray'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('crypto-compass', 'Crypto Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'crypto-compass'")
         # Drop the "GCG " prefix from page labels (2026-10-25); only touches labels still at the old default.
@@ -1799,6 +1801,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "bubble-radar": "Valuation, run-up and debt clues that tend to show up in bubbles, scored from live Yahoo Finance data across about 280 stocks, metals and crypto, with a contagion globe and the figures from nine historic bubbles.",
     "finance-map": "An interactive world map of national debt, growth, inflation, rates, credit ratings and bank stress across 47 economies, with a time machine back to 1990, a globe view and listed financial stocks.",
     "crypto-compass": "The top 50 cryptos on one compass: how many are up or down over a day, week, month or year, plus market dominance, year-end prices, where coins come from and which won each year.",
+    "etf-wallet-xray": "Add the ETFs and stocks in your wallet and see what you really own underneath: top companies, sectors, countries, overlap between funds and total fees (illustrative snapshot data, not advice).",
     "currency-calculator": "Convert between 75+ currencies and Bitcoin, with each currency's history, inflation and economy snapshot.",
 }
 
@@ -1828,6 +1831,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "ai-tracker", "label": "AI Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "bubble-radar", "label": "Bubble Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "finance-map", "label": "The Finance Map", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "etf-wallet-xray", "label": "ETF Wallet X-Ray", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "crypto-compass", "label": "Crypto Compass", "author": None, "has_live_widget": True, "kind": "viz"},
 ]
 

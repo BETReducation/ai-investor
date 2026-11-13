@@ -98,6 +98,7 @@
       ['Russell 2000 Compass', '/tools/data-visualisation/russell-compass'],
       ['S&amp;P500 Compass', '/tools/data-visualisation/league-compass'],
       ['Global ETF Tracker', '/tools/data-visualisation/etf-tracker'],
+      ['ETF Wallet X-Ray', '/tools/data-visualisation/etf-wallet-xray'],
       ['AI Tracker', '/tools/data-visualisation/ai-tracker']
     ] },
     { name: 'Property', pages: [
