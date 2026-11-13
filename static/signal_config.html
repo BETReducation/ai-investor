@@ -358,6 +358,23 @@
 /* Price-alert bell — scoped here (not gcg.css) since .stat-cell is shared with dashboard.html/trading-dashboard.html */
 .stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
 .stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
+
+/* Desktop: chart fills the view, RSI/volume sit below the fold; right panel collapses/resizes */
+.ind-jump, .right-reopen, .right-collapse { display: none; }
+@media (min-width: 769px) and (min-height: 521px) {
+  .layout { position: relative; }
+  .center-panel { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-bright) transparent; }
+  .center-panel .chart-area { flex: none; height: calc(100vh - 44px - 38px - 28px - 28px + 190px); min-height: 360px; }
+  .ind-jump { display: block; position: sticky; bottom: 12px; height: 0; z-index: 6; overflow: visible; }
+  .ind-jump button { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 12px; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-bright); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+  .ind-jump button:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+  .right-collapse { display: block; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 2px; cursor: pointer; font-size: 12px; line-height: 1; padding: 2px 6px; }
+  .right-collapse:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+  #rightPanel { max-width: 70vw; }
+  .layout.right-collapsed #rightPanel, .layout.right-collapsed #rightResizer { display: none; }
+  .layout.right-collapsed .right-reopen { display: block; position: absolute; top: 10px; right: 0; z-index: 8; background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); border-right: none; border-radius: 4px 0 0 4px; padding: 6px 7px; cursor: pointer; font-size: 13px; line-height: 1; }
+  .layout.right-collapsed .right-reopen:hover { color: var(--accent-blue); }
+}
 .stat-cell-action span { position: absolute; top: -3px; right: -3px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: var(--accent-amber); color: #000; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .price-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 2px; padding: 6px 10px; }
 .price-alert-row .pa-remove { flex-shrink: 0; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; padding: 2px 4px; }
@@ -902,12 +919,13 @@ window.addEventListener('resize', () => {
   <!-- CENTER PANEL: Chart + Indicators -->
   <div class="center-panel">
     <!-- SIMULATION NOTICE -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 12px;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--border);font-size:8px;letter-spacing:1.5px;color:var(--accent-amber);text-align:center;">
+    <div style="position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:8px;padding:5px 44px;background:rgba(245,158,11,0.08);border-bottom:1px solid var(--border);font-size:8px;letter-spacing:1.5px;color:var(--accent-amber);text-align:center;">
       <span style="font-weight:700;border:1px solid var(--accent-amber);border-radius:2px;padding:1px 5px;">SIMULATION</span>
       <span>Educational paper-trading only — no real orders are placed and no money changes hands.</span>
+      <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()" style="top:50%;right:10px;transform:translateY(-50%);width:26px;height:26px;font-size:14px;">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
     </div>
-    <!-- STATS ROW -->
-    <div class="stats-row">
+    <!-- STATS ROW (hidden for now; cells stay so the stat updaters keep working) -->
+    <div class="stats-row" style="display:none">
       <div class="stat-cell">
         <div class="stat-label">DAILY P&L</div>
         <div class="stat-value tag-green" id="statPnl">+£0.00</div>
@@ -923,9 +941,6 @@ window.addEventListener('resize', () => {
         <div class="stat-value" id="statTrades">0</div>
         <div class="stat-sub" id="statWinRate">—% win rate</div>
       </div>
-      <div class="stat-cell" style="position:relative;display:flex;align-items:center;justify-content:center;">
-        <button class="stat-cell-action" id="priceAlertBtn" title="Price alerts" onclick="openPriceAlertsModal()" style="position:relative;width:28px;height:28px;font-size:15px;">&#128276;<span id="priceAlertBadge" style="display:none;"></span></button>
-      </div>
     </div>
 
     <!-- CHART -->
@@ -937,6 +952,7 @@ window.addEventListener('resize', () => {
       <div id="chartPrice" style="display:none"></div>
       <div id="chartChange" style="display:none"></div>
     </div>
+    <div class="ind-jump"><button type="button" id="indJumpBtn">&#9660; RSI &amp; Volume</button></div>
 
 
     <!-- POSITIONS TABLE -->
@@ -966,6 +982,8 @@ window.addEventListener('resize', () => {
     </div>
   </div>
 
+  <div class="panel-resizer" id="rightResizer"></div>
+  <button type="button" class="right-reopen" id="rightReopenBtn" title="Show strategy output">&#171;</button>
   <!-- RIGHT PANEL: Alerts -->
   <div class="panel" id="rightPanel" style="position:relative;">
 
@@ -984,7 +1002,10 @@ window.addEventListener('resize', () => {
 
     <div class="panel-header">
       <div class="panel-title">STRATEGY OUTPUT</div>
-      <div class="panel-badge" id="alertBadge">0 PENDING</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="panel-badge" id="alertBadge">0 PENDING</div>
+        <button type="button" class="right-collapse" id="rightCollapseBtn" title="Collapse panel">&#187;</button>
+      </div>
     </div>
     <label style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:9px;color:var(--text-muted);cursor:pointer;">
       <input type="checkbox" id="emailSignalAlerts" onchange="try{localStorage.setItem('gcgEmailSignalAlerts',this.checked?'1':'0')}catch(e){}"> Email me when a signal fires
@@ -5995,6 +6016,64 @@ checkSession();
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
+})();
+
+// ── Right panel: collapse + drag-resize (desktop) ───────────────────────────
+(function () {
+  const layout = document.getElementById('mainLayout');
+  const panel = document.getElementById('rightPanel');
+  const resizer = document.getElementById('rightResizer');
+  if (!layout || !panel || !resizer) return;
+  const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const savedW = parseInt(store.get('gcgSignalsRightW'), 10);
+  if (savedW >= 220) panel.style.width = Math.min(savedW, 620) + 'px';
+  const setCollapsed = c => { layout.classList.toggle('right-collapsed', c); store.set('gcgSignalsRightCollapsed', c ? '1' : '0'); };
+  if (store.get('gcgSignalsRightCollapsed') === '1') layout.classList.add('right-collapsed');
+  document.getElementById('rightCollapseBtn').addEventListener('click', () => setCollapsed(true));
+  document.getElementById('rightReopenBtn').addEventListener('click', () => setCollapsed(false));
+
+  resizer.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    resizer.setPointerCapture(e.pointerId);
+    const startX = e.clientX, startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    function onMove(ev) { panel.style.width = Math.min(620, Math.max(220, startW - (ev.clientX - startX))) + 'px'; }
+    function onUp() {
+      resizer.classList.remove('dragging');
+      document.body.style.userSelect = '';
+      resizer.removeEventListener('pointermove', onMove);
+      resizer.removeEventListener('pointerup', onUp);
+      store.set('gcgSignalsRightW', panel.offsetWidth);
+    }
+    resizer.addEventListener('pointermove', onMove);
+    resizer.addEventListener('pointerup', onUp);
+  });
+})();
+
+// ── Chart scroll: RSI/volume live below the fold on desktop ─────────────────
+(function () {
+  const center = document.querySelector('.center-panel');
+  const area = document.querySelector('.chart-area');
+  const host = document.getElementById('tvChart');
+  const btn = document.getElementById('indJumpBtn');
+  if (!center || !area || !host || !btn) return;
+  const down = () => area.offsetTop + area.offsetHeight - center.clientHeight;
+  const atBottom = () => center.scrollTop >= down() - 20;
+  function sync() { btn.innerHTML = atBottom() ? '&#9650; Chart' : '&#9660; RSI &amp; Volume'; }
+  btn.addEventListener('click', () => center.scrollTo({ top: atBottom() ? 0 : down(), behavior: 'smooth' }));
+  center.addEventListener('scroll', sync, { passive: true });
+  // Wheel over the candles zooms the chart; over the RSI/volume panes it scrolls the page instead.
+  host.addEventListener('wheel', function (e) {
+    if (isCompactScreen() || !priceChart || e.ctrlKey || e.metaKey) return;
+    let candleH;
+    try { candleH = priceChart.getSize('candle_pane', 'main').height; } catch (err) { return; }
+    if (e.clientY - host.getBoundingClientRect().top > candleH) {
+      e.stopPropagation();
+      center.scrollTop += e.deltaY;
+    }
+  }, { capture: true, passive: true });
 })();
 
 </script>
