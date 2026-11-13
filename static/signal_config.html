@@ -359,15 +359,10 @@
 .stat-cell-action { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; border-radius: 2px; }
 .stat-cell-action:hover { color: var(--accent-amber); background: rgba(245,158,11,0.1); }
 
-/* Desktop: chart fills the view, RSI/volume sit below the fold; right panel collapses/resizes */
-.ind-jump, .right-reopen, .right-collapse { display: none; }
+/* Desktop: right panel collapses/resizes */
+.right-reopen, .right-collapse { display: none; }
 @media (min-width: 769px) and (min-height: 521px) {
   .layout { position: relative; }
-  .center-panel { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-bright) transparent; }
-  .center-panel .chart-area { flex: none; height: calc(100vh - 44px - 38px - 28px - 28px + 190px); min-height: 360px; }
-  .ind-jump { display: block; position: sticky; bottom: 12px; height: 0; z-index: 6; overflow: visible; }
-  .ind-jump button { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; padding: 4px 12px; border-radius: 12px; background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-bright); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-  .ind-jump button:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
   .right-collapse { display: block; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 2px; cursor: pointer; font-size: 12px; line-height: 1; padding: 2px 6px; }
   .right-collapse:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
   #rightPanel { max-width: 70vw; }
@@ -375,6 +370,10 @@
   .layout.right-collapsed .right-reopen { display: block; position: absolute; top: 10px; right: 0; z-index: 8; background: var(--bg-panel); color: var(--text-muted); border: 1px solid var(--border); border-right: none; border-radius: 4px 0 0 4px; padding: 6px 7px; cursor: pointer; font-size: 13px; line-height: 1; }
   .layout.right-collapsed .right-reopen:hover { color: var(--accent-blue); }
 }
+.pane-ctl { position: absolute; z-index: 3; display: flex; gap: 3px; }
+.pane-ctl button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 3px; background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); cursor: pointer; opacity: .75; }
+.pane-ctl button:hover { opacity: 1; color: var(--accent-blue); border-color: var(--accent-blue); }
+.pane-ctl button.pane-x:hover { color: var(--accent-red, #ef4444); border-color: var(--accent-red, #ef4444); }
 .stat-cell-action span { position: absolute; top: -3px; right: -3px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 6px; background: var(--accent-amber); color: #000; font-size: 7px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .price-alert-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 2px; padding: 6px 10px; }
 .price-alert-row .pa-remove { flex-shrink: 0; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 11px; padding: 2px 4px; }
@@ -952,7 +951,6 @@ window.addEventListener('resize', () => {
       <div id="chartPrice" style="display:none"></div>
       <div id="chartChange" style="display:none"></div>
     </div>
-    <div class="ind-jump"><button type="button" id="indJumpBtn">&#9660; RSI &amp; Volume</button></div>
 
 
     <!-- POSITIONS TABLE -->
@@ -3920,7 +3918,8 @@ function ensurePriceChart() {
   // fixed pane created once here (unlike VOL/VOL_FOOTPRINT, its indicator type never
   // needs to swap at runtime, so it doesn't need its own refresh function).
   _legendPillsOn = _legendMobile();
-  priceChart.createIndicator({ name: 'RSI', calcParams: [14], precision: 0, styles: { lastValueMark: { show: true, text: { show: true, color: '#ffffff', size: 11, paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2, borderRadius: 2 } } }, createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'rsi_pane' });
+  _lowerBuiltSig = null;
+  rebuildLowerPanes();
   priceChart.subscribeAction('onCrosshairChange', (d) => { if (_legendPillsOn) updateLegendPills(d && d.indicatorData); });
   applyBollingerOverlay();
   applyMovingAverages();
@@ -3929,7 +3928,7 @@ function ensurePriceChart() {
 
 // RSI and volume panes are shorter on phones so the price candles keep most of the height.
 function subPaneHeight() {
-  return (isCompactScreen() ? (window.innerWidth > 768 ? 40 : 52) : 80);
+  return (isCompactScreen() ? (window.innerWidth > 768 ? 40 : 52) : 64);
 }
 
 // ---- Price range (phone-friendly) ----------------------------------------------------
@@ -3984,7 +3983,9 @@ function _fmtBig(n) {
 
 function _legendHtml(paneId, d) {
   if (!d) return '';
-  if (paneId === 'rsi_pane') return d.RSI ? `RSI <b>${Math.round(d.RSI.rsi1)}</b>` : '';
+  const pane = lowerPanes.find(p => p.id === paneId);
+  if (pane && pane.ind === 'RSI') return d.RSI ? `RSI <b>${Math.round(d.RSI.rsi1)}</b>` : '';
+  if (pane && pane.ind !== 'VOL') return '';
   const v = d.VOL || d.VOL_FOOTPRINT;
   if (!v) return '';
   return `VOL <b>${_fmtBig(v.volume)}</b> &nbsp;MA5 ${_fmtBig(v.ma1)} &nbsp;MA10 ${_fmtBig(v.ma2)}`;
@@ -3994,7 +3995,8 @@ function updateLegendPills(indicatorData) {
   const area = document.querySelector('.chart-area');
   const host = document.getElementById('tvChart');
   if (!area || !host || !priceChart) return;
-  ['rsi_pane', 'volume_pane'].forEach(id => {
+  renderPaneControls();
+  lowerPanes.map(p => p.id).forEach(id => {
     let el = document.getElementById('legendPill_' + id);
     if (!_legendPillsOn) { if (el) el.remove(); return; }
     const size = priceChart.getSize(id, 'main');
@@ -4131,6 +4133,7 @@ function renderChartToolbars() {
         title="Chart type — Session Volume Profile and Volume Footprint are estimates built from Open/High/Low/Close/Volume bars, not real bid/ask trade data."
         onclick="toggleChartTypeFlyout(this)"></button>
       <button class="chart-type-toggle" id="chartBbToggle" title="Bollinger Bands (20, 2) overlay" onclick="toggleChartBollinger()">BB</button>
+      <button class="chart-type-toggle" id="chartIndAdd" title="Add an indicator pane (RSI, MACD, volume…)" onclick="openPaneMenu(this, null)">+ IND</button>
       <span class="chart-range-group">
         <button class="chart-type-toggle" title="Zoom price range out" aria-label="Zoom price range out" onclick="zoomPriceRange(1.3)">&minus;</button>
         <button class="chart-type-toggle" title="Zoom price range in" aria-label="Zoom price range in" onclick="zoomPriceRange(1 / 1.3)">+</button>
@@ -4189,20 +4192,100 @@ function onChartTypeChange(type) {
 // Swaps the bottom pane between the plain Volume histogram and the Volume Footprint
 // (approx.) buy/sell-split histogram based on the active chart type. Called after
 // every data load too, so switching symbols/timeframes keeps the selected mode.
-function refreshVolumePaneMode() {
-  if (!priceChart) return;
-  // createIndicator() with no explicit pane id creates a BRAND NEW pane every call
-  // instead of reusing one — confirmed live (repeated calls left several stacked,
-  // empty-looking duplicate volume panes). A stable `id` here makes every call target
-  // the same pane, so removeIndicator+createIndicator actually swaps in place.
-  const wantFootprint = chartType === 'volume_footprint';
-  priceChart.removeIndicator({ paneId: 'volume_pane' });
-  if (wantFootprint) {
-    ensureFootprintIndicator();
-    priceChart.createIndicator({ name: 'VOL_FOOTPRINT', createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'volume_pane' });
-  } else {
-    priceChart.createIndicator({ name: 'VOL', createTooltipDataSource: legendTooltipSource() }, false, { height: subPaneHeight(), id: 'volume_pane' });
+function refreshVolumePaneMode() { rebuildLowerPanes(); }
+
+// ---- Lower indicator panes (RSI / Volume by default; user can swap, add, remove) ----
+const PANE_RSI_STYLES = { lastValueMark: { show: true, text: { show: true, color: '#ffffff', size: 11, paddingLeft: 4, paddingRight: 4, paddingTop: 2, paddingBottom: 2, borderRadius: 2 } } };
+const PANE_INDICATORS = [
+  { ind: 'RSI',  label: 'RSI (14)',          hint: 'Momentum — overbought above 70, oversold below 30', group: 'Momentum' },
+  { ind: 'MACD', label: 'MACD (12, 26, 9)',  hint: 'Trend momentum — line / signal crossovers',         group: 'Momentum' },
+  { ind: 'KDJ',  label: 'Stochastic (KDJ)',  hint: 'Where the close sits in its recent range',          group: 'Momentum' },
+  { ind: 'CCI',  label: 'CCI',               hint: 'Distance from the average price',                   group: 'Momentum' },
+  { ind: 'WR',   label: 'Williams %R',       hint: 'Overbought / oversold, scaled 0 to -100',           group: 'Momentum' },
+  { ind: 'ROC',  label: 'Rate of Change',    hint: '% change versus N bars ago',                        group: 'Momentum' },
+  { ind: 'VOL',  label: 'Volume',            hint: 'Bars traded, with moving averages',                 group: 'Volume' },
+  { ind: 'OBV',  label: 'On-Balance Volume', hint: 'Running total of up-volume minus down-volume',      group: 'Volume' },
+];
+const DEFAULT_LOWER_PANES = [{ id: 'rsi_pane', ind: 'RSI' }, { id: 'volume_pane', ind: 'VOL' }];
+const MAX_LOWER_PANES = 3;
+let lowerPanes = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem('gcgChartPanes'));
+    if (Array.isArray(v) && v.length <= MAX_LOWER_PANES && v.every(p => p && /^[a-z0-9_]+$/.test(p.id) && PANE_INDICATORS.some(i => i.ind === p.ind))) return v;
+  } catch (e) {}
+  return DEFAULT_LOWER_PANES.map(p => ({ ...p }));
+})();
+function saveLowerPanes() { try { localStorage.setItem('gcgChartPanes', JSON.stringify(lowerPanes)); } catch (e) {} }
+
+let _lowerBuiltSig = null;
+function _paneSpec(ind) {
+  const base = { createTooltipDataSource: legendTooltipSource() };
+  if (ind === 'RSI') return { name: 'RSI', calcParams: [14], precision: 0, styles: PANE_RSI_STYLES, ...base };
+  if (ind === 'VOL') {
+    if (chartType === 'volume_footprint') { ensureFootprintIndicator(); return { name: 'VOL_FOOTPRINT', ...base }; }
+    return { name: 'VOL', ...base };
   }
+  return { name: ind, ...base };
+}
+// Panes stack in creation order, so any change rebuilds all of them to keep the order.
+// A signature check keeps the per-data-load call from rebuilding when nothing changed.
+function rebuildLowerPanes() {
+  if (!priceChart) return;
+  const sig = JSON.stringify(lowerPanes) + '|' + chartType + '|' + (_legendPillsOn ? 1 : 0);
+  if (sig === _lowerBuiltSig) return;
+  _lowerBuiltSig = sig;
+  const all = new Set(['rsi_pane', 'volume_pane', ...lowerPanes.map(p => p.id)]);
+  all.forEach(id => priceChart.removeIndicator(id));
+  lowerPanes.forEach(p => priceChart.createIndicator(_paneSpec(p.ind), false, { height: subPaneHeight(), id: p.id }));
+  setTimeout(() => updateLegendPills(), 300);
+}
+function setPaneIndicator(paneId, ind) {
+  closeToolFlyout();
+  const p = lowerPanes.find(x => x.id === paneId);
+  if (p) p.ind = ind;
+  else if (lowerPanes.length < MAX_LOWER_PANES) lowerPanes.push({ id: 'pane_' + Date.now().toString(36), ind });
+  saveLowerPanes(); rebuildLowerPanes();
+}
+function removePane(paneId) {
+  closeToolFlyout();
+  lowerPanes = lowerPanes.filter(p => p.id !== paneId);
+  saveLowerPanes(); rebuildLowerPanes();
+}
+function openPaneMenu(btn, paneId) {
+  const cur = paneId && lowerPanes.find(p => p.id === paneId);
+  if (!cur && lowerPanes.length >= MAX_LOWER_PANES) {
+    openToolMenu(btn, 'pane:full', `<div class="chart-tool-menu-title">Up to ${MAX_LOWER_PANES} indicator panes</div><div class="chart-tool-menu-title" style="text-transform:none">Remove one with its ✕ first.</div>`);
+    return;
+  }
+  let html = `<div class="chart-tool-menu-title">${cur ? 'Replace this pane with' : 'Add indicator pane'}</div>`, group = '';
+  PANE_INDICATORS.forEach(i => {
+    if (i.group !== group) { group = i.group; html += `<div class="chart-tool-menu-title">${group}</div>`; }
+    html += `<button class="chart-tool-row${cur && cur.ind === i.ind ? ' active' : ''}" onclick="setPaneIndicator(${paneId ? `'${paneId}'` : 'null'}, '${i.ind}')"><span class="row-text"><span class="row-label">${i.label}</span><span class="row-hint">${i.hint}</span></span></button>`;
+  });
+  if (cur) html += `<button class="chart-tool-row" onclick="removePane('${paneId}')"><span class="row-text"><span class="row-label">Remove pane</span></span></button>`;
+  openToolMenu(btn, 'pane:' + (paneId || 'add'), html);
+}
+// Small replace / remove buttons at the top-right of each lower pane (desktop; phones use the + IND menu).
+function renderPaneControls() {
+  const area = document.querySelector('.chart-area'), host = document.getElementById('tvChart');
+  if (!area || !host || !priceChart) return;
+  const keep = new Set();
+  if (!_legendPillsOn) lowerPanes.forEach(p => {
+    const size = priceChart.getSize(p.id, 'main');
+    if (!size) return;
+    keep.add('paneCtl_' + p.id);
+    let el = document.getElementById('paneCtl_' + p.id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'paneCtl_' + p.id;
+      el.className = 'pane-ctl';
+      el.innerHTML = `<button type="button" title="Replace this indicator" onclick="openPaneMenu(this, '${p.id}')">&#8644;</button><button type="button" class="pane-x" title="Remove this pane" onclick="removePane('${p.id}')">&#10005;</button>`;
+      area.appendChild(el);
+    }
+    el.style.top = (host.offsetTop + size.top + 3) + 'px';
+    el.style.right = (area.clientWidth - (host.offsetLeft + size.width) + 6) + 'px';
+  });
+  area.querySelectorAll('.pane-ctl').forEach(el => { if (!keep.has(el.id)) el.remove(); });
 }
 
 // --- LEFT TOOLBAR: icons, flyout menus, active-tool state ---
@@ -4393,7 +4476,7 @@ function startFreehand() {
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   // Strokes stay inside the pane they began in (price, RSI or volume).
   const paneAt = (y) => {
-    for (const id of ['candle_pane', 'rsi_pane', 'volume_pane']) {
+    for (const id of ['candle_pane', ...lowerPanes.map(p => p.id)]) {
       const sz = priceChart.getSize(id, 'root');
       if (sz && y >= sz.top && y <= sz.top + sz.height) return { id, top: sz.top, bottom: sz.top + sz.height };
     }
@@ -6050,30 +6133,6 @@ checkSession();
     resizer.addEventListener('pointermove', onMove);
     resizer.addEventListener('pointerup', onUp);
   });
-})();
-
-// ── Chart scroll: RSI/volume live below the fold on desktop ─────────────────
-(function () {
-  const center = document.querySelector('.center-panel');
-  const area = document.querySelector('.chart-area');
-  const host = document.getElementById('tvChart');
-  const btn = document.getElementById('indJumpBtn');
-  if (!center || !area || !host || !btn) return;
-  const down = () => area.offsetTop + area.offsetHeight - center.clientHeight;
-  const atBottom = () => center.scrollTop >= down() - 20;
-  function sync() { btn.innerHTML = atBottom() ? '&#9650; Chart' : '&#9660; RSI &amp; Volume'; }
-  btn.addEventListener('click', () => center.scrollTo({ top: atBottom() ? 0 : down(), behavior: 'smooth' }));
-  center.addEventListener('scroll', sync, { passive: true });
-  // Wheel over the candles zooms the chart; over the RSI/volume panes it scrolls the page instead.
-  host.addEventListener('wheel', function (e) {
-    if (isCompactScreen() || !priceChart || e.ctrlKey || e.metaKey) return;
-    let candleH;
-    try { candleH = priceChart.getSize('candle_pane', 'main').height; } catch (err) { return; }
-    if (e.clientY - host.getBoundingClientRect().top > candleH) {
-      e.stopPropagation();
-      center.scrollTop += e.deltaY;
-    }
-  }, { capture: true, passive: true });
 })();
 
 </script>
