@@ -7528,6 +7528,66 @@ def api_etf_tracker_live():
     return jsonify(data)
 
 
+# ETF Wallet X-Ray: live price + day/week/month/year change for one holding, with the price also
+# converted into each display currency so the page can value a portfolio in £, $, € or ₿.
+_XRAY_TTL_SECONDS = 120
+_xray_cache: dict = {}
+_xray_lock = threading.Lock()
+
+
+def _xray_fx(ccy: str) -> dict | None:
+    """Units of each display currency per 1 unit of `ccy` (e.g. JPY -> GBP/USD/EUR/BTC)."""
+    def last(sym):
+        c = _fetch_yf_history_cached(yf.Ticker(sym), sym, "5d", "1d")["Close"].dropna()
+        return float(c.iloc[-1])
+    to_usd = 1.0 if ccy == "USD" else (1 / last("USD" + ccy + "=X") if ccy in ("JPY", "CAD", "CHF", "HKD", "SGD", "KRW", "INR", "BRL", "CNY", "ZAR", "TWD", "ILS", "SEK", "NOK", "DKK", "PLN", "MXN") else last(ccy + "USD=X"))
+    gbp, eur, btc = last("GBPUSD=X"), last("EURUSD=X"), last("BTC-USD")
+    return {"USD": to_usd, "GBP": to_usd / gbp, "EUR": to_usd / eur, "BTC": to_usd / btc}
+
+
+@app.route("/api/dataviz/etf-wallet-xray/quote", methods=["GET"])
+def api_xray_quote():
+    sym = (request.args.get("symbol") or "").strip().upper()
+    if not re.fullmatch(r"\^?[A-Z0-9.\-=]{1,14}", sym):
+        return jsonify({"error": "bad symbol"}), 400
+    with _xray_lock:
+        hit = _xray_cache.get(sym)
+        if hit and time.monotonic() - hit[0] < _XRAY_TTL_SECONDS:
+            return (jsonify(hit[1]), 200) if hit[1] else (jsonify({"error": "not found"}), 404)
+    out = None
+    try:
+        t = yf.Ticker(sym)
+        c = t.history(period="1y", interval="1d", auto_adjust=False)["Close"].dropna()
+        if len(c) >= 2 and (_dt.datetime.now(_dt.timezone.utc).date() - c.index[-1].date()).days <= 7:
+            ccy = (t.fast_info.get("currency") or "USD")
+            scale = 1.0
+            if ccy in ("GBp", "GBX"):
+                ccy, scale = "GBP", 0.01
+            elif ccy == "ZAc":
+                ccy, scale = "ZAR", 0.01
+            elif ccy == "ILA":
+                ccy, scale = "ILS", 0.01
+            last = float(c.iloc[-1])
+            rets = {"d": float(c.iloc[-2])}
+            for k, days in (("w", 7), ("m", 30), ("y", 365)):
+                prior = c[c.index <= c.index[-1] - _dt.timedelta(days=days)]
+                if len(prior):
+                    rets[k] = float(prior.iloc[-1])
+            out = {"price": round(last * scale, 6), "ccy": ccy,
+                   "returns": {k: round((last / b - 1) * 100, 2) for k, b in rets.items() if b > 0},
+                   "asOf": c.index[-1].strftime("%-d %b %Y")}
+            try:
+                fx = _xray_fx(ccy)
+                out["px"] = {k: round(out["price"] * v, 8) for k, v in fx.items()}
+            except Exception:
+                out["px"] = {ccy: out["price"]} if ccy in ("USD", "GBP", "EUR") else None
+    except Exception:
+        out = None
+    with _xray_lock:
+        _xray_cache[sym] = (time.monotonic(), out)
+    return (jsonify(out), 200) if out else (jsonify({"error": "not found"}), 404)
+
+
 # REIT Map: trailing 12-month dividend yield (dividends paid over the last year / last close) from one Yahoo download.
 # Dividends and price share a currency (incl. UK pence), so the ratio is unaffected. Cached for six hours.
 _REITY_TTL_SECONDS = 21600
