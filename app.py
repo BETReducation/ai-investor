@@ -4343,6 +4343,10 @@ def _alpha_sample_ok(level: str, post_id: int) -> bool:
     return True
 
 
+# In-depth explainers left open to everyone as samples (also linked from free pages).
+FREE_EXPLAINER_SAMPLES = {"panic-at-the-bottom"}
+
+
 def _gate_map() -> dict:
     """{path: minimum plan} for everything locked behind a paid plan."""
     gates = {}
@@ -4352,7 +4356,7 @@ def _gate_map() -> dict:
             gates[f"/learn/{l['level']}/{l['slug']}"] = need
     for e in EXPLAINERS:
         need = plans.EXPLAINER_PART_MIN_PLAN.get(e["part"], "free")
-        if need != "free":
+        if need != "free" and e["slug"] not in FREE_EXPLAINER_SAMPLES:
             gates[f"/static/explainers/{e['slug']}/index.html"] = need
     for slug, need in plans.DATAVIZ_MIN_PLAN.items():
         gates[f"/tools/data-visualisation/{slug}"] = need
