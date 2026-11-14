@@ -57,6 +57,7 @@
 .jump-bar button { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: all 0.15s; }
 .jump-bar button:hover { color: var(--text); border-color: var(--border2); }
 .jump-bar button.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.plan-bar button.active { background: #a855f7; border-color: #a855f7; color: #fff; }
 .tool-section { margin-bottom: 52px; --c: #94a3b8; --c-rgb: 148,163,184; scroll-margin-top: 90px; }
 .tool-section-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .tool-section-head h2 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; color: var(--text); }
@@ -112,6 +113,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     <h1 class="hero-title">Your Trading <span class="accent">Toolkit</span></h1>
     <p class="hero-sub">Analysis tools and calculators for every stage of your investing process.</p>
     <div class="jump-bar" id="jumpBar"></div>
+    <div class="jump-bar plan-bar" id="planBar" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -135,19 +137,36 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
     return '<section class="tool-section reveal" id="cat-' + slug(c.name) + '" style="--c:rgb(' + c.rgb + ');--c-rgb:' + c.rgb + '">' +
       '<div class="tool-section-head"><h2>' + c.name + '</h2><p>' + c.blurb + '</p></div>' +
       '<div class="tile-grid' + (feat ? ' feature' : '') + '">' + c.pages.map(function (p) {
-        return '<a class="tile" href="' + p[1] + '"><div class="tile-top"><div class="tile-title">' + p[0] + '</div><span class="tile-tag">' + p[3] + '</span></div>' +
+        return '<a class="tile" data-plan="' + p[4] + '" href="' + p[1] + '"><div class="tile-top"><div class="tile-title">' + p[0] + '</div><span class="tile-tag">' + p[3] + '</span></div>' +
           '<div class="tile-desc">' + p[2] + '</div><div class="tile-link">Open' + arrow + ' <span class="tile-plan">' + p[4] + ' plan</span></div></a>';
       }).join('') + '</div></section>';
   }).join('');
   bar.innerHTML = '<button type="button" class="active" data-cat="all">All</button>' + cats.map(function (c) {
     return '<button type="button" data-cat="' + slug(c.name) + '">' + c.name.replace(/ tools$/, '') + '</button>';
   }).join('');
+  var planBar = document.getElementById('planBar'), curCat = 'all', curPlan = 'all';
+  planBar.innerHTML = ['all', 'Beginner', 'Intermediate', 'Pro'].map(function (pl, i) {
+    return '<button type="button"' + (i ? '' : ' class="active"') + ' data-plan="' + pl + '">' + (pl === 'all' ? 'All plans' : pl) + '</button>';
+  }).join('');
+  function apply() {
+    host.querySelectorAll('.tool-section').forEach(function (sec) {
+      var any = false;
+      sec.querySelectorAll('.tile').forEach(function (t) {
+        var show = curPlan === 'all' || t.dataset.plan === curPlan;
+        t.style.display = show ? '' : 'none';
+        if (show) any = true;
+      });
+      sec.style.display = (any && (curCat === 'all' || sec.id === 'cat-' + curCat)) ? '' : 'none';
+    });
+  }
+  function pick(group, b) { group.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); }); }
   bar.addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
-    bar.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
-    host.querySelectorAll('.tool-section').forEach(function (sec) {
-      sec.style.display = (b.dataset.cat === 'all' || sec.id === 'cat-' + b.dataset.cat) ? '' : 'none';
-    });
+    pick(bar, b); curCat = b.dataset.cat; apply();
+  });
+  planBar.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    pick(planBar, b); curPlan = b.dataset.plan; apply();
   });
 })();
 </script>
