@@ -45,7 +45,7 @@
     { name: 'Analysis', rgb: '59,130,246', blurb: 'Find setups, test them against history and review charts.', pages: [
       ['Signals', '/tools/signals', 'Configure multi-indicator signals across 30+ technical studies. Filter, score and surface only the setups that match your criteria.', 'Analysis'],
       ['Backtester', '/backtester', 'Run any strategy against years of real market data. Inspect P&L curves, max drawdown, Sharpe ratio and more.', 'Backtest'],
-      ['AI Chart Analysis', '/tools/ai-chart-analysis', 'A live chart with ready-made AI prompts for an indicator scan, market information and chart-pattern review. Pro and Founder.', 'Pro & Founder']
+      ['AI Chart Analysis', '/tools/ai-chart-analysis', 'A live chart with ready-made AI prompts for an indicator scan, market information and chart-pattern review.', 'AI']
     ] },
     { name: 'Crypto', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
       ['Crypto Unit Calculator', DV + 'crypto-unit-calculator', 'See how a coin divides into its smallest units, from satoshi to whole coins, with live prices.', 'Live data'],
@@ -68,10 +68,27 @@
       ['Position Size Calculator', '/tools/calculator', 'Size positions with the Kelly Criterion and convert pip values across FX pairs and lot sizes.', 'Calculator']
     ] }
   ];
+  // Plan each tool needs; the server enforces the same list (plans.TOOL_MIN_PLAN), this only labels it.
+  var TOOL_TIER = {
+    '/tools/signals': 'Pro',
+    '/tools/ai-chart-analysis': 'Pro',
+    '/backtester': 'Intermediate',
+    '/tools/portfolio': 'Intermediate',
+    '/tools/calculator': 'Beginner',
+    '/tools/crypto-unit-calculator': 'Beginner',
+    '/tools/crypto-portfolio-donut': 'Beginner',
+    '/tools/metal-calculator': 'Beginner',
+    '/tools/dividend-calculator': 'Beginner',
+    '/tools/stock-donut': 'Beginner',
+    '/tools/currency-calculator': 'Beginner',
+    '/tools/freedom-clock': 'Beginner',
+    '/tools/price-value-tracker': 'Beginner'
+  };
+  TOOL_CATEGORIES.forEach(function (c) { c.pages.forEach(function (p) { p[4] = TOOL_TIER[p[1]] || 'Beginner'; }); });
   window.GCG_TOOL_CATEGORIES = TOOL_CATEGORIES;
   var TOOL_MENU_HTML = '<li><a href="/tools">All tools</a></li>' + TOOL_CATEGORIES.filter(function (c) { return c.pages.length; }).map(function (c) {
     return '<li class="has-submenu"><a href="#">' + c.name + ' <span class="nav-subchev">▸</span></a>' +
-      '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + '</a></li>'; }).join('') + '</ul></li>';
+      '<ul class="nav-submenu">' + c.pages.map(function (p) { return '<li><a href="' + p[1] + '">' + p[0] + ' <span class="nav-tier">' + p[4] + '</span></a></li>'; }).join('') + '</ul></li>';
   }).join('');
 
   // Data Viz menu: its own top-level dropdown between Tools and Arena.

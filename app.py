@@ -979,11 +979,11 @@ def _clear_custom_symbols_on_downgrade(users: dict, username: str, old_level, ne
 # them to sign up. IP-based limiting is a soft speed bump, not real abuse-proofing
 # — trivially bypassed by VPN/incognito/mobile data — but it stops casual reuse
 # without needing an account, which is the point.
-ANON_BACKTEST_LIMIT = plans.FREE_DAILY_TOOL_TESTS
+ANON_BACKTEST_LIMIT = 5
 
 # Free-tier accounts: N runs per *calendar* day (UTC), not a rolling 24h window —
 # resets at midnight UTC regardless of when the user's first run that day was.
-FREE_TIER_DAILY_BACKTEST_LIMIT = plans.FREE_DAILY_TOOL_TESTS
+FREE_TIER_DAILY_BACKTEST_LIMIT = 20
 
 # Lesson Q&A bot: free-tier gets a small taste per day; pro/founder are
 # "unlimited" per DEFAULT_ENTITLEMENTS_BY_TIER but still get a high sanity
@@ -4360,7 +4360,17 @@ def _gate_map() -> dict:
             gates[f"/static/explainers/{e['slug']}/index.html"] = need
     for slug, need in plans.DATAVIZ_MIN_PLAN.items():
         gates[f"/tools/data-visualisation/{slug}"] = need
+    gates.update(plans.TOOL_MIN_PLAN)
     return gates
+
+
+def _tool_locked(feature: str, need: str):
+    """403 body for a tool API when the caller's entitlement for it isn't 'pro' (full access). Admin
+    overrides of the entitlement still work. Page visits are already redirected by _plan_gate."""
+    if getattr(current_user, "entitlements", {}).get(feature) == "pro":
+        return None
+    return jsonify({"error": f"This tool is part of the {plans.PLAN_NAMES[need]} plan and above.",
+                    "locked": True, "tier_required": need}), 403
 
 
 def _user_gate_map() -> dict:
@@ -9241,6 +9251,9 @@ def signals():
     # is continuous watchlist monitoring rather than one-shot runs, so unlike the
     # Backtester there's no daily-call cap — basic just can't watch anything outside
     # the same curated symbol allowlist. See BASIC_TIER_SYMBOLS for why these 20.
+    locked = _tool_locked("signals", "pro")
+    if locked:
+        return locked
     entitlement_level = getattr(current_user, "entitlements", {}).get("signals", "basic")
     if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
         return jsonify({
@@ -9430,6 +9443,9 @@ def backtest_quota():
     """Read-only lookup for the strategy-lab UI — reports the caller's backtester
     entitlement, symbol allowlist (if restricted), and remaining tries, without
     consuming one. Used to show/hide tabs and a tries-remaining note up front."""
+    locked = _tool_locked("backtester", "intermediate")
+    if locked:
+        return locked
     if current_user.is_authenticated:
         entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
     else:
@@ -9518,6 +9534,10 @@ def _backtest_impl():
 
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
+
+    locked = _tool_locked("backtester", "intermediate")
+    if locked:
+        return locked
 
     # ── Tier gating ──────────────────────────────────────────────────────────
     # Anonymous visitors and free-tier ("basic" entitlement) accounts share the

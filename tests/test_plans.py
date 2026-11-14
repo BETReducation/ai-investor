@@ -42,8 +42,28 @@ def test_entitlements_per_tier():
     assert e("pro")["signals"] == "pro" and e("free")["market_xi"] == "not_entered"
 
 
-def test_free_accounts_get_three_daily_tool_tests():
-    assert A.FREE_TIER_DAILY_BACKTEST_LIMIT == 3 and A.ANON_BACKTEST_LIMIT == 3
+def test_tools_are_gated_by_plan():
+    gates = A._gate_map()
+    assert gates["/tools/signals"] == "pro" and gates["/tools/ai-chart-analysis"] == "pro"
+    assert gates["/backtester"] == "intermediate" and gates["/tools/portfolio"] == "intermediate"
+    assert gates["/tools/dividend-calculator"] == "beginner" and gates["/tools/calculator"] == "beginner"
+
+
+def test_every_tool_page_in_the_menu_has_a_plan_and_nav_labels_match():
+    import re
+    nav = open("static/js/nav.js", encoding="utf-8").read()
+    labels = dict(re.findall(r"'(/[^']+)':\s*'(Beginner|Intermediate|Pro)'", nav.split("TOOL_TIER")[1].split("};")[0]))
+    assert labels == {path: plans.PLAN_NAMES[need] for path, need in plans.TOOL_MIN_PLAN.items()}
+    for page in A._SEED_DATAVIZ_PAGES:
+        if page.get("kind") == "tool":
+            assert f"/tools/{page['slug']}" in plans.TOOL_MIN_PLAN
+
+
+def test_backtester_and_signals_apis_lock_out_lower_plans(monkeypatch):
+    c = A.app.test_client()
+    r = c.get("/api/backtest?symbol=AAPL")
+    assert r.status_code == 403 and r.get_json().get("locked")
+    assert c.get("/api/backtest/quota").status_code == 403
 
 
 def test_plan_read_from_intermediate_price_key():

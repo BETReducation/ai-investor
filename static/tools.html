@@ -72,6 +72,7 @@
 .tile > * { position: relative; }
 .tile-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .tile-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 18px; color: var(--text); }
+.tile-plan { margin-left: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .tile-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c); border: 1px solid rgba(var(--c-rgb), 0.45); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
 .tile-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; flex: 1; }
 .tile-link { font-size: 13px; font-weight: 600; color: var(--c); transition: letter-spacing 0.2s; }
@@ -135,7 +136,7 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
       '<div class="tool-section-head"><h2>' + c.name + '</h2><p>' + c.blurb + '</p></div>' +
       '<div class="tile-grid' + (feat ? ' feature' : '') + '">' + c.pages.map(function (p) {
         return '<a class="tile" href="' + p[1] + '"><div class="tile-top"><div class="tile-title">' + p[0] + '</div><span class="tile-tag">' + p[3] + '</span></div>' +
-          '<div class="tile-desc">' + p[2] + '</div><div class="tile-link">Open' + arrow + '</div></a>';
+          '<div class="tile-desc">' + p[2] + '</div><div class="tile-link">Open' + arrow + ' <span class="tile-plan">' + p[4] + ' plan</span></div></a>';
       }).join('') + '</div></section>';
   }).join('');
   bar.innerHTML = '<button type="button" class="active" data-cat="all">All</button>' + cats.map(function (c) {
