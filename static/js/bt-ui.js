@@ -129,9 +129,17 @@
     </select>
     <div class="bt-sig-hint">Unlike the take-profit in step 2, which sells the moment it is hit, this works as one of your sell rules. "Must be reached first" means an indicator sell is ignored until the trade is up by this much, e.g. RSI overbought AND +30%.</div>`;
   stepEl(3).appendChild(sigBox);
+  const mBuy = document.createElement('div');
+  mBuy.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary);margin-bottom:10px;max-width:480px;"><span>Buy when</span>
+    <select class="lab-input" data-match="entry" style="width:auto;margin:0;"><option value="any">ANY indicator signals</option><option value="all">ALL indicators signal</option></select></div>`;
+  stepEl(3).appendChild(mBuy.firstChild);
   stepEl(3).appendChild(indWrap);
   stepEl(4).appendChild(exitBox);
   stepEl(4).appendChild(gainBox);
+  const mSell = document.createElement('div');
+  mSell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary);margin-bottom:10px;max-width:480px;"><span>Sell when</span>
+    <select class="lab-input" data-match="exit" style="width:auto;margin:0;"><option value="any">ANY indicator signals</option><option value="all">ALL indicators signal</option></select></div>`;
+  stepEl(4).appendChild(mSell.firstChild);
   wrapNumber(gainBox.querySelector('[data-gain-pct]'));
 
   // Rename the entry confidence slider now that sells have their own.
@@ -190,6 +198,7 @@
   let activeSet = 'entry';
   let exitMinConf = 60;
   let exitGain = { on: false, pct: 30, mode: 'signal' };
+  const match = { entry: 'any', exit: 'any' };   // ALL = every indicator needs at least one trigger firing
 
   const indSubset = cfg => { const o = {}; Object.keys(cfg).forEach(k => { const el = $(k); if (el && el.closest(IND_ROOT)) o[k] = cfg[k]; }); return o; };
   const blankSet = cfg => { const o = indSubset(cfg); Object.keys(o).forEach(k => { if (/^tog[A-Z]/.test(k)) o[k] = false; }); return o; };
@@ -211,6 +220,7 @@
     cfg._exit = activeSet === 'exit' ? liveInd : sets.exit;
     cfg._exitMinConf = exitMinConf;
     cfg._exitGain = { ...exitGain };
+    cfg._match = { ...match };
     return cfg;
   };
   window.applyBacktestConfig = function (cfg) {
@@ -218,6 +228,7 @@
     // Strategies saved before sell rules existed: reuse the one indicator set for selling, as they always ran.
     sets.exit = cfg._exit ? { ...cfg._exit } : indSubset(cfg);
     sets.entry = null;
+    setMatch(cfg._match || {});
     setExitGain(cfg._exitGain || { on: false, pct: 30, mode: 'signal' });
     setExitConf(cfg._exitMinConf !== undefined ? cfg._exitMinConf : (cfg.minConf !== undefined ? cfg.minConf : 60));
     return rawApply(cfg);
@@ -229,6 +240,14 @@
     if (r) r.value = exitMinConf;
     if (l) l.textContent = exitMinConf + '%';
   }
+  function setMatch(m) {
+    ['entry', 'exit'].forEach(k => {
+      match[k] = m[k] === 'all' ? 'all' : 'any';
+      const el = overlay.querySelector(`[data-match="${k}"]`);
+      if (el) el.value = match[k];
+    });
+  }
+  overlay.addEventListener('change', e => { if (e.target.matches('[data-match]')) match[e.target.dataset.match] = e.target.value; });
   function setExitGain(g) {
     exitGain = { on: !!g.on, pct: parseFloat(g.pct) > 0 ? parseFloat(g.pct) : 30, mode: g.mode === 'require' ? 'require' : 'signal' };
     overlay.querySelector('[data-gain-on]').checked = exitGain.on;
@@ -286,13 +305,13 @@
   function sumBuy() {
     const mode = (typeof indicatorMode !== 'undefined' && indicatorMode === 'detailed') ? 'Advanced' : 'Basic';
     const note = $('btGatingNote') ? `<div class="sum-note">${esc($('btGatingNote').textContent)}</div>` : '';
-    return line('Mode', mode) + line('Min confidence', $('minConf').value + '%') + ruleChips(rulesFor(getSet('entry'))) + note
+    return line('Mode', mode) + line('Buy when', match.entry === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', $('minConf').value + '%') + ruleChips(rulesFor(getSet('entry'))) + note
       + `<button type="button" class="bt-sig-btn" style="margin-top:8px;" data-sig>COPY STRATEGY FROM SIGNALS</button>`;
   }
   function sumSell() {
     const rules = rulesFor(getSet('exit'));
     if (exitGain.on) rules.push(`Profit +${exitGain.pct}% from buy (${exitGain.mode === 'require' ? 'must be reached first' : 'counts as a signal'})`);
-    return line('Min confidence', exitMinConf + '%') + ruleChips(rules)
+    return line('Sell when', match.exit === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', exitMinConf + '%') + ruleChips(rules)
       + '<div class="sum-note">Also closes at the stop-loss or take-profit.</div>';
   }
   const snapshot = () => [sumAsset(), sumRisk(), sumBuy(), sumSell()];
@@ -404,7 +423,7 @@
     captured = {};
     try { await origRun.apply(this, arguments); } finally { var xp = captured.params; captured = null; activate('entry'); }
     if (!xp) return;   // page-level validation already showed its message
-    extra = [['x_set', '1'], ['x_min_confidence', exitMinConf]];
+    extra = [['x_set', '1'], ['x_min_confidence', exitMinConf], ['entry_match', match.entry], ['x_match', match.exit]];
     if (exitGain.on) {
       // "Must be reached first" needs indicators to gate; with none it is just a profit-target sell signal.
       extra.push(['x_exit_gain_pct', exitGain.pct], ['x_exit_gain_mode', exitGain.mode === 'require' && rulesFor(sets.exit).length ? 'require' : 'signal']);
@@ -436,10 +455,10 @@
       const prefs = (await res.json()).preferences || {};
       sigCache = [];
       if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length) {
-        sigCache.push({ name: prefs.strategyName || 'Current strategy', sub: 'Open on the Signals page now', conditions: prefs.strategyConditions, prefs });
+        sigCache.push({ name: prefs.strategyName || 'Current strategy', sub: 'Open on the Signals page now', conditions: prefs.strategyConditions, match: prefs.strategyMatch, prefs });
       }
       (Array.isArray(prefs.savedStrategies) ? prefs.savedStrategies : []).forEach(s => {
-        if (s && Array.isArray(s.conditions) && s.conditions.length) sigCache.push({ name: s.name, sub: 'Saved on Signals', conditions: s.conditions, prefs });
+        if (s && Array.isArray(s.conditions) && s.conditions.length) sigCache.push({ name: s.name, sub: 'Saved on Signals', conditions: s.conditions, match: s.match, prefs });
       });
       if (!sigCache.length) { list.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">No Signals strategies yet. Build one on the Signals page first.</div>'; return; }
       list.innerHTML = sigCache.map((s, i) => `<div class="bt-sig-row"><div style="min-width:0;"><div class="nm">${esc(s.name)}</div><div class="sub">${esc(s.sub)} · ${s.conditions.length} condition${s.conditions.length === 1 ? '' : 's'}</div></div>
@@ -520,6 +539,7 @@
     const cfg = { ...rawSerialize(), ...setFromSignals(tb, restricted) };
     cfg._indicatorMode = restricted ? 'basic' : 'detailed';
     cfg._exit = setFromSignals(ts, restricted);
+    cfg._match = { entry: item.match === 'all' ? 'all' : 'any', exit: item.match === 'all' ? 'all' : 'any' };
 
     // Risk settings from the Signals page (percent-based on both pages). Forex here is pip-based, so skip those.
     const p = item.prefs || {};

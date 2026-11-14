@@ -41,6 +41,8 @@ def run_backtest(
     exit_min_confidence: float | None = None,
     exit_gain_pct: float | None = None,
     exit_gain_mode: str = "signal",
+    entry_match: str = "any",
+    exit_match: str = "any",
     signal_only: bool = False,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
@@ -836,6 +838,11 @@ def run_backtest(
                     x_result = {**base, "sell_score": s_, "signals": base["signals"] + [{"indicator": "Profit target", "type": "SELL", "detail": detail, "weight": 2}]}
                     x_conf = round(max(b, s_) / (b + s_) * 100, 1)
                     x_overall = "SELL" if s_ > b else x_overall
+                elif exit_match == "all":
+                    x_overall = None   # ALL: the profit condition is one of the conditions that must be met
+            # ALL: every sell indicator must have at least one trigger signalling a sell on this bar.
+            if exit_match == "all" and x_overall == "SELL" and not _all_agree(x_result, "SELL"):
+                x_overall = None
 
             if low <= effective_sl:
                 exit_reason = "Trailing Stop" if trail_is_tighter else "Stop Loss"
@@ -887,7 +894,7 @@ def run_backtest(
                 position = None
 
         else:
-            if overall == "BUY" and confidence >= min_confidence:
+            if overall == "BUY" and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, "BUY")):
                 pot_value = equity * capital
                 if trade_amount_mode == "gbp":
                     size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
@@ -1033,6 +1040,14 @@ def _sf(val):
 # Turns the per-bar `score_signals()` output and a snapshot of the broader
 # market backdrop into a human-readable explanation of why each trade was
 # taken and why it closed, for the Backtester's trade log.
+
+def _all_agree(result: dict | None, side: str) -> bool:
+    """'All conditions' mode: each indicator in play has at least one trigger firing on this side."""
+    sigs = (result or {}).get("signals", [])
+    names = {s["indicator"] for s in sigs}
+    fired = {s["indicator"] for s in sigs if s.get("type") == side and s.get("weight", 0) > 0}
+    return bool(names) and names <= fired
+
 
 def _fired_signals(signals: list[dict], side: str) -> list[dict]:
     """Signals that actually contributed to the BUY/SELL decision (non-zero weight)."""

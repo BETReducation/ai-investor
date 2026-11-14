@@ -9698,6 +9698,8 @@ def _backtest_impl():
         # Optional separate EXIT indicator set, sent with an x_ prefix. Without it the one set drives both sides.
         exit_thresholds = exit_calc_params = exit_gain_pct = None
         exit_gain_mode = "signal"
+        exit_match = "all" if args.get("x_match") == "all" else "any"
+        entry_match = "all" if args.get("entry_match") == "all" else "any"
         exit_min_confidence = min_confidence
         if args.get("x_set") in ("1", "true"):
             items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
@@ -9745,6 +9747,8 @@ def _backtest_impl():
             exit_min_confidence=exit_min_confidence,
             exit_gain_pct=exit_gain_pct,
             exit_gain_mode=exit_gain_mode,
+            entry_match=entry_match,
+            exit_match=exit_match,
         )
         metrics = calculate_metrics(trades, equity_curve)
 
