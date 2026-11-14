@@ -148,11 +148,12 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
   planBar.innerHTML = ['all', 'Beginner', 'Intermediate', 'Pro'].map(function (pl, i) {
     return '<button type="button"' + (i ? '' : ' class="active"') + ' data-plan="' + pl + '">' + (pl === 'all' ? 'All plans' : pl) + '</button>';
   }).join('');
+  var RANK = { Beginner: 1, Intermediate: 2, Pro: 3 };
   function apply() {
     host.querySelectorAll('.tool-section').forEach(function (sec) {
       var any = false;
       sec.querySelectorAll('.tile').forEach(function (t) {
-        var show = curPlan === 'all' || t.dataset.plan === curPlan;
+        var show = curPlan === 'all' || RANK[t.dataset.plan] <= RANK[curPlan];
         t.style.display = show ? '' : 'none';
         if (show) any = true;
       });
