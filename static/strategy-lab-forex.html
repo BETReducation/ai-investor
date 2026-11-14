@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/gcg.css">
 <link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="stylesheet" href="/static/css/bt-ui.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="/static/js/theme.js"></script>
 <script src="/static/js/info-tooltip.js" defer></script>
@@ -2258,7 +2259,7 @@ const BT_STRATEGY_CONTROL_IDS = new Set(['btStrategySelect', 'btStrategyName']);
 
 function serializeBacktestConfig() {
   const cfg = {};
-  document.querySelectorAll('.lab-sidebar [id]').forEach(el => {
+  document.querySelectorAll('.lab-sidebar [id], #btWizard [id]').forEach(el => {
     if (BT_STRATEGY_CONTROL_IDS.has(el.id)) return;
     if (el.classList && el.classList.contains('trigger-chips')) {
       cfg[el.id] = getActiveTriggers(el.id);
@@ -3484,5 +3485,7 @@ document.addEventListener('click', e => {
   if (wrap && !wrap.contains(e.target)) { btSearchResults = []; renderBtSearchResults(''); }
 });
 </script>
+<script src="/static/js/strategy-map.js"></script>
+<script src="/static/js/bt-ui.js"></script>
 </body>
 </html>
