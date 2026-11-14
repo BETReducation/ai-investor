@@ -42,6 +42,7 @@ from datetime import timedelta
 import datetime as _dt
 import base64
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import MultiDict
 from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -9513,7 +9514,7 @@ _backtest_lock = threading.Lock()
 _backtest_active: dict = {"total": 0}
 
 
-@app.route("/api/backtest", methods=["GET"])
+@app.route("/api/backtest", methods=["GET", "POST"])
 def backtest():
     caller = current_user.id if current_user.is_authenticated else f"ip:{_client_ip()}"
     with _backtest_lock:
@@ -9536,74 +9537,8 @@ def backtest():
                 del _backtest_active[caller]
 
 
-def _backtest_impl():
-    symbol     = request.args.get("symbol", "").strip()
-    if symbol and current_user.is_authenticated:
-        log_event(current_user.id, "backtest", symbol)
-    period     = request.args.get("period", "2y")
-    interval   = request.args.get("interval", "1d")
-    start_date = request.args.get("start_date", "").strip() or None
-    end_date   = request.args.get("end_date", "").strip() or None
-
-    if not symbol:
-        return jsonify({"error": "symbol parameter is required"}), 400
-
-    locked = _tool_locked("backtester", "intermediate")
-    if locked:
-        return locked
-
-    # ── Tier gating ──────────────────────────────────────────────────────────
-    # Anonymous visitors and free-tier ("basic" entitlement) accounts share the
-    # same restrictions: a curated symbol list and Basic-only indicators. On top
-    # of that, anonymous gets a lifetime try cap and free-tier gets a daily cap.
-    # Pro/founder accounts (entitlements['backtester'] == 'pro') skip all of it.
-    if current_user.is_authenticated:
-        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
-    else:
-        entitlement_level = "basic"
-
-    if not current_user.is_authenticated:
-        allowed, tries_used = _anon_backtest_try(_client_ip())
-        if not allowed:
-            return jsonify({
-                "error": f"You've used your {ANON_BACKTEST_LIMIT} free backtests. Sign up for a free account to keep going.",
-                "anon_limit_reached": True,
-                "limit": ANON_BACKTEST_LIMIT,
-            }), 403
-    elif entitlement_level != "pro":
-        allowed, count = _daily_backtest_try(current_user.id)
-        if not allowed:
-            return jsonify({
-                "error": f"Daily backtest limit reached ({FREE_TIER_DAILY_BACKTEST_LIMIT}/day). Upgrade to Pro for unlimited backtests, or try again tomorrow.",
-                "daily_limit_reached": True,
-                "limit": FREE_TIER_DAILY_BACKTEST_LIMIT,
-            }), 403
-
-    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
-        return jsonify({
-            "error": f"'{symbol}' isn't available on the free plan. Free backtesting is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
-            "symbol_restricted": True,
-            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
-        }), 403
-
-    try:
-        stop_loss_pct   = float(request.args.get("stop_loss",     5.0))
-        take_profit_pct = float(request.args.get("take_profit",   5.0))
-        min_confidence  = float(request.args.get("min_confidence", 60.0))
-        trailing_stop      = request.args.get("trailing_stop", "0") in ("1", "true", "True")
-        trail_distance_pct = float(request.args.get("trail_distance", 1.5))
-        capital            = float(request.args.get("capital", 10000.0))
-        trade_amount        = float(request.args.get("trade_amount", 100.0))
-        trade_amount_mode   = request.args.get("trade_amount_mode", "percent").strip().lower()
-        sl_tp_unit          = request.args.get("sl_tp_unit", "percent").strip().lower()
-    except (ValueError, TypeError) as e:
-        return jsonify({"error": f"Invalid parameter: {e}"}), 400
-
-    if trade_amount_mode not in ("percent", "gbp"):
-        return jsonify({"error": "trade_amount_mode must be 'percent' or 'gbp'"}), 400
-    if sl_tp_unit not in ("percent", "pips"):
-        return jsonify({"error": "sl_tp_unit must be 'percent' or 'pips'"}), 400
-
+def _parse_backtest_set(args, entitlement_level):
+    """Indicator thresholds + calc params for one indicator set (entry, or exit with its x_ prefix stripped)."""
     thresholds = {}
     for key in [
         "rsi_oversold", "rsi_overbought", "volume_surge",
@@ -9650,24 +9585,24 @@ def _backtest_impl():
         "bb_breakout_margin_pct", "bb_pct_below_high", "bb_pct_above_low",
         "donchian_retest_lookback", "donchian_retest_tolerance_pct",
     ]:
-        val = request.args.get(key)
+        val = args.get(key)
         if val is not None:
             try:
                 thresholds[key] = float(val)
             except ValueError:
-                return jsonify({"error": f"Invalid value for '{key}'"}), 400
+                raise ValueError(f"Invalid value for '{key}'")
 
     # Each indicator's trigger can now have several modes active at once — the
     # frontend sends one repeated query key per active mode (?rsi_trigger=a&rsi_trigger=b),
     # which Flask collects with getlist(). Falls back to DEFAULT_THRESHOLDS' single-mode
     # default (in score_signals) if the caller sends nothing for a given indicator.
     for trig_key, allowed in _TRIGGER_WHITELISTS.items():
-        vals = request.args.getlist(trig_key)
+        vals = args.getlist(trig_key)
         if vals:
             cleaned = []
             for v in vals:
                 if v not in allowed:
-                    return jsonify({"error": f"Invalid value for '{trig_key}'"}), 400
+                    raise ValueError(f"Invalid value for '{trig_key}'")
                 if v not in cleaned:
                     cleaned.append(v)
             thresholds[trig_key] = cleaned
@@ -9681,8 +9616,93 @@ def _backtest_impl():
         for key in set(_TRIGGER_WHITELISTS) - BASIC_TRIGGER_KEYS:
             thresholds.pop(key, None)
 
-    calc_params = _extract_calc_params(request.args)
-    calc_params.update(_extract_backtest_calc_params(request.args))
+    calc_params = _extract_calc_params(args)
+    calc_params.update(_extract_backtest_calc_params(args))
+    return thresholds, calc_params
+
+
+def _backtest_impl():
+    # POST (form body) so an entry + exit indicator set fits; GET still works for the entry set alone.
+    args = request.values
+    symbol     = args.get("symbol", "").strip()
+    if symbol and current_user.is_authenticated:
+        log_event(current_user.id, "backtest", symbol)
+    period     = args.get("period", "2y")
+    interval   = args.get("interval", "1d")
+    start_date = args.get("start_date", "").strip() or None
+    end_date   = args.get("end_date", "").strip() or None
+
+    if not symbol:
+        return jsonify({"error": "symbol parameter is required"}), 400
+
+    locked = _tool_locked("backtester", "intermediate")
+    if locked:
+        return locked
+
+    # ── Tier gating ──────────────────────────────────────────────────────────
+    # Anonymous visitors and free-tier ("basic" entitlement) accounts share the
+    # same restrictions: a curated symbol list and Basic-only indicators. On top
+    # of that, anonymous gets a lifetime try cap and free-tier gets a daily cap.
+    # Pro/founder accounts (entitlements['backtester'] == 'pro') skip all of it.
+    if current_user.is_authenticated:
+        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
+    else:
+        entitlement_level = "basic"
+
+    if not current_user.is_authenticated:
+        allowed, tries_used = _anon_backtest_try(_client_ip())
+        if not allowed:
+            return jsonify({
+                "error": f"You've used your {ANON_BACKTEST_LIMIT} free backtests. Sign up for a free account to keep going.",
+                "anon_limit_reached": True,
+                "limit": ANON_BACKTEST_LIMIT,
+            }), 403
+    elif entitlement_level != "pro":
+        allowed, count = _daily_backtest_try(current_user.id)
+        if not allowed:
+            return jsonify({
+                "error": f"Daily backtest limit reached ({FREE_TIER_DAILY_BACKTEST_LIMIT}/day). Upgrade to Pro for unlimited backtests, or try again tomorrow.",
+                "daily_limit_reached": True,
+                "limit": FREE_TIER_DAILY_BACKTEST_LIMIT,
+            }), 403
+
+    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
+        return jsonify({
+            "error": f"'{symbol}' isn't available on the free plan. Free backtesting is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
+            "symbol_restricted": True,
+            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
+        }), 403
+
+    try:
+        stop_loss_pct   = float(args.get("stop_loss",     5.0))
+        take_profit_pct = float(args.get("take_profit",   5.0))
+        min_confidence  = float(args.get("min_confidence", 60.0))
+        trailing_stop      = args.get("trailing_stop", "0") in ("1", "true", "True")
+        trail_distance_pct = float(args.get("trail_distance", 1.5))
+        capital            = float(args.get("capital", 10000.0))
+        trade_amount        = float(args.get("trade_amount", 100.0))
+        trade_amount_mode   = args.get("trade_amount_mode", "percent").strip().lower()
+        sl_tp_unit          = args.get("sl_tp_unit", "percent").strip().lower()
+    except (ValueError, TypeError) as e:
+        return jsonify({"error": f"Invalid parameter: {e}"}), 400
+
+    if trade_amount_mode not in ("percent", "gbp"):
+        return jsonify({"error": "trade_amount_mode must be 'percent' or 'gbp'"}), 400
+    if sl_tp_unit not in ("percent", "pips"):
+        return jsonify({"error": "sl_tp_unit must be 'percent' or 'pips'"}), 400
+
+    try:
+        thresholds, calc_params = _parse_backtest_set(args, entitlement_level)
+        # Optional separate EXIT indicator set, sent with an x_ prefix. Without it the one set drives both sides.
+        exit_thresholds = exit_calc_params = None
+        exit_min_confidence = min_confidence
+        if args.get("x_set") in ("1", "true"):
+            items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
+            xargs = MultiDict(items)
+            exit_thresholds, exit_calc_params = _parse_backtest_set(xargs, entitlement_level)
+            exit_min_confidence = float(xargs.get("min_confidence", min_confidence))
+    except ValueError as e:
+        return jsonify({"error": str(e) if "Invalid" in str(e) else f"Invalid parameter: {e}"}), 400
 
     try:
         df = _fetch_ohlcv(symbol, period, interval, start_date=start_date, end_date=end_date)
@@ -9712,6 +9732,9 @@ def _backtest_impl():
             trade_amount=trade_amount,
             sl_tp_unit=sl_tp_unit,
             pip_size=pip_size,
+            exit_thresholds=exit_thresholds,
+            exit_calc_params=exit_calc_params,
+            exit_min_confidence=exit_min_confidence,
         )
         metrics = calculate_metrics(trades, equity_curve)
 

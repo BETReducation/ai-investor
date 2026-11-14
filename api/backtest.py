@@ -36,6 +36,10 @@ def run_backtest(
     trade_amount: float = 100.0,
     sl_tp_unit: str = "percent",
     pip_size: float = 0.0001,
+    exit_thresholds: dict | None = None,
+    exit_calc_params: dict | None = None,
+    exit_min_confidence: float | None = None,
+    signal_only: bool = False,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -60,6 +64,14 @@ def run_backtest(
     rather than as a % of the position, since leverage decouples position
     value from the price move.
     """
+    # Separate EXIT indicator set: scored on its own thresholds/params (a second signal-only pass over the
+    # same data); its SELL signal closes a trade. Without it, the one set drives both entry and exit.
+    exit_rows = None
+    if exit_thresholds is not None or exit_calc_params is not None:
+        exit_rows = run_backtest(df, thresholds=exit_thresholds, calc_params=exit_calc_params, signal_only=True)
+    exit_min_conf = min_confidence if exit_min_confidence is None else exit_min_confidence
+    signal_rows: dict = {}
+
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     cp = calc_params or {}
 
@@ -773,6 +785,10 @@ def run_backtest(
         overall    = result["overall"]
         confidence = result["confidence"]
 
+        if signal_only:
+            signal_rows[date_str] = (result, overall, confidence)
+            continue
+
         # ── Manage open position ──────────────────────────────────────────
         if position is not None:
             ep       = position["entry_price"]
@@ -790,13 +806,18 @@ def run_backtest(
 
             exit_reason = exit_price = None
 
+            if exit_rows is not None:
+                x_result, x_overall, x_conf = exit_rows.get(date_str, (None, None, 0))
+            else:
+                x_result, x_overall, x_conf = result, overall, confidence
+
             if low <= effective_sl:
                 exit_reason = "Trailing Stop" if trail_is_tighter else "Stop Loss"
                 exit_price  = max(low, effective_sl)
             elif high >= tp_price:
                 exit_reason = "Take Profit"
                 exit_price  = min(high, tp_price)
-            elif overall == "SELL" and confidence >= min_confidence:
+            elif x_overall == "SELL" and x_conf >= exit_min_conf:
                 exit_reason = "Signal"
                 exit_price  = close
 
@@ -806,9 +827,9 @@ def run_backtest(
                 equity_before = equity
                 equity       *= 1 + f * ret / 100
 
-                exit_signals    = _fired_signals(result["signals"], "SELL") if exit_reason == "Signal" else []
+                exit_signals    = _fired_signals(x_result["signals"], "SELL") if exit_reason == "Signal" else []
                 exit_context    = _market_context(indicators)
-                exit_confidence = confidence if exit_reason == "Signal" else None
+                exit_confidence = x_conf if exit_reason == "Signal" else None
 
                 description_detailed, description_simple = _describe_trade(
                     entry_signals=position["entry_signals"], entry_context=position["entry_context"],
@@ -816,8 +837,8 @@ def run_backtest(
                     entry_sell_score=position["entry_sell_score"],
                     exit_reason=exit_reason, exit_signals=exit_signals, exit_context=exit_context,
                     exit_confidence=exit_confidence,
-                    exit_buy_score=result["buy_score"] if exit_reason == "Signal" else None,
-                    exit_sell_score=result["sell_score"] if exit_reason == "Signal" else None,
+                    exit_buy_score=x_result["buy_score"] if exit_reason == "Signal" else None,
+                    exit_sell_score=x_result["sell_score"] if exit_reason == "Signal" else None,
                     return_pct=ret, sl_price=sl_price, tp_price=tp_price, trail_distance_pct=trail_distance_pct,
                 )
 
@@ -873,6 +894,9 @@ def run_backtest(
                 }
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
+
+    if signal_only:
+        return signal_rows
 
     # Close any position still open at end of data
     if position is not None:
