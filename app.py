@@ -1788,7 +1788,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "global-heat-map": "Every major stock index worldwide, coloured by today's move.",
     "market-orbs": "Markets and assets as bubbles in their own pools: gainers float, decliners sink.",
     "gold-silver-ratio": "How many ounces of silver it takes to match one ounce of gold, and how that ratio has moved.",
-    "bitcoin-dashboard": "Bitcoin's price, halving countdown, coins left to mine, returns and what a house or car costs in BTC.",
+    "bitcoin-dashboard": "Bitcoin's price, halving countdown, coins left to mine, returns, power law, hashrate and what a house or car costs in BTC.",
     "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
     "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
@@ -8220,6 +8220,48 @@ def api_bitcoin_dashboard_live():
             "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
     with _btc_dash_lock:
         _btc_dash_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
+# Bitcoin dashboard history (blockchain.com charts): price, hashrate, difficulty and exchange trading volume.
+# Fetched once and cached for 12 hours; a stale copy is served if the upstream is down.
+_btc_hist_cache: dict = {"at": 0.0, "data": None}
+_btc_hist_lock = threading.Lock()
+
+
+def _fetch_btc_history() -> dict:
+    def series(name, **extra):
+        r = requests.get(f"https://api.blockchain.info/charts/{name}",
+                         params={"timespan": "all", "format": "json", **extra},
+                         headers={"user-agent": "GCG-BitcoinDashboard/1.0"}, timeout=25)
+        r.raise_for_status()
+        return r.json()["values"]
+    price = [[v["x"], round(v["y"], 2)] for v in series("market-price", sampled="true") if v["y"] > 0.05 and v["x"] >= 1280000000]
+    hashrate = [[v["x"], v["y"] / 1e6] for v in series("hash-rate", sampled="true") if v["y"] > 0 and v["x"] >= 1293840000]  # TH/s -> EH/s
+    diff = [[v["x"], v["y"] / 1e12] for v in series("difficulty", sampled="true") if v["y"] > 0 and v["x"] >= 1293840000]  # -> T
+    vol_years: dict = {}
+    for v in series("trade-volume", sampled="false"):
+        y = _dt.datetime.fromtimestamp(v["x"], _dt.timezone.utc).year
+        vol_years[y] = vol_years.get(y, 0.0) + v["y"]
+    vol = [[y, round(t / 1e9, 1)] for y, t in sorted(vol_years.items()) if y >= 2017]
+    return {"price": price, "hash": [[t, float(f"{h:.6g}")] for t, h in hashrate], "diff": [[t, float(f"{d:.6g}")] for t, d in diff],
+            "vol": vol, "vol_year": _dt.datetime.now(_dt.timezone.utc).year}
+
+
+@app.route("/api/dataviz/bitcoin-dashboard/history", methods=["GET"])
+def api_bitcoin_dashboard_history():
+    with _btc_hist_lock:
+        fresh = _btc_hist_cache["data"] and time.monotonic() - _btc_hist_cache["at"] < 43200
+        if fresh:
+            return jsonify(_btc_hist_cache["data"])
+    try:
+        data = _fetch_btc_history()
+    except Exception:
+        if _btc_hist_cache["data"]:
+            return jsonify(_btc_hist_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    with _btc_hist_lock:
+        _btc_hist_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
 
 

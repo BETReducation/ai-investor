@@ -92,6 +92,9 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <button type="button" data-t="s-house">House</button>
   <button type="button" data-t="s-car">Car</button>
   <button type="button" data-t="s-gold">Gold</button>
+  <button type="button" data-t="s-plaw">Power law</button>
+  <button type="button" data-t="s-mining">Hashrate</button>
+  <button type="button" data-t="s-volume">Trading volume</button>
   <button type="button" data-t="s-maps">House maps</button>
   <button type="button" data-t="s-acceptance">Where it’s spent</button>
   <button type="button" data-t="s-holders">Top holders</button>
@@ -174,6 +177,29 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <div class="mut" id="gstatus" style="margin:8px 0">Gold at $4,000/oz (estimate) until the live price loads.</div>
   <svg id="gchart" viewBox="0 0 300 170" width="100%" role="img" aria-label="Ounces of gold per Bitcoin over time"></svg>
   <div class="mut">Ounces of gold per BTC, 2010 to now (log scale). Uses yearly average prices, with the last point at today's prices. Press Refresh price to update both the BTC and gold price.</div>
+</section>
+
+<section class="card" id="s-plaw">
+  <h2>Bitcoin power law</h2>
+  <div class="mut" id="plstat" style="margin-bottom:8px">Loading price history…</div>
+  <svg id="plchart" viewBox="0 0 300 190" width="100%" role="img" aria-label="Bitcoin price against the power law trend, log-log"></svg>
+  <div class="mut">Bitcoin's price (orange) against a power law trend (dashed): price = 10<sup>-17.016</sup> × days since 3 Jan 2009<sup>5.82</sup>, on log scales so the trend plots as a straight line. The shaded band holds 90% of daily prices since 2011. A historical curve fit, not a forecast; the line beyond today is the model extended, not a prediction.</div>
+</section>
+
+<section class="card" id="s-mining">
+  <h2>Hashrate &amp; mining difficulty</h2>
+  <div class="grid" style="margin-bottom:8px">
+    <div class="stat"><span class="mut">Hashrate</span><b id="hrnow" style="color:var(--acc)">–</b></div>
+    <div class="stat"><span class="mut">Difficulty</span><b id="dfnow" style="color:#4aa3ff">–</b></div>
+  </div>
+  <svg id="hchart" viewBox="0 0 300 190" width="100%" role="img" aria-label="Bitcoin hashrate and mining difficulty over time"></svg>
+  <div class="mut">Hashrate in exahashes per second (orange, left axis) and mining difficulty in trillions (blue, right axis), both on log scales. Difficulty resets every 2,016 blocks to follow hashrate, so the two move together with a lag. Source: blockchain.com.</div>
+</section>
+
+<section class="card" id="s-volume">
+  <h2>Spot trading volume by year</h2>
+  <svg id="vchart" viewBox="0 0 300 180" width="100%" role="img" aria-label="Bitcoin spot exchange trading volume per year in US dollars"></svg>
+  <div class="mut" id="vnote">Total Bitcoin spot trading volume per year, in billions of US dollars.</div>
 </section>
 
 <section class="card" id="s-maps">
@@ -520,6 +546,66 @@ function renderHolders(){
 [].forEach.call($('hTabs').children,function(b){b.onclick=function(){hTab=b.dataset.k;[].forEach.call($('hTabs').children,function(x){x.className=x===b?'on':''});renderHolders()}});
 function renderAll(){renderCur();renderPChart();renderReturns();renderHouse();renderCar();renderGold();renderMaps();renderHolders();renderExtras()}
 
+// ---- history charts: power law, hashrate/difficulty, yearly volume (data from /api/dataviz/bitcoin-dashboard/history) ----
+var GEN=Date.UTC(2009,0,3)/1000,DAY=86400;
+var BLUE='#4aa3ff';
+function pow10lab(k){return k<-2?'1e'+k:k<0?String(Math.pow(10,k)):short(Math.pow(10,k))}
+function renderPowerLaw(H){
+  var model=function(t){return Math.pow(10,-17.01593+5.82*Math.log10((t-GEN)/DAY))};
+  var pts=H.price.filter(function(p){return p[1]>=.1});
+  var res=H.price.filter(function(p){return p[0]>=1293840000}).map(function(p){return Math.log10(p[1]/model(p[0]))}).sort(function(a,b){return a-b});
+  var lo=res[Math.floor(res.length*.05)],hi=res[Math.floor(res.length*.95)];
+  var t0=pts[0][0],t1=Date.UTC(2030,0,1)/1000,now=pts[pts.length-1][0];
+  var lx0=Math.log10((t0-GEN)/DAY),lx1=Math.log10((t1-GEN)/DAY),ymin=-1,ymax=6;
+  var X=function(t){return 38+(Math.log10((t-GEN)/DAY)-lx0)/(lx1-lx0)*254},Y=function(v){return 152-(Math.log10(v)-ymin)/(ymax-ymin)*140},sv='';
+  for(var k=ymin;k<=ymax;k++)sv+='<line x1="38" x2="292" y1="'+Y(Math.pow(10,k)).toFixed(1)+'" y2="'+Y(Math.pow(10,k)).toFixed(1)+'" stroke="var(--line)"/><text x="34" y="'+(Y(Math.pow(10,k))+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--mut)">'+pow10lab(k)+'</text>';
+  var ts=[];for(var i=0;i<=60;i++)ts.push(t0+(t1-t0)*i/60);
+  var up=ts.map(function(t,i){return (i?'L':'M')+X(t).toFixed(1)+' '+Y(model(t)*Math.pow(10,hi)).toFixed(1)}).join(' ');
+  var dn=ts.slice().reverse().map(function(t){return 'L'+X(t).toFixed(1)+' '+Y(model(t)*Math.pow(10,lo)).toFixed(1)}).join(' ');
+  sv+='<path d="'+up+' '+dn+' Z" fill="var(--acc)" opacity=".13"/>';
+  sv+='<path d="'+ts.map(function(t,i){return (i?'L':'M')+X(t).toFixed(1)+' '+Y(model(t)).toFixed(1)}).join(' ')+'" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="4 3"/>';
+  sv+='<path d="'+pts.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)}).join(' ')+'" fill="none" stroke="var(--acc)" stroke-width="1.6" stroke-linejoin="round"/>';
+  sv+='<line x1="'+X(now).toFixed(1)+'" x2="'+X(now).toFixed(1)+'" y1="12" y2="152" stroke="var(--mut)" stroke-dasharray="2 3"/>';
+  [2011,2013,2016,2020,2024,2028].forEach(function(y){sv+='<text x="'+X(Date.UTC(y,0,1)/1000).toFixed(1)+'" y="168" text-anchor="middle" font-size="9" fill="var(--mut)">'+y+'</text>'});
+  $('plchart').innerHTML=sv;
+  var last=pts[pts.length-1][1],m=model(now);
+  $('plstat').textContent='Power law value today: $'+fmt(m)+'. Latest price: $'+fmt(last)+' ('+(last/m).toFixed(2)+'× the trend line).';
+}
+function renderMining(H){
+  var hs=H.hash,ds=H.diff,t0=hs[0][0],t1=hs[hs.length-1][0];
+  var rng=function(a){var l=a.map(function(p){return Math.log10(p[1])});return [Math.floor(Math.min.apply(null,l)),Math.ceil(Math.max.apply(null,l))]};
+  var hr=rng(hs),dr=rng(ds),X=function(t){return 38+(t-t0)/(t1-t0)*224};
+  var Yh=function(v){return 152-(Math.log10(v)-hr[0])/(hr[1]-hr[0])*140},Yd=function(v){return 152-(Math.log10(v)-dr[0])/(dr[1]-dr[0])*140};
+  var sv='',step=function(a){return Math.max(1,Math.ceil((a[1]-a[0])/7))};
+  for(var k=hr[0];k<=hr[1];k+=step(hr))sv+='<line x1="38" x2="262" y1="'+Yh(Math.pow(10,k)).toFixed(1)+'" y2="'+Yh(Math.pow(10,k)).toFixed(1)+'" stroke="var(--line)"/><text x="34" y="'+(Yh(Math.pow(10,k))+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--acc)">'+pow10lab(k)+'</text>';
+  for(k=dr[0];k<=dr[1];k+=step(dr))sv+='<text x="266" y="'+(Yd(Math.pow(10,k))+3).toFixed(1)+'" font-size="9" fill="'+BLUE+'">'+pow10lab(k)+'</text>';
+  var line=function(a,Y,c){return '<path d="'+a.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)}).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="1.8" stroke-linejoin="round"/>'};
+  sv+=line(hs,Yh,'var(--acc)')+line(ds,Yd,BLUE);
+  for(var y=2012;y<=new Date(t1*1000).getUTCFullYear();y+=2)sv+='<text x="'+X(Date.UTC(y,0,1)/1000).toFixed(1)+'" y="168" text-anchor="middle" font-size="9" fill="var(--mut)">'+y+'</text>';
+  sv+='<text x="38" y="8" font-size="9" fill="var(--acc)">EH/s</text><text x="262" y="8" text-anchor="end" font-size="9" fill="'+BLUE+'">Difficulty (T)</text>';
+  $('hchart').innerHTML=sv;
+  $('hrnow').textContent=fmt(hs[hs.length-1][1])+' EH/s';
+  $('dfnow').textContent=fmt(ds[ds.length-1][1],1)+' T';
+}
+function renderVolume(H){
+  var v=H.vol,mx=Math.max.apply(null,v.map(function(r){return r[1]})),w=240/v.length,sv='';
+  var top=Math.ceil(mx/40)*40,Y=function(x){return 140-x/top*120};
+  for(var g=0;g<=top;g+=top/4)sv+='<line x1="38" x2="290" y1="'+Y(g).toFixed(1)+'" y2="'+Y(g).toFixed(1)+'" stroke="var(--line)"/><text x="34" y="'+(Y(g)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--mut)">$'+Math.round(g)+'B</text>';
+  v.forEach(function(r,i){var x=44+i*(w*1.0+1),bw=w-6,part=r[0]===H.vol_year;
+    sv+='<rect x="'+x.toFixed(1)+'" y="'+Y(r[1]).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(140-Y(r[1])).toFixed(1)+'" rx="2" fill="var(--acc)" opacity="'+(part?.5:1)+'"/>'+
+      '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(Y(r[1])-4).toFixed(1)+'" text-anchor="middle" font-size="8.5" font-weight="700" fill="var(--ink)">'+Math.round(r[1])+'</text>'+
+      '<text x="'+(x+bw/2).toFixed(1)+'" y="154" text-anchor="middle" font-size="9" fill="var(--mut)">'+(part?"’"+String(r[0]).slice(2)+"*":r[0])+'</text>'});
+  $('vchart').innerHTML=sv;
+  $('vnote').textContent='Bitcoin spot trading volume per year in billions of US dollars, summed from daily exchange volume reported by blockchain.com (2017 onward). *'+H.vol_year+' is the year so far. It covers the exchanges blockchain.com tracks, so treat it as a trend, not an exact market total.';
+}
+function loadHistory(){
+  fetch('/api/dataviz/bitcoin-dashboard/history').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(H){
+    renderPowerLaw(H);renderMining(H);renderVolume(H);postHeight();
+  }).catch(function(){
+    $('plstat').textContent='History data unavailable right now.';$('vnote').textContent='History data unavailable right now.';
+  });
+}
+
 // Jump to a section: open it if collapsed, then scroll the page (the dashboard sits in an iframe, so scroll the parent).
 function jump(el,offset){
   try{
@@ -556,7 +642,7 @@ $('dnav').onclick=function(e){
   h.onclick=go;h.onkeydown=function(e){if(e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();go()}};
   set(sec.id!=='s-price'); // load with only the price section open
 });
-renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
+loadHistory();renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
 
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bitcoin-dashboard"},location.origin);}
