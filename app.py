@@ -4945,7 +4945,19 @@ def api_forgot_password():
         user_data["profile"] = profile
         _save_user(match_username, user_data)
 
+        from urllib.parse import quote
         reset_link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(match_username)}&t={token}"
+        safe_link = html_escape(reset_link, quote=True)
+        html_body = (
+            '<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1f2e;max-width:480px">'
+            f'<p>Someone requested a password reset for the account "{html_escape(match_username)}".</p>'
+            f'<p><a href="{safe_link}" style="display:inline-block;background:#10b981;color:#04130d;'
+            'font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px">Reset password</a></p>'
+            '<p style="color:#5b6478;font-size:13px">This link is valid for 1 hour. If the button doesn\'t work, '
+            f'copy this address into your browser:<br>{safe_link}</p>'
+            '<p style="color:#5b6478;font-size:13px">If you didn\'t request this, you can safely ignore this email.</p>'
+            '</div>'
+        )
         to_addr = profile.get("email") or match_username
         _send_email(
             to_addr,
@@ -4954,6 +4966,7 @@ def api_forgot_password():
             f"Reset your password here (valid for 1 hour):\n{reset_link}\n\n"
             f"If you didn't request this, you can safely ignore this email.",
             sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
+            html=html_body,
         )
 
     return jsonify(generic)
