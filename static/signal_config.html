@@ -19,6 +19,13 @@
 <link rel="stylesheet" href="/static/css/site-nav.css">
 <link rel="stylesheet" href="/static/css/gcg.css">
 <style>
+.num-step { display: inline-flex; align-items: stretch; }
+.num-step button { width: 24px; border: 1px solid var(--border); background: var(--panel-bg); color: var(--text-primary); cursor: pointer; font: inherit; font-size: 14px; line-height: 1; padding: 0; }
+.num-step button:hover { border-color: var(--text-secondary); }
+.num-step button:first-child { border-radius: 2px 0 0 2px; border-right: none; }
+.num-step button:last-child { border-radius: 0 2px 2px 0; border-left: none; }
+.num-step input { border-radius: 0; text-align: center; min-height: 24px; -moz-appearance: textfield; appearance: textfield; }
+.num-step input::-webkit-inner-spin-button, .num-step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 /* The shared nav is fixed, so push the page below it. */
 body { padding-top: 68px; }
 .layout { height: calc(100vh - 68px - 44px - 38px - 28px); }
@@ -1566,6 +1573,19 @@ function toggleCondExpand(i) {
   if (chev) chev.classList.toggle('open', condExpanded[i]);
 }
 
+// Number field with large − / + buttons. The browser's own spinner arrows are only ~9px tall here,
+// so a click meant for "down" easily lands on "up".
+function _numStepper(inputHtml) {
+  return `<span class="num-step"><button type="button" tabindex="-1" aria-label="Decrease" onclick="stepNum(this,-1)">−</button>${inputHtml}<button type="button" tabindex="-1" aria-label="Increase" onclick="stepNum(this,1)">+</button></span>`;
+}
+
+function stepNum(btn, dir) {
+  const input = btn.parentElement.querySelector('input');
+  if (!input) return;
+  if (dir < 0) input.stepDown(); else input.stepUp();
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 // Build per-condition indicator parameter inputs
 function _buildCondParams(i, cond) {
   const def = CONDITION_DEFS[cond.type] || {};
@@ -1585,9 +1605,9 @@ function _buildCondParams(i, cond) {
     }
     return `<div class="cond-param">
       <span class="cond-param-label">${p.label}</span>
-      <input type="number" value="${val}" min="${p.min}" max="${p.max}" step="${p.step}"
+      ${_numStepper(`<input type="number" value="${val}" min="${p.min}" max="${p.max}" step="${p.step}"
         onchange="updateConditionParam(${i},'${p.id}',this.value)"
-        style="width:50px;font-size:10px;padding:2px 4px;">
+        style="width:44px;font-size:10px;padding:2px 4px;">`)}
     </div>`;
   }).join('');
   return `<div class="cond-params-row">${inputs}</div>`;
@@ -1653,8 +1673,8 @@ function renderConditions() {
     const inputRow = def.inputLabel ? `
       <div class="cond-input-row">
         <span class="cond-input-label">${def.inputLabel}:</span>
-        <input type="number" value="${cond.value}" min="${def.min ?? -9999}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
-          onchange="updateCondition(${i},'value',this.value)" style="width:62px;font-size:11px;">
+        ${_numStepper(`<input type="number" value="${cond.value}" min="${def.min ?? -9999}" max="${def.max ?? 9999}" step="${def.step ?? 1}"
+          onchange="updateCondition(${i},'value',this.value)" style="width:56px;font-size:11px;">`)}
         ${def.suffix ? `<span class="cond-input-label">${def.suffix}</span>` : ''}
       </div>` : '';
     const dir = cond.direction === 'sell' ? 'sell' : 'buy';
