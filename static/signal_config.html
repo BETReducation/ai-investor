@@ -16,115 +16,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" href="/static/logos/Green Square.png">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/site-nav.css">
 <link rel="stylesheet" href="/static/css/gcg.css">
 <style>
-  .site-nav, .site-nav button, .site-nav input, .site-nav a { font-family: 'Space Grotesk', sans-serif; }
-  .site-nav {
-    position: sticky; top: 0; z-index: 200;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 5%; height: 68px;
-    background: var(--bg-secondary);
-    border-bottom: 2px solid rgba(168,85,247,0.5) !important;
-    background: linear-gradient(rgba(168,85,247,0.08),rgba(168,85,247,0.08)), var(--bg-secondary);
-    backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
-  }
-  .site-nav-logo img { height: 48px; width: auto; border-radius: 6px; display: block; }
-  .site-nav-left { display: flex; align-items: center; gap: 48px; }
-  .site-nav-links {
-    display: flex; align-items: center; gap: 36px; list-style: none;
-  }
-  .site-nav-links > li { position: relative; }
-  .site-nav-links > li > a {
-    display: flex; align-items: center; gap: 3px;
-    color: var(--text-secondary); text-decoration: none;
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px; font-weight: 500;
-    transition: color 0.2s; white-space: nowrap;
-  }
-  .site-nav-links > li > a:hover { color: var(--text-primary); }
-  .nav-chev { font-size: 9px; opacity: 0.5; }
-  .site-dropdown {
-    display: none; position: absolute;
-    top: 100%; left: 50%; transform: translateX(-50%);
-    background: var(--bg-panel); border: 1px solid var(--border-bright);
-    border-radius: 10px; padding: 10px 0 6px; min-width: 175px;
-    list-style: none; z-index: 300;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-  }
-  .has-drop:hover .site-dropdown { display: block; }
-  .site-dropdown li a {
-    display: block; padding: 9px 18px;
-    color: var(--text-secondary); font-size: 13px; font-weight: 500;
-    font-family: 'Space Grotesk', sans-serif;
-    white-space: nowrap; text-decoration: none;
-    transition: color 0.15s, background 0.15s;
-  }
-  .site-dropdown li a:hover { color: var(--accent-green); background: rgba(0,255,136,0.05); }
-  .nav-divider { height: 1px; background: var(--border-bright); margin: 6px 12px; }
-  .has-submenu { position: relative; }
-  .has-submenu > a { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
-  .nav-subchev { font-size: 10px; opacity: 0.55; }
-  .nav-submenu {
-    display: none; position: absolute; top: -10px; left: 100%;
-    background: var(--bg-panel); border: 1px solid var(--border-bright);
-    border-radius: 10px; padding: 10px 0 6px; min-width: 190px;
-    list-style: none; z-index: 301; box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-  }
-  .has-submenu:hover > .nav-submenu { display: block; }
-  .has-submenu:hover > a { color: var(--accent-green); background: rgba(0,255,136,0.05); }
-  .site-nav-cta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .theme-toggle { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
-  .theme-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .site-btn-ghost {
-    background: transparent; border: 1px solid var(--border-bright);
-    color: var(--text-secondary); padding: 9px 20px; border-radius: 8px;
-    font-size: 14px; font-family: 'Space Grotesk', sans-serif; font-weight: 500;
-    cursor: pointer; text-decoration: none; transition: border-color 0.2s;
-    white-space: nowrap;
-  }
-  .site-btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
-  .site-btn-primary {
-    background: var(--accent-green); color: #000; padding: 6px 16px;
-    border-radius: 6px; font-size: 12px; font-weight: 700;
-    font-family: 'Space Grotesk', sans-serif;
-    cursor: pointer; border: none; text-decoration: none;
-    transition: background 0.2s; white-space: nowrap;
-  }
-  .site-btn-primary:hover { background: var(--accent-green-dim); }
-  .nav-admin-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(251,191,36,0.1); border: 1px solid var(--accent-amber);
-    color: var(--accent-amber); padding: 7px 14px; border-radius: 8px;
-    font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
-    text-decoration: none; transition: background 0.2s;
-  }
-  .nav-admin-link:hover { background: rgba(251,191,36,0.2); }
-  .nav-admin-mobile-li { display: none; }
-  .nav-hamburger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 36px; height: 36px; background: none; border: none; cursor: pointer; padding: 0; flex-shrink: 0; }
-.nav-hamburger span { display: block; width: 100%; height: 2px; background: var(--text-primary); border-radius: 2px; transition: transform 0.25s, opacity 0.25s; }
-.nav-hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.nav-hamburger.active span:nth-child(2) { opacity: 0; }
-.nav-hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-@media (max-width: 900px) {
-  .nav-hamburger { display: flex; }
-  .nav-admin-link { display: none; }
-  .nav-admin-mobile-li.is-admin { display: list-item; }
-  .site-nav-links { display: none; position: fixed; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--bg-panel); border-bottom: 1px solid var(--border); max-height: calc(100vh - 68px); overflow-y: auto; padding: 8px 0; box-shadow: 0 16px 40px rgba(0,0,0,0.5); z-index: 299; }
-  .site-nav-links.open { display: flex; }
-  .site-nav-links > li { width: 100%; }
-  .site-nav-links > li > a { padding: 14px 24px; width: 100%; }
-  .nav-chev { padding: 8px 10px; margin: -8px -10px -8px 0; font-size: 17px; opacity: 0.9; }
-  .has-drop:hover .site-dropdown { display: none; }
-  .has-drop.open .site-dropdown { display: block; }
-  .has-drop.open .nav-chev { transform: rotate(180deg); }
-  .has-submenu:hover > .nav-submenu { display: none; }
-  .has-submenu.open > .nav-submenu { display: block; }
-  .has-submenu.open > a .nav-subchev { transform: rotate(90deg); }
-  .nav-submenu { position: static; background: none; border: none; box-shadow: none; border-radius: 0; padding: 0 0 4px 18px; min-width: 0; }
-  .nav-divider { margin: 6px 18px 6px 0; }
-  .site-dropdown { position: static; transform: none; background: none; border: none; box-shadow: none; border-radius: 0; padding: 0 0 6px 36px; min-width: 0; }
-}
+/* The shared nav is fixed, so push the page below it. */
+body { padding-top: 68px; }
+.layout { height: calc(100vh - 68px - 44px - 38px - 28px); }
 @media (max-width: 768px) {
   body { overflow: auto; }
 }
@@ -331,7 +228,7 @@
   .mobile-nav { display: flex; height: 40px; }
   .site-nav { height: 44px !important; }
   .site-nav-logo img { height: 32px; }
-  .layout { height: calc(100vh - 44px - 40px); height: calc(100dvh - 44px - 40px); } /* dvh: iOS Safari's 100vh ignores its toolbars */
+  .layout { height: calc(100vh - 68px - 40px); height: calc(100dvh - 68px - 40px); } /* dvh: iOS Safari's 100vh ignores its toolbars */
   .center-panel > :nth-child(1), .center-panel > .stats-row, .center-panel > :nth-child(4),
   .disclaimer-bar, .tool-footer { display: none !important; }
 }
@@ -534,185 +431,7 @@
 </div>
 
 <!-- SITE NAV -->
-<nav class="site-nav">
-  <div class="site-nav-left">
-  <a href="/" class="site-nav-logo">
-    <img id="navLogo" src="/static/logos/GCT Square.png" alt="Growth Capital Group">
-  </a>
-  <ul class="site-nav-links">
-    <li><a href="/">Home</a></li>
-    <li class="has-drop">
-      <a href="/learn">Education <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/learn/beginner">Beginner</a></li>
-        <li><a href="/learn/intermediate">Intermediate</a></li>
-        <li><a href="/learn/pro">Pro</a></li>
-        <li><a href="/learn/guest-lessons">Guest Lessons</a></li>
-        <li><a href="/learn/tools">Tools</a></li>
-        <li><a href="/learn/artifacts">Artifacts</a></li>
-      </ul>
-    </li>
-    <li class="has-drop">
-      <a href="#" onclick="return false;">Tools <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/tools">All tools</a></li>
-        <li class="has-submenu"><a href="#">Analysis <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/signals">Signals</a></li>
-            <li><a href="/backtester">Backtester</a></li>
-            <li><a href="/tools/ai-chart-analysis">AI Chart Analysis</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Crypto <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/crypto-unit-calculator">Crypto Unit Calculator</a></li>
-            <li><a href="/tools/crypto-portfolio-donut">Crypto Portfolio Donut</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Metals <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/metal-calculator">Metal Calculator</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Stocks <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/dividend-calculator">Dividend Calculator</a></li>
-            <li><a href="/tools/stock-donut">Stock Donut</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Forex <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/currency-calculator">Currency Calculator</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Property <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/reit-map">REIT Map</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Other <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/freedom-clock">Freedom Clock</a></li>
-            <li><a href="/tools/price-value-tracker">Price &amp; Value Tracker</a></li>
-            <li><a href="/tools/portfolio">Portfolio Manager</a></li>
-            <li><a href="/tools/calculator">Position Size Calculator</a></li>
-          </ul></li>
-      </ul>
-    </li>
-    <li class="has-drop">
-      <a href="#" onclick="return false;">Data Viz <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/tools/data-visualisation">All visualisations</a></li>
-        <li class="has-submenu"><a href="#">Analysis <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/global-heat-map">Global Heat Map</a></li>
-            <li><a href="/tools/data-visualisation/market-orbs">Market Orbs</a></li>
-            <li><a href="/tools/data-visualisation/winners-league">Winners League</a></li>
-            <li><a href="/tools/data-visualisation/bull-bear-meter">Bull vs Bear Meter</a></li>
-            <li><a href="/tools/data-visualisation/bubble-radar">Bubble Tracker</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Crypto <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/bitcoin-dashboard">Bitcoin Dashboard</a></li>
-            <li><a href="/tools/data-visualisation/crypto-compass">Crypto Compass</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Metals <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/gold-silver-ratio">Gold &amp; Silver</a></li>
-            <li><a href="/tools/data-visualisation/mining-globe">The Mining Globe</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Stocks <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/nasdaq-wagon-wheel">NASDAQ Wagon Wheel</a></li>
-            <li><a href="/tools/data-visualisation/ftse-wagon-wheel">FTSE 100 Wagon Wheel</a></li>
-            <li><a href="/tools/data-visualisation/russell-compass">Russell 2000 Compass</a></li>
-            <li><a href="/tools/data-visualisation/league-compass">S&amp;P500 Compass</a></li>
-            <li><a href="/tools/data-visualisation/etf-tracker">Global ETF Tracker</a></li>
-            <li><a href="/tools/data-visualisation/etf-wallet-xray">ETF Wallet X-Ray</a></li>
-            <li><a href="/tools/data-visualisation/ai-tracker">AI Tracker</a></li>
-          </ul></li>
-        <li class="has-submenu"><a href="#">Other <span class="nav-subchev">▸</span></a>
-          <ul class="nav-submenu">
-            <li><a href="/tools/data-visualisation/barrel-map">Barrel Map</a></li>
-            <li><a href="/tools/data-visualisation/finance-map">The Finance Map</a></li>
-          </ul></li>
-      </ul>
-    </li>
-    <li class="has-drop">
-      <a href="/arena">Arena <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/arena/market-xi">Market XI</a></li>
-        <li><a href="/arena/competitions">Trading Competitions</a></li>
-        <li><a href="/arena/predictions">Predictions Markets</a></li>
-      </ul>
-    </li>
-    <li class="has-drop">
-      <a href="/alpha">Alpha <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/alpha/connor">Connor</a></li>
-        <li><a href="/alpha/dave">Dave</a></li>
-        <li><a href="/alpha/gary">Gary</a></li>
-        <li><a href="/alpha/tom">Tom</a></li>
-        <li><a href="/alpha/podcast">Podcast</a></li>
-        <li><a href="/alpha/chat">GCG Chat</a></li>
-      </ul>
-    </li>
-    <li class="has-drop" id="navStudioLi" style="display:none;">
-      <a href="#" onclick="return false;">Studio <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/alpha/studio">Alpha Studio</a></li>
-        <li id="navDatavizStudioLi" style="display:none;"><a href="/dataviz-studio">Data Viz Studio</a></li>
-        <li id="navNewsletterStudioLi" style="display:none;"><a href="/admin/newsletter">Newsletter</a></li>
-      </ul>
-    </li>
-    <li class="has-drop">
-      <a href="/company">Group <span class="nav-chev">▾</span></a>
-      <ul class="site-dropdown">
-        <li><a href="/company">Company</a></li>
-        <li><a href="/roadmap">Roadmap</a></li>
-        <li><a href="/partners">Partners</a></li>
-      </ul>
-    </li>
-    <li><a href="/pricing">Pricing</a></li>
-    <li id="navAdminMobileLi" class="nav-admin-mobile-li"><a href="/admin">Admin</a></li>
-  </ul>
-  </div>
-  <div class="site-nav-cta">
-    <a href="/admin" class="nav-admin-link" id="navAdminLink" style="display:none;" title="Admin panel">Admin</a>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleGCGTheme()" title="Toggle light/dark mode">🌙</button>
-    <span id="usernameDisplay" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-secondary);letter-spacing:1px;display:none;"></span>
-    <button class="site-btn-ghost" id="signInBtn" onclick="document.getElementById('loginOverlay').style.display='flex'">Sign In</button>
-    <button class="site-btn-ghost" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
-    <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Toggle menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
-<script>
-function toggleMobileNav() {
-  const links = document.querySelector('.site-nav-links');
-  const btn = document.getElementById('navHamburger');
-  const isOpen = links.classList.toggle('open');
-  btn.classList.toggle('active', isOpen);
-  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-}
-document.querySelectorAll('.has-submenu > a').forEach(trigger => {
-  trigger.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (window.innerWidth <= 900) trigger.parentNode.classList.toggle('open');
-  });
-});
-document.querySelectorAll('.nav-chev').forEach(chev => {
-  chev.addEventListener('click', (e) => {
-    if (window.innerWidth <= 900) {
-      e.preventDefault();
-      e.stopPropagation();
-      chev.closest('.has-drop').classList.toggle('open');
-    }
-  });
-});
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 900) {
-    document.querySelector('.site-nav-links').classList.remove('open');
-    document.getElementById('navHamburger').classList.remove('active');
-    document.querySelectorAll('.has-drop.open').forEach(li => li.classList.remove('open'));
-  }
-});
-</script>
+<script src="/static/js/nav.js" data-logo="GCT Square.png"></script>
 
 <!-- MAIN LAYOUT -->
 <div class="layout" id="mainLayout">
@@ -5630,10 +5349,14 @@ async function checkSession() {
 
 function updateUserDisplay() {
   const userDisplay = document.getElementById('usernameDisplay');
-  userDisplay.textContent = currentUser ? currentUser.toUpperCase() : '';
-  userDisplay.style.display = currentUser ? '' : 'none';
-  document.getElementById('signInBtn').style.display = currentUser ? 'none' : 'inline-block';
-  document.getElementById('logoutBtn').style.display  = currentUser ? 'inline-block' : 'none';
+  // The shared nav shows the signed-in name itself; these elements only exist on older copies of the page.
+  if (userDisplay) {
+    userDisplay.textContent = currentUser ? currentUser.toUpperCase() : '';
+    userDisplay.style.display = currentUser ? '' : 'none';
+  }
+  const signInBtn = document.getElementById('signInBtn'), logoutBtn = document.getElementById('logoutBtn');
+  if (signInBtn) signInBtn.style.display = currentUser ? 'none' : 'inline-block';
+  if (logoutBtn) logoutBtn.style.display = currentUser ? 'inline-block' : 'none';
   const pill = document.getElementById('userPill');
   if (pill) {
     pill.style.cursor = currentUser ? 'pointer' : 'default';
@@ -6402,7 +6125,7 @@ setTimeout(() => {
 </div>
 
 <!-- MOBILE NAV BAR -->
-<nav class="mobile-nav" id="mobileNav">
+<div class="mobile-nav" id="mobileNav" role="navigation">
   <button class="mobile-nav-btn active" id="mNavChart" onclick="mobileTab('chart')">
     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     CHART
@@ -6415,7 +6138,7 @@ setTimeout(() => {
     <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     ALERTS
   </button>
-</nav>
+</div>
 
 <script>
 (function () {
