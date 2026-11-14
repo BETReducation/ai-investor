@@ -2354,6 +2354,30 @@ function stopEngine(quiet) {
   if (!quiet) addLog('warn', 'ENGINE', 'All strategy scans stopped');
 }
 
+let runnerOpen = {};
+function toggleRunnerOpen(id) { runnerOpen[id] = !runnerOpen[id]; renderRunners(); }
+
+// Per-asset view of how many of a runner's conditions hold right now, from the same
+// cache the scan loop evaluates (so it matches what would fire).
+function runnerConditionsHtml(r) {
+  const syms = Object.keys(assets).filter(sym => watchlistEnabled[sym] && r.cache[sym]);
+  if (syms.length === 0) return '<div style="padding:4px 9px 8px;font-size:8px;color:var(--text-muted);">Waiting for the first scan...</div>';
+  const rows = syms.map(sym => {
+    const res = evaluateStrategy(sym, r);
+    const met = res.results.filter(x => x.met).length;
+    const total = res.results.length;
+    const fired = res.buy.fired || res.sell.fired;
+    const col = fired ? 'var(--accent-green)' : (met > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
+    const items = res.results.map(x => {
+      const name = ((CONDITION_DEFS[x.type] || {}).label || x.type).replace(/</g, '&lt;');
+      const dir = x.direction === 'sell' ? 'SELL' : 'BUY';
+      return `<div style="display:flex;gap:6px;color:${x.met ? 'var(--accent-green)' : 'var(--text-muted)'};"><span>${x.met ? '✓' : '✗'}</span><span style="flex:1;">${name}</span><span style="opacity:.7;">${dir}</span></div>`;
+    }).join('');
+    return `<div style="margin-top:5px;"><div style="display:flex;justify-content:space-between;font-size:9px;font-weight:600;"><span>${sym}</span><span style="color:${col};">${met}/${total} met${fired ? ' · FIRING' : ''}</span></div><div style="font-size:8px;line-height:1.6;margin-top:2px;">${items}</div></div>`;
+  }).join('');
+  return `<div style="padding:2px 9px 8px;border-top:1px solid var(--border);max-height:260px;overflow-y:auto;">${rows}</div>`;
+}
+
 function renderRunners() {
   const box = document.getElementById('runnerList');
   const btn = document.getElementById('engineBtn');
@@ -2364,15 +2388,22 @@ function renderRunners() {
   if (!box) return;
   if (runners.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
   box.style.display = 'block';
-  box.innerHTML = '<div class="section-label" style="margin:4px 0 6px;">RUNNING STRATEGIES</div>' + runners.map(r => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--accent-green);border-radius:3px;padding:7px 9px;margin-bottom:6px;">
-      <span class="status-dot" style="flex-shrink:0;"></span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name.replace(/</g, '&lt;')}</div>
-        <div style="font-size:8px;letter-spacing:1px;color:var(--text-muted);margin-top:2px;">${r.conditions.length} COND · ${r.timeframe.toUpperCase()} · EVERY ${r.scanMs / 1000}S</div>
+  box.innerHTML = '<div class="section-label" style="margin:4px 0 6px;">RUNNING STRATEGIES</div>' + runners.map(r => {
+    const open = !!runnerOpen[r.id];
+    return `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-left:2px solid var(--accent-green);border-radius:3px;margin-bottom:6px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 9px;cursor:pointer;" title="Click to see which conditions are currently met" onclick="toggleRunnerOpen('${r.id}')">
+        <span class="status-dot" style="flex-shrink:0;"></span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.5px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.name.replace(/</g, '&lt;')}</div>
+          <div style="font-size:8px;letter-spacing:1px;color:var(--text-muted);margin-top:2px;">${r.conditions.length} COND · ${r.timeframe.toUpperCase()} · EVERY ${r.scanMs / 1000}S</div>
+        </div>
+        <span style="font-size:9px;color:var(--text-muted);flex-shrink:0;">${open ? '▾' : '▸'}</span>
+        <button class="btn-engine stop" style="width:auto;padding:3px 8px;font-size:8px;letter-spacing:1px;flex-shrink:0;" title="Stop" onclick="event.stopPropagation();stopRunner('${r.id}')">■ STOP</button>
       </div>
-      <button class="btn-engine stop" style="width:auto;padding:3px 8px;font-size:8px;letter-spacing:1px;flex-shrink:0;" title="Stop" onclick="stopRunner('${r.id}')">■ STOP</button>
-    </div>`).join('') +
+      ${open ? runnerConditionsHtml(r) : ''}
+    </div>`;
+  }).join('') +
     (runners.length > 1 ? '<button class="btn-engine stop" style="padding:6px;font-size:9px;letter-spacing:2px;" onclick="stopEngine()">■ STOP ALL</button>' : '');
 }
 
@@ -2522,6 +2553,7 @@ async function scanSignals(only) {
     }
   }
   updateStrategyStatus();
+  if (Object.values(runnerOpen).some(Boolean)) renderRunners();
   updateStats();
 }
 
@@ -2557,6 +2589,7 @@ function handleEngineSignalMessage(sym, evt, runner) {
     addLog('err', 'STREAM', `Signal evaluation failed for ${sym}: ${e.message}`);
   }
   updateStrategyStatus();
+  if (Object.values(runnerOpen).some(Boolean)) renderRunners();
   updateStats();
 }
 
