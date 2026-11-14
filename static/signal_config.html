@@ -1582,7 +1582,15 @@ function _numStepper(inputHtml) {
 function stepNum(btn, dir) {
   const input = btn.parentElement.querySelector('input');
   if (!input) return;
-  if (dir < 0) input.stepDown(); else input.stepUp();
+  // Plain add/subtract: the built-in stepUp/stepDown step from the field's min, which gives 2001 not 2050.
+  const step = parseFloat(input.step) || 1;
+  const decimals = (String(step).split('.')[1] || '').length;
+  let v = (parseFloat(input.value) || 0) + dir * step;
+  if (input.min !== '' && v < +input.min) v = +input.min;
+  if (input.max !== '' && v > +input.max) v = +input.max;
+  input.value = v.toFixed(decimals);
+  // Some fields listen for input, others for change, so fire both.
+  input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
@@ -5988,7 +5996,7 @@ setTimeout(() => {
       <div class="control-row">
         <div class="control-label">Capital <span id="capitalCurrencyLabel">(GBP)</span></div>
         <div class="input-group">
-          <input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
+          <span class="num-step"><button type="button" tabindex="-1" aria-label="Decrease" onclick="stepNum(this,-1)">−</button><input type="number" id="capital" value="10000" min="100" step="100" style="width:90px" oninput="syncFixedTargetsFromPositionValue()"><button type="button" tabindex="-1" aria-label="Increase" onclick="stepNum(this,1)">+</button></span>
         </div>
       </div>
 
@@ -6003,7 +6011,7 @@ setTimeout(() => {
       <div class="control-row" id="posSizeGbpRow" style="display:none;">
         <div class="control-label">Position Size <span id="posSizeGbpLabelSym">(£)</span></div>
         <div class="input-group">
-          <input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()">
+          <span class="num-step"><button type="button" tabindex="-1" aria-label="Decrease" onclick="stepNum(this,-1)">−</button><input type="number" id="posSizeGbp" value="2000" min="1" step="50" style="width:90px" oninput="syncFixedTargetsFromPositionValue()"><button type="button" tabindex="-1" aria-label="Increase" onclick="stepNum(this,1)">+</button></span>
         </div>
       </div>
 
@@ -6018,7 +6026,7 @@ setTimeout(() => {
       <div class="control-row" id="targetGainCcyRow" style="display:none;">
         <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
         <div class="input-group">
-          <input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()">
+          <span class="num-step"><button type="button" tabindex="-1" aria-label="Decrease" onclick="stepNum(this,-1)">−</button><input type="number" id="targetGainCcy" value="4000" min="0.01" step="10" style="width:90px" oninput="applyTargetGainCcy()"><button type="button" tabindex="-1" aria-label="Increase" onclick="stepNum(this,1)">+</button></span>
         </div>
       </div>
 
@@ -6033,7 +6041,7 @@ setTimeout(() => {
       <div class="control-row" id="stopLossCcyRow" style="display:none;">
         <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>
         <div class="input-group">
-          <input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()">
+          <span class="num-step"><button type="button" tabindex="-1" aria-label="Decrease" onclick="stepNum(this,-1)">−</button><input type="number" id="stopLossCcy" value="2000" min="0.01" step="10" style="width:90px" oninput="applyStopLossCcy()"><button type="button" tabindex="-1" aria-label="Increase" onclick="stepNum(this,1)">+</button></span>
         </div>
       </div>
 
