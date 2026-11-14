@@ -1916,8 +1916,8 @@ function importBacktestStrategy(name) {
   document.getElementById('strategyName').value = `${name} (from Backtester)`;
 
   // Carry over risk settings (both pages are £ now).
-  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(cfg.stopLoss).toFixed(1); }
-  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(cfg.takeProfit).toFixed(1); }
+  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(document.getElementById('stopLoss').value).toFixed(1); }
+  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(document.getElementById('targetGain').value).toFixed(1); }
   if (cfg.trailSL !== undefined)    { document.getElementById('trailSL').checked = !!cfg.trailSL; document.getElementById('trailSLRow').style.opacity = cfg.trailSL ? '1' : '0.3'; document.getElementById('trailSLRow').style.pointerEvents = cfg.trailSL ? 'auto' : 'none'; }
   if (cfg.trailDist !== undefined)  { document.getElementById('trailDist').value = cfg.trailDist; document.getElementById('trailVal').textContent = parseFloat(cfg.trailDist).toFixed(1) + '%'; }
   if (cfg.minConf !== undefined)    { document.getElementById('minConfidence').value = cfg.minConf; document.getElementById('minConfidenceVal').textContent = cfg.minConf + '%'; }
@@ -5023,13 +5023,15 @@ function clampPct(v, lo, hi) {
 function onPctSliderInput(sliderId, textId) {
   document.getElementById(textId).value = parseFloat(document.getElementById(sliderId).value).toFixed(1);
 }
+// Stop loss can't lose more than the whole position; take profit/target capped at +200%.
+const PCT_MAX = { stopLoss: 100, targetGain: 200 };
 function onPctTextInput(sliderId, textId) {
-  const v = clampPct(document.getElementById(textId).value, 1, 4000);
+  const v = clampPct(document.getElementById(textId).value, 1, PCT_MAX[sliderId] || 200);
   if (v !== null) document.getElementById(sliderId).value = v;
 }
 function onPctTextChange(sliderId, textId) {
   const slider = document.getElementById(sliderId);
-  const v = clampPct(document.getElementById(textId).value, 1, 4000) ?? parseFloat(slider.value);
+  const v = clampPct(document.getElementById(textId).value, 1, PCT_MAX[sliderId] || 200) ?? parseFloat(slider.value);
   slider.value = v;
   document.getElementById(textId).value = v.toFixed(1);
 }
@@ -5146,13 +5148,13 @@ function onToggleStopLossMode(isCcy) {
     document.getElementById('stopLossCcy').value = (computeInvested() * pct / 100).toFixed(2);
   }
 }
-// Writes the £ box's value through to the %-slider (clamped the same [1,4000] range
+// Writes the £ box's value through to the %-slider (clamped to the same range
 // onPctTextChange uses for a free-typed %).
 function applyTargetGainCcy() {
   const invested = computeInvested();
   const amt = parseFloat(document.getElementById('targetGainCcy').value);
   if (!invested || !isFinite(amt)) return;
-  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('targetGain').value);
+  const pct = clampPct((amt / invested) * 100, 1, PCT_MAX.targetGain) ?? parseFloat(document.getElementById('targetGain').value);
   document.getElementById('targetGain').value = pct;
   document.getElementById('targetVal').value = pct.toFixed(1);
 }
@@ -5160,7 +5162,7 @@ function applyStopLossCcy() {
   const invested = computeInvested();
   const amt = parseFloat(document.getElementById('stopLossCcy').value);
   if (!invested || !isFinite(amt)) return;
-  const pct = clampPct((amt / invested) * 100, 1, 4000) ?? parseFloat(document.getElementById('stopLoss').value);
+  const pct = clampPct((amt / invested) * 100, 1, PCT_MAX.stopLoss) ?? parseFloat(document.getElementById('stopLoss').value);
   document.getElementById('stopLoss').value = pct;
   document.getElementById('slVal').value = pct.toFixed(1);
 }
@@ -5491,9 +5493,9 @@ function applyPreferences(prefs) {
   set('posSizeGbp', prefs.posSizeGbp);
   togglePosSizeMode(!!prefs.posSizeGbpMode);
   set('targetGain', prefs.targetGain);
-  if (prefs.targetGain !== undefined) set('targetVal', parseFloat(prefs.targetGain).toFixed(1));
+  if (prefs.targetGain !== undefined) set('targetVal', Math.min(PCT_MAX.targetGain, parseFloat(prefs.targetGain)).toFixed(1));
   set('stopLoss',   prefs.stopLoss);
-  if (prefs.stopLoss  !== undefined) set('slVal', parseFloat(prefs.stopLoss).toFixed(1));
+  if (prefs.stopLoss  !== undefined) set('slVal', Math.min(PCT_MAX.stopLoss, parseFloat(prefs.stopLoss)).toFixed(1));
   setChk('targetGainCcyMode', prefs.targetGainCcyMode);
   set('targetGainCcy', prefs.targetGainCcy);
   showTargetGainMode(!!prefs.targetGainCcyMode);
@@ -5881,9 +5883,9 @@ setTimeout(() => {
       <div class="range-row" id="targetGainPctRow">
         <div class="range-header">
           <div class="control-label">Target Gain <span>(per trade)</span> <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 200% targets doubling your position value.">?</span></div>
-          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
+          <div class="range-value tag-green pct-input-group"><input type="number" class="pct-input" id="targetVal" min="1" max="200" step="0.1" value="5.0" oninput="onPctTextInput('targetGain','targetVal')" onchange="onPctTextChange('targetGain','targetVal')">%</div>
         </div>
-        <input type="range" id="targetGain" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('targetGain','targetVal')">
+        <input type="range" id="targetGain" min="1" max="200" step="1" value="5" oninput="onPctSliderInput('targetGain','targetVal')">
       </div>
       <div class="control-row" id="targetGainCcyRow" style="display:none;">
         <div class="control-label" title="Exact profit target for this trade — converted to the equivalent % of the trade amount under the hood.">Target Gain <span id="targetGainCcyLabelSym">(£)</span></div>
@@ -5896,9 +5898,9 @@ setTimeout(() => {
       <div class="range-row" id="stopLossPctRow">
         <div class="range-header">
           <div class="control-label">Stop-Loss % <span class="info-dot" tabindex="0" data-tip="% of the TRADE AMOUNT (position size) for this trade, e.g. 100% stops you out once the position loses all its value.">?</span></div>
-          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="4000" step="0.1" value="5.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
+          <div class="range-value tag-red pct-input-group">-<input type="number" class="pct-input" id="slVal" min="1" max="100" step="0.1" value="5.0" oninput="onPctTextInput('stopLoss','slVal')" onchange="onPctTextChange('stopLoss','slVal')">%</div>
         </div>
-        <input type="range" id="stopLoss" min="1" max="4000" step="1" value="5" oninput="onPctSliderInput('stopLoss','slVal')">
+        <input type="range" id="stopLoss" min="1" max="100" step="1" value="5" oninput="onPctSliderInput('stopLoss','slVal')">
       </div>
       <div class="control-row" id="stopLossCcyRow" style="display:none;">
         <div class="control-label" title="Exact loss limit for this trade — converted to the equivalent % of the trade amount under the hood.">Stop-Loss <span id="stopLossCcyLabelSym">(£)</span></div>

@@ -3221,8 +3221,12 @@ async function runBacktest() {
     });
   }
 
+  // bt-ui.js adds the sell-rule indicator set here (or captures this set for a dry run).
+  if (window.btParamsHook && window.btParamsHook(params) === 'stop') { document.getElementById('runBtn').disabled = false; return; }
+
   try {
-    const res  = await fetch(`/api/backtest?${params}`);
+    // POST: the buy and sell indicator sets together are too long for a URL.
+    const res  = await fetch('/api/backtest', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
     const data = await res.json();
 
     if (!res.ok || data.error) {
