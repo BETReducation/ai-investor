@@ -684,6 +684,7 @@ async function boot() {
       document.getElementById('notLoggedIn').style.display = 'flex';
       return;
     }
+    if (!res.ok) throw new Error('profile ' + res.status);
     const data = await res.json();
     profileUsername = data.username;
     profileTier = data.tier || 'free';
@@ -695,7 +696,12 @@ async function boot() {
       loadAdminUserList();
     }
   } catch (e) {
-    document.getElementById('notLoggedIn').style.display = 'flex';
+    console.error('Profile failed to load', e);
+    const nl = document.getElementById('notLoggedIn');
+    nl.querySelector('.not-auth-title').textContent = 'Could not load your profile';
+    nl.querySelector('.not-auth-sub').textContent = 'Something went wrong. Refresh the page to try again.';
+    const b = nl.querySelector('a'); if (b) b.style.display = 'none';
+    nl.style.display = 'flex';
   }
 }
 
@@ -706,7 +712,7 @@ function populateProfile(data) {
   document.getElementById('heroUsername').textContent = '@' + data.username;
 
   const pill = document.getElementById('heroPill');
-  const tierLabels = { free: 'Free', pro: 'Pro', founder: 'Founder' };
+  const tierLabels = { free: 'Free', beginner: 'Beginner', intermediate: 'Intermediate', pro: 'Pro', founder: 'Founder' };
   pill.textContent = tierLabels[data.tier] || data.tier;
   pill.className = 'tier-pill ' + (data.tier || 'free');
 
@@ -721,7 +727,6 @@ function populateProfile(data) {
   document.getElementById('fieldLandingPage').value = data.landing_page || '/dashboard';
 
   setAvatarDisplay(data.profile_picture, data.display_name || data.username);
-  highlightCurrentPlan(data.tier);
   updateDangerZone(data.tier);
 
   const prefs = data.preferences || {};
@@ -867,25 +872,9 @@ function setAvatarDisplay(value, name) {
   }
 }
 
-function highlightCurrentPlan(tier) {
-
-  ['Free','Pro','Founder'].forEach(n => {
-    const el = document.getElementById('plan'+n).querySelector('.plan-badge');
-    if (el) el.remove();
-  });
-  const mapping = { free: 'Free', pro: 'Pro', founder: 'Founder' };
-  const card = document.getElementById('plan' + mapping[tier]);
-  if (card) {
-    const b = document.createElement('div');
-    b.className = 'plan-badge';
-    b.textContent = 'CURRENT';
-    card.appendChild(b);
-  }
-}
-
 function updateDangerZone(tier) {
   const subBtn = document.getElementById('cancelSubBtn');
-  if (tier === 'free') {
+  if (subBtn && tier === 'free') {
     subBtn.disabled = true;
     subBtn.title = 'You are already on the Free plan';
   }
