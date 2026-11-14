@@ -123,7 +123,7 @@ def test_alpha_post_share_tags(monkeypatch):
     assert 'og:image" content="https://www.growthcapitalgroup.co/share-image/alpha/7.jpg"' in page
     assert "The value of a network" in page
     item["status"] = "draft"
-    assert "og-default.jpg" in A.app.test_client().get("/alpha/tom/post/7").data.decode()
+    assert "og-home-v2.jpg" in A.app.test_client().get("/alpha/tom/post/7").data.decode()
 
 
 def test_alpha_share_image_resized(monkeypatch):
