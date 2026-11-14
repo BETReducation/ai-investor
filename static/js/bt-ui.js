@@ -119,9 +119,20 @@
     <input type="range" min="50" max="100" step="5" value="60" data-xconf style="width:100%;">
     <button type="button" class="bt-sig-btn" data-copy-entry style="margin-top:8px;">START FROM THE BUY RULES</button>
     <div class="bt-sig-hint">Copies the buy indicators across so you can adjust them for selling, for example switching RSI to overbought.</div>`;
+  const gainBox = document.createElement('div');
+  gainBox.className = 'bt-sig-box';
+  gainBox.innerHTML = `<label style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-primary);cursor:pointer;"><input type="checkbox" data-gain-on> Profit from the buy price is at least</label>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;"><span style="color:var(--text-muted);">+</span><input type="number" class="lab-input" data-gain-pct min="0.5" max="1000" step="0.5" value="30" style="width:90px;margin:0;"><span style="color:var(--text-muted);">%</span></div>
+    <select class="lab-input" data-gain-mode style="margin:8px 0 0;">
+      <option value="signal">Counts as a sell signal, alongside the sell indicators</option>
+      <option value="require">Must be reached first, then the sell indicators can sell</option>
+    </select>
+    <div class="bt-sig-hint">Unlike the take-profit in step 2, which sells the moment it is hit, this works as one of your sell rules. "Must be reached first" means an indicator sell is ignored until the trade is up by this much, e.g. RSI overbought AND +30%.</div>`;
   stepEl(3).appendChild(sigBox);
   stepEl(3).appendChild(indWrap);
   stepEl(4).appendChild(exitBox);
+  stepEl(4).appendChild(gainBox);
+  wrapNumber(gainBox.querySelector('[data-gain-pct]'));
 
   // Rename the entry confidence slider now that sells have their own.
   const mc = $('minConf') && $('minConf').closest('.slider-row') && $('minConf').closest('.slider-row').querySelector('.ctrl-name');
@@ -178,6 +189,7 @@
   const sets = { entry: null, exit: null };
   let activeSet = 'entry';
   let exitMinConf = 60;
+  let exitGain = { on: false, pct: 30, mode: 'signal' };
 
   const indSubset = cfg => { const o = {}; Object.keys(cfg).forEach(k => { const el = $(k); if (el && el.closest(IND_ROOT)) o[k] = cfg[k]; }); return o; };
   const blankSet = cfg => { const o = indSubset(cfg); Object.keys(o).forEach(k => { if (/^tog[A-Z]/.test(k)) o[k] = false; }); return o; };
@@ -198,6 +210,7 @@
     const cfg = { ...live, ...(activeSet === 'entry' ? liveInd : sets.entry) };
     cfg._exit = activeSet === 'exit' ? liveInd : sets.exit;
     cfg._exitMinConf = exitMinConf;
+    cfg._exitGain = { ...exitGain };
     return cfg;
   };
   window.applyBacktestConfig = function (cfg) {
@@ -205,6 +218,7 @@
     // Strategies saved before sell rules existed: reuse the one indicator set for selling, as they always ran.
     sets.exit = cfg._exit ? { ...cfg._exit } : indSubset(cfg);
     sets.entry = null;
+    setExitGain(cfg._exitGain || { on: false, pct: 30, mode: 'signal' });
     setExitConf(cfg._exitMinConf !== undefined ? cfg._exitMinConf : (cfg.minConf !== undefined ? cfg.minConf : 60));
     return rawApply(cfg);
   };
@@ -215,7 +229,20 @@
     if (r) r.value = exitMinConf;
     if (l) l.textContent = exitMinConf + '%';
   }
+  function setExitGain(g) {
+    exitGain = { on: !!g.on, pct: parseFloat(g.pct) > 0 ? parseFloat(g.pct) : 30, mode: g.mode === 'require' ? 'require' : 'signal' };
+    overlay.querySelector('[data-gain-on]').checked = exitGain.on;
+    overlay.querySelector('[data-gain-pct]').value = exitGain.pct;
+    overlay.querySelector('[data-gain-mode]').value = exitGain.mode;
+  }
+  const readGain = () => setExitGain({
+    on: overlay.querySelector('[data-gain-on]').checked,
+    pct: overlay.querySelector('[data-gain-pct]').value,
+    mode: overlay.querySelector('[data-gain-mode]').value,
+  });
   overlay.addEventListener('input', e => { if (e.target.matches('[data-xconf]')) setExitConf(e.target.value); });
+  overlay.addEventListener('input', e => { if (e.target.matches('[data-gain-pct]')) exitGain.pct = parseFloat(e.target.value) > 0 ? parseFloat(e.target.value) : exitGain.pct; });
+  overlay.addEventListener('change', e => { if (e.target.matches('[data-gain-on],[data-gain-pct],[data-gain-mode]')) readGain(); });
   overlay.addEventListener('click', e => {
     if (!e.target.closest('[data-copy-entry]')) return;
     if (activeSet === 'exit') rawApply({ ...rawSerialize(), ...sets.entry });   // sets.entry was stored when sell rules were opened
@@ -263,7 +290,9 @@
       + `<button type="button" class="bt-sig-btn" style="margin-top:8px;" data-sig>COPY STRATEGY FROM SIGNALS</button>`;
   }
   function sumSell() {
-    return line('Min confidence', exitMinConf + '%') + ruleChips(rulesFor(getSet('exit')))
+    const rules = rulesFor(getSet('exit'));
+    if (exitGain.on) rules.push(`Profit +${exitGain.pct}% from buy (${exitGain.mode === 'require' ? 'must be reached first' : 'counts as a signal'})`);
+    return line('Min confidence', exitMinConf + '%') + ruleChips(rules)
       + '<div class="sum-note">Also closes at the stop-loss or take-profit.</div>';
   }
   const snapshot = () => [sumAsset(), sumRisk(), sumBuy(), sumSell()];
@@ -316,7 +345,7 @@
   function missingRules() {
     const m = [];
     if (!rulesFor(getSet('entry')).length) m.push([3, 'No buy rules are set. Choose at least one indicator in step 3.']);
-    if (!rulesFor(getSet('exit')).length) m.push([4, 'No sell rules are set. Choose at least one indicator in step 4.']);
+    if (!rulesFor(getSet('exit')).length && !exitGain.on) m.push([4, 'No sell rules are set. Choose at least one indicator in step 4.']);
     return m;
   }
   function renderReview() {
@@ -376,6 +405,10 @@
     try { await origRun.apply(this, arguments); } finally { var xp = captured.params; captured = null; activate('entry'); }
     if (!xp) return;   // page-level validation already showed its message
     extra = [['x_set', '1'], ['x_min_confidence', exitMinConf]];
+    if (exitGain.on) {
+      // "Must be reached first" needs indicators to gate; with none it is just a profit-target sell signal.
+      extra.push(['x_exit_gain_pct', exitGain.pct], ['x_exit_gain_mode', exitGain.mode === 'require' && rulesFor(sets.exit).length ? 'require' : 'signal']);
+    }
     xp.forEach((v, k) => { if (!SHARED_KEYS.has(k)) extra.push(['x_' + k, v]); });
     try { return await origRun.apply(this, arguments); } finally { extra = null; }
   };

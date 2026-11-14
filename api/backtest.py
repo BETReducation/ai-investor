@@ -39,6 +39,8 @@ def run_backtest(
     exit_thresholds: dict | None = None,
     exit_calc_params: dict | None = None,
     exit_min_confidence: float | None = None,
+    exit_gain_pct: float | None = None,
+    exit_gain_mode: str = "signal",
     signal_only: bool = False,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
@@ -412,6 +414,10 @@ def run_backtest(
         else pd.Series(999, index=combined.index)
     )
 
+    dip_lb  = max(2, int(t.get("dip_lookback", 30)))
+    dip_peak = combined["Close"].rolling(dip_lb, min_periods=2).max()
+    dip_drop = (dip_peak - combined["Close"]) / dip_peak * 100
+
     atr_trend_lb   = int(t.get("atr_trend_lookback", 5))
     stdev_trend_lb = int(t.get("stdev_trend_lookback", 5))
     cv_trend_lb    = int(t.get("chaikin_vol_trend_lookback", 5))
@@ -770,6 +776,7 @@ def run_backtest(
                 "centerline_bars_since": int(cmf_centerline_bars.iloc[i]),
                 "centerline_direction":  1 if (cmf_v is not None and cmf_v > 0) else -1,
             },
+            "price_dip": {"drop_pct": _sf(dip_drop.iloc[i])},
             "volume_profile": {
                 "poc": (poc_v := _sf(row.get("VP_POC"))),
                 "breakout_bars_since": int(vp_poc_bars.iloc[i]),
@@ -810,6 +817,25 @@ def run_backtest(
                 x_result, x_overall, x_conf = exit_rows.get(date_str, (None, None, 0))
             else:
                 x_result, x_overall, x_conf = result, overall, confidence
+
+            # "+X% from the buy price" as a sell condition that combines with the sell indicators:
+            #   signal  - reaching it adds a weighted SELL signal, so it counts toward confidence
+            #   require - indicator sells are ignored until the gain is reached (AND)
+            if exit_gain_pct is not None and close is not None:
+                gain_now = (close - ep) / ep * 100
+                gain_hit = gain_now >= exit_gain_pct
+                detail = f"Price is {gain_now:+.1f}% from the buy price (sell condition: +{exit_gain_pct:g}%)"
+                base = x_result or {"buy_score": 0, "sell_score": 0, "signals": []}
+                if exit_gain_mode == "require":
+                    if not gain_hit:
+                        x_overall = None
+                    elif x_overall == "SELL":
+                        x_result = {**base, "signals": base["signals"] + [{"indicator": "Profit target", "type": "SELL", "detail": detail, "weight": 1}]}
+                elif gain_hit:
+                    b, s_ = base["buy_score"], base["sell_score"] + 2
+                    x_result = {**base, "sell_score": s_, "signals": base["signals"] + [{"indicator": "Profit target", "type": "SELL", "detail": detail, "weight": 2}]}
+                    x_conf = round(max(b, s_) / (b + s_) * 100, 1)
+                    x_overall = "SELL" if s_ > b else x_overall
 
             if low <= effective_sl:
                 exit_reason = "Trailing Stop" if trail_is_tighter else "Stop Loss"

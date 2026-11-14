@@ -1039,6 +1039,7 @@ ADVANCED_ONLY_THRESHOLD_KEYS = {
     "vwap_on",
     "ad_on",
     "cmf_on", "cmf_threshold",
+    "dip_on", "dip_pct", "dip_lookback",
     "vol_profile_on",
     "fib_on", "fib_tolerance_pct",
     "inv_hs_on", "inv_hs_tolerance_pct",
@@ -9569,6 +9570,7 @@ def _parse_backtest_set(args, entitlement_level):
         "vwap_on",
         "ad_on",
         "cmf_on", "cmf_threshold",
+        "dip_on", "dip_pct", "dip_lookback",
         "vol_profile_on",
         "fib_on", "fib_tolerance_pct",
         "inv_hs_on", "inv_hs_tolerance_pct",
@@ -9694,13 +9696,19 @@ def _backtest_impl():
     try:
         thresholds, calc_params = _parse_backtest_set(args, entitlement_level)
         # Optional separate EXIT indicator set, sent with an x_ prefix. Without it the one set drives both sides.
-        exit_thresholds = exit_calc_params = None
+        exit_thresholds = exit_calc_params = exit_gain_pct = None
+        exit_gain_mode = "signal"
         exit_min_confidence = min_confidence
         if args.get("x_set") in ("1", "true"):
             items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
             xargs = MultiDict(items)
             exit_thresholds, exit_calc_params = _parse_backtest_set(xargs, entitlement_level)
             exit_min_confidence = float(xargs.get("min_confidence", min_confidence))
+            if xargs.get("exit_gain_pct"):
+                exit_gain_pct = float(xargs.get("exit_gain_pct"))
+                if exit_gain_pct <= 0:
+                    exit_gain_pct = None
+                exit_gain_mode = "require" if xargs.get("exit_gain_mode") == "require" else "signal"
     except ValueError as e:
         return jsonify({"error": str(e) if "Invalid" in str(e) else f"Invalid parameter: {e}"}), 400
 
@@ -9735,6 +9743,8 @@ def _backtest_impl():
             exit_thresholds=exit_thresholds,
             exit_calc_params=exit_calc_params,
             exit_min_confidence=exit_min_confidence,
+            exit_gain_pct=exit_gain_pct,
+            exit_gain_mode=exit_gain_mode,
         )
         metrics = calculate_metrics(trades, equity_curve)
 

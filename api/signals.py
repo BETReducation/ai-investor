@@ -119,6 +119,7 @@ DEFAULT_THRESHOLDS = {
     "cmf_on": 0, "cmf_threshold": 0.05,
     "cmf_trigger": "threshold",  # threshold | bullish | bearish | centerline_cross
     "cmf_centerline_lookback": 5,
+    "dip_on": 0, "dip_pct": 30, "dip_lookback": 30,
     "vol_profile_on": 0,
     "vol_profile_trigger": "position",  # position | bullish | bearish | poc_breakout
     "vol_profile_breakout_lookback": 5,
@@ -1673,6 +1674,15 @@ def score_signals(indicators: dict, thresholds: dict | None = None) -> dict:
                 buy_score += 2
             else:
                 signals.append({"indicator": "Inverse H&S", "type": "NEUTRAL", "detail": "Inverse H&S formed; neckline not yet broken", "weight": 0})
+
+    # ── Price dip from a recent high (buy the dip) ───────────────────────────
+    dip_drop = indicators.get("price_dip", {}).get("drop_pct")
+    if t.get("dip_on", 0) and dip_drop is not None:
+        if dip_drop >= t["dip_pct"]:
+            signals.append({"indicator": "Price dip", "type": "BUY", "detail": f"Price is {dip_drop:.1f}% below its {int(t['dip_lookback'])}-bar high (dip of {t['dip_pct']:g}%+)", "weight": 2})
+            buy_score += 2
+        else:
+            signals.append({"indicator": "Price dip", "type": "NEUTRAL", "detail": f"Price is {dip_drop:.1f}% below its recent high — no dip yet", "weight": 0})
 
     total_weight = buy_score + sell_score
     confidence = round((max(buy_score, sell_score) / total_weight * 100) if total_weight > 0 else 50, 1)

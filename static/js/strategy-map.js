@@ -158,12 +158,15 @@ const BT_INDICATOR_MAP = {
   // below carries its surge multiplier across the same way as any other
   // condition's threshold.
   togVol:        { group: 'Volume', modes: { spike: ['volume_spike'] } },
+  // "Buy the dip": no chip row, like Volume. Signals' price_dip carries the drop % across.
+  togDip:        { group: 'Price', modes: { dip: ['price_dip'] } },
 };
 
 const CONDITION_VALUE_KEYS = {
   rsi_below:      { basic: 'rsiOversoldBasic',   detailed: 'rsiOversold' },
   rsi_above:      { basic: 'rsiOverboughtBasic', detailed: 'rsiOverbought' },
   volume_spike:   { basic: 'volSurgeBasic',      detailed: 'volSurge' },
+  price_dip:      { detailed: 'dipPct' },
   cci_below:      { detailed: 'cciOversold' },
   cci_above:      { detailed: 'cciOverbought' },
   willr_below:    { detailed: 'willrOversold' },

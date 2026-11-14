@@ -1912,6 +1912,25 @@
         </div>
       </div>
 
+      <!-- Price dip from high -->
+      <div class="ind-row">
+        <span class="ind-label" onclick="toggleIndSettings('dip')">
+          <span id="dipLabel">Price Dip from High</span>
+          <span class="ind-chevron" id="dipChevron">▸</span>
+        </span>
+        <label class="toggle"><input type="checkbox" id="togDip"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div class="ind-params" id="dipParams">
+        <div class="param-row">
+          <span class="param-label">Dipped by at least (%)</span>
+          <input type="number" class="param-input" id="dipPct" value="30" min="1" max="95" step="1">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Looking back (bars)</span>
+          <input type="number" class="param-input" id="dipLookback" value="30" min="5" max="500" step="5">
+        </div>
+      </div>
+
       <!-- Volume -->
       <div class="ind-row" style="margin-bottom:0;">
         <span class="ind-label" onclick="toggleIndSettings('vol')">
@@ -3157,6 +3176,7 @@ async function runBacktest() {
       ad_div_lookback: _iv('adDivLookback', 5),
     cmf_on: _on('togCmf'), cmf_length: _iv('cmfLength', 20), cmf_threshold: _fv('cmfThreshold', 0.05),
       cmf_centerline_lookback: _iv('cmfCenterlineLookback', 5),
+    dip_on: _on('togDip'), dip_pct: _fv('dipPct', 30), dip_lookback: _iv('dipLookback', 30),
     vol_profile_on: _on('togVolProfile'), vol_profile_lookback: _iv('volProfileLookback', 50), vol_profile_bins: _iv('volProfileBins', 24),
       vol_profile_breakout_lookback: _iv('volProfileBreakoutLookback', 5),
     fib_on: _on('togFib'), fib_lookback: _iv('fibLookback', 50), fib_tolerance_pct: _fv('fibTolerancePct', 1.0),
