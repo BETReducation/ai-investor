@@ -4945,7 +4945,7 @@ def api_forgot_password():
         user_data["profile"] = profile
         _save_user(match_username, user_data)
 
-        reset_link = f"{request.host_url.rstrip('/')}/reset-password?u={match_username}&t={token}"
+        reset_link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(match_username)}&t={token}"
         to_addr = profile.get("email") or match_username
         _send_email(
             to_addr,
