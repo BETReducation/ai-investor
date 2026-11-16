@@ -1139,6 +1139,7 @@ async function doCancelSub() {
   try {
     const res  = await fetch('/api/subscription/cancel', { method: 'POST', credentials: 'include' });
     const data = await res.json();
+    if (data.redirect) { location.href = data.redirect; return; }
     if (!res.ok) { showToast(data.error || 'Failed', 'err'); return; }
     profileTier = 'free';
     highlightCurrentPlan('free');

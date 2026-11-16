@@ -4456,7 +4456,7 @@ def pricing_page():
 
 SUPPORT_FAQ = [
     ("Is any of this financial advice?", "No. Everything on the site is educational and shows what strategies would have done historically. Nothing is a recommendation."),
-    ("How do I change or cancel my plan?", "Open Billing and choose Manage billing. Upgrades apply straight away; downgrades and cancellations take effect at the end of the period you've paid for."),
+    ("How do I change or cancel my plan?", "Open Billing and choose Manage billing. Upgrades apply straight away; downgrades and cancellations take effect at the end of the period you've paid for. Annual plans aren't refunded part-way through the year, but you keep access until the year ends and aren't charged again."),
     ("Why is my Beginner access ending on 1 January?", "Registered accounts get Beginner free until 31 December 2026. After that you stay on Free unless you subscribe."),
     ("What are the free tests on Signals and AI Chart Analysis?", "Accounts below Pro get 3 lifetime tests of each tool, one per distinct symbol. Re-running a symbol you've already tested doesn't use another."),
 ]
@@ -9078,6 +9078,10 @@ def api_cancel_subscription():
     users = _load_users()
     if current_user.id not in users:
         return jsonify({"error": "User not found"}), 404
+    # Stripe subscribers cancel through the portal; flipping the tier here would drop access
+    # immediately while Stripe kept billing.
+    if ((users[current_user.id].get("profile") or {}).get("billing") or {}).get("customer_id"):
+        return jsonify({"error": "Manage or cancel your plan from the billing page.", "redirect": "/billing"}), 409
     users[current_user.id]["tier"] = "basic"
     _save_users(users)
     return jsonify({"success": True, "message": "Subscription cancelled. You have been moved to the Basic (free) plan."})
