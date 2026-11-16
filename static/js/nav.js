@@ -73,6 +73,7 @@
     '/tools/signals': 'Pro',
     '/tools/ai-chart-analysis': 'Pro',
     '/backtester': 'Intermediate',
+    '/arena/competitions': 'Pro',
     '/tools/portfolio': 'Intermediate',
     '/tools/calculator': 'Beginner',
     '/tools/crypto-unit-calculator': 'Beginner',

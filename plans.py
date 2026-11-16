@@ -84,6 +84,7 @@ TOOL_MIN_PLAN = {
     "/tools/signals": "pro",
     "/tools/ai-chart-analysis": "pro",
     "/backtester": "intermediate",
+    "/arena/competitions": "pro",
     "/tools/portfolio": "intermediate",
     "/tools/calculator": "beginner",
     "/tools/crypto-unit-calculator": "beginner",
@@ -99,4 +100,6 @@ TOOL_MIN_PLAN = {
 # Free-account samples (the "1 page / 3 tests / 3 pages" cells of the tier sheet).
 FREE_LESSONS_PER_LEVEL = 1        # the first lesson of each level stays open to everyone
 FREE_ALPHA_POSTS_PER_LEVEL = 1    # a free account can open one full Alpha post per level
+FREE_TOOL_TESTS = 3              # lifetime free tests per tool (Signals, AI Chart Analysis) for accounts below its plan
+FREE_TEST_TOOLS = ("/tools/signals", "/tools/ai-chart-analysis")  # pages a registered account can open to use those tests
 FREE_DATAVIZ_PAGES = 3            # a free account can open three data visualisation pages

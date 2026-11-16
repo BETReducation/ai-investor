@@ -68,3 +68,26 @@ def test_backtester_and_signals_apis_lock_out_lower_plans(monkeypatch):
 
 def test_plan_read_from_intermediate_price_key():
     assert A._plan_from_price({"price": {"lookup_key": "gcg_intermediate_month_1000_exclusive"}}) == "intermediate"
+
+
+def test_competitions_are_pro_only():
+    assert A._gate_map()["/arena/competitions"] == "pro"
+
+
+def test_free_tool_tests_are_three_distinct_symbols_per_tool(monkeypatch):
+    store = {}
+    monkeypatch.setattr(A, "_samples_of", lambda u: store)
+    monkeypatch.setattr(A, "_save_samples", lambda u, s: None)
+    monkeypatch.setattr(A, "_user_rank", lambda: 0)
+
+    class U:
+        is_authenticated = True
+        id = "t"
+    monkeypatch.setattr(A, "current_user", U())
+    ok = A._free_test_ok
+    assert all(ok("signals", s) for s in ("aapl", "MSFT", "NVDA"))
+    assert ok("signals", "AAPL")           # repeat symbol costs nothing
+    assert not ok("signals", "TSLA")       # fourth distinct symbol is blocked
+    assert ok("ai-chart", "TSLA")          # separate allowance per tool
+    monkeypatch.setattr(A, "_user_rank", lambda: 3)
+    assert ok("signals", "TSLA")           # Pro is never limited

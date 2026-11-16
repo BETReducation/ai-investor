@@ -4375,10 +4375,38 @@ def _tool_locked(feature: str, need: str):
                     "locked": True, "tier_required": need}), 403
 
 
+def _free_test_ok(tool: str, key: str, need: str = "pro") -> bool:
+    """Accounts below a tool's plan get plans.FREE_TOOL_TESTS lifetime tests per tool.
+    A test is one distinct key (symbol); re-running a symbol already tested is free."""
+    if not current_user.is_authenticated:
+        return False
+    if _user_rank() >= _rank(need):
+        return True
+    samples = _samples_of(current_user.id)
+    used = (samples.get("tests") or {}).get(tool) or []
+    key = key.upper()
+    if key in used:
+        return True
+    if len(used) >= plans.FREE_TOOL_TESTS:
+        return False
+    samples.setdefault("tests", {})[tool] = used + [key]
+    _save_samples(current_user.id, samples)
+    return True
+
+
+def _free_test_locked(tool: str, need: str = "pro"):
+    return jsonify({
+        "error": f"You've used your {plans.FREE_TOOL_TESTS} free tests of this tool. It's part of the {plans.PLAN_NAMES[need]} plan and above.",
+        "locked": True, "tier_required": need,
+    }), 403
+
+
 def _user_gate_map() -> dict:
     """The gate map for the current user: data-viz pages a free account can still open as a sample drop out."""
     gates = _gate_map()
     if current_user.is_authenticated:
+        for path in plans.FREE_TEST_TOOLS:
+            gates.pop(path, None)
         for slug in plans.DATAVIZ_MIN_PLAN:
             if _dataviz_sample_ok(slug, record=False):
                 gates.pop(f"/tools/data-visualisation/{slug}", None)
@@ -4395,6 +4423,8 @@ def _plan_gate():
     if path.startswith("/static/explainers/"):
         path = "/".join(path.split("/")[:4]) + "/index.html"
     need = _gate_map().get(path)
+    if path in plans.FREE_TEST_TOOLS and current_user.is_authenticated:
+        return None
     if need and _user_rank() < _rank(need):
         if path.startswith("/tools/data-visualisation/") and _dataviz_sample_ok(path.rsplit("/", 1)[-1], record=True):
             return None
@@ -5158,9 +5188,11 @@ def _trend_structure(swing_highs: list, swing_lows: list) -> str:
 
 
 @app.route("/api/ai-chart-data", methods=["GET"])
-@tier_required("pro")
+@login_required
 def ai_chart_data():
     symbol = (request.args.get("symbol") or "").strip()
+    if symbol and not _free_test_ok("ai-chart", symbol):
+        return _free_test_locked("ai-chart")
     if symbol:
         log_event(current_user.id, "ai_request", f"chart:{symbol}")
     tf = request.args.get("interval", "1d")
@@ -9303,21 +9335,9 @@ def signals():
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
 
-    # Signals is always login-required (unlike Backtester, which allows a limited
-    # anonymous trial), so the only gate that applies here is basic vs pro. Signals
-    # is continuous watchlist monitoring rather than one-shot runs, so unlike the
-    # Backtester there's no daily-call cap — basic just can't watch anything outside
-    # the same curated symbol allowlist. See BASIC_TIER_SYMBOLS for why these 20.
-    locked = _tool_locked("signals", "pro")
-    if locked:
-        return locked
-    entitlement_level = getattr(current_user, "entitlements", {}).get("signals", "basic")
-    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
-        return jsonify({
-            "error": f"'{symbol}' isn't available on the free plan. Free signal monitoring is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
-            "symbol_restricted": True,
-            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
-        }), 403
+    # Login-required. Below Pro, an account gets plans.FREE_TOOL_TESTS lifetime symbol tests.
+    if getattr(current_user, "entitlements", {}).get("signals") != "pro" and not _free_test_ok("signals", symbol):
+        return _free_test_locked("signals")
 
     try:
         thresholds = _extract_signal_thresholds(request.args)
