@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — Growth Capital Group</title>
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 720px; margin: 0 auto; padding: 120px 5% 80px; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 32px; }
+h2 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 8px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+.muted { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.btn { align-self: flex-start; background: var(--green); color: #04110d; font-weight: 700; font-size: 15px; padding: 11px 20px; border-radius: 10px; text-decoration: none; }
+details { border-top: 1px solid var(--border); padding: 10px 0; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin-top: 8px; }
+</style>
+</head>
+<body>
+<script src="/static/js/nav.js"></script>
+<main class="wrap">
+  <h1>Support</h1>
+  <div id="out" class="muted">Loading…</div>
+</main>
+<script src="/static/js/footer.js"></script>
+<script>
+const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const locked = (what, plan) => `<div class="card"><h2>${what}</h2><p class="muted">Part of the ${plan} plan and above.</p><a class="btn" href="/pricing">See plans</a></div>`;
+(async function () {
+  const r = await fetch('/api/support', { credentials: 'include' });
+  if (r.status === 401) { location.href = '/login?next=/support'; return; }
+  const d = await r.json();
+  let h = '';
+  h += d.faq.length
+    ? `<div class="card"><h2>FAQ</h2>${d.faq.map(f => `<details><summary>${esc(f.q)}</summary><p class="muted">${esc(f.a)}</p></details>`).join('')}</div>`
+    : locked('FAQ', 'Beginner');
+  h += d.discord
+    ? `<div class="card"><h2>Community Discord</h2><p class="muted">Ask questions and talk to other members.</p><a class="btn" href="${esc(d.discord)}" target="_blank" rel="noopener">Join the Discord</a></div>`
+    : d.faq.length ? '<div class="card"><h2>Community Discord</h2><p class="muted">The invite link is coming soon.</p></div>' : locked('Community Discord', 'Beginner');
+  h += d.email
+    ? `<div class="card"><h2>${d.priority_email ? 'Priority email support' : 'Email support'}</h2><p class="muted">Write to <a href="mailto:${esc(d.priority_email || d.email)}">${esc(d.priority_email || d.email)}</a>.</p></div>`
+    : d.tier_rank >= 2 ? '<div class="card"><h2>Email support</h2><p class="muted">The support address is coming soon.</p></div>' : locked('Email support', 'Intermediate');
+  if (!d.priority_email && d.tier_rank >= 2) h += locked('Priority email support', 'Pro');
+  document.getElementById('out').outerHTML = h;
+})();
+</script>
+</body>
+</html>

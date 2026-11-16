@@ -91,3 +91,22 @@ def test_free_tool_tests_are_three_distinct_symbols_per_tool(monkeypatch):
     assert ok("ai-chart", "TSLA")          # separate allowance per tool
     monkeypatch.setattr(A, "_user_rank", lambda: 3)
     assert ok("signals", "TSLA")           # Pro is never limited
+
+
+def test_support_channels_by_plan(monkeypatch):
+    monkeypatch.setenv("DISCORD_INVITE_URL", "https://d.example/x")
+    monkeypatch.setenv("SUPPORT_EMAIL", "s@example.com")
+    monkeypatch.setenv("PRIORITY_SUPPORT_EMAIL", "p@example.com")
+    monkeypatch.setattr(A, "current_user", type("U", (), {"is_authenticated": True, "id": "t"})())
+    A.app.config["LOGIN_DISABLED"] = True
+    try:
+        for rank, discord, email, prio in ((0, None, None, None), (1, "https://d.example/x", None, None),
+                                           (2, "https://d.example/x", "s@example.com", None),
+                                           (3, "https://d.example/x", "s@example.com", "p@example.com")):
+            monkeypatch.setattr(A, "_user_rank", lambda r=rank: r)
+            with A.app.test_request_context():
+                d = A.api_support().get_json()
+            assert (d["discord"], d["email"], d["priority_email"]) == (discord, email, prio)
+            assert bool(d["faq"]) == (rank >= 1)
+    finally:
+        A.app.config["LOGIN_DISABLED"] = False

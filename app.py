@@ -4454,6 +4454,38 @@ def pricing_page():
     return send_from_directory("static", "pricing.html")
 
 
+SUPPORT_FAQ = [
+    ("Is any of this financial advice?", "No. Everything on the site is educational and shows what strategies would have done historically. Nothing is a recommendation."),
+    ("How do I change or cancel my plan?", "Open Billing and choose Manage billing. Upgrades apply straight away; downgrades and cancellations take effect at the end of the period you've paid for."),
+    ("Why is my Beginner access ending on 1 January?", "Registered accounts get Beginner free until 31 December 2026. After that you stay on Free unless you subscribe."),
+    ("What are the free tests on Signals and AI Chart Analysis?", "Accounts below Pro get 3 lifetime tests of each tool, one per distinct symbol. Re-running a symbol you've already tested doesn't use another."),
+]
+
+
+@app.route("/support")
+def support_page():
+    if not current_user.is_authenticated:
+        return redirect("/login?next=/support")
+    return send_from_directory("static", "support.html")
+
+
+@app.route("/api/support")
+@login_required
+def api_support():
+    """Support channels by plan: FAQ + Discord from Beginner, email from Intermediate, priority email on Pro.
+    Links come from env vars and are only sent to accounts entitled to them."""
+    rank = _user_rank()
+    out = {"tier_rank": rank, "faq": [{"q": q, "a": a} for q, a in SUPPORT_FAQ] if rank >= _rank("beginner") else [],
+           "discord": None, "email": None, "priority_email": None}
+    if rank >= _rank("beginner"):
+        out["discord"] = os.environ.get("DISCORD_INVITE_URL") or None
+    if rank >= _rank("intermediate"):
+        out["email"] = os.environ.get("SUPPORT_EMAIL") or None
+    if rank >= _rank("pro"):
+        out["priority_email"] = os.environ.get("PRIORITY_SUPPORT_EMAIL") or os.environ.get("SUPPORT_EMAIL") or None
+    return jsonify(out)
+
+
 @app.route("/billing")
 def billing_page():
     if not current_user.is_authenticated:
@@ -6540,6 +6572,7 @@ def alpha_post_page(slug, post_id):
 SEARCH_PAGE_INDEX = [
     {"title": "Home", "url": "/", "sub": "Growth Capital Group"},
     {"title": "Plans and pricing", "url": "/pricing", "sub": "Free, Beginner and Pro plans"},
+    {"title": "Support", "url": "/support", "sub": "FAQ, Discord and email support by plan"},
     {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
     {"title": "Company", "url": "/company", "sub": "Growth Capital Group structure"},
     {"title": "Privacy and cookies", "url": "/privacy", "sub": "Analytics and cookie policy"},

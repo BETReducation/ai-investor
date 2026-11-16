@@ -196,6 +196,7 @@ DATAVIZ_MENU_HTML +
 '        <li><a href="/company">Company</a></li>' +
 '        <li><a href="/roadmap">Roadmap</a></li>' +
 '        <li><a href="/partners">Partners</a></li>' +
+'        <li><a href="/support">Support</a></li>' +
 '      </ul>' +
 '    </li>' +
 '    <li><a href="/pricing">Pricing</a></li>' +
