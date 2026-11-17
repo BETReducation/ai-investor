@@ -6490,6 +6490,39 @@ def api_lesson_related_alpha(slug):
     ]})
 
 
+def _share_card_jpeg(file_bytes: bytes) -> bytes:
+    """Fit an image onto a 1200x630 canvas and keep it under ~250KB (crawlers skip larger)."""
+    import io
+    from PIL import Image
+    img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+    img.thumbnail((1200, 630), Image.LANCZOS)
+    canvas = Image.new("RGB", (1200, 630), (6, 8, 18))
+    canvas.paste(img, ((1200 - img.width) // 2, (630 - img.height) // 2))
+    out = b""
+    for q in (85, 75, 65, 55):
+        buf = io.BytesIO()
+        canvas.save(buf, "JPEG", quality=q, optimize=True)
+        out = buf.getvalue()
+        if len(out) < 250_000:
+            break
+    return out
+
+
+@app.route("/share-image/dataviz/<slug>")
+def dataviz_share_image(slug):
+    """Share-card copy of a dataviz page's header image (X skips big images and obeys robots.txt, which blocks /api/)."""
+    _fn, file_bytes = dataviz_page_get_header_image(slug)
+    if file_bytes is None:
+        return jsonify({"error": "No image"}), 404
+    try:
+        out = _share_card_jpeg(file_bytes)
+    except Exception:
+        return jsonify({"error": "Image unavailable"}), 404
+    resp = Response(out, mimetype="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    resp.add_etag()
+    return resp.make_conditional(request)
+
+
 @app.route("/share-image/alpha/<int:item_id>.jpg")
 def alpha_share_image(item_id):
     """Share-card copy of a published post's hero image: link-preview crawlers skip
@@ -9023,8 +9056,6 @@ def api_dataviz_page_update(slug):
     return jsonify({"success": True, "page": page})
 
 
-# /api/ is disallowed in robots.txt, so share-card scrapers (X) can't fetch images from it.
-@app.route("/share-image/dataviz/<slug>", methods=["GET"])
 @app.route("/api/dataviz/pages/<slug>/header-image", methods=["GET"])
 def api_dataviz_page_header_image(slug):
     filename, file_bytes = dataviz_page_get_header_image(slug)
