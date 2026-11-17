@@ -3846,7 +3846,13 @@ def _dataviz_page_shell(page: dict):
             put(r'(<meta name="description" content=")[^"]*(">)', desc)
             put(r'(<meta property="og:description" content=")[^"]*(">)', desc)
         if page.get("has_header_image"):
-            put(r'(<meta property="og:image" content=")[^"]*(">)', f"{PUBLIC_BASE_URL}/api/dataviz/pages/{page['slug']}/header-image")
+            # Version the URL by image content so scrapers (X, Facebook) that cached an
+            # earlier miss or an older image refetch it when the header image changes.
+            _fn, _bytes = dataviz_page_get_header_image(page["slug"])
+            _v = hashlib.md5(_bytes).hexdigest()[:8] if _bytes else "0"
+            _img = f"{PUBLIC_BASE_URL}/api/dataviz/pages/{page['slug']}/header-image?v={_v}"
+            put(r'(<meta property="og:image" content=")[^"]*(">)', _img)
+            html = html.replace('<meta name="twitter:card"', f'<meta name="twitter:image" content="{_img}">\n<meta name="twitter:card"', 1)
         html = html.replace('<meta property="og:type" content="website">',
                             f'<meta property="og:type" content="website">\n<meta property="og:url" content="{url}">', 1)
         return Response(html, mimetype="text/html")
