@@ -3850,7 +3850,7 @@ def _dataviz_page_shell(page: dict):
             # earlier miss or an older image refetch it when the header image changes.
             _fn, _bytes = dataviz_page_get_header_image(page["slug"])
             _v = hashlib.md5(_bytes).hexdigest()[:8] if _bytes else "0"
-            _img = f"{PUBLIC_BASE_URL}/api/dataviz/pages/{page['slug']}/header-image?v={_v}"
+            _img = f"{PUBLIC_BASE_URL}/share-image/dataviz/{page['slug']}?v={_v}"
             put(r'(<meta property="og:image" content=")[^"]*(">)', _img)
             html = html.replace('<meta name="twitter:card"', f'<meta name="twitter:image" content="{_img}">\n<meta name="twitter:card"', 1)
         html = html.replace('<meta property="og:type" content="website">',
@@ -9023,6 +9023,8 @@ def api_dataviz_page_update(slug):
     return jsonify({"success": True, "page": page})
 
 
+# /api/ is disallowed in robots.txt, so share-card scrapers (X) can't fetch images from it.
+@app.route("/share-image/dataviz/<slug>", methods=["GET"])
 @app.route("/api/dataviz/pages/<slug>/header-image", methods=["GET"])
 def api_dataviz_page_header_image(slug):
     filename, file_bytes = dataviz_page_get_header_image(slug)
