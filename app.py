@@ -668,6 +668,7 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('barrel-map', 'Barrel Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('etf-tracker', 'Global ETF Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('mining-globe', 'The Mining Globe', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('industrial-tracker', 'The Industrial Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('reit-map', 'REIT Map', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
@@ -693,6 +694,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'barrel-map'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'etf-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'mining-globe'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'industrial-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'reit-map'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
@@ -1797,6 +1799,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "barrel-map": "What a barrel of oil costs at the pump in nearly 200 countries, how much more drivers pay than in past years, and why.",
     "etf-tracker": "Around 400 ETFs, stocks and indices from every region ranked by their day, week, month or year, with a spin-the-globe country view, fee and overlap checkers, watchlist and side-by-side comparison (live prices).",
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
+    "industrial-tracker": "Where the ore sits, who holds the stockpiles, what industrial metals cost and what power costs where they're smelted: a mining globe, metal prices, warehouse stocks, supply shocks, historic league tables and short lessons (snapshot data, educational only).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "ai-tracker": "About 90 AI stocks across every country on one world map, coloured by return over a day to five years, with market temperature, supply chain links, a compass, league table and AI spend vs profit (illustrative sample data).",
@@ -1826,6 +1829,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "barrel-map", "label": "Barrel Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "mining-globe", "label": "The Mining Globe", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "industrial-tracker", "label": "The Industrial Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "reit-map", "label": "REIT Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},

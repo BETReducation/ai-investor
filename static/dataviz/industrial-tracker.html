@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Industrial Tracker</title>
+<script>
+  // Follow the site's light/dark toggle (same origin as the host page).
+  try { var _th = localStorage.getItem('gcg-theme'); if (_th) document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Public+Sans:wght@400;600&display=swap">
+<style>
+:root{--bg:#f1efe9;--panel:#fff;--ink:#1c2630;--mute:#5d6b78;--line:#d5d2c9;--land:#c9cfc4;--up:#1f8a5b;--dn:#c2432d;--al:#6f8fae;--fe:#b5452c;--cu:#c9742e;--ni:#4f9c82;--st:#5b6fa8;--zn:#8a8f99;--li:#a0709f;--co:#3e7fb8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1820;--panel:#16232d;--ink:#e8ecef;--mute:#8d9ba7;--line:#2a3a47;--land:#2d4252;--up:#4cc790;--dn:#f0765f;--al:#9fb9d4;--fe:#e0654a;--cu:#e6944d;--ni:#6fc4a6;--st:#8497cf;--zn:#a9aeb8;--li:#c795c6;--co:#6aa6dd}}
+:root[data-theme="dark"]{--bg:#0e1820;--panel:#16232d;--ink:#e8ecef;--mute:#8d9ba7;--line:#2a3a47;--land:#2d4252;--up:#4cc790;--dn:#f0765f;--al:#9fb9d4;--fe:#e0654a;--cu:#e6944d;--ni:#6fc4a6;--st:#8497cf;--zn:#a9aeb8;--li:#c795c6;--co:#6aa6dd}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Public Sans',system-ui,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:18px 14px 50px}
+h1{font:900 clamp(40px,10vw,76px)/.92 'Big Shoulders Display',Impact,sans-serif;margin:6px 0 8px}
+.sub{color:var(--mute);max-width:60ch;margin:0 0 14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.seg button{background:var(--panel);color:var(--ink);border:0;padding:9px 16px;font:600 14px 'Public Sans',sans-serif;cursor:pointer;min-height:40px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--cu);outline-offset:2px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;margin:0 0 12px}
+summary{cursor:pointer;padding:14px;font:700 24px 'Big Shoulders Display',Impact,sans-serif;list-style:none;display:flex;justify-content:space-between}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:400 22px 'Public Sans',sans-serif;color:var(--mute)}
+details[open]>summary::after{content:"–"}
+.in{padding:0 14px 14px}.note{color:var(--mute);font-size:13px;margin:4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:4px;padding:10px 12px;display:block}
+.card[aria-pressed=true]{background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+.card:focus-visible{outline:2px solid var(--cu)}
+.card b{font:700 21px 'Big Shoulders Display',sans-serif;display:block}
+.px{font:700 26px 'Big Shoulders Display',sans-serif}.u{color:var(--mute);font-size:12px}
+.chg{font-weight:600}.up{color:var(--up)}.dn{color:var(--dn)}
+.track{height:8px;background:var(--line);border-radius:4px;position:relative;margin-top:6px}.track i{position:absolute;top:0;height:8px;border-radius:4px}
+.globebox{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:760px){.globebox{grid-template-columns:1.1fr 1fr}}
+#globe{width:100%;max-height:440px;touch-action:none;cursor:grab;aspect-ratio:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:20px;padding:6px 12px;cursor:pointer;font:600 13px 'Public Sans',sans-serif;min-height:36px}
+.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.row{display:grid;grid-template-columns:100px 1fr 74px;gap:8px;align-items:center;margin:5px 0;font-size:13px}
+.bg{height:12px;background:var(--line);border-radius:3px}.bg i{display:block;height:12px;border-radius:3px;background:var(--cu)}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.sig{font-size:14px;border-left:4px solid var(--cu);padding:4px 10px;margin:8px 0}
+.big{font:900 40px/1 'Big Shoulders Display',sans-serif}
+.pw{display:flex;gap:12px;align-items:baseline;border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:8px 0}
+.snap{border:1px solid var(--line);border-top:6px solid var(--c);border-radius:6px;padding:12px;margin-top:12px}
+.scroll{max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:4px 8px}.row.w{grid-template-columns:150px 1fr 56px}.srch{width:100%;padding:9px;margin-bottom:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}h3.s{font:700 22px 'Big Shoulders Display',sans-serif;margin:16px 0 4px}.tbl{overflow-x:auto}.tbl td{vertical-align:top}.wk{border-left:4px solid var(--c);padding:6px 12px;margin:6px 0}.stk{display:flex;height:14px;border-radius:3px;overflow:hidden;background:var(--line);margin:4px 0}.stk i{display:block;height:14px}.inp{width:96px;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}.hg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}.hg label{font-size:12px;color:var(--mute)}.hg .inp{width:100%;display:block;margin-top:2px}.les summary{font:600 16px 'Public Sans',sans-serif;padding:10px}.les{margin:0 0 8px}
+</style></head>
+<body><div class="wrap">
+<h1>The Industrial Tracker</h1>
+<p class="sub">What it costs to build the world: where the ore sits, who holds the stockpiles, what metals cost today and what power costs where they’re smelted.</p>
+
+<details open><summary>Mining globe</summary><div class="in">
+<p class="note">Drag to spin and tap any country for its power price. Mining nations also show reserves and stockpile position. Markers are sized by the metal you pick.</p>
+<div class="chips" id="mchips"></div>
+<div class="globebox"><svg id="globe" viewBox="-250 -250 500 500" role="img" aria-label="Globe of mining countries"></svg><div id="cpanel"></div></div>
+</div></details>
+
+<details open><summary>Metal prices</summary><div class="in">
+<div class="seg" id="tf"></div>
+<p class="note">Tap a metal for its snapshot. Prices are benchmark prices in US$ per tonne (LME 3-month for base metals, SGX for iron ore, SMM and Fastmarkets for the rest). The status line at the top shows how fresh they are.</p>
+<div class="grid" id="prices"></div><div id="snap"></div></div></details>
+
+<details open><summary>My watchlist</summary><div class="in"><p class="note">Star the metals you follow and set price alerts. Your list is saved in this browser. Alerts show when you open the page.</p><div class="chips" id="wlchips"></div><div id="wlalert"></div><div id="wlist"></div></div></details>
+
+<details open><summary>Why it moves</summary><div class="in"><p class="note">Pick a metal to see what pushes the price up or down, what to watch, and who buys it.</p><div class="chips" id="wchips"></div><div id="why"></div></div></details>
+
+<details open><summary>What’s your stuff worth in metals?</summary><div class="in"><p class="note">The raw metal inside everyday things, valued at today’s prices. Typical amounts, rounded; real figures vary by model. Lithium is priced as carbonate.</p><div class="chips" id="ichips"></div><div id="stuff"></div></div></details>
+
+<details open><summary>Inventory tracker</summary><div class="in"><p class="note">Days of world demand covered by metal sitting in LME warehouses (mid-Nov 2026). Thin stocks often come before price spikes, big stocks cap rallies.</p><div id="inv"></div><div class="sig"><b>How to read it.</b> Under 5 days is tight, 5 to 15 is worth watching, above 15 is comfortable. LME stocks are only part of the picture: China and US warehouses matter too, and copper held in US warehouses is at record levels.</div></div></details>
+
+<details open><summary>Who controls the metals</summary><div class="in"><p class="note">How much of each metal’s supply the top three countries hold. Control of refining often matters more than who owns the ore.</p><div class="seg" id="cst"></div><div id="ctrl"></div></div></details>
+
+<details open><summary>Supply shock simulator</summary><div class="in"><p class="note">Pick a disruption and a severity to see an illustrative price impact. These are simple what-if models for learning, not forecasts. Add holdings in the exposure checker to see the effect on your portfolio.</p><div class="chips" id="sch"></div><div class="seg" id="ssev"></div><div id="sres"></div></div></details>
+
+<details open><summary>Producer stocks and ETFs</summary><div class="in"><p class="note">How most investors get exposure. Moves are shown only where I could verify them; the rest show a dash.</p><div class="tbl" id="prod"></div></div></details>
+
+<details open><summary>Portfolio exposure checker</summary><div class="in"><p class="note">Enter what you hold in each (amounts in your own currency, saved in this browser). You’ll see the metal mix hiding in your portfolio and what a price move could do to it. Illustrative sensitivities, not advice.</p><div class="hg" id="hold"></div><div id="xres"></div></div></details>
+
+<details open><summary>League tables</summary><div class="in"><div class="seg" id="ltf"></div><div id="lg"></div>
+<h3 class="s">Historic league: biggest annual gains</h3><p class="note">Pick a year from 2000 to 2026. Gold, silver and bronze go to the three best performers that year (calendar-year change in the year-end price).</p>
+<div><b id="ylab"></b></div><div class="chips" id="yrs" role="group" aria-label="Year"></div><div id="hy"></div>
+<h3 class="s">Medal table, 2000 to 2026</h3><div id="hm"></div></div></details>
+
+<details open><summary>Electricity cost by country</summary><div class="in">
+<p class="note">Ballpark industrial power price, US$ per kWh, for every country on the map. Cheap power is why smelters cluster where they do.</p><input id="esearch" class="srch" placeholder="Search a country" aria-label="Search countries"><div id="elec" class="scroll"></div></div></details>
+
+<details open><summary>The power bill inside a tonne</summary><div class="in">
+<p class="note">Electricity cost to make one tonne at each country’s power price. Aluminium smelting needs about 14.5 MWh a tonne; steel from scrap in an electric arc furnace about 0.45 MWh.</p>
+<div class="chips" id="pchips"></div><div id="pbill" class="scroll"></div></div></details>
+
+<details open><summary>Metals 101</summary><div class="in"><p class="note">Six short lessons with a quick question each. Progress is saved in this browser.</p><div id="lesbadge" class="sig"></div><div id="les"></div></div></details>
+
+<details><summary>Signals</summary><div class="in" id="signals"></div></details>
+<details><summary>About this data</summary><div class="in note">Prices and changes come from published market reports of 12–13 Nov 2026 (LME, SGX, Shanghai Metals Market, Trading Economics). Week moves are approximate and “n/a” means no verified figure. Record highs are the main published peaks and can differ by contract. Steel is China export hot-rolled coil, FOB; its record is approximate. Reserves are rounded USGS-style contained tonnes (bauxite and iron ore as ore; steel is annual output). Power prices and stockpile notes are approximate and qualitative. Power prices for countries without mining data are rough ballparks, since many have no single industrial tariff. Borders come from the open Datamaps world data. Exchange stocks are LME warehouse figures from mid-Nov 2026 and days of cover use rounded annual demand. Demand splits are rounded and approximate. Producer moves are shown only where verified. Supply shares are rounded approximations of recent USGS and IEA-style figures. Metal content of everyday items is typical and rounded. Exposure sensitivities and shock impacts are simple illustrations for learning, not forecasts or advice. The historic league uses rounded year-end benchmark prices for copper, aluminium, nickel, zinc and iron ore (iron ore from 2008); steel, lithium and cobalt lack a reliable long series, and 2026 is year to date. Educational and historical information only, not investment advice.</div></details>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"></script>
+<script>
+// p price, ch [day,week,month,year], ath, ad date, st stock note, nt note
+var M={
+al:{n:'Aluminium',c:'--al',p:3061,ch:[-.2,.4,.8,6.3],ath:4103,ad:'Mar 2022',st:'LME stocks 226,725 t, down about 56% since January',nt:'The cash premium over 3-month hit a 36-year high as warehouses empty out.',mw:14.5},
+fe:{n:'Iron ore',c:'--fe',p:92.6,ch:[-.4,-1,1.5,-11.5],ath:230,ad:'May 2021',st:'China port stocks about 175 Mt',nt:'Simandou in Guinea is ramping up while Chinese steel demand stays soft. Around $90 is seen as a cost floor.'},
+cu:{n:'Copper',c:'--cu',p:13645,ch:[-1.2,-1.1,-7.1,22.9],ath:14875,ad:'Sep 2026',st:'LME stocks 319,675 t; US warehouses hold record amounts',nt:'Fell to a 4-month low on rate-hike fears and doubts over AI-driven demand.'},
+ni:{n:'Nickel',c:'--ni',p:16320,ch:[.5,1.2,4.7,8.7],ath:54050,ad:'Mar 2022',st:'LME stocks 271,632 t, the biggest of the base metals',nt:'Indonesia drives supply. The 2022 squeeze briefly spiked near $100,000, so the record shown is the cleaned series.'},
+st:{n:'Steel (HRC)',c:'--st',p:615,ch:[null,-.8,null,null],ath:1000,ad:'mid-2021, approx',st:'China export hot-rolled coil, FOB',nt:'Mill margins are squeezed by weak demand and cheap ore.',mw:.45},
+zn:{n:'Zinc',c:'--zn',p:3728,ch:[-.7,.4,0,22.1],ath:4658,ad:'2006',st:'LME stocks 143,575 t',nt:'Up more than a fifth on the year as stocks fall and power costs bite smelters.'},
+li:{n:'Lithium carbonate',c:'--li',p:12270,ch:[1.9,-3.2,null,null],ath:80000,ad:'Nov 2022, approx',st:'China stocks about 122,600 t, destocking',nt:'Battery-grade, China spot. A long way down from the 2022 peak.'},
+co:{n:'Cobalt',c:'--co',p:33525,ch:[0,null,-14.6,-31],ath:95250,ad:'2018',st:'Most supply comes from DR Congo',nt:'Cobalt rallied sharply on DRC export curbs, then gave back a lot of it.'}};
+var TF=['Day','Week','Month','Year'],tf=0,mk='cu',pk='al',sk=null;
+// name,lat,lon,power $/kWh,{reserves Mt},stockpile
+var C=[
+['China',35,103,.08,{al:700,fe:20000,cu:41,ni:4.2,st:1010,zn:33,li:3,co:.14},'The State Reserve Bureau holds undisclosed copper, aluminium and nickel buffers, the biggest hidden stock in the market.'],
+['Australia',-25,134,.11,{al:5100,fe:51000,cu:100,ni:24,st:5,zn:64,li:7,co:1.7},'Mostly ore in the ground and port stocks in the Pilbara and Queensland; no large state metal stockpile.'],
+['Brazil',-10,-52,.10,{al:2700,fe:34000,cu:12,ni:16,st:32,li:.4},'Vale and CSN hold big ore stocks at ports; no state stockpile.'],
+['India',21,79,.09,{al:650,fe:5500,cu:2,st:140,zn:10},'Building ore and steel buffers; export duties on ore act as a policy lever.'],
+['Russia',61,95,.05,{al:200,fe:25000,cu:80,ni:8.3,st:72,zn:22},'The state reserve holds strategic metals; Norilsk is a major nickel and copper source.'],
+['Chile',-30,-71,.12,{fe:1500,cu:190,st:1.2,li:9.3},'Codelco concentrate and cathode inventories; the world’s biggest copper and lithium reserves.'],
+['Peru',-10,-76,.09,{fe:2000,cu:100,st:1.4,zn:20},'Concentrate stocks at Callao port; supply often hit by community blockades.'],
+['DR Congo',-3,23,.06,{cu:80,co:6},'Little formal stockpiling; copper and cobalt move quickly to Chinese buyers.'],
+['Indonesia',-2,118,.07,{al:1000,cu:24,ni:55,st:17,co:.6},'The ore export ban pushed nickel smelting onshore; large nickel pig iron and matte stocks.'],
+['Philippines',12,122,.15,{cu:3,ni:4.8},'Nickel ore ships mostly raw to China; little local inventory.'],
+['Canada',56,-106,.06,{fe:6000,cu:7,ni:2.2,st:12,zn:6,li:.9,co:.2},'Hydro power feeds Quebec aluminium; Sudbury and Voisey’s Bay hold nickel concentrate.'],
+['USA',40,-100,.08,{fe:3000,cu:50,ni:.3,st:80,zn:11,li:1.2},'The National Defense Stockpile holds some strategic metals; copper is imported at scale.'],
+['Guinea',10,-11,.15,{al:7400,fe:5000},'The world’s biggest bauxite reserve, with port stockpiles at Kamsar.'],
+['South Africa',-29,25,.07,{fe:640,cu:3,ni:3.7,st:4.5},'Iron ore, plus nickel as a platinum by-product; rail capacity is the bottleneck.'],
+['Kazakhstan',48,67,.05,{fe:2500,cu:20,st:4,zn:12},'Cheap coal power; copper cathode and iron ore stocks for export east.'],
+['Argentina',-35,-65,.12,{li:4,cu:3},'Brine lithium projects in the north; little formal stockpiling.']];
+// simplified land outlines: lon,lat pairs
+var L='-168,66 -162,70 -156,71 -141,70 -128,70 -115,68 -100,68 -95,72 -85,70 -82,67 -90,64 -94,60 -92,57 -85,55 -82,52 -79,54 -77,60 -72,61 -65,60 -62,56 -56,52 -60,48 -66,45 -70,43 -70,41 -74,40 -76,37 -76,35 -81,31 -80,26 -82,28 -84,30 -89,30 -94,29 -97,26 -97,22 -95,19 -91,19 -90,21 -87,21 -88,16 -84,15 -83,10 -80,8 -77,8 -80,7 -84,9 -88,13 -92,15 -96,16 -101,18 -105,20 -106,23 -109,26 -112,30 -115,30 -112,26 -110,23 -112,25 -115,29 -117,33 -121,35 -124,40 -124,47 -127,51 -131,55 -136,58 -141,60 -148,61 -152,59 -158,57 -164,55 -158,59 -162,60 -166,62 -166,65|-55,60 -45,60 -40,65 -22,70 -20,76 -20,82 -35,83 -60,82 -70,78 -58,75 -52,70|-80,64 -62,67 -66,72 -80,73 -90,70|-77,8 -72,12 -62,11 -52,5 -50,0 -44,-2 -35,-5 -35,-9 -39,-15 -41,-22 -48,-26 -53,-34 -58,-35 -57,-38 -62,-39 -65,-42 -65,-46 -68,-50 -69,-53 -72,-54 -75,-50 -74,-42 -73,-37 -71,-30 -70,-18 -76,-14 -81,-6 -80,-1 -78,2|-9,37 -9,43 -2,43.5 -1,46 -4,48 -2,49 2,51 5,53 8,54 8,57 10,57 12,55 14,54 20,55 22,59 30,60 22,64 25,66 20,69 28,71 40,68 33,66 41,66 44,68 60,69 70,73 80,73 100,77 113,74 130,72 140,72 160,70 170,70 180,69 180,65 170,64 163,60 160,55 156,51 157,58 150,59 143,59 135,54 140,50 142,47 135,43 130,42 129,35 126,37 125,39 121,40 118,38 122,37 120,34 122,30 120,26 117,23 110,21 108,18 106,10 105,9 100,13 100,8 103,2 100,3 98,8 98,16 94,17 92,22 88,22 80,15 77,8 73,17 72,21 67,24 62,25 57,26 55,27 50,30 48,30 51,25 56,25 56,22 59,22 52,16 43,13 40,20 35,28 34,30 32,31 35,36 27,37 26,40 29,41 24,40 23,37 21,38 19,42 14,45 12,44 16,40 17,38 14,38 10,44 7,43 3,43 0,39 -2,37 -6,36|-17,15 -17,21 -13,27 -9,32 -6,36 10,37 11,33 20,32 32,31 34,28 38,22 43,12 51,12 51,10 41,-3 40,-10 41,-16 35,-24 33,-27 32,-29 27,-34 20,-35 18,-32 15,-27 12,-17 13,-9 9,-1 9,4 4,6 -5,5 -8,4 -13,8|114,-22 122,-18 130,-12 137,-12 136,-15 141,-17 142,-11 146,-19 153,-26 150,-37 146,-39 140,-38 135,-34 131,-31 124,-33 115,-34|-5,50 1,51 2,53 -2,56 -2,58 -5,58 -6,56 -3,54|-10,52 -6,52 -6,55 -10,54|130,31 134,34 140,35 142,40 141,45 145,44 141,41 140,38 137,36 132,34|95,5 98,4 104,-2 106,-6 102,-4 98,0|109,2 117,7 119,1 116,-4 110,-3|105,-6 114,-8 106,-7|131,-1 141,-3 150,-10 141,-9 135,-4|120,18 122,18 124,12 126,7 122,7 120,14|44,-25 49,-15 50,-13 47,-25|172,-34 178,-38 175,-41 172,-41|167,-46 174,-41 171,-45|-24,65 -14,65 -14,64 -22,63|-85,22 -80,23 -74,20 -77,20';
+var LP=L.split('|').map(function(s){return s.split(' ').map(function(p){var a=p.split(',');return[+a[1],+a[0]]})});
+var $=function(i){return document.getElementById(i)};
+function fm(n){return n>=1000?n.toLocaleString('en-GB'):String(n)}
+function pct(v){return v==null?'<span class="u">n/a</span>':'<span class="chg '+(v>=0?'up':'dn')+'">'+(v>=0?'▲ ':'▼ ')+Math.abs(v).toFixed(1)+'%</span>'}
+function prices(){var h='';for(var k in M){var m=M[k],v=m.ch[tf],w=Math.min(50,Math.abs(v||0)*2.2);
+h+='<button class="card" data-k="'+k+'" aria-pressed="'+(k==sk)+'" style="--c:var('+m.c+')"><b>'+m.n+'</b><span class="px">'+fm(m.p)+'</span><div>'+pct(v)+' <span class="u">'+TF[tf].toLowerCase()+'</span></div><div class="track"><i style="background:var('+(v>=0?'--up':'--dn')+');width:'+w+'%;'+(v>=0?'left:50%':'right:50%')+'"></i></div></button>'}
+$('prices').innerHTML=h;snap();signals();if(typeof ITM!='undefined'){stuff();wl()}}
+function snap(){if(!sk){$('snap').innerHTML='';return}
+var m=M[sk],d=(1-m.p/m.ath)*100,rk=C.filter(function(c){return c[4][sk]}).sort(function(a,b){return b[4][sk]-a[4][sk]}).slice(0,3).map(function(c){return c[0]}).join(', ');
+$('snap').innerHTML='<div class="snap" style="--c:var('+m.c+')"><div style="font:700 26px \'Big Shoulders Display\',sans-serif">'+m.n+' snapshot</div><div class="pw"><span class="big dn">'+d.toFixed(1)+'% below</span><span>its record of <b>$'+fm(m.ath)+'</b> ('+m.ad+')</span></div><div class="track"><i style="left:0;background:var('+m.c+');width:'+Math.min(100,m.p/m.ath*100)+'%"></i></div><p class="note">Bar shows today’s price as a share of the record.</p><table><tr><td>Price</td><td>$'+fm(m.p)+'/t</td></tr><tr><td>Day / week / month / year</td><td>'+m.ch.map(pct).join(' · ')+'</td></tr><tr><td>Stocks</td><td>'+m.st+'</td></tr><tr><td>Biggest in the ground</td><td>'+rk+'</td></tr>'+(m.mw?'<tr><td>Power to make a tonne</td><td>about '+m.mw+' MWh</td></tr>':'')+'</table><div class="sig">'+m.nt+'</div></div>'}
+function signals(){var cu=M.cu.p,al=M.al.p,fe=M.fe.ch[tf],st=M.st.ch[tf],s=C.slice().sort(function(a,b){return a[3]-b[3]});
+$('signals').innerHTML='<div class="sig"><b>Copper to aluminium ratio: '+(cu/al).toFixed(2)+'.</b> A rising ratio often points to stronger industrial demand, since copper tracks electrification and aluminium tracks supply.</div>'+((fe!=null&&st!=null)?'<div class="sig"><b>Steel margin check.</b> Iron ore moved '+fe.toFixed(1)+'% and steel '+st.toFixed(1)+'% this '+TF[tf].toLowerCase()+'. When ore falls faster than steel, mill margins widen.</div>':'')+'<div class="sig"><b>Cheapest power on the board:</b> '+s[0][0]+'. Dearest: '+s[s.length-1][0]+'. Energy-hungry smelting follows the cheap end.</div>'}
+function chips(){$('mchips').innerHTML=Object.keys(M).map(function(k){return '<button aria-pressed="'+(k==mk)+'" data-k="'+k+'">'+M[k].n+'</button>'}).join('')}
+// globe
+var lon0=100,lat0=20,sel=null,drag=null,spin=true,R=200;
+function pr(la,lo){var f=Math.PI/180,p=la*f,l=(lo-lon0)*f,p0=lat0*f,cc=Math.sin(p0)*Math.sin(p)+Math.cos(p0)*Math.cos(p)*Math.cos(l);
+return[R*Math.cos(p)*Math.sin(l),-R*(Math.cos(p0)*Math.sin(p)-Math.sin(p0)*Math.cos(p)*Math.cos(l)),cc]}
+function draw(){var s='',i,j,pt,d;
+FR.forEach(function(o){var poly=o.r,any=0,pts=poly.map(function(v){var q=pr(v[0],v[1]);if(q[2]>0)any=1;else{var l=Math.hypot(q[0],q[1])||1;q=[q[0]/l*R,q[1]/l*R,q[2]]}return q});
+if(any)s+='<path d="M'+pts.map(function(q){return q[0].toFixed(1)+' '+q[1].toFixed(1)}).join('L')+'Z"'+(o.id?' data-id="'+o.id+'"':'')+' fill="'+(o.id&&o.id==selId?'var(--cu)':'var(--land)')+'" stroke="var(--mute)" stroke-width=".5" stroke-opacity=".8" style="cursor:pointer"/>'});
+for(i=-60;i<=60;i+=30){d='';for(j=-180;j<=180;j+=6){pt=pr(i,j);d+=pt[2]>0?(/[0-9]$/.test(d)?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1):' '}
+s+='<path d="'+d+'" fill="none" stroke="var(--line)" stroke-width=".6"/>'}
+for(i=-180;i<180;i+=30){d='';for(j=-84;j<=84;j+=6){pt=pr(j,i);d+=pt[2]>0?(/[0-9]$/.test(d)?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1):' '}
+s+='<path d="'+d+'" fill="none" stroke="var(--line)" stroke-width=".6"/>'}
+var mx=0;C.forEach(function(c){mx=Math.max(mx,c[4][mk]||0)});
+C.forEach(function(c,n){var v=c[4][mk];if(!v)return;pt=pr(c[1],c[2]);if(pt[2]<=0)return;var r=5+Math.sqrt(v/mx)*20,on=sel===n;
+s+='<g data-n="'+n+'" style="cursor:pointer"><circle cx="'+pt[0]+'" cy="'+pt[1]+'" r="'+r+'" fill="var('+M[mk].c+')" fill-opacity=".6" stroke="var(--ink)" stroke-width="'+(on?3:1)+'"/><text x="'+pt[0]+'" y="'+(pt[1]+r+11)+'" text-anchor="middle" font-size="10" font-weight="600" fill="var(--ink)">'+c[0]+'</text></g>'});
+$('globe').innerHTML=s}
+function panel(){if(sel===null){$('cpanel').innerHTML='<p class="note">Tap a country on the globe to see its power price, what lies in its ground and its stockpile position.</p>';return}
+var c=C[sel],rk=C.slice().sort(function(a,b){return a[3]-b[3]}).indexOf(c)+1,h='<h3 style="font:700 30px \'Big Shoulders Display\',sans-serif;margin:0">'+c[0]+'</h3><div class="pw"><span class="big">⚡ $'+c[3].toFixed(2)+'</span><span>per kWh industrial power<br><span class="u">#'+rk+' cheapest of '+C.length+' countries</span></span></div>';
+for(var k in M){var v=c[4][k]||0,mx=Math.max.apply(null,C.map(function(x){return x[4][k]||0}));h+='<div class="row"><span>'+M[k].n+'</span><div class="bg"><i style="width:'+(mx?v/mx*100:0)+'%;background:var('+M[k].c+')"></i></div><span>'+(v?fm(v)+' Mt':'none')+'</span></div>'}
+h+='<div class="note">Mt in the ground (steel: made per year).</div><div class="sig"><b>Stockpile.</b> '+c[5]+'</div>';$('cpanel').innerHTML=h}
+function pick(n){sel=n;spin=false;lon0=C[n][2];lat0=Math.max(-40,Math.min(50,C[n][1]));draw();panel()}
+var g=$('globe');
+g.addEventListener('pointerdown',function(e){drag=[e.clientX,e.clientY,lon0,lat0,0];spin=false});
+window.addEventListener('pointermove',function(e){if(!drag)return;var dx=e.clientX-drag[0],dy=e.clientY-drag[1];drag[4]=Math.abs(dx)+Math.abs(dy);lon0=drag[2]-dx*.4;lat0=Math.max(-60,Math.min(60,drag[3]+dy*.3));draw()});
+window.addEventListener('pointerup',function(){setTimeout(function(){drag=null},0)});
+g.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('g[data-n]');if(t&&!(drag&&drag[4]>6))pick(+t.getAttribute('data-n'))});
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+if(!rm)setInterval(function(){if(spin&&!document.hidden){lon0=(lon0+.6)%360;draw()}},90);
+function elec(){var s=C.slice().sort(function(a,b){return a[3]-b[3]});
+$('elec').innerHTML=s.map(function(c){return '<div class="row"><span>'+c[0]+'</span><div class="bg"><i style="width:'+c[3]/.16*100+'%"></i></div><span>$'+c[3].toFixed(2)+'</span></div>'}).join('')}
+function bill(){var mwh=pk=='al'?14.5:.45,price=pk=='al'?M.al.p:M.st.p,s=C.slice().sort(function(a,b){return a[3]-b[3]});
+$('pchips').innerHTML='<button aria-pressed="'+(pk=='al')+'" data-k="al">Aluminium</button><button aria-pressed="'+(pk=='st')+'" data-k="st">Steel (EAF)</button>';
+$('pbill').innerHTML='<table><tr><th>Country</th><th>Power per tonne</th><th>Share of price</th></tr>'+s.map(function(c){var b=c[3]*mwh*1000;return '<tr><td>'+c[0]+'</td><td>$'+Math.round(b).toLocaleString('en-GB')+'</td><td>'+(b/price*100).toFixed(0)+'%</td></tr>'}).join('')+'</table><div class="note">At a price of $'+fm(price)+'/t.</div>'}
+$('tf').innerHTML=TF.map(function(t,i){return '<button aria-pressed="'+(i==tf)+'" data-i="'+i+'">'+t+'</button>'}).join('');
+$('tf').onclick=function(e){var i=e.target.getAttribute('data-i');if(i==null)return;tf=+i;Array.prototype.forEach.call($('tf').children,function(b,j){b.setAttribute('aria-pressed',j==tf)});prices()};
+$('prices').onclick=function(e){var b=e.target.closest('.card');if(!b)return;sk=b.getAttribute('data-k')==sk?null:b.getAttribute('data-k');prices()};
+$('mchips').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){mk=k;chips();draw()}};
+$('pchips').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){pk=k;bill()}};
+var ISO={China:'CHN',Australia:'AUS',Brazil:'BRA',India:'IND',Russia:'RUS',Chile:'CHL',Peru:'PER','DR Congo':'COD',Indonesia:'IDN',Philippines:'PHL',Canada:'CAN',USA:'USA',Guinea:'GIN','South Africa':'ZAF',Kazakhstan:'KAZ',Argentina:'ARG'};
+var FE=[],selId=null,mv=0,md=['🥇','🥈','🥉'];
+try{var tp=Datamap.prototype.worldTopo,ok=Object.keys(tp.objects)[0],gj=topojson.feature(tp,tp.objects[ok]);FE=gj.features.map(function(f){var g=f.geometry,ps=g.type=='Polygon'?[g.coordinates]:g.coordinates;return{id:f.id,name:f.properties.name,rings:ps.map(function(p){return p[0].map(function(c){return[c[1],c[0]]})})}})}catch(e){FE=[]}
+var FR=FE.length?FE.reduce(function(a,f){return a.concat(f.rings.map(function(r){return{r:r,id:f.id}}))},[]):LP.map(function(r){return{r:r}});
+var E={};('AFG:.08,ALB:.11,DZA:.04,AGO:.03,ARG:.12,ARM:.10,AUS:.11,AUT:.19,AZE:.06,BHS:.30,BGD:.09,BLR:.07,BEL:.17,BLZ:.20,BEN:.15,BTN:.03,BOL:.07,BIH:.10,BWA:.09,BRA:.10,BRN:.06,BGR:.12,BFA:.20,BDI:.20,KHM:.15,CMR:.10,CAN:.06,CAF:.20,TCD:.25,CHL:.12,CHN:.08,COL:.13,COG:.10,COD:.06,CRI:.14,CIV:.12,HRV:.14,CUB:.09,CYP:.22,CZE:.18,DNK:.16,DJI:.20,DOM:.16,ECU:.10,EGY:.05,SLV:.16,GNQ:.12,ERI:.15,EST:.14,ETH:.03,FJI:.20,FIN:.09,FRA:.15,GAB:.13,GMB:.25,GEO:.08,DEU:.20,GHA:.12,GRC:.17,GRL:.10,GTM:.15,GIN:.15,GNB:.20,GUY:.22,HTI:.30,HND:.14,HUN:.16,ISL:.05,IND:.09,IDN:.07,IRN:.02,IRQ:.04,IRL:.24,ISR:.12,ITA:.25,JAM:.22,JPN:.17,JOR:.13,KAZ:.05,KEN:.12,PRK:.05,KOR:.11,KWT:.03,KGZ:.03,LAO:.06,LVA:.15,LBN:.20,LSO:.06,LBR:.30,LBY:.02,LTU:.14,LUX:.15,MKD:.12,MDG:.20,MWI:.10,MYS:.09,MLI:.18,MRT:.15,MEX:.12,MDA:.12,MNG:.08,MNE:.11,MAR:.11,MOZ:.06,MMR:.08,NAM:.09,NPL:.08,NLD:.17,NZL:.09,NIC:.17,NER:.13,NGA:.08,NOR:.08,OMN:.05,PAK:.12,PAN:.16,PNG:.15,PRY:.04,PER:.09,PHL:.15,POL:.15,PRT:.14,PRI:.24,QAT:.04,ROU:.15,RUS:.05,RWA:.13,SAU:.05,SEN:.18,SRB:.11,SLE:.20,SGP:.17,SVK:.19,SVN:.15,SLB:.50,SOM:.30,ZAF:.07,SSD:.20,ESP:.14,LKA:.13,SDN:.05,SUR:.10,SWZ:.10,SWE:.06,CHE:.17,SYR:.03,TWN:.10,TJK:.03,TZA:.09,THA:.11,TLS:.20,TGO:.14,TTO:.05,TUN:.09,TUR:.13,TKM:.02,UGA:.08,UKR:.09,ARE:.09,GBR:.22,USA:.08,URY:.13,UZB:.04,VUT:.45,VEN:.02,VNM:.08,YEM:.06,ZMB:.05,ZWE:.10').split(',').forEach(function(s){var a=s.split(':');E[a[0]]=+a[1]});
+var CT=(FE.length?FE.filter(function(f){return E[f.id]}).map(function(f){return{id:f.id,name:f.name,p:E[f.id]}}):C.map(function(c){return{id:ISO[c[0]],name:c[0],p:c[3]}})).sort(function(a,b){return a.p-b.p});
+function ctr(f){var r=f.rings.reduce(function(a,b){return b.length>a.length?b:a}),la=0,sx=0,sy=0,k=Math.PI/180;r.forEach(function(v){la+=v[0];sx+=Math.cos(v[1]*k);sy+=Math.sin(v[1]*k)});return[la/r.length,Math.atan2(sy,sx)/k]}
+pick=function(n){selId=ISO[C[n][0]];spin=false;lon0=C[n][2];lat0=Math.max(-40,Math.min(50,C[n][1]));draw();panel()};
+g.addEventListener('pointerdown',function(){mv=0});window.addEventListener('pointermove',function(){if(drag)mv=drag[4]});
+g.addEventListener('click',function(e){var id=e.target.getAttribute&&e.target.getAttribute('data-id');if(!id||mv>6)return;selId=id;spin=false;var f=FE.filter(function(x){return x.id==id})[0];if(f){var c=ctr(f);lon0=c[1];lat0=Math.max(-50,Math.min(60,c[0]))}draw();panel()});
+panel=function(){if(!selId){$('cpanel').innerHTML='<p class="note">Tap any country on the globe to see its power price. Mining nations also show what lies in the ground and their stockpile position.</p>';return}
+var f=FE.filter(function(x){return x.id==selId})[0],c=C.filter(function(x){return ISO[x[0]]==selId})[0],nm=f?f.name:(c?c[0]:selId),p=E[selId],ix=CT.map(function(x){return x.id}).indexOf(selId),h='<h3 style="font:700 30px \'Big Shoulders Display\',sans-serif;margin:0">'+nm+'</h3>';
+h+=p?'<div class="pw"><span class="big">⚡ $'+p.toFixed(2)+'</span><span>per kWh industrial power<br><span class="u">#'+(ix+1)+' cheapest of '+CT.length+' countries</span></span></div>':'<p class="note">No power price estimate for this country.</p>';
+if(c){for(var k in M){var v=c[4][k]||0,mx=Math.max.apply(null,C.map(function(x){return x[4][k]||0}));h+='<div class="row"><span>'+M[k].n+'</span><div class="bg"><i style="width:'+(mx?v/mx*100:0)+'%;background:var('+M[k].c+')"></i></div><span>'+(v?fm(v)+' Mt':'none')+'</span></div>'}h+='<div class="note">Mt in the ground (steel: made per year).</div><div class="sig"><b>Stockpile.</b> '+c[5]+'</div>'}else h+='<p class="note">No large reserves tracked here for these metals.</p>';
+$('cpanel').innerHTML=h};
+elec=function(){var q=($('esearch').value||'').toLowerCase();$('elec').innerHTML=CT.map(function(c,i){return q&&c.name.toLowerCase().indexOf(q)<0?'':'<div class="row w"><span>'+(i+1)+'. '+c.name+'</span><div class="bg"><i style="width:'+Math.min(100,c.p/.3*100)+'%"></i></div><span>$'+c.p.toFixed(2)+'</span></div>'}).join('')||'<p class="note">No match.</p>'};
+$('esearch').oninput=elec;
+bill=function(){var mwh=pk=='al'?14.5:.45,price=pk=='al'?M.al.p:M.st.p;
+$('pchips').innerHTML='<button aria-pressed="'+(pk=='al')+'" data-k="al">Aluminium</button><button aria-pressed="'+(pk=='st')+'" data-k="st">Steel (EAF)</button>';
+$('pbill').innerHTML='<table><tr><th>Country</th><th>Power per tonne</th><th>Share of price</th></tr>'+CT.map(function(c){var b=c.p*mwh*1000;return '<tr><td>'+c.name+'</td><td>$'+Math.round(b).toLocaleString('en-GB')+'</td><td>'+(b/price*100).toFixed(0)+'%</td></tr>'}).join('')+'</table><div class="note">At a price of $'+fm(price)+'/t.</div>'};
+// leagues
+var INV={cu:[319675,28],al:[226725,73],ni:[271632,3.7],zn:[143575,14]};
+function inv(){var rows=Object.keys(INV).map(function(k){return{k:k,d:INV[k][0]/(INV[k][1]*1e6/365)}}).sort(function(a,b){return a.d-b.d});
+$('inv').innerHTML=rows.map(function(r){var t=r.d<5?['Tight','--dn']:r.d<15?['Watch','--cu']:['Comfortable','--up'];return '<div class="row w"><span>'+M[r.k].n+'</span><div class="bg"><i style="width:'+Math.min(100,r.d/30*100)+'%;background:var('+t[1]+')"></i></div><span>'+r.d.toFixed(1)+' days</span></div><div class="u" style="margin:-2px 0 8px">'+t[0]+': '+fm(INV[r.k][0])+' t on LME warrants</div>'}).join('')}
+var WY={
+cu:{u:'AI data centres and grid build-outs, mine outages, tariff-driven stockpiling in the US',d:'China property weakness, higher rates, a stronger dollar',w:'LME and US warehouse stocks, China imports, Chile and Peru output',s:[['Construction',30],['Grid and electronics',30],['Transport',13],['Industry',15],['Other',12]]},
+al:{u:'Smelter curbs in China, power shortages, low warehouse stocks',d:'Weak car and building demand, Chinese exports rising',w:'LME stocks and the cash premium, China’s production cap, smelter power prices',s:[['Transport',27],['Construction',25],['Packaging',14],['Electrical',12],['Other',22]]},
+fe:{u:'Chinese stimulus, steel output rising, supply disruptions in Australia or Brazil',d:'China property slump, new supply such as Simandou, high port stocks',w:'China port stocks, steel mill margins, Simandou shipments',s:[['Steelmaking',98],['Other',2]]},
+ni:{u:'Indonesian quota cuts or export curbs, stainless steel demand, battery demand',d:'Indonesian oversupply, weak stainless demand, big LME stocks',w:'Indonesian ore quotas, LME stocks, stainless output in China',s:[['Stainless steel',65],['Batteries',15],['Alloys and plating',20]]},
+st:{u:'Chinese stimulus, trade protection, rising ore and coking coal costs',d:'Weak construction, export surges from China, cheap ore',w:'China output and exports, mill margins, tariffs and quotas',s:[['Construction',52],['Machinery',16],['Transport',12],['Metal products',11],['Other',9]]},
+zn:{u:'Smelter closures from high power costs, low stocks, infrastructure spending',d:'Weak construction, rising mine supply, a stronger dollar',w:'LME stocks, European smelter power prices, mine output',s:[['Galvanising',50],['Brass and alloys',17],['Die casting',10],['Other',23]]},
+li:{u:'EV sales beating forecasts, grid battery storage, mine shutdowns',d:'Oversupply from new brine and hard-rock projects, weak EV demand',w:'China EV sales, mine restarts, battery maker destocking',s:[['Batteries',87],['Glass and ceramics',6],['Other',7]]},
+co:{u:'DR Congo export quotas or bans, battery demand',d:'Congo supply returning, shift to cobalt-free battery chemistries',w:'DRC export policy, Chinese refinery stocks, battery chemistry trends',s:[['Batteries',70],['Alloys',12],['Other',18]]}};
+var wk='cu';
+function why(){$('wchips').innerHTML=Object.keys(WY).map(function(k){return '<button aria-pressed="'+(k==wk)+'" data-k="'+k+'">'+M[k].n+'</button>'}).join('');var w=WY[wk],c='var('+M[wk].c+')';
+$('why').innerHTML='<div class="wk" style="--c:var(--up)"><b>Pushes it up:</b> '+w.u+'</div><div class="wk" style="--c:var(--dn)"><b>Pushes it down:</b> '+w.d+'</div><div class="wk" style="--c:'+c+'"><b>Watch:</b> '+w.w+'</div><h3 class="s">Where the demand comes from</h3>'+w.s.map(function(s){return '<div class="row w"><span>'+s[0]+'</span><div class="bg"><i style="width:'+s[1]+'%;background:'+c+'"></i></div><span>~'+s[1]+'%</span></div>'}).join('')}
+$('wchips').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){wk=k;why()}};
+var PR=[['Freeport-McMoRan','FCX','Copper','Grasberg (Indonesia), US Southwest, Cerro Verde (Peru)','+3.0% on 11 Nov'],['Southern Copper','SCCO','Copper','Peru and Mexico, huge reserves','+1.3% on 11 Nov'],['BHP','BHP','Copper, iron ore','Escondida (Chile), Pilbara (Australia)','—'],['Rio Tinto','RIO','Iron ore, aluminium, copper','Pilbara, Oyu Tolgoi (Mongolia), Canadian smelters','—'],['Vale','VALE','Iron ore, nickel','Carajás (Brazil)','—'],['Glencore','GLEN','Copper, nickel, zinc, cobalt','DR Congo copper and cobalt, global trading','—'],['Alcoa','AA','Aluminium','Bauxite in Western Australia, smelters','—'],['Norsk Hydro','NHY','Aluminium','Norwegian hydro-powered smelters','—'],['Nucor','NUE','Steel','US electric arc furnace mills','—'],['ArcelorMittal','MT','Steel','Global mills across Europe and the Americas','—'],['Albemarle','ALB','Lithium','Chile brines, Australian hard rock','—'],['Global X Copper Miners ETF','COPX','Copper miners','45 miners worldwide, including BHP, Antofagasta, Anglo, Freeport','Day −3.9%, week +0.5%, month −12.7%, year +11.4% (12 Nov)'],['iShares MSCI Global Metals & Mining','PICK','Broad miners','Diversified global producers','—'],['SPDR S&P Metals & Mining','XME','Broad US miners and steel','US producers','—'],['SPDR S&P Steel','SLX','Steel','Global steel makers and iron ore miners','—'],['Global X Lithium & Battery Tech','LIT','Lithium, batteries','Lithium miners and battery makers','—'],['United States Copper Index Fund','CPER','Copper futures','Tracks copper futures, not miners','—'],['Invesco DB Base Metals Fund','DBB','Copper, aluminium, zinc futures','Tracks base metal futures','—']];
+function prod(){$('prod').innerHTML='<table><tr><th>Name</th><th>Metal</th><th>Key assets</th><th>Latest move</th></tr>'+PR.map(function(r){return '<tr><td><b>'+r[1]+'</b><br><span class="u">'+r[0]+'</span></td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>'}).join('')+'</table>'}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function ld(k,d){try{var s=localStorage.getItem(k);return s?JSON.parse(s):d}catch(e){return d}}
+function mny(v){return v>=100?Math.round(v).toLocaleString('en-GB'):v.toFixed(2)}
+function cbtn(list,cur,attr){return list.map(function(x){return '<button aria-pressed="'+(x[0]==cur)+'" data-'+attr+'="'+x[0]+'">'+x[1]+'</button>'}).join('')}
+var CTRL={cu:{mine:[['Chile',23],['DR Congo',14],['Peru',11]],ref:[['China',44],['Chile',8],['Japan',6]]},al:{mine:[['Guinea',28],['Australia',24],['China',23]],ref:[['China',59],['India',5],['Russia',5]]},ni:{mine:[['Indonesia',60],['Philippines',10],['Russia',6]],ref:[['Indonesia',38],['China',32],['Russia',6]]},zn:{mine:[['China',32],['Peru',11],['Australia',10]],ref:[['China',47],['South Korea',7],['India',6]]},li:{mine:[['Australia',37],['Chile',24],['China',17]],ref:[['China',65],['Chile',25],['Argentina',5]]},co:{mine:[['DR Congo',74],['Indonesia',10],['Russia',3]],ref:[['China',75],['Finland',4],['Japan',3]]},fe:{mine:[['Australia',38],['Brazil',17],['China',14]],ref:[['China',54],['India',8],['Japan',4]]}};
+var CS='mine';
+function ctrl(){$('cst').innerHTML=cbtn([['mine','Mining'],['ref','Refining and smelting']],CS,'s');
+var rows=Object.keys(CTRL).map(function(k){var a=CTRL[k][CS];return{k:k,a:a,t:a[0][1]+a[1][1]+a[2][1]}}).sort(function(x,y){return y.t-x.t});
+$('ctrl').innerHTML=rows.map(function(r){var lv=r.t>=75?['Very concentrated','--dn']:r.t>=55?['Concentrated','--cu']:['Spread out','--up'];return '<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>'+(r.k=='fe'?'Iron ore and steel':M[r.k].n)+'</b><span style="color:var('+lv[1]+');font-weight:600">'+lv[0]+': top 3 hold '+r.t+'%</span></div><div class="stk">'+r.a.map(function(x,i){return '<i style="width:'+x[1]+'%;background:var('+M[r.k].c+');opacity:'+(1-i*.3)+'"></i>'}).join('')+'</div><div class="u">'+r.a.map(function(x){return x[0]+' '+x[1]+'%'}).join(' · ')+'</div></div>'}).join('')+'<div class="note">Refining for aluminium means smelting; for iron ore it means steelmaking. Sorted most concentrated first.</div>'}
+$('cst').onclick=function(e){var s=e.target.getAttribute('data-s');if(s){CS=s;ctrl()}};
+var ITM={ev:['Electric car',{cu:80,al:250,st:900,ni:35,li:45,co:8}],car:['Petrol car',{cu:25,al:150,st:1000,zn:10}],house:['Average house',{cu:200,al:150,st:3000,zn:60}],phone:['Smartphone',{cu:.015,al:.025,co:.006}],wind:['3 MW wind turbine',{cu:9000,al:2500,st:400000,zn:4000}],solar:['1 MW solar farm',{cu:3000,al:20000,st:35000}]};
+var IK='ev';
+function stuff(){$('ichips').innerHTML=Object.keys(ITM).map(function(k){return '<button aria-pressed="'+(k==IK)+'" data-k="'+k+'">'+ITM[k][0]+'</button>'}).join('');
+var c=ITM[IK][1],tot=0,chg=0,rows=[];for(var k in c){var v=c[k]*M[k].p/1000,ch=M[k].ch[tf]||0;tot+=v;chg+=v*ch/(100+ch);rows.push([k,c[k],v])}
+rows.sort(function(a,b){return b[2]-a[2]});
+$('stuff').innerHTML='<div class="pw"><span class="big">$'+mny(tot)+'</span><span>of raw metal at today’s prices<br><span class="u">'+(chg>=0?'up':'down')+' $'+mny(Math.abs(chg))+' this '+TF[tf].toLowerCase()+'</span></span></div>'+rows.map(function(r){return '<div class="row w"><span>'+M[r[0]].n+'</span><div class="bg"><i style="width:'+r[2]/tot*100+'%;background:var('+M[r[0]].c+')"></i></div><span>$'+mny(r[2])+'</span></div><div class="u" style="margin:-2px 0 6px">'+(r[1]<1?Math.round(r[1]*1000)+' g':fm(r[1])+' kg')+'</div>'}).join('')}
+$('ichips').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){IK=k;stuff()}};
+var WL=ld('gcg_wl',{});
+function wl(){$('wlchips').innerHTML=Object.keys(M).map(function(k){return '<button aria-pressed="'+(k in WL)+'" data-k="'+k+'">'+(k in WL?'★ ':'☆ ')+M[k].n+'</button>'}).join('');
+var al=[],ks=Object.keys(WL),h=ks.map(function(k){var m=M[k],w=WL[k],d=(1-m.p/m.ath)*100;if(w.a!=null&&m.p>=w.a)al.push(m.n+' is above your $'+fm(w.a)+' alert');if(w.b!=null&&m.p<=w.b)al.push(m.n+' is below your $'+fm(w.b)+' alert');if(d<=10)al.push(m.n+' is within 10% of its record high');
+return '<tr><td><b>'+m.n+'</b></td><td>$'+fm(m.p)+'</td><td>'+pct(m.ch[tf])+'</td><td>'+d.toFixed(0)+'% below</td><td><input class="inp" type="number" aria-label="Alert above" placeholder="Above $" data-k="'+k+'" data-f="a" value="'+(w.a==null?'':w.a)+'"></td><td><input class="inp" type="number" aria-label="Alert below" placeholder="Below $" data-k="'+k+'" data-f="b" value="'+(w.b==null?'':w.b)+'"></td></tr>'}).join('');
+$('wlalert').innerHTML=al.map(function(t){return '<div class="sig" style="border-color:var(--dn)">🔔 '+t+'</div>'}).join('');
+$('wlist').innerHTML=ks.length?'<div class="tbl"><table><tr><th>Metal</th><th>Price</th><th>'+TF[tf]+'</th><th>From record</th><th>Alert above</th><th>Alert below</th></tr>'+h+'</table></div>':'<p class="note">Tap ☆ to add metals to your watchlist.</p>'}
+$('wlchips').onclick=function(e){var k=e.target.getAttribute('data-k');if(!k)return;if(k in WL)delete WL[k];else WL[k]={};sv('gcg_wl',WL);wl()};
+$('wlist').onchange=function(e){var k=e.target.getAttribute('data-k'),f=e.target.getAttribute('data-f');if(k&&f){var v=parseFloat(e.target.value);WL[k]=WL[k]||{};WL[k][f]=isNaN(v)?null:v;sv('gcg_wl',WL);wl()}};
+var EXP={FCX:[{cu:.75},1.5],SCCO:[{cu:.8},1.4],BHP:[{fe:.55,cu:.35},1.3],RIO:[{fe:.65,al:.15,cu:.15},1.3],VALE:[{fe:.8,ni:.1},1.4],GLEN:[{cu:.35,ni:.1,zn:.15,co:.1},1.4],AA:[{al:.9},1.6],NHY:[{al:.7},1.2],NUE:[{st:.9},1.3],MT:[{st:.8,fe:.1},1.3],ALB:[{li:.8},1.8],COPX:[{cu:.7,fe:.1},1.4],PICK:[{fe:.25,cu:.2,al:.1,ni:.05},1.2],XME:[{st:.3,cu:.15,al:.1},1.2],SLX:[{st:.6,fe:.3},1.3],LIT:[{li:.5},1.3],CPER:[{cu:1},1],DBB:[{cu:.5,al:.35,zn:.15},1]};
+var HOLD=ld('gcg_hold',{}),XM='cu',XP=-10;
+function pf(imp){var tot=0,usd=0;for(var t in HOLD){var a=HOLD[t]||0;if(!a||!EXP[t])continue;tot+=a;var e=EXP[t],s=0;for(var k in imp)s+=(e[0][k]||0)*imp[k]/100;usd+=a*e[1]*s}return{tot:tot,usd:usd,pct:tot?usd/tot*100:0}}
+function hd(){var nm={};PR.forEach(function(r){nm[r[1]]=r[0]});$('hold').innerHTML=Object.keys(EXP).map(function(t){return '<label>'+t+' <span>'+(nm[t]||'')+'</span><input class="inp" type="number" min="0" data-t="'+t+'" value="'+(HOLD[t]||'')+'" placeholder="Amount held"></label>'}).join('');
+$('hold').oninput=function(e){var t=e.target.getAttribute('data-t');if(t){HOLD[t]=parseFloat(e.target.value)||0;sv('gcg_hold',HOLD);xr();sim()}}}
+function xr(){var p=pf({}),mix={};for(var t in HOLD){var a=HOLD[t]||0;if(!a||!EXP[t])continue;for(var k in EXP[t][0])mix[k]=(mix[k]||0)+a*EXP[t][0][k]}
+if(!p.tot){$('xres').innerHTML='<p class="note">Add an amount above to see your metal mix.</p>';return}
+var r=pf((function(){var o={};o[XM]=XP;return o})());
+$('xres').innerHTML='<h3 class="s">Your metal mix</h3>'+Object.keys(mix).sort(function(a,b){return mix[b]-mix[a]}).map(function(k){var s=mix[k]/p.tot*100;return '<div class="row w"><span>'+M[k].n+'</span><div class="bg"><i style="width:'+Math.min(100,s)+'%;background:var('+M[k].c+')"></i></div><span>'+s.toFixed(0)+'%</span></div>'}).join('')+'<div class="note">Share of your holdings that behaves like each metal (a miner or ETF can carry more than one).</div><h3 class="s">What if a metal moves?</h3><div class="chips" id="xchips">'+Object.keys(M).map(function(k){return '<button aria-pressed="'+(k==XM)+'" data-k="'+k+'">'+M[k].n+'</button>'}).join('')+'</div><label>Price move % <input class="inp" id="xp" type="number" value="'+XP+'"></label><div class="pw" style="margin-top:10px"><span class="big '+(r.usd>=0?'up':'dn')+'">'+(r.pct>=0?'+':'−')+Math.abs(r.pct).toFixed(1)+'%</span><span>on your holdings of '+mny(p.tot)+'<br><span class="u">about '+(r.usd>=0?'+':'−')+mny(Math.abs(r.usd))+' if '+M[XM].n+' moves '+XP+'%. Miners often move more than the metal, so this assumes extra leverage.</span></span></div>';
+$('xchips').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){XM=k;xr()}};
+$('xp').onchange=function(e){XP=parseFloat(e.target.value)||0;xr()}}
+var SC={nick:['Indonesia cuts nickel exports',{ni:25,co:4,st:2},'Indonesia mines about 60% of the world’s nickel, so a quota cut or ban tightens supply fast and lifts related metals.','Indonesia, China, Vale, Glencore'],chile:['Strike halts Chile copper mines',{cu:8,zn:1},'Chile mines roughly a quarter of the world’s copper and warehouse stocks are thin, so even a short stoppage matters.','Chile, Peru, Freeport, Southern Copper, BHP'],alu:['China caps aluminium smelting',{al:10},'China makes close to 60% of the world’s aluminium and a power or output cap removes supply quickly.','China, Alcoa, Norsk Hydro, Rio Tinto'],cobalt:['DR Congo halts cobalt exports',{co:40,cu:3},'DR Congo mines about three quarters of the world’s cobalt, often alongside copper.','DR Congo, China refiners, Glencore'],guinea:['Guinea halts bauxite exports',{al:12},'Guinea is the biggest bauxite source, so an export halt starves alumina refineries.','Guinea, China, Australia, Alcoa'],sim:['Simandou ramps up faster than expected',{fe:-15,st:-3},'New high-grade ore from Guinea adds supply to an already well-stocked market and cuts costs for steel makers.','Australia, Brazil, Rio Tinto, Vale, BHP']};
+var SK='nick',SV=1;
+function sim(){$('sch').innerHTML=Object.keys(SC).map(function(k){return '<button aria-pressed="'+(k==SK)+'" data-k="'+k+'">'+SC[k][0]+'</button>'}).join('');
+$('ssev').innerHTML=[['0.5','Mild'],['1','Medium'],['2','Severe']].map(function(s){return '<button aria-pressed="'+(+s[0]==SV)+'" data-v="'+s[0]+'">'+s[1]+'</button>'}).join('');
+var s=SC[SK],imp={},rows='';for(var k in s[1]){imp[k]=s[1][k]*SV;rows+='<tr><td>'+M[k].n+'</td><td>$'+fm(M[k].p)+'</td><td>$'+fm(Math.round(M[k].p*(1+imp[k]/100)*10)/10)+'</td><td>'+pct(imp[k])+'</td></tr>'}
+var p=pf(imp);
+$('sres').innerHTML='<div class="sig">'+s[2]+'</div><div class="tbl"><table><tr><th>Metal</th><th>Now</th><th>After</th><th>Move</th></tr>'+rows+'</table></div><p class="note"><b>Who feels it:</b> '+s[3]+'</p>'+(p.tot?'<div class="pw"><span class="big '+(p.usd>=0?'up':'dn')+'">'+(p.pct>=0?'+':'−')+Math.abs(p.pct).toFixed(1)+'%</span><span>estimated effect on your holdings</span></div>':'<p class="note">Add holdings in the exposure checker to see the effect on your portfolio.</p>')}
+$('sch').onclick=function(e){var k=e.target.getAttribute('data-k');if(k){SK=k;sim()}};
+$('ssev').onclick=function(e){var v=e.target.getAttribute('data-v');if(v){SV=+v;sim()}};
+var LES=[['Why industrial metals matter','Copper, aluminium and steel are the raw material of buildings, power grids and vehicles. Unlike gold, which is mostly held as a store of value, they are used up, so their prices follow the real economy.','Which is the better barometer of industrial demand?',['Copper','Gold','They are identical'],0],['How prices are set','Metals trade on exchanges such as the LME and in futures markets. When metal for immediate delivery costs more than metal for later, the market is in backwardation, a classic sign of tight supply.','Backwardation usually signals…',['Tight supply right now','A glut of metal','Trading has stopped'],0],['From mine to product','Ore is mined, turned into concentrate, then smelted and refined before it is used. Each step can be a bottleneck, and the processing step is often controlled by fewer countries than the mining step.','Which step is usually the most concentrated?',['Mining','Refining','Retail'],1],['Stocks and the cost curve','Warehouse stocks, measured in days of demand, show how big the cushion is. The cost curve shows the price at which the average producer breaks even; near it, mines tend to close and supply falls.','Stocks equal to only 1 or 2 days of demand mean…',['A thin cushion','A big surplus','Nothing at all'],0],['Power and smelting','Making aluminium takes about 14.5 MWh of electricity per tonne. That is why smelters cluster where power is cheap and why electricity prices can drive the metal’s price.','Which of these is the most power-hungry to make?',['Aluminium','Iron ore','Copper concentrate'],0],['Reading the signals','Ratios turn prices into signals. A rising copper to aluminium ratio often points to stronger industrial demand, and ore falling faster than steel widens mill margins.','A rising copper to aluminium ratio often signals…',['Stronger industrial demand','Weaker demand','Nothing'],0]];
+var LS=ld('gcg_les',{}),OP=-1;
+function les(){var ok=0;LES.forEach(function(l,i){if(LS[i]===l[4])ok++});
+$('lesbadge').innerHTML=ok==LES.length?'🏅 <b>Metals Graduate</b>: all '+ok+' correct.':'Progress: <b>'+ok+'/'+LES.length+'</b> correct.';
+$('les').innerHTML=LES.map(function(l,i){var a=LS[i];return '<details class="les"'+(OP==i?' open':'')+'><summary>'+(i+1)+'. '+l[0]+(a===l[4]?' ✅':'')+'</summary><div class="in"><p>'+l[1]+'</p><p><b>'+l[2]+'</b></p><div class="chips">'+l[3].map(function(o,j){return '<button aria-pressed="'+(a===j)+'" data-l="'+i+'" data-o="'+j+'">'+o+'</button>'}).join('')+'</div>'+(a==null?'':a===l[4]?'<div class="sig">✅ Right.</div>':'<div class="sig">❌ Not quite. The answer is: '+l[3][l[4]]+'.</div>')+'</div></details>'}).join('')}
+$('les').onclick=function(e){var l=e.target.getAttribute('data-l');if(l==null)return;LS[l]=+e.target.getAttribute('data-o');OP=+l;sv('gcg_les',LS);les()};
+var LF=0;
+function league(){var rows=Object.keys(M).map(function(k){return{k:k,v:M[k].ch[LF]}}).sort(function(a,b){return(b.v==null?-1e9:b.v)-(a.v==null?-1e9:a.v)});
+$('lg').innerHTML='<table><tr><th></th><th>Metal</th><th>Move</th><th>Price</th></tr>'+rows.map(function(r,i){return'<tr><td>'+(r.v==null?'':(md[i]||(i+1)))+'</td><td>'+M[r.k].n+'</td><td>'+pct(r.v)+'</td><td>$'+fm(M[r.k].p)+'</td></tr>'}).join('')+'</table><div class="note">Best to worst this '+TF[LF].toLowerCase()+'. n/a means no verified figure.</div>'}
+$('ltf').innerHTML=TF.map(function(t,i){return '<button aria-pressed="'+(i==LF)+'" data-i="'+i+'">'+t+'</button>'}).join('');
+$('ltf').onclick=function(e){var i=e.target.getAttribute('data-i');if(i==null)return;LF=+i;Array.prototype.forEach.call($('ltf').children,function(b,j){b.setAttribute('aria-pressed',j==LF)});league()};
+var H={cu:[1650,1810,1490,1570,2280,3260,4580,6310,6670,3070,7380,9590,7600,7970,7360,6350,4720,5490,7200,5960,6170,7760,9700,8370,8500,8770,12500,13645],al:[1540,1570,1350,1350,1580,1880,2280,2770,2380,1450,2230,2470,1960,2070,1780,1830,1490,1710,2140,1840,1790,2000,2800,2360,2350,2550,2900,3061],ni:[8500,6900,5900,6800,15100,15200,13600,32500,24700,9600,18400,24000,17800,17000,13900,15200,8800,10100,12000,11000,14000,16600,20000,29000,16500,15200,14900,16320],zn:[1190,1030,780,780,1030,1300,1880,4600,2400,1130,2590,2430,1820,2050,1880,2180,1500,2600,3320,2520,2300,2750,3540,3000,2650,2970,3100,3728],fe:[0,0,0,0,0,0,0,0,0,65,140,170,130,140,135,70,40,80,72,70,92,160,115,108,135,100,105,92.6]};
+var HN={cu:'Copper',al:'Aluminium',ni:'Nickel',zn:'Zinc',fe:'Iron ore'};
+function yr(y){var a=[];for(var k in H){var v=H[k][y-1999],u=H[k][y-2000];if(v&&u)a.push({k:k,g:(v/u-1)*100})}return a.sort(function(a,b){return b.g-a.g})}
+var HY=2026;function hist(){var y=HY;Array.prototype.forEach.call($('yrs').children,function(b){b.setAttribute('aria-pressed',+b.getAttribute('data-y')==y)});$('ylab').textContent=y==2026?'2026 (year to date)':y;$('hy').innerHTML='<table><tr><th></th><th>Metal</th><th>Gain</th></tr>'+yr(y).map(function(r,i){return'<tr><td>'+(md[i]||(i+1))+'</td><td>'+HN[r.k]+'</td><td>'+pct(r.g)+'</td></tr>'}).join('')+'</table>'}
+function medals(){var t={};for(var y=2000;y<=2026;y++)yr(y).forEach(function(r,i){if(i<3){t[r.k]=t[r.k]||[0,0,0];t[r.k][i]++}});var ks=Object.keys(t).sort(function(a,b){return t[b][0]-t[a][0]||t[b][1]-t[a][1]||t[b][2]-t[a][2]});$('hm').innerHTML='<table><tr><th>Metal</th><th>🥇</th><th>🥈</th><th>🥉</th></tr>'+ks.map(function(k){return'<tr><td>'+HN[k]+'</td><td>'+t[k][0]+'</td><td>'+t[k][1]+'</td><td>'+t[k][2]+'</td></tr>'}).join('')+'</table>'}
+(function(){var h='';for(var y=2000;y<=2026;y++)h+='<button aria-pressed="'+(y==HY)+'" data-y="'+y+'">'+y+'</button>';$('yrs').innerHTML=h;$('yrs').onclick=function(e){var y=e.target.getAttribute('data-y');if(y){HY=+y;hist()}}})();
+chips();prices();draw();panel();elec();bill();league();hist();medals();inv();why();prod();ctrl();stuff();wl();hd();xr();sim();les();
+// ---- Live data hook ----
+// Call GCGMetals.update(data) or postMessage({gcgMetals:data}) from the host page to push live prices.
+// Shape: {asOf:'2026-11-14T09:30:00Z', metals:{cu:{p:13645,ch:[day,week,month,year],ath:14875}, ...}, stocks:{cu:319675,...}, producers:{FCX:'+3.0% today'}, power:{USA:0.08}}
+// Every field is optional; anything missing keeps its snapshot value.
+var FEED_URL='',FEED_MS=60000,LIVE=false;
+var stp=document.createElement('div');stp.className='note';document.querySelector('.sub').after(stp);
+function stamp(t){stp.innerHTML=LIVE?'<span style="color:var(--up)">●</span> Live data, updated '+t:'<span style="color:var(--mute)">●</span> Snapshot of 12–13 Nov 2026, not live'}
+function rerender(){prices();inv();league();prod();sim();xr();hist();medals();elec();bill()}
+function applyFeed(d){if(!d||typeof d!='object')return;try{
+if(d.metals)for(var k in d.metals){var s=d.metals[k];if(!M[k]||!s)continue;if(typeof s.p=='number')M[k].p=s.p;if(s.ch&&s.ch.length==4)M[k].ch=s.ch;if(typeof s.ath=='number')M[k].ath=s.ath;if(H[k]&&typeof s.p=='number')H[k][27]=s.p}
+if(d.stocks)for(var j in d.stocks)if(INV[j]&&typeof d.stocks[j]=='number')INV[j][0]=d.stocks[j];
+if(d.producers)PR.forEach(function(r){if(d.producers[r[1]]!=null)r[4]=String(d.producers[r[1]])});
+if(d.power){for(var id in d.power)if(typeof d.power[id]=='number')E[id]=d.power[id];CT.forEach(function(c){if(E[c.id])c.p=E[c.id]});CT.sort(function(a,b){return a.p-b.p})}
+var t=d.asOf?new Date(d.asOf):new Date(),old=Date.now()-t.getTime()>864e5;LIVE=true;stamp(t.toLocaleString('en-GB')+(old?' (delayed)':''));rerender()}catch(e){}}
+window.GCGMetals={update:applyFeed};
+window.addEventListener('message',function(e){if(e.source===window.parent&&e.data&&e.data.gcgMetals)applyFeed(e.data.gcgMetals)});
+function loadFeed(){if(!FEED_URL)return;fetch(FEED_URL,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(applyFeed).catch(function(){})}
+stamp();if(FEED_URL){loadFeed();setInterval(loadFeed,FEED_MS)}
+// Tell the host page how tall the content is so the iframe doesn't clip or scroll.
+function postH(){try{parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"industrial-tracker"},location.origin)}catch(e){}}
+try{new ResizeObserver(postH).observe(document.body)}catch(e){}
+</script></body></html>

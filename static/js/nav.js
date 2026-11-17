@@ -108,7 +108,8 @@
     ] },
     { name: 'Metals', pages: [
       ['Gold &amp; Silver', '/tools/data-visualisation/gold-silver-ratio'],
-      ['The Mining Globe', '/tools/data-visualisation/mining-globe']
+      ['The Mining Globe', '/tools/data-visualisation/mining-globe'],
+      ['The Industrial Tracker', '/tools/data-visualisation/industrial-tracker']
     ] },
     { name: 'Stocks', pages: [
       ['NASDAQ Wagon Wheel', '/tools/data-visualisation/nasdaq-wagon-wheel'],
