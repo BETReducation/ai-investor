@@ -3706,6 +3706,10 @@ def company():
 def privacy():
     return send_from_directory("static", "privacy.html")
 
+@app.route("/terms")
+def terms():
+    return send_from_directory("static", "terms.html")
+
 @app.route("/guides/signals")
 def guide_signals():
     return send_from_directory("static", "guide-signals.html")
@@ -6619,6 +6623,7 @@ SEARCH_PAGE_INDEX = [
     {"title": "Roadmap", "url": "/roadmap", "sub": "Progress towards MVP"},
     {"title": "Company", "url": "/company", "sub": "Growth Capital Group structure"},
     {"title": "Privacy and cookies", "url": "/privacy", "sub": "Analytics and cookie policy"},
+    {"title": "Terms of service", "url": "/terms", "sub": "Plans, billing, refunds and acceptable use"},
     {"title": "Signal Tracker — Full Guide", "url": "/guides/signals", "sub": "Illustrated user guide"},
     {"title": "Backtester — Full Guide", "url": "/guides/backtester", "sub": "Illustrated user guide"},
     {"title": "Portfolio Balancer — Full Guide", "url": "/guides/portfolio", "sub": "Illustrated user guide"},
