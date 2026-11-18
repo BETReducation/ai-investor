@@ -4608,6 +4608,14 @@ def api_billing_checkout():
             "subscription_data": {"metadata": {"username": current_user.id, "plan": plan["id"]}},
             "integration_identifier": "gcg-" + "".join(random.choices(string.ascii_lowercase, k=8)),
         }
+        # Terms link and 14-day waiver wording above the pay button. The required tick box needs a
+        # Terms URL in the Stripe Dashboard (Settings > Public details), so it's opt-in via env var.
+        terms_url = f"{base}/terms"
+        form["custom_text"] = {"submit": {"message": (
+            f"By subscribing you agree to our [Terms of service]({terms_url}). You ask us to give you access straight away "
+            "and, if you cancel within 14 days, you pay for the days you've used.")}}
+        if os.environ.get("STRIPE_TERMS_CONSENT") == "1":
+            form["consent_collection"] = {"terms_of_service": "required"}
         # Stripe Tax: opt in once registrations exist in the Dashboard (STRIPE_AUTOMATIC_TAX=1).
         if os.environ.get("STRIPE_AUTOMATIC_TAX") == "1":
             form["automatic_tax"] = {"enabled": True}
