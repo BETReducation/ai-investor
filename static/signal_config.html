@@ -2416,7 +2416,12 @@ function getApiInterval(timeframe) {
 async function apiFetch(path) {
   const res = await fetch(API_BASE + path, { credentials: 'include' });
   if (res.status === 401) { handleSessionExpiry(); throw new Error('Session expired'); }
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    // Surface the server's own message (e.g. "Failed to generate signals: ...") in the log.
+    let detail = '';
+    try { detail = (await res.json()).error || ''; } catch (_) {}
+    throw new Error(detail ? `HTTP ${res.status}: ${detail}` : `HTTP ${res.status}`);
+  }
   return res.json();
 }
 
