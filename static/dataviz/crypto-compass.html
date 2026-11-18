@@ -180,7 +180,11 @@ function draw(){
  document.querySelectorAll("#tg button").forEach(b=>b.classList.toggle("on",b.dataset.k===tf));
  const L=[...D].sort((a,b)=>b.ch[tf]-a.ch[tf]),n=D.length;
  const avg=D.reduce((s,c)=>s+c.ch[tf],0)/n,gr=D.filter(c=>c.ch[tf]>=0).length;
- const score=Math.max(0,Math.min(100,.6*(gr/n*100)+.4*(50+avg*(40/SC[tf]*2))));
+ // Breadth and momentum set the raw reading; the market's typical distance from all-time highs caps it,
+ // so Extreme Greed only shows when most coins sit near their peaks.
+ const mom=Math.max(0,Math.min(100,50+avg/SC[tf]*25)),raw=.55*(gr/n*100)+.45*mom;
+ const pr=D.map(c=>ATH[c.s]?Math.min(1,c.p/ATH[c.s][0]):null).filter(v=>v!=null).sort((a,b)=>a-b),prox=pr.length?pr[pr.length>>1]:.5;
+ const score=Math.max(0,Math.min(100,Math.min(raw,45+55*prox)));
  const lab=score>=80?"Extreme Greed 🚀":score>=60?"Bullish 🐂":score>=40?"Neutral 😐":score>=20?"Bearish 🐻":"Extreme Fear 😱";
  const ang=-90+score*1.8,pt=(a,r)=>[150+r*Math.cos(a*Math.PI/180),150+r*Math.sin(a*Math.PI/180)];
  let g="";const cols=["#ff4d6d","#ff8a3d","#ffd23d","#9be34a","#19e68c"];
@@ -341,6 +345,10 @@ fetch("/api/dataviz/crypto-compass/live").then(r=>r.ok?r.json():Promise.reject()
   for(const k in TF){if(x[k]!=null)c.ch[k]=x[k];else if(k==="y"&&j.source==="CoinMarketCap"){c.ch.y=0;noY++}}
   if(x.ath&&x.ath_date){const dt=new Date(x.ath_date);ATH[c.s]=[x.ath,dt.toLocaleString("en-GB",{month:"short",year:"numeric",timeZone:"UTC"})]}});
  if(hit<D.length*.6)return;
+ // Re-pick the compass's 50 from live market cap (stablecoins and wrapped tokens excluded) so the list isn't frozen.
+ const pool=D.concat(EX),ok=c=>K[c.s]&&K[c.s].mc&&!NOTV.has(c.s)&&!NOTN.test(K[c.s].n||"");
+ const t50=pool.filter(ok).sort((a,b)=>K[b.s].mc-K[a.s].mc).slice(0,D.length),inTop=new Set(t50);
+ if(t50.length===D.length){const rest=pool.filter(c=>!inTop.has(c));D.splice(0,D.length,...t50);EX.splice(0,EX.length,...rest);D.concat(EX).forEach((c,i)=>c.i=i)}
  const dm=j.dominance||{},cols={BTC:"#f7931a",ETH:"#627eea",USDT:"#26a17b",XRP:"#6b7ba4",BNB:"#f3ba2f",SOL:"#9945ff",USDC:"#2775ca",DOGE:"#c2a633",TRX:"#ff060a",ADA:"#3468d1"};
  const top=Object.keys(dm).sort((a,b)=>dm[b]-dm[a]).slice(0,10).map(k=>[k,+dm[k].toFixed(1),cols[k]||"#8d97b3"]);
  if(top.length>=5)domChart(top);
