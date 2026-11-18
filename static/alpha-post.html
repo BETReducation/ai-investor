@@ -443,6 +443,13 @@ function renderBlockLines(text, container) {
       h.className = 'post-subheading';
       h.textContent = line.slice(3).trim();
       container.appendChild(h);
+    } else if (/^\*\*[^*]+\*\*:?$/.test(line)) {
+      // A line that is only bold text is a section title (how some authors write headings).
+      closeList();
+      const h = document.createElement('h2');
+      h.className = 'post-subheading';
+      h.textContent = line.replace(/^\*\*|\*\*:?$/g, '').trim();
+      container.appendChild(h);
     } else if (imageMatch && /^(https?:\/\/|\/api\/)/.test(imageMatch[2])) {
       closeList();
       const img = document.createElement('img');
