@@ -9773,6 +9773,18 @@ def _backtest_impl():
                 if exit_gain_pct <= 0:
                     exit_gain_pct = None
                 exit_gain_mode = "require" if xargs.get("exit_gain_mode") == "require" else "signal"
+        # Optional separate SHORT rule sets (long & short mode): s_ = short entry (SELL signals),
+        # c_ = short exit / cover (BUY signals). Same prefix scheme as the exit set above.
+        short_kw = {}
+        for pre, key, match_key in (("s_", "short", "s_match"), ("c_", "cover", "c_match")):
+            if args.get(pre + "set") in ("1", "true"):
+                sitems = [(k[2:], v) for k in args.keys() if k.startswith(pre) and k not in (pre + "set", match_key) for v in args.getlist(k)]
+                sargs = MultiDict(sitems)
+                st, sc = _parse_backtest_set(sargs, entitlement_level)
+                short_kw[key + "_thresholds"] = st
+                short_kw[key + "_calc_params"] = sc
+                short_kw[key + "_min_confidence"] = float(sargs.get("min_confidence", min_confidence))
+                short_kw[key + "_match"] = "all" if args.get(match_key) == "all" else "any"
     except ValueError as e:
         return jsonify({"error": str(e) if "Invalid" in str(e) else f"Invalid parameter: {e}"}), 400
 
@@ -9815,6 +9827,7 @@ def _backtest_impl():
             level_price=level_price,
             level_cross=level_cross,
             reverse_on_stop=reverse_on_stop,
+            **short_kw,
         )
         metrics = calculate_metrics(trades, equity_curve)
 

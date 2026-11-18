@@ -1956,7 +1956,15 @@ function importBacktestStrategy(name) {
   if (!saved || !saved.config) { addLog('err', 'STRAT', `Could not find Backtester strategy "${name}"`); return; }
   const cfg = saved.config;
 
-  const { conditions, skippedModes } = translateBacktestConfig(cfg);
+  // A Backtester strategy can hold up to four rule sets (entry, exit, short entry, short exit); each condition
+  // keeps its natural buy/sell tag, and the strategy's trade direction decides what those mean here.
+  const conditions = [], skippedModes = [], seen = new Set();
+  [cfg, cfg._exit, cfg._short, cfg._cover].forEach((set, i) => {
+    if (i > 0 && !set) return;
+    const t = translateBacktestConfig(i === 0 ? cfg : { ...cfg, ...set });
+    t.conditions.forEach(c => { if (!seen.has(c.type)) { seen.add(c.type); conditions.push(c); } });
+    skippedModes.push(...t.skippedModes);
+  });
   if (conditions.length === 0) {
     addLog('warn', 'STRAT', `"${name}" translated to zero usable conditions — it may only use indicators/modes not yet supported here`);
     closeImportBacktestModal();

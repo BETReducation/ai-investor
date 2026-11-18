@@ -844,6 +844,10 @@
         <button type="button" id="dirBoth" onclick="setDirection('both')" class="dir-btn">LONG &amp; SHORT</button>
       </div>
       <div id="dirHelp" style="font-size:8px;color:var(--text-muted);line-height:1.5;"></div>
+      <div class="ctrl-row" id="splitShortRow" style="margin:8px 0 0;">
+        <span class="ctrl-name">Separate rules for shorts <span class="info-dot" tabindex="0" data-tip="Long &amp; short only. Give shorts their own entry and exit indicators instead of reading shorts off the same rules as longs. Each side's entry then closes the other side, so the two rule sets reverse into each other.">?</span></span>
+        <label class="toggle"><input type="checkbox" id="splitShort"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
       <div class="ctrl-row" id="reverseStopRow" style="margin:8px 0 0;">
         <span class="ctrl-name">Reverse on stop <span class="info-dot" tabindex="0" data-tip="Long &amp; short only. When a stop-loss or trailing stop closes a position, flip straight into the opposite side at the stop price instead of waiting for the next signal.">?</span></span>
         <label class="toggle"><input type="checkbox" id="reverseOnStop"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
@@ -2852,9 +2856,11 @@ function setDirection(d) {
   [['long', 'dirLong'], ['short', 'dirShort'], ['both', 'dirBoth']].forEach(([k, id]) =>
     document.getElementById(id).classList.toggle('active', k === tradeDirection));
   document.getElementById('dirHelp').textContent = DIR_HELP[tradeDirection];
-  const rs = document.getElementById('reverseStopRow');
-  rs.style.opacity = tradeDirection === 'both' ? '1' : '0.35';
-  rs.style.pointerEvents = tradeDirection === 'both' ? 'auto' : 'none';
+  ['reverseStopRow', 'splitShortRow'].forEach(id => {
+    const r = document.getElementById(id);
+    r.style.opacity = tradeDirection === 'both' ? '1' : '0.35';
+    r.style.pointerEvents = tradeDirection === 'both' ? 'auto' : 'none';
+  });
 }
 setDirection('long');
 

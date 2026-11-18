@@ -48,6 +48,14 @@ def run_backtest(
     level_price: float | None = None,
     level_cross: str = "below",
     reverse_on_stop: bool = False,
+    short_thresholds: dict | None = None,
+    short_calc_params: dict | None = None,
+    short_min_confidence: float | None = None,
+    short_match: str = "any",
+    cover_thresholds: dict | None = None,
+    cover_calc_params: dict | None = None,
+    cover_min_confidence: float | None = None,
+    cover_match: str = "any",
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -83,6 +91,11 @@ def run_backtest(
     ("above" -> BUY, "below" -> SELL) it overrides the indicator vote on that bar, so
     "go short if price falls through 150" works alongside, or instead of, the indicators.
 
+    short_* / cover_*: separate indicator sets for the short side. When short_* is given the
+    short entry is that set's SELL (the main set only ever opens longs) and the short exit is
+    cover_*'s BUY, falling back to the short set's own BUY. In "both" mode each side's entry
+    signal also closes the opposite position, so the two rule sets reverse into each other.
+
     reverse_on_stop (direction_mode="both" only): a stop-loss or trailing stop that closes
     a position flips straight into the opposite side at the stop price.
     """
@@ -95,6 +108,13 @@ def run_backtest(
     if exit_thresholds is not None or exit_calc_params is not None:
         exit_rows = run_backtest(df, thresholds=exit_thresholds, calc_params=exit_calc_params, signal_only=True)
     exit_min_conf = min_confidence if exit_min_confidence is None else exit_min_confidence
+    short_rows = cover_rows = None
+    if short_thresholds is not None or short_calc_params is not None:
+        short_rows = run_backtest(df, thresholds=short_thresholds, calc_params=short_calc_params, signal_only=True)
+    if cover_thresholds is not None or cover_calc_params is not None:
+        cover_rows = run_backtest(df, thresholds=cover_thresholds, calc_params=cover_calc_params, signal_only=True)
+    short_min_conf = min_confidence if short_min_confidence is None else short_min_confidence
+    cover_min_conf = short_min_conf if cover_min_confidence is None else cover_min_confidence
     signal_rows: dict = {}
 
     t  = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
@@ -882,6 +902,23 @@ def run_backtest(
             overall, confidence = level_side, 100.0
         prev_close = close
 
+        # Per-side entry decisions. With a separate short set the short entry is read from it;
+        # otherwise both sides read the one main set, exactly as before.
+        if short_rows is not None:
+            s_result, s_overall, s_conf = short_rows.get(date_str, (None, None, 0))
+            if level_side == "SELL" and s_result is not None:
+                s_result = {**s_result, "signals": s_result["signals"] + [level_sig]}
+                s_overall, s_conf = "SELL", 100.0
+            s_match, s_min = short_match, short_min_conf
+        else:
+            s_result, s_overall, s_conf, s_match, s_min = result, overall, confidence, entry_match, min_confidence
+        entry_ok = {
+            "long": level_side == "BUY" or (overall == "BUY" and confidence >= min_confidence
+                                            and (entry_match != "all" or _all_agree(result, "BUY"))),
+            "short": level_side == "SELL" or (s_overall == "SELL" and s_conf >= s_min
+                                              and (s_match != "all" or _all_agree(s_result, "SELL"))),
+        }
+
         # ── Manage open position ──────────────────────────────────────────
         # `side` decides everything that differs between a long and a short: which
         # signal closes it, which way the stops sit, and the sign of the return.
@@ -916,7 +953,12 @@ def run_backtest(
 
             exit_reason = exit_price = None
 
-            if exit_rows is not None:
+            x_min, x_match = exit_min_conf, exit_match
+            if side == "short" and (cover_rows is not None or short_rows is not None):
+                src = cover_rows if cover_rows is not None else short_rows
+                x_result, x_overall, x_conf = src.get(date_str, (None, None, 0))
+                x_min, x_match = (cover_min_conf, cover_match) if cover_rows is not None else (short_min_conf, short_match)
+            elif exit_rows is not None:
                 x_result, x_overall, x_conf = exit_rows.get(date_str, (None, None, 0))
             else:
                 x_result, x_overall, x_conf = result, overall, confidence
@@ -941,16 +983,25 @@ def run_backtest(
                     x_result = {**base, own_key: own, "signals": base["signals"] + [{"indicator": "Profit target", "type": close_side, "detail": detail, "weight": 2}]}
                     x_conf = round(max(own, opp) / (own + opp) * 100, 1)
                     x_overall = close_side if own > opp else x_overall
-                elif exit_match == "all":
+                elif x_match == "all":
                     x_overall = None   # ALL: the profit condition is one of the conditions that must be met
             # ALL: every indicator must have at least one trigger signalling a close on this bar.
-            if exit_match == "all" and x_overall == close_side and not _all_agree(x_result, close_side):
+            if x_match == "all" and x_overall == close_side and not _all_agree(x_result, close_side):
                 x_overall = None
 
+            forced = False
             if level_side == close_side:
                 base = x_result or result
                 x_result = {**base, "signals": base["signals"] + [level_sig]}
                 x_overall, x_conf = close_side, 100.0
+                forced = True
+            elif direction_mode == "both" and x_overall != close_side:
+                # Long & short mode reverses: the other side's entry signal closes this position,
+                # whether the two sides share one rule set or have their own.
+                if side == "long" and entry_ok["short"]:
+                    x_result, x_overall, x_conf, forced = s_result, "SELL", s_conf, True
+                elif side == "short" and entry_ok["long"]:
+                    x_result, x_overall, x_conf, forced = result, "BUY", confidence, True
 
             if side == "long":
                 sl_hit, tp_hit = low <= effective_sl, high >= tp_price
@@ -965,7 +1016,7 @@ def run_backtest(
             elif tp_hit:
                 exit_reason = "Take Profit"
                 exit_price  = tp_fill
-            elif x_overall == close_side and (x_conf >= exit_min_conf or level_side == close_side):
+            elif x_overall == close_side and (x_conf >= x_min or forced):
                 exit_reason = "Signal"
                 exit_price  = close
 
@@ -1027,13 +1078,16 @@ def run_backtest(
                     continue
                 if closed_this_bar and cand[0] == last_closed_side:
                     continue   # a reversal goes the other way, never straight back in
-                if level_side == cand[1] or (overall == cand[1] and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, cand[1]))):
+                if entry_ok[cand[0]]:
                     new_side = cand
                     break
             if new_side is not None:
                 side, entry_side = new_side
-                position = _open(side, close, _fired_signals(result["signals"], entry_side),
-                                 confidence, result["buy_score"], result["sell_score"])
+                src_res, src_conf = (s_result, s_conf) if side == "short" else (result, confidence)
+                if src_res is None:   # level trigger on a bar the short set has no row for
+                    src_res, src_conf = result, confidence
+                position = _open(side, close, _fired_signals(src_res["signals"], entry_side),
+                                 src_conf, src_res["buy_score"], src_res["sell_score"])
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
 

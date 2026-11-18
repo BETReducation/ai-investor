@@ -70,11 +70,46 @@
   const STEPS = [
     { title: 'Asset & period', h: 'What should the strategy be tested on?', hint: 'Pick the asset, how far back to look and the candle size. Nothing real is bought or sold. This is a simulation of what the rules would have done historically.', nodes: ['market', 'asset'] },
     { title: 'Capital & risk', h: 'How much would each simulated trade use?', hint: 'Starting capital, trade size, stop-loss and take-profit shape the simulated trades. Change them freely and compare the results.', nodes: ['currency', 'capital', 'trade', 'risk'] },
-    { title: 'Buy rules', h: 'When should it buy?', hint: 'Switch on the indicators that decide entries. A buy is simulated when enough of them agree (the Entry Min Confidence in step 2). You can also copy a strategy from the Signals page: its buy conditions become these rules and its sell conditions become the sell rules.', nodes: [] },
-    { title: 'Sell rules', h: 'When should it sell?', hint: 'Choose the indicators that close a trade. A sell happens when these agree, or sooner if the stop-loss or take-profit is hit. Pick sell-side triggers, such as overbought or a bearish cross. Without sell rules a position would only ever close on its stop or target.', nodes: [] },
+    { key: 'entry', title: '', h: '', hint: '', nodes: [] },
+    { key: 'exit', title: '', h: '', hint: '', nodes: [] },
+    { key: 'short', title: '', h: '', hint: '', nodes: [] },
+    { key: 'cover', title: '', h: '', hint: '', nodes: [] },
     { title: 'Review', h: 'Check it over', hint: '', nodes: [] },
   ];
-  const LAST = STEPS.length;
+  const LAST = STEPS.length;   // the Review step
+  let step = 1, snapBefore = null;
+  const dirMode = () => (typeof tradeDirection !== 'undefined' ? tradeDirection : 'long');
+  const isSplit = () => dirMode() === 'both' && !!$('splitShort') && $('splitShort').checked;
+  // Steps 5 and 6 (the short rules) only exist when shorts have their own rule sets.
+  const visibleSteps = () => (isSplit() ? [1, 2, 3, 4, 5, 6, LAST] : [1, 2, 3, 4, LAST]);
+
+  // What each rule step is called and says, by trade direction.
+  const COPY = {
+    long: {
+      entry: ['Buy rules', 'When should it buy?', 'Switch on the indicators that decide entries. A buy is simulated when enough of them agree (the Entry Min Confidence in step 2). You can also copy a strategy from the Signals page: its buy conditions become these rules and its sell conditions become the sell rules.'],
+      exit: ['Sell rules', 'When should it sell?', 'Choose the indicators that close a trade. A sell happens when these agree, or sooner if the stop-loss or take-profit is hit. Pick sell-side triggers, such as overbought or a bearish cross. Without sell rules a position would only ever close on its stop or target.'],
+      verbs: { entry: 'Buy when', exit: 'Sell when' }, confs: { exit: 'Sell' }, cards: { entry: 'BUY RULES', exit: 'SELL RULES' },
+    },
+    short: {
+      entry: ['Short entry rules', 'When should it go short?', 'Switch on the indicators that decide when to open a short, using sell-side triggers such as overbought or a bearish cross. A short is simulated when enough of them agree (the Entry Min Confidence in step 2). A short gains when the price falls.'],
+      exit: ['Cover rules', 'When should it close the short?', 'Choose the indicators that close a short (buy it back). Use buy-side triggers, such as oversold or a bullish cross. A cover happens when these agree, or sooner if the stop-loss or take-profit is hit.'],
+      verbs: { entry: 'Short when', exit: 'Cover when' }, confs: { exit: 'Cover' }, cards: { entry: 'SHORT ENTRY RULES', exit: 'COVER RULES' },
+    },
+    both: {
+      entry: ['Entry rules', 'What should open a position?', 'One set of rules drives both sides: buy-side triggers (oversold, bullish cross) open longs and sell-side triggers (overbought, bearish cross) open shorts. Each side\'s signal closes the opposite position, so the strategy reverses between long and short. Turn on "Separate rules for shorts" in the sidebar to give shorts their own indicators.'],
+      exit: ['Exit rules', 'When should a position close early?', 'Optional. Sell-side triggers close longs and buy-side triggers cover shorts before a reversal. Stops and reversals close trades even if this is left empty.'],
+      verbs: { entry: 'Enter when', exit: 'Exit when' }, confs: { exit: 'Exit' }, cards: { entry: 'ENTRY RULES', exit: 'EXIT RULES' },
+    },
+    split: {
+      entry: ['Long entry rules', 'When should it go long?', 'Switch on the indicators that open a long, using buy-side triggers such as oversold or a bullish cross. Shorts have their own rules in step 5. When a short entry fires, any open long is closed first.'],
+      exit: ['Long exit rules', 'When should a long close early?', 'Optional. Sell-side indicators that close a long before a short entry would. Stops and the short entry (step 5) also close longs.'],
+      short: ['Short entry rules', 'When should it go short?', 'Switch on the indicators that open a short, using sell-side triggers such as overbought or a bearish cross. When one fires, any open long is closed and the short opens in its place. A short gains when the price falls.'],
+      cover: ['Short exit rules', 'When should a short close early?', 'Optional. Buy-side indicators that cover a short before a long entry would. Stops and the long entry (step 3) also cover shorts.'],
+      verbs: { entry: 'Go long when', exit: 'Close long when', short: 'Go short when', cover: 'Cover when' }, confs: { exit: 'Long exit', short: 'Short entry', cover: 'Short exit' },
+      cards: { entry: 'LONG ENTRY RULES', exit: 'LONG EXIT RULES', short: 'SHORT ENTRY RULES', cover: 'SHORT EXIT RULES' },
+    },
+  };
+  const copyFor = () => COPY[isSplit() ? 'split' : dirMode()] || COPY.long;
 
   // Wizard shell
   const overlay = document.createElement('div');
@@ -84,8 +119,8 @@
     <div class="bt-wz" role="dialog" aria-modal="true" aria-labelledby="btWzTitle">
       <div class="bt-wz-head"><div class="bt-wz-title" id="btWzTitle">SET UP YOUR BACKTEST</div>
         <button type="button" class="bt-wz-close" aria-label="Close">&#10005;</button></div>
-      <div class="bt-wz-steps">${STEPS.map((s, i) => `<button type="button" data-step="${i + 1}"><b>${i + 1}</b> ${esc(s.title)}</button>`).join('')}</div>
-      <div class="bt-wz-body">${STEPS.map((s, i) => `<section class="bt-wz-step" data-step="${i + 1}" style="display:none;"><h3>${esc(s.h)}</h3><div class="bt-wz-hint">${esc(s.hint)}</div></section>`).join('')}</div>
+      <div class="bt-wz-steps"></div>
+      <div class="bt-wz-body">${STEPS.map((s, i) => `<section class="bt-wz-step" data-step="${i + 1}" style="display:none;"><h3 data-h></h3><div class="bt-wz-hint" data-hint>${esc(s.hint)}</div></section>`).join('')}</div>
       <div class="bt-wz-foot"><button type="button" class="bt-wz-btn" id="btWzBack">&larr; BACK</button>
         <button type="button" class="bt-wz-btn primary" id="btWzNext">NEXT &rarr;</button></div>
     </div>`;
@@ -112,13 +147,19 @@
   sigBox.className = 'bt-sig-box';
   sigBox.innerHTML = `<button type="button" class="bt-sig-btn" id="btSigBtn" title="Translate a strategy you built on the Signals page into buy and sell rules here">COPY STRATEGY FROM SIGNALS</button>
     <div class="bt-sig-hint" id="btSigHint">Pulls a strategy from the Signals page: buy conditions become the buy rules, sell conditions the sell rules. Review them before running.</div>`;
-  const exitBox = document.createElement('div');
-  exitBox.className = 'bt-sig-box';
-  exitBox.style.borderColor = 'var(--accent-red, #ef4444)';
-  exitBox.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-secondary);margin-bottom:4px;"><span>Sell Min Confidence <span class="info-dot" tabindex="0" data-tip="The % of your sell indicators that must agree before a position is closed on a signal.">?</span></span><b data-xconf-val>60%</b></div>
-    <input type="range" min="50" max="100" step="5" value="60" data-xconf style="width:100%;">
-    <button type="button" class="bt-sig-btn" data-copy-entry style="margin-top:8px;">START FROM THE BUY RULES</button>
-    <div class="bt-sig-hint">Copies the buy indicators across so you can adjust them for selling, for example switching RSI to overbought.</div>`;
+  // One confidence slider + "start from" shortcut per extra rule set (exit, short entry, short exit).
+  const COPY_FROM = { exit: ['entry', 'THE ENTRY RULES'], short: ['entry', 'THE LONG ENTRY RULES'], cover: ['short', 'THE SHORT ENTRY RULES'] };
+  const mkConfBox = key => {
+    const box = document.createElement('div');
+    box.className = 'bt-sig-box';
+    box.style.borderColor = 'var(--accent-red, #ef4444)';
+    box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-secondary);margin-bottom:4px;"><span><span data-conf-label="${key}">Sell</span> Min Confidence <span class="info-dot" tabindex="0" data-tip="The % of these indicators that must agree before this rule set acts on a signal.">?</span></span><b data-conf-val="${key}">60%</b></div>
+      <input type="range" min="50" max="100" step="5" value="60" data-conf="${key}" style="width:100%;">
+      <button type="button" class="bt-sig-btn" data-copy="${key}:${COPY_FROM[key][0]}" style="margin-top:8px;">START FROM ${COPY_FROM[key][1]}</button>
+      <div class="bt-sig-hint">Copies those indicators across so you can adjust them, for example switching RSI from oversold to overbought.</div>`;
+    return box;
+  };
+  const exitBox = mkConfBox('exit'), shortBox = mkConfBox('short'), coverBox = mkConfBox('cover');
   const gainBox = document.createElement('div');
   gainBox.className = 'bt-sig-box';
   gainBox.innerHTML = `<label style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-primary);cursor:pointer;"><input type="checkbox" data-gain-on> Profit from the buy price is at least</label>
@@ -129,17 +170,21 @@
     </select>
     <div class="bt-sig-hint">Unlike the take-profit in step 2, which sells the moment it is hit, this works as one of your sell rules. "Must be reached first" means an indicator sell is ignored until the trade is up by this much, e.g. RSI overbought AND +30%.</div>`;
   stepEl(3).appendChild(sigBox);
-  const mBuy = document.createElement('div');
-  mBuy.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary);margin-bottom:10px;max-width:480px;"><span>Buy when</span>
-    <select class="lab-input" data-match="entry" style="width:auto;margin:0;"><option value="any">ANY indicator signals</option><option value="all">ALL indicators signal</option></select></div>`;
-  stepEl(3).appendChild(mBuy.firstChild);
+  const mkMatch = key => {
+    const d = document.createElement('div');
+    d.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary);margin-bottom:10px;max-width:480px;"><span data-verb="${key}"></span>
+      <select class="lab-input" data-match="${key}" style="width:auto;margin:0;"><option value="any">ANY indicator signals</option><option value="all">ALL indicators signal</option></select></div>`;
+    return d.firstChild;
+  };
+  stepEl(3).appendChild(mkMatch('entry'));
   stepEl(3).appendChild(indWrap);
   stepEl(4).appendChild(exitBox);
   stepEl(4).appendChild(gainBox);
-  const mSell = document.createElement('div');
-  mSell.innerHTML = `<div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text-secondary);margin-bottom:10px;max-width:480px;"><span>Sell when</span>
-    <select class="lab-input" data-match="exit" style="width:auto;margin:0;"><option value="any">ANY indicator signals</option><option value="all">ALL indicators signal</option></select></div>`;
-  stepEl(4).appendChild(mSell.firstChild);
+  stepEl(4).appendChild(mkMatch('exit'));
+  stepEl(5).appendChild(shortBox);
+  stepEl(5).appendChild(mkMatch('short'));
+  stepEl(6).appendChild(coverBox);
+  stepEl(6).appendChild(mkMatch('cover'));
   wrapNumber(gainBox.querySelector('[data-gain-pct]'));
 
   // Rename the entry confidence slider now that sells have their own.
@@ -152,7 +197,7 @@
   const sum = document.createElement('div');
   sum.className = 'bt-sum-wrap';
   const card = (n, t) => `<div class="sum-card" id="btSumCard${n}"><div class="sum-head"><span class="sum-title">${n} · ${t}</span><button type="button" class="sum-edit" data-open="${n}">EDIT</button></div><div class="sum-body" id="btSumBody${n}"></div></div>`;
-  sum.innerHTML = `<button type="button" class="bt-open-btn" data-open="1">SET UP BACKTEST</button>${card(1, 'ASSET &amp; PERIOD')}${card(2, 'CAPITAL &amp; RISK')}${card(3, 'BUY RULES')}${card(4, 'SELL RULES')}`;
+  sum.innerHTML = `<button type="button" class="bt-open-btn" data-open="1">SET UP BACKTEST</button>${card(1, 'ASSET &amp; PERIOD')}${card(2, 'CAPITAL &amp; RISK')}${card(3, 'BUY RULES')}${card(4, 'SELL RULES')}${card(5, 'SHORT ENTRY RULES')}${card(6, 'SHORT EXIT RULES')}`;
   header.insertAdjacentElement('afterend', sum);
   sum.addEventListener('click', e => { const t = e.target.closest('[data-open]'); if (t) openWizard(+t.dataset.open); });
 
@@ -194,15 +239,18 @@
   const IND_ROOT = '#basicIndicators, #detailedIndicators';
   const rawSerialize = window.serializeBacktestConfig;
   const rawApply = window.applyBacktestConfig;
-  const sets = { entry: null, exit: null };
+  const sets = { entry: null, exit: null, short: null, cover: null };
   let activeSet = 'entry';
-  let exitMinConf = 60;
+  const confs = { exit: 60, short: 60, cover: 60 };   // entry uses the page's own Entry Min Confidence slider
   let exitGain = { on: false, pct: 30, mode: 'signal' };
-  const match = { entry: 'any', exit: 'any' };   // ALL = every indicator needs at least one trigger firing
+  const match = { entry: 'any', exit: 'any', short: 'any', cover: 'any' };   // ALL = every indicator needs at least one trigger firing
+  const SET_KEYS = ['entry', 'exit', 'short', 'cover'];
 
   const indSubset = cfg => { const o = {}; Object.keys(cfg).forEach(k => { const el = $(k); if (el && el.closest(IND_ROOT)) o[k] = cfg[k]; }); return o; };
   const blankSet = cfg => { const o = indSubset(cfg); Object.keys(o).forEach(k => { if (/^tog[A-Z]/.test(k)) o[k] = false; }); return o; };
   sets.exit = blankSet(rawSerialize());
+  sets.short = blankSet(rawSerialize());
+  sets.cover = blankSet(rawSerialize());
 
   const getSet = name => (name === activeSet ? indSubset(rawSerialize()) : (sets[name] || {}));
   function activate(name) {
@@ -217,8 +265,10 @@
     const live = rawSerialize();
     const liveInd = indSubset(live);
     const cfg = { ...live, ...(activeSet === 'entry' ? liveInd : sets.entry) };
-    cfg._exit = activeSet === 'exit' ? liveInd : sets.exit;
-    cfg._exitMinConf = exitMinConf;
+    ['exit', 'short', 'cover'].forEach(k => { cfg['_' + k] = activeSet === k ? liveInd : sets[k]; });
+    cfg._exitMinConf = confs.exit;
+    cfg._shortMinConf = confs.short;
+    cfg._coverMinConf = confs.cover;
     cfg._exitGain = { ...exitGain };
     cfg._match = { ...match };
     return cfg;
@@ -227,21 +277,26 @@
     activeSet = 'entry';
     // Strategies saved before sell rules existed: reuse the one indicator set for selling, as they always ran.
     sets.exit = cfg._exit ? { ...cfg._exit } : indSubset(cfg);
+    // Strategies saved before shorts had their own rules have no short/cover sets.
+    sets.short = cfg._short ? { ...cfg._short } : blankSet(cfg);
+    sets.cover = cfg._cover ? { ...cfg._cover } : blankSet(cfg);
     sets.entry = null;
     setMatch(cfg._match || {});
     setExitGain(cfg._exitGain || { on: false, pct: 30, mode: 'signal' });
-    setExitConf(cfg._exitMinConf !== undefined ? cfg._exitMinConf : (cfg.minConf !== undefined ? cfg.minConf : 60));
+    setConf('exit', cfg._exitMinConf !== undefined ? cfg._exitMinConf : (cfg.minConf !== undefined ? cfg.minConf : 60));
+    setConf('short', cfg._shortMinConf !== undefined ? cfg._shortMinConf : 60);
+    setConf('cover', cfg._coverMinConf !== undefined ? cfg._coverMinConf : 60);
     return rawApply(cfg);
   };
 
-  function setExitConf(v) {
-    exitMinConf = Math.min(100, Math.max(50, parseFloat(v) || 60));
-    const r = overlay.querySelector('[data-xconf]'), l = overlay.querySelector('[data-xconf-val]');
-    if (r) r.value = exitMinConf;
-    if (l) l.textContent = exitMinConf + '%';
+  function setConf(key, v) {
+    confs[key] = Math.min(100, Math.max(50, parseFloat(v) || 60));
+    const r = overlay.querySelector(`[data-conf="${key}"]`), l = overlay.querySelector(`[data-conf-val="${key}"]`);
+    if (r) r.value = confs[key];
+    if (l) l.textContent = confs[key] + '%';
   }
   function setMatch(m) {
-    ['entry', 'exit'].forEach(k => {
+    SET_KEYS.forEach(k => {
       match[k] = m[k] === 'all' ? 'all' : 'any';
       const el = overlay.querySelector(`[data-match="${k}"]`);
       if (el) el.value = match[k];
@@ -259,12 +314,15 @@
     pct: overlay.querySelector('[data-gain-pct]').value,
     mode: overlay.querySelector('[data-gain-mode]').value,
   });
-  overlay.addEventListener('input', e => { if (e.target.matches('[data-xconf]')) setExitConf(e.target.value); });
+  overlay.addEventListener('input', e => { if (e.target.matches('[data-conf]')) setConf(e.target.dataset.conf, e.target.value); });
   overlay.addEventListener('input', e => { if (e.target.matches('[data-gain-pct]')) exitGain.pct = parseFloat(e.target.value) > 0 ? parseFloat(e.target.value) : exitGain.pct; });
   overlay.addEventListener('change', e => { if (e.target.matches('[data-gain-on],[data-gain-pct],[data-gain-mode]')) readGain(); });
   overlay.addEventListener('click', e => {
-    if (!e.target.closest('[data-copy-entry]')) return;
-    if (activeSet === 'exit') rawApply({ ...rawSerialize(), ...sets.entry });   // sets.entry was stored when sell rules were opened
+    const b = e.target.closest('[data-copy]');
+    if (!b) return;
+    const [key, src] = b.dataset.copy.split(':');
+    // The source set was stored when its own step was left, so it is available here.
+    if (activeSet === key && sets[src]) rawApply({ ...rawSerialize(), ...sets[src] });
   });
 
   // ── Summary text ───────────────────────────────────────────────────────────
@@ -286,9 +344,12 @@
       return modes ? `${name}: ${modes}` : name;
     });
   }
-  const ruleChips = list => list.length
+  const ruleChips = (list, optional) => list.length
     ? `<div class="sum-chips">${list.map(n => `<span class="sum-chip">${esc(n)}</span>`).join('')}</div>`
-    : '<div class="sum-empty" style="color:var(--accent-amber);">None set yet. Required to run.</div>';
+    : (optional ? '<div class="sum-empty">None set. Optional.</div>' : '<div class="sum-empty" style="color:var(--accent-amber);">None set yet. Required to run.</div>');
+  // Entry rules always need something; exit rules only when stops are the sole other way out (long or short mode).
+  const required = key => key === 'entry' || key === 'short' || (key === 'exit' && !isSplit() && dirMode() !== 'both');
+  const CARD_STEP = { entry: 3, exit: 4, short: 5, cover: 6 };
 
   function sumAsset() {
     const custom = $('customPanel').style.display !== 'none';
@@ -302,29 +363,63 @@
       + line('Stop-loss', '−' + esc(fieldText('slVal', '%'))) + line('Take-profit', '+' + esc(fieldText('tpVal', '%')))
       + ($('trailSL').checked ? line('Trailing stop', parseFloat($('trailDist').value).toFixed(1) + '%') : '');
   }
-  function sumBuy() {
-    const mode = (typeof indicatorMode !== 'undefined' && indicatorMode === 'detailed') ? 'Advanced' : 'Basic';
-    const note = $('btGatingNote') ? `<div class="sum-note">${esc($('btGatingNote').textContent)}</div>` : '';
-    return line('Mode', mode) + line('Buy when', match.entry === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', $('minConf').value + '%') + ruleChips(rulesFor(getSet('entry'))) + note
-      + `<button type="button" class="bt-sig-btn" style="margin-top:8px;" data-sig>COPY STRATEGY FROM SIGNALS</button>`;
+  function sumSet(key) {
+    const c = copyFor();
+    const rules = rulesFor(getSet(key));
+    if (key === 'exit' && exitGain.on) rules.push(`Profit +${exitGain.pct}% from entry (${exitGain.mode === 'require' ? 'must be reached first' : 'counts as a signal'})`);
+    const verb = (c.verbs[key] || '');
+    if (key === 'entry') {
+      const mode = (typeof indicatorMode !== 'undefined' && indicatorMode === 'detailed') ? 'Advanced' : 'Basic';
+      const note = $('btGatingNote') ? `<div class="sum-note">${esc($('btGatingNote').textContent)}</div>` : '';
+      return line('Mode', mode) + line(verb, match.entry === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', $('minConf').value + '%') + ruleChips(rules, false) + note
+        + `<button type="button" class="bt-sig-btn" style="margin-top:8px;" data-sig>COPY STRATEGY FROM SIGNALS</button>`;
+    }
+    const closes = key === 'exit' ? (dirMode() === 'both' || isSplit() ? 'Also closes at a stop-loss, take-profit or the opposite entry.' : 'Also closes at the stop-loss or take-profit.')
+      : 'Also closes at a stop-loss, take-profit or the opposite entry.';
+    return line(verb, match[key] === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', confs[key] + '%') + ruleChips(rules, !required(key))
+      + `<div class="sum-note">${closes}</div>`;
   }
-  function sumSell() {
-    const rules = rulesFor(getSet('exit'));
-    if (exitGain.on) rules.push(`Profit +${exitGain.pct}% from buy (${exitGain.mode === 'require' ? 'must be reached first' : 'counts as a signal'})`);
-    return line('Sell when', match.exit === 'all' ? 'ALL signal' : 'ANY signals') + line('Min confidence', exitMinConf + '%') + ruleChips(rules)
-      + '<div class="sum-note">Also closes at the stop-loss or take-profit.</div>';
-  }
-  const snapshot = () => [sumAsset(), sumRisk(), sumBuy(), sumSell()];
+  const snapshot = () => [sumAsset(), sumRisk(), sumSet('entry'), sumSet('exit'), sumSet('short'), sumSet('cover')];
 
   // Runs on a timer and only touches the DOM when a card changed, so edits made anywhere
   // (pop-up, saved strategy load, copy from Signals) reach the sidebar.
   function renderSummary() {
     let snap;
     try { snap = snapshot(); } catch (e) { return; }
+    applyTitles();
     snap.forEach((html, i) => {
       const el = $('btSumBody' + (i + 1));
       if (el && el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
     });
+  }
+  // Keeps every label that depends on trade direction in step with it.
+  let titlesKey = '';
+  function applyTitles() {
+    const c = copyFor(), split = isSplit();
+    const k = dirMode() + (split ? '+split' : '');
+    if (k === titlesKey) return;
+    titlesKey = k;
+    ['entry', 'exit', 'short', 'cover'].forEach(key => {
+      const idx = CARD_STEP[key] - 1, t = c[key];
+      if (t) { STEPS[idx].title = t[0]; STEPS[idx].h = t[1]; STEPS[idx].hint = t[2]; }
+      const sec = stepEl(CARD_STEP[key]);
+      if (sec && t) { sec.querySelector('[data-h]').textContent = t[1]; sec.querySelector('[data-hint]').textContent = t[2]; }
+      overlay.querySelectorAll(`[data-verb="${key}"]`).forEach(el => { el.textContent = c.verbs[key] || ''; });
+      overlay.querySelectorAll(`[data-conf-label="${key}"]`).forEach(el => { el.textContent = (c.confs && c.confs[key]) || ''; });
+      const card = $('btSumCard' + CARD_STEP[key]);
+      if (card) {
+        const ttl = card.querySelector('.sum-title');
+        if (ttl) ttl.textContent = `${CARD_STEP[key]} · ${(c.cards && c.cards[key]) || ''}`;
+        if (key === 'short' || key === 'cover') card.style.display = split ? '' : 'none';
+      }
+    });
+    renderStepsBar();
+    if (overlay.style.display === 'flex' && !visibleSteps().includes(step)) go(4);
+  }
+  function renderStepsBar() {
+    const vis = visibleSteps();
+    overlay.querySelector('.bt-wz-steps').innerHTML = vis.map((id, i) =>
+      `<button type="button" data-step="${id}" class="${id === step ? 'active' : ''}"><b>${i + 1}</b> ${esc(STEPS[id - 1].title)}</button>`).join('');
   }
   // Rough candle count for the chosen period + timeframe, so a too-short combination
   // is flagged before the run (the backend needs ~35 candles for MACD at defaults).
@@ -365,7 +460,6 @@
   sum.addEventListener('click', e => { if (e.target.closest('[data-sig]')) openSignalsImport(); });
 
   // ── Wizard flow ────────────────────────────────────────────────────────────
-  let step = 1, snapBefore = null;
   function openWizard(n) {
     snapBefore = snapshot();
     overlay.style.display = 'flex';
@@ -384,31 +478,43 @@
     });
   }
   function go(n) {
-    step = Math.max(1, Math.min(LAST, n));
-    // The shared indicator controls live in step 3 (buy) or step 4 (sell); load that side's values.
-    if (step === 4) { activate('exit'); stepEl(4).appendChild(indWrap); }
+    applyTitles();
+    const vis = visibleSteps();
+    step = vis.includes(n) ? n : (vis.find(v => v >= n) || LAST);
+    // The shared indicator controls live in whichever rule step is open; load that rule set's values.
+    const key = STEPS[step - 1].key;
+    if (key) { activate(key); stepEl(step).appendChild(indWrap); }
     else { activate('entry'); stepEl(3).appendChild(indWrap); }
+    renderStepsBar();
     overlay.querySelectorAll('.bt-wz-step').forEach(el => { el.style.display = +el.dataset.step === step ? '' : 'none'; });
-    overlay.querySelectorAll('.bt-wz-steps button').forEach(b => b.classList.toggle('active', +b.dataset.step === step));
-    $('btWzBack').disabled = step === 1;
+    $('btWzBack').disabled = step === vis[0];
     $('btWzNext').innerHTML = step === LAST ? '&#10003; DONE' : 'NEXT &rarr;';
     overlay.querySelector('.bt-wz-body').scrollTop = 0;
     if (step === LAST) renderReview();
   }
   function missingRules() {
     const m = [];
-    if (!rulesFor(getSet('entry')).length) m.push([3, 'No buy rules are set. Choose at least one indicator in step 3.']);
-    if (!rulesFor(getSet('exit')).length && !exitGain.on) m.push([4, 'No sell rules are set. Choose at least one indicator in step 4.']);
+    const c = copyFor();
+    ['entry', 'exit', 'short', 'cover'].forEach(key => {
+      if (!visibleSteps().includes(CARD_STEP[key]) || !required(key)) return;
+      if (rulesFor(getSet(key)).length || (key === 'exit' && exitGain.on)) return;
+      m.push([CARD_STEP[key], `No ${c[key][0].toLowerCase()} are set. Choose at least one indicator in the "${c[key][0]}" step.`]);
+    });
     return m;
   }
   function renderReview() {
-    const [a, b, c, d] = snapshot();
+    const snap = snapshot();
     const warns = missingRules().map(x => x[1]);
-    const cd = (t, body, s) => `<div class="sum-card"><div class="sum-head"><span class="sum-title">${t}</span><button type="button" class="sum-edit" data-go="${s}">EDIT</button></div><div class="sum-body">${body}</div></div>`;
+    const cd = (t, body, st) => `<div class="sum-card"><div class="sum-head"><span class="sum-title">${t}</span><button type="button" class="sum-edit" data-go="${st}">EDIT</button></div><div class="sum-body">${body}</div></div>`;
     const noBtn = h => h.replace(/<button[\s\S]*?<\/button>/, '');
+    const c = copyFor();
+    const cards = [cd('ASSET &amp; PERIOD', snap[0], 1), cd('CAPITAL &amp; RISK', snap[1], 2)];
+    ['entry', 'exit', 'short', 'cover'].forEach((key, i) => {
+      if (visibleSteps().includes(CARD_STEP[key])) cards.push(cd(c.cards[key], noBtn(snap[2 + i]), CARD_STEP[key]));
+    });
     stepEl(LAST).innerHTML = `<h3>${esc(STEPS[LAST - 1].h)}</h3>`
       + warns.map(w => `<div class="bt-wz-warn">${w}</div>`).join('')
-      + `<div class="bt-wz-review">${cd('ASSET &amp; PERIOD', a, 1)}${cd('CAPITAL &amp; RISK', b, 2)}${cd('BUY RULES', noBtn(c), 3)}${cd('SELL RULES', d, 4)}</div>`
+      + `<div class="bt-wz-review">${cards.join('')}</div>`
       + `<div class="bt-wz-hint" style="margin-top:10px;">Results show what the rules would have done historically. This is a simulation for learning, not advice.</div>`
       + `<button type="button" class="bt-wz-run" id="btWzRun">&#9654; RUN BACKTEST</button>`;
   }
@@ -416,6 +522,8 @@
     if (e.target === overlay) return closeWizard();
     const g = e.target.closest('[data-go]');
     if (g) return go(+g.dataset.go);
+    const sb = e.target.closest('.bt-wz-steps button');
+    if (sb) return go(+sb.dataset.step);
     if (e.target.closest('#btWzRun')) {
       const miss = missingRules();
       if (miss.length) return go(miss[0][0]);
@@ -423,18 +531,19 @@
     }
   });
   overlay.querySelector('.bt-wz-close').addEventListener('click', closeWizard);
-  overlay.querySelectorAll('.bt-wz-steps button').forEach(b => b.addEventListener('click', () => go(+b.dataset.step)));
-  $('btWzBack').addEventListener('click', () => go(step - 1));
-  $('btWzNext').addEventListener('click', () => (step >= LAST ? closeWizard() : go(step + 1)));
+  $('btWzBack').addEventListener('click', () => { const v = visibleSteps(); go(v[Math.max(0, v.indexOf(step) - 1)]); });
+  $('btWzNext').addEventListener('click', () => { const v = visibleSteps(); return step >= LAST ? closeWizard() : go(v[v.indexOf(step) + 1]); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (sigOverlay.style.display !== 'none') sigOverlay.style.display = 'none';
     else if (overlay.style.display !== 'none') closeWizard();
   });
 
-  // ── Running: buy rules go as normal params, sell rules as x_-prefixed params (POST body) ──
+  // ── Running: entry rules go as normal params; each extra rule set as a prefixed param (POST body) ──
+  //   x_ = exit rules, s_ = short entry rules, c_ = short exit rules
   const SHARED_KEYS = new Set(['symbol', 'period', 'interval', 'start_date', 'end_date', 'stop_loss', 'take_profit', 'sl_tp_unit',
-    'trailing_stop', 'trail_distance', 'capital', 'trade_amount_mode', 'trade_amount', 'min_confidence']);
+    'trailing_stop', 'trail_distance', 'capital', 'trade_amount_mode', 'trade_amount', 'min_confidence',
+    'direction', 'reverse_on_stop', 'level_price', 'level_cross']);
   let captured = null, extra = null;
   window.btParamsHook = function (params) {
     if (captured) { captured.params = params; return 'stop'; }
@@ -452,17 +561,26 @@
       return;
     }
     if (window.innerWidth <= 768 && $('labMain')) $('labMain').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Let the page build the sell-rule params from the controls (dry run), then do the real run.
-    activate('exit');
-    captured = {};
-    try { await origRun.apply(this, arguments); } finally { var xp = captured.params; captured = null; activate('entry'); }
-    if (!xp) return;   // page-level validation already showed its message
-    extra = [['x_set', '1'], ['x_min_confidence', exitMinConf], ['entry_match', match.entry], ['x_match', match.exit]];
+    // Let the page build each extra rule set's params from the controls (dry runs), then do the real run.
+    const split = isSplit();
+    const wanted = [['exit', 'x_']];
+    if (split) { wanted.push(['short', 's_']); if (rulesFor(getSet('cover')).length) wanted.push(['cover', 'c_']); }
+    const got = {};
+    for (const [key] of wanted) {
+      activate(key);
+      captured = {};
+      try { await origRun.apply(this, arguments); } finally { got[key] = captured.params; captured = null; activate('entry'); }
+      if (!got[key]) return;   // page-level validation already showed its message
+    }
+    extra = [['x_set', '1'], ['x_min_confidence', confs.exit], ['entry_match', match.entry], ['x_match', match.exit]];
     if (exitGain.on) {
-      // "Must be reached first" needs indicators to gate; with none it is just a profit-target sell signal.
+      // "Must be reached first" needs indicators to gate; with none it is just a profit-target close signal.
       extra.push(['x_exit_gain_pct', exitGain.pct], ['x_exit_gain_mode', exitGain.mode === 'require' && rulesFor(sets.exit).length ? 'require' : 'signal']);
     }
-    xp.forEach((v, k) => { if (!SHARED_KEYS.has(k)) extra.push(['x_' + k, v]); });
+    wanted.forEach(([key, pre]) => {
+      if (key !== 'exit') extra.push([pre + 'set', '1'], [pre + 'min_confidence', confs[key]], [pre + 'match', match[key]]);
+      got[key].forEach((v, k) => { if (!SHARED_KEYS.has(k)) extra.push([pre + k, v]); });
+    });
     try { return await origRun.apply(this, arguments); } finally { extra = null; }
   };
 
@@ -489,10 +607,10 @@
       const prefs = (await res.json()).preferences || {};
       sigCache = [];
       if (Array.isArray(prefs.strategyConditions) && prefs.strategyConditions.length) {
-        sigCache.push({ name: prefs.strategyName || 'Current strategy', sub: 'Open on the Signals page now', conditions: prefs.strategyConditions, match: prefs.strategyMatch, prefs });
+        sigCache.push({ name: prefs.strategyName || 'Current strategy', sub: 'Open on the Signals page now', conditions: prefs.strategyConditions, match: prefs.strategyMatch, direction: prefs.strategyDirection, current: true, prefs });
       }
       (Array.isArray(prefs.savedStrategies) ? prefs.savedStrategies : []).forEach(s => {
-        if (s && Array.isArray(s.conditions) && s.conditions.length) sigCache.push({ name: s.name, sub: 'Saved on Signals', conditions: s.conditions, match: s.match, prefs });
+        if (s && Array.isArray(s.conditions) && s.conditions.length) sigCache.push({ name: s.name, sub: 'Saved on Signals', conditions: s.conditions, match: s.match, direction: s.direction, prefs });
       });
       if (!sigCache.length) { list.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">No Signals strategies yet. Build one on the Signals page first.</div>'; return; }
       list.innerHTML = sigCache.map((s, i) => `<div class="bt-sig-row"><div style="min-width:0;"><div class="nm">${esc(s.name)}</div><div class="sub">${esc(s.sub)} · ${s.conditions.length} condition${s.conditions.length === 1 ? '' : 's'}</div></div>
@@ -544,7 +662,10 @@
     return { used, values, params, skipped };
   }
 
-  // Signals conditions carry a buy/sell direction: buys become the buy rules, sells the sell rules.
+  // Signals conditions carry a buy/sell direction and the strategy a trade direction. Which Backtester rule set a
+  // condition feeds depends on that direction:
+  //   long  - buys open (entry), sells close (exit)         short - sells open (entry), buys close (exit)
+  //   both  - buys open a long (entry), sells open a short (own short rules)
   function setFromSignals(t, restricted) {
     const o = blankSet(rawSerialize());
     t.used.forEach(({ spec, modes }, togId) => {
@@ -561,19 +682,32 @@
 
   function copyFromSignals(item) {
     const restricted = typeof btGating !== 'undefined' && btGating && btGating.restricted;
+    const p0 = item.prefs || {};
+    const hasBuy = item.conditions.some(c => c.direction !== 'sell'), hasSell = item.conditions.some(c => c.direction === 'sell');
+    const inferred = hasBuy && hasSell ? 'both' : (hasSell ? 'short' : 'long');   // older Signals saves have no direction
+    const dir = ['long', 'short', 'both'].includes(item.direction) ? item.direction
+      : (item.current && ['long', 'short', 'both'].includes(p0.strategyDirection) ? p0.strategyDirection : inferred);
     const buys = item.conditions.filter(c => c.direction !== 'sell');
     const sells = item.conditions.filter(c => c.direction === 'sell');
-    const tb = translateSignals(buys, restricted), ts = translateSignals(sells, restricted);
+    const groups = dir === 'short' ? { entry: sells, exit: buys } : dir === 'both' ? { entry: buys, short: sells } : { entry: buys, exit: sells };
+    const tr = {};
+    Object.entries(groups).forEach(([k, conds]) => { tr[k] = translateSignals(conds, restricted); });
     const hint = $('btSigHint');
-    if (!tb.used.size && !ts.used.size) {
+    if (!Object.values(tr).some(t => t.used.size)) {
       hint.textContent = `"${item.name}" has no conditions the Backtester can run${restricted ? ' on your plan' : ''}.`;
       sigOverlay.style.display = 'none';
       return;
     }
-    const cfg = { ...rawSerialize(), ...setFromSignals(tb, restricted) };
+    const blank = blankSet(rawSerialize());
+    const cfg = { ...rawSerialize(), ...setFromSignals(tr.entry, restricted) };
     cfg._indicatorMode = restricted ? 'basic' : 'detailed';
-    cfg._exit = setFromSignals(ts, restricted);
-    cfg._match = { entry: item.match === 'all' ? 'all' : 'any', exit: item.match === 'all' ? 'all' : 'any' };
+    cfg._exit = tr.exit ? setFromSignals(tr.exit, restricted) : blank;
+    cfg._short = tr.short ? setFromSignals(tr.short, restricted) : blank;
+    cfg._cover = blank;
+    const m = item.match === 'all' ? 'all' : 'any';
+    cfg._match = { entry: m, exit: m, short: m, cover: m };
+    cfg.splitShort = dir === 'both';
+    cfg._direction = dir;
 
     // Risk settings from the Signals page (percent-based on both pages). Forex here is pip-based, so skip those.
     const p = item.prefs || {};
@@ -583,23 +717,25 @@
       if (typeof p.trailSL === 'boolean') cfg.trailSL = p.trailSL;
       if (isFinite(p.trailDist)) cfg.trailDist = p.trailDist;
     }
-    if (isFinite(p.minConfidence)) { cfg.minConf = p.minConfidence; cfg._exitMinConf = p.minConfidence; }
-    else cfg._exitMinConf = exitMinConf;
+    if (isFinite(p.minConfidence)) { cfg.minConf = p.minConfidence; cfg._exitMinConf = p.minConfidence; cfg._shortMinConf = p.minConfidence; }
+    else { cfg._exitMinConf = confs.exit; cfg._shortMinConf = confs.short; }
+    cfg._coverMinConf = confs.cover;
     if (isFinite(p.capital)) cfg.btCapital = p.capital;
     if (p.currency && [...$('btCurrency').options].some(o => o.value === p.currency)) cfg.btCurrency = p.currency;
 
     window.applyBacktestConfig(cfg);
     $('btStrategyName').value = `${item.name} (from Signals)`;
-    const skipped = tb.skipped.concat(ts.skipped);
-    const msg = `Copied "${item.name}": ${tb.used.size} buy indicator${tb.used.size === 1 ? '' : 's'} and ${ts.used.size} sell indicator${ts.used.size === 1 ? '' : 's'}.`
-      + (!ts.used.size ? ' It has no sell conditions, so set the sell rules in step 4 before running.' : '')
-      + (!tb.used.size ? ' It has no buy conditions, so set the buy rules in step 3 before running.' : '')
+    const skipped = Object.values(tr).flatMap(t => t.skipped);
+    const parts = Object.entries(tr).map(([k, t]) => `${t.used.size} for the ${copyFor().cards[k].toLowerCase()}`);
+    const msg = `Copied "${item.name}" (${dir === 'both' ? 'long & short' : dir + ' only'}): ${parts.join(', ')}.`
+      + (!tr.entry.used.size ? ' It has no conditions for the entry rules, so set those before running.' : '')
+      + (tr.exit && !tr.exit.used.size && dir !== 'both' ? ' It has no exit conditions, so set the exit rules before running.' : '')
       + (skipped.length ? ` Skipped (no Backtester equivalent): ${skipped.join(', ')}.` : '');
     hint.textContent = msg;
     const h2 = $('btStrategyHint'); if (h2) h2.textContent = msg;
     sigOverlay.style.display = 'none';
     renderSummary();
-    [3, 4].forEach(n => { const c = $('btSumCard' + n); if (c) { c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } });
+    [3, 4, 5, 6].forEach(n => { const c = $('btSumCard' + n); if (c) { c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } });
   }
 
   window.btUi = { openWizard, closeWizard, openSignalsImport, copyFromSignals };

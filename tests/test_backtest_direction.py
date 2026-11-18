@@ -75,3 +75,35 @@ def test_reverse_on_stop_flips_into_opposite_side_at_stop_price():
 
 def test_reverse_on_stop_off_by_default_changes_nothing():
     assert _run("both") == _run("both", reverse_on_stop=False)
+
+
+_OFF = {"macd_on": 0, "bb_on": 0, "ma_on": 0, "vol_on": 0}
+_LONG_SET = {**_OFF, "rsi_trigger": "oversold", "rsi_oversold": 42}
+_SHORT_SET = {**_OFF, "rsi_trigger": "overbought", "rsi_overbought": 58}
+
+
+def _split(**kw):
+    return run_backtest(_df(), direction_mode="both", thresholds=_LONG_SET, short_thresholds=_SHORT_SET,
+                        min_confidence=50, stop_loss_pct=10, take_profit_pct=10, **kw)[0]
+
+
+def test_split_rules_longs_only_from_long_set_and_shorts_only_from_short_set():
+    trades = _split()
+    assert {t["side"] for t in trades} == {"long", "short"}
+    for t in trades:
+        assert "oversold" in str(t["entry_signals"]) if t["side"] == "long" else "overbought" in str(t["entry_signals"])
+    for a, b in zip(trades, trades[1:]):
+        assert a["exit_date"] <= b["entry_date"]
+
+
+def test_split_rules_reverse_into_each_other():
+    trades = _split()
+    flips = [(a, b) for a, b in zip(trades, trades[1:])
+             if a["exit_reason"] == "Signal" and b["entry_date"] == a["exit_date"]]
+    assert flips and all(a["side"] != b["side"] for a, b in flips)
+
+
+def test_split_rules_off_matches_single_set():
+    one = run_backtest(_df(), direction_mode="both", thresholds=_LONG_SET, min_confidence=50)[0]
+    same = run_backtest(_df(), direction_mode="both", thresholds=_LONG_SET, min_confidence=50, short_match="all")[0]
+    assert one == same
