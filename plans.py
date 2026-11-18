@@ -48,9 +48,10 @@ COMPARE = [
     ("Pro Alpha posts", "Preview only", "Preview only", "Preview only", "Full posts"),
     ("Explainers", "The basics", "Basics and in-depth", "Basics and in-depth", "Basics and in-depth"),
     ("Data visualisations", "Selected", "All", "All", "All"),
-    ("Calculators, donuts and trackers", False, True, True, True),
-    ("Backtester and Portfolio Manager", False, False, True, True),
-    ("Signals and AI Chart Analysis", False, False, False, True),
+    ("Calculators, donuts and trackers", True, True, True, True),
+    ("Portfolio Manager", True, True, True, True),
+    ("Backtester", "3 free tests", "3 free tests", True, True),
+    ("Signals and AI Chart Analysis", "3 free tests", "3 free tests", "3 free tests", True),
     ("Market XI dashboard", False, True, True, True),
     ("Trading competitions", False, False, False, True),
     ("Community Discord and FAQ", False, True, True, True),
@@ -101,5 +102,5 @@ TOOL_MIN_PLAN = {
 FREE_LESSONS_PER_LEVEL = 1        # the first lesson of each level stays open to everyone
 FREE_ALPHA_POSTS_PER_LEVEL = 1    # a free account can open one full Alpha post per level
 FREE_TOOL_TESTS = 3              # lifetime free tests per tool (Signals, AI Chart Analysis, Backtester) for accounts below its plan
-FREE_TEST_TOOLS = ("/tools/signals", "/tools/ai-chart-analysis", "/backtester")  # pages a registered account can open to use those tests
+FREE_TEST_TOOLS = ("/tools/signals", "/tools/ai-chart-analysis", "/backtester", "/tools/portfolio", "/tools/calculator")  # pages a registered account can open to use those tests
 FREE_DATAVIZ_PAGES = 3            # a free account can open three data visualisation pages
