@@ -47,6 +47,11 @@
       ['Backtester', '/backtester', 'Run any strategy against years of real market data. Inspect P&L curves, max drawdown, Sharpe ratio and more.', 'Backtest'],
       ['AI Chart Analysis', '/tools/ai-chart-analysis', 'A live chart with ready-made AI prompts for an indicator scan, market information and chart-pattern review.', 'AI']
     ] },
+    { name: 'The Armoury', rgb: '168,85,247', blurb: 'Quant calculators for options, volatility, portfolios and the COT report.', pages: [
+      ['The Armoury', '/tools/armoury', 'Nine quant calculators with 2D and 3D charts, plus a Strategy Builder that combines your saved results.', 'Calculators'],
+      ['Field Manual', '/tools/armoury/field-manual', 'Plain-English explanations of every Armoury calculator and the formula behind it.', 'Guide'],
+      ['COT Report', '/tools/armoury/cot', 'Search the CFTC Traders in Financial Futures report and see how asset managers and leveraged funds are positioned.', 'Live data']
+    ] },
     { name: 'Crypto', rgb: '247,147,26', blurb: 'Understand how digital assets are built and divided.', pages: [
       ['Crypto Unit Calculator', DV + 'crypto-unit-calculator', 'See how a coin divides into its smallest units, from satoshi to whole coins, with live prices.', 'Live data'],
       ['Crypto Portfolio Donut', DV + 'crypto-portfolio-donut', 'Enter the coins you hold from the top 50 by market cap and see your portfolio as a donut, valued in pounds, dollars, euros or bitcoin.', 'Live data']
@@ -76,6 +81,9 @@
     '/arena/competitions': 'Pro',
     '/tools/portfolio': 'Intermediate',
     '/tools/calculator': 'Beginner',
+    '/tools/armoury': 'Pro',
+    '/tools/armoury/field-manual': 'Pro',
+    '/tools/armoury/cot': 'Pro',
     '/tools/crypto-unit-calculator': 'Beginner',
     '/tools/crypto-portfolio-donut': 'Beginner',
     '/tools/metal-calculator': 'Beginner',

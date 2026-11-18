@@ -3763,6 +3763,15 @@ def tools_portfolio(): return send_from_directory("static", "portfolio-balancer.
 @app.route("/tools/calculator")
 def tools_calculator(): return send_from_directory("static", "calculator.html")
 
+@app.route("/tools/armoury")
+def tools_armoury(): return send_from_directory("static", "armoury.html")
+
+@app.route("/tools/armoury/field-manual")
+def tools_armoury_field_manual(): return send_from_directory("static", "armoury-field-manual.html")
+
+@app.route("/tools/armoury/cot")
+def tools_armoury_cot(): return send_from_directory("static", "armoury-cot.html")
+
 @app.route("/tools/data-visualisation")
 def tools_data_visualisation(): return send_from_directory("static", "data-visualisation.html")
 
@@ -5597,6 +5606,7 @@ LANDING_PAGE_CHOICES = {
     "/",
     "/learn", "/learn/beginner", "/learn/intermediate", "/learn/pro", "/learn/guest-lessons", "/learn/tools", "/learn/artifacts",
     "/tools", "/tools/signals", "/backtester", "/tools/ai-chart-analysis", "/tools/portfolio", "/tools/calculator",
+    "/tools/armoury", "/tools/armoury/field-manual", "/tools/armoury/cot",
     "/arena", "/arena/market-xi", "/arena/competitions", "/arena/predictions",
     "/alpha", "/alpha/connor", "/alpha/dave", "/alpha/gary", "/alpha/tom", "/alpha/podcast",
     "/partners", "/profile", "/dashboard",
@@ -6591,6 +6601,9 @@ SEARCH_PAGE_INDEX = [
     {"title": "AI Chart Analysis", "url": "/tools/ai-chart-analysis", "sub": "Tool"},
     {"title": "Portfolio Manager", "url": "/tools/portfolio", "sub": "Tool"},
     {"title": "Position Size Calculator", "url": "/tools/calculator", "sub": "Tool"},
+    {"title": "The Armoury", "url": "/tools/armoury", "sub": "Tool — options pricing, volatility, Greeks, Kalman filter, portfolio theory and strategy builder"},
+    {"title": "Field Manual", "url": "/tools/armoury/field-manual", "sub": "The Armoury — every calculator and formula explained"},
+    {"title": "COT Report", "url": "/tools/armoury/cot", "sub": "The Armoury — CFTC Traders in Financial Futures: asset managers and leveraged funds"},
     {"title": "Data Visualisation", "url": "/tools/data-visualisation", "sub": "Tool"},
     {"title": "The Arena", "url": "/arena", "sub": "Arena hub"},
     {"title": "Market XI", "url": "/arena/market-xi", "sub": "The Arena"},
@@ -10932,6 +10945,232 @@ app.register_blueprint(gcg_finance.bp)
 app.register_blueprint(gcg_notify.bp)
 app.register_blueprint(gcg_planner.bp)
 _ensure_default_user()
+
+# ── The Armoury: market-data endpoints (Pro only) ────────────────────────────
+# Price history and option chains come from yfinance; COT data from the CFTC's public Socrata API.
+ARMOURY_MAX_SYMBOLS = 11
+ARMOURY_PERIODS = {"6mo", "1y", "2y", "5y"}
+_armoury_cache: dict = {}
+_armoury_cache_lock = threading.Lock()
+CFTC_TFF_URL = "https://publicreporting.cftc.gov/resource/gpe5-46if.json"  # Traders in Financial Futures, futures only
+
+
+def _armoury_cached(key, ttl: int, fn):
+    now = time.time()
+    with _armoury_cache_lock:
+        hit = _armoury_cache.get(key)
+        if hit and now - hit[0] < ttl:
+            return hit[1]
+    val = fn()
+    with _armoury_cache_lock:
+        if len(_armoury_cache) > 500:
+            _armoury_cache.clear()
+        _armoury_cache[key] = (now, val)
+    return val
+
+
+def _armoury_locked():
+    if _user_rank() >= _rank("pro"):
+        return None
+    return jsonify({"error": "The Armoury is part of the Pro plan.", "locked": True, "tier_required": "pro"}), 403
+
+
+def _armoury_symbol(raw: str) -> str:
+    sym = (raw or "").strip().upper()
+    if not sym or len(sym) > 20 or not re.fullmatch(r"[A-Z0-9^=.\-]+", sym):
+        raise ValueError(f"'{raw}' isn't a valid ticker.")
+    return sym
+
+
+@app.route("/api/armoury/history", methods=["GET"])
+def armoury_history():
+    """Aligned daily closes for up to 11 tickers."""
+    blocked = _armoury_locked()
+    if blocked:
+        return blocked
+    try:
+        symbols = [_armoury_symbol(s) for s in request.args.get("symbols", "").split(",") if s.strip()]
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    symbols = list(dict.fromkeys(symbols))
+    period = request.args.get("period", "1y")
+    if not symbols:
+        return jsonify({"error": "Enter at least one ticker."}), 400
+    if len(symbols) > ARMOURY_MAX_SYMBOLS:
+        return jsonify({"error": f"At most {ARMOURY_MAX_SYMBOLS} tickers per request."}), 400
+    if period not in ARMOURY_PERIODS:
+        return jsonify({"error": f"period must be one of {sorted(ARMOURY_PERIODS)}"}), 400
+
+    def load():
+        closes, failed = {}, []
+        for sym in symbols:
+            try:
+                c = _fetch_ohlcv(sym, period, "1d")["Close"].dropna()
+                if len(c) < 30:
+                    raise ValueError("not enough history")
+                idx = pd.to_datetime(c.index)
+                if idx.tz is not None:
+                    idx = idx.tz_localize(None)
+                c.index = idx.normalize()
+                closes[sym] = c[~c.index.duplicated(keep="last")]
+            except Exception:
+                failed.append(sym)
+        return closes, failed
+
+    try:
+        closes, failed = _armoury_cached(("hist", tuple(symbols), period), 900, load)
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch prices: {e}"}), 500
+    if failed:
+        return jsonify({"error": f"No usable price history for: {', '.join(failed)}. Use Yahoo Finance symbols, e.g. AAPL, ^VIX, EURUSD=X, BTC-USD."}), 400
+    frame = pd.DataFrame(closes).dropna()
+    if len(frame) < 30:
+        return jsonify({"error": "These tickers share too few trading days to compare."}), 400
+    return jsonify({
+        "symbols": symbols, "period": period,
+        "dates": [d.strftime("%Y-%m-%d") for d in frame.index],
+        "closes": {s: [round(float(v), 6) for v in frame[s].tolist()] for s in symbols},
+    })
+
+
+@app.route("/api/armoury/chain", methods=["GET"])
+def armoury_chain():
+    """Option chain snapshot (up to 8 expiries, spread from about a week to a year out)."""
+    blocked = _armoury_locked()
+    if blocked:
+        return blocked
+    try:
+        symbol = _armoury_symbol(request.args.get("symbol", ""))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    try:
+        n_exp = max(1, min(8, int(request.args.get("expiries", 6))))
+    except ValueError:
+        n_exp = 6
+
+    def load():
+        tk = yf.Ticker(symbol)
+        expiries = list(tk.options or [])
+        if not expiries:
+            raise LookupError(f"Yahoo Finance has no listed options for {symbol}.")
+        spot = float(_fetch_ohlcv(symbol, "5d", "1d")["Close"].dropna().iloc[-1])
+        today = _dt.datetime.utcnow().date()
+        dated = [(e, (_dt.date.fromisoformat(e) - today).days) for e in expiries]
+        dated = [(e, d) for e, d in dated if d >= 3]
+        chosen = []
+        for target in (7, 21, 35, 60, 95, 180, 270, 365)[:n_exp]:
+            pick = min((x for x in dated if x not in chosen), key=lambda x: abs(x[1] - target), default=None)
+            if pick:
+                chosen.append(pick)
+        chosen.sort(key=lambda x: x[1])
+        num = lambda v: float(v) if v is not None and not pd.isna(v) else 0.0
+
+        def rows(df):
+            keep = []
+            for r in df.itertuples():
+                k = float(r.strike)
+                if 0.6 * spot <= k <= 1.4 * spot:
+                    keep.append({"strike": k, "bid": num(r.bid), "ask": num(r.ask), "last": num(r.lastPrice),
+                                 "oi": int(num(getattr(r, "openInterest", 0))), "yf_iv": round(num(r.impliedVolatility), 6)})
+            return keep
+
+        out = []
+        for exp, days in chosen:
+            ch = tk.option_chain(exp)
+            out.append({"expiry": exp, "days": days, "calls": rows(ch.calls), "puts": rows(ch.puts)})
+        if not out:
+            raise LookupError(f"No usable expiries for {symbol}.")
+        return {"symbol": symbol, "spot": spot, "expiries": out}
+
+    try:
+        data = _armoury_cached(("chain", symbol, n_exp), 600, load)
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch the option chain: {e}"}), 500
+    return jsonify(data)
+
+
+def _cftc_get(params: dict) -> list:
+    headers = {"Accept": "application/json", "User-Agent": "GCG-Armoury/1.0"}
+    token = os.environ.get("CFTC_APP_TOKEN")  # optional, raises the CFTC's rate limit
+    if token:
+        headers["X-App-Token"] = token
+    r = requests.get(CFTC_TFF_URL, params=params, headers=headers, timeout=20)
+    r.raise_for_status()
+    return r.json()
+
+
+@app.route("/api/cot/markets", methods=["GET"])
+def cot_markets():
+    """Search the TFF market list by name."""
+    blocked = _armoury_locked()
+    if blocked:
+        return blocked
+    q = re.sub(r"[^A-Za-z0-9 &\-./]", "", request.args.get("q", "")).strip().upper()[:60]
+
+    def load():
+        cutoff = (_dt.date.today() - _dt.timedelta(days=60)).isoformat()
+        rows = _cftc_get({
+            "$select": "cftc_contract_market_code,market_and_exchange_names,max(report_date_as_yyyy_mm_dd) as latest,max(open_interest_all) as oi",
+            "$where": f"report_date_as_yyyy_mm_dd > '{cutoff}'",
+            "$group": "cftc_contract_market_code,market_and_exchange_names",
+            "$limit": 2000,
+        })
+        seen = {}
+        for r in rows:
+            code = r.get("cftc_contract_market_code")
+            if code and (code not in seen or (r.get("latest") or "") > seen[code]["latest"]):
+                seen[code] = {"code": code, "name": r.get("market_and_exchange_names", ""),
+                              "latest": (r.get("latest") or "")[:10], "oi": int(float(r.get("oi") or 0))}
+        return sorted(seen.values(), key=lambda m: -m["oi"])
+
+    try:
+        markets = _armoury_cached(("cot_markets",), 6 * 3600, load)
+    except Exception as e:
+        return jsonify({"error": f"Couldn't reach the CFTC: {e}"}), 502
+    if q:
+        words = q.split()
+        markets = [m for m in markets if all(w in m["name"].upper() for w in words)]
+    return jsonify({"markets": markets[:40]})
+
+
+COT_FIELDS = [
+    "report_date_as_yyyy_mm_dd", "market_and_exchange_names", "contract_units", "open_interest_all",
+    "dealer_positions_long_all", "dealer_positions_short_all", "asset_mgr_positions_long", "asset_mgr_positions_short",
+    "lev_money_positions_long", "lev_money_positions_short", "other_rept_positions_long", "other_rept_positions_short",
+    "nonrept_positions_long_all", "nonrept_positions_short_all",
+    "traders_asset_mgr_long_all", "traders_asset_mgr_short_all", "traders_lev_money_long_all", "traders_lev_money_short_all",
+]
+
+
+@app.route("/api/cot/report", methods=["GET"])
+def cot_report():
+    """Weekly TFF positions for one market (oldest first)."""
+    blocked = _armoury_locked()
+    if blocked:
+        return blocked
+    code = re.sub(r"[^A-Za-z0-9+]", "", request.args.get("code", ""))[:12]
+    try:
+        weeks = max(26, min(520, int(request.args.get("weeks", 156))))
+    except ValueError:
+        weeks = 156
+    if not code:
+        return jsonify({"error": "code is required"}), 400
+
+    def load():
+        rows = _cftc_get({"$select": ",".join(COT_FIELDS), "$where": f"cftc_contract_market_code = '{code}'",
+                          "$order": "report_date_as_yyyy_mm_dd DESC", "$limit": weeks})
+        return list(reversed(rows))
+
+    try:
+        rows = _armoury_cached(("cot_report", code, weeks), 3 * 3600, load)
+    except Exception as e:
+        return jsonify({"error": f"Couldn't reach the CFTC: {e}"}), 502
+    if not rows:
+        return jsonify({"error": "No COT data for that market code."}), 404
+    return jsonify({"market": {"code": code, "name": rows[-1].get("market_and_exchange_names", ""), "units": rows[-1].get("contract_units", "")}, "rows": rows})
+
 
 
 def _should_start_background_streams() -> bool:

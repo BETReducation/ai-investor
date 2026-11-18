@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Manual — Growth Capital Group</title>
+<meta name="description" content="Plain-English explanations of every Armoury calculator and formula.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Growth Capital Group">
+<meta property="og:title" content="Field Manual — Growth Capital Group">
+<meta property="og:description" content="Plain-English explanations of every Armoury calculator and formula.">
+<meta property="og:image" content="https://www.growthcapitalgroup.co/static/img/og-home-v2.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="/static/logos/Green Square.png">
+<script>
+  var _t = localStorage.getItem('gcg-theme') || 'light';
+  localStorage.setItem('gcg-theme', _t);
+  document.documentElement.setAttribute('data-theme', _t);
+</script>
+<link rel="stylesheet" href="/static/css/site-nav.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/armoury.css">
+</head>
+<body>
+<script src="/static/js/nav.js" data-logo="GCT Square.png"></script>
+<div class="arm-hero">
+  <div class="arm-badge">The Armoury · Field Manual</div>
+  <h1 class="arm-title">Field <span>Manual</span></h1>
+  <p class="arm-sub">What each calculator does, how it connects to Black-Scholes, what the charts and colours mean, and the formula behind it, broken down so it is easy to follow.</p>
+</div>
+<div class="arm-wrap">
+  <div class="arm-top">
+    <a class="arm-pill" href="/tools/armoury">Calculators</a>
+    <a class="arm-pill on" href="/tools/armoury/field-manual">Field Manual</a>
+    <a class="arm-pill" href="/tools/armoury/cot">COT Report</a>
+  </div>
+  <div class="arm-card"><div class="fm-toc"><a class="arm-pill" href="#bs">Black-Scholes calculator</a><a class="arm-pill" href="#amer">American options via a binomial tree</a><a class="arm-pill" href="#iv">Implied volatility and the volatility smile</a><a class="arm-pill" href="#greeks">Greeks and portfolio-level Greeks and risk</a><a class="arm-pill" href="#ivrank">IV rank and IV percentile</a><a class="arm-pill" href="#parity">Put-call parity checker</a><a class="arm-pill" href="#size">Volatility-adjusted position sizing</a><a class="arm-pill" href="#kalman">Kalman filter</a><a class="arm-pill" href="#mpt">Modern Portfolio Theory, Black-Litterman and risk parity</a><a class="arm-pill" href="#sb">Strategy Builder</a><a class="arm-pill" href="#cot">COT Report</a></div></div>
+  <div class="arm-card fm-card" id="bs">
+    <h2>1. Black-Scholes calculator</h2>
+    <h3>What it does</h3><p>Prices a European call or put from five inputs: stock price, strike, time to expiry, interest rate and volatility (plus dividend yield).</p>
+    <h3>Link to Black-Scholes</h3><p>This is the model itself. Every other feature builds on it.</p>
+    <h3>Visuals</h3><p>2D shows option price against stock price. 3D shows option price against stock price and time to expiry. For colour, green means the market price is below the model price (the option looks cheap) and red means it is above (looks expensive). Amber means within 5% of the model.</p>
+    <h3>The formula</h3><div class="fm-formula">d1 = [ln(S/K) + (r − q + σ²/2)·T] / (σ·√T)
+d2 = d1 − σ·√T
+Call = S·e^(−qT)·N(d1) − K·e^(−rT)·N(d2)
+Put  = K·e^(−rT)·N(−d2) − S·e^(−qT)·N(−d1)</div>
+    <p>N() is the standard normal cumulative distribution: the probability a normally distributed variable lands below that value. N(d2) is roughly the chance the option finishes in the money; N(d1) also accounts for the size of the payoff when it does.</p>
+  </div>
+  <div class="arm-card fm-card" id="amer">
+    <h2>2. American options via a binomial tree</h2>
+    <h3>What it does</h3><p>Prices options that can be exercised early (most US stock options), which Black-Scholes can't do.</p>
+    <h3>Link to Black-Scholes</h3><p>As you add more steps to the tree, it converges to the Black-Scholes price for European options. The difference between the two is the value of being able to exercise early.</p>
+    <h3>Visuals</h3><p>2D shows the branching price tree and how the tree converges as steps increase. 3D shows the early-exercise value against stock price and time. Colour highlights the nodes where exercising early is optimal (green).</p>
+    <h3>The formula</h3><div class="fm-formula">u = e^(σ·√Δt)     d = 1/u     p = (e^((r−q)Δt) − d) / (u − d)
+Node value = max( exercise value, e^(−rΔt)·[p·Up + (1−p)·Down] )</div>
+    <p>The tree starts at today's price and splits into an up move and a down move at each step. Working backwards from expiry, at every node we compare holding the option with exercising it now and keep the larger. Where exercising wins, the node is flagged.</p>
+  </div>
+  <div class="arm-card fm-card" id="iv">
+    <h2>3. Implied volatility and the volatility smile</h2>
+    <h3>What it does</h3><p>Works backwards from market prices to the volatility the market expects, then plots it across strikes and expiries.</p>
+    <h3>Link to Black-Scholes</h3><p>You get it by inverting Black-Scholes. The smile exists because real markets break the model's assumption of a single constant volatility.</p>
+    <h3>Visuals</h3><p>2D shows the smile (IV against strike). 3D shows the volatility surface (IV against strike and expiry). For colour, a cool-to-hot scale (blue = low IV, red = high IV) shows where options are relatively cheap or expensive. The verdict colour shows how much of the chain inverted cleanly.</p>
+    <h3>The formula</h3><div class="fm-formula">Find σ such that BlackScholes(S, K, T, r, q, σ) = market price
+(solved by bisection, since price rises steadily with σ)</div>
+    <p>Out-of-the-money puts and calls are used because they carry the cleanest information. If IV is higher for low strikes than high strikes, the market is paying up for downside protection; that tilt is called skew.</p>
+  </div>
+  <div class="arm-card fm-card" id="greeks">
+    <h2>4. Greeks and portfolio-level Greeks and risk</h2>
+    <h3>What it does</h3><p>Measures how sensitive an option's price is to each input. Delta covers price, gamma how fast delta changes, theta time, vega volatility and rho interest rates. The portfolio view adds these up across all positions.</p>
+    <h3>Link to Black-Scholes</h3><p>Each Greek is a partial derivative of the Black-Scholes formula.</p>
+    <h3>Visuals</h3><p>2D shows each Greek against stock price, plus portfolio profit and loss against price. 3D shows a Greek against price and time (e.g. a gamma surface). For colour, green marks exposure within your limits, amber nearing a limit (over 70%) and red over it.</p>
+    <h3>The formula</h3><div class="fm-formula">Delta = ∂V/∂S     Gamma = ∂²V/∂S²     Theta = ∂V/∂t
+Vega  = ∂V/∂σ      Rho   = ∂V/∂r
+Portfolio Greek = Σ (contracts × 100 × position Greek)</div>
+    <p>Vega is quoted per one volatility point and theta per calendar day. The stress grid re-prices every position under price and volatility shocks, and the one-day VaR re-prices the book after a 95%-confidence one-day move.</p>
+  </div>
+  <div class="arm-card fm-card" id="ivrank">
+    <h2>5. IV rank and IV percentile</h2>
+    <h3>What it does</h3><p>Shows where today's IV sits compared with its range over the past year (0–100).</p>
+    <h3>Link to Black-Scholes</h3><p>It uses the implied volatilities from the inverted Black-Scholes model, tracked over time.</p>
+    <h3>Visuals</h3><p>2D shows volatility over the past year with today marked, plus a gauge from 0 to 100. 3D shows IV rank across several stocks and lookback windows. For colour, low (green) suggests options are cheap for buyers and high (red) suggests they're rich for sellers.</p>
+    <h3>The formula</h3><div class="fm-formula">IV rank       = (today − 1y low) / (1y high − 1y low) × 100
+IV percentile = % of days in the past year with IV below today's</div>
+    <p>Rank cares about the extremes; percentile cares about how often. They can differ a lot after a single spike. Free historical IV isn't available for each stock, so the calculator uses 21-day realised volatility as a stand-in unless you use a volatility index such as ^VIX, or type in your option's current IV.</p>
+  </div>
+  <div class="arm-card fm-card" id="parity">
+    <h2>6. Put-call parity checker</h2>
+    <h3>What it does</h3><p>Checks that matching call and put prices are consistent: C − P = S − K·e^(−rT).</p>
+    <h3>Link to Black-Scholes</h3><p>Black-Scholes prices always satisfy parity, so when market prices don't, it points to bad data, dividends, borrowing costs or (rarely) an arbitrage opportunity.</p>
+    <h3>Visuals</h3><p>2D shows the parity gap at each strike. 3D shows the gap across strike and expiry. For colour, green means within tolerance and red means a mismatch.</p>
+    <h3>The formula</h3><div class="fm-formula">Gap = (C − P) − (S·e^(−qT) − K·e^(−rT))</div>
+    <p>You set the tolerance in dollars; a sensible starting point is the bid-ask spread. Amber means the gap is up to three times the tolerance.</p>
+  </div>
+  <div class="arm-card fm-card" id="size">
+    <h2>7. Volatility-adjusted position sizing</h2>
+    <h3>What it does</h3><p>Suggests how many contracts to trade based on maximum acceptable loss or volatility exposure, rather than a fixed number.</p>
+    <h3>Link to Black-Scholes</h3><p>It uses vega and delta from the model, plus the expected move based on IV, to estimate risk per contract.</p>
+    <h3>Visuals</h3><p>2D shows position size against IV. 3D shows position size against IV and account risk %. For colour, green means within the risk budget and red means oversized.</p>
+    <h3>The formula</h3><div class="fm-formula">Expected move = S · IV · √(holding days / 365)
+Risk per contract = loss when the model re-prices after a 1σ adverse move and a 20% IV shift against you
+Max contracts = floor( account × risk % / risk per contract )</div>
+    <p>Higher IV means a bigger expected move, so the same budget buys fewer contracts. That is the point: size shrinks when volatility rises.</p>
+  </div>
+  <div class="arm-card fm-card" id="kalman">
+    <h2>8. Kalman filter</h2>
+    <h3>What it does</h3><p>Separates the underlying trend from day-to-day noise in up to three tickers, and tracks a hedge ratio that is allowed to change over time.</p>
+    <h3>Link to Black-Scholes</h3><p>It sits beside Black-Scholes rather than inside it. Black-Scholes assumes constant volatility and drift; the Kalman filter lets both the trend and the relationship between tickers move.</p>
+    <h3>Visuals</h3><p>2D shows prices with the filtered trend, the hedge ratios over time and the spread z-score. 3D traces the hedge ratios through time, coloured by z-score. Green means the spread is normal, amber stretching (beyond 1) and red stretched (beyond 2).</p>
+    <h3>The formula</h3><div class="fm-formula">Hedge ratio:  Ticker 1 = β₂·Ticker 2 + β₃·Ticker 3 + intercept, where each β drifts a little every day
+Spread z-score = (Ticker 1 − fitted value) / forecast standard deviation
+Trend: local linear trend on log prices (level + slope)</div>
+    <p>At every new price the filter blends its prediction with the new data, trusting each according to its uncertainty. The adaptivity setting controls how quickly the ratios may drift.</p>
+  </div>
+  <div class="arm-card fm-card" id="mpt">
+    <h2>9. Modern Portfolio Theory, Black-Litterman and risk parity</h2>
+    <h3>What it does</h3><p>Finds long-only mixes of your tickers that balance return against risk, and reports a set of risk measures for each.</p>
+    <h3>Link to Black-Scholes</h3><p>Black-Scholes assumes returns are log-normal with a volatility. MPT uses the same two ingredients, expected return and volatility, but across several assets at once.</p>
+    <h3>Visuals</h3><p>2D shows the risk-return cloud of random mixes with the optimised portfolios marked, and growth over the period. 3D adds the Sharpe ratio as a third axis. Table cells go green, amber or red on common thresholds.</p>
+    <h3>The formula</h3><div class="fm-formula">Sharpe   = (return − risk-free) / volatility
+Sortino  = (return − risk-free) / downside deviation
+Max drawdown = largest fall from a previous peak
+Calmar   = return / |max drawdown|
+Treynor  = (return − risk-free) / beta to the benchmark
+VaR 95%  = the one-day loss exceeded on 5% of days
+CVaR 95% = the average loss on those worst 5% of days</div>
+    <p>Black-Litterman starts from equal weights as a neutral prior and nudges expected returns toward your views by the confidence you give them. Risk parity sizes each holding so it contributes the same amount of risk. Both can be switched on independently. Everything is in-sample, so it describes the past.</p>
+  </div>
+  <div class="arm-card fm-card" id="sb">
+    <h2>10. Strategy Builder</h2>
+    <h3>What it does</h3><p>Combines the results you saved into a textbook structure, a list of risk checks and a conviction score from 0 to 100.</p>
+    <h3>Link to Black-Scholes</h3><p>It reads the model outputs, such as the Black-Scholes verdict and IV rank, and matches them with the structures that classic options theory pairs with them.</p>
+    <h3>Visuals</h3><p>The score is green at 70 and above, amber from 45 and red below that.</p>
+    <h3>The formula</h3><div class="fm-formula">Score = 100 × (0.6 × average result quality + 0.4 × coverage), less 15 if results disagree on direction
+Quality: good = 1, caution = 0.5, poor = 0     Coverage = saved results ÷ 5, capped at 1</div>
+    <p>The score does not predict outcomes. It measures whether your saved analyses are sound and agree with each other. Saved plans feed the COT Report comparison.</p>
+  </div>
+  <div class="arm-card fm-card" id="cot">
+    <h2>11. COT Report</h2>
+    <h3>What it does</h3><p>Searches the CFTC's Traders in Financial Futures report: weekly positions of dealers, asset managers, leveraged funds and others across financial futures.</p>
+    <h3>Link to Black-Scholes</h3><p>Separate from Black-Scholes. It adds context about who holds the other side of the market.</p>
+    <h3>Visuals</h3><p>Asset managers (institutions) and leveraged funds (hedge funds) are highlighted with their net position, share of open interest, four-week change and percentile over three years. The comparison tool lines this up with a saved Backtester strategy or Strategy Builder plan.</p>
+    <h3>The formula</h3><div class="fm-formula">Net position = long − short
+Percentile = share of the last 156 weeks with a lower net position than today</div>
+    <p>The report covers financial futures such as stock indices, bond futures, currencies and bitcoin. It does not include gold or oil. Positions are as of Tuesday and published the following Friday, so the data is always a few days old. Data source: US Commodity Futures Trading Commission (public data). This page is not affiliated with or endorsed by the CFTC.</p>
+  </div>
+  <div class="arm-note">Educational material. The models describe how option prices and portfolios behave under stated assumptions; they are not recommendations.</div>
+</div>
+<script src="/static/js/footer.js"></script>
+</body>
+</html>

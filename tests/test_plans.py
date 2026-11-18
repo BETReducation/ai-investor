@@ -114,3 +114,15 @@ def test_support_channels_by_plan(monkeypatch):
 
 def test_backtester_is_a_free_test_tool():
     assert "/backtester" in A.plans.FREE_TEST_TOOLS
+
+
+def test_armoury_pages_and_data_endpoints_are_pro_only():
+    gates = A._gate_map()
+    for path in ("/tools/armoury", "/tools/armoury/field-manual", "/tools/armoury/cot"):
+        assert gates[path] == "pro"
+    client = A.app.test_client()
+    # Anonymous visitors are sent to pricing; the data endpoints refuse them.
+    assert client.get("/tools/armoury").status_code == 302
+    for url in ("/api/armoury/history?symbols=AAPL", "/api/armoury/chain?symbol=AAPL", "/api/cot/markets", "/api/cot/report?code=13874A"):
+        r = client.get(url)
+        assert r.status_code == 403 and r.get_json()["tier_required"] == "pro"
