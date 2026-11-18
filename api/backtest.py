@@ -166,6 +166,15 @@ def run_backtest(
     hs_lookback            = int(cp.get("hs_lookback", 90))
 
     # ── Compute full indicator series upfront (O(n), not O(n²)) ──────────
+    # pandas_ta returns None (not NaNs) when a series is shorter than the indicator's
+    # window, which used to surface as "'NoneType' object has no attribute 'iloc'".
+    min_bars = max(macd_slow + macd_signal, bb_length, rsi_length + 1)
+    if len(df) < min_bars:
+        raise ValueError(
+            f"Not enough data: this period and candle size give only {len(df)} candles, "
+            f"but the indicators need at least {min_bars}. Use a longer period or a smaller candle size."
+        )
+
     rsi_s   = calculate_rsi(df, length=rsi_length)
     rsi_centerline       = calculate_rsi_centerline_cross(rsi_s)
     rsi_bull_div, rsi_bear_div = calculate_rsi_divergence(df["Close"], rsi_s, lookback=rsi_div_lookback)
