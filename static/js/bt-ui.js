@@ -326,8 +326,42 @@
       if (el && el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
     });
   }
-  setInterval(renderSummary, 600);
+  // Rough candle count for the chosen period + timeframe, so a too-short combination
+  // is flagged before the run (the backend needs ~35 candles for MACD at defaults).
+  const PERIOD_TRADING_DAYS = { halfday: 0.5, '1d': 1, '2d': 2, '3d': 3, '4d': 4, '5d': 5, '1wk': 5, '2wk': 10, '3wk': 15,
+    '1mo': 21, '3mo': 63, '6mo': 126, '1y': 252, '2y': 504, '5y': 1260 };
+  const BARS_PER_DAY = { '1m': 390, '5m': 78, '15m': 26, '30m': 13, '1h': 7, '2h': 4, '4h': 2, '1d': 1, '1wk': 0.2, '1mo': 1 / 21, '3mo': 1 / 63 };
+  const MIN_CANDLES = 35;
+  function updateShortWarning() {
+    const per = $('btPeriod'), itv = $('btInterval');
+    if (!per || !itv) return;
+    let warn = $('btShortWarn');
+    if (!warn) {
+      warn = document.createElement('div');
+      warn.id = 'btShortWarn';
+      warn.style.cssText = 'display:none;margin-top:6px;padding:6px 8px;font-size:10px;line-height:1.4;border:1px solid #d9a400;border-radius:4px;background:rgba(217,164,0,.12);color:var(--text-primary);';
+      itv.insertAdjacentElement('afterend', warn);
+    }
+    let days;
+    const custom = $('customPanel') && $('customPanel').style.display !== 'none';
+    if (custom) {
+      const sd = $('btStartDate').value;
+      if (!sd) { warn.style.display = 'none'; return; }
+      const end = $('btEndDate').value ? new Date($('btEndDate').value) : new Date();
+      days = Math.max(0, (end - new Date(sd)) / 864e5) * 5 / 7;
+    } else {
+      days = PERIOD_TRADING_DAYS[per.value];
+    }
+    const bpd = BARS_PER_DAY[itv.value];
+    if (days == null || bpd == null) { warn.style.display = 'none'; return; }
+    const est = Math.round(days * bpd);
+    if (est >= MIN_CANDLES) { warn.style.display = 'none'; return; }
+    warn.textContent = `This gives roughly ${est} candles. The indicators need about ${MIN_CANDLES}, so the backtest will likely fail. Pick a longer period or a smaller candle size.`;
+    warn.style.display = 'block';
+  }
+  setInterval(() => { renderSummary(); updateShortWarning(); }, 600);
   renderSummary();
+  updateShortWarning();
   sum.addEventListener('click', e => { if (e.target.closest('[data-sig]')) openSignalsImport(); });
 
   // ── Wizard flow ────────────────────────────────────────────────────────────
