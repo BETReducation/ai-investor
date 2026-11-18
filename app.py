@@ -9752,6 +9752,9 @@ def _backtest_impl():
         exit_gain_mode = "signal"
         exit_match = "all" if args.get("x_match") == "all" else "any"
         entry_match = "all" if args.get("entry_match") == "all" else "any"
+        direction_mode = args.get("direction", "long").strip().lower()
+        if direction_mode not in ("long", "short", "both"):
+            direction_mode = "long"
         exit_min_confidence = min_confidence
         if args.get("x_set") in ("1", "true"):
             items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
@@ -9801,6 +9804,7 @@ def _backtest_impl():
             exit_gain_mode=exit_gain_mode,
             entry_match=entry_match,
             exit_match=exit_match,
+            direction_mode=direction_mode,
         )
         metrics = calculate_metrics(trades, equity_curve)
 
@@ -9821,6 +9825,7 @@ def _backtest_impl():
             "symbol":       symbol.upper(),
             "period":       period_label,
             "interval":     interval,
+            "direction":    direction_mode,
             "metrics":      metrics,
             "trades":       trades,
             "equity_curve": equity_curve,

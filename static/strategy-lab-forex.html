@@ -580,6 +580,13 @@
   .ret-pos { color: var(--accent-green); font-weight: 600; }
   .ret-neg { color: var(--accent-red);   font-weight: 600; }
 
+  .dir-btn { flex:1; padding:5px 0; font-size:9px; letter-spacing:1px; border-radius:3px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-secondary); cursor:pointer; font-weight:700; }
+  .dir-btn.active { background:var(--accent-green); color:#000; }
+  .side-tag { display:inline-block; font-size:8px; padding:1px 5px; border-radius:2px; letter-spacing:0.5px; font-weight:700; }
+  .side-long  { background: rgba(0,255,136,0.12); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.2); }
+  .side-short { background: rgba(255,51,85,0.12); color: var(--accent-red);   border: 1px solid rgba(255,51,85,0.2); }
+  .side-breakdown { display:flex; gap:24px; flex-wrap:wrap; padding:8px 14px; border-bottom:1px solid var(--border); font-size:9px; letter-spacing:1px; color:var(--text-muted); }
+
   .reason-tag {
     display: inline-block;
     font-size: 8px;
@@ -826,6 +833,17 @@
         <input type="number" id="tradeAmountGbp" class="lab-input" value="10000" min="1" step="100" style="margin-bottom:0;">
       </div>
       <div style="font-size:8px;color:var(--text-muted);margin-top:6px;line-height:1.5;">Compounds off current equity each trade — a fixed £ amount becomes a smaller share of the pot as it grows.</div>
+    </div>
+
+    <!-- Direction -->
+    <div class="ctrl-section">
+      <div class="ctrl-label">TRADE DIRECTION <span class="info-dot" tabindex="0" data-tip="Long makes money when price rises, short when it falls. Buy signals open a long (or close a short); sell signals open a short (or close a long).">?</span></div>
+      <div style="display:flex;gap:4px;margin-bottom:8px;">
+        <button type="button" id="dirLong" onclick="setDirection('long')" class="dir-btn">LONG ONLY</button>
+        <button type="button" id="dirShort" onclick="setDirection('short')" class="dir-btn">SHORT ONLY</button>
+        <button type="button" id="dirBoth" onclick="setDirection('both')" class="dir-btn">LONG &amp; SHORT</button>
+      </div>
+      <div id="dirHelp" style="font-size:8px;color:var(--text-muted);line-height:1.5;"></div>
     </div>
 
     <!-- Risk controls -->
@@ -2085,6 +2103,8 @@
         </div>
       </div>
 
+      <div class="side-breakdown" id="sideBreakdown" style="display:none;"></div>
+
       <!-- Chart -->
       <div class="chart-section">
         <div class="chart-header">
@@ -2119,6 +2139,7 @@
             <thead>
               <tr>
                 <th>#</th>
+                <th>SIDE</th>
                 <th>ENTRY DATE</th>
                 <th>EXIT DATE</th>
                 <th>ENTRY PRICE</th>
@@ -2289,12 +2310,13 @@ function serializeBacktestConfig() {
   cfg._periodMode = document.getElementById('customPanel').style.display !== 'none' ? 'custom' : 'preset';
   cfg._indicatorMode = indicatorMode;
   cfg._tradeAmountMode = document.getElementById('tradeAmountGbpRow').style.display !== 'none' ? 'gbp' : 'percent';
+  cfg._direction = tradeDirection;
   return cfg;
 }
 
 function applyBacktestConfig(cfg) {
   Object.entries(cfg).forEach(([id, val]) => {
-    if (id === '_periodMode' || id === '_indicatorMode' || id === '_tradeAmountMode') return;
+    if (id === '_periodMode' || id === '_indicatorMode' || id === '_tradeAmountMode' || id === '_direction') return;
     const el = document.getElementById(id);
     if (!el || BT_STRATEGY_CONTROL_IDS.has(id)) return;
     if (el.classList && el.classList.contains('trigger-chips')) {
@@ -2317,6 +2339,8 @@ function applyBacktestConfig(cfg) {
   // Legacy strategies saved before Trade Amount existed have no _tradeAmountMode —
   // treat them as 100%-of-pot (percent), which reproduces their original behaviour.
   setTradeAmountMode(cfg._tradeAmountMode || 'percent');
+  // Strategies saved before shorting existed are long-only.
+  setDirection(cfg._direction || 'long');
 }
 
 function renderBacktestStrategyDropdown() {
@@ -2806,6 +2830,20 @@ function setIndicatorMode(mode) {
 }
 
 // ── Trade Amount mode toggle ──────────────────────────────────────────────────
+const DIR_HELP = {
+  long:  'Buy signals open a long and sell signals close it. This is the default.',
+  short: 'Sell signals open a short (profits if price falls) and buy signals cover it. Stops flip: the stop sits above entry, the target below.',
+  both:  'Always in one position at a time. A sell signal closes a long and opens a short; a buy signal covers the short and opens a long. Historical simulation only; borrow and funding costs on shorts are not modelled.',
+};
+let tradeDirection = 'long';
+function setDirection(d) {
+  tradeDirection = ['long', 'short', 'both'].includes(d) ? d : 'long';
+  [['long', 'dirLong'], ['short', 'dirShort'], ['both', 'dirBoth']].forEach(([k, id]) =>
+    document.getElementById(id).classList.toggle('active', k === tradeDirection));
+  document.getElementById('dirHelp').textContent = DIR_HELP[tradeDirection];
+}
+setDirection('long');
+
 function setTradeAmountMode(mode) {
   const isGbp = mode === 'gbp';
   document.getElementById('tradeAmountPctRow').style.display = isGbp ? 'none' : '';
@@ -3201,7 +3239,7 @@ async function runBacktest() {
     ...(startDate && { start_date: startDate }),
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, sl_tp_unit: 'pips', min_confidence: conf,
-    trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist,
+    trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist, direction: tradeDirection,
     capital: btCapital, trade_amount_mode: tradeAmountMode, trade_amount: tradeAmount,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     rsi_div_lookback: rsiDivLookback,
@@ -3376,11 +3414,21 @@ function renderResults(data) {
 
   // Trade log — £ P&L per trade comes straight from the server (each trade's
   // pnl_gbp already reflects its Trade Amount sizing at the time it was taken).
+  const sbEl = document.getElementById('sideBreakdown');
+  const bySide = metrics.by_side || {};
+  if (sbEl) {
+    const parts = ['long', 'short'].filter(k => bySide[k]).map(k => {
+      const b = bySide[k];
+      return `<span><span class="side-tag side-${k}">${k.toUpperCase()}</span> ${b.num_trades} trade${b.num_trades !== 1 ? 's' : ''} · win rate ${b.win_rate.toFixed(1)}% · avg ${pctStr(b.avg_trade_pct)} · compounded ${pctStr(b.total_return_pct)}</span>`;
+    });
+    sbEl.innerHTML = parts.join('');
+    sbEl.style.display = (bySide.long && bySide.short) || ((data.direction || 'long') !== 'long' && parts.length) ? 'flex' : 'none';
+  }
   document.getElementById('tradeCount').textContent = `${trades.length} TRADE${trades.length !== 1 ? 'S' : ''}`;
 
   const tbody = document.getElementById('tradeBody');
   if (trades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--text-muted);padding:20px;font-size:10px;letter-spacing:1px;">NO TRADES EXECUTED</td></tr>`;
   } else {
     tbody.innerHTML = trades.map((t, i) => {
       const pnl = t.pnl_gbp;
@@ -3389,6 +3437,7 @@ function renderResults(data) {
       return `
       <tr>
         <td style="color:var(--text-muted);">${i + 1}</td>
+        <td><span class="side-tag ${t.side === 'short' ? 'side-short' : 'side-long'}">${t.side === 'short' ? 'SHORT' : 'LONG'}</span></td>
         <td>${fmtTradeDate(t.entry_date, interval)}</td>
         <td>${fmtTradeDate(t.exit_date, interval)}</td>
         <td>${fmtPrice(t.entry_price)}</td>
@@ -3399,7 +3448,7 @@ function renderResults(data) {
         <td><button type="button" class="trade-why-btn" id="whyBtn${i}" onclick="toggleTradeWhy(${i})">WHY ▾</button></td>
       </tr>
       <tr class="trade-desc-row" id="descRow${i}" style="display:none;">
-        <td colspan="9">
+        <td colspan="10">
           <div class="trade-desc-tabs">
             <button type="button" class="trade-desc-tab active" id="simpleTab${i}" onclick="setTradeWhyMode(${i},'simple')">SIMPLE</button>
             <button type="button" class="trade-desc-tab" id="detailedTab${i}" onclick="setTradeWhyMode(${i},'detailed')">DETAILED</button>
@@ -3431,9 +3480,9 @@ function exportResultsCSV() {
     ['Worst Trade %', metrics.worst_trade_pct],
   ].map(row => row.join(',')).join('\n');
 
-  const tradeHeader = ['#', 'Entry Date', 'Exit Date', 'Entry Price', 'Exit Price', 'Return %', 'P&L', 'Exit Reason'].join(',');
+  const tradeHeader = ['#', 'Side', 'Entry Date', 'Exit Date', 'Entry Price', 'Exit Price', 'Return %', 'P&L', 'Exit Reason'].join(',');
   const tradeRows = trades.map((t, i) => [
-    i + 1, t.entry_date, t.exit_date, t.entry_price, t.exit_price,
+    i + 1, t.side || 'long', t.entry_date, t.exit_date, t.entry_price, t.exit_price,
     t.return_pct.toFixed(2), t.pnl_gbp.toFixed(2), t.exit_reason,
   ].join(','));
 

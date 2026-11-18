@@ -796,6 +796,48 @@ let liveCache = {};
 // ── Strategy builder state ────────────────────────────────────────────────────
 let strategyConditions = [];
 let strategyMatch = 'all';
+// Trade direction: how the buy/sell evidence is read. Internally a signal is still BUY or SELL;
+// the mode decides whether it opens or closes a position and what it's called.
+//   long  - BUY opens a long, SELL closes it
+//   short - SELL opens a short, BUY covers it
+//   both  - BUY goes long (covering any short), SELL goes short (closing any long)
+let strategyDirection = 'long';
+const DIRECTION_HELP = {
+  long:  'Buy evidence opens a long; sell evidence closes it.',
+  short: 'Sell evidence opens a short (profits if price falls); buy evidence covers it.',
+  both:  'Always one position at a time: sell evidence closes a long and opens a short, buy evidence covers the short and opens a long.',
+};
+function _validDirection(d) { return d === 'short' || d === 'both' ? d : 'long'; }
+// Older saves have no direction. Infer it from which sides their conditions point at, which
+// reproduces how they behaved before (a SELL alert used to open a simulated short).
+function inferDirection(conds) {
+  const hasBuy = conds.some(c => c.direction !== 'sell'), hasSell = conds.some(c => c.direction === 'sell');
+  return hasBuy && hasSell ? 'both' : (hasSell ? 'short' : 'long');
+}
+// Does a BUY/SELL signal open a position in this mode, or close one?
+function signalKind(type, mode) {
+  mode = _validDirection(mode);
+  if (mode === 'both') return 'entry';
+  return (mode === 'long') === (type === 'BUY') ? 'entry' : 'exit';
+}
+function signalLabel(type, mode) {
+  mode = _validDirection(mode);
+  const kind = signalKind(type, mode);
+  const side = mode === 'both' ? (type === 'BUY' ? 'LONG' : 'SHORT') : (mode === 'long' ? 'LONG' : 'SHORT');
+  return kind === 'entry' ? `${side} ENTRY` : `EXIT ${side}`;
+}
+// What a condition's Buy/Sell tag is called on its card.
+function conditionRoleLabel(dir) {
+  const kind = signalKind(dir === 'sell' ? 'SELL' : 'BUY', strategyDirection);
+  if (strategyDirection === 'both') return dir === 'sell' ? 'SHORT' : 'LONG';
+  return kind === 'entry' ? 'ENTRY' : 'EXIT';
+}
+function setStrategyDirection(d, rerender = true) {
+  strategyDirection = _validDirection(d);
+  const el = document.getElementById('stratDirection'); if (el) el.value = strategyDirection;
+  const h = document.getElementById('stratDirectionHelp'); if (h) h.textContent = DIRECTION_HELP[strategyDirection];
+  if (rerender) { renderConditions(); updateStrategyStatus(); }
+}
 let savedStrategies = [];
 let condExpanded  = {};
 let notificationSettings = { sound_enabled: true, popup_enabled: true };
@@ -1508,6 +1550,7 @@ function applyTemplate(key) {
   if (!tpl) return;
   strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value, c.params));
   strategyMatch = tpl.match;
+  setStrategyDirection(tpl.type === 'SELL' ? 'short' : 'long', false);
   const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
   const nameEl  = document.getElementById('strategyName'); if (nameEl) nameEl.value = tpl.name;
   const selEl   = document.getElementById('strategySelect'); if (selEl) selEl.value = '';
@@ -1703,7 +1746,7 @@ function renderConditions() {
         <div class="cond-header" onclick="toggleCondExpand(${i})">
           <span class="cond-name">${def.label || cond.type}</span>
           ${levelBtn}
-          <button class="cond-dir-btn cond-dir-${dir}" onclick="toggleConditionDirection(${i});event.stopPropagation()" title="This condition counts as evidence for a Buy or a Sell — click to flip">${dir.toUpperCase()}</button>
+          <button class="cond-dir-btn cond-dir-${dir}" onclick="toggleConditionDirection(${i});event.stopPropagation()" title="Which way this condition points — buy or sell evidence. Click to flip. Entry/exit/long/short is set by Trade direction.">${conditionRoleLabel(dir)}</button>
           <svg id="cond-chev-${i}" class="cond-chevron ${open ? 'open' : ''}" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"/>
           </svg>
@@ -1736,6 +1779,7 @@ function loadSavedStrategy(name) {
     document.getElementById('strategyName').value = '';
     document.getElementById('stratMatch').value = 'all';
     strategyMatch = 'all';
+    setStrategyDirection('long', false);
     strategyConditions = [];
     condExpanded = {};
     renderConditions();
@@ -1751,6 +1795,7 @@ function loadSavedStrategy(name) {
   // on their conditions — migrate using that old save's single whole-strategy
   // BUY/SELL setting (s.type), same idea as the tier-downgrade case below.
   strategyConditions = s.conditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, s.type) }));
+  setStrategyDirection(s.direction || inferDirection(strategyConditions), false);
   // A strategy saved back when this account still had Pro access can carry
   // condition types (Stochastic, Ichimoku, ADX...) that are no longer available —
   // drop those rather than silently keep them around unable to fire, same as the
@@ -1914,6 +1959,7 @@ function importBacktestStrategy(name) {
 
   strategyConditions = conditions;
   document.getElementById('strategyName').value = `${name} (from Backtester)`;
+  setStrategyDirection(cfg._direction || 'long', false);
 
   // Carry over risk settings (both pages are £ now).
   if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(document.getElementById('stopLoss').value).toFixed(1); }
@@ -2236,11 +2282,10 @@ function updateStrategyStatus() {
 
   const result = evaluateStrategy(currentAsset);
   statusEl.style.display = 'block';
-  const dirLine = (label, d, color) => {
+  const dirLine = (label, d, color, dirKey) => {
     if (d.total === 0) return '';
     const state = d.fired ? `▶ ${label} FIRING` : (d.matchedCount > 0 ? '◐ partial' : '⏸ no match');
     const lineColor = d.fired ? color : (d.matchedCount > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
-    const dirKey = label.toLowerCase();
     const items = result.results.filter(r => (r.direction === 'sell' ? 'sell' : 'buy') === dirKey).map(r => {
       const name = (CONDITION_DEFS[r.type] || {}).label || r.type;
       return `<div style="display:flex;gap:6px;color:${r.met ? 'var(--accent-green)' : 'var(--text-muted)'};"><span>${r.met ? '✓' : '✗'}</span><span style="flex:1;">${name}</span><span>${r.met ? 'firing' : 'not firing'}</span></div>`;
@@ -2257,8 +2302,8 @@ function updateStrategyStatus() {
   statusEl.innerHTML = `
     <div style="letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">LIVE · ${currentAsset} · ${tfLabel} BARS</div>
     ${tfMismatch ? `<div style="color:var(--accent-amber);margin-bottom:4px;">Chart is on ${chartTfLabel} — conditions are scored on ${tfLabel}, so indicator values can differ from the chart.</div>` : ''}
-    ${dirLine('BUY', result.buy, 'var(--accent-green)') || '<div style="color:var(--text-muted);">No Buy-tagged conditions</div>'}
-    ${dirLine('SELL', result.sell, 'var(--accent-red)') || '<div style="color:var(--text-muted);">No Sell-tagged conditions</div>'}`;
+    ${dirLine(signalLabel('BUY', strategyDirection), result.buy, 'var(--accent-green)', 'buy') || '<div style="color:var(--text-muted);">No buy-side conditions</div>'}
+    ${dirLine(signalLabel('SELL', strategyDirection), result.sell, 'var(--accent-red)', 'sell') || '<div style="color:var(--text-muted);">No sell-side conditions</div>'}`;
 
   result.results.forEach((r, i) => {
     const dot  = document.getElementById(`cond-dot-${i}`);
@@ -2303,6 +2348,7 @@ async function startEngine() {
     minConfidence: parseFloat(document.getElementById('minConfidence')?.value) || 50,
     timeframe: document.getElementById('timeframe').value,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
+    direction: strategyDirection,
     cache: {},
     lastScan: 0,
   };
@@ -2370,7 +2416,7 @@ function runnerConditionsHtml(r) {
     const col = fired ? 'var(--accent-green)' : (met > 0 ? 'var(--accent-amber)' : 'var(--text-muted)');
     const items = res.results.map(x => {
       const name = ((CONDITION_DEFS[x.type] || {}).label || x.type).replace(/</g, '&lt;');
-      const dir = x.direction === 'sell' ? 'SELL' : 'BUY';
+      const dir = signalLabel(x.direction === 'sell' ? 'SELL' : 'BUY', r.direction);
       return `<div style="display:flex;gap:6px;color:${x.met ? 'var(--accent-green)' : 'var(--text-muted)'};"><span>${x.met ? '✓' : '✗'}</span><span style="flex:1;">${name}</span><span style="opacity:.7;">${dir}</span></div>`;
     }).join('');
     return `<div style="margin-top:5px;"><div style="display:flex;justify-content:space-between;font-size:9px;font-weight:600;"><span>${sym}</span><span style="color:${col};">${met}/${total} met${fired ? ' · FIRING' : ''}</span></div><div style="font-size:8px;line-height:1.6;margin-top:2px;">${items}</div></div>`;
@@ -2536,7 +2582,7 @@ function _fireDirectionalAlerts(sym, result, runner) {
   [['BUY', result.buy], ['SELL', result.sell]].forEach(([type, d]) => {
     if (!d.fired) return;
     const reasons = d.matchedConditions.map(c => CONDITION_DEFS[c.type]?.label || c.type);
-    fireAlert(sym, { type, score: d.matchedCount, confidence: d.confidence / 100, reasons, strategy: runner ? runner.name : '' });
+    fireAlert(sym, { type, score: d.matchedCount, confidence: d.confidence / 100, reasons, strategy: runner ? runner.name : '', mode: runner ? runner.direction : strategyDirection });
   });
 }
 
@@ -2783,7 +2829,7 @@ function fireAlert(sym, sig) {
 
   const alert = {
     id: Date.now() + Math.random(),
-    sym, type: sig.type, price, target, sl, qty, conf, strategy: sig.strategy || '',
+    sym, type: sig.type, mode: _validDirection(sig.mode), price, target, sl, qty, conf, strategy: sig.strategy || '',
     reasons: sig.reasons, time: new Date().toTimeString().split(' ')[0],
     dismissed: false
   };
@@ -2794,7 +2840,7 @@ function fireAlert(sym, sig) {
   document.getElementById('alertBadge').textContent = alerts.filter(a => !a.dismissed).length + ' PENDING';
 
   const col = sig.type === 'BUY' ? 'signal' : 'err';
-  addLog(col, 'SIGNAL', `${sig.type} signal: ${sym} @ ${priceSymbol(sym)}${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
+  addLog(col, 'SIGNAL', `${signalLabel(sig.type, sig.mode)} signal: ${sym} @ ${priceSymbol(sym)}${price.toFixed(2)} | Conf: ${conf}% | Score: ${(sig.score || 0).toFixed(1)}`);
   addLog('info', 'SIGNAL', `Reasons: ${sig.reasons.join(', ')}`);
 
   if (notificationSettings.sound_enabled) playAlertTone(sig.type);
@@ -2804,7 +2850,7 @@ function fireAlert(sym, sig) {
   const key = (sig.strategy || '') + ':' + sym + ':' + sig.type;
   if (emailBox && emailBox.checked && Date.now() - (_lastSignalEmail[key] || 0) > 15 * 60 * 1000) {
     _lastSignalEmail[key] = Date.now();
-    sendAlertEmail('signal', sym, { strategyName: sig.strategy || sig.type + ' strategy', triggers: sig.reasons, direction: sig.type, price: priceSymbol(sym) + price.toFixed(2), confidence: conf });
+    sendAlertEmail('signal', sym, { strategyName: sig.strategy || sig.type + ' strategy', triggers: sig.reasons, direction: signalLabel(sig.type, sig.mode), price: priceSymbol(sym) + price.toFixed(2), confidence: conf });
   }
 }
 const _lastSignalEmail = {};
@@ -2929,7 +2975,7 @@ function showSignalToast(a) {
   el.className = `signal-toast ${a.type.toLowerCase()}`;
   el.innerHTML = `
     <div class="signal-toast-hdr">
-      <span class="signal-toast-type ${a.type.toLowerCase()}">${a.type} SIGNAL</span>
+      <span class="signal-toast-type ${a.type.toLowerCase()}">${signalLabel(a.type, a.mode)}</span>
       <button class="signal-toast-close" onclick="this.closest('.signal-toast').remove()">✕</button>
     </div>
     <div class="signal-toast-body">
@@ -3127,7 +3173,7 @@ function renderAlerts() {
   list.innerHTML = pending.map(a => `
     <div class="alert-card ${a.type.toLowerCase()} new" id="alert-${a.id}">
       <div class="alert-card-header">
-        <span class="alert-type ${a.type.toLowerCase()}">${a.type}</span>
+        <span class="alert-type ${a.type.toLowerCase()}">${signalLabel(a.type, a.mode)}</span>
         <span class="alert-asset">${a.sym}</span>${a.strategy ? `<span style="font-size:8px;color:var(--text-muted);">${a.strategy.replace(/</g, '&lt;')}</span>` : ''}
         <span class="alert-time">${a.time}</span>
       </div>
@@ -3146,13 +3192,18 @@ function renderAlerts() {
         </div>
         <div class="alert-actions">
           <button class="btn-execute ${a.type === 'BUY' ? 'btn-buy' : 'btn-sell-exec'}" onclick="openModal('${a.id}')">
-            ${a.type === 'BUY' ? '▲ SIMULATE BUY' : '▼ SIMULATE SELL'}
+            ${simulateButtonText(a)}
           </button>
           <button class="btn-skip" onclick="dismissAlert('${a.id}')">SKIP</button>
         </div>
       </div>
     </div>
   `).join('');
+}
+
+function simulateButtonText(a) {
+  if (signalKind(a.type, a.mode) === 'exit') return a.mode === 'long' ? '✕ SIMULATE EXIT LONG' : '✕ SIMULATE COVER SHORT';
+  return a.type === 'BUY' ? '▲ SIMULATE LONG' : '▼ SIMULATE SHORT';
 }
 
 // --- MODAL ---
@@ -3164,10 +3215,10 @@ function openModal(alertId) {
   const profit = Math.abs(a.target - a.price) * a.qty;
   const risk = Math.abs(a.price - a.sl) * a.qty;
 
-  document.getElementById('modalTitle').textContent = `REVIEW ${a.type} SIGNAL — ${a.sym}`;
+  document.getElementById('modalTitle').textContent = `REVIEW ${signalLabel(a.type, a.mode)} — ${a.sym}`;
   document.getElementById('modalSummary').innerHTML = `
     <div class="order-row"><div class="order-key">ASSET</div><div class="order-val">${a.sym}</div></div>
-    <div class="order-row"><div class="order-key">SIDE</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${a.type}</div></div>
+    <div class="order-row"><div class="order-key">ACTION</div><div class="order-val ${a.type === 'BUY' ? 'green' : 'red'}">${signalLabel(a.type, a.mode)}</div></div>
     <div class="order-row"><div class="order-key">ENTRY PRICE</div><div class="order-val">${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}</div></div>
     <div class="order-row"><div class="order-key">QUANTITY</div><div class="order-val">${a.qty.toFixed(6)}</div></div>
     <div class="order-row"><div class="order-key">POSITION SIZE</div><div class="order-val amber">${getCurrencySymbol()}${invested.toFixed(2)}</div></div>
@@ -3191,6 +3242,23 @@ function confirmTrade() {
   if (!pendingTrade) return;
   const a = pendingTrade;
   const invested = computeInvested();
+  // Close whatever is open the other way on this symbol first: always for an exit signal, and
+  // in long & short mode too (that's the reverse). Same-side positions are left alone.
+  const kind = signalKind(a.type, a.mode);
+  positions.filter(p => p.sym === a.sym && p.side !== a.type).forEach(p => {
+    p.current = assets[p.sym]?.price || p.current;
+    const d = p.side === 'BUY' ? 1 : -1;
+    p.pnl = d * (p.current - p.entry) * p.qty;
+    p.pnlPct = d * ((p.current - p.entry) / p.entry) * 100;
+    closePosition(p, kind === 'exit' ? 'EXIT SIGNAL' : 'REVERSED');
+  });
+  if (kind === 'exit') {
+    dismissAlert(String(a.id));
+    closeModal();
+    updatePositionsTable();
+    updateRiskBar();
+    return;
+  }
   positions.push({
     id: a.id, sym: a.sym, side: a.type,
     entry: a.price, current: a.price,
@@ -3202,7 +3270,7 @@ function confirmTrade() {
   closeModal();
   updatePositionsTable();
   updateRiskBar();
-  addLog('signal', 'ORDER', `${a.type} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ ${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}`);
+  addLog('signal', 'ORDER', `${signalLabel(a.type, a.mode)} SIMULATED: ${a.sym} × ${a.qty.toFixed(4)} @ ${priceSymbol(a.sym)}${formatPrice(a.price, a.sym)}`);
   addLog('info', 'ORDER', `Target: ${priceSymbol(a.sym)}${formatPrice(a.target, a.sym)} | Stop: ${priceSymbol(a.sym)}${formatPrice(a.sl, a.sym)}`);
 }
 
@@ -3255,7 +3323,7 @@ function updatePositionsTable() {
     const pnlStr = (pos.pnl >= 0 ? '+' : '') + getCurrencySymbol() + pos.pnl.toFixed(2);
     return `<tr>
       <td style="color:var(--text-primary);font-weight:600;">${pos.sym}</td>
-      <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side}</td>
+      <td style="color:${pos.side === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'};">${pos.side === 'BUY' ? 'LONG' : 'SHORT'}</td>
       <td>${priceSymbol(pos.sym)}${formatPrice(pos.entry, pos.sym)}</td>
       <td style="color:var(--accent-cyan);">${priceSymbol(pos.sym)}${formatPrice(pos.current, pos.sym)}</td>
       <td>${getCurrencySymbol()}${pos.invested.toFixed(0)}</td>
@@ -5394,6 +5462,7 @@ async function saveStrategy() {
   const strategy = {
     name,
     match:      document.getElementById('stratMatch').value,
+    direction:  strategyDirection,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
   };
   const idx = savedStrategies.findIndex(s => s.name === name);
@@ -5433,6 +5502,7 @@ async function savePreferences() {
     watchlistEnabled: { ...watchlistEnabled },
     strategyName:       document.getElementById('strategyName').value,
     strategyMatch:      document.getElementById('stratMatch').value,
+    strategyDirection,
     minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
     savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
@@ -5537,6 +5607,7 @@ function applyPreferences(prefs) {
     // per-condition direction existed — used only to migrate conditions saved
     // without their own `.direction`.
     strategyConditions = prefs.strategyConditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, prefs.strategyType) }));
+    setStrategyDirection(prefs.strategyDirection || inferDirection(strategyConditions), false);
     renderConditions();
   }
   if (Array.isArray(prefs.savedStrategies)) {
@@ -5790,6 +5861,19 @@ setTimeout(() => {
           <summary>Advanced options</summary>
           <div class="wz-adv-body">
             <div class="wz-hint">Fire when: ALL means every condition must be true together (stricter). ANY means one is enough (more signals).</div>
+      <!-- Trade direction -->
+      <div style="margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span>Trade direction</span>
+          <select id="stratDirection" onchange="setStrategyDirection(this.value)" style="width:auto;font-size:10px;padding:3px 6px;">
+            <option value="long">Long only</option>
+            <option value="short">Short only</option>
+            <option value="both">Long &amp; short (reverse)</option>
+          </select>
+        </div>
+        <div id="stratDirectionHelp" style="font-size:8px;color:var(--text-muted);line-height:1.5;margin-top:3px;">Buy evidence opens a long; sell evidence closes it.</div>
+      </div>
+
       <!-- Match logic -->
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:10px;color:var(--text-secondary);">
         <span>Fire when</span>

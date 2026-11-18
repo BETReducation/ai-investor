@@ -46,7 +46,25 @@ def calculate_metrics(trades: list[dict], equity_curve: list[dict]) -> dict:
     gross_loss   = abs(sum(losers)) if losers else 0.0
     profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else (99.0 if gross_profit > 0 else 0.0)
 
+    # Long vs short split. Returns are compounded per side so each leg reads like its own run.
+    by_side = {}
+    for side in ("long", "short"):
+        rs = [t["return_pct"] for t in trades if t.get("side", "long") == side]
+        if not rs:
+            continue
+        comp = 1.0
+        for t in trades:
+            if t.get("side", "long") == side:
+                comp *= 1 + t["size_pct"] / 100 * t["return_pct"] / 100
+        by_side[side] = {
+            "num_trades": len(rs),
+            "win_rate":   round(sum(1 for r in rs if r > 0) / len(rs) * 100, 1),
+            "avg_trade_pct": round(sum(rs) / len(rs), 2),
+            "total_return_pct": round((comp - 1) * 100, 2),
+        }
+
     return {
+        "by_side": by_side,
         "total_return_pct": round(total_return, 2),
         "win_rate":         round(len(winners) / len(trades) * 100, 1),
         "num_trades":       len(trades),

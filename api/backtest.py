@@ -44,6 +44,7 @@ def run_backtest(
     entry_match: str = "any",
     exit_match: str = "any",
     signal_only: bool = False,
+    direction_mode: str = "long",
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -67,7 +68,17 @@ def run_backtest(
     price increment: 0.0001 for most pairs, 0.01 for JPY pairs via pip_size)
     rather than as a % of the position, since leverage decouples position
     value from the price move.
+
+    direction_mode="long" (default): BUY opens a long, SELL closes it.
+    direction_mode="short": SELL opens a short, BUY closes (covers) it.
+    direction_mode="both": stop-and-reverse. One position at a time; a SELL that closes
+    a long can open a short on the same bar, and a BUY that covers a short can open a long.
+    Shorts mirror everything: stop above entry, target below, trailing stop follows the
+    low, and return_pct is (entry - exit) / entry. No borrow or funding cost is modelled.
     """
+    if direction_mode not in ("long", "short", "both"):
+        direction_mode = "long"
+    allowed_sides = {"long": ("long",), "short": ("short",), "both": ("long", "short")}[direction_mode]
     # Separate EXIT indicator set: scored on its own thresholds/params (a second signal-only pass over the
     # same data); its SELL signal closes a trade. Without it, the one set drives both entry and exit.
     exit_rows = None
@@ -491,6 +502,7 @@ def run_backtest(
     equity      = 1.0
     equity_curve: list[dict] = []
     position: dict | None = None
+    last_closed_side: str | None = None
 
     # Buy-and-hold baseline (normalised to 1.0 at warmup bar)
     bah_curve: list[dict] = []
@@ -808,19 +820,36 @@ def run_backtest(
             continue
 
         # ── Manage open position ──────────────────────────────────────────
+        # `side` decides everything that differs between a long and a short: which
+        # signal closes it, which way the stops sit, and the sign of the return.
+        closed_this_bar = False
         if position is not None:
-            ep       = position["entry_price"]
-            sl_price = position["sl_price"]
-            tp_price = position["tp_price"]
+            side       = position["side"]
+            sgn        = 1 if side == "long" else -1
+            close_side = "SELL" if side == "long" else "BUY"
+            ep         = position["entry_price"]
+            sl_price   = position["sl_price"]
+            tp_price   = position["tp_price"]
 
             trail_price = None
             if trailing_stop:
-                position["peak"] = max(position["peak"], high)
-                trail_price = position["peak"] * (1 - trail_distance_pct / 100)
+                if side == "long":
+                    position["peak"] = max(position["peak"], high)
+                    trail_price = position["peak"] * (1 - trail_distance_pct / 100)
+                else:
+                    position["peak"] = min(position["peak"], low)   # best price so far for a short
+                    trail_price = position["peak"] * (1 + trail_distance_pct / 100)
 
-            # Trailing stop only ever tightens the floor set by the fixed stop.
-            effective_sl   = max(sl_price, trail_price) if trail_price is not None else sl_price
-            trail_is_tighter = trail_price is not None and effective_sl == trail_price and trail_price > sl_price
+            # The trailing stop only ever tightens the fixed stop.
+            if trail_price is None:
+                effective_sl = sl_price
+                trail_is_tighter = False
+            elif side == "long":
+                effective_sl = max(sl_price, trail_price)
+                trail_is_tighter = effective_sl == trail_price and trail_price > sl_price
+            else:
+                effective_sl = min(sl_price, trail_price)
+                trail_is_tighter = effective_sl == trail_price and trail_price < sl_price
 
             exit_reason = exit_price = None
 
@@ -829,47 +858,56 @@ def run_backtest(
             else:
                 x_result, x_overall, x_conf = result, overall, confidence
 
-            # "+X% from the buy price" as a sell condition that combines with the sell indicators:
-            #   signal  - reaching it adds a weighted SELL signal, so it counts toward confidence
-            #   require - indicator sells are ignored until the gain is reached (AND)
+            # "+X% from the entry price" as a close condition that combines with the close indicators:
+            #   signal  - reaching it adds a weighted close signal, so it counts toward confidence
+            #   require - indicator close signals are ignored until the gain is reached (AND)
             if exit_gain_pct is not None and close is not None:
-                gain_now = (close - ep) / ep * 100
+                gain_now = sgn * (close - ep) / ep * 100
                 gain_hit = gain_now >= exit_gain_pct
-                detail = f"Price is {gain_now:+.1f}% from the buy price (sell condition: +{exit_gain_pct:g}%)"
+                verb, cond = ("buy", "sell") if side == "long" else ("short", "cover")
+                detail = f"Price is {gain_now:+.1f}% from the {verb} price ({cond} condition: +{exit_gain_pct:g}%)"
                 base = x_result or {"buy_score": 0, "sell_score": 0, "signals": []}
+                own_key, opp_key = ("sell_score", "buy_score") if side == "long" else ("buy_score", "sell_score")
                 if exit_gain_mode == "require":
                     if not gain_hit:
                         x_overall = None
-                    elif x_overall == "SELL":
-                        x_result = {**base, "signals": base["signals"] + [{"indicator": "Profit target", "type": "SELL", "detail": detail, "weight": 1}]}
+                    elif x_overall == close_side:
+                        x_result = {**base, "signals": base["signals"] + [{"indicator": "Profit target", "type": close_side, "detail": detail, "weight": 1}]}
                 elif gain_hit:
-                    b, s_ = base["buy_score"], base["sell_score"] + 2
-                    x_result = {**base, "sell_score": s_, "signals": base["signals"] + [{"indicator": "Profit target", "type": "SELL", "detail": detail, "weight": 2}]}
-                    x_conf = round(max(b, s_) / (b + s_) * 100, 1)
-                    x_overall = "SELL" if s_ > b else x_overall
+                    own, opp = base[own_key] + 2, base[opp_key]
+                    x_result = {**base, own_key: own, "signals": base["signals"] + [{"indicator": "Profit target", "type": close_side, "detail": detail, "weight": 2}]}
+                    x_conf = round(max(own, opp) / (own + opp) * 100, 1)
+                    x_overall = close_side if own > opp else x_overall
                 elif exit_match == "all":
                     x_overall = None   # ALL: the profit condition is one of the conditions that must be met
-            # ALL: every sell indicator must have at least one trigger signalling a sell on this bar.
-            if exit_match == "all" and x_overall == "SELL" and not _all_agree(x_result, "SELL"):
+            # ALL: every indicator must have at least one trigger signalling a close on this bar.
+            if exit_match == "all" and x_overall == close_side and not _all_agree(x_result, close_side):
                 x_overall = None
 
-            if low <= effective_sl:
+            if side == "long":
+                sl_hit, tp_hit = low <= effective_sl, high >= tp_price
+                sl_fill, tp_fill = max(low, effective_sl), min(high, tp_price)
+            else:
+                sl_hit, tp_hit = high >= effective_sl, low <= tp_price
+                sl_fill, tp_fill = min(high, effective_sl), max(low, tp_price)
+
+            if sl_hit:
                 exit_reason = "Trailing Stop" if trail_is_tighter else "Stop Loss"
-                exit_price  = max(low, effective_sl)
-            elif high >= tp_price:
+                exit_price  = sl_fill
+            elif tp_hit:
                 exit_reason = "Take Profit"
-                exit_price  = min(high, tp_price)
-            elif x_overall == "SELL" and x_conf >= exit_min_conf:
+                exit_price  = tp_fill
+            elif x_overall == close_side and x_conf >= exit_min_conf:
                 exit_reason = "Signal"
                 exit_price  = close
 
             if exit_reason:
-                ret           = (exit_price - ep) / ep * 100
+                ret           = sgn * (exit_price - ep) / ep * 100
                 f             = position["size_fraction"]
                 equity_before = equity
                 equity       *= 1 + f * ret / 100
 
-                exit_signals    = _fired_signals(x_result["signals"], "SELL") if exit_reason == "Signal" else []
+                exit_signals    = _fired_signals(x_result["signals"], close_side) if exit_reason == "Signal" else []
                 exit_context    = _market_context(indicators)
                 exit_confidence = x_conf if exit_reason == "Signal" else None
 
@@ -882,9 +920,11 @@ def run_backtest(
                     exit_buy_score=x_result["buy_score"] if exit_reason == "Signal" else None,
                     exit_sell_score=x_result["sell_score"] if exit_reason == "Signal" else None,
                     return_pct=ret, sl_price=sl_price, tp_price=tp_price, trail_distance_pct=trail_distance_pct,
+                    side=side,
                 )
 
                 trades.append({
+                    "side":        side,
                     "entry_date":  position["entry_date"],
                     "exit_date":   date_str,
                     "entry_price": round(ep, 4),
@@ -901,34 +941,48 @@ def run_backtest(
                     "description_simple":   description_simple,
                 })
                 position = None
+                closed_this_bar = True
+                last_closed_side = side
 
-        else:
-            if overall == "BUY" and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, "BUY")):
+        # Open a new position. Long-only keeps the old rule (no re-entry on the bar a trade closed);
+        # in "both" mode a close can reverse straight into the opposite side on the same bar.
+        if position is None and (not closed_this_bar or direction_mode == "both"):
+            new_side = None
+            for cand in (("long", "BUY"), ("short", "SELL")):
+                if cand[0] not in allowed_sides:
+                    continue
+                if closed_this_bar and cand[0] == last_closed_side:
+                    continue   # a reversal goes the other way, never straight back in
+                if overall == cand[1] and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, cand[1])):
+                    new_side = cand
+                    break
+            if new_side is not None:
+                side, entry_side = new_side
                 pot_value = equity * capital
                 if trade_amount_mode == "gbp":
                     size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
                 else:
                     size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
 
+                # Forex: SL/TP are a pip distance from entry. Otherwise a % of the trade amount
+                # (the position at risk), which for an unleveraged position is also the price move.
+                # A short's stop sits above entry and its target below.
                 if sl_tp_unit == "pips":
-                    # Forex: SL/TP are a pip distance from entry, not a % of
-                    # the position — a fixed number of price increments.
-                    sl_price = close - stop_loss_pct * pip_size
-                    tp_price = close + take_profit_pct * pip_size
+                    sl_dist, tp_dist = stop_loss_pct * pip_size, take_profit_pct * pip_size
                 else:
-                    # Stocks/ETFs/futures: SL/TP are a % of the trade amount
-                    # (the position actually at risk), so for an unleveraged
-                    # position the price move needed to reach them is the
-                    # same percentage.
-                    sl_price = close * (1 - stop_loss_pct / 100)
-                    tp_price = close * (1 + take_profit_pct / 100)
+                    sl_dist, tp_dist = close * stop_loss_pct / 100, close * take_profit_pct / 100
+                if side == "long":
+                    sl_price, tp_price = close - sl_dist, close + tp_dist
+                else:
+                    sl_price, tp_price = close + sl_dist, max(close - tp_dist, 0.0)
 
                 position = {
+                    "side": side,
                     "entry_price": close, "entry_date": date_str, "peak": close,
                     "size_fraction": size_fraction,
                     "sl_price": sl_price,
                     "tp_price": tp_price,
-                    "entry_signals":    _fired_signals(result["signals"], "BUY"),
+                    "entry_signals":    _fired_signals(result["signals"], entry_side),
                     "entry_context":    _market_context(indicators),
                     "entry_confidence": confidence,
                     "entry_buy_score":  result["buy_score"],
@@ -943,7 +997,8 @@ def run_backtest(
     # Close any position still open at end of data
     if position is not None:
         lc            = _sf(combined.iloc[-1].get("Close")) or position["entry_price"]
-        ret           = (lc - position["entry_price"]) / position["entry_price"] * 100
+        sgn           = 1 if position["side"] == "long" else -1
+        ret           = sgn * (lc - position["entry_price"]) / position["entry_price"] * 100
         f             = position["size_fraction"]
         equity_before = equity
         equity       *= 1 + f * ret / 100
@@ -955,10 +1010,11 @@ def run_backtest(
             exit_reason="End of Data", exit_signals=[], exit_context=None,
             exit_confidence=None, exit_buy_score=None, exit_sell_score=None,
             return_pct=ret, sl_price=position["sl_price"], tp_price=position["tp_price"],
-            trail_distance_pct=trail_distance_pct,
+            trail_distance_pct=trail_distance_pct, side=position["side"],
         )
 
         trades.append({
+            "side":        position["side"],
             "entry_date":  position["entry_date"],
             "exit_date":   str(combined.index[-1]),
             "entry_price": round(position["entry_price"], 4),
@@ -1140,6 +1196,13 @@ _EXIT_PLAIN = {
     "End of Data":    "the backtest period ended while the position was still open, so it was closed at the last available price",
 }
 
+_EXIT_PLAIN_SHORT = {
+    **_EXIT_PLAIN,
+    "Stop Loss":     "the price rose to the stop level, closing the short to cap further losses",
+    "Trailing Stop": "the price bounced up from its low by the trailing-stop distance, locking in gains as the move lost momentum",
+    "Take Profit":   "the price fell to the take-profit target, locking in the planned gain",
+}
+
 
 def _describe_trade(
     entry_signals: list[dict], entry_context: dict, entry_confidence: float,
@@ -1147,14 +1210,18 @@ def _describe_trade(
     exit_reason: str, exit_signals: list[dict], exit_context: dict | None,
     exit_confidence: float | None, exit_buy_score: float | None, exit_sell_score: float | None,
     return_pct: float, sl_price: float, tp_price: float, trail_distance_pct: float,
+    side: str = "long",
 ) -> tuple[str, str]:
+    short = side == "short"
+    open_sig, close_sig = ("SELL", "BUY") if short else ("BUY", "SELL")
+    open_word, close_word = ("Shorted", "Covered") if short else ("Bought", "Sold")
     outcome_word = "gain" if return_pct >= 0 else "loss"
 
     # ── Detailed ──
     entry_lines = "\n".join(f"  • {s['detail']}" for s in entry_signals) or "  • (no individual conditions logged)"
     entry_ctx_str = _describe_context(entry_context)
     detailed_entry = (
-        f"ENTRY — {len(entry_signals)} indicator condition(s) triggered a BUY "
+        f"ENTRY — {len(entry_signals)} indicator condition(s) triggered a {open_sig} "
         f"(confidence {entry_confidence:.0f}%, {entry_buy_score:g} buy vs {entry_sell_score:g} sell points):\n"
         f"{entry_lines}"
         + (f"\nMarket backdrop at entry: {entry_ctx_str}." if entry_ctx_str else "")
@@ -1164,13 +1231,13 @@ def _describe_trade(
         exit_lines = "\n".join(f"  • {s['detail']}" for s in exit_signals) or "  • (no individual conditions logged)"
         exit_ctx_str = _describe_context(exit_context)
         detailed_exit = (
-            f"EXIT — {len(exit_signals)} indicator condition(s) triggered a SELL "
+            f"EXIT — {len(exit_signals)} indicator condition(s) triggered a {close_sig} "
             f"(confidence {exit_confidence:.0f}%, {exit_sell_score:g} sell vs {exit_buy_score:g} buy points):\n"
             f"{exit_lines}"
             + (f"\nMarket backdrop at exit: {exit_ctx_str}." if exit_ctx_str else "")
         )
     else:
-        plain = _EXIT_PLAIN.get(exit_reason, "the position was closed")
+        plain = (_EXIT_PLAIN_SHORT if short else _EXIT_PLAIN).get(exit_reason, "the position was closed")
         extra = ""
         if exit_reason == "Stop Loss":
             extra = f" (stop level: {sl_price:.4g})"
@@ -1185,16 +1252,16 @@ def _describe_trade(
 
     # ── Simple ──
     top_entry = sorted(entry_signals, key=lambda s: -s.get("weight", 0))[:2]
-    entry_reason = "; ".join(s["detail"] for s in top_entry) or "a buy signal fired"
+    entry_reason = "; ".join(s["detail"] for s in top_entry) or f"a {open_sig.lower()} signal fired"
     trend_phrase = f", while the market was in {entry_context.get('trend')}" if entry_context and entry_context.get("trend") else ""
-    simple_entry = f"Bought because {entry_reason}{trend_phrase}."
+    simple_entry = f"{open_word} because {entry_reason}{trend_phrase}."
 
     if exit_reason == "Signal":
         top_exit = sorted(exit_signals, key=lambda s: -s.get("weight", 0))[:2]
-        exit_reason_str = "; ".join(s["detail"] for s in top_exit) or "a sell signal fired"
-        simple_exit = f"Sold because {exit_reason_str}."
+        exit_reason_str = "; ".join(s["detail"] for s in top_exit) or f"a {close_sig.lower()} signal fired"
+        simple_exit = f"{close_word} because {exit_reason_str}."
     else:
-        simple_exit = f"Sold — {_EXIT_PLAIN.get(exit_reason, 'the position was closed')}."
+        simple_exit = f"{close_word} — {(_EXIT_PLAIN_SHORT if short else _EXIT_PLAIN).get(exit_reason, 'the position was closed')}."
 
     simple = f"{simple_entry} {simple_exit} Result: {return_pct:+.2f}% {outcome_word}."
 
