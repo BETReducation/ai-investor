@@ -90,10 +90,10 @@ function tile(cls, title, link, body, locked) {
 
 function up(text) { return `<div class="muted">🔒 ${text}</div><a class="btn" style="align-self:flex-start" href="/pricing">See plans</a>`; }
 
-function usageBar(u) {
+function usageBar(u, label) {
   if (!u) return '<div class="muted">Unlimited on your plan.</div>';
   const pct = Math.min(100, Math.round(u.used / u.limit * 100));
-  return `<div class="row"><span>Used today</span><span>${u.used} / ${u.limit}</span></div><div class="bar"><i style="width:${pct}%"></i></div>`;
+  return `<div class="row"><span>${label || 'Used today'}</span><span>${u.used} / ${u.limit}</span></div><div class="bar"><i style="width:${pct}%"></i></div>`;
 }
 
 function render(d) {
@@ -143,7 +143,7 @@ function render(d) {
     tile('wide', 'Latest Alpha' + (d.interests.length ? ' for you' : ''), ['All Alpha', '/alpha'], `<div>${alpha}</div>`) +
     tile('', 'GCG Chat', ['Open', '/alpha/chat'], `<div>${chatItems}</div>`) +
     tile('full', 'Jump to', null, `<div class="links">${links}</div>`) +
-    tile('', 'Backtester', ['Open', '/backtester'], proBt ? '<div class="muted">Full symbol list and unlimited runs.</div>' : usageBar(d.usage.backtests) + up('Pro unlocks every symbol and unlimited runs.')) +
+    tile('', 'Backtester', ['Open', '/backtester'], proBt ? '<div class="muted">Full symbol list and unlimited runs.</div>' : usageBar(d.usage.backtests, 'Free tests used') + up('Intermediate unlocks every symbol and indicator.')) +
     tile('', 'Signals', ['Open', '/tools/signals'], proSig ? '<div class="muted">Full signals suite.</div>' : up('You have basic signals. Pro adds the full signal configuration and saved symbols.')) +
     tile('', 'Ask the lessons', null, usageBar(d.usage.learn_ai) + (d.entitlements.learn_ai === 'unlimited' ? '' : up('Pro removes the daily limit.')));
 }

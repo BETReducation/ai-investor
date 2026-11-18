@@ -2216,18 +2216,13 @@ async function applyBacktesterGating() {
       note.style.cssText = 'padding:6px 16px 0;font-size:10px;color:var(--text-secondary);';
       modeRow.insertAdjacentElement('afterend', note);
     }
-    if (btGating.anonymous) {
-      note.textContent = `Free trial: ${btGating.remaining} of ${btGating.limit} backtests left — sign up for a free account for ${FREE_TIER_DAILY_LIMIT_LABEL}/day.`;
-    } else {
-      note.textContent = `${btGating.remaining} of ${btGating.limit} backtests left today — upgrade to Pro for unlimited.`;
-    }
+    note.textContent = `${btGating.remaining} of ${btGating.limit} free tests left. Each new symbol uses one; re-running a symbol is free. Intermediate unlocks every symbol and indicator.`;
     document.getElementById('btSymbolRow').style.display = 'none';
     renderBasicAssetPicker();
   } else {
     setIndicatorMode('detailed');
   }
 }
-const FREE_TIER_DAILY_LIMIT_LABEL = 20;
 
 // Friendly names for the Basic-tier allowlist — mirrors BASIC_TIER_SYMBOLS in
 // app.py, keep the two in sync. Only the forex pairs apply here (this page's

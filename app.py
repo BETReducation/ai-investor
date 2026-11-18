@@ -975,18 +975,8 @@ def _clear_custom_symbols_on_downgrade(users: dict, username: str, old_level, ne
             users[username]["preferences"] = prefs
 
 
-# ── Backtester gating (basic entitlement = anonymous visitors AND free-tier
-# accounts; "basic" here is the same value as entitlements['backtester']) ────
-
-# Anonymous visitors: a lifetime cap per IP (never resets) before the tool asks
-# them to sign up. IP-based limiting is a soft speed bump, not real abuse-proofing
-# — trivially bypassed by VPN/incognito/mobile data — but it stops casual reuse
-# without needing an account, which is the point.
-ANON_BACKTEST_LIMIT = 5
-
-# Free-tier accounts: N runs per *calendar* day (UTC), not a rolling 24h window —
-# resets at midnight UTC regardless of when the user's first run that day was.
-FREE_TIER_DAILY_BACKTEST_LIMIT = 20
+# ── Backtester gating: "basic" entitlement = free accounts, who get plans.FREE_TOOL_TESTS
+# lifetime tests (see _free_test_ok). Anonymous visitors are locked out. ─────────────
 
 # Lesson Q&A bot: free-tier gets a small taste per day; pro/founder are
 # "unlimited" per DEFAULT_ENTITLEMENTS_BY_TIER but still get a high sanity
@@ -1136,56 +1126,8 @@ def _too_many_requests(msg: str = "Too many attempts. Please wait a few minutes 
     return resp
 
 
-def _anon_backtest_try(ip: str) -> tuple[bool, int]:
-    """Increments this IP's lifetime anonymous-backtest count and reports whether
-    this run is allowed. Returns (allowed, count_after)."""
-    if DATABASE_URL:
-        with _db_conn() as conn, conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO anon_backtest_usage (ip, count) VALUES (%s, 1)
-                ON CONFLICT (ip) DO UPDATE SET count = anon_backtest_usage.count + 1
-                RETURNING count
-            """, (ip,))
-            count = cur.fetchone()[0]
-        return count <= ANON_BACKTEST_LIMIT, count
-    data = {}
-    if os.path.exists(ANON_BACKTEST_FILE):
-        with open(ANON_BACKTEST_FILE) as f:
-            data = json.load(f)
-    count = data.get(ip, 0) + 1
-    data[ip] = count
-    with open(ANON_BACKTEST_FILE, "w") as f:
-        json.dump(data, f)
-    return count <= ANON_BACKTEST_LIMIT, count
-
-
-def _daily_backtest_try(username: str) -> tuple[bool, int]:
-    """Increments this user's count for today (UTC calendar day) and reports
-    whether this run is allowed. Returns (allowed, count_after)."""
-    today = _dt.datetime.utcnow().date()
-    if DATABASE_URL:
-        with _db_conn() as conn, conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO backtest_daily_usage (username, day, count) VALUES (%s, %s, 1)
-                ON CONFLICT (username, day) DO UPDATE SET count = backtest_daily_usage.count + 1
-                RETURNING count
-            """, (username, today))
-            count = cur.fetchone()[0]
-        return count <= FREE_TIER_DAILY_BACKTEST_LIMIT, count
-    data = {}
-    if os.path.exists(DAILY_BACKTEST_FILE):
-        with open(DAILY_BACKTEST_FILE) as f:
-            data = json.load(f)
-    key = f"{username}|{today.isoformat()}"
-    count = data.get(key, 0) + 1
-    data[key] = count
-    with open(DAILY_BACKTEST_FILE, "w") as f:
-        json.dump(data, f)
-    return count <= FREE_TIER_DAILY_BACKTEST_LIMIT, count
-
-
 def _daily_learn_qa_try(username: str, limit: int) -> tuple[bool, int]:
-    """Same pattern as _daily_backtest_try, for the lesson Q&A bot. `limit` is
+    """Per-day counter for the lesson Q&A bot. `limit` is
     the caller's tier-specific cap (FREE_TIER_ vs PRO_TIER_)."""
     today = _dt.datetime.utcnow().date()
     if DATABASE_URL:
@@ -5005,7 +4947,7 @@ def api_dashboard():
         },
         "usage": {
             "learn_ai": None if pro_qa else {"used": _daily_usage("learn_qa_daily_usage", current_user.id), "limit": FREE_TIER_DAILY_LEARN_QA_LIMIT},
-            "backtests": None if ent.get("backtester") == "pro" else {"used": _daily_usage("backtest_daily_usage", current_user.id), "limit": FREE_TIER_DAILY_BACKTEST_LIMIT},
+            "backtests": None if ent.get("backtester") == "pro" else {"used": len((_samples_of(current_user.id).get("tests") or {}).get("backtester") or []), "limit": plans.FREE_TOOL_TESTS},
         },
     })
 
@@ -9613,51 +9555,15 @@ def backtest_quota():
     """Read-only lookup for the strategy-lab UI — reports the caller's backtester
     entitlement, symbol allowlist (if restricted), and remaining tries, without
     consuming one. Used to show/hide tabs and a tries-remaining note up front."""
-    locked = _tool_locked("backtester", "intermediate")
-    if locked:
-        return locked
-    if current_user.is_authenticated:
-        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
-    else:
-        entitlement_level = "basic"
-
-    if entitlement_level == "pro":
-        return jsonify({"entitlement": "pro", "restricted": False})
-
     if not current_user.is_authenticated:
-        ip = _client_ip()
-        if DATABASE_URL:
-            with _db_conn() as conn, conn.cursor() as cur:
-                cur.execute("SELECT count FROM anon_backtest_usage WHERE ip = %s", (ip,))
-                row = cur.fetchone()
-                used = row[0] if row else 0
-        else:
-            used = 0
-            if os.path.exists(ANON_BACKTEST_FILE):
-                with open(ANON_BACKTEST_FILE) as f:
-                    used = json.load(f).get(ip, 0)
-        return jsonify({
-            "entitlement": "basic", "restricted": True, "anonymous": True,
-            "limit": ANON_BACKTEST_LIMIT, "used": used,
-            "remaining": max(0, ANON_BACKTEST_LIMIT - used),
-            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
-        })
-
-    today = _dt.datetime.utcnow().date()
-    if DATABASE_URL:
-        with _db_conn() as conn, conn.cursor() as cur:
-            cur.execute("SELECT count FROM backtest_daily_usage WHERE username = %s AND day = %s", (current_user.id, today))
-            row = cur.fetchone()
-            used = row[0] if row else 0
-    else:
-        used = 0
-        if os.path.exists(DAILY_BACKTEST_FILE):
-            with open(DAILY_BACKTEST_FILE) as f:
-                used = json.load(f).get(f"{current_user.id}|{today.isoformat()}", 0)
+        return _tool_locked("backtester", "intermediate")
+    if getattr(current_user, "entitlements", {}).get("backtester", "basic") == "pro":
+        return jsonify({"entitlement": "pro", "restricted": False})
+    used = len((_samples_of(current_user.id).get("tests") or {}).get("backtester") or [])
     return jsonify({
         "entitlement": "basic", "restricted": True, "anonymous": False,
-        "limit": FREE_TIER_DAILY_BACKTEST_LIMIT, "used": used,
-        "remaining": max(0, FREE_TIER_DAILY_BACKTEST_LIMIT - used),
+        "limit": plans.FREE_TOOL_TESTS, "used": used,
+        "remaining": max(0, plans.FREE_TOOL_TESTS - used),
         "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
     })
 
@@ -9792,43 +9698,21 @@ def _backtest_impl():
     if not symbol:
         return jsonify({"error": "symbol parameter is required"}), 400
 
-    locked = _tool_locked("backtester", "intermediate")
-    if locked:
-        return locked
-
-    # ── Tier gating ──────────────────────────────────────────────────────────
-    # Anonymous visitors and free-tier ("basic" entitlement) accounts share the
-    # same restrictions: a curated symbol list and Basic-only indicators. On top
-    # of that, anonymous gets a lifetime try cap and free-tier gets a daily cap.
-    # Pro/founder accounts (entitlements['backtester'] == 'pro') skip all of it.
-    if current_user.is_authenticated:
-        entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
-    else:
-        entitlement_level = "basic"
-
+    # Anonymous visitors are locked out. Accounts below Intermediate get plans.FREE_TOOL_TESTS
+    # lifetime tests (one per distinct symbol, basic indicators, curated symbol list);
+    # Intermediate and above (entitlement "pro") skip all of it.
     if not current_user.is_authenticated:
-        allowed, tries_used = _anon_backtest_try(_client_ip())
-        if not allowed:
+        return _tool_locked("backtester", "intermediate")
+    entitlement_level = getattr(current_user, "entitlements", {}).get("backtester", "basic")
+    if entitlement_level != "pro":
+        if symbol.upper() not in BASIC_TIER_SYMBOLS:
             return jsonify({
-                "error": f"You've used your {ANON_BACKTEST_LIMIT} free backtests. Sign up for a free account to keep going.",
-                "anon_limit_reached": True,
-                "limit": ANON_BACKTEST_LIMIT,
+                "error": f"'{symbol}' isn't available on the free plan. Free backtesting is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Intermediate for any symbol.",
+                "symbol_restricted": True,
+                "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
             }), 403
-    elif entitlement_level != "pro":
-        allowed, count = _daily_backtest_try(current_user.id)
-        if not allowed:
-            return jsonify({
-                "error": f"Daily backtest limit reached ({FREE_TIER_DAILY_BACKTEST_LIMIT}/day). Upgrade to Pro for unlimited backtests, or try again tomorrow.",
-                "daily_limit_reached": True,
-                "limit": FREE_TIER_DAILY_BACKTEST_LIMIT,
-            }), 403
-
-    if entitlement_level != "pro" and symbol.upper() not in BASIC_TIER_SYMBOLS:
-        return jsonify({
-            "error": f"'{symbol}' isn't available on the free plan. Free backtesting is limited to: {', '.join(sorted(BASIC_TIER_SYMBOLS))}. Upgrade to Pro for any symbol.",
-            "symbol_restricted": True,
-            "allowed_symbols": sorted(BASIC_TIER_SYMBOLS),
-        }), 403
+        if not _free_test_ok("backtester", symbol, "intermediate"):
+            return _free_test_locked("backtester", "intermediate")
 
     try:
         stop_loss_pct   = float(args.get("stop_loss",     5.0))

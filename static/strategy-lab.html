@@ -2216,11 +2216,7 @@ async function applyBacktesterGating() {
       note.style.cssText = 'padding:6px 16px 0;font-size:10px;color:var(--text-secondary);';
       modeRow.insertAdjacentElement('afterend', note);
     }
-    if (btGating.anonymous) {
-      note.textContent = `Free trial: ${btGating.remaining} of ${btGating.limit} backtests left — sign up for a free account for ${FREE_TIER_DAILY_LIMIT_LABEL}/day.`;
-    } else {
-      note.textContent = `${btGating.remaining} of ${btGating.limit} backtests left today — upgrade to Pro for unlimited.`;
-    }
+    note.textContent = `${btGating.remaining} of ${btGating.limit} free tests left. Each new symbol uses one; re-running a symbol is free. Intermediate unlocks every symbol and indicator.`;
     document.getElementById('btSymbolRow').style.display = 'none';
     renderBasicAssetPicker();
   } else {
@@ -2286,7 +2282,6 @@ function pickBasicAsset(symbol) {
   pickBtSymbol(symbol);
   renderBasicAssetPicker();
 }
-const FREE_TIER_DAILY_LIMIT_LABEL = 20;
 
 // Keeps a range slider and its paired free-typed number box in sync. The slider
 // stays the source of truth read by serializeBacktestConfig()/the backtest request —

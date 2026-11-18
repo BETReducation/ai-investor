@@ -110,3 +110,7 @@ def test_support_channels_by_plan(monkeypatch):
             assert bool(d["faq"]) == (rank >= 1)
     finally:
         A.app.config["LOGIN_DISABLED"] = False
+
+
+def test_backtester_is_a_free_test_tool():
+    assert "/backtester" in A.plans.FREE_TEST_TOOLS
