@@ -894,6 +894,10 @@ const CONDITION_DEFS = {
   // ── ROC ─────────────────────────────────────────────────────────────────────
   roc_positive:     { label: 'ROC Positive (Momentum ↑)', group: 'ROC',        desc: 'Rate of Change is positive — price is higher than N bars ago, momentum up',         inputLabel: null,              defaultVal: 0 },
   roc_negative:     { label: 'ROC Negative (Momentum ↓)', group: 'ROC',        desc: 'Rate of Change is negative — price is lower than N bars ago, momentum down',        inputLabel: null,              defaultVal: 0 },
+  // ── Price level ─────────────────────────────────────────────────────────────
+  price_below_level: { label: 'Price Below Level', group: 'Price', desc: 'Latest price is below the level you set, e.g. a support break. Pair it with a short entry (Sell evidence) to go short when price falls through a level', inputLabel: 'Price level', defaultVal: 0, min: 0, max: 100000000, step: 0.01, suffix: '' },
+  price_above_level: { label: 'Price Above Level', group: 'Price', desc: 'Latest price is above the level you set, e.g. a breakout. Pair it with a long entry (Buy evidence) to go long when price clears a level', inputLabel: 'Price level', defaultVal: 0, min: 0, max: 100000000, step: 0.01, suffix: '' },
+
   // ── Moving Averages ─────────────────────────────────────────────────────────
   ma_golden:        { label: 'Golden Cross',             group: 'MA',          desc: 'MA20 crossed above MA50 recently — classic bullish breakout signal',                 inputLabel: 'Within (bars)',   defaultVal: 10,   min: 1,    max: 30,  step: 1,   suffix: '' },
   ma_death:         { label: 'Death Cross',              group: 'MA',          desc: 'MA20 crossed below MA50 recently — classic bearish breakdown signal',                inputLabel: 'Within (bars)',   defaultVal: 10,   min: 1,    max: 30,  step: 1,   suffix: '' },
@@ -1114,6 +1118,7 @@ const CONDITION_DEFAULT_DIRECTION = {
   price_above_vwap: 'buy', price_below_vwap: 'sell',
   roc_positive: 'buy', roc_negative: 'sell',
   ma_golden: 'buy', ma_death: 'sell',
+  price_below_level: 'sell', price_above_level: 'buy',
   price_above_ma20: 'buy', price_below_ma20: 'sell', price_above_ma50: 'buy', price_below_ma50: 'sell',
   volume_spike: 'buy', price_dip: 'buy', inv_hs_neckline: 'buy',
   rsi_centerline_up: 'buy', rsi_centerline_down: 'sell',
@@ -1409,7 +1414,7 @@ function applyTierUI() {
 // Condition-type groups available on Basic/free — mirrors the Backtester's Basic
 // indicator set (RSI/MACD/BB/MA/Volume/Donchian breakout) for consistency between
 // the two tools. Everything else (Stochastic, ADX, Ichimoku, etc.) is Pro-only.
-const BASIC_CONDITION_GROUPS = new Set(['RSI', 'MACD', 'Bollinger', 'MA', 'Volume', 'Donchian']);
+const BASIC_CONDITION_GROUPS = new Set(['RSI', 'MACD', 'Bollinger', 'MA', 'Volume', 'Donchian', 'Price']);
 
 // Friendly names/categories for the Basic-tier symbol allowlist — mirrors
 // BASIC_TIER_SYMBOLS in app.py, keep the two in sync. Basic users often won't
@@ -1686,6 +1691,7 @@ function _buildCondParams(i, cond) {
 // independent of this — flipping Below/Above never touches .direction.
 const LEVEL_CONDITION_PAIRS = {
   rsi_below: 'rsi_above', rsi_above: 'rsi_below',
+  price_below_level: 'price_above_level', price_above_level: 'price_below_level',
   cci_below: 'cci_above', cci_above: 'cci_below',
   willr_below: 'willr_above', willr_above: 'willr_below',
   mfi_below: 'mfi_above', mfi_above: 'mfi_below',
@@ -2035,6 +2041,8 @@ function evaluateCondition(cond, cache, sym) {
     // Moving Averages
     case 'ma_golden':        return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction > 0;
     case 'ma_death':         return (cx.ma_bars_since_cross ?? 999) <= val && cx.ma_direction < 0;
+    case 'price_below_level': return val > 0 && ind.price?.close != null && ind.price.close < val;
+    case 'price_above_level': return val > 0 && ind.price?.close != null && ind.price.close > val;
     case 'price_above_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close > ind.moving_averages.ma_20);
     case 'price_below_ma20': return !!(ind.price?.close && ind.moving_averages?.ma_20 && ind.price.close < ind.moving_averages.ma_20);
     case 'price_above_ma50': return !!(ind.price?.close && ind.moving_averages?.ma_50 && ind.price.close > ind.moving_averages.ma_50);

@@ -42,3 +42,36 @@ def test_short_stops_sit_on_the_right_side():
             assert t["exit_price"] > t["entry_price"]
         if t["exit_reason"] == "Take Profit":
             assert t["exit_price"] < t["entry_price"]
+
+
+def test_price_level_cross_below_opens_short_at_the_cross_bar():
+    df = _df()
+    level = float(df["Close"].median())
+    trades = run_backtest(df, direction_mode="short", level_price=level, level_cross="below",
+                          min_confidence=101, stop_loss_pct=50, take_profit_pct=50)[0]
+    assert trades and all(t["side"] == "short" for t in trades)
+    closes = df["Close"]
+    first = trades[0]["entry_date"]
+    i = list(map(str, closes.index)).index(first)
+    assert closes.iloc[i - 1] > level >= closes.iloc[i]
+
+
+def test_price_level_cross_above_opens_long():
+    df = _df()
+    level = float(df["Close"].median())
+    trades = run_backtest(df, direction_mode="long", level_price=level, level_cross="above",
+                          min_confidence=101, stop_loss_pct=50, take_profit_pct=50)[0]
+    assert trades and all(t["side"] == "long" for t in trades)
+
+
+def test_reverse_on_stop_flips_into_opposite_side_at_stop_price():
+    trades = _run("both", reverse_on_stop=True)
+    flips = [(a, b) for a, b in zip(trades, trades[1:])
+             if a["exit_reason"] in ("Stop Loss", "Trailing Stop") and b["entry_date"] == a["exit_date"]]
+    assert flips
+    for a, b in flips:
+        assert a["side"] != b["side"] and b["entry_price"] == a["exit_price"]
+
+
+def test_reverse_on_stop_off_by_default_changes_nothing():
+    assert _run("both") == _run("both", reverse_on_stop=False)

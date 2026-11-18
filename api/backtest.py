@@ -45,6 +45,9 @@ def run_backtest(
     exit_match: str = "any",
     signal_only: bool = False,
     direction_mode: str = "long",
+    level_price: float | None = None,
+    level_cross: str = "below",
+    reverse_on_stop: bool = False,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -75,6 +78,13 @@ def run_backtest(
     a long can open a short on the same bar, and a BUY that covers a short can open a long.
     Shorts mirror everything: stop above entry, target below, trailing stop follows the
     low, and return_pct is (entry - exit) / entry. No borrow or funding cost is modelled.
+
+    level_price / level_cross: a price-level trigger. When the close crosses the level
+    ("above" -> BUY, "below" -> SELL) it overrides the indicator vote on that bar, so
+    "go short if price falls through 150" works alongside, or instead of, the indicators.
+
+    reverse_on_stop (direction_mode="both" only): a stop-loss or trailing stop that closes
+    a position flips straight into the opposite side at the stop price.
     """
     if direction_mode not in ("long", "short", "both"):
         direction_mode = "long"
@@ -503,6 +513,43 @@ def run_backtest(
     equity_curve: list[dict] = []
     position: dict | None = None
     last_closed_side: str | None = None
+    prev_close: float | None = None
+    date_str = ""
+    indicators: dict = {}
+
+    def _open(side, px, signals, conf, buy_score, sell_score):
+        """Size and stop-place a new position at price px."""
+        pot_value = equity * capital
+        if trade_amount_mode == "gbp":
+            size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
+        else:
+            size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
+
+        # Forex: SL/TP are a pip distance from entry. Otherwise a % of the trade amount
+        # (the position at risk), which for an unleveraged position is also the price move.
+        # A short's stop sits above entry and its target below.
+        if sl_tp_unit == "pips":
+            sl_dist, tp_dist = stop_loss_pct * pip_size, take_profit_pct * pip_size
+        else:
+            sl_dist, tp_dist = px * stop_loss_pct / 100, px * take_profit_pct / 100
+        if side == "long":
+            sl_price, tp_price = px - sl_dist, px + tp_dist
+        else:
+            sl_price, tp_price = px + sl_dist, max(px - tp_dist, 0.0)
+
+        return {
+            "side": side,
+            "entry_price": px, "entry_date": date_str, "peak": px,
+            "size_fraction": size_fraction,
+            "sl_price": sl_price,
+            "tp_price": tp_price,
+            "entry_signals":    signals,
+            "entry_context":    _market_context(indicators),
+            "entry_confidence": conf,
+            "entry_buy_score":  buy_score,
+            "entry_sell_score": sell_score,
+        }
+
 
     # Buy-and-hold baseline (normalised to 1.0 at warmup bar)
     bah_curve: list[dict] = []
@@ -819,6 +866,22 @@ def run_backtest(
             signal_rows[date_str] = (result, overall, confidence)
             continue
 
+        # Price-level trigger: a close through the level overrides the indicator vote on this bar.
+        level_side = level_sig = None
+        if level_price is not None and prev_close is not None and close is not None:
+            if level_cross == "above" and prev_close < level_price <= close:
+                level_side = "BUY"
+            elif level_cross != "above" and prev_close > level_price >= close:
+                level_side = "SELL"
+        if level_side:
+            word = "above" if level_side == "BUY" else "below"
+            sig = {"indicator": "Price level", "type": level_side, "weight": 2,
+                   "detail": f"Price crossed {word} the {level_price:g} level (closed at {close:.4g})"}
+            level_sig = sig
+            result = {**result, "signals": result["signals"] + [sig]}
+            overall, confidence = level_side, 100.0
+        prev_close = close
+
         # ── Manage open position ──────────────────────────────────────────
         # `side` decides everything that differs between a long and a short: which
         # signal closes it, which way the stops sit, and the sign of the return.
@@ -884,6 +947,11 @@ def run_backtest(
             if exit_match == "all" and x_overall == close_side and not _all_agree(x_result, close_side):
                 x_overall = None
 
+            if level_side == close_side:
+                base = x_result or result
+                x_result = {**base, "signals": base["signals"] + [level_sig]}
+                x_overall, x_conf = close_side, 100.0
+
             if side == "long":
                 sl_hit, tp_hit = low <= effective_sl, high >= tp_price
                 sl_fill, tp_fill = max(low, effective_sl), min(high, tp_price)
@@ -897,7 +965,7 @@ def run_backtest(
             elif tp_hit:
                 exit_reason = "Take Profit"
                 exit_price  = tp_fill
-            elif x_overall == close_side and x_conf >= exit_min_conf:
+            elif x_overall == close_side and (x_conf >= exit_min_conf or level_side == close_side):
                 exit_reason = "Signal"
                 exit_price  = close
 
@@ -943,6 +1011,12 @@ def run_backtest(
                 position = None
                 closed_this_bar = True
                 last_closed_side = side
+                if reverse_on_stop and direction_mode == "both" and exit_reason in ("Stop Loss", "Trailing Stop"):
+                    flip = "short" if side == "long" else "long"
+                    position = _open(flip, exit_price, [{
+                        "indicator": "Stop reverse", "weight": 1,
+                        "detail": f"The {side} was stopped out at {exit_price:.4g}, so the position reversed to {flip}"}],
+                        100.0, 0, 0)
 
         # Open a new position. Long-only keeps the old rule (no re-entry on the bar a trade closed);
         # in "both" mode a close can reverse straight into the opposite side on the same bar.
@@ -953,41 +1027,13 @@ def run_backtest(
                     continue
                 if closed_this_bar and cand[0] == last_closed_side:
                     continue   # a reversal goes the other way, never straight back in
-                if overall == cand[1] and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, cand[1])):
+                if level_side == cand[1] or (overall == cand[1] and confidence >= min_confidence and (entry_match != "all" or _all_agree(result, cand[1]))):
                     new_side = cand
                     break
             if new_side is not None:
                 side, entry_side = new_side
-                pot_value = equity * capital
-                if trade_amount_mode == "gbp":
-                    size_fraction = min(max(trade_amount / pot_value, 0.0), 1.0) if pot_value > 0 else 0.0
-                else:
-                    size_fraction = min(max(trade_amount / 100, 0.01), 1.0)
-
-                # Forex: SL/TP are a pip distance from entry. Otherwise a % of the trade amount
-                # (the position at risk), which for an unleveraged position is also the price move.
-                # A short's stop sits above entry and its target below.
-                if sl_tp_unit == "pips":
-                    sl_dist, tp_dist = stop_loss_pct * pip_size, take_profit_pct * pip_size
-                else:
-                    sl_dist, tp_dist = close * stop_loss_pct / 100, close * take_profit_pct / 100
-                if side == "long":
-                    sl_price, tp_price = close - sl_dist, close + tp_dist
-                else:
-                    sl_price, tp_price = close + sl_dist, max(close - tp_dist, 0.0)
-
-                position = {
-                    "side": side,
-                    "entry_price": close, "entry_date": date_str, "peak": close,
-                    "size_fraction": size_fraction,
-                    "sl_price": sl_price,
-                    "tp_price": tp_price,
-                    "entry_signals":    _fired_signals(result["signals"], entry_side),
-                    "entry_context":    _market_context(indicators),
-                    "entry_confidence": confidence,
-                    "entry_buy_score":  result["buy_score"],
-                    "entry_sell_score": result["sell_score"],
-                }
+                position = _open(side, close, _fired_signals(result["signals"], entry_side),
+                                 confidence, result["buy_score"], result["sell_score"])
 
         equity_curve.append({"date": date_str, "equity": round(equity, 6)})
 

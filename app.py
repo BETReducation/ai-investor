@@ -9755,6 +9755,13 @@ def _backtest_impl():
         direction_mode = args.get("direction", "long").strip().lower()
         if direction_mode not in ("long", "short", "both"):
             direction_mode = "long"
+        level_price = None
+        if args.get("level_price", "").strip():
+            level_price = float(args.get("level_price"))
+            if level_price <= 0:
+                level_price = None
+        level_cross = "above" if args.get("level_cross") == "above" else "below"
+        reverse_on_stop = args.get("reverse_on_stop", "0") in ("1", "true", "True")
         exit_min_confidence = min_confidence
         if args.get("x_set") in ("1", "true"):
             items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
@@ -9805,6 +9812,9 @@ def _backtest_impl():
             entry_match=entry_match,
             exit_match=exit_match,
             direction_mode=direction_mode,
+            level_price=level_price,
+            level_cross=level_cross,
+            reverse_on_stop=reverse_on_stop,
         )
         metrics = calculate_metrics(trades, equity_curve)
 

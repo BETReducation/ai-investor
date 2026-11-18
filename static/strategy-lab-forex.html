@@ -844,6 +844,17 @@
         <button type="button" id="dirBoth" onclick="setDirection('both')" class="dir-btn">LONG &amp; SHORT</button>
       </div>
       <div id="dirHelp" style="font-size:8px;color:var(--text-muted);line-height:1.5;"></div>
+      <div class="ctrl-row" id="reverseStopRow" style="margin:8px 0 0;">
+        <span class="ctrl-name">Reverse on stop <span class="info-dot" tabindex="0" data-tip="Long &amp; short only. When a stop-loss or trailing stop closes a position, flip straight into the opposite side at the stop price instead of waiting for the next signal.">?</span></span>
+        <label class="toggle"><input type="checkbox" id="reverseOnStop"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="ctrl-name" style="margin-bottom:4px;">Price-level trigger <span class="info-dot" tabindex="0" data-tip="Optional. When the close crosses this price it overrides the indicators on that bar: crossing above counts as a buy, crossing below as a sell. In Long &amp; short mode, a cross below flips a long into a short. Leave blank to switch off.">?</span></div>
+        <div style="display:flex;gap:4px;">
+          <select id="levelCross" class="lab-input" style="flex:1;margin-bottom:0;"><option value="below">Crosses below</option><option value="above">Crosses above</option></select>
+          <input type="number" id="levelPrice" class="lab-input" placeholder="price" min="0" step="any" style="flex:1;margin-bottom:0;">
+        </div>
+      </div>
     </div>
 
     <!-- Risk controls -->
@@ -2841,6 +2852,9 @@ function setDirection(d) {
   [['long', 'dirLong'], ['short', 'dirShort'], ['both', 'dirBoth']].forEach(([k, id]) =>
     document.getElementById(id).classList.toggle('active', k === tradeDirection));
   document.getElementById('dirHelp').textContent = DIR_HELP[tradeDirection];
+  const rs = document.getElementById('reverseStopRow');
+  rs.style.opacity = tradeDirection === 'both' ? '1' : '0.35';
+  rs.style.pointerEvents = tradeDirection === 'both' ? 'auto' : 'none';
 }
 setDirection('long');
 
@@ -3240,6 +3254,8 @@ async function runBacktest() {
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, sl_tp_unit: 'pips', min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist, direction: tradeDirection,
+    reverse_on_stop: (tradeDirection === 'both' && document.getElementById('reverseOnStop').checked) ? 1 : 0,
+    ...(parseFloat(document.getElementById('levelPrice').value) > 0 && { level_price: document.getElementById('levelPrice').value, level_cross: document.getElementById('levelCross').value }),
     capital: btCapital, trade_amount_mode: tradeAmountMode, trade_amount: tradeAmount,
     rsi_length: rsiLength, rsi_smoothing: rsiSmoothing, rsi_oversold: rsiOs, rsi_overbought: rsiOb,
     rsi_div_lookback: rsiDivLookback,
