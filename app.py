@@ -5063,12 +5063,20 @@ def market_xi_play():
         return redirect(MARKET_XI_URL)
     profile = user.get("profile", {}) or {}
     if not profile.get("email") or not profile.get("email_verified"):
-        msg = ("Verify your Growth Capital Group email before opening Market XI. "
-               "Check your inbox for the confirmation link, or resend it from your profile.")
         return _market_xi_no_store(Response(
-            f'<!doctype html><meta charset="utf-8"><title>Verify your email</title>'
-            f'<body style="font-family:sans-serif;max-width:480px;margin:80px auto;padding:0 16px">'
-            f'<p>{html_escape(msg)}</p><p><a href="/profile">Go to your profile</a></p></body>', 403, mimetype="text/html"))
+            '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            '<title>Verify your email</title>'
+            '<body style="font-family:sans-serif;max-width:480px;margin:80px auto;padding:0 16px;line-height:1.5">'
+            '<p>Verify your Growth Capital Group email before opening Market XI. '
+            'We sent a confirmation link to the address on your account.</p>'
+            '<p><button id="b" style="background:#10b981;color:#04130d;font-weight:700;border:0;padding:12px 24px;'
+            'border-radius:8px;cursor:pointer;font-size:15px">Resend confirmation email</button></p>'
+            '<p id="m" style="color:#5b6478"></p>'
+            '<p><small>Once you have confirmed it, <a href="/arena/market-xi/play">try Market XI again</a>.</small></p>'
+            '<script>document.getElementById("b").onclick=async()=>{const m=document.getElementById("m");'
+            'try{const r=await fetch("/api/resend-verification",{method:"POST",credentials:"include"});'
+            'const d=await r.json().catch(()=>({}));m.textContent=r.ok?"Sent. Check your inbox (and spam).":(d.error||"Could not send. Try again shortly.")}'
+            'catch(e){m.textContent="Could not send. Try again shortly."}};</script></body>', 403, mimetype="text/html"))
     try:
         token = _market_xi_token(current_user.id, user)
     except ValueError:
