@@ -9,6 +9,10 @@ in both Vercel and Railway.
 ```
 Add GCG single sign-on to this Next.js + Supabase app.
 
+First check whether the project uses the App Router (app/) or Pages Router (pages/) and write the routes to match.
+Use the existing server-side Supabase service-role client and env var (SUPABASE_SERVICE_ROLE_KEY or whatever this
+project already calls it); never expose it to the browser. Add MARKET_XI_SHARED_SECRET to the env as well.
+
 1. Route GET /auth/gcg?token=<jwt>. The token is HS256, signed with env MARKET_XI_SHARED_SECRET.
    Verify: signature, exp not passed, iss == "growthcapitalgroup.co", aud == "playmarketxi.com".
    Reject a reused jti (store seen jti values for ~2 minutes, e.g. a small Supabase table or KV).
