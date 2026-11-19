@@ -335,6 +335,10 @@ body::after {
         <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
       </div>
       <div class="field">
+        <label class="field-label" for="regEmailConfirm">Confirm email</label>
+        <input type="email" id="regEmailConfirm" placeholder="Type it again" autocomplete="off">
+      </div>
+      <div class="field">
         <label class="field-label" for="regPassword">Password</label>
         <input type="password" id="regPassword" placeholder="At least 6 characters" autocomplete="new-password">
       </div>
@@ -498,6 +502,7 @@ async function doRegister() {
   const first_name = document.getElementById('regFirstName').value.trim();
   const username = document.getElementById('regUsername').value.trim();
   const email    = document.getElementById('regEmail').value.trim();
+  const emailConfirm = document.getElementById('regEmailConfirm').value.trim();
   const password = document.getElementById('regPassword').value;
   const confirm  = document.getElementById('regConfirm').value;
   const errEl    = document.getElementById('registerError');
@@ -507,6 +512,7 @@ async function doRegister() {
   if (!first_name)            { showError(errEl, 'Please enter your first name.'); return; }
   if (!username || !password) { showError(errEl, 'Username and password are required.'); return; }
   if (!email)                 { showError(errEl, 'Email address is required.'); return; }
+  if (email.toLowerCase() !== emailConfirm.toLowerCase()) { showError(errEl, 'The two email addresses do not match. Check for typos.'); return; }
   if (password !== confirm)   { showError(errEl, 'Passwords do not match.'); return; }
   if (password.length < 6)    { showError(errEl, 'Password must be at least 6 characters.'); return; }
 
@@ -517,7 +523,7 @@ async function doRegister() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        first_name, username, email, password,
+        first_name, username, email, email_confirm: emailConfirm, password,
         country: document.getElementById('regCountry').value,
         age_band: document.getElementById('regAge').value,
         referral_source: document.getElementById('regReferral').value,

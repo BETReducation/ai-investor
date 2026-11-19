@@ -4175,6 +4175,8 @@ def api_register():
         return jsonify({"error": "Email address required"}), 400
     if not _EMAIL_RE.match(email):
         return jsonify({"error": "That doesn't look like a valid email address"}), 400
+    if "email_confirm" in data and data["email_confirm"].strip().lower() != email.lower():
+        return jsonify({"error": "The two email addresses do not match"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
@@ -4839,6 +4841,29 @@ def api_resend_verification():
     return jsonify({"success": True})
 
 
+@app.route("/api/change-email", methods=["POST"])
+@login_required
+def api_change_email():
+    """Fix a mistyped signup address. Only while the current one is unverified."""
+    if _rate_limited("change-email", current_user.id, 5, 3600):
+        return _too_many_requests()
+    user = _load_user(current_user.id) or {}
+    profile = dict(user.get("profile", {}) or {})
+    if profile.get("email_verified"):
+        return jsonify({"error": "Your email is already verified. Contact support to change it."}), 400
+    email = _clip((request.get_json(silent=True) or {}).get("email"), 200).lower()
+    if not _EMAIL_RE.match(email):
+        return jsonify({"error": "That doesn't look like a valid email address"}), 400
+    taken, _ = _find_user_by_login(email, case_insensitive=True)
+    if taken and taken != current_user.id:
+        return jsonify({"error": "That email is already used by another account"}), 409
+    profile["email"] = email
+    user["profile"] = profile
+    _save_user(current_user.id, user)
+    _send_verification_email(current_user.id, email)
+    return jsonify({"success": True})
+
+
 @app.route("/welcome")
 def welcome_page():
     if not current_user.is_authenticated:
@@ -5072,11 +5097,19 @@ def market_xi_play():
             '<p><button id="b" style="background:#10b981;color:#04130d;font-weight:700;border:0;padding:12px 24px;'
             'border-radius:8px;cursor:pointer;font-size:15px">Resend confirmation email</button></p>'
             '<p id="m" style="color:#5b6478"></p>'
+            '<p style="margin-top:28px">Wrong address? Enter the correct one and we will send a new link:</p>'
+            '<p><input id="e" type="email" placeholder="your@email.com" style="padding:10px;font-size:15px;width:70%;max-width:280px"> '
+            '<button id="c" style="padding:10px 16px;font-size:15px;cursor:pointer">Change &amp; resend</button></p>'
             '<p><small>Once you have confirmed it, <a href="/arena/market-xi/play">try Market XI again</a>.</small></p>'
             '<script>document.getElementById("b").onclick=async()=>{const m=document.getElementById("m");'
             'try{const r=await fetch("/api/resend-verification",{method:"POST",credentials:"include"});'
             'const d=await r.json().catch(()=>({}));m.textContent=r.ok?"Sent. Check your inbox (and spam).":(d.error||"Could not send. Try again shortly.")}'
-            'catch(e){m.textContent="Could not send. Try again shortly."}};</script></body>', 403, mimetype="text/html"))
+            'catch(e){m.textContent="Could not send. Try again shortly."}};'
+            'document.getElementById("c").onclick=async()=>{const m=document.getElementById("m");'
+            'try{const r=await fetch("/api/change-email",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},'
+            'body:JSON.stringify({email:document.getElementById("e").value})});const d=await r.json().catch(()=>({}));'
+            'm.textContent=r.ok?"Email updated. A new confirmation link is on its way.":(d.error||"Could not update. Try again shortly.")}'
+            'catch(e){m.textContent="Could not update. Try again shortly."}};</script></body>', 403, mimetype="text/html"))
     try:
         token = _market_xi_token(current_user.id, user)
     except ValueError:

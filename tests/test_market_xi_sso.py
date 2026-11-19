@@ -108,3 +108,22 @@ def test_link_user_creates_then_is_idempotent_and_never_downgrades(store):
 
 def test_link_user_rejects_non_boolean_verified(store):
     assert _link(gcg.app.test_client(), email="a@x.co", email_verified="yes").status_code == 400
+
+
+def test_change_email_only_while_unverified_and_not_taken(store):
+    _member(store, "u1", verified=False)
+    _member(store, "u2", verified=True)
+    c = gcg.app.test_client()
+    _login(c, "u1")
+    assert c.post("/api/change-email", json={"email": "bad"}).status_code == 400
+    assert c.post("/api/change-email", json={"email": "u2@x.co"}).status_code == 409
+    assert c.post("/api/change-email", json={"email": "fixed@x.co"}).status_code == 200
+    assert store["u1"]["profile"]["email"] == "fixed@x.co"
+    _login(c, "u2")
+    assert c.post("/api/change-email", json={"email": "new@x.co"}).status_code == 400
+
+
+def test_register_rejects_mismatched_confirmation(store):
+    r = gcg.app.test_client().post("/api/register", json={
+        "username": "zz", "password": "secret1", "first_name": "Z", "email": "a@x.co", "email_confirm": "b@x.co"})
+    assert r.status_code == 400
