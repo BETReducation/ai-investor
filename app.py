@@ -5010,6 +5010,107 @@ def api_forgot_password():
     return jsonify(generic)
 
 
+# ── Market XI single sign-on ─────────────────────────────────────────────────
+# GCG is the identity provider: the Play button sends a logged-in member to Market XI with a
+# short-lived HS256 token (email, username, effective tier). Market XI verifies it with the
+# shared secret and creates/finds its own Supabase user. The reverse direction (someone who
+# signed up on Market XI first) is /api/market-xi/link-user, called server-to-server.
+# Both need MARKET_XI_SHARED_SECRET in the environment; until it's set the Play button
+# just opens playmarketxi.com as a plain link.
+MARKET_XI_SSO_URL = os.environ.get("MARKET_XI_SSO_URL", "https://playmarketxi.com/auth/gcg")
+MARKET_XI_TOKEN_TTL = 60
+
+
+def _b64url(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+
+def _market_xi_token(username: str, user: dict) -> str:
+    """JWT (HS256) for Market XI. Tier is the effective one, so promo-free accounts count as beginner."""
+    from plans import access_tier
+    now = int(time.time())
+    payload = {
+        "iss": "growthcapitalgroup.co", "aud": "playmarketxi.com", "iat": now, "exp": now + MARKET_XI_TOKEN_TTL,
+        "jti": secrets.token_urlsafe(12), "sub": username,
+        "email": (user.get("profile", {}) or {}).get("email", ""),
+        "email_verified": bool((user.get("profile", {}) or {}).get("email_verified")),
+        "tier": access_tier(user.get("tier") or "free"),
+    }
+    head = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode())
+    body = _b64url(json.dumps(payload, separators=(",", ":")).encode())
+    sig = hmac.new(os.environ["MARKET_XI_SHARED_SECRET"].encode(), f"{head}.{body}".encode(), hashlib.sha256).digest()
+    return f"{head}.{body}.{_b64url(sig)}"
+
+
+@app.route("/arena/market-xi/play")
+def market_xi_play():
+    from urllib.parse import quote
+    if not os.environ.get("MARKET_XI_SHARED_SECRET"):
+        return redirect(MARKET_XI_URL)
+    if not current_user.is_authenticated:
+        return redirect("/login?next=" + quote("/arena/market-xi/play"))
+    user = _load_user(current_user.id)
+    if not user:
+        return redirect(MARKET_XI_URL)
+    return redirect(f"{MARKET_XI_SSO_URL}?token={_market_xi_token(current_user.id, user)}")
+
+
+@app.route("/api/market-xi/link-user", methods=["POST"])
+def api_market_xi_link_user():
+    """Server-to-server: Market XI reports a new signup. Finds the GCG account with that email,
+    or creates a Beginner one and emails a set-password link. Bearer-authenticated."""
+    secret = os.environ.get("MARKET_XI_SHARED_SECRET", "")
+    supplied = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    if not secret or not hmac.compare_digest(supplied, secret):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    email = _clip(data.get("email"), 200).lower()
+    if not _EMAIL_RE.match(email):
+        return jsonify({"error": "Valid email required"}), 400
+
+    existing, user = _find_user_by_login(email, case_insensitive=True)
+    if existing and (user.get("profile", {}) or {}).get("email", "").strip().lower() == email:
+        from plans import access_tier
+        return jsonify({"created": False, "username": existing, "tier": access_tier(user.get("tier") or "free")})
+
+    base = re.sub(r"[^A-Za-z0-9_.-]", "", _clip(data.get("username"), 30)) or email.split("@")[0]
+    base = re.sub(r"[^A-Za-z0-9_.-]", "", base)[:24] or "player"
+    username, n = base, 1
+    while _load_user(username) is not None:
+        n += 1
+        username = f"{base}{n}"
+
+    token = secrets.token_urlsafe(32)
+    new_user = {
+        "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
+        "preferences": {},
+        "tier": "beginner",
+        "entitlements": default_entitlements("beginner"),
+        "profile": {
+            "email": email, "display_name": username, "bio": "", "investor_type": "beginner",
+            "profile_picture": "", "newsletter_opt_in": False, "marketing_consent": False,
+            "first_name": _clip(data.get("first_name"), 60), "country": "", "referral_source": "other", "age_band": "",
+            "email_verified": bool(data.get("email_verified")),
+            "reset_token_hash": hashlib.sha256(token.encode()).hexdigest(),
+            "reset_token_expires": time.time() + 7 * 86400,
+            "signup_source": "market_xi",
+        },
+    }
+    _save_user(username, new_user)
+    gcg_notify.record("member_joined", username, f"{username} joined via Market XI", "/admin")
+
+    from urllib.parse import quote
+    link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(username)}&t={token}"
+    _send_email(
+        email, "Your Growth Capital Group account is ready",
+        f"You signed up for Market XI, so we've set you up with a free Beginner account on Growth Capital Group "
+        f"(username: {username}).\n\nChoose a password here (valid for 7 days):\n{link}\n\n"
+        f"After that, one login covers both sites.",
+        sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
+    )
+    return jsonify({"created": True, "username": username, "tier": "beginner"}), 201
+
+
 @app.route("/api/reset-password", methods=["POST"])
 def api_reset_password():
     data = request.get_json() or {}
