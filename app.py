@@ -5027,19 +5027,28 @@ def _b64url(raw: bytes) -> str:
 
 def _market_xi_token(username: str, user: dict) -> str:
     """JWT (HS256) for Market XI. Tier is the effective one, so promo-free accounts count as beginner."""
-    from plans import access_tier
+    from plans import access_tier, PLAN_RANK
+    tier = access_tier(user.get("tier") or "free")
+    if tier not in PLAN_RANK:
+        raise ValueError(f"unmapped GCG tier: {tier!r}")
     now = int(time.time())
     payload = {
         "iss": "growthcapitalgroup.co", "aud": "playmarketxi.com", "iat": now, "exp": now + MARKET_XI_TOKEN_TTL,
         "jti": secrets.token_urlsafe(12), "sub": username,
         "email": (user.get("profile", {}) or {}).get("email", ""),
         "email_verified": bool((user.get("profile", {}) or {}).get("email_verified")),
-        "tier": access_tier(user.get("tier") or "free"),
+        "tier": tier,
     }
     head = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode())
     body = _b64url(json.dumps(payload, separators=(",", ":")).encode())
     sig = hmac.new(os.environ["MARKET_XI_SHARED_SECRET"].encode(), f"{head}.{body}".encode(), hashlib.sha256).digest()
     return f"{head}.{body}.{_b64url(sig)}"
+
+
+def _market_xi_no_store(resp):
+    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    return resp
 
 
 @app.route("/arena/market-xi/play")
@@ -5052,7 +5061,20 @@ def market_xi_play():
     user = _load_user(current_user.id)
     if not user:
         return redirect(MARKET_XI_URL)
-    return redirect(f"{MARKET_XI_SSO_URL}?token={_market_xi_token(current_user.id, user)}")
+    profile = user.get("profile", {}) or {}
+    if not profile.get("email") or not profile.get("email_verified"):
+        msg = ("Verify your Growth Capital Group email before opening Market XI. "
+               "Check your inbox for the confirmation link, or resend it from your profile.")
+        return _market_xi_no_store(Response(
+            f'<!doctype html><meta charset="utf-8"><title>Verify your email</title>'
+            f'<body style="font-family:sans-serif;max-width:480px;margin:80px auto;padding:0 16px">'
+            f'<p>{html_escape(msg)}</p><p><a href="/profile">Go to your profile</a></p></body>', 403, mimetype="text/html"))
+    try:
+        token = _market_xi_token(current_user.id, user)
+    except ValueError:
+        app.logger.error("Market XI SSO refused: unmapped tier for %s", current_user.id)
+        return _market_xi_no_store(Response("Couldn't start Market XI sign-in. Please contact support.", 500))
+    return _market_xi_no_store(redirect(f"{MARKET_XI_SSO_URL}?token={quote(token)}"))
 
 
 @app.route("/api/market-xi/link-user", methods=["POST"])
@@ -5063,10 +5085,12 @@ def api_market_xi_link_user():
     supplied = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     if not secret or not hmac.compare_digest(supplied, secret):
         return jsonify({"error": "Unauthorized"}), 401
+    if _rate_limited("mxi-link", _client_ip(), 60, 3600):
+        return _too_many_requests()
     data = request.get_json(silent=True) or {}
     email = _clip(data.get("email"), 200).lower()
-    if not _EMAIL_RE.match(email):
-        return jsonify({"error": "Valid email required"}), 400
+    if not _EMAIL_RE.match(email) or not isinstance(data.get("email_verified"), bool):
+        return jsonify({"error": "Invalid request"}), 400
 
     existing, user = _find_user_by_login(email, case_insensitive=True)
     if existing and (user.get("profile", {}) or {}).get("email", "").strip().lower() == email:
