@@ -1998,10 +1998,15 @@ function importBacktestStrategy(name) {
   strategyConditions = conditions;
   document.getElementById('strategyName').value = `${name} (from Backtester)`;
   setStrategyDirection(cfg._direction || 'long', false);
+  // The Backtester's match rules and per-side settings map straight across.
+  const bm = cfg._match || {};
+  if (bm.entry) { document.getElementById('stratMatch').value = bm.entry; strategyMatch = bm.entry; }
+  _applySplitSides({ splitSides: !!cfg.splitShort && cfg._direction === 'both', matchShort: bm.short || bm.entry, minConfidenceShort: cfg._shortMinConf });
 
-  // Carry over risk settings (both pages are £ now).
-  if (cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(document.getElementById('stopLoss').value).toFixed(1); }
-  if (cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(document.getElementById('targetGain').value).toFixed(1); }
+  // Carry over risk settings (both pages are £ now). The forex Backtester sizes stops in pips, which don't map to a %.
+  const isFx = new URLSearchParams(location.search).get('forex') === '1';
+  if (!isFx && cfg.stopLoss !== undefined)   { document.getElementById('stopLoss').value = cfg.stopLoss; document.getElementById('slVal').value = parseFloat(document.getElementById('stopLoss').value).toFixed(1); }
+  if (!isFx && cfg.takeProfit !== undefined) { document.getElementById('targetGain').value = cfg.takeProfit; document.getElementById('targetVal').value = parseFloat(document.getElementById('targetGain').value).toFixed(1); }
   if (cfg.trailSL !== undefined)    { document.getElementById('trailSL').checked = !!cfg.trailSL; document.getElementById('trailSLRow').style.opacity = cfg.trailSL ? '1' : '0.3'; document.getElementById('trailSLRow').style.pointerEvents = cfg.trailSL ? 'auto' : 'none'; }
   if (cfg.trailDist !== undefined)  { document.getElementById('trailDist').value = cfg.trailDist; document.getElementById('trailVal').textContent = parseFloat(cfg.trailDist).toFixed(1) + '%'; }
   if (cfg.minConf !== undefined)    { document.getElementById('minConfidence').value = cfg.minConf; document.getElementById('minConfidenceVal').textContent = cfg.minConf + '%'; }
@@ -5360,6 +5365,17 @@ async function checkSession() {
       await loadCustomSymbols();
 
       // Support "Open" links from the profile page's Saved Strategies list.
+      // Backtester "Send to Signals": open the saved Backtester strategy as conditions to review.
+      const wantImport = new URLSearchParams(location.search).get('importBacktest');
+      if (wantImport) {
+        try {
+          const pr = await fetch(API_BASE + '/api/load-preferences', { credentials: 'include' });
+          const bts = (await pr.json()).preferences?.saved_backtests;
+          openImportBacktestModal._cache = Array.isArray(bts) ? bts : [];
+          importBacktestStrategy(wantImport);
+          addLog('info', 'STRAT', `Sent from the Backtester. Review the conditions, then press Save to keep it as a Signals strategy.`);
+        } catch (e) { addLog('err', 'STRAT', 'Could not open the Backtester strategy: ' + e.message); }
+      }
       const wantStrategy = new URLSearchParams(location.search).get('loadStrategy');
       if (wantStrategy && savedStrategies.find(s => s.name === wantStrategy)) {
         document.getElementById('strategySelect').value = wantStrategy;

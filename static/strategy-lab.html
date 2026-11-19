@@ -2006,6 +2006,8 @@
         <button onclick="saveBacktestStrategy()" title="Save this configuration"
           style="background:rgba(0,255,136,0.08);border:1px solid var(--accent-green);color:var(--accent-green);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;padding:6px 12px;border-radius:2px;font-family:'IBM Plex Mono',monospace;">SAVE</button>
       </div>
+      <button type="button" onclick="sendToSignals()" title="Save this strategy and open it on the Signals page as live alert rules"
+        style="width:100%;margin-top:8px;background:rgba(0,136,255,0.08);border:1px solid var(--accent-blue);color:var(--accent-blue);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 12px;border-radius:2px;font-family:'IBM Plex Mono',monospace;">SEND TO SIGNALS &rarr;</button>
       <div id="btStrategyHint" style="font-size:9px;color:var(--text-muted);margin-top:6px;"></div>
     </div>
 
@@ -2451,7 +2453,7 @@ async function saveBacktestStrategy() {
   const nameInput = document.getElementById('btStrategyName');
   const hint = document.getElementById('btStrategyHint');
   const name = nameInput.value.trim();
-  if (!name) { hint.textContent = 'Enter a name for this strategy first.'; return; }
+  if (!name) { hint.textContent = 'Enter a name for this strategy first.'; return false; }
 
   const strategy = { name, config: serializeBacktestConfig(), savedAt: new Date().toISOString() };
   const idx = savedBacktests.findIndex(s => s.name === name);
@@ -2464,6 +2466,20 @@ async function saveBacktestStrategy() {
     document.getElementById('btStrategySelect').value = name;
     hint.textContent = `Saved "${name}".`;
   }
+  return !!ok;
+}
+
+// Saves the strategy, then opens the Signals page with it loaded as alert conditions to review and save there.
+async function sendToSignals() {
+  const nameInput = document.getElementById('btStrategyName');
+  const hint = document.getElementById('btStrategyHint');
+  if (!nameInput.value.trim()) {
+    const sym = (document.getElementById('btSymbol').value || 'Strategy').trim().toUpperCase();
+    nameInput.value = `${sym} ${tradeDirection === 'both' ? 'long-short' : tradeDirection}`;
+  }
+  if (!(await saveBacktestStrategy())) return;
+  hint.textContent = 'Saved. Opening Signals…';
+  location.href = '/tools/signals?importBacktest=' + encodeURIComponent(nameInput.value.trim()) + '';
 }
 
 function loadSavedBacktestStrategy(name) {
