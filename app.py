@@ -5115,6 +5115,14 @@ def market_xi_play():
     except ValueError:
         app.logger.error("Market XI SSO refused: unmapped tier for %s", current_user.id)
         return _market_xi_no_store(Response("Couldn't start Market XI sign-in. Please contact support.", 500))
+    # Beginner or above who reaches Market XI is marked as entered on the admin page.
+    from plans import PLAN_RANK
+    if PLAN_RANK.get(user.get("tier") or "free", 0) >= PLAN_RANK["beginner"]:
+        ent = dict(user.get("entitlements") or default_entitlements(user.get("tier") or "free"))
+        if ent.get("market_xi") != "entered":
+            ent["market_xi"] = "entered"
+            user["entitlements"] = ent
+            _save_user(current_user.id, user)
     return _market_xi_no_store(redirect(f"{MARKET_XI_SSO_URL}?token={quote(token)}"))
 
 

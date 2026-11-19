@@ -127,3 +127,16 @@ def test_register_rejects_mismatched_confirmation(store):
     r = gcg.app.test_client().post("/api/register", json={
         "username": "zz", "password": "secret1", "first_name": "Z", "email": "a@x.co", "email_confirm": "b@x.co"})
     assert r.status_code == 400
+
+
+def test_play_marks_beginner_plus_as_entered_but_not_free(store):
+    _member(store, "b", tier="beginner")
+    store["b"]["entitlements"] = {"market_xi": "not_entered"}
+    c = gcg.app.test_client()
+    _login(c, "b")
+    assert c.get("/arena/market-xi/play").status_code == 302
+    assert store["b"]["entitlements"]["market_xi"] == "entered"
+    _member(store, "f", tier="free")
+    _login(c, "f")
+    c.get("/arena/market-xi/play")
+    assert store["f"].get("entitlements", {}).get("market_xi") != "entered"
