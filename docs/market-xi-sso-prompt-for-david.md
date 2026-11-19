@@ -28,13 +28,21 @@ project already calls it); never expose it to the browser. Add MARKET_XI_SHARED_
 4. Start a Supabase session for that user (admin.generateLink type "magiclink", then verify the
    hashed token server-side with verifyOtp, and set the session cookies) and redirect to the game home.
 
-5. Access rule: gcg_tier of beginner or above gets full free access to Market XI.
-   gcg_tier "free" gets whatever access Gary decides (default: same as a normal Market XI free user).
+5. Access rule (launch phase): Market XI is gated. Only users whose gcg_tier is beginner, intermediate, pro or
+   founder may play. Gary grants Beginner manually in the GCG admin panel. Everyone else (gcg_tier "free",
+   missing/null, or an account with no GCG link, including anyone who signed up directly on Market XI) sees a
+   "Market XI is currently for Growth Capital Group Beginner members and above" page with a link to
+   https://www.growthcapitalgroup.co/arena/market-xi, and cannot enter the game or any game API route.
+   Enforce this server-side (middleware and every API route), not just in the UI.
+   Tier is only refreshed when someone comes through /auth/gcg, so also store gcg_tier_checked_at and, if it is
+   older than 24 hours, send the user back through https://www.growthcapitalgroup.co/arena/market-xi/play to
+   refresh (so a revoked member loses access within a day). Existing Market XI users with no GCG link are blocked
+   until they sign in through GCG once; tell Gary how many there are.
 
 6. After any new Market XI signup (email or other), POST from the server to
    https://www.growthcapitalgroup.co/api/market-xi/link-user
    with header Authorization: Bearer <MARKET_XI_SHARED_SECRET> and JSON
    {"email": "...", "username": "...", "first_name": "...", "email_verified": true|false}.
-   Response: {"created": bool, "username": "...", "tier": "..."}. Store username/tier on the profile.
+   Response: {"created": bool, "username": "...", "tier": "..."}. New accounts come back as tier "free"; that is expected, they are not allowed in until Gary upgrades them. Store username/tier on the profile.
    Failure of this call must not block signup; retry later.
 ```

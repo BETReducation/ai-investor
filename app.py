@@ -5027,8 +5027,8 @@ def _b64url(raw: bytes) -> str:
 
 def _market_xi_token(username: str, user: dict) -> str:
     """JWT (HS256) for Market XI. Tier is the effective one, so promo-free accounts count as beginner."""
-    from plans import access_tier, PLAN_RANK
-    tier = access_tier(user.get("tier") or "free")
+    from plans import PLAN_RANK
+    tier = user.get("tier") or "free"  # stored tier, not the promo-effective one: Market XI access is granted by admin
     if tier not in PLAN_RANK:
         raise ValueError(f"unmapped GCG tier: {tier!r}")
     now = int(time.time())
@@ -5094,8 +5094,7 @@ def api_market_xi_link_user():
 
     existing, user = _find_user_by_login(email, case_insensitive=True)
     if existing and (user.get("profile", {}) or {}).get("email", "").strip().lower() == email:
-        from plans import access_tier
-        return jsonify({"created": False, "username": existing, "tier": access_tier(user.get("tier") or "free")})
+        return jsonify({"created": False, "username": existing, "tier": user.get("tier") or "free"})
 
     base = re.sub(r"[^A-Za-z0-9_.-]", "", _clip(data.get("username"), 30)) or email.split("@")[0]
     base = re.sub(r"[^A-Za-z0-9_.-]", "", base)[:24] or "player"
@@ -5108,8 +5107,8 @@ def api_market_xi_link_user():
     new_user = {
         "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
         "preferences": {},
-        "tier": "beginner",
-        "entitlements": default_entitlements("beginner"),
+        "tier": "free",
+        "entitlements": default_entitlements("free"),
         "profile": {
             "email": email, "display_name": username, "bio": "", "investor_type": "beginner",
             "profile_picture": "", "newsletter_opt_in": False, "marketing_consent": False,
@@ -5127,12 +5126,12 @@ def api_market_xi_link_user():
     link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(username)}&t={token}"
     _send_email(
         email, "Your Growth Capital Group account is ready",
-        f"You signed up for Market XI, so we've set you up with a free Beginner account on Growth Capital Group "
+        f"You signed up for Market XI, so we've set you up with a free account on Growth Capital Group "
         f"(username: {username}).\n\nChoose a password here (valid for 7 days):\n{link}\n\n"
         f"After that, one login covers both sites.",
         sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
     )
-    return jsonify({"created": True, "username": username, "tier": "beginner"}), 201
+    return jsonify({"created": True, "username": username, "tier": "free"}), 201
 
 
 @app.route("/api/reset-password", methods=["POST"])

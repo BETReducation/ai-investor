@@ -15,7 +15,7 @@ def test_token_carries_effective_tier_and_expires_soon():
     user = {"tier": "free", "profile": {"email": "a@b.co", "email_verified": True}}
     p = _decode(gcg._market_xi_token("gary", user))
     assert p["email"] == "a@b.co" and p["sub"] == "gary"
-    assert p["tier"] in ("free", "beginner")  # beginner while the promo runs
+    assert p["tier"] == "free"  # stored tier, never the promo-effective one
     assert 0 < p["exp"] - time.time() <= gcg.MARKET_XI_TOKEN_TTL
 
 
@@ -98,9 +98,9 @@ def _link(c, **body):
 def test_link_user_creates_then_is_idempotent_and_never_downgrades(store):
     c = gcg.app.test_client()
     r = _link(c, email="new@x.co", username="newbie", first_name="N", email_verified=True)
-    assert r.status_code == 201 and r.get_json() == {"created": True, "username": "newbie", "tier": "beginner"}
+    assert r.status_code == 201 and r.get_json() == {"created": True, "username": "newbie", "tier": "free"}
     r2 = _link(c, email="new@x.co", username="other", first_name="N", email_verified=True)
-    assert r2.get_json() == {"created": False, "username": "newbie", "tier": "beginner"} and len(store) == 1
+    assert r2.get_json() == {"created": False, "username": "newbie", "tier": "free"} and len(store) == 1
     _member(store, "paid", tier="pro")
     r3 = _link(c, email="paid@x.co", username="paid", first_name="P", email_verified=False)
     assert r3.get_json() == {"created": False, "username": "paid", "tier": "pro"} and store["paid"]["tier"] == "pro"
