@@ -4786,7 +4786,7 @@ INTEREST_OPTIONS = {
     "education":   ("Learning the basics", []),
 }
 
-MARKET_XI_REGISTER_URL = "https://market-xi-live.vercel.app/"  # TODO: swap for the real code-entry page once Market XI has one
+MARKET_XI_REGISTER_URL = "https://playmarketxi.com/"  # TODO: swap for the real code-entry page once Market XI has one
 
 
 def _clip(value, limit: int) -> str:
@@ -5747,7 +5747,7 @@ def _alpha_can_touch(item) -> bool:
 
 # ── Market XI asset auto-linking ────────────────────────────────────────────
 # Placeholder integration: Market XI (the fantasy-team game at
-# https://market-xi-live.vercel.app/) doesn't have per-asset profile pages
+# https://playmarketxi.com/) doesn't have per-asset profile pages
 # yet, so every match points at the site's root for now, and the asset list
 # itself is drawn from GCG's own watchlist data (see
 # _market_xi_asset_aliases below) rather than from Market XI directly.
@@ -5769,7 +5769,7 @@ def _alpha_can_touch(item) -> bool:
 # asset linking down with it. At that point MARKET_XI_URL below becomes a
 # per-asset URL (from that "url" field) instead of one constant for
 # everything.
-MARKET_XI_URL = "https://market-xi-live.vercel.app/"
+MARKET_XI_URL = "https://playmarketxi.com/"
 
 
 def _market_xi_asset_aliases() -> dict:
