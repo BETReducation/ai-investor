@@ -346,6 +346,7 @@ LESSON_PAGES = [
     {"slug": "backtesting", "level": "pro", "file": "lesson-backtesting.html", "title": "Backtesting"},
     {"slug": "regime-detection", "level": "pro", "file": "lesson-regime-detection.html", "title": "Regime Detection"},
     {"slug": "risk-budgeting", "level": "pro", "file": "lesson-risk-budgeting.html", "title": "Position Sizing & Risk Budgeting"},
+    {"slug": "long-short", "level": "pro", "file": "lesson-long-short.html", "title": "Going Short: Long, Short & Reversing"},
     {"slug": "what-is-an-option", "level": "pro", "file": "lesson-what-is-an-option.html", "title": "What Is an Option?"},
     {"slug": "the-greeks", "level": "pro", "file": "lesson-the-greeks.html", "title": "The Greeks"},
     {"slug": "implied-volatility", "level": "pro", "file": "lesson-implied-volatility.html", "title": "Implied Volatility & Skew"},
@@ -10156,6 +10157,11 @@ LESSON_FAQ = {
         {"question": "Can you give me a real example?", "answer": "The lesson illustrates a hypothetical index moving through three stretches: a calmer Jan-Jun period with 11% volatility and 0.35 correlation (low-vol trending), a choppier Jul-Sep period, and an Oct-Nov crisis period with 34% volatility and 0.81 correlation \u2014 showing how both volatility and correlation spiked together during the crisis."},
         {"question": "What's the biggest mistake people make about diversification during a crisis?", "answer": "Assuming diversified holdings will keep behaving independently during a downturn. The lesson notes correlation often spikes in crises, meaning normally-independent assets can start moving together exactly when diversification is needed most."},
         {"question": "Why doesn't one strategy work in every market condition?", "answer": "Because markets move through distinct regimes \u2014 low-volatility trending, range-bound, and high-volatility crisis \u2014 and a strategy tuned for one can struggle in another. The lesson gives the example of a momentum strategy shining in a trending regime but getting whipsawed in a choppy one, while mean reversion can suffer in a strongly trending regime."},
+    ],
+    "long-short": [
+        {"question": "Can you give me a real example?", "answer": "The lesson compares a $10,000 position going long versus short across price moves from -20% to +200%. The results are exact opposites up to a point, but a long can lose at most the full $10,000 while a short that sees the price triple loses $20,000. It also walks through a stop-and-reverse: a long stopped out at 95 flips to a short, which makes about +5% net if price keeps falling to 85 but about -9.8% if price bounces back."},
+        {"question": "What's the biggest mistake people make with shorts?", "answer": "Treating a short as the mirror image of a long. The lesson stresses the loss on a short has no ceiling, shorts pay a running borrow fee for every day they are open, and a stop-loss sits above entry rather than below, so the same sizing and stop habits need adjusting."},
+        {"question": "Does reversing a position make a strategy safer?", "answer": "No. The lesson shows reversing helps when a trend continues but doubles the damage in a whipsaw, because the strategy is stopped out on both sides. It is a bet on follow-through, not protection."},
     ],
     "risk-budgeting": [
         {"question": "Can you give me a real example?", "answer": "The lesson compares bonds (6% volatility), large-cap stocks (16% volatility), and a small-cap stock (32% volatility), each given an equal $100,000 in an equal-dollar approach. Under that approach, the small-cap stock contributes over 5x as much risk to the portfolio as the bonds, despite the identical dollar size \u2014 the risk-budgeted approach instead sizes each position so their risk contributions are roughly balanced."},
