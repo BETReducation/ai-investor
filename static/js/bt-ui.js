@@ -545,7 +545,7 @@
   //   x_ = exit rules, s_ = short entry rules, c_ = short exit rules
   const SHARED_KEYS = new Set(['symbol', 'period', 'interval', 'start_date', 'end_date', 'stop_loss', 'take_profit', 'sl_tp_unit',
     'trailing_stop', 'trail_distance', 'capital', 'trade_amount_mode', 'trade_amount', 'min_confidence',
-    'direction', 'reverse_on_stop', 'level_price', 'level_cross']);
+    'direction', 'reverse_on_stop', 'level_price', 'level_cross', 'fee_pct', 'borrow_pct']);
   let captured = null, extra = null;
   window.btParamsHook = function (params) {
     if (captured) { captured.params = params; return 'stop'; }
