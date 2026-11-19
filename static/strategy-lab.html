@@ -853,6 +853,13 @@
         <label class="toggle"><input type="checkbox" id="reverseOnStop"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
       <div style="margin-top:8px;">
+        <div class="ctrl-name" style="margin-bottom:4px;">Trading costs <span class="info-dot" tabindex="0" data-tip="Optional, off at 0. The fee is charged on every entry and every exit as a % of the position. Borrow is an annual % charged on shorts for each day they are held. Both are taken off each trade's return, so results are net.">?</span></div>
+        <div style="display:flex;gap:4px;">
+          <input type="number" id="feePct" class="lab-input" placeholder="fee % per side" min="0" max="10" step="0.01" style="flex:1;margin-bottom:0;">
+          <input type="number" id="borrowPct" class="lab-input" placeholder="short borrow %/yr" min="0" max="100" step="0.1" style="flex:1;margin-bottom:0;">
+        </div>
+      </div>
+      <div style="margin-top:8px;">
         <div class="ctrl-name" style="margin-bottom:4px;">Price-level trigger <span class="info-dot" tabindex="0" data-tip="Optional. When the close crosses this price it overrides the indicators on that bar: crossing above counts as a buy, crossing below as a sell. In Long &amp; short mode, a cross below flips a long into a short. Leave blank to switch off.">?</span></div>
         <div style="display:flex;gap:4px;">
           <select id="levelCross" class="lab-input" style="flex:1;margin-bottom:0;"><option value="below">Crosses below</option><option value="above">Crosses above</option></select>
@@ -3310,6 +3317,8 @@ async function runBacktest() {
     ...(endDate   && { end_date:   endDate   }),
     stop_loss: sl, take_profit: tp, sl_tp_unit: 'percent', min_confidence: conf,
     trailing_stop: trailSL ? 1 : 0, trail_distance: trailDist, direction: tradeDirection,
+    fee_pct: parseFloat(document.getElementById('feePct').value) || 0,
+    borrow_pct: parseFloat(document.getElementById('borrowPct').value) || 0,
     reverse_on_stop: (tradeDirection === 'both' && document.getElementById('reverseOnStop').checked) ? 1 : 0,
     ...(parseFloat(document.getElementById('levelPrice').value) > 0 && { level_price: document.getElementById('levelPrice').value, level_cross: document.getElementById('levelCross').value }),
     capital: btCapital, trade_amount_mode: tradeAmountMode, trade_amount: tradeAmount,
@@ -3552,10 +3561,10 @@ function exportResultsCSV() {
     ['Worst Trade %', metrics.worst_trade_pct],
   ].map(row => row.join(',')).join('\n');
 
-  const tradeHeader = ['#', 'Side', 'Entry Date', 'Exit Date', 'Entry Price', 'Exit Price', 'Return %', 'P&L', 'Exit Reason'].join(',');
+  const tradeHeader = ['#', 'Side', 'Entry Date', 'Exit Date', 'Entry Price', 'Exit Price', 'Return % (net)', 'Cost %', 'P&L', 'Exit Reason'].join(',');
   const tradeRows = trades.map((t, i) => [
     i + 1, t.side || 'long', t.entry_date, t.exit_date, t.entry_price, t.exit_price,
-    t.return_pct.toFixed(2), t.pnl_gbp.toFixed(2), t.exit_reason,
+    t.return_pct.toFixed(2), (t.cost_pct || 0).toFixed(3), t.pnl_gbp.toFixed(2), t.exit_reason,
   ].join(','));
 
   const csv = 'SUMMARY\n' + summaryLines + '\n\nTRADES\n' + tradeHeader + '\n' + tradeRows.join('\n');

@@ -56,6 +56,8 @@ def run_backtest(
     cover_calc_params: dict | None = None,
     cover_min_confidence: float | None = None,
     cover_match: str = "any",
+    fee_pct: float = 0.0,
+    borrow_pct: float = 0.0,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """
     Bar-by-bar backtest using the existing indicator + signal pipeline.
@@ -95,6 +97,10 @@ def run_backtest(
     short entry is that set's SELL (the main set only ever opens longs) and the short exit is
     cover_*'s BUY, falling back to the short set's own BUY. In "both" mode each side's entry
     signal also closes the opposite position, so the two rule sets reverse into each other.
+
+    fee_pct / borrow_pct: trading costs, off by default. fee_pct is charged on each side of a
+    trade (so 2x per round trip) as a % of position value; borrow_pct is an annual % charged on
+    shorts for the days they are held. Both come off return_pct, which is reported net.
 
     reverse_on_stop (direction_mode="both" only): a stop-loss or trailing stop that closes
     a position flips straight into the opposite side at the stop price.
@@ -536,6 +542,17 @@ def run_backtest(
     prev_close: float | None = None
     date_str = ""
     indicators: dict = {}
+
+    def _cost(side, entry_date, exit_date):
+        """Round-trip fees plus, for shorts, borrow for the calendar days held. In % of position value."""
+        c = 2 * fee_pct
+        if side == "short" and borrow_pct:
+            try:
+                days = max((pd.Timestamp(exit_date) - pd.Timestamp(entry_date)).total_seconds() / 86400, 0.0)
+            except (ValueError, TypeError):
+                days = 0.0
+            c += borrow_pct * days / 365
+        return c
 
     def _open(side, px, signals, conf, buy_score, sell_score):
         """Size and stop-place a new position at price px."""
@@ -1021,7 +1038,8 @@ def run_backtest(
                 exit_price  = close
 
             if exit_reason:
-                ret           = sgn * (exit_price - ep) / ep * 100
+                cost          = _cost(side, position["entry_date"], date_str)
+                ret           = sgn * (exit_price - ep) / ep * 100 - cost
                 f             = position["size_fraction"]
                 equity_before = equity
                 equity       *= 1 + f * ret / 100
@@ -1049,6 +1067,7 @@ def run_backtest(
                     "entry_price": round(ep, 4),
                     "exit_price":  round(exit_price, 4),
                     "return_pct":  round(ret, 2),
+                    "cost_pct":    round(cost, 3),
                     "exit_reason": exit_reason,
                     "size_pct":      round(f * 100, 2),
                     "equity_before": round(equity_before, 6),
@@ -1098,7 +1117,8 @@ def run_backtest(
     if position is not None:
         lc            = _sf(combined.iloc[-1].get("Close")) or position["entry_price"]
         sgn           = 1 if position["side"] == "long" else -1
-        ret           = sgn * (lc - position["entry_price"]) / position["entry_price"] * 100
+        cost          = _cost(position["side"], position["entry_date"], str(combined.index[-1]))
+        ret           = sgn * (lc - position["entry_price"]) / position["entry_price"] * 100 - cost
         f             = position["size_fraction"]
         equity_before = equity
         equity       *= 1 + f * ret / 100
@@ -1120,6 +1140,7 @@ def run_backtest(
             "entry_price": round(position["entry_price"], 4),
             "exit_price":  round(lc, 4),
             "return_pct":  round(ret, 2),
+            "cost_pct":    round(cost, 3),
             "exit_reason": "End of Data",
             "size_pct":      round(f * 100, 2),
             "equity_before": round(equity_before, 6),

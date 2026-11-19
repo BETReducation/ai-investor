@@ -836,6 +836,7 @@ function setStrategyDirection(d, rerender = true) {
   strategyDirection = _validDirection(d);
   const el = document.getElementById('stratDirection'); if (el) el.value = strategyDirection;
   const h = document.getElementById('stratDirectionHelp'); if (h) h.textContent = DIRECTION_HELP[strategyDirection];
+  _syncSplitSidesUi();
   if (rerender) { renderConditions(); updateStrategyStatus(); }
 }
 let savedStrategies = [];
@@ -1786,6 +1787,7 @@ function loadSavedStrategy(name) {
     document.getElementById('stratMatch').value = 'all';
     strategyMatch = 'all';
     setStrategyDirection('long', false);
+    _applySplitSides({ splitSides: false, matchShort: 'all', minConfidenceShort: 60 });
     strategyConditions = [];
     condExpanded = {};
     renderConditions();
@@ -1802,6 +1804,7 @@ function loadSavedStrategy(name) {
   // BUY/SELL setting (s.type), same idea as the tier-downgrade case below.
   strategyConditions = s.conditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, s.type) }));
   setStrategyDirection(s.direction || inferDirection(strategyConditions), false);
+  _applySplitSides(s);
   // A strategy saved back when this account still had Pro access can carry
   // condition types (Stochastic, Ichimoku, ADX...) that are no longer available —
   // drop those rather than silently keep them around unable to fire, same as the
@@ -2263,6 +2266,27 @@ function evaluateCondition(cond, cache, sym) {
 // groups against the same ALL/ANY match rule, and reports each separately.
 // A symbol can fire Buy, Sell, both (rare, but possible if conditions in each
 // group happen to hold at once), or neither.
+// Long & short mode can give the short side (sell-tagged conditions) its own match rule and confidence.
+function _splitSidesOn() { return strategyDirection === 'both' && !!document.getElementById('stratSplitSides')?.checked; }
+function _applySplitSides(src) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+  const cb = document.getElementById('stratSplitSides'); if (cb) cb.checked = !!src.splitSides;
+  set('stratMatchShort', src.matchShort);
+  set('minConfidenceShort', src.minConfidenceShort);
+  const lab = document.getElementById('minConfidenceShortVal');
+  if (lab && src.minConfidenceShort !== undefined) lab.textContent = src.minConfidenceShort + '%';
+  _syncSplitSidesUi();
+}
+function onSplitSidesChange() {
+  const on = _splitSidesOn();
+  const body = document.getElementById('splitSidesBody'); if (body) body.style.display = on ? '' : 'none';
+  updateStrategyStatus();
+}
+function _syncSplitSidesUi() {
+  const box = document.getElementById('splitSidesBox');
+  if (box) box.style.display = strategyDirection === 'both' ? '' : 'none';
+  onSplitSidesChange();
+}
 function _evaluateDirectionGroup(results, direction, match, minConfidence) {
   const group = results.filter(r => (r.direction === 'sell' ? 'sell' : 'buy') === direction);
   if (group.length === 0) return { fired: false, matchedCount: 0, matchedConditions: [], confidence: 0, total: 0 };
@@ -2281,10 +2305,14 @@ function evaluateStrategy(sym, runner) {
   }
   const match = runner ? runner.match : (document.getElementById('stratMatch')?.value || strategyMatch);
   const minConfidence = runner ? runner.minConfidence : (parseFloat(document.getElementById('minConfidence')?.value) || 50);
+  // Short side: its own settings when split is on (runner snapshot, or the live controls), else the shared ones.
+  const split = runner ? !!runner.splitSides : _splitSidesOn();
+  const matchShort = split ? (runner ? runner.matchShort : (document.getElementById('stratMatchShort')?.value || match)) : match;
+  const minConfShort = split ? (runner ? runner.minConfidenceShort : (parseFloat(document.getElementById('minConfidenceShort')?.value) || 50)) : minConfidence;
   const results = conds.map(cond => ({ ...cond, met: evaluateCondition(cond, cache, sym) }));
   return {
     buy:  _evaluateDirectionGroup(results, 'buy',  match, minConfidence),
-    sell: _evaluateDirectionGroup(results, 'sell', match, minConfidence),
+    sell: _evaluateDirectionGroup(results, 'sell', matchShort, minConfShort),
     results,
   };
 }
@@ -2365,6 +2393,9 @@ async function startEngine() {
     timeframe: document.getElementById('timeframe').value,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
     direction: strategyDirection,
+    splitSides: _splitSidesOn(),
+    matchShort: document.getElementById('stratMatchShort')?.value || document.getElementById('stratMatch').value,
+    minConfidenceShort: parseFloat(document.getElementById('minConfidenceShort')?.value) || 50,
     cache: {},
     lastScan: 0,
   };
@@ -5479,6 +5510,9 @@ async function saveStrategy() {
     name,
     match:      document.getElementById('stratMatch').value,
     direction:  strategyDirection,
+    splitSides: _splitSidesOn(),
+    matchShort: document.getElementById('stratMatchShort')?.value || 'all',
+    minConfidenceShort: parseFloat(document.getElementById('minConfidenceShort')?.value) || 60,
     conditions: JSON.parse(JSON.stringify(strategyConditions)),
   };
   const idx = savedStrategies.findIndex(s => s.name === name);
@@ -5519,6 +5553,9 @@ async function savePreferences() {
     strategyName:       document.getElementById('strategyName').value,
     strategyMatch:      document.getElementById('stratMatch').value,
     strategyDirection,
+    splitSides:         _splitSidesOn(),
+    strategyMatchShort: document.getElementById('stratMatchShort')?.value || 'all',
+    minConfidenceShort: parseFloat(document.getElementById('minConfidenceShort')?.value) || 60,
     minConfidence:      parseFloat(document.getElementById('minConfidence').value),
     strategyConditions: JSON.parse(JSON.stringify(strategyConditions)),
     savedStrategies:    JSON.parse(JSON.stringify(savedStrategies)),
@@ -5624,6 +5661,7 @@ function applyPreferences(prefs) {
     // without their own `.direction`.
     strategyConditions = prefs.strategyConditions.map(c => ({ ...c, direction: c.direction || conditionDirection(c.type, prefs.strategyType) }));
     setStrategyDirection(prefs.strategyDirection || inferDirection(strategyConditions), false);
+    _applySplitSides({ splitSides: prefs.splitSides, matchShort: prefs.strategyMatchShort, minConfidenceShort: prefs.minConfidenceShort });
     renderConditions();
   }
   if (Array.isArray(prefs.savedStrategies)) {
@@ -5910,6 +5948,27 @@ setTimeout(() => {
         <input type="range" id="minConfidence" min="50" max="100" step="5" value="60"
                oninput="document.getElementById('minConfidenceVal').textContent=this.value+'%'; updateStrategyStatus();"
                title="Confidence is the % of your active conditions currently pointing the same way. For 'ANY condition', a trade only fires once at least this % of conditions agree — raise it to demand stronger agreement, lower it to let weaker, single-condition setups through. No effect on 'ALL conditions' (that mode always needs 100% agreement to fire).">
+      </div>
+
+      <!-- Separate settings for the short side (long & short mode only) -->
+      <div id="splitSidesBox" style="display:none;margin-bottom:10px;padding:8px 10px;border:1px solid var(--border);border-radius:2px;font-size:10px;color:var(--text-secondary);">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="stratSplitSides" onchange="onSplitSidesChange()"> Separate settings for shorts
+        </label>
+        <div style="font-size:8px;color:var(--text-muted);line-height:1.5;margin:3px 0 0;">Above applies to the long side (buy-tagged conditions). Turn this on to give the short side (sell-tagged conditions) its own match rule and minimum confidence.</div>
+        <div id="splitSidesBody" style="display:none;margin-top:8px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span>Short fires when</span>
+            <select id="stratMatchShort" onchange="updateStrategyStatus()" style="width:auto;font-size:10px;padding:3px 6px;">
+              <option value="all">ALL conditions</option>
+              <option value="any">ANY condition</option>
+            </select>
+            <span>are met</span>
+          </div>
+          <div class="range-header"><div class="control-label">Short Min Confidence</div><div class="range-value" id="minConfidenceShortVal">60%</div></div>
+          <input type="range" id="minConfidenceShort" min="50" max="100" step="5" value="60"
+                 oninput="document.getElementById('minConfidenceShortVal').textContent=this.value+'%'; updateStrategyStatus();">
+        </div>
       </div>
 
 

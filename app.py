@@ -1731,8 +1731,8 @@ DATAVIZ_KINDS = ("tool", "viz", "both")
 _SEED_DATAVIZ_DESCRIPTIONS = {
     "global-heat-map": "Every major stock index worldwide, coloured by today's move.",
     "market-orbs": "Markets and assets as bubbles in their own pools: gainers float, decliners sink.",
-    "gold-silver-ratio": "How many ounces of silver it takes to match one ounce of gold, and how that ratio has moved.",
-    "bitcoin-dashboard": "Bitcoin's price, halving countdown, coins left to mine, returns, power law, hashrate and what a house or car costs in BTC.",
+    "gold-silver-ratio": "How many ounces of silver, barrels of oil or ounces in a Bitcoin line up against gold, shown as live balance scales.",
+    "bitcoin-dashboard": "Bitcoin's price, halving countdown, coins left to mine, returns, 200-week average, power law, hashrate, miners and what a house or car costs in BTC.",
     "winners-league": "Which asset, metal or stock topped the table each year since 2010, and who leads this one.",
     "bull-bear-meter": "Pick any market and see its health signals blended into one bull or bear reading.",
     "nasdaq-wagon-wheel": "A wheel of Nasdaq stocks with winners on the left and losers on the right (illustrative simulated day).",
@@ -8341,6 +8341,51 @@ def api_bitcoin_dashboard_history():
     return jsonify(data)
 
 
+# Bitcoin miners and Bitcoin ETFs: price, day move and 1-year move, cached 15 minutes.
+_BTC_MINERS = [("MARA", "MARA Holdings"), ("RIOT", "Riot Platforms"), ("CLSK", "CleanSpark"), ("CORZ", "Core Scientific"),
+               ("CIFR", "Cipher Mining"), ("WULF", "TeraWulf"), ("HUT", "Hut 8"), ("IREN", "IREN"),
+               ("BTDR", "Bitdeer"), ("HIVE", "HIVE Digital")]
+_BTC_ETFS = [("WGMI", "CoinShares Bitcoin Mining ETF", "mining"), ("IBIT", "iShares Bitcoin Trust", "spot"), ("FBTC", "Fidelity Wise Origin Bitcoin", "spot"),
+             ("ARKB", "ARK 21Shares Bitcoin ETF", "spot"), ("BITB", "Bitwise Bitcoin ETF", "spot"), ("GBTC", "Grayscale Bitcoin Trust", "spot")]
+_btc_miners_cache: dict = {"at": 0.0, "data": None}
+_btc_miners_lock = threading.Lock()
+
+
+def _fetch_btc_miners() -> dict:
+    syms = [s for s, *_ in _BTC_MINERS + _BTC_ETFS]
+    raw = yf.download(tickers=syms, period="1y", interval="1d", group_by="ticker", threads=True, auto_adjust=True, progress=False)
+    def row(sym, name, kind):
+        try:
+            c = raw[sym]["Close"].dropna()
+            if len(c) < 2:
+                return None
+            last, prev, first = float(c.iloc[-1]), float(c.iloc[-2]), float(c.iloc[0])
+            return {"s": sym, "n": name, "k": kind, "p": round(last, 2), "d": round((last / prev - 1) * 100, 2), "y": round((last / first - 1) * 100, 1)}
+        except Exception:
+            return None
+    rows = [row(s, n, "miner") for s, n in _BTC_MINERS] + [row(s, n, k) for s, n, k in _BTC_ETFS]
+    rows = [r for r in rows if r]
+    if not rows:
+        raise RuntimeError("no data")
+    return {"rows": rows, "updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat()}
+
+
+@app.route("/api/dataviz/bitcoin-dashboard/miners", methods=["GET"])
+def api_bitcoin_dashboard_miners():
+    with _btc_miners_lock:
+        if _btc_miners_cache["data"] and time.monotonic() - _btc_miners_cache["at"] < 900:
+            return jsonify(_btc_miners_cache["data"])
+    try:
+        data = _fetch_btc_miners()
+    except Exception:
+        if _btc_miners_cache["data"]:
+            return jsonify(_btc_miners_cache["data"])
+        return jsonify({"error": "unavailable"}), 502
+    with _btc_miners_lock:
+        _btc_miners_cache.update(at=time.monotonic(), data=data)
+    return jsonify(data)
+
+
 # Crypto Compass live board: top 250 coins by market cap from CoinMarketCap (set CMC_API_KEY; price, 24h/7d/30d
 # change, dominance from market caps, 1y from Yahoo) or, without a key, CoinGecko (also gives 1y and all-time highs). One call each, cached for 5 minutes; a stale copy is
 # served if CoinGecko rate-limits us, so the page only falls back to its demo numbers when we have nothing.
@@ -8945,6 +8990,55 @@ def api_stock_donut_quotes():
 def api_gold_silver_ratio_live():
     force = request.args.get("refresh") in ("1", "true", "yes")
     return jsonify(_fetch_gold_silver_ratio_live(force=force))
+
+
+# Gold-to-oil (barrels of Brent one ounce of gold buys) and gold-to-bitcoin (ounces of gold in one BTC)
+# scales on the same page. Live prices plus a full-history mean, cached 12h like the gold:silver leg.
+_gold_ratios_cache: dict = {"at": 0.0, "data": None}
+_gold_ratios_lock = threading.Lock()
+
+
+def _fetch_gold_ratios() -> dict | None:
+    def hist(sym):
+        return _yf_history_with_retry(yf.Ticker(sym), period="30y", interval="1d")["Close"].dropna()
+    gold = hist("GC=F")
+    oil = hist("BZ=F")
+    btc = hist("BTC-USD")
+    oil = oil[oil > 5]  # drop the odd bad print so it can't distort the average
+    gold.index, oil.index, btc.index = gold.index.tz_localize(None).normalize(), oil.index.tz_localize(None).normalize(), btc.index.tz_localize(None).normalize()
+    out = {"updated_at": _dt.datetime.utcnow().isoformat() + "Z"}
+    for key, other, inverse in (("oil", oil, False), ("btc", btc, True)):
+        j = pd.concat([gold[~gold.index.duplicated()], other[~other.index.duplicated()]], axis=1, join="inner", keys=["g", "o"]).dropna()
+        series = (j["o"] / j["g"]) if inverse else (j["g"] / j["o"])
+        out[key] = {
+            "ratio": round(float(series.iloc[-1]), 2),
+            "average": round(float(series.mean()), 2),
+            "since": j.index[0].date().isoformat(),
+            "gold_usd": round(float(j["g"].iloc[-1]), 2),
+            "other_usd": round(float(j["o"].iloc[-1]), 2),
+        }
+    return out
+
+
+@app.route("/api/dataviz/gold-ratios/live", methods=["GET"])
+def api_gold_ratios_live():
+    force = request.args.get("refresh") in ("1", "true", "yes")
+    ttl = 30 if force else 12 * 3600
+    with _gold_ratios_lock:
+        c = _gold_ratios_cache
+        if c["data"] and time.monotonic() - c["at"] < ttl:
+            return jsonify(c["data"])
+    try:
+        data = _fetch_gold_ratios()
+    except Exception:
+        data = None
+    with _gold_ratios_lock:
+        if data:
+            _gold_ratios_cache.update(at=time.monotonic(), data=data)
+        data = _gold_ratios_cache["data"]
+    if not data:
+        return jsonify({"error": "unavailable"}), 502
+    return jsonify(data)
 
 
 _site_stats_cache: dict = {"at": 0.0, "data": None}
@@ -9762,6 +9856,8 @@ def _backtest_impl():
                 level_price = None
         level_cross = "above" if args.get("level_cross") == "above" else "below"
         reverse_on_stop = args.get("reverse_on_stop", "0") in ("1", "true", "True")
+        fee_pct = min(max(float(args.get("fee_pct") or 0), 0.0), 10.0)
+        borrow_pct = min(max(float(args.get("borrow_pct") or 0), 0.0), 100.0)
         exit_min_confidence = min_confidence
         if args.get("x_set") in ("1", "true"):
             items = [(k[2:], v) for k in args.keys() if k.startswith("x_") and k != "x_set" for v in args.getlist(k)]
@@ -9827,6 +9923,8 @@ def _backtest_impl():
             level_price=level_price,
             level_cross=level_cross,
             reverse_on_stop=reverse_on_stop,
+            fee_pct=fee_pct,
+            borrow_pct=borrow_pct,
             **short_kw,
         )
         metrics = calculate_metrics(trades, equity_curve)

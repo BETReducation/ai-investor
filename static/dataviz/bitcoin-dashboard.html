@@ -66,6 +66,9 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
 .wm-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .wm-mapwrap{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 #wmMap{position:relative;width:100%;aspect-ratio:2/1;min-height:200px}
+#mmMap{position:relative;width:100%;aspect-ratio:2/1;min-height:200px}
+#mmRz{position:absolute;right:8px;top:8px;font-size:12px;padding:4px 10px}
+#mmTop{margin:0;padding-left:20px}#mmTop li{margin:3px 0}#mmTop li span{color:var(--mut);float:right}
 #wmRz{position:absolute;right:8px;top:8px;font-size:12px;padding:4px 10px}
 .hoverinfo{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;line-height:1.4}
 .wm-leg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mut);margin:10px 0}
@@ -92,8 +95,11 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <button type="button" data-t="s-house">House</button>
   <button type="button" data-t="s-car">Car</button>
   <button type="button" data-t="s-gold">Gold</button>
+  <button type="button" data-t="s-wma">200-week MA</button>
   <button type="button" data-t="s-plaw">Power law</button>
   <button type="button" data-t="s-mining">Hashrate</button>
+  <button type="button" data-t="s-miners">Miners &amp; ETFs</button>
+  <button type="button" data-t="s-minemap">Mining map</button>
   <button type="button" data-t="s-volume">Trading volume</button>
   <button type="button" data-t="s-maps">House maps</button>
   <button type="button" data-t="s-acceptance">Where it’s spent</button>
@@ -179,6 +185,16 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   <div class="mut">Ounces of gold per BTC, 2010 to now (log scale). Uses yearly average prices, with the last point at today's prices. Press Refresh price to update both the BTC and gold price.</div>
 </section>
 
+<section class="card" id="s-wma">
+  <h2>200-week moving average</h2>
+  <div class="grid" style="margin-bottom:8px">
+    <div class="stat"><span class="mut">200-week average</span><b id="wmaNow" style="color:var(--ink)">–</b></div>
+    <div class="stat"><span class="mut">Price vs average</span><b id="wmaX" style="color:var(--acc)">–</b></div>
+  </div>
+  <svg id="wmachart" viewBox="0 0 300 190" width="100%" role="img" aria-label="Bitcoin price against its 200-week moving average, log scale"></svg>
+  <div class="mut" id="wmaNote">Loading price history…</div>
+</section>
+
 <section class="card" id="s-plaw">
   <h2>Bitcoin power law</h2>
   <div class="mut" id="plstat" style="margin-bottom:8px">Loading price history…</div>
@@ -194,6 +210,24 @@ h2.tg .tgl svg{width:12px;height:12px;transition:transform .2s}
   </div>
   <svg id="hchart" viewBox="0 0 300 190" width="100%" role="img" aria-label="Bitcoin hashrate and mining difficulty over time"></svg>
   <div class="mut">Hashrate in exahashes per second (orange, left axis) and mining difficulty in trillions (blue, right axis), both on log scales. Difficulty resets every 2,016 blocks to follow hashrate, so the two move together with a lag. Source: blockchain.com.</div>
+</section>
+
+<section class="card" id="s-miners">
+  <h2>Bitcoin mining stocks &amp; ETFs</h2>
+  <div class="scroll"><table class="ss" id="mnTable"><tr><td>Loading…</td></tr></table></div>
+  <div class="mut" id="mnNote" style="margin-top:8px">Listed companies that mine bitcoin, plus a mining ETF and the main spot bitcoin ETFs, for comparison.</div>
+</section>
+
+<section class="card" id="s-minemap">
+  <h2>Where bitcoin gets mined</h2>
+  <div class="mut" style="margin-bottom:10px">Share of the network's hashrate by country. The darker the orange, the bigger the share. Blue dots mark well-known mining regions. Tap a country for details, drag to pan.</div>
+  <div class="wm-mapwrap"><div id="mmMap"></div><button id="mmRz">Reset zoom</button></div>
+  <div class="wm-leg"><span>Small share</span><div class="wm-bar"></div><span>Large share</span></div>
+  <div class="wm-row">
+    <div class="wm-card" id="mmInfo"></div>
+    <div class="wm-card"><h3>Top 10 by hashrate share</h3><ol id="mmTop"></ol></div>
+  </div>
+  <div class="mut" style="margin-top:10px">Indicative estimates only. Mining is hard to pin to a place: miners move quickly when power prices or rules change, and some run in the open while others hide. The last full country survey (Cambridge Centre for Alternative Finance, to January 2022) showed the US in the lead after China's 2021 ban; the shares here are rounded and updated by hand from later reports and pool data, so treat them as a rough picture, not a count. They add up to less than 100% because many smaller countries are left out. Historical and educational only.</div>
 </section>
 
 <section class="card" id="s-volume">
@@ -600,11 +634,48 @@ function renderVolume(H){
   $('vchart').innerHTML=sv;
   $('vnote').textContent='Bitcoin spot trading volume per year in billions of US dollars, summed from daily exchange volume reported by blockchain.com (2017 onward). *'+H.vol_year+' is the year so far. It covers the exchanges blockchain.com tracks, so treat it as a trend, not an exact market total.';
 }
+function renderWMA(H){
+  var P=H.price,W=1400*DAY,out=[],lo=0,sum=0,n=0;
+  for(var i=0;i<P.length;i++){
+    sum+=P[i][1];n++;
+    while(P[lo][0]<P[i][0]-W){sum-=P[lo][1];n--;lo++}
+    if(P[i][0]-P[0][0]>=W)out.push([P[i][0],sum/n,P[i][1]]);
+  }
+  if(out.length<10){$('wmaNote').textContent='Not enough history to draw this yet.';return}
+  var t0=out[0][0],t1=out[out.length-1][0],all=[];
+  out.forEach(function(p){all.push(p[1],p[2])});
+  var ymin=Math.floor(Math.log10(Math.min.apply(null,all))),ymax=Math.ceil(Math.log10(Math.max.apply(null,all)));
+  var X=function(t){return 38+(t-t0)/(t1-t0)*254},Y=function(v){return 152-(Math.log10(v)-ymin)/(ymax-ymin)*140},sv='';
+  for(var k=ymin;k<=ymax;k++)sv+='<line x1="38" x2="292" y1="'+Y(Math.pow(10,k)).toFixed(1)+'" y2="'+Y(Math.pow(10,k)).toFixed(1)+'" stroke="var(--line)"/><text x="34" y="'+(Y(Math.pow(10,k))+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--mut)">'+pow10lab(k)+'</text>';
+  var line=function(idx,c,w){return '<path d="'+out.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[idx]).toFixed(1)}).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'" stroke-linejoin="round"/>'};
+  sv+=line(2,'var(--acc)',1.5)+line(1,BLUE,2);
+  for(var y=new Date(t0*1000).getUTCFullYear()+1;y<=new Date(t1*1000).getUTCFullYear();y+=2)sv+='<text x="'+X(Date.UTC(y,0,1)/1000).toFixed(1)+'" y="168" text-anchor="middle" font-size="9" fill="var(--mut)">'+y+'</text>';
+  sv+='<text x="38" y="8" font-size="9" fill="var(--acc)">Price</text><text x="80" y="8" font-size="9" fill="'+BLUE+'">200-week average</text>';
+  $('wmachart').innerHTML=sv;
+  var last=out[out.length-1],below=out.filter(function(p){return p[2]<p[1]}).length/out.length*100;
+  $('wmaNow').textContent='$'+fmt(last[1]);
+  $('wmaX').textContent=(last[2]/last[1]).toFixed(2)+'×';
+  $('wmaNote').textContent='Bitcoin\'s price (orange) against its 200-week moving average (blue), the average of the last 1,400 days of prices, on a log scale. Since the average has existed, price has spent '+below.toFixed(0)+'% of the time below it, and those spells have been rare and brief. Historical only; it describes the past, not what comes next. Source: blockchain.com.';
+}
+function loadMiners(){
+  fetch('/api/dataviz/bitcoin-dashboard/miners').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(M){
+    var pc=function(v){return '<span style="color:var('+(v>=0?'--up':'--dn')+')">'+(v>=0?'+':'')+v.toFixed(1)+'%</span>'};
+    var grp=[['miner','Mining companies'],['mining','Mining ETF'],['spot','Spot bitcoin ETFs (for comparison)']],h='<tr><th>Name</th><th>Price</th><th>Day</th><th>1 year</th></tr>';
+    grp.forEach(function(g){
+      var rows=M.rows.filter(function(r){return r.k===g[0]});if(!rows.length)return;
+      h+='<tr><td colspan="4" style="text-align:left;background:var(--bg);color:var(--mut);font-weight:600">'+g[1]+'</td></tr>';
+      rows.forEach(function(r){h+='<tr><td>'+r.s+' <span class="mut" style="font-weight:400">'+r.n+'</span></td><td>$'+fmt(r.p,2)+'</td><td>'+pc(r.d)+'</td><td>'+pc(r.y)+'</td></tr>'});
+    });
+    $('mnTable').innerHTML=h;
+    $('mnNote').textContent='US-listed share prices in dollars, delayed, refreshed every 15 minutes. Miners are a leveraged way to be exposed to bitcoin: their shares often swing harder than the coin itself, and many now also sell computing power to AI firms. Historical and educational only, not a recommendation.';
+    postHeight();
+  }).catch(function(){$('mnTable').innerHTML='<tr><td>Prices unavailable right now.</td></tr>'});
+}
 function loadHistory(){
   fetch('/api/dataviz/bitcoin-dashboard/history').then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(H){
-    renderPowerLaw(H);renderMining(H);renderVolume(H);postHeight();
+    renderWMA(H);renderPowerLaw(H);renderMining(H);renderVolume(H);postHeight();
   }).catch(function(){
-    $('plstat').textContent='History data unavailable right now.';$('vnote').textContent='History data unavailable right now.';
+    $('plstat').textContent='History data unavailable right now.';$('wmaNote').textContent='History data unavailable right now.';$('vnote').textContent='History data unavailable right now.';
   });
 }
 
@@ -638,13 +709,14 @@ $('dnav').onclick=function(e){
     if(!closed){
       if(sec.id==='s-maps'){$('usreal').innerHTML='';usMap=null;renderMaps()}
       if(sec.id==='s-acceptance'&&window._wmBuild)window._wmBuild();
+      if(sec.id==='s-minemap'&&window._mmBuild)window._mmBuild();
       setTimeout(function(){window.dispatchEvent(new Event('resize'))},0);
     }};
   var go=function(){set(!sec.classList.contains('closed'))};
   h.onclick=go;h.onkeydown=function(e){if(e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();go()}};
   set(sec.id!=='s-price'); // load with only the price section open
 });
-loadHistory();renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
+loadHistory();loadMiners();renderSupplyTable();setPrice(price,'Estimate – loading live price…');tick();setInterval(tick,1000);refresh();
 
 // Tell the host page how tall to make the iframe.
 function postHeight(){parent.postMessage({gcgIframeHeight:document.documentElement.scrollHeight,src:"bitcoin-dashboard"},location.origin);}
@@ -791,6 +863,84 @@ window.addEventListener("resize",function(){if(map)map.resize()});
 try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",build)}catch(e){}
 try{new MutationObserver(build).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
 fetch(DATA_URL,{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;return r.json()}).then(applyLive).catch(function(){}).then(function(){tabs();glob();build()});
+})();
+</script>
+<script>
+// Where bitcoin gets mined: hashrate share by country. Own scope so its names can't clash with the scripts around it.
+(function(){
+// iso3, name, approx % of global hashrate, note
+var D=[
+["USA","United States",38,"The largest miner by a wide margin since China's 2021 ban. Texas, Georgia, Pennsylvania, Ohio and North Dakota lead; listed miners like MARA, Riot and CleanSpark are based here."],
+["CHN","China",14,"Banned mining in 2021 yet a meaningful share is believed to run quietly, mostly on cheap hydro in Sichuan and Yunnan and coal in Xinjiang."],
+["RUS","Russia",11,"Cheap Siberian hydro and gas. Mining was legalised under tight rules in 2024."],
+["CAN","Canada",6.5,"Quebec, Manitoba and British Columbia hydro power draw miners, though Quebec has limited new connections."],
+["KAZ","Kazakhstan",6,"Took in many miners fleeing China, then tightened power rules and taxes after 2022."],
+["IRN","Iran",3.5,"Subsidised power attracts miners, but blackouts have led to regular crackdowns."],
+["DEU","Germany",3,"Mostly small and mid-sized operations running on renewables."],
+["MYS","Malaysia",2.5,"Mining here is often linked to power theft, which has led to large seizures."],
+["IRL","Ireland",2,"Hosts a cluster of data-centre style miners."],
+["NOR","Norway",1.5,"Hydro-powered and cold, a natural site for mining."],
+["ETH","Ethiopia",1.5,"Cheap surplus hydro from the Grand Renaissance Dam, with the state allocating power to miners."],
+["PRY","Paraguay",1.2,"Surplus power from the Itaipu dam, shared with Brazil."],
+["ISL","Iceland",0.8,"Geothermal and hydro, but small in absolute terms."],
+["SLV","El Salvador",0.5,"The government's volcano-powered mining pilot is small."],
+["ARE","UAE",0.8,"Cheap gas power and friendly rules draw new operators."],
+["BRA","Brazil",0.8,""],
+["SWE","Sweden",0.6,""],
+["FIN","Finland",0.5,""],
+["UKR","Ukraine",0.4,""],
+["ARG","Argentina",0.6,"Cheap regulated power in some provinces."]
+];
+// name, lat, lon, note
+var HUBS=[
+["Texas, USA",31.5,-99,"ERCOT grid: miners are paid to switch off when power is scarce."],
+["Georgia & Carolinas, USA",33.5,-83,"Large industrial sites near cheap, steady power."],
+["Sichuan & Yunnan, China",29.5,102.5,"Wet-season hydro. Mostly underground since the ban."],
+["Irkutsk, Russia",56,104,"Siberian hydro."],
+["Ekibastuz, Kazakhstan",51.7,75.3,"Coal-fired power next to the old mining belt."],
+["Quebec, Canada",48.5,-72,"Hydro-Québec power."],
+["Iceland",64.9,-18.5,"Geothermal and hydro."],
+["Norway",62,9,"Hydro."],
+["Itaipu, Paraguay",-25.4,-54.6,"Surplus dam power."],
+["Ethiopia",9,39,"State-backed hydro mining."],
+["El Salvador",13.7,-88.9,"Volcano-powered pilot."],
+["Abu Dhabi, UAE",24.4,54.4,"Gas power and favourable rules."]
+];
+var by={};D.forEach(function(d){by[d[0]]=d});
+var map,zm,sel="USA",max=Math.max.apply(0,D.map(function(d){return d[2]}));
+function g(i){return document.getElementById(i)}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function col(d){return"rgba(247,147,26,"+(.15+.85*Math.pow(d[2]/max,.6)).toFixed(2)+")"}
+function build(){
+var el=g("mmMap");el.innerHTML="";map=null;
+if(!el.clientWidth){info();return}
+if(!window.Datamap){el.textContent="Map library failed to load.";return}
+var data={};D.forEach(function(d){data[d[0]]={fillColor:col(d),d:d}});
+map=new Datamap({element:el,scope:"world",responsive:true,fills:{defaultFill:css("--empty")},data:data,
+geographyConfig:{borderColor:css("--line"),borderWidth:.5,highlightFillColor:"#ffd08a",highlightBorderColor:css("--ink"),highlightBorderWidth:1,
+popupTemplate:function(geo,x){return'<div class="hoverinfo"><b>'+esc(geo.properties.name)+'</b><br>'+(x&&x.d?'About '+x.d[2]+'% of hashrate':'Small or unknown share')+'</div>'}},
+done:function(ds){
+ds.svg.selectAll(".datamaps-subunit").on("click",function(gm){if(by[gm.id]){sel=gm.id;info();mark()}});
+zm=d3.behavior.zoom().scaleExtent([1,8]).on("zoom",function(){ds.svg.selectAll("g").attr("transform","translate("+d3.event.translate+")scale("+d3.event.scale+")")});
+ds.svg.call(zm).on("wheel.zoom",null).on("mousewheel.zoom",null).on("DOMMouseScroll.zoom",null)}});
+map.bubbles(HUBS.map(function(h){return{name:h[0],latitude:h[1],longitude:h[2],radius:5,fillKey:"hub",note:h[3]}}),
+{popupTemplate:function(geo,d){return'<div class="hoverinfo"><b>'+esc(d.name)+'</b><br>'+esc(d.note)+'</div>'}});
+map.svg.selectAll(".datamaps-bubble").style("fill","#4aa3ff").style("fill-opacity",.75).style("stroke","#fff").style("stroke-width","1px");
+info();mark()}
+function mark(){if(!map)return;map.svg.selectAll(".datamaps-subunit").style("stroke",css("--line")).style("stroke-width","0.5px");
+map.svg.select(".datamaps-subunit."+sel).style("stroke",css("--ink")).style("stroke-width","1.8px")}
+function info(){
+var d=by[sel],rank=D.slice().sort(function(a,b){return b[2]-a[2]}).indexOf(d)+1;
+g("mmInfo").innerHTML='<h3>'+esc(d[1])+'</h3><div class="wm-stats"><div><b>~'+d[2]+'%</b><span>Of global hashrate</span></div><div><b>#'+rank+'</b><span>Rank</span></div></div><div class="wm-note">'+esc(d[3]||"No standout story.")+'</div>';
+g("mmTop").innerHTML=D.slice().sort(function(a,b){return b[2]-a[2]}).slice(0,10).map(function(x){return"<li>"+esc(x[1])+"<span>~"+x[2]+"%</span></li>"}).join("")}
+window._mmBuild=build;
+try{new ResizeObserver(function(){if(g("mmMap").clientWidth&&!map)build()}).observe(g("mmMap"))}catch(e){}
+g("mmRz").onclick=function(){if(zm&&map){zm.scale(1).translate([0,0]);zm.event(map.svg)}};
+window.addEventListener("resize",function(){if(map)map.resize()});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",build)}catch(e){}
+try{new MutationObserver(build).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
+info();build();
 })();
 </script>
 </body>

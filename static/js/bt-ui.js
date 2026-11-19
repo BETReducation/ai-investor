@@ -361,7 +361,9 @@
     const per = gbpMode ? money($('tradeAmountGbp').value) : $('tradeAmountPct').value + '% of pot';
     return line('Capital', money($('btCapital').value)) + line('Per trade', per)
       + line('Stop-loss', '−' + esc(fieldText('slVal', '%'))) + line('Take-profit', '+' + esc(fieldText('tpVal', '%')))
-      + ($('trailSL').checked ? line('Trailing stop', parseFloat($('trailDist').value).toFixed(1) + '%') : '');
+      + ($('trailSL').checked ? line('Trailing stop', parseFloat($('trailDist').value).toFixed(1) + '%') : '')
+      + (parseFloat($('feePct').value) > 0 ? line('Fee', parseFloat($('feePct').value) + '% per side') : '')
+      + (parseFloat($('borrowPct').value) > 0 ? line('Short borrow', parseFloat($('borrowPct').value) + '% / yr') : '');
   }
   function sumSet(key) {
     const c = copyFor();

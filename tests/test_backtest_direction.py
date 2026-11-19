@@ -107,3 +107,17 @@ def test_split_rules_off_matches_single_set():
     one = run_backtest(_df(), direction_mode="both", thresholds=_LONG_SET, min_confidence=50)[0]
     same = run_backtest(_df(), direction_mode="both", thresholds=_LONG_SET, min_confidence=50, short_match="all")[0]
     assert one == same
+
+
+def test_costs_default_off_and_reduce_returns_when_set():
+    base = _run("both")
+    assert all(t["cost_pct"] == 0 for t in base)
+    costly = _run("both", fee_pct=0.1, borrow_pct=5.0)
+    assert len(costly) == len(base)
+    for a, b in zip(base, costly):
+        assert b["cost_pct"] >= 0.2 - 1e-9
+        assert b["return_pct"] <= a["return_pct"] - 0.19
+        if b["side"] == "long":
+            assert b["cost_pct"] == pytest.approx(0.2, abs=0.01)
+        else:
+            assert b["cost_pct"] > 0.2 - 1e-9
