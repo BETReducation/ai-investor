@@ -1541,6 +1541,19 @@ const STRATEGY_TEMPLATES = {
     name: 'Inverse H&S Breakout', type: 'BUY', match: 'all',
     conditions: [ { type: 'inv_hs_neckline', params: { mode: 'break' } }, { type: 'volume_spike', value: 1.3 } ],
   },
+  // Two-sided starters (Trade direction: long & short). Each side is judged on its own conditions.
+  range_long_short: {
+    name: 'Oversold Long / Overbought Short', type: 'BOTH', direction: 'both', match: 'all',
+    conditions: [ { type: 'rsi_below', value: 30 }, { type: 'bb_lower', value: 10 }, { type: 'rsi_above', value: 70 }, { type: 'bb_upper', value: 90 } ],
+  },
+  trend_flip: {
+    name: 'MACD Cross Flip', type: 'BOTH', direction: 'both', match: 'all',
+    conditions: [ { type: 'macd_bull_cross', value: 5 }, { type: 'macd_bear_cross', value: 5 } ],
+  },
+  level_lost_short: {
+    name: 'Golden Cross Long / Short if Level Lost', type: 'BOTH', direction: 'both', match: 'all', needsLevel: true,
+    conditions: [ { type: 'ma_golden', value: 10 }, { type: 'price_below_level' } ],
+  },
 };
 
 function _buildCondition(type, value, paramOverrides) {
@@ -1556,7 +1569,8 @@ function applyTemplate(key) {
   if (!tpl) return;
   strategyConditions = tpl.conditions.map(c => _buildCondition(c.type, c.value, c.params));
   strategyMatch = tpl.match;
-  setStrategyDirection(tpl.type === 'SELL' ? 'short' : 'long', false);
+  setStrategyDirection(tpl.direction || (tpl.type === 'SELL' ? 'short' : 'long'), false);
+  _applySplitSides({ splitSides: false, matchShort: tpl.match, minConfidenceShort: 60 });
   const matchEl = document.getElementById('stratMatch'); if (matchEl) matchEl.value = tpl.match;
   const nameEl  = document.getElementById('strategyName'); if (nameEl) nameEl.value = tpl.name;
   const selEl   = document.getElementById('strategySelect'); if (selEl) selEl.value = '';
@@ -1564,6 +1578,13 @@ function applyTemplate(key) {
   renderConditions();
   updateStrategyStatus();
   addLog('info', 'STRAT', `Loaded starter strategy: ${tpl.name} (${tpl.type}, ${tpl.conditions.length} conditions)`);
+  if (tpl.needsLevel) {
+    // The level is the user's call. Start 3% under the live price when we have one so the card isn't empty.
+    const c = strategyConditions.find(x => x.type === 'price_below_level');
+    const px = assets[currentAsset]?.price;
+    if (c && px) { c.value = Math.round(px * 0.97 * 100) / 100; renderConditions(); updateStrategyStatus(); }
+    addLog('warn', 'STRAT', `Set the Price Below Level condition to the price you want to treat as lost${c && px ? ` (pre-filled 3% under ${currentAsset}'s current price)` : ''}.`);
+  }
 }
 
 function addCondition(type) {
@@ -5897,6 +5918,9 @@ setTimeout(() => {
           <button type="button" class="qs-chip" id="qsGoldenCross" onclick="applyTemplate('golden_cross')" title="BUY when the 20-MA crosses above the 50-MA with a strong ADX trend — the classic trend-follow. Requires Pro (uses ADX).">Golden Cross Trend</button>
           <button type="button" class="qs-chip" onclick="applyTemplate('overbought_pullback')" title="SELL when RSI is overbought and price is near the upper Bollinger Band — a mean-reversion fade.">Overbought Pullback</button>
           <button type="button" class="qs-chip" id="qsInverseHs" onclick="applyTemplate('inverse_hs_breakout')" title="BUY when price closes above the neckline of an inverse head-and-shoulders pattern, confirmed by a volume spike. Requires Pro (uses Inverse H&amp;S).">Inverse H&amp;S Breakout</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('range_long_short')" title="Long &amp; short. Long when RSI is oversold near the lower Bollinger Band, short when RSI is overbought near the upper band. A range-trading setup that flips between sides.">Oversold Long / Overbought Short</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('trend_flip')" title="Long &amp; short. Long on a MACD bull cross, short on a MACD bear cross: a stop-and-reverse that is always on one side or the other.">MACD Cross Flip</button>
+          <button type="button" class="qs-chip" onclick="applyTemplate('level_lost_short')" title="Long &amp; short. Long on a golden cross; short when price is below a level you set (a support break). Set the level on the condition card.">Golden Cross Long / Short if Level Lost</button>
         </div>
       </div>
 

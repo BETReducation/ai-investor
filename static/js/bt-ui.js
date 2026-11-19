@@ -197,7 +197,7 @@
   const sum = document.createElement('div');
   sum.className = 'bt-sum-wrap';
   const card = (n, t) => `<div class="sum-card" id="btSumCard${n}"><div class="sum-head"><span class="sum-title">${n} · ${t}</span><button type="button" class="sum-edit" data-open="${n}">EDIT</button></div><div class="sum-body" id="btSumBody${n}"></div></div>`;
-  sum.innerHTML = `<button type="button" class="bt-open-btn" data-open="1">SET UP BACKTEST</button>${card(1, 'ASSET &amp; PERIOD')}${card(2, 'CAPITAL &amp; RISK')}${card(3, 'BUY RULES')}${card(4, 'SELL RULES')}${card(5, 'SHORT ENTRY RULES')}${card(6, 'SHORT EXIT RULES')}`;
+  sum.innerHTML = `<button type="button" class="bt-open-btn" data-open="1">SET UP BACKTEST</button><div style="margin:8px 0 2px;font-size:8px;letter-spacing:1px;color:var(--text-muted);">LONG &amp; SHORT STARTERS</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;"><button type="button" class="bt-sig-btn" data-starter="range">Oversold Long / Overbought Short</button><button type="button" class="bt-sig-btn" data-starter="trend">MACD Cross Flip</button><button type="button" class="bt-sig-btn" data-starter="level">Golden Cross Long / Short if Level Lost</button></div>${card(1, 'ASSET &amp; PERIOD')}${card(2, 'CAPITAL &amp; RISK')}${card(3, 'BUY RULES')}${card(4, 'SELL RULES')}${card(5, 'SHORT ENTRY RULES')}${card(6, 'SHORT EXIT RULES')}`;
   header.insertAdjacentElement('afterend', sum);
   sum.addEventListener('click', e => { const t = e.target.closest('[data-open]'); if (t) openWizard(+t.dataset.open); });
 
@@ -691,7 +691,8 @@
       : (item.current && ['long', 'short', 'both'].includes(p0.strategyDirection) ? p0.strategyDirection : inferred);
     const buys = item.conditions.filter(c => c.direction !== 'sell');
     const sells = item.conditions.filter(c => c.direction === 'sell');
-    const groups = dir === 'short' ? { entry: sells, exit: buys } : dir === 'both' ? { entry: buys, short: sells } : { entry: buys, exit: sells };
+    const split = dir === 'both' && !item.noSplit;
+    const groups = dir === 'short' ? { entry: sells, exit: buys } : dir === 'both' ? (split ? { entry: buys, short: sells } : { entry: item.conditions }) : { entry: buys, exit: sells };
     const tr = {};
     Object.entries(groups).forEach(([k, conds]) => { tr[k] = translateSignals(conds, restricted); });
     const hint = $('btSigHint');
@@ -708,7 +709,7 @@
     cfg._cover = blank;
     const m = item.match === 'all' ? 'all' : 'any';
     cfg._match = { entry: m, exit: m, short: m, cover: m };
-    cfg.splitShort = dir === 'both';
+    cfg.splitShort = split;
     cfg._direction = dir;
 
     // Risk settings from the Signals page (percent-based on both pages). Forex here is pip-based, so skip those.
@@ -726,10 +727,10 @@
     if (p.currency && [...$('btCurrency').options].some(o => o.value === p.currency)) cfg.btCurrency = p.currency;
 
     window.applyBacktestConfig(cfg);
-    $('btStrategyName').value = `${item.name} (from Signals)`;
+    $('btStrategyName').value = item.starter ? item.name : `${item.name} (from Signals)`;
     const skipped = Object.values(tr).flatMap(t => t.skipped);
     const parts = Object.entries(tr).map(([k, t]) => `${t.used.size} for the ${copyFor().cards[k].toLowerCase()}`);
-    const msg = `Copied "${item.name}" (${dir === 'both' ? 'long & short' : dir + ' only'}): ${parts.join(', ')}.`
+    const msg = `${item.starter ? 'Loaded starter' : 'Copied'} "${item.name}" (${dir === 'both' ? 'long & short' : dir + ' only'}): ${parts.join(', ')}.`
       + (!tr.entry.used.size ? ' It has no conditions for the entry rules, so set those before running.' : '')
       + (tr.exit && !tr.exit.used.size && dir !== 'both' ? ' It has no exit conditions, so set the exit rules before running.' : '')
       + (skipped.length ? ` Skipped (no Backtester equivalent): ${skipped.join(', ')}.` : '');
@@ -740,5 +741,32 @@
     [3, 4, 5, 6].forEach(n => { const c = $('btSumCard' + n); if (c) { c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } });
   }
 
-  window.btUi = { openWizard, closeWizard, openSignalsImport, copyFromSignals };
+  // ── Starter strategies ─────────────────────────────────────────────────────
+  // Ready-made two-sided setups. Same conditions as the Signals page starters; they load through the same
+  // translation, so the Backtester shows them as ordinary rules to review and change.
+  const STARTERS = {
+    range: { name: 'Oversold Long / Overbought Short', direction: 'both', match: 'all',
+      conditions: [{ type: 'rsi_below', value: 30, direction: 'buy' }, { type: 'bb_lower', value: 10, direction: 'buy' },
+        { type: 'rsi_above', value: 70, direction: 'sell' }, { type: 'bb_upper', value: 90, direction: 'sell' }] },
+    trend: { name: 'MACD Cross Flip', direction: 'both', match: 'all',
+      conditions: [{ type: 'macd_bull_cross', value: 5, direction: 'buy' }, { type: 'macd_bear_cross', value: 5, direction: 'sell' }] },
+    level: { name: 'Golden Cross Long / Short if Level Lost', direction: 'both', match: 'all', noSplit: true, level: true,
+      conditions: [{ type: 'ma_golden', value: 10, direction: 'buy' }] },
+  };
+  function applyStarter(key) {
+    const st = STARTERS[key];
+    if (!st) return;
+    // Reset the leftovers a previous run might have left behind, then load the rules.
+    $('levelPrice').value = ''; $('levelCross').value = 'below';
+    copyFromSignals({ ...st, starter: true, prefs: {} });
+    if (st.level) {
+      $('levelCross').value = 'below';
+      const msg = 'Loaded "' + st.name + '". Enter the price to treat as lost in the Price-level trigger box (Trade Direction section), then run it. A close below that price closes the long and opens a short.';
+      $('btSigHint').textContent = msg; const h2 = $('btStrategyHint'); if (h2) h2.textContent = msg;
+      $('levelPrice').focus();
+    }
+  }
+  sum.addEventListener('click', e => { const b = e.target.closest('[data-starter]'); if (b) applyStarter(b.dataset.starter); });
+
+  window.btUi = { applyStarter, openWizard, closeWizard, openSignalsImport, copyFromSignals };
 })();
