@@ -327,7 +327,7 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
   background: var(--card); border: 1px solid rgba(212,175,106,0.35); border-radius: 999px; padding: 8px 16px; margin-bottom: 22px;
 }
 .gsr-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 24px 34px; text-align: center; }
-.gsr-scale-area { position: relative; max-width: 400px; margin: 0 auto 6px; cursor: pointer; }
+.gsr-scale-area { position: relative; max-width: 520px; margin: 0 auto 6px; cursor: pointer; }
 .gsr-scale-area:hover .gsr-svg { filter: brightness(1.05); }
 .gsr-scale-area.gsr-refreshing { cursor: wait; }
 .gsr-scale-area.gsr-refreshing .gsr-svg { opacity: 0.55; transition: opacity 0.15s ease; }
@@ -373,7 +373,7 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
 .gsr-glow-btc { fill: #ffb454; opacity: 0.5; }
 .gsr-extra { margin-top: 28px; }
 .gsr-extra h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; margin: 0 0 14px; color: var(--text); }
-.gsr-label { position: absolute; top: 65.5%; width: 120px; text-align: center; pointer-events: none; }
+.gsr-label { position: absolute; top: 77%; width: 120px; text-align: center; pointer-events: none; }
 .gsr-label-left { left: 19.5%; transform: translateX(-50%); }
 .gsr-label-right { left: 80.5%; transform: translateX(-50%); }
 .gsr-label-amount { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 17px; color: var(--text); }
@@ -1671,52 +1671,7 @@ function initGoldSilverRatio() {
       </div>
       <div class="gsr-card">
         <div class="gsr-scale-area" id="gsrScaleArea" onclick="gsrRefreshClick()" role="button" tabindex="0" aria-label="Refresh the gold:silver ratio now" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gsrRefreshClick();}">
-          <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <filter id="gsrGoldGlow" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="7"/>
-              </filter>
-              <filter id="gsrSilverGlow" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="7"/>
-              </filter>
-            </defs>
-            <rect class="gsr-stand-fill" x="196" y="90" width="8" height="175" rx="4"/>
-            <ellipse class="gsr-stand-fill" cx="200" cy="267" rx="54" ry="11"/>
-            <circle class="gsr-stand-fill" cx="200" cy="88" r="7"/>
-            <g class="gsr-arm" id="gsrArm">
-              <line class="gsr-beam-line" x1="78" y1="90" x2="322" y2="90"/>
-              <circle class="gsr-beam-cap" cx="78" cy="90" r="5"/>
-              <circle class="gsr-beam-cap" cx="322" cy="90" r="5"/>
-              <line class="gsr-chain" x1="78" y1="90" x2="58" y2="175"/>
-              <line class="gsr-chain" x1="78" y1="90" x2="98" y2="175"/>
-              <ellipse class="gsr-pan" cx="78" cy="175" rx="50" ry="13"/>
-              <!-- Gold: one big bar, sized to match the reference photo's proportions
-                   (previously a much smaller 36x14 bar) — glow copy painted first so
-                   the crisp bar on top reads clearly. -->
-              <rect class="gsr-glow-gold" filter="url(#gsrGoldGlow)" x="50" y="138" width="56" height="24" rx="5"/>
-              <rect class="gsr-bar-gold" x="50" y="138" width="56" height="24" rx="5"/>
-              <rect class="gsr-bar-gold-top" x="50" y="138" width="56" height="9" rx="4"/>
-              <line class="gsr-chain" x1="322" y1="90" x2="302" y2="175"/>
-              <line class="gsr-chain" x1="322" y1="90" x2="342" y2="175"/>
-              <ellipse class="gsr-pan" cx="322" cy="175" rx="50" ry="13"/>
-              <!-- Silver: a taller 4-bar tapered stack, also enlarged vs. the original
-                   — glow group behind, then the crisp stack on top. -->
-              <g filter="url(#gsrSilverGlow)">
-                <rect class="gsr-glow-silver" x="294" y="144" width="56" height="18" rx="4"/>
-                <rect class="gsr-glow-silver" x="298" y="126" width="48" height="18" rx="4"/>
-                <rect class="gsr-glow-silver" x="302" y="108" width="40" height="18" rx="4"/>
-                <rect class="gsr-glow-silver" x="306" y="92" width="32" height="16" rx="4"/>
-              </g>
-              <rect class="gsr-bar-silver" x="294" y="144" width="56" height="18" rx="4"/>
-              <rect class="gsr-bar-silver-top" x="294" y="144" width="56" height="7" rx="3"/>
-              <rect class="gsr-bar-silver" x="298" y="126" width="48" height="18" rx="4"/>
-              <rect class="gsr-bar-silver-top" x="298" y="126" width="48" height="7" rx="3"/>
-              <rect class="gsr-bar-silver" x="302" y="108" width="40" height="18" rx="4"/>
-              <rect class="gsr-bar-silver-top" x="302" y="108" width="40" height="7" rx="3"/>
-              <rect class="gsr-bar-silver" x="306" y="92" width="32" height="16" rx="4"/>
-              <rect class="gsr-bar-silver-top" x="306" y="92" width="32" height="6" rx="3"/>
-            </g>
-          </svg>
+          ${gsrScaleSvg('gsr', gsrGoldBar('gsr'), gsrStack('gsr', 'ag', 322))}
           <div class="gsr-label gsr-label-left">
             <div class="gsr-label-amount">1 oz</div>
             <div class="gsr-label-metal">GOLD</div>
@@ -1749,64 +1704,90 @@ function initGoldSilverRatio() {
 // Extra scales on the same page: gold vs a barrel of oil, and gold vs one bitcoin.
 // Same beam, chains and pans as the gold:silver scale (that one is written out longhand above);
 // only what sits in each pan changes.
-const GOLD_BAR_SOLO = `
-  <rect class="gsr-glow-gold" filter="url(#__ID__GG)" x="50" y="138" width="56" height="24" rx="5"/>
-  <rect class="gsr-bar-gold" x="50" y="138" width="56" height="24" rx="5"/>
-  <rect class="gsr-bar-gold-top" x="50" y="138" width="56" height="9" rx="4"/>`;
-const GOLD_STACK_LEFT = `
-  <g filter="url(#__ID__GG)">
-    <rect class="gsr-glow-gold" x="50" y="144" width="56" height="18" rx="4"/>
-    <rect class="gsr-glow-gold" x="54" y="126" width="48" height="18" rx="4"/>
-    <rect class="gsr-glow-gold" x="58" y="108" width="40" height="18" rx="4"/>
-    <rect class="gsr-glow-gold" x="62" y="92" width="32" height="16" rx="4"/>
-  </g>
-  <rect class="gsr-bar-gold" x="50" y="144" width="56" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="50" y="144" width="56" height="7" rx="3"/>
-  <rect class="gsr-bar-gold" x="54" y="126" width="48" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="54" y="126" width="48" height="7" rx="3"/>
-  <rect class="gsr-bar-gold" x="58" y="108" width="40" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="58" y="108" width="40" height="7" rx="3"/>
-  <rect class="gsr-bar-gold" x="62" y="92" width="32" height="16" rx="4"/><rect class="gsr-bar-gold-top" x="62" y="92" width="32" height="6" rx="3"/>`;
-function gsrBarrel(x, y, w, h) {
-  const bandY1 = y + h * 0.22, bandY2 = y + h * 0.7;
-  return `<rect class="gsr-glow-oil" filter="url(#__ID__OG)" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
-    <rect class="gsr-bar-oil" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
-    <rect class="gsr-bar-oil-top" x="${x}" y="${y}" width="${w}" height="${h * 0.14}" rx="5"/>
-    <rect class="gsr-bar-oil-band" x="${x}" y="${bandY1}" width="${w}" height="3"/>
-    <rect class="gsr-bar-oil-band" x="${x}" y="${bandY2}" width="${w}" height="3"/>`;
+// Shared scale drawing for all three cards. Metals are cast ingots with a lit top face,
+// bevelled edge and stamped hallmark, so they read as real bars rather than flat boxes.
+function gsrDefs(id) {
+  return `
+    <linearGradient id="${id}Au" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9a3"/><stop offset=".35" stop-color="#e9bd55"/><stop offset=".75" stop-color="#b98a2c"/><stop offset="1" stop-color="#d9a640"/></linearGradient>
+    <linearGradient id="${id}AuTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff6d0"/><stop offset="1" stop-color="#f0cd78"/></linearGradient>
+    <linearGradient id="${id}Ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f9fc"/><stop offset=".4" stop-color="#c5cddb"/><stop offset=".8" stop-color="#8f9bb0"/><stop offset="1" stop-color="#b9c3d2"/></linearGradient>
+    <linearGradient id="${id}AgTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9e0ec"/></linearGradient>
+    <linearGradient id="${id}Brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#a855f7"/></linearGradient>
+    <linearGradient id="${id}Stand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6d5bb8"/><stop offset=".5" stop-color="#9b8ae0"/><stop offset="1" stop-color="#6d5bb8"/></linearGradient>
+    <linearGradient id="${id}Oil" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#14171f"/><stop offset=".35" stop-color="#4a5166"/><stop offset=".6" stop-color="#2a2f3d"/><stop offset="1" stop-color="#0f1219"/></linearGradient>
+    <radialGradient id="${id}Coin" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#ffd27a"/><stop offset=".55" stop-color="#f7931a"/><stop offset="1" stop-color="#c46a05"/></radialGradient>
+    <filter id="${id}Glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>`;
 }
-// A pyramid of three-two-one barrels; the label gives the real count.
-const OIL_STACK = gsrBarrel(292, 134, 28, 28) + gsrBarrel(324, 134, 28, 28) + gsrBarrel(308, 104, 28, 28);
-const BTC_COIN = `
-  <circle class="gsr-glow-btc" filter="url(#__ID__BG)" cx="322" cy="128" r="32"/>
-  <circle class="gsr-coin" cx="322" cy="128" r="32"/>
-  <circle class="gsr-coin-ring" cx="322" cy="128" r="25"/>
-  <text class="gsr-coin-b" x="322" y="142">₿</text>`;
+// One cast ingot: front face, lit top face, edge highlight, stamped text, soft glow behind.
+function gsrIngot(id, kind, cx, baseY, w, h, stamp) {
+  const g = kind === 'au' ? 'Au' : 'Ag', glow = kind === 'au' ? '#f6d68c' : '#e9f0fb';
+  const t = w * 0.09, d = h * 0.34, x0 = cx - w / 2, x1 = cx + w / 2;
+  const front = `${x0},${baseY} ${x1},${baseY} ${x1 - t},${baseY - h} ${x0 + t},${baseY - h}`;
+  const top = `${x0 + t},${baseY - h} ${x1 - t},${baseY - h} ${x1 - t * 1.7},${baseY - h - d} ${x0 + t * 1.7},${baseY - h - d}`;
+  return `
+    <polygon points="${front}" fill="${glow}" opacity=".5" filter="url(#${id}Glow)"/>
+    <polygon points="${front}" fill="url(#${id}${g})" stroke="${kind === 'au' ? '#8a6420' : '#6f7b90'}" stroke-width=".8" stroke-linejoin="round"/>
+    <polygon points="${top}" fill="url(#${id}${g}Top)" stroke="${kind === 'au' ? '#b98a2c' : '#9aa6ba'}" stroke-width=".8" stroke-linejoin="round"/>
+    <line x1="${x0 + t + 1}" y1="${baseY - h + 1.5}" x2="${x1 - t - 1}" y2="${baseY - h + 1.5}" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>
+    ${stamp ? `<text x="${cx}" y="${baseY - h / 2 + 3.5}" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="${Math.max(5.5, w / 13)}" font-weight="700" fill="${kind === 'au' ? '#7a5514' : '#5a6578'}" opacity=".75">${stamp}</text>` : ''}`;
+}
+function gsrGoldBar(id) { return gsrIngot(id, 'au', 78, 162, 90, 40, '1 OZ 999.9 AU'); }
+function gsrStack(id, kind, cx) {
+  const sp = kind === 'au' ? '999.9 AU' : '999 AG';
+  return gsrIngot(id, kind, cx, 162, 76, 20, sp) + gsrIngot(id, kind, cx, 142, 62, 19, '') + gsrIngot(id, kind, cx, 123, 48, 18, '');
+}
+function gsrBarrel(id, cx, baseY, w, h) {
+  const x = cx - w / 2, ry = 4.5, y = baseY - h;
+  return `
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="url(#${id}Oil)" stroke="#05070b" stroke-width=".8"/>
+    <ellipse cx="${cx}" cy="${y}" rx="${w / 2 - 1}" ry="${ry}" fill="#3a4152" stroke="#05070b" stroke-width=".8"/>
+    <rect x="${x}" y="${y + h * 0.22}" width="${w}" height="3" fill="#7d8599" opacity=".85"/>
+    <rect x="${x}" y="${y + h * 0.68}" width="${w}" height="3" fill="#7d8599" opacity=".85"/>
+    <rect x="${x + w * 0.2}" y="${y + 3}" width="2.5" height="${h - 6}" rx="1" fill="#fff" opacity=".18"/>`;
+}
+function gsrOilStack(id) {
+  return `<ellipse cx="322" cy="164" rx="46" ry="6" fill="#000" opacity=".18"/>` +
+    gsrBarrel(id, 300, 163, 34, 34) + gsrBarrel(id, 344, 163, 34, 34) + gsrBarrel(id, 322, 129, 34, 34);
+}
+function gsrBtcCoin(id) {
+  return `
+    <circle cx="322" cy="124" r="40" fill="#ffb454" opacity=".45" filter="url(#${id}Glow)"/>
+    <ellipse cx="324" cy="127" rx="36" ry="36" fill="#a85a04"/>
+    <circle cx="322" cy="124" r="36" fill="url(#${id}Coin)" stroke="#ffd27a" stroke-width="2"/>
+    <circle cx="322" cy="124" r="36" fill="none" stroke="#c46a05" stroke-width="2" stroke-dasharray="1.6 2.4" opacity=".7"/>
+    <circle cx="322" cy="124" r="28.5" fill="none" stroke="#ffe0a3" stroke-width="1.6" opacity=".85"/>
+    <text x="322" y="138" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="42" fill="#7a3f00" opacity=".45" transform="translate(1.2 1.4)">₿</text>
+    <text x="322" y="138" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="900" font-size="42" fill="#fff">₿</text>`;
+}
+// Beam, chains, pans, brand-purple stand with a GCT plate. Tilts as one rigid unit around (200,90).
+function gsrScaleSvg(id, leftSvg, rightSvg) {
+  return `
+    <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>${gsrDefs(id)}</defs>
+      <ellipse cx="200" cy="272" rx="62" ry="10" fill="url(#${id}Stand)" opacity=".55"/>
+      <rect x="194" y="90" width="12" height="178" rx="6" fill="url(#${id}Stand)"/>
+      <rect x="178" y="226" width="44" height="22" rx="6" fill="url(#${id}Brand)"/>
+      <text x="200" y="241" text-anchor="middle" font-family="'Outfit', sans-serif" font-weight="800" font-size="11" fill="#fff" letter-spacing=".5">GCT</text>
+      <circle cx="200" cy="88" r="9" fill="url(#${id}Brand)" stroke="#d4af6a" stroke-width="2"/>
+      <g class="gsr-arm" id="${id}Arm">
+        <line class="gsr-beam-line" x1="78" y1="90" x2="322" y2="90"/>
+        <circle class="gsr-beam-cap" cx="78" cy="90" r="5"/><circle class="gsr-beam-cap" cx="322" cy="90" r="5"/>
+        <line class="gsr-chain" x1="78" y1="90" x2="38" y2="172"/><line class="gsr-chain" x1="78" y1="90" x2="118" y2="172"/>
+        <ellipse class="gsr-pan" cx="78" cy="175" rx="50" ry="13"/>
+        ${leftSvg}
+        <line class="gsr-chain" x1="322" y1="90" x2="282" y2="172"/><line class="gsr-chain" x1="322" y1="90" x2="362" y2="172"/>
+        <ellipse class="gsr-pan" cx="322" cy="175" rx="50" ry="13"/>
+        ${rightSvg}
+      </g>
+    </svg>`;
+}
 
 function gsrScaleCard(id, leftSvg, rightSvg, leftAmount, leftMetal, rightAmount, rightMetal, headlineLabel) {
-  const fill = (t) => t.replace(/__ID__/g, id);
   return `
     <div class="gsr-card gsr-extra" id="${id}Card">
       <h3>${esc(headlineLabel)}</h3>
       <div class="gsr-scale-area" id="${id}Area" onclick="gsrExtraRefresh()" role="button" tabindex="0" aria-label="Refresh the ratios now" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gsrExtraRefresh();}">
-        <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <filter id="${id}GG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
-            <filter id="${id}OG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
-            <filter id="${id}BG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
-          </defs>
-          <rect class="gsr-stand-fill" x="196" y="90" width="8" height="175" rx="4"/>
-          <ellipse class="gsr-stand-fill" cx="200" cy="267" rx="54" ry="11"/>
-          <circle class="gsr-stand-fill" cx="200" cy="88" r="7"/>
-          <g class="gsr-arm" id="${id}Arm">
-            <line class="gsr-beam-line" x1="78" y1="90" x2="322" y2="90"/>
-            <circle class="gsr-beam-cap" cx="78" cy="90" r="5"/>
-            <circle class="gsr-beam-cap" cx="322" cy="90" r="5"/>
-            <line class="gsr-chain" x1="78" y1="90" x2="58" y2="175"/><line class="gsr-chain" x1="78" y1="90" x2="98" y2="175"/>
-            <ellipse class="gsr-pan" cx="78" cy="175" rx="50" ry="13"/>
-            ${fill(leftSvg)}
-            <line class="gsr-chain" x1="322" y1="90" x2="302" y2="175"/><line class="gsr-chain" x1="322" y1="90" x2="342" y2="175"/>
-            <ellipse class="gsr-pan" cx="322" cy="175" rx="50" ry="13"/>
-            ${fill(rightSvg)}
-          </g>
-        </svg>
+        ${gsrScaleSvg(id, leftSvg, rightSvg)}
         <div class="gsr-label gsr-label-left"><div class="gsr-label-amount" id="${id}L">${leftAmount}</div><div class="gsr-label-metal">${leftMetal}</div></div>
         <div class="gsr-label gsr-label-right"><div class="gsr-label-amount" id="${id}R">${rightAmount}</div><div class="gsr-label-metal">${rightMetal}</div></div>
       </div>
@@ -1823,8 +1804,8 @@ function initGsrExtras() {
   const host = document.createElement('div');
   host.id = 'gsrExtras';
   host.innerHTML =
-    gsrScaleCard('gsrOil', GOLD_BAR_SOLO, OIL_STACK, '1 oz', 'GOLD', '— bbl', 'BRENT OIL', 'Gold to Oil') +
-    gsrScaleCard('gsrBtc', GOLD_STACK_LEFT, BTC_COIN, '— oz', 'GOLD', '1 BTC', 'BITCOIN', 'Gold to Bitcoin');
+    gsrScaleCard('gsrOil', gsrGoldBar('gsrOil'), gsrOilStack('gsrOil'), '1 oz', 'GOLD', '— bbl', 'BRENT OIL', 'Gold to Oil') +
+    gsrScaleCard('gsrBtc', gsrStack('gsrBtc', 'au', 78), gsrBtcCoin('gsrBtc'), '— oz', 'GOLD', '1 BTC', 'BITCOIN', 'Gold to Bitcoin');
   document.querySelector('#pulseContainer .gsr-wrap').appendChild(host);
   fetchGoldRatios();
 }
