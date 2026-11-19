@@ -363,6 +363,16 @@ body.gsr-page .section-badge, body.gsr-page .section-badge::before { color: #d4a
    in a way a plain feGaussianBlur copy doesn't. */
 .gsr-glow-gold { fill: #f6d68c; opacity: 0.6; }
 .gsr-glow-silver { fill: #e9f0fb; opacity: 0.5; }
+.gsr-bar-oil { fill: #2b2f3a; }
+.gsr-bar-oil-band { fill: #6b7385; }
+.gsr-bar-oil-top { fill: #454b5c; }
+.gsr-glow-oil { fill: #8a93a8; opacity: 0.35; }
+.gsr-coin { fill: #f7931a; stroke: #ffc15a; stroke-width: 2; }
+.gsr-coin-ring { fill: none; stroke: #ffd999; stroke-width: 1.5; opacity: 0.8; }
+.gsr-coin-b { fill: #fff; font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 38px; text-anchor: middle; }
+.gsr-glow-btc { fill: #ffb454; opacity: 0.5; }
+.gsr-extra { margin-top: 28px; }
+.gsr-extra h3 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 20px; margin: 0 0 14px; color: var(--text); }
 .gsr-label { position: absolute; top: 65.5%; width: 120px; text-align: center; pointer-events: none; }
 .gsr-label-left { left: 19.5%; transform: translateX(-50%); }
 .gsr-label-right { left: 80.5%; transform: translateX(-50%); }
@@ -1730,9 +1740,138 @@ function initGoldSilverRatio() {
       </div>
     </div>
   `;
+  initGsrExtras();
   fetchGoldSilverRatio();
   if (gsrTimer) clearInterval(gsrTimer);
   gsrTimer = setInterval(fetchGoldSilverRatio, GSR_REFRESH_MS);
+}
+
+// Extra scales on the same page: gold vs a barrel of oil, and gold vs one bitcoin.
+// Same beam, chains and pans as the gold:silver scale (that one is written out longhand above);
+// only what sits in each pan changes.
+const GOLD_BAR_SOLO = `
+  <rect class="gsr-glow-gold" filter="url(#__ID__GG)" x="50" y="138" width="56" height="24" rx="5"/>
+  <rect class="gsr-bar-gold" x="50" y="138" width="56" height="24" rx="5"/>
+  <rect class="gsr-bar-gold-top" x="50" y="138" width="56" height="9" rx="4"/>`;
+const GOLD_STACK_LEFT = `
+  <g filter="url(#__ID__GG)">
+    <rect class="gsr-glow-gold" x="50" y="144" width="56" height="18" rx="4"/>
+    <rect class="gsr-glow-gold" x="54" y="126" width="48" height="18" rx="4"/>
+    <rect class="gsr-glow-gold" x="58" y="108" width="40" height="18" rx="4"/>
+    <rect class="gsr-glow-gold" x="62" y="92" width="32" height="16" rx="4"/>
+  </g>
+  <rect class="gsr-bar-gold" x="50" y="144" width="56" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="50" y="144" width="56" height="7" rx="3"/>
+  <rect class="gsr-bar-gold" x="54" y="126" width="48" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="54" y="126" width="48" height="7" rx="3"/>
+  <rect class="gsr-bar-gold" x="58" y="108" width="40" height="18" rx="4"/><rect class="gsr-bar-gold-top" x="58" y="108" width="40" height="7" rx="3"/>
+  <rect class="gsr-bar-gold" x="62" y="92" width="32" height="16" rx="4"/><rect class="gsr-bar-gold-top" x="62" y="92" width="32" height="6" rx="3"/>`;
+function gsrBarrel(x, y, w, h) {
+  const bandY1 = y + h * 0.22, bandY2 = y + h * 0.7;
+  return `<rect class="gsr-glow-oil" filter="url(#__ID__OG)" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
+    <rect class="gsr-bar-oil" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>
+    <rect class="gsr-bar-oil-top" x="${x}" y="${y}" width="${w}" height="${h * 0.14}" rx="5"/>
+    <rect class="gsr-bar-oil-band" x="${x}" y="${bandY1}" width="${w}" height="3"/>
+    <rect class="gsr-bar-oil-band" x="${x}" y="${bandY2}" width="${w}" height="3"/>`;
+}
+// A pyramid of three-two-one barrels; the label gives the real count.
+const OIL_STACK = gsrBarrel(292, 134, 28, 28) + gsrBarrel(324, 134, 28, 28) + gsrBarrel(308, 104, 28, 28);
+const BTC_COIN = `
+  <circle class="gsr-glow-btc" filter="url(#__ID__BG)" cx="322" cy="128" r="32"/>
+  <circle class="gsr-coin" cx="322" cy="128" r="32"/>
+  <circle class="gsr-coin-ring" cx="322" cy="128" r="25"/>
+  <text class="gsr-coin-b" x="322" y="142">₿</text>`;
+
+function gsrScaleCard(id, leftSvg, rightSvg, leftAmount, leftMetal, rightAmount, rightMetal, headlineLabel) {
+  const fill = (t) => t.replace(/__ID__/g, id);
+  return `
+    <div class="gsr-card gsr-extra" id="${id}Card">
+      <h3>${esc(headlineLabel)}</h3>
+      <div class="gsr-scale-area" id="${id}Area" onclick="gsrExtraRefresh()" role="button" tabindex="0" aria-label="Refresh the ratios now" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gsrExtraRefresh();}">
+        <svg class="gsr-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="${id}GG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+            <filter id="${id}OG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5"/></filter>
+            <filter id="${id}BG" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+          </defs>
+          <rect class="gsr-stand-fill" x="196" y="90" width="8" height="175" rx="4"/>
+          <ellipse class="gsr-stand-fill" cx="200" cy="267" rx="54" ry="11"/>
+          <circle class="gsr-stand-fill" cx="200" cy="88" r="7"/>
+          <g class="gsr-arm" id="${id}Arm">
+            <line class="gsr-beam-line" x1="78" y1="90" x2="322" y2="90"/>
+            <circle class="gsr-beam-cap" cx="78" cy="90" r="5"/>
+            <circle class="gsr-beam-cap" cx="322" cy="90" r="5"/>
+            <line class="gsr-chain" x1="78" y1="90" x2="58" y2="175"/><line class="gsr-chain" x1="78" y1="90" x2="98" y2="175"/>
+            <ellipse class="gsr-pan" cx="78" cy="175" rx="50" ry="13"/>
+            ${fill(leftSvg)}
+            <line class="gsr-chain" x1="322" y1="90" x2="302" y2="175"/><line class="gsr-chain" x1="322" y1="90" x2="342" y2="175"/>
+            <ellipse class="gsr-pan" cx="322" cy="175" rx="50" ry="13"/>
+            ${fill(rightSvg)}
+          </g>
+        </svg>
+        <div class="gsr-label gsr-label-left"><div class="gsr-label-amount" id="${id}L">${leftAmount}</div><div class="gsr-label-metal">${leftMetal}</div></div>
+        <div class="gsr-label gsr-label-right"><div class="gsr-label-amount" id="${id}R">${rightAmount}</div><div class="gsr-label-metal">${rightMetal}</div></div>
+      </div>
+      <div class="gsr-headline">
+        <span class="gsr-headline-label" id="${id}Label"></span>
+        <span class="gsr-headline-value" id="${id}Value">—</span>
+      </div>
+      <div class="gsr-sub" id="${id}Sub">Loading…</div>
+      <div class="gsr-explainer" id="${id}Expl" style="display:none;"></div>
+    </div>`;
+}
+
+function initGsrExtras() {
+  const host = document.createElement('div');
+  host.id = 'gsrExtras';
+  host.innerHTML =
+    gsrScaleCard('gsrOil', GOLD_BAR_SOLO, OIL_STACK, '1 oz', 'GOLD', '— bbl', 'BRENT OIL', 'Gold to Oil') +
+    gsrScaleCard('gsrBtc', GOLD_STACK_LEFT, BTC_COIN, '— oz', 'GOLD', '1 BTC', 'BITCOIN', 'Gold to Bitcoin');
+  document.querySelector('#pulseContainer .gsr-wrap').appendChild(host);
+  fetchGoldRatios();
+}
+
+let gsrExtraBusy = false;
+async function gsrExtraRefresh() {
+  if (gsrExtraBusy) return;
+  gsrExtraBusy = true;
+  document.querySelectorAll('#gsrExtras .gsr-scale-area').forEach(a => a.classList.add('gsr-refreshing'));
+  try { await fetchGoldRatios(true); } finally {
+    document.querySelectorAll('#gsrExtras .gsr-scale-area').forEach(a => a.classList.remove('gsr-refreshing'));
+    gsrExtraBusy = false;
+  }
+}
+
+function gsrCompare(r) {
+  return r.ratio > r.average ? 'above' : r.ratio < r.average ? 'below' : 'right at';
+}
+
+async function fetchGoldRatios(force) {
+  try {
+    const res = await fetch(`/api/dataviz/gold-ratios/live${force ? '?refresh=1' : ''}`);
+    const d = await res.json();
+    if (!d.oil) throw new Error('no data');
+    const o = d.oil, b = d.btc;
+    // Oil: left pan gold sinks when gold buys more barrels than usual, same direction as gold:silver.
+    document.getElementById('gsrOilR').textContent = `${o.ratio.toFixed(1)} bbl`;
+    document.getElementById('gsrOilLabel').textContent = 'Barrels of oil per ounce of gold';
+    document.getElementById('gsrOilValue').textContent = `${o.ratio.toFixed(1)} : 1`;
+    document.getElementById('gsrOilArm').style.transform = `rotate(${gsrTilt(o.ratio, o.average)}deg)`;
+    document.getElementById('gsrOilSub').innerHTML = `<strong>${gsrCompare(o)}</strong> its average of <strong>${o.average.toFixed(1)} : 1</strong> (daily Brent and gold since ${esc(o.since)}) · gold $${o.gold_usd.toLocaleString()}/oz, Brent $${o.other_usd.toLocaleString()}/bbl`;
+    // Bitcoin: ratio is ounces of gold per BTC, so above average means bitcoin is rich and the coin pan sinks.
+    document.getElementById('gsrBtcL').textContent = `${b.ratio.toFixed(1)} oz`;
+    document.getElementById('gsrBtcLabel').textContent = 'Ounces of gold in one Bitcoin';
+    document.getElementById('gsrBtcValue').textContent = `${b.ratio.toFixed(1)} : 1`;
+    document.getElementById('gsrBtcArm').style.transform = `rotate(${-gsrTilt(b.ratio, b.average)}deg)`;
+    document.getElementById('gsrBtcSub').innerHTML = `<strong>${gsrCompare(b)}</strong> its average of <strong>${b.average.toFixed(1)} : 1</strong> (daily data since ${esc(b.since)}) · bitcoin $${b.other_usd.toLocaleString()}, gold $${b.gold_usd.toLocaleString()}/oz`;
+    const note = (id, txt) => {
+      const e = document.getElementById(id);
+      e.style.display = 'block';
+      e.innerHTML = `<div class="gsr-explainer-body">${txt}</div><div class="gsr-explainer-note">Historical framing only, not a trading signal or personal advice.</div>`;
+    };
+    note('gsrOilExpl', 'Gold priced in barrels of oil is a rough gauge of how much energy an ounce of gold buys. It swings with oil shocks: it dropped to single digits in 2008 when oil spiked, and shot up in early 2020 when oil collapsed. The beam is level when the ratio sits at its average since 2007. Brent is the global benchmark; the barrel stack is a picture, the label gives the real number.');
+    note('gsrBtcExpl', 'This shows how many ounces of gold one whole bitcoin is worth. Bitcoin has been far more volatile than gold, so the ratio has moved by large multiples over its life, and its average since 2014 is pulled around by those swings. The beam is level when the ratio sits at that average; the gold stack is a picture, the label gives the real number.');
+  } catch {
+    ['gsrOilSub', 'gsrBtcSub'].forEach(i => { const e = document.getElementById(i); if (e) e.textContent = "Couldn't load live prices right now."; });
+  }
 }
 
 function gsrTimeAgo(iso) {
