@@ -27,7 +27,7 @@
 <div class="arm-hero">
   <div class="arm-badge">The Armoury · Field Manual</div>
   <h1 class="arm-title">Field <span>Manual</span></h1>
-  <p class="arm-sub">What each calculator does, how it connects to Black-Scholes, what the charts and colours mean, and the formula behind it, broken down so it is easy to follow.</p>
+  <p class="arm-sub">What each calculator does, what the charts and colours mean, and the formula behind it, broken down so it is easy to follow.</p>
 </div>
 <div class="arm-wrap">
   <div class="arm-top">
@@ -39,83 +39,133 @@
   <div class="arm-card fm-card" id="bs">
     <h2>1. Black-Scholes calculator</h2>
     <h3>What it does</h3><p>Prices a European call or put from five inputs: stock price, strike, time to expiry, interest rate and volatility (plus dividend yield).</p>
-    <h3>Link to Black-Scholes</h3><p>This is the model itself. Every other feature builds on it.</p>
     <h3>Visuals</h3><p>2D shows option price against stock price. 3D shows option price against stock price and time to expiry. For colour, green means the market price is below the model price (the option looks cheap) and red means it is above (looks expensive). Amber means within 5% of the model.</p>
     <h3>The formula</h3><div class="fm-formula">d1 = [ln(S/K) + (r − q + σ²/2)·T] / (σ·√T)
 d2 = d1 − σ·√T
 Call = S·e^(−qT)·N(d1) − K·e^(−rT)·N(d2)
 Put  = K·e^(−rT)·N(−d2) − S·e^(−qT)·N(−d1)</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>S</dt><dd>Stock price: what one share costs today.</dd><dt>K</dt><dd>Strike price: the fixed price the option lets you buy (call) or sell (put) at.</dd><dt>T</dt><dd>Time to expiry in years. The calculator turns your days into years: days ÷ 365.</dd><dt>r</dt><dd>Interest rate as a decimal (4.5% = 0.045).</dd><dt>q</dt><dd>Dividend yield as a decimal (2% = 0.02).</dd><dt>σ (sigma)</dt><dd>Volatility as a decimal (25% = 0.25): how much the price tends to swing.</dd><dt>d1, d2</dt><dd>Two helper numbers worked out first, then fed into N().</dd><dt>ln( )</dt><dd>Natural logarithm. ln(S/K) measures how far the stock is above (positive) or below (negative) the strike.</dd><dt>e</dt><dd>Euler’s number, about 2.718. e^(−rT) shrinks a future amount to what it is worth today.</dd><dt>e^(−qT)</dt><dd>Takes off the dividends you would miss by holding the option instead of the share.</dd><dt>N( )</dt><dd>Normal distribution: turns a number into a probability between 0 and 1.</dd><dt>√</dt><dd>Square root.</dd><dt>σ²</dt><dd>Volatility squared (multiplied by itself).</dd><dt>·</dt><dd>Multiply.</dd><dt>/</dt><dd>Divide.</dd><dt>−d1, −d2</dt><dd>The same helper numbers with the sign flipped, used for puts.</dd><dt>Call / Put</dt><dd>The model price of each type of option.</dd></dl>
     <p>N() is the standard normal cumulative distribution: the probability a normally distributed variable lands below that value. N(d2) is roughly the chance the option finishes in the money; N(d1) also accounts for the size of the payoff when it does.</p>
+    <h3>In plain English: start here</h3>
+    <p>An <b>option</b> is a contract that gives you the right, but not the duty, to buy or sell a share at a fixed price before a set date. You pay a small amount up front for that right. This calculator works out what that right should be worth. Here is what every box means.</p>
+    <dl class="fm-terms">
+      <dt>Stock price</dt><dd>What one share of the company costs right now. If Walmart is $100, type 100. You can find it on any finance website or in your broker app.</dd>
+      <dt>Strike price</dt><dd>The fixed price written into the option. A call gives the right to <i>buy</i> at this price; a put gives the right to <i>sell</i> at it. A $105 call on a $100 share only pays off if the share climbs above $105.</dd>
+      <dt>Days to expiry</dt><dd>How many days until the option runs out. After that day it is worthless unless it is “in the money” (worth using). More days means more time for the price to move, so the option costs more. Historically, shares in general have grown 7–10% a year on average, with plenty of ups and downs along the way. Over 90 days, that works out at only about 2% on average.</dd>
+      <dt>Interest rate</dt><dd>What you could earn a year on cash kept somewhere safe, like a government savings bond. Use roughly 4–4.5% for US dollars, about 2% for euros and about 4% for pounds. It matters a little: higher rates make calls slightly dearer and puts slightly cheaper.</dd>
+      <dt>Dividend yield %</dt><dd>The cash a company pays its shareholders each year, as a percentage of the share price. A $100 share paying $1 a year has a 1% yield. Option holders don’t receive dividends, so a high yield makes calls cheaper and puts dearer. Type 0 if the company pays none.</dd>
+      <dt>Volatility %</dt><dd>How wildly the share price tends to swing in a year. 20% means a typical year sees the price move up or down by about a fifth. Steady companies sit around 15–25%; exciting or troubled ones 40% and up. Higher volatility makes every option more expensive, because a big move becomes more likely. This is the input that changes the price the most.</dd>
+      <dt>Type</dt><dd><b>Call</b>: gains value when the price goes <i>up</i> (the right to buy). <b>Put</b>: gains value when the price goes <i>down</i>, which is also how people protect shares they already own (the right to sell).</dd>
+      <dt>Market price</dt><dd>What the option actually costs right now, shown in your broker app (use the midpoint between the bid and the ask). It’s optional: fill it in to see whether the option looks cheap or expensive against the model.</dd>
+      <dt>Model price</dt><dd>What the Black-Scholes formula says the option is <i>worth</i>, per share. Green means the market price is more than 5% below this (looks cheap), red means more than 5% above (looks expensive) and amber means within 5% (about fair). One contract usually covers 100 shares, so multiply by 100 for the real cost.</dd>
+      <dt>Delta</dt><dd>How much the option price moves when the share moves $1. Delta 0.40 means the option gains about 40 cents if the share rises $1. Calls are between 0 and 1; puts are between −1 and 0 (they gain when the share falls). It’s also a rough guide to the chance the option ends up worth using: 0.40 ≈ 40%.</dd>
+      <dt>Gamma</dt><dd>How fast delta itself changes when the share moves $1. A gamma of 0.03 means delta grows by about 0.03 for each $1 rise. High gamma means the option’s behaviour can change quickly; it’s highest when the share is close to the strike and expiry is near.</dd>
+      <dt>Theta / day</dt><dd>How much value the option loses each day just from time passing, with nothing else changing. −0.03 means it loses about 3 cents a day per share ($3 a day per contract). For the holder it is almost always negative: an option is like a melting ice cube.</dd>
+      <dt>Vega / 1 pt</dt><dd>How much the option price changes if volatility rises by 1 percentage point (say from 25% to 26%). Vega 0.15 means it gains about 15 cents. When the market gets nervous, volatility rises and options get dearer, even if the share price hasn’t moved.</dd>
+      <dt>Rho / 1 pt</dt><dd>How much the option price changes if interest rates rise by 1 percentage point (say from 4.5% to 5.5%). Usually tiny for short-dated options. Calls gain a little (positive) and puts lose a little (negative).</dd>
+    </dl>
+    <h3>Three worked examples</h3>
+    <p>Type these numbers into the Black-Scholes calculator and you’ll get the same results. The share and option prices are rounded practice numbers for illustration, not live quotes, and the companies are used only as familiar examples.</p>
+    <div class="fm-ex-wrap"><table class="fm-ex">
+      <thead><tr><th></th><th>Walmart</th><th>Shell</th><th>Volkswagen</th></tr>
+      <tr class="fm-ex-sub"><th></th><th>Steady US retailer, small dividend</th><th>UK energy giant, bigger dividend</th><th>German carmaker, high dividend, bumpier price (in euros)</th></tr></thead>
+      <tbody>
+        <tr class="fm-ex-head"><td colspan="4">What you type in</td></tr>
+        <tr><th>Stock price</th><td>100</td><td>70</td><td>95</td></tr>
+        <tr><th>Strike</th><td>105</td><td>70</td><td>90</td></tr>
+        <tr><th>Days to expiry</th><td>90</td><td>90</td><td>90</td></tr>
+        <tr><th>Interest rate %</th><td>4.5</td><td>4.5</td><td>2.0</td></tr>
+        <tr><th>Dividend yield %</th><td>0.9</td><td>4.0</td><td>6.5</td></tr>
+        <tr><th>Volatility %</th><td>22</td><td>24</td><td>30</td></tr>
+        <tr><th>Type</th><td>Call</td><td>Call</td><td>Put</td></tr>
+        <tr><th>Market price</th><td>2.40</td><td>3.25</td><td>4.20</td></tr>
+        <tr class="fm-ex-head"><td colspan="4">What the calculator shows</td></tr>
+        <tr><th>Model price</th><td><span class="fm-dot good"></span>2.6958</td><td><span class="fm-dot warn"></span>3.3343</td><td><span class="fm-dot bad"></span>3.6922</td></tr>
+        <tr><th>Verdict</th><td>Cheap: the market price is 11% below the model</td><td>Fair: the market price is 2.5% below the model</td><td>Expensive: the market price is 14% above the model</td></tr>
+        <tr><th>Delta</th><td>0.377</td><td>0.523</td><td>−0.353</td></tr>
+        <tr><th>Gamma</th><td>0.0347</td><td>0.0472</td><td>0.0260</td></tr>
+        <tr><th>Theta / day</th><td>−0.0264</td><td>−0.0184</td><td>−0.0328</td></tr>
+        <tr><th>Vega / 1 pt</th><td>0.1883</td><td>0.1370</td><td>0.1734</td></tr>
+        <tr><th>Rho / 1 pt</th><td>0.0864</td><td>0.0820</td><td>−0.0917</td></tr>
+        <tr class="fm-ex-head"><td colspan="4">What it means</td></tr>
+        <tr><th>The scenario</th><td>The option pays off if Walmart rises above $105 within 90 days. That needs a 5% climb, more than double the 2% an average share has historically grown in 90 days, which is why the option is fairly cheap.</td><td>The option pays off if Shell ends above $70, where it is today. With the strike equal to today’s price it’s close to a coin flip, which is why delta is about 0.5.</td><td>The option pays off if Volkswagen falls below €90. This put works like insurance: it is in the money if the share drops more than about 5%, and covers its €4.20 cost below about €85.80.</td></tr>
+        <tr><th>Cost per contract</th><td>$2.40 × 100 = $240</td><td>$3.25 × 100 = $325</td><td>€4.20 × 100 = €420</td></tr>
+        <tr><th>If the share moves 1</th><td>Up $1: the option gains about 38¢ (delta 0.377), about $38 per contract.</td><td>Up $1: the option gains about 52¢, about $52 per contract.</td><td>Down €1: the option gains about 35 cents, about €35 per contract. Delta is negative because a put rises when the share falls.</td></tr>
+        <tr><th>Each day that passes</th><td>Loses about 2.6¢, about $2.64 per contract.</td><td>Loses about 1.8¢, about $1.84 per contract.</td><td>Loses about 3.3 cents, about €3.28 per contract.</td></tr>
+        <tr><th>If volatility rises 1 pt</th><td>Gains about 19¢ (22% → 23%).</td><td>Gains about 14¢ (24% → 25%).</td><td>Gains about 17 cents (30% → 31%).</td></tr>
+        <tr><th>Why the dividend matters</th><td>The small 0.9% dividend barely changes the price.</td><td>The 4% dividend makes this call cheaper than it would be without one.</td><td>The big 6.5% dividend makes puts dearer, part of the reason this put costs what it does.</td></tr>
+        <tr><th>What the colour says</th><td>The model values it above the market price, so on these inputs it looks cheap. That depends entirely on 22% being a fair volatility.</td><td>The price is about fair. The model shows no gap between price and value here.</td><td>The market price is 14% above the model, which suggests the market is pricing in more than 30% volatility. Comparing with the Implied volatility calculator shows how much more.</td></tr>
+      </tbody>
+    </table></div>
   </div>
   <div class="arm-card fm-card" id="amer">
     <h2>2. American options via a binomial tree</h2>
     <h3>What it does</h3><p>Prices options that can be exercised early (most US stock options), which Black-Scholes can't do.</p>
-    <h3>Link to Black-Scholes</h3><p>As you add more steps to the tree, it converges to the Black-Scholes price for European options. The difference between the two is the value of being able to exercise early.</p>
     <h3>Visuals</h3><p>2D shows the branching price tree and how the tree converges as steps increase. 3D shows the early-exercise value against stock price and time. Colour highlights the nodes where exercising early is optimal (green).</p>
     <h3>The formula</h3><div class="fm-formula">u = e^(σ·√Δt)     d = 1/u     p = (e^((r−q)Δt) − d) / (u − d)
 Node value = max( exercise value, e^(−rΔt)·[p·Up + (1−p)·Down] )</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>u</dt><dd>Up factor: how much the price multiplies by in one up step.</dd><dt>d</dt><dd>Down factor: how much it multiplies by in one down step (d = 1/u).</dd><dt>p</dt><dd>Risk-neutral probability of an up step; (1 − p) is the chance of a down step.</dd><dt>σ</dt><dd>Volatility as a decimal.</dd><dt>Δt (delta t)</dt><dd>Length of one step in years: time to expiry ÷ number of steps.</dd><dt>r, q</dt><dd>Interest rate and dividend yield as decimals.</dd><dt>e</dt><dd>Euler’s number, about 2.718. e^(−rΔt) brings a value one step in the future back to today.</dd><dt>√</dt><dd>Square root.</dd><dt>Up, Down</dt><dd>The option’s value at the two nodes one step ahead.</dd><dt>exercise value</dt><dd>What you would get by using the option right now: S − K for a call, K − S for a put (never below 0).</dd><dt>max( a, b )</dt><dd>Take whichever of the two is bigger.</dd></dl>
     <p>The tree starts at today's price and splits into an up move and a down move at each step. Working backwards from expiry, at every node we compare holding the option with exercising it now and keep the larger. Where exercising wins, the node is flagged.</p>
   </div>
   <div class="arm-card fm-card" id="iv">
     <h2>3. Implied volatility and the volatility smile</h2>
     <h3>What it does</h3><p>Works backwards from market prices to the volatility the market expects, then plots it across strikes and expiries.</p>
-    <h3>Link to Black-Scholes</h3><p>You get it by inverting Black-Scholes. The smile exists because real markets break the model's assumption of a single constant volatility.</p>
     <h3>Visuals</h3><p>2D shows the smile (IV against strike). 3D shows the volatility surface (IV against strike and expiry). For colour, a cool-to-hot scale (blue = low IV, red = high IV) shows where options are relatively cheap or expensive. The verdict colour shows how much of the chain inverted cleanly.</p>
     <h3>The formula</h3><div class="fm-formula">Find σ such that BlackScholes(S, K, T, r, q, σ) = market price
 (solved by bisection, since price rises steadily with σ)</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>σ</dt><dd>The volatility we are solving for: the implied volatility (IV).</dd><dt>BlackScholes( … )</dt><dd>The price from the Black-Scholes formula in section 1.</dd><dt>S, K, T</dt><dd>Stock price, strike price, time to expiry in years.</dd><dt>r, q</dt><dd>Interest rate and dividend yield as decimals.</dd><dt>market price</dt><dd>What the option actually trades for.</dd><dt>bisection</dt><dd>Guess a volatility, check the price, then halve the search range again and again until the price matches.</dd></dl>
     <p>Out-of-the-money puts and calls are used because they carry the cleanest information. If IV is higher for low strikes than high strikes, the market is paying up for downside protection; that tilt is called skew.</p>
   </div>
   <div class="arm-card fm-card" id="greeks">
     <h2>4. Greeks and portfolio-level Greeks and risk</h2>
     <h3>What it does</h3><p>Measures how sensitive an option's price is to each input. Delta covers price, gamma how fast delta changes, theta time, vega volatility and rho interest rates. The portfolio view adds these up across all positions.</p>
-    <h3>Link to Black-Scholes</h3><p>Each Greek is a partial derivative of the Black-Scholes formula.</p>
     <h3>Visuals</h3><p>2D shows each Greek against stock price, plus portfolio profit and loss against price. 3D shows a Greek against price and time (e.g. a gamma surface). For colour, green marks exposure within your limits, amber nearing a limit (over 70%) and red over it.</p>
     <h3>The formula</h3><div class="fm-formula">Delta = ∂V/∂S     Gamma = ∂²V/∂S²     Theta = ∂V/∂t
 Vega  = ∂V/∂σ      Rho   = ∂V/∂r
 Portfolio Greek = Σ (contracts × 100 × position Greek)</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>V</dt><dd>Value (price) of the option.</dd><dt>∂</dt><dd>“A small change in”. ∂V/∂S means “how much V moves when S moves a little”.</dd><dt>∂²V/∂S²</dt><dd>How fast that change is itself changing (the change of the change).</dd><dt>S</dt><dd>Stock price.</dd><dt>t</dt><dd>Time passing.</dd><dt>σ</dt><dd>Volatility.</dd><dt>r</dt><dd>Interest rate.</dd><dt>Σ (sigma)</dt><dd>Add up across every position.</dd><dt>× 100</dt><dd>One stock option contract usually covers 100 shares.</dd></dl>
     <p>Vega is quoted per one volatility point and theta per calendar day. The stress grid re-prices every position under price and volatility shocks, and the one-day VaR re-prices the book after a 95%-confidence one-day move.</p>
   </div>
   <div class="arm-card fm-card" id="ivrank">
     <h2>5. IV rank and IV percentile</h2>
     <h3>What it does</h3><p>Shows where today's IV sits compared with its range over the past year (0–100).</p>
-    <h3>Link to Black-Scholes</h3><p>It uses the implied volatilities from the inverted Black-Scholes model, tracked over time.</p>
     <h3>Visuals</h3><p>2D shows volatility over the past year with today marked, plus a gauge from 0 to 100. 3D shows IV rank across several stocks and lookback windows. For colour, low (green) suggests options are cheap for buyers and high (red) suggests they're rich for sellers.</p>
     <h3>The formula</h3><div class="fm-formula">IV rank       = (today − 1y low) / (1y high − 1y low) × 100
 IV percentile = % of days in the past year with IV below today's</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>today</dt><dd>Today’s implied (or stand-in) volatility.</dd><dt>1y low / 1y high</dt><dd>Lowest and highest volatility seen over the past year.</dd><dt>× 100</dt><dd>Turns the answer into a score from 0 to 100.</dd><dt>%</dt><dd>Share of days, out of 100.</dd></dl>
     <p>Rank cares about the extremes; percentile cares about how often. They can differ a lot after a single spike. Free historical IV isn't available for each stock, so the calculator uses 21-day realised volatility as a stand-in unless you use a volatility index such as ^VIX, or type in your option's current IV.</p>
   </div>
   <div class="arm-card fm-card" id="parity">
     <h2>6. Put-call parity checker</h2>
     <h3>What it does</h3><p>Checks that matching call and put prices are consistent: C − P = S − K·e^(−rT).</p>
-    <h3>Link to Black-Scholes</h3><p>Black-Scholes prices always satisfy parity, so when market prices don't, it points to bad data, dividends, borrowing costs or (rarely) an arbitrage opportunity.</p>
     <h3>Visuals</h3><p>2D shows the parity gap at each strike. 3D shows the gap across strike and expiry. For colour, green means within tolerance and red means a mismatch.</p>
     <h3>The formula</h3><div class="fm-formula">Gap = (C − P) − (S·e^(−qT) − K·e^(−rT))</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>C</dt><dd>Call price.</dd><dt>P</dt><dd>Put price.</dd><dt>S</dt><dd>Stock price.</dd><dt>K</dt><dd>Strike price.</dd><dt>r, q</dt><dd>Interest rate and dividend yield as decimals.</dd><dt>T</dt><dd>Time to expiry in years.</dd><dt>e</dt><dd>Euler’s number, about 2.718. e^(−rT) and e^(−qT) bring future amounts back to today.</dd><dt>Gap</dt><dd>How far the real prices are from where theory says they should be. 0 means perfect.</dd></dl>
     <p>You set the tolerance in dollars; a sensible starting point is the bid-ask spread. Amber means the gap is up to three times the tolerance.</p>
   </div>
   <div class="arm-card fm-card" id="size">
     <h2>7. Volatility-adjusted position sizing</h2>
     <h3>What it does</h3><p>Suggests how many contracts to trade based on maximum acceptable loss or volatility exposure, rather than a fixed number.</p>
-    <h3>Link to Black-Scholes</h3><p>It uses vega and delta from the model, plus the expected move based on IV, to estimate risk per contract.</p>
     <h3>Visuals</h3><p>2D shows position size against IV. 3D shows position size against IV and account risk %. For colour, green means within the risk budget and red means oversized.</p>
     <h3>The formula</h3><div class="fm-formula">Expected move = S · IV · √(holding days / 365)
 Risk per contract = loss when the model re-prices after a 1σ adverse move and a 20% IV shift against you
 Max contracts = floor( account × risk % / risk per contract )</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>S</dt><dd>Stock price.</dd><dt>IV</dt><dd>Implied volatility as a decimal.</dd><dt>√</dt><dd>Square root.</dd><dt>holding days / 365</dt><dd>How long you plan to hold, in years.</dd><dt>1σ (one sigma)</dt><dd>A typical-sized move: about the expected move above.</dd><dt>account</dt><dd>Total money in your trading account.</dd><dt>risk %</dt><dd>Most you are willing to lose on this trade, as a share of the account.</dd><dt>floor( )</dt><dd>Round down to a whole number of contracts.</dd></dl>
     <p>Higher IV means a bigger expected move, so the same budget buys fewer contracts. That is the point: size shrinks when volatility rises.</p>
   </div>
   <div class="arm-card fm-card" id="kalman">
     <h2>8. Kalman filter</h2>
     <h3>What it does</h3><p>Separates the underlying trend from day-to-day noise in up to three tickers, and tracks a hedge ratio that is allowed to change over time.</p>
-    <h3>Link to Black-Scholes</h3><p>It sits beside Black-Scholes rather than inside it. Black-Scholes assumes constant volatility and drift; the Kalman filter lets both the trend and the relationship between tickers move.</p>
     <h3>Visuals</h3><p>2D shows prices with the filtered trend, the hedge ratios over time and the spread z-score. 3D traces the hedge ratios through time, coloured by z-score. Green means the spread is normal, amber stretching (beyond 1) and red stretched (beyond 2).</p>
     <h3>The formula</h3><div class="fm-formula">Hedge ratio:  Ticker 1 = β₂·Ticker 2 + β₃·Ticker 3 + intercept, where each β drifts a little every day
 Spread z-score = (Ticker 1 − fitted value) / forecast standard deviation
 Trend: local linear trend on log prices (level + slope)</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>Ticker 1, 2, 3</dt><dd>The prices of the stocks you entered.</dd><dt>β₂, β₃ (beta)</dt><dd>Hedge ratios: how many units of Ticker 2 and 3 move together with one unit of Ticker 1.</dd><dt>intercept</dt><dd>A constant gap left over after the betas.</dd><dt>fitted value</dt><dd>What Ticker 1 “should” be, given Tickers 2 and 3 and the betas.</dd><dt>forecast standard deviation</dt><dd>How big the filter expects the miss to be on a normal day.</dd><dt>z-score</dt><dd>How many normal-sized misses away we are. Beyond 2 is unusual.</dd><dt>log prices</dt><dd>Prices on a log scale, so a 10% move looks the same size at $10 or $1,000.</dd><dt>level, slope</dt><dd>The smoothed price and its direction (going up, down or flat).</dd></dl>
     <p>At every new price the filter blends its prediction with the new data, trusting each according to its uncertainty. The adaptivity setting controls how quickly the ratios may drift.</p>
   </div>
   <div class="arm-card fm-card" id="mpt">
     <h2>9. Modern Portfolio Theory, Black-Litterman and risk parity</h2>
     <h3>What it does</h3><p>Finds long-only mixes of your tickers that balance return against risk, and reports a set of risk measures for each.</p>
-    <h3>Link to Black-Scholes</h3><p>Black-Scholes assumes returns are log-normal with a volatility. MPT uses the same two ingredients, expected return and volatility, but across several assets at once.</p>
     <h3>Visuals</h3><p>2D shows the risk-return cloud of random mixes with the optimised portfolios marked, and growth over the period. 3D adds the Sharpe ratio as a third axis. Table cells go green, amber or red on common thresholds.</p>
     <h3>The formula</h3><div class="fm-formula">Sharpe   = (return − risk-free) / volatility
 Sortino  = (return − risk-free) / downside deviation
@@ -124,24 +174,25 @@ Calmar   = return / |max drawdown|
 Treynor  = (return − risk-free) / beta to the benchmark
 VaR 95%  = the one-day loss exceeded on 5% of days
 CVaR 95% = the average loss on those worst 5% of days</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>return</dt><dd>Average yearly gain of the portfolio.</dd><dt>risk-free</dt><dd>What you could earn with no risk (for example, a government bill).</dd><dt>volatility</dt><dd>How much returns swing up and down each year.</dd><dt>downside deviation</dt><dd>Volatility counting only the bad days.</dd><dt>beta</dt><dd>How much the portfolio moves when the benchmark moves 1%.</dd><dt>| x |</dt><dd>Ignore the minus sign (absolute value).</dd><dt>VaR 95%</dt><dd>Value at Risk: a loss exceeded on only 1 day in 20.</dd><dt>CVaR 95%</dt><dd>Conditional VaR: how bad those worst 1-in-20 days are on average.</dd></dl>
     <p>Black-Litterman starts from equal weights as a neutral prior and nudges expected returns toward your views by the confidence you give them. Risk parity sizes each holding so it contributes the same amount of risk. Both can be switched on independently. Everything is in-sample, so it describes the past.</p>
   </div>
   <div class="arm-card fm-card" id="sb">
     <h2>10. Strategy Builder</h2>
     <h3>What it does</h3><p>Combines the results you saved into a textbook structure, a list of risk checks and a conviction score from 0 to 100.</p>
-    <h3>Link to Black-Scholes</h3><p>It reads the model outputs, such as the Black-Scholes verdict and IV rank, and matches them with the structures that classic options theory pairs with them.</p>
     <h3>Visuals</h3><p>The score is green at 70 and above, amber from 45 and red below that.</p>
     <h3>The formula</h3><div class="fm-formula">Score = 100 × (0.6 × average result quality + 0.4 × coverage), less 15 if results disagree on direction
 Quality: good = 1, caution = 0.5, poor = 0     Coverage = saved results ÷ 5, capped at 1</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>×</dt><dd>Multiply.</dd><dt>÷</dt><dd>Divide.</dd><dt>average result quality</dt><dd>Average of your saved results’ quality scores (good = 1, caution = 0.5, poor = 0).</dd><dt>coverage</dt><dd>How many of the five key analyses you have saved, as a share from 0 to 1.</dd><dt>less 15</dt><dd>Take 15 points off if your results point in different directions.</dd></dl>
     <p>The score does not predict outcomes. It measures whether your saved analyses are sound and agree with each other. Saved plans feed the COT Report comparison.</p>
   </div>
   <div class="arm-card fm-card" id="cot">
     <h2>11. COT Report</h2>
     <h3>What it does</h3><p>Searches the CFTC's Traders in Financial Futures report: weekly positions of dealers, asset managers, leveraged funds and others across financial futures.</p>
-    <h3>Link to Black-Scholes</h3><p>Separate from Black-Scholes. It adds context about who holds the other side of the market.</p>
     <h3>Visuals</h3><p>Asset managers (institutions) and leveraged funds (hedge funds) are highlighted with their net position, share of open interest, four-week change and percentile over three years. The comparison tool lines this up with a saved Backtester strategy or Strategy Builder plan.</p>
     <h3>The formula</h3><div class="fm-formula">Net position = long − short
 Percentile = share of the last 156 weeks with a lower net position than today</div>
+    <h3>Key to the formula</h3><dl class="fm-key"><dt>long</dt><dd>Contracts held that gain if the price goes up.</dd><dt>short</dt><dd>Contracts held that gain if the price goes down.</dd><dt>Net position</dt><dd>Long minus short. Positive = net long, negative = net short.</dd><dt>156 weeks</dt><dd>Three years of weekly reports.</dd></dl>
     <p>The report covers financial futures such as stock indices, bond futures, currencies and bitcoin. It does not include gold or oil. Positions are as of Tuesday and published the following Friday, so the data is always a few days old. Data source: US Commodity Futures Trading Commission (public data). This page is not affiliated with or endorsed by the CFTC.</p>
   </div>
   <div class="arm-note">Educational material. The models describe how option prices and portfolios behave under stated assumptions; they are not recommendations.</div>
