@@ -19,6 +19,7 @@
 '    <a href="/learn">Education</a>' +
 '    <a href="/tools">Tools</a>' +
 '    <a href="/arena">Arena</a>' +
+'    <a href="https://playmarketxi.com/" target="_blank" rel="noopener">Market XI</a>' +
 '    <a href="/alpha/studio" id="footerStudioLink" style="display:none;">Studio</a>' +
 '    <a href="/company">Group</a>' +
 '    <a href="/privacy">Privacy</a>' +
@@ -36,6 +37,7 @@
 '      <a href="/learn">Education</a>' +
 '      <a href="/tools">Tools</a>' +
 '      <a href="/arena">Arena</a>' +
+'      <a href="https://playmarketxi.com/" target="_blank" rel="noopener">Market XI</a>' +
 '      <a href="/alpha/studio" id="footerStudioLink" style="display:none;">Studio</a>' +
 '      <a href="/company">Group</a>' +
 '      <a href="/privacy">Privacy</a>' +

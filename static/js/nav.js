@@ -176,6 +176,7 @@ DATAVIZ_MENU_HTML +
 '      <a href="/arena">Arena <span class="nav-chevron">▾</span></a>' +
 '      <ul class="nav-dropdown">' +
 '        <li><a href="/arena/market-xi">Market XI</a></li>' +
+'        <li><a href="https://playmarketxi.com/" target="_blank" rel="noopener">Play Market XI ↗</a></li>' +
 '        <li><a href="/arena/competitions">Trading Competitions</a></li>' +
 '        <li><a href="/arena/predictions">Predictions Markets</a></li>' +
 '      </ul>' +
