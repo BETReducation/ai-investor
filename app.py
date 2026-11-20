@@ -5143,7 +5143,18 @@ def api_market_xi_link_user():
 
     existing, user = _find_user_by_login(email, case_insensitive=True)
     if existing and (user.get("profile", {}) or {}).get("email", "").strip().lower() == email:
+        # A verified Market XI signup lifts a Free GCG account to Beginner. Never changes a higher tier.
+        if data["email_verified"] and (user.get("tier") or "free") == "free":
+            user["tier"] = "beginner"
+            user["entitlements"] = {**(user.get("entitlements") or {}), **default_entitlements("beginner")}
+            profile = dict(user.get("profile", {}) or {})
+            profile["email_verified"] = True
+            user["profile"] = profile
+            _save_user(existing, user)
         return jsonify({"created": False, "username": existing, "tier": user.get("tier") or "free"})
+
+    if not data["email_verified"]:
+        return jsonify({"error": "Invalid request"}), 400  # only create accounts for emails Market XI has verified
 
     base = re.sub(r"[^A-Za-z0-9_.-]", "", _clip(data.get("username"), 30)) or email.split("@")[0]
     base = re.sub(r"[^A-Za-z0-9_.-]", "", base)[:24] or "player"
@@ -5156,13 +5167,13 @@ def api_market_xi_link_user():
     new_user = {
         "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
         "preferences": {},
-        "tier": "free",
-        "entitlements": default_entitlements("free"),
+        "tier": "beginner",
+        "entitlements": default_entitlements("beginner"),
         "profile": {
             "email": email, "display_name": username, "bio": "", "investor_type": "beginner",
             "profile_picture": "", "newsletter_opt_in": False, "marketing_consent": False,
             "first_name": _clip(data.get("first_name"), 60), "country": "", "referral_source": "other", "age_band": "",
-            "email_verified": bool(data.get("email_verified")),
+            "email_verified": True,
             "reset_token_hash": hashlib.sha256(token.encode()).hexdigest(),
             "reset_token_expires": time.time() + 7 * 86400,
             "signup_source": "market_xi",
@@ -5175,12 +5186,12 @@ def api_market_xi_link_user():
     link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(username)}&t={token}"
     _send_email(
         email, "Your Growth Capital Group account is ready",
-        f"You signed up for Market XI, so we've set you up with a free account on Growth Capital Group "
+        f"You signed up for Market XI, so we've set you up with a free Beginner account on Growth Capital Group "
         f"(username: {username}).\n\nChoose a password here (valid for 7 days):\n{link}\n\n"
         f"After that, one login covers both sites.",
         sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
     )
-    return jsonify({"created": True, "username": username, "tier": "free"}), 201
+    return jsonify({"created": True, "username": username, "tier": "beginner"}), 201
 
 
 @app.route("/api/reset-password", methods=["POST"])

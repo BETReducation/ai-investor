@@ -98,9 +98,9 @@ def _link(c, **body):
 def test_link_user_creates_then_is_idempotent_and_never_downgrades(store):
     c = gcg.app.test_client()
     r = _link(c, email="new@x.co", username="newbie", first_name="N", email_verified=True)
-    assert r.status_code == 201 and r.get_json() == {"created": True, "username": "newbie", "tier": "free"}
+    assert r.status_code == 201 and r.get_json() == {"created": True, "username": "newbie", "tier": "beginner"}
     r2 = _link(c, email="new@x.co", username="other", first_name="N", email_verified=True)
-    assert r2.get_json() == {"created": False, "username": "newbie", "tier": "free"} and len(store) == 1
+    assert r2.get_json() == {"created": False, "username": "newbie", "tier": "beginner"} and len(store) == 1
     _member(store, "paid", tier="pro")
     r3 = _link(c, email="paid@x.co", username="paid", first_name="P", email_verified=False)
     assert r3.get_json() == {"created": False, "username": "paid", "tier": "pro"} and store["paid"]["tier"] == "pro"
@@ -140,3 +140,12 @@ def test_play_marks_beginner_plus_as_entered_but_not_free(store):
     _login(c, "f")
     c.get("/arena/market-xi/play")
     assert store["f"].get("entitlements", {}).get("market_xi") != "entered"
+
+
+def test_link_user_upgrades_free_account_and_refuses_unverified_creation(store):
+    c = gcg.app.test_client()
+    _member(store, "fr", tier="free", verified=False)
+    r = _link(c, email="fr@x.co", username="fr", first_name="F", email_verified=True)
+    assert r.get_json()["tier"] == "beginner" and store["fr"]["profile"]["email_verified"] is True
+    assert _link(c, email="ghost@x.co", username="g", first_name="G", email_verified=False).status_code == 400
+    assert len(store) == 1
