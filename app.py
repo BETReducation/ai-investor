@@ -4278,8 +4278,9 @@ GOOGLE_PENDING_TTL = 900
 
 def _google_creds() -> tuple:
     # Own variables so login can use a different OAuth client from the Planner's calendar connection.
-    return (os.environ.get("GOOGLE_LOGIN_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID", ""),
-            os.environ.get("GOOGLE_LOGIN_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET", ""))
+    cid = os.environ.get("GOOGLE_LOGIN_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID", "")
+    secret = os.environ.get("GOOGLE_LOGIN_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET", "")
+    return cid.strip(), secret.strip()
 
 
 def _google_enabled() -> bool:
@@ -4377,6 +4378,8 @@ def google_callback():
             "code": request.args["code"], "client_id": _google_creds()[0],
             "client_secret": _google_creds()[1], "redirect_uri": redirect_uri,
             "grant_type": "authorization_code"})
+        if not resp.ok:
+            app.logger.error("Google token endpoint %s: %s (client %s…)", resp.status_code, resp.text[:300], _google_creds()[0][:14])
         resp.raise_for_status()
         # The ID token comes straight from Google's token endpoint over TLS, so its claims are
         # trusted without a signature check (per Google's OpenID Connect guidance); we still check them.
