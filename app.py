@@ -8595,7 +8595,8 @@ def _fetch_crypto_compass_cg() -> dict | None:
                       "w": c.get("price_change_percentage_7d_in_currency"),
                       "m": c.get("price_change_percentage_30d_in_currency"),
                       "y": c.get("price_change_percentage_1y_in_currency"),
-                      "ath": c.get("ath"), "ath_date": c.get("ath_date")}
+                      "ath": c.get("ath"), "ath_date": c.get("ath_date"),
+                      "cs": c.get("circulating_supply"), "ts": c.get("total_supply"), "ms": c.get("max_supply")}
     dom = {}
     total_mc = None
     try:
@@ -8648,7 +8649,8 @@ def _fetch_crypto_compass_cmc(key: str) -> dict | None:
         if not sym or sym in coins or not q.get("price"):
             continue  # listings come ranked by market cap, so the first hit per symbol is the real one
         coins[sym] = {"n": c.get("name"), "p": q["price"], "mc": q.get("market_cap"), "rank": c.get("cmc_rank"),
-                      "d": q.get("percent_change_24h"), "w": q.get("percent_change_7d"), "m": q.get("percent_change_30d")}
+                      "d": q.get("percent_change_24h"), "w": q.get("percent_change_7d"), "m": q.get("percent_change_30d"),
+                      "cs": c.get("circulating_supply"), "ts": c.get("total_supply"), "ms": c.get("max_supply")}
     if not coins:
         return None
     dom = {}
