@@ -4280,6 +4280,12 @@ def _google_enabled() -> bool:
     return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
 
 
+def _google_redirect_uri() -> str:
+    # Fixed (not taken from the request) so it always matches what's registered in Google Cloud.
+    base = os.environ.get("PUBLIC_BASE_URL", "https://www.growthcapitalgroup.co").rstrip("/")
+    return os.environ.get("GOOGLE_LOGIN_REDIRECT_URI", f"{base}/auth/google/callback")
+
+
 def _mask_email(email: str) -> str:
     local, _, domain = (email or "").partition("@")
     return f"{local[:1]}***@{domain}" if domain else "your Google account"
@@ -4340,7 +4346,7 @@ def google_start():
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
     session["google_oauth"] = {"state": state, "nonce": nonce, "t": time.time(),
                                "next": _safe_next(request.args.get("next", ""))}
-    redirect_uri = os.environ.get("GOOGLE_LOGIN_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    redirect_uri = _google_redirect_uri()
     return redirect(GOOGLE_AUTH_URL + "?" + urlencode({
         "client_id": os.environ["GOOGLE_CLIENT_ID"], "redirect_uri": redirect_uri, "response_type": "code",
         "scope": "openid email profile", "state": state, "nonce": nonce,
@@ -4359,7 +4365,7 @@ def google_callback():
             or not hmac.compare_digest(st["state"], request.args.get("state", ""))
             or not request.args.get("code") or not _google_enabled()):
         return redirect("/login?gerror=expired")
-    redirect_uri = os.environ.get("GOOGLE_LOGIN_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    redirect_uri = _google_redirect_uri()
     try:
         resp = requests.post(GOOGLE_TOKEN_URL, timeout=10, data={
             "code": request.args["code"], "client_id": os.environ["GOOGLE_CLIENT_ID"],
