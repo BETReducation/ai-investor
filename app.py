@@ -4266,7 +4266,7 @@ def api_login():
 # ── Google sign-in ───────────────────────────────────────────────────────────
 # Optional extra way in; username/password login is untouched. Needs GOOGLE_CLIENT_ID and
 # GOOGLE_CLIENT_SECRET (redirect URI: <site>/auth/google/callback, or set GOOGLE_LOGIN_REDIRECT_URI).
-# Until they're set the button stays hidden. Accounts link by Google's stable `sub`; a first
+# (or GOOGLE_LOGIN_CLIENT_ID / _SECRET to use a separate client). Until they're set the button stays hidden. Accounts link by Google's stable `sub`; a first
 # Google sign-in is matched to an existing account by *verified* email only. Anything unsure
 # (unverified account email, several accounts, no account) goes through a confirmation screen
 # so people don't silently get a duplicate account from picking the wrong Google account.
@@ -4276,8 +4276,14 @@ GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_PENDING_TTL = 900
 
 
+def _google_creds() -> tuple:
+    # Own variables so login can use a different OAuth client from the Planner's calendar connection.
+    return (os.environ.get("GOOGLE_LOGIN_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID", ""),
+            os.environ.get("GOOGLE_LOGIN_CLIENT_SECRET") or os.environ.get("GOOGLE_CLIENT_SECRET", ""))
+
+
 def _google_enabled() -> bool:
-    return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+    return all(_google_creds())
 
 
 def _google_redirect_uri() -> str:
@@ -4348,7 +4354,7 @@ def google_start():
                                "next": _safe_next(request.args.get("next", ""))}
     redirect_uri = _google_redirect_uri()
     return redirect(GOOGLE_AUTH_URL + "?" + urlencode({
-        "client_id": os.environ["GOOGLE_CLIENT_ID"], "redirect_uri": redirect_uri, "response_type": "code",
+        "client_id": _google_creds()[0], "redirect_uri": redirect_uri, "response_type": "code",
         "scope": "openid email profile", "state": state, "nonce": nonce,
         "prompt": "select_account",  # always show the account chooser: wrong-account mix-ups are the common failure
     }))
@@ -4368,8 +4374,8 @@ def google_callback():
     redirect_uri = _google_redirect_uri()
     try:
         resp = requests.post(GOOGLE_TOKEN_URL, timeout=10, data={
-            "code": request.args["code"], "client_id": os.environ["GOOGLE_CLIENT_ID"],
-            "client_secret": os.environ["GOOGLE_CLIENT_SECRET"], "redirect_uri": redirect_uri,
+            "code": request.args["code"], "client_id": _google_creds()[0],
+            "client_secret": _google_creds()[1], "redirect_uri": redirect_uri,
             "grant_type": "authorization_code"})
         resp.raise_for_status()
         # The ID token comes straight from Google's token endpoint over TLS, so its claims are
@@ -4379,7 +4385,7 @@ def google_callback():
         app.logger.exception("Google token exchange failed")
         return redirect("/login?gerror=failed")
     if (claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com")
-            or claims.get("aud") != os.environ["GOOGLE_CLIENT_ID"] or claims.get("exp", 0) < time.time()
+            or claims.get("aud") != _google_creds()[0] or claims.get("exp", 0) < time.time()
             or claims.get("nonce") != st["nonce"] or not claims.get("sub")):
         return redirect("/login?gerror=failed")
     email = str(claims.get("email") or "").strip().lower()

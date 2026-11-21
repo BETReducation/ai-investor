@@ -14,8 +14,8 @@ def _jwt(claims):
 @pytest.fixture
 def env(monkeypatch):
     users = {}
-    monkeypatch.setenv("GOOGLE_CLIENT_ID", "cid")
-    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "sec")
+    monkeypatch.setenv("GOOGLE_LOGIN_CLIENT_ID", "cid")
+    monkeypatch.setenv("GOOGLE_LOGIN_CLIENT_SECRET", "sec")
     monkeypatch.setattr(gcg, "DATABASE_URL", "")
     monkeypatch.setattr(gcg, "_load_users", lambda: users)
     monkeypatch.setattr(gcg, "_load_user", lambda u: users.get(u))
