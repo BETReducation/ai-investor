@@ -38,6 +38,7 @@ def _google(monkeypatch, client, sub="g1", email="a@gmail.com", verified=True):
         st = s["google_oauth"]
 
     class R:
+        ok = True
         def raise_for_status(self): pass
         def json(self): return {"id_token": _jwt({"iss": "accounts.google.com", "aud": "cid", "exp": time.time() + 99,
                                                    "nonce": st["nonce"], "sub": sub, "email": email, "email_verified": verified,
