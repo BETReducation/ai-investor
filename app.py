@@ -473,11 +473,18 @@ def _ensure_table() -> None:
             UPDATE users SET entitlements = %s
             WHERE entitlements = '{}'::jsonb
         """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"]),))
+        # Free accounts can now play Market XI (it used to be "not_entered"); move accounts still on the old free default.
+        cur.execute("""
+            UPDATE users SET entitlements = %s
+            WHERE tier = 'free' AND entitlements = %s
+        """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"]),
+              json.dumps({**DEFAULT_ENTITLEMENTS_BY_TIER["free"], "market_xi": "not_entered"})))
         for tier in ("beginner", "intermediate", "pro", "founder"):
             cur.execute("""
                 UPDATE users SET entitlements = %s
                 WHERE tier = %s AND entitlements = %s
-            """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER[tier]), tier, json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER["free"])))
+            """, (json.dumps(DEFAULT_ENTITLEMENTS_BY_TIER[tier]), tier,
+                  json.dumps({**DEFAULT_ENTITLEMENTS_BY_TIER["free"], "market_xi": "not_entered"})))
         cur.execute("""
             CREATE TABLE IF NOT EXISTS user_events (
                 id         BIGSERIAL PRIMARY KEY,
@@ -951,7 +958,7 @@ FEATURE_LEVELS = {
     "learn_ai": ["free_quota", "unlimited"],
 }
 DEFAULT_ENTITLEMENTS_BY_TIER = {
-    "free": {"backtester": "basic", "signals": "basic", "market_xi": "not_entered", "learn_ai": "free_quota"},
+    "free": {"backtester": "basic", "signals": "basic", "market_xi": "entered", "learn_ai": "free_quota"},
     "beginner": {"backtester": "basic", "signals": "basic", "market_xi": "entered", "learn_ai": "free_quota"},
     "intermediate": {"backtester": "pro", "signals": "basic", "market_xi": "entered", "learn_ai": "free_quota"},
     "pro": {"backtester": "pro", "signals": "pro", "market_xi": "entered", "learn_ai": "unlimited"},
@@ -4522,7 +4529,7 @@ def api_google_create():
     gcg_notify.record("member_joined", username, f"{username} joined via Google", "/admin")
     session.pop("google_pending", None)
     _google_sign_in(username, new_user)
-    return jsonify({"success": True, "landing_page": "/welcome"})
+    return jsonify({"success": True, "landing_page": p["next"] or "/welcome"})
 
 
 @app.route("/api/google/link", methods=["POST"])
@@ -5426,14 +5433,12 @@ def market_xi_play():
     except ValueError:
         app.logger.error("Market XI SSO refused: unmapped tier for %s", current_user.id)
         return _market_xi_no_store(Response("Couldn't start Market XI sign-in. Please contact support.", 500))
-    # Beginner or above who reaches Market XI is marked as entered on the admin page.
-    from plans import PLAN_RANK
-    if PLAN_RANK.get(user.get("tier") or "free", 0) >= PLAN_RANK["beginner"]:
-        ent = dict(user.get("entitlements") or default_entitlements(user.get("tier") or "free"))
-        if ent.get("market_xi") != "entered":
-            ent["market_xi"] = "entered"
-            user["entitlements"] = ent
-            _save_user(current_user.id, user)
+    # Anyone who reaches Market XI is marked as entered on the admin page.
+    ent = dict(user.get("entitlements") or default_entitlements(user.get("tier") or "free"))
+    if ent.get("market_xi") != "entered":
+        ent["market_xi"] = "entered"
+        user["entitlements"] = ent
+        _save_user(current_user.id, user)
     return _market_xi_no_store(redirect(f"{MARKET_XI_SSO_URL}?token={quote(token)}"))
 
 
@@ -5454,10 +5459,8 @@ def api_market_xi_link_user():
 
     existing, user = _find_user_by_login(email, case_insensitive=True)
     if existing and (user.get("profile", {}) or {}).get("email", "").strip().lower() == email:
-        # A verified Market XI signup lifts a Free GCG account to Beginner. Never changes a higher tier.
-        if data["email_verified"] and (user.get("tier") or "free") == "free":
-            user["tier"] = "beginner"
-            user["entitlements"] = {**(user.get("entitlements") or {}), **default_entitlements("beginner")}
+        # A verified Market XI signup confirms the email on a matching account; the tier is never changed.
+        if data["email_verified"] and not (user.get("profile", {}) or {}).get("email_verified"):
             profile = dict(user.get("profile", {}) or {})
             profile["email_verified"] = True
             user["profile"] = profile
@@ -5478,8 +5481,8 @@ def api_market_xi_link_user():
     new_user = {
         "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
         "preferences": {},
-        "tier": "beginner",
-        "entitlements": default_entitlements("beginner"),
+        "tier": "free",
+        "entitlements": default_entitlements("free"),
         "profile": {
             "email": email, "display_name": username, "bio": "", "investor_type": "beginner",
             "profile_picture": "", "newsletter_opt_in": False, "marketing_consent": False,
@@ -5497,12 +5500,12 @@ def api_market_xi_link_user():
     link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(username)}&t={token}"
     _send_email(
         email, "Your Growth Capital Group account is ready",
-        f"You signed up for Market XI, so we've set you up with a free Beginner account on Growth Capital Group "
+        f"You signed up for Market XI, so we've set you up with a free account on Growth Capital Group "
         f"(username: {username}).\n\nChoose a password here (valid for 7 days):\n{link}\n\n"
         f"After that, one login covers both sites.",
         sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
     )
-    return jsonify({"created": True, "username": username, "tier": "beginner"}), 201
+    return jsonify({"created": True, "username": username, "tier": "free"}), 201
 
 
 @app.route("/api/reset-password", methods=["POST"])

@@ -261,6 +261,12 @@ body::after {
 .link-btn { background: none; border: none; color: var(--green); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
 .link-btn:hover { text-decoration: underline; }
 
+.mxi-box { display: none; border: 1px solid var(--border2); background: var(--bg3); border-radius: 12px; padding: 16px 18px; margin-bottom: 22px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.mxi-box h2 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+.mxi-box ul { margin: 8px 0 0 18px; }
+.mxi-box li { margin-bottom: 4px; }
+.mxi-box strong { color: var(--text); }
+
 /* ── BACK LINK ── */
 .back {
   text-align: center;
@@ -304,6 +310,16 @@ body::after {
     <div class="logo">
       <a href="/"><img src="/static/logos/Green Square.png" alt="Growth Capital Group" style="height:44px;width:auto;border-radius:10px;display:block;margin:0 auto;"></a>
       <div class="logo-sub">Your Investing Education Hub</div>
+    </div>
+
+    <div class="mxi-box" id="mxiBox">
+      <h2>Market XI is part of Growth Capital Group</h2>
+      <p>You sign in here, on growthcapitalgroup.co, with one free login that covers both Market XI and Growth Capital Group.</p>
+      <ul>
+        <li><strong>New?</strong> Create a free account (or continue with Google) and we'll take you straight into the game.</li>
+        <li><strong>Already play Market XI or have a GCG account?</strong> Sign in with the same details you already use.</li>
+        <li><strong>Free accounts</strong> can play and join leagues. Creating your own leagues and extras like badges and avatars are for paid members.</li>
+      </ul>
     </div>
 
     <div class="tabs">
@@ -542,10 +558,22 @@ async function doForgotPassword() {
   }
 }
 
+
+// ── Market XI entry: /login?from=market-xi (or any next pointing at the Play route) ──
+const _q = new URLSearchParams(window.location.search);
+const MXI_PLAY = '/arena/market-xi/play';
+const fromMxi = _q.get('from') === 'market-xi' || (safePath(_q.get('next')) || '').startsWith(MXI_PLAY);
+function effectiveNext() { return safePath(_q.get('next')) || (fromMxi ? MXI_PLAY : ''); }
+if (fromMxi) {
+  document.getElementById('mxiBox').style.display = 'block';
+  document.querySelector('.logo-sub').textContent = 'Market XI is part of Growth Capital Group';
+  document.title = 'Market XI · Sign in with Growth Capital Group';
+}
+
 // ── Redirect after auth ──
 function getRedirect(landingPage) {
   const params = new URLSearchParams(window.location.search);
-  return safePath(params.get('next')) || landingPage || '/';
+  return effectiveNext() || landingPage || '/';
 }
 function safePath(p) { return p && p.startsWith('/') && !p.startsWith('//') && !p.includes('\\') ? p : ''; }
 
@@ -618,7 +646,7 @@ async function doRegister() {
     localStorage.setItem('gcgSession', '1');
     okEl.textContent = 'Account created! Redirecting…';
     okEl.style.display = 'block';
-    setTimeout(() => { window.location.href = '/welcome'; }, 800);
+    setTimeout(() => { window.location.href = effectiveNext() || '/welcome'; }, 800);
   } catch {
     showError(errEl, 'Cannot reach server — please try again.');
   } finally {
@@ -636,7 +664,7 @@ const GOOGLE_ERRORS = {
   ratelimit:  "Too many attempts. Wait a few minutes and try again.",
 };
 function startGoogle() {
-  const next = safePath(new URLSearchParams(window.location.search).get('next'));
+  const next = effectiveNext();
   window.location.href = '/auth/google/start' + (next ? '?next=' + encodeURIComponent(next) : '');
 }
 fetch('/api/auth/providers').then(r => r.json()).then(p => {
