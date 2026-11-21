@@ -4231,10 +4231,23 @@ def api_login():
     if user_data:
         username = found_username
     if not user_data:
-        return jsonify({"error": "Invalid credentials"}), 401
+        return jsonify({
+            "error": "No account matches that username or email. Check the spelling, try the email you signed up with, "
+                     "or use Continue with Google if that's how you joined. Market XI uses your Growth Capital Group login, "
+                     "so use the same details here.",
+            "code": "no_account"}), 401
 
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
-        return jsonify({"error": "Invalid credentials"}), 401
+        profile = user_data.get("profile", {}) or {}
+        if profile.get("has_password") is False:
+            return jsonify({"error": "This account was created with Google and has no password yet. Use Continue with Google, "
+                                     "or choose Forgot password to set one.", "code": "google_only"}), 401
+        if profile.get("google_email"):
+            return jsonify({"error": f"That password doesn't match. This account is also linked to Google "
+                                     f"({_mask_email(profile['google_email'])}), so try Continue with Google, or use Forgot password.",
+                            "code": "bad_password"}), 401
+        return jsonify({"error": "That password doesn't match this account. Try again, or use Forgot password.",
+                        "code": "bad_password"}), 401
 
     stay_signed_in = user_data.get("preferences", {}).get("stay_signed_in", True)
     session.permanent = bool(stay_signed_in)
@@ -4248,6 +4261,253 @@ def api_login():
         "preferences": user_data.get("preferences", {}),
         "landing_page": user_data.get("profile", {}).get("landing_page", "/dashboard"),
     })
+
+
+# ── Google sign-in ───────────────────────────────────────────────────────────
+# Optional extra way in; username/password login is untouched. Needs GOOGLE_CLIENT_ID and
+# GOOGLE_CLIENT_SECRET (redirect URI: <site>/auth/google/callback, or set GOOGLE_REDIRECT_URI).
+# Until they're set the button stays hidden. Accounts link by Google's stable `sub`; a first
+# Google sign-in is matched to an existing account by *verified* email only. Anything unsure
+# (unverified account email, several accounts, no account) goes through a confirmation screen
+# so people don't silently get a duplicate account from picking the wrong Google account.
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_PENDING_TTL = 900
+
+
+def _google_enabled() -> bool:
+    return bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"))
+
+
+def _mask_email(email: str) -> str:
+    local, _, domain = (email or "").partition("@")
+    return f"{local[:1]}***@{domain}" if domain else "your Google account"
+
+
+def _safe_next(value: str) -> str:
+    value = (value or "").strip()
+    return value if value.startswith("/") and not value.startswith("//") and "\\" not in value else ""
+
+
+def _find_users_by_profile_field(field: str, value: str) -> list:
+    """[(username, record)] whose profile[field] equals value (case-insensitive for email)."""
+    if not value:
+        return []
+    if DATABASE_URL:
+        expr = "lower(profile->>%s) = lower(%s)" if field == "email" else "profile->>%s = %s"
+        with _db_conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(f"SELECT {_USER_COLUMNS} FROM users WHERE {expr}", (field, value))
+            return [(r["username"], _user_row_to_dict(r)) for r in cur.fetchall()]
+    out = []
+    for uname, udata in _load_users().items():
+        have = str((udata.get("profile", {}) or {}).get(field) or "").strip()
+        if have and (have.lower() == value.lower() if field == "email" else have == value):
+            out.append((uname, udata))
+    return out
+
+
+def _google_sign_in(username: str, user: dict):
+    session.permanent = True
+    login_user(User(username, user.get("tier", "free")), remember=True)
+    log_event(username, "login", "google")
+    gcg_notify.record("login", username, f"{username} logged in (Google)", "/admin")
+
+
+def _google_done_redirect(user: dict, nxt: str):
+    from urllib.parse import quote
+    target = nxt or (user.get("profile", {}) or {}).get("landing_page") or "/dashboard"
+    return redirect("/login?gok=" + quote(target, safe=""))
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    payload = token.split(".")[1]
+    return json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+
+
+@app.route("/api/auth/providers")
+def api_auth_providers():
+    return jsonify({"google": _google_enabled()})
+
+
+@app.route("/auth/google/start")
+def google_start():
+    from urllib.parse import urlencode
+    if not _google_enabled():
+        return redirect("/login?gerror=unavailable")
+    if _rate_limited("g-start", _client_ip(), 30, 600):
+        return redirect("/login?gerror=ratelimit")
+    state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
+    session["google_oauth"] = {"state": state, "nonce": nonce, "t": time.time(),
+                               "next": _safe_next(request.args.get("next", ""))}
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    return redirect(GOOGLE_AUTH_URL + "?" + urlencode({
+        "client_id": os.environ["GOOGLE_CLIENT_ID"], "redirect_uri": redirect_uri, "response_type": "code",
+        "scope": "openid email profile", "state": state, "nonce": nonce,
+        "prompt": "select_account",  # always show the account chooser: wrong-account mix-ups are the common failure
+    }))
+
+
+@app.route("/auth/google/callback")
+def google_callback():
+    from urllib.parse import quote
+    st = session.pop("google_oauth", None)
+    err = request.args.get("error")
+    if err:
+        return redirect("/login?gerror=" + ("cancelled" if err == "access_denied" else "failed"))
+    if (not st or time.time() - st["t"] > GOOGLE_PENDING_TTL
+            or not hmac.compare_digest(st["state"], request.args.get("state", ""))
+            or not request.args.get("code") or not _google_enabled()):
+        return redirect("/login?gerror=expired")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    try:
+        resp = requests.post(GOOGLE_TOKEN_URL, timeout=10, data={
+            "code": request.args["code"], "client_id": os.environ["GOOGLE_CLIENT_ID"],
+            "client_secret": os.environ["GOOGLE_CLIENT_SECRET"], "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code"})
+        resp.raise_for_status()
+        # The ID token comes straight from Google's token endpoint over TLS, so its claims are
+        # trusted without a signature check (per Google's OpenID Connect guidance); we still check them.
+        claims = _decode_jwt_payload(resp.json()["id_token"])
+    except Exception:
+        app.logger.exception("Google token exchange failed")
+        return redirect("/login?gerror=failed")
+    if (claims.get("iss") not in ("accounts.google.com", "https://accounts.google.com")
+            or claims.get("aud") != os.environ["GOOGLE_CLIENT_ID"] or claims.get("exp", 0) < time.time()
+            or claims.get("nonce") != st["nonce"] or not claims.get("sub")):
+        return redirect("/login?gerror=failed")
+    email = str(claims.get("email") or "").strip().lower()
+    if not email or claims.get("email_verified") is not True:
+        return redirect("/login?gerror=unverified")
+    sub, nxt = str(claims["sub"]), st["next"]
+
+    linked = _find_users_by_profile_field("google_sub", sub)
+    if linked:
+        username, user = linked[0]
+        profile = dict(user.get("profile", {}) or {})
+        profile["google_email"] = email
+        user["profile"] = profile
+        _save_user(username, user)
+        _google_sign_in(username, user)
+        return _google_done_redirect(user, nxt)
+
+    matches = _find_users_by_profile_field("email", email)
+    reason, matched = "none", ""
+    if len(matches) == 1:
+        username, user = matches[0]
+        profile = dict(user.get("profile", {}) or {})
+        if profile.get("google_sub"):
+            return redirect("/login?gerror=linked_other&hint=" + quote(_mask_email(profile.get("google_email", "")), safe=""))
+        if profile.get("email_verified"):
+            profile.update(google_sub=sub, google_email=email)
+            user["profile"] = profile
+            _save_user(username, user)
+            _google_sign_in(username, user)
+            return _google_done_redirect(user, nxt)
+        reason, matched = "unverified_match", username
+    elif len(matches) > 1:
+        reason = "multi"
+
+    session["google_pending"] = {"sub": sub, "email": email, "name": str(claims.get("given_name") or claims.get("name") or "")[:60],
+                                 "reason": reason, "matched": matched, "next": nxt, "t": time.time()}
+    return redirect("/login?gpending=1")
+
+
+def _google_pending():
+    p = session.get("google_pending")
+    if not p or time.time() - p["t"] > GOOGLE_PENDING_TTL:
+        session.pop("google_pending", None)
+        return None
+    return p
+
+
+def _free_username(base: str) -> str:
+    base = re.sub(r"[^A-Za-z0-9_.-]", "", base)[:24] or "member"
+    if len(base) < 3:
+        base += "member"
+    username, n = base, 1
+    while _load_user(username) is not None:
+        n += 1
+        username = f"{base}{n}"
+    return username
+
+
+@app.route("/api/google/pending")
+def api_google_pending():
+    p = _google_pending()
+    if not p:
+        return jsonify({"error": "That Google sign-in has expired. Please start again."}), 404
+    return jsonify({"email": p["email"], "first_name": p["name"], "reason": p["reason"], "matched_username": p["matched"],
+                    "suggested_username": _free_username(p["email"].split("@")[0])})
+
+
+@app.route("/api/google/create", methods=["POST"])
+def api_google_create():
+    p = _google_pending()
+    if not p:
+        return jsonify({"error": "That Google sign-in has expired. Please start again."}), 404
+    if _rate_limited("register", _client_ip(), 5, 3600):
+        return _too_many_requests()
+    data = request.get_json(silent=True) or {}
+    username = str(data.get("username") or "").strip()
+    first_name = _clip(data.get("first_name"), 60)
+    if p["reason"] != "none" or _find_users_by_profile_field("email", p["email"]):
+        return jsonify({"error": "An account already uses this email, so we won't create a second one. "
+                                 "Connect Google to it with its password, or use Forgot password."}), 409
+    if not first_name:
+        return jsonify({"error": "Please tell us your first name"}), 400
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,30}", username):
+        return jsonify({"error": "Username must be 3-30 characters: letters, numbers, dots, dashes or underscores"}), 400
+    if _load_user(username) is not None:
+        return jsonify({"error": "Username already taken"}), 409
+    newsletter_opt_in = bool(data.get("newsletter_opt_in", False))
+    new_user = {
+        "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
+        "preferences": {}, "tier": "free", "entitlements": default_entitlements("free"),
+        "profile": {
+            "email": p["email"], "display_name": username, "bio": "", "investor_type": "beginner", "profile_picture": "",
+            "newsletter_opt_in": newsletter_opt_in, "marketing_consent": newsletter_opt_in, "first_name": first_name,
+            "country": "", "referral_source": "", "age_band": "", "email_verified": True,
+            "google_sub": p["sub"], "google_email": p["email"], "has_password": False, "signup_source": "google",
+        },
+    }
+    _save_user(username, new_user)
+    gcg_notify.record("member_joined", username, f"{username} joined via Google", "/admin")
+    session.pop("google_pending", None)
+    _google_sign_in(username, new_user)
+    return jsonify({"success": True, "landing_page": "/welcome"})
+
+
+@app.route("/api/google/link", methods=["POST"])
+def api_google_link():
+    """Attach the pending Google identity to an existing account, proven with that account's password."""
+    p = _google_pending()
+    if not p:
+        return jsonify({"error": "That Google sign-in has expired. Please start again."}), 404
+    data = request.get_json(silent=True) or {}
+    identifier = str(data.get("identifier") or "").strip()
+    password = str(data.get("password") or "")
+    if _rate_limited("g-link", _client_ip(), 8, 600) or (identifier and _rate_limited("g-link-id", identifier.lower(), 5, 600)):
+        return _too_many_requests()
+    if not identifier or not password:
+        return jsonify({"error": "Enter the username or email and password of your existing account."}), 400
+    username, user = _find_user_by_login(identifier, case_insensitive=True)
+    if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password_hash"].encode("utf-8")):
+        return jsonify({"error": "Those details don't match an account. Check the username (or email) and password. "
+                                 "Forgotten them? Use Forgot password, then come back."}), 401
+    profile = dict(user.get("profile", {}) or {})
+    if profile.get("google_sub") and profile["google_sub"] != p["sub"]:
+        return jsonify({"error": f"That account is already linked to a different Google account "
+                                 f"({_mask_email(profile.get('google_email', ''))}). Sign in with that one instead."}), 409
+    profile.update(google_sub=p["sub"], google_email=p["email"])
+    if (profile.get("email") or "").strip().lower() == p["email"]:
+        profile["email_verified"] = True
+    user["profile"] = profile
+    _save_user(username, user)
+    session.pop("google_pending", None)
+    _google_sign_in(username, user)
+    target = p["next"] or profile.get("landing_page") or "/dashboard"
+    return jsonify({"success": True, "landing_page": target})
 
 
 # ── Plans, gating and Stripe billing ────────────────────────────────────────
@@ -5225,6 +5485,9 @@ def api_reset_password():
     user_data["password_hash"] = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     profile.pop("reset_token_hash", None)
     profile.pop("reset_token_expires", None)
+    profile["has_password"] = True
+    if profile.get("email"):
+        profile["email_verified"] = True  # the reset link went to this address, so they own it
     user_data["profile"] = profile
     _save_user(username, user_data)
 
@@ -5839,7 +6102,10 @@ def api_update_profile():
     profile = users[current_user.id].get("profile", {})
     for field in ("email", "display_name", "bio", "investor_type"):
         if field in data:
-            profile[field] = str(data[field]).strip()
+            new_value = str(data[field]).strip()
+            if field == "email" and new_value.lower() != (profile.get("email") or "").lower():
+                profile["email_verified"] = False  # a changed address is unproven; Google linking trusts this flag
+            profile[field] = new_value
     if "newsletter_opt_in" in data:
         profile["newsletter_opt_in"] = bool(data["newsletter_opt_in"])
     if "profile_picture" in data:
