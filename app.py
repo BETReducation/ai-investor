@@ -7581,7 +7581,48 @@ def api_bull_bear_live():
 
 # NASDAQ Wagon Wheel: today's % move for the wheel's ~100 large Nasdaq names, from Yahoo daily
 # bars (the latest bar is the live session during market hours). Cached briefly.
-_NASDAQ_WHEEL_SYMBOLS = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'TSLA', 'COST', 'NFLX', 'PLTR', 'ASML', 'AMD', 'CSCO', 'TMUS', 'AZN', 'LIN', 'PEP', 'ISRG', 'SHOP', 'ADBE', 'QCOM', 'TXN', 'INTU', 'BKNG', 'AMGN', 'AMAT', 'HON', 'PDD', 'GILD', 'CMCSA', 'ARM', 'MU', 'LRCX', 'PANW', 'ADP', 'APP', 'KLAC', 'CRWD', 'VRTX', 'SBUX', 'MELI', 'CEG', 'ADI', 'INTC', 'CDNS', 'MDLZ', 'ORLY', 'DASH', 'FTNT', 'MAR', 'REGN', 'CTAS', 'SNPS', 'PYPL', 'MRVL', 'ABNB', 'WDAY', 'ADSK', 'CSX', 'MNST', 'AEP', 'NXPI', 'ROP', 'FAST', 'PCAR', 'AXON', 'CPRT', 'TTWO', 'KDP', 'EA', 'ROST', 'BKR', 'XEL', 'EXC', 'FANG', 'CCEP', 'PAYX', 'CHTR', 'TEAM', 'ODFL', 'VRSK', 'KHC', 'DDOG', 'GEHC', 'CTSH', 'LULU', 'IDXX', 'MCHP', 'CSGP', 'TTD', 'ON', 'ZS', 'BIIB', 'DXCM', 'CDW', 'GFS', 'WBD', 'MDB']
+_NASDAQ_WHEEL_FALLBACK = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'TSLA', 'COST', 'NFLX', 'PLTR', 'ASML', 'AMD', 'CSCO', 'TMUS', 'AZN', 'LIN', 'PEP', 'ISRG', 'SHOP', 'ADBE', 'QCOM', 'TXN', 'INTU', 'BKNG', 'AMGN', 'AMAT', 'HON', 'PDD', 'GILD', 'CMCSA', 'ARM', 'MU', 'LRCX', 'PANW', 'ADP', 'APP', 'KLAC', 'CRWD', 'VRTX', 'SBUX', 'MELI', 'CEG', 'ADI', 'INTC', 'CDNS', 'MDLZ', 'ORLY', 'DASH', 'FTNT', 'MAR', 'REGN', 'CTAS', 'SNPS', 'PYPL', 'MRVL', 'ABNB', 'WDAY', 'ADSK', 'CSX', 'MNST', 'AEP', 'NXPI', 'ROP', 'FAST', 'PCAR', 'AXON', 'CPRT', 'TTWO', 'KDP', 'EA', 'ROST', 'BKR', 'XEL', 'EXC', 'FANG', 'CCEP', 'PAYX', 'CHTR', 'TEAM', 'ODFL', 'VRSK', 'KHC', 'DDOG', 'GEHC', 'CTSH', 'LULU', 'IDXX', 'MCHP', 'CSGP', 'TTD', 'ON', 'ZS', 'BIIB', 'DXCM', 'CDW', 'GFS', 'WBD', 'MDB']
+_NASDAQ_WHEEL_SYMBOLS = list(_NASDAQ_WHEEL_FALLBACK)  # replaced by the live membership list below
+# Tracked on the wheel although not in the index (weight shown as 0%): Anthropic.
+_NASDAQ_EXTRAS = {"ANT": "Anthropic"}
+_nasdaq_members: dict = {"at": 0.0, "syms": list(_NASDAQ_WHEEL_FALLBACK), "names": {}, "live": False}
+_nasdaq_members_lock = threading.Lock()
+
+
+def _nasdaq_constituents() -> dict:
+    """Current Nasdaq-100 membership from Nasdaq's own list, refreshed every 12 hours (adds and removals
+    flow through automatically). Falls back to the last good list, then to the built-in one."""
+    with _nasdaq_members_lock:
+        m = _nasdaq_members
+        if m["live"] and time.monotonic() - m["at"] < 12 * 3600:
+            return m
+        if not m["live"] and m["at"] and time.monotonic() - m["at"] < 600:
+            return m
+        try:
+            r = requests.get("https://api.nasdaq.com/api/quote/list-type/nasdaq100", timeout=10,
+                             headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+            rows = r.json()["data"]["data"]["rows"]
+            syms, names = [], {}
+            for row in rows:
+                sym = (row.get("symbol") or "").strip().upper()
+                if re.fullmatch(r"[A-Z]{1,5}", sym) and sym not in names:
+                    syms.append(sym)
+                    nm = (row.get("companyName") or sym).strip()
+                    for _ in range(3):  # strip trailing share-class / legal suffixes, e.g. "Apple Inc. Common Stock" -> "Apple"
+                        nm = re.sub(r"[\s,]+(Class [A-Z]\b.*|Common Stock.*|Ordinary Shares.*|American Depositary.*|Inc\.?|Corporation|Corp\.?|Company|Holdings.*|Ltd\.?|plc)$", "", nm, flags=re.I)
+                    names[sym] = nm.strip(" ,.") or sym
+            if len(syms) < 90:
+                raise ValueError("short list")
+            m.update(at=time.monotonic(), syms=syms, names=names, live=True)
+        except Exception:
+            m["at"] = time.monotonic()
+    return m
+
+
+def _nasdaq_wheel_syms() -> list:
+    return list(_nasdaq_constituents()["syms"]) + [x for x in _NASDAQ_EXTRAS if x not in _nasdaq_members["syms"]]
+
+
 _NASDAQ_TTL_SECONDS = 120
 _nasdaq_cache: dict = {"at": 0.0, "data": None}
 _nasdaq_lock = threading.Lock()
@@ -7627,13 +7668,14 @@ def api_nasdaq_wheel_live():
     with _nasdaq_lock:
         if _nasdaq_cache["data"] and time.monotonic() - _nasdaq_cache["at"] < _NASDAQ_TTL_SECONDS:
             return jsonify(_nasdaq_cache["data"])
+    wheel_syms = _nasdaq_wheel_syms()
     try:
-        raw = yf.download(tickers=_NASDAQ_WHEEL_SYMBOLS + ["^IXIC"], period="5d", interval="1d", group_by="ticker",
+        raw = yf.download(tickers=wheel_syms + ["^IXIC"], period="5d", interval="1d", group_by="ticker",
                           threads=True, auto_adjust=False, progress=False)
     except Exception:
         raw = None
     moves, as_of = {}, None
-    for sym in _NASDAQ_WHEEL_SYMBOLS:
+    for sym in wheel_syms:
         try:
             closes = raw[sym]["Close"].dropna()
             if len(closes) < 2 or (closes.index[-1] - closes.index[-2]).days > 5:
@@ -7654,7 +7696,8 @@ def api_nasdaq_wheel_live():
                 return jsonify(_nasdaq_cache["data"])
         return jsonify({"error": "unavailable"}), 502
     data = {"updated_at": _dt.datetime.now(_dt.timezone.utc).isoformat(), "as_of": as_of, "moves": moves, "index": index,
-            "px": _index_snapshot("^IXIC")}
+            "px": _index_snapshot("^IXIC"), "names": {**_nasdaq_members["names"], **_NASDAQ_EXTRAS},
+            "extras": list(_NASDAQ_EXTRAS)}
     with _nasdaq_lock:
         _nasdaq_cache.update(at=time.monotonic(), data=data)
     return jsonify(data)
@@ -7756,7 +7799,7 @@ def _wheel_weights_build(key: str, syms: list, yahoo) -> None:
 @app.route("/api/dataviz/wheel-weights/<idx>", methods=["GET"])
 def api_wheel_weights(idx):
     if idx == "nasdaq":
-        syms, yahoo = list(_NASDAQ_WHEEL_SYMBOLS), (lambda x: x)
+        syms, yahoo = list(_nasdaq_constituents()["syms"]), (lambda x: x)
     elif idx == "ftse":
         syms = [x for x in (request.args.get("symbols") or "").split(",") if re.fullmatch(r"[A-Z0-9]{1,5}(\.[A-Z])?\.?", x)][:120]
         if not syms:

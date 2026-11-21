@@ -144,14 +144,14 @@ function draw(){
  const f2=$("#flist .flist");if(f2)f2.scrollTop=sc;
  drawW();
 }
-let W={};const WL="Nasdaq-100";
+let W={},XT=new Set();const WL="Nasdaq-100";
 const wl=s=>W[s.t]!=null?" · "+W[s.t].toFixed(1)+"% wt":"";
 function drawW(){
  const top=S.filter(s=>W[s.t]!=null).sort((a,b)=>W[b.t]-W[a.t]).slice(0,10);if(!top.length){$("#wts").innerHTML="";return}
  const mx=W[top[0].t],sum=top.reduce((a,s)=>a+W[s.t],0);
  $("#wts").innerHTML=`<h2 style="margin-top:22px">Biggest weights</h2><p class="sub" style="margin:0 0 8px">Share of total market cap across the wheel’s Nasdaq-100 stocks. The top 10 make up ${sum.toFixed(1)}%.</p>`+top.map((s,i)=>`<div class="row ${sel===s.t?"sel":""}" data-t="${s.t}"><i style="width:${W[s.t]/mx*100}%;background:var(--tx);opacity:.12"></i><span class="rk">${i+1}</span><span class="nm"><b>${s.t}</b><small>${s.n}</small></span><span class="ch">${W[s.t].toFixed(1)}%</span></div>`).join("");
 }
-function loadW(n){return fetch("/api/dataviz/wheel-weights/nasdaq").then(r=>r.status===202&&(n||0)<12?new Promise(ok=>setTimeout(ok,5000)).then(()=>loadW((n||0)+1)):r.ok?r.json():null).then(j=>{if(j&&j.weights){W=j.weights;draw();}}).catch(()=>{})}
+function loadW(n){return fetch("/api/dataviz/wheel-weights/nasdaq").then(r=>r.status===202&&(n||0)<12?new Promise(ok=>setTimeout(ok,5000)).then(()=>loadW((n||0)+1)):r.ok?r.json():null).then(j=>{if(j&&j.weights){W=j.weights;XT.forEach(t=>{W[t]=0});draw();}}).catch(()=>{})}
 function pick(t){sel=sel===t?null:t;draw()}
 $("#ring").addEventListener("click",e=>{const p=e.target.closest("path");if(p)pick(p.dataset.t)});
 $("#ring").addEventListener("mouseover",e=>{const p=e.target.closest("path");if(p&&sel!==p.dataset.t){sel=p.dataset.t;$("#ring").querySelectorAll("path").forEach(x=>x.classList.toggle("sel",x.dataset.t===p.dataset.t));draw2()}});
@@ -190,6 +190,9 @@ function note(t){document.querySelector(".foot").textContent=t}
 // Live moves from our server (Yahoo daily bars, % change vs previous close). Falls back to a simulated day if unavailable.
 function loadLive(){
  return fetch("/api/dataviz/nasdaq-wheel/live").then(r=>{if(!r.ok)throw 0;return r.json()}).then(j=>{
+  // Membership comes from the server (Nasdaq's current list plus any tracked extras), so adds/removals show up without a page edit.
+  if(j.names){const old=new Map(S.map(s=>[s.t,s]));S.splice(0,S.length,...Object.keys(j.names).map(t=>old.get(t)||{t,n:j.names[t]}));S.forEach(s=>{if(j.names[s.t])s.n=j.names[s.t]})}
+  XT=new Set(j.extras||[]);XT.forEach(t=>{W[t]=0});
   S.forEach(s=>{s.c=j.moves[s.t]!=null?j.moves[s.t]:null});
   const have=S.filter(s=>s.c!=null);
   if(have.length<20)throw 0;
