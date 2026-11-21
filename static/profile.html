@@ -382,13 +382,25 @@ footer { border-top: 1px solid var(--border); padding: 48px 5%; }
         </div>
       </div>
 
+      <!-- GOOGLE SIGN-IN -->
+      <div class="profile-card" id="googleCard" style="display:none;">
+        <div class="card-header-row">
+          <div class="card-header-title">Google sign-in</div>
+        </div>
+        <p class="form-hint" id="googleStatus" style="margin-bottom:14px;line-height:1.6;"></p>
+        <div class="form-actions">
+          <button class="btn-save" id="googleBtn" onclick="googleAction()"></button>
+          <span class="form-hint" id="googleHint"></span>
+        </div>
+      </div>
+
       <!-- PASSWORD -->
       <div class="profile-card">
         <div class="card-header-row">
-          <div class="card-header-title">Password</div>
+          <div class="card-header-title" id="passwordTitle">Password</div>
         </div>
         <div class="form-grid">
-          <div class="form-group">
+          <div class="form-group" id="currentPwGroup">
             <div class="form-label">Current Password</div>
             <input type="password" id="fieldCurrentPassword" class="form-input" autocomplete="current-password">
           </div>
@@ -689,6 +701,7 @@ async function boot() {
     profileUsername = data.username;
     profileTier = data.tier || 'free';
     populateProfile(data);
+    googleState = data; renderGoogle();
     loadEdu();
     document.getElementById('profilePage').style.display = 'block';
     if (data.username === 'admin') {
@@ -981,6 +994,41 @@ async function saveProfile() {
   }
 }
 
+// ── Google sign-in ──────────────────────────────────────────────────────────
+let googleState = {};
+function renderGoogle() {
+  const d = googleState;
+  const hint = document.getElementById('googleHint');
+  const q = new URLSearchParams(location.search);
+  document.getElementById('googleCard').style.display = (d.google_enabled || d.google_email) ? '' : 'none';
+  document.getElementById('currentPwGroup').style.display = d.has_password ? '' : 'none';
+  document.getElementById('passwordTitle').textContent = d.has_password ? 'Password' : 'Set a password';
+  document.getElementById('changePasswordBtn').textContent = d.has_password ? 'Update Password' : 'Set Password';
+  const status = document.getElementById('googleStatus'), btn = document.getElementById('googleBtn');
+  if (d.google_email) {
+    status.textContent = 'Connected to ' + d.google_email + '. You can sign in with Google or with your password' + (d.has_password ? '.' : ' (set one below to keep a fallback).');
+    btn.textContent = 'Disconnect Google';
+  } else {
+    status.textContent = 'Not connected. Connect a Google account to sign in with one click. Your username and password keep working either way.';
+    btn.textContent = 'Connect Google';
+  }
+  if (q.get('glinked')) { hint.style.color = 'var(--green)'; hint.textContent = 'Google connected.'; }
+  else if (q.get('gerror') === 'taken') { hint.style.color = '#ff4757'; hint.textContent = 'That Google account is already connected to a different GCG account. Pick another Google account.'; }
+}
+async function googleAction() {
+  const hint = document.getElementById('googleHint');
+  if (!googleState.google_email) { location.href = '/auth/google/start?mode=link'; return; }
+  if (!confirm('Disconnect ' + googleState.google_email + ' from this account?')) return;
+  hint.style.color = '#ff4757';
+  try {
+    const res = await fetch('/api/profile/google/unlink', { method: 'POST', credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) { hint.textContent = data.error || 'Could not disconnect.'; return; }
+    googleState.google_email = ''; history.replaceState(null, '', '/profile'); renderGoogle();
+    hint.style.color = 'var(--green)'; hint.textContent = 'Google disconnected.';
+  } catch (e) { hint.textContent = 'Cannot reach server.'; }
+}
+
 // ── Change password ──────────────────────────────────────────────────────────
 
 async function changePassword() {
@@ -991,7 +1039,8 @@ async function changePassword() {
   const confirm = document.getElementById('fieldConfirmPassword').value;
 
   hint.style.color = '#ff4757';
-  if (!current || !next || !confirm) { hint.textContent = 'Fill in all three fields.'; return; }
+  const needCurrent = document.getElementById('currentPwGroup').style.display !== 'none';
+  if ((needCurrent && !current) || !next || !confirm) { hint.textContent = needCurrent ? 'Fill in all three fields.' : 'Fill in both fields.'; return; }
   if (next.length < 6) { hint.textContent = 'New password must be at least 6 characters.'; return; }
   if (next !== confirm) { hint.textContent = 'New passwords don\'t match.'; return; }
 
@@ -1012,6 +1061,7 @@ async function changePassword() {
     document.getElementById('fieldConfirmPassword').value = '';
     hint.style.color = 'var(--green)';
     hint.textContent = 'Password updated.';
+    googleState.has_password = true; renderGoogle();
   } catch (e) {
     hint.textContent = 'Cannot reach server.';
   } finally {

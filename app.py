@@ -4351,7 +4351,8 @@ def google_start():
     if _rate_limited("g-start", _client_ip(), 30, 600):
         return redirect("/login?gerror=ratelimit")
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
-    session["google_oauth"] = {"state": state, "nonce": nonce, "t": time.time(),
+    link = request.args.get("mode") == "link" and current_user.is_authenticated
+    session["google_oauth"] = {"state": state, "nonce": nonce, "t": time.time(), "link": link,
                                "next": _safe_next(request.args.get("next", ""))}
     redirect_uri = _google_redirect_uri()
     return redirect(GOOGLE_AUTH_URL + "?" + urlencode({
@@ -4395,6 +4396,21 @@ def google_callback():
     if not email or claims.get("email_verified") is not True:
         return redirect("/login?gerror=unverified")
     sub, nxt = str(claims["sub"]), st["next"]
+
+    if st.get("link"):  # signed-in member connecting Google from their profile
+        if not current_user.is_authenticated:
+            return redirect("/login?gerror=expired")
+        owners = [u for u, _ in _find_users_by_profile_field("google_sub", sub) if u != current_user.id]
+        if owners:
+            return redirect("/profile?gerror=taken")
+        me = _load_user(current_user.id)
+        profile = dict(me.get("profile", {}) or {})
+        profile.update(google_sub=sub, google_email=email)
+        if (profile.get("email") or "").strip().lower() == email:
+            profile["email_verified"] = True
+        me["profile"] = profile
+        _save_user(current_user.id, me)
+        return redirect("/profile?glinked=1")
 
     linked = _find_users_by_profile_field("google_sub", sub)
     if linked:
@@ -4445,6 +4461,22 @@ def _free_username(base: str) -> str:
         n += 1
         username = f"{base}{n}"
     return username
+
+
+@app.route("/api/profile/google/unlink", methods=["POST"])
+@login_required
+def api_google_unlink():
+    user = _load_user(current_user.id)
+    profile = dict((user or {}).get("profile", {}) or {})
+    if not profile.get("google_sub"):
+        return jsonify({"error": "Google isn't connected to this account."}), 400
+    if profile.get("has_password") is False:
+        return jsonify({"error": "Set a password first, otherwise you'd be locked out of this account."}), 400
+    for k in ("google_sub", "google_email"):
+        profile.pop(k, None)
+    user["profile"] = profile
+    _save_user(current_user.id, user)
+    return jsonify({"success": True})
 
 
 @app.route("/api/google/pending")
@@ -6099,6 +6131,9 @@ def api_get_profile():
         "landing_page":   profile.get("landing_page", "/dashboard"),
         "newsletter_opt_in": newsletter_opted_in(profile),
         "preferences":    user_data.get("preferences", {}),
+        "google_email":   profile.get("google_email", "") if profile.get("google_sub") else "",
+        "google_enabled": _google_enabled(),
+        "has_password":   profile.get("has_password") is not False,
     })
 
 
@@ -6154,19 +6189,20 @@ def api_change_password():
     data = request.get_json() or {}
     current_password = data.get("current_password", "")
     new_password      = data.get("new_password", "")
-    if not current_password or not new_password:
-        return jsonify({"error": "Current and new password required"}), 400
-    if len(new_password) < 6:
-        return jsonify({"error": "New password must be at least 6 characters"}), 400
-
     users = _load_users()
     user_data = users.get(current_user.id)
     if not user_data:
         return jsonify({"error": "User not found"}), 404
-    if not bcrypt.checkpw(current_password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
+    google_only = (user_data.get("profile", {}) or {}).get("has_password") is False
+    if not new_password or (not current_password and not google_only):
+        return jsonify({"error": "Current and new password required"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
+    if not google_only and not bcrypt.checkpw(current_password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
         return jsonify({"error": "Current password is incorrect"}), 400
 
     user_data["password_hash"] = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    user_data.setdefault("profile", {})["has_password"] = True
     _save_users(users)
     return jsonify({"success": True})
 

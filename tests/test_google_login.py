@@ -93,3 +93,29 @@ def test_login_messages_are_descriptive(env):
     c = gcg.app.test_client()
     assert c.post("/api/login", json={"username": "g", "password": "x"}).get_json()["code"] == "google_only"
     assert c.post("/api/login", json={"username": "nobody", "password": "x"}).get_json()["code"] == "no_account"
+
+
+def test_profile_link_and_unlink(env, monkeypatch):
+    env["al"] = _user("other@x.co", True)
+    c = gcg.app.test_client()
+    with c.session_transaction() as s:
+        s["_user_id"], s["_fresh"] = "al", True
+    monkeypatch.setattr(gcg.login_manager, "_user_callback", lambda uid: gcg.User(uid, "free"), raising=False)
+    c.get("/auth/google/start?mode=link")
+    r = _google_cb(monkeypatch, c)
+    assert "glinked=1" in r.headers["Location"] and env["al"]["profile"]["google_sub"] == "g1"
+    assert c.post("/api/profile/google/unlink").status_code == 200
+    assert "google_sub" not in env["al"]["profile"]
+
+
+def _google_cb(monkeypatch, client, sub="g1", email="a@gmail.com"):
+    with client.session_transaction() as s:
+        st = s["google_oauth"]
+
+    class R:
+        ok = True
+        def raise_for_status(self): pass
+        def json(self): return {"id_token": _jwt({"iss": "accounts.google.com", "aud": "cid", "exp": time.time() + 99,
+                                                   "nonce": st["nonce"], "sub": sub, "email": email, "email_verified": True})}
+    monkeypatch.setattr(gcg.requests, "post", lambda *a, **k: R())
+    return client.get(f"/auth/google/callback?code=c&state={st['state']}")
