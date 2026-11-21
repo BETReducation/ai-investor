@@ -671,6 +671,7 @@ def _ensure_table() -> None:
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('mining-globe', 'The Mining Globe', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('industrial-tracker', 'The Industrial Tracker', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('reit-map', 'REIT Map', 'viz') ON CONFLICT (slug) DO NOTHING")
+        cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('market-xi-scout', 'Market XI Scout', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('russell-compass', 'Russell 2000 Compass', 'viz') ON CONFLICT (slug) DO NOTHING")
         # Flip the flag on for global-heat-map/gold-silver-ratio even if the row
         # already existed from before has_live_widget was added (ON CONFLICT DO
@@ -697,6 +698,7 @@ def _ensure_table() -> None:
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'mining-globe'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'industrial-tracker'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'reit-map'")
+        cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'market-xi-scout'")
         cur.execute("INSERT INTO dataviz_pages (slug, label, kind) VALUES ('ftse-wagon-wheel', 'FTSE 100 Wagon Wheel', 'viz') ON CONFLICT (slug) DO NOTHING")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'ftse-wagon-wheel'")
         cur.execute("UPDATE dataviz_pages SET has_live_widget = TRUE WHERE slug = 'russell-compass'")
@@ -1743,6 +1745,7 @@ _SEED_DATAVIZ_DESCRIPTIONS = {
     "etf-tracker": "Around 400 ETFs, stocks and indices from every region ranked by their day, week, month or year, with a spin-the-globe country view, fee and overlap checkers, watchlist and side-by-side comparison (live prices).",
     "mining-globe": "A spinning globe of mining company headquarters and deposit regions, country stockpile leaderboards, a wheel of mining stocks and ETFs, and a vault of bullion coins (sample data).",
     "industrial-tracker": "Where the ore sits, who holds the stockpiles, what industrial metals cost and what power costs where they're smelted: a mining globe, metal prices, warehouse stocks, supply shocks, historic league tables and short lessons (snapshot data, educational only).",
+    "market-xi-scout": "Scout 100 stocks, crypto, forex pairs and ETFs like a football coach: team of the week, captain pick, head to head, sector split, world map and mood meter (live prices, from the Market XI game).",
     "reit-map": "A spinning globe of property markets in 38 countries, REIT league tables, historic REIT returns, crash timelines, US state and UK region maps, and what-if tools for rent vs buy, dividends and interest rates (sample data).",
     "russell-compass": "Nearly 2,000 US small-cap stocks (the Russell 2000, via iShares' IWM holdings) ranked best to worst over a day, week, month or year, plus a compass showing how many are up by sector.",
     "ai-tracker": "About 90 AI stocks across every country on one world map, coloured by return over a day to five years, with market temperature, supply chain links, a compass, league table and AI spend vs profit (illustrative sample data).",
@@ -1773,6 +1776,7 @@ _SEED_DATAVIZ_PAGES = [
     {"slug": "etf-tracker", "label": "Global ETF Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "mining-globe", "label": "The Mining Globe", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "industrial-tracker", "label": "The Industrial Tracker", "author": None, "has_live_widget": True, "kind": "viz"},
+    {"slug": "market-xi-scout", "label": "Market XI Scout", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "reit-map", "label": "REIT Map", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "ftse-wagon-wheel", "label": "FTSE 100 Wagon Wheel", "author": None, "has_live_widget": True, "kind": "viz"},
     {"slug": "russell-compass", "label": "Russell 2000 Compass", "author": None, "has_live_widget": True, "kind": "viz"},
@@ -9171,6 +9175,156 @@ def api_stock_donut_quotes():
                 _stock_donut_cache[t] = (now, fresh.get(t))
         out.update(fresh)
     return jsonify({"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "quotes": out})
+
+
+# Market XI Scout: live price, all-time high, week change and Day/Week/Month/Year chart series for the
+# 100 assets on the page. Prices refresh every 5 min; all-time highs (full monthly history) every 12 h.
+_MXI_STOCKS = "NVDA MSFT AAPL META AMZN TSLA GOOGL PLTR AMD JPM XOM WMT KO PG JNJ RR.L AZN.L REL.L SHEL.L HSBA.L ULVR.L BP.L BARC.L NWG.L GSK.L TSCO.L NG.L DGE.L LLOY.L VOD.L".split()
+_MXI_ETFS = "SPY DIA XLF XLV GLD QQQ IWM XLK XLE TLT".split()
+_MXI_CRYPTO = {t: t + "-USD" for t in "BTC ETH BNB XRP SOL TRX LTC BCH LINK XLM ADA HBAR AVAX DOT AAVE NEAR ATOM ALGO DOGE ZEC XMR RENDER ONDO INJ FET SEI".split()}
+_MXI_CRYPTO.update({"SUI": "SUI20947-USD", "UNI": "UNI7083-USD", "HYPE": "HYPE32196-USD", "TAO": "TAO22974-USD"})
+_MXI_FOREX = ("EUR/NZD GBP/NZD NZD/JPY AUD/CAD AUD/CHF CAD/CHF NZD/CAD NZD/CHF EUR/NOK EUR/SEK EUR/USD GBP/USD USD/JPY USD/CHF "
+              "USD/CAD AUD/USD NZD/USD EUR/GBP EUR/JPY GBP/JPY EUR/CHF GBP/CHF EUR/CAD GBP/CAD EUR/AUD GBP/AUD AUD/JPY CAD/JPY "
+              "CHF/JPY AUD/NZD").split()
+
+
+def _mxi_symbols() -> dict:
+    m = {t: t for t in _MXI_STOCKS + _MXI_ETFS}
+    m.update(_MXI_CRYPTO)
+    for p in _MXI_FOREX:
+        a, b = p.split("/")
+        m[p] = ("%s=X" % b) if a == "USD" else "%s%s=X" % (a, b)
+    return m
+
+
+def _mxi_resample(vals: list, n: int = 48) -> list:
+    if len(vals) < 2:
+        return []
+    out = []
+    for i in range(n):
+        x = i * (len(vals) - 1) / (n - 1)
+        lo = int(x)
+        hi = min(lo + 1, len(vals) - 1)
+        out.append(vals[lo] + (vals[hi] - vals[lo]) * (x - lo))
+    return out
+
+
+def _mxi_round(v: float) -> float:
+    return float("%.6g" % v)
+
+
+_mxi_cache: dict = {"at": 0.0, "data": None, "ath": {}, "ath_at": 0.0, "busy": False}
+_mxi_lock = threading.Lock()
+
+
+def _mxi_build() -> dict | None:
+    sym = _mxi_symbols()
+    syms = list(sym.values()) + ["GBPUSD=X"]
+    now = time.monotonic()
+    with _mxi_lock:
+        ath_fresh = now - _mxi_cache["ath_at"] < 12 * 3600 and _mxi_cache["ath"]
+    daily = yf.download(tickers=syms, period="13mo", interval="1d", group_by="ticker", auto_adjust=False, progress=False, threads=True)
+    hourly = yf.download(tickers=syms, period="5d", interval="1h", group_by="ticker", auto_adjust=False, progress=False, threads=True)
+    ath = dict(_mxi_cache["ath"]) if ath_fresh else {}
+    if not ath_fresh:
+        monthly = yf.download(tickers=syms, period="max", interval="1mo", group_by="ticker", auto_adjust=False, progress=False, threads=True)
+        for t, s in sym.items():
+            try:
+                # FX monthly highs carry bad prints (e.g. USD/JPY at 635); closes are clean enough
+                col = "Close" if "=X" in s else "High"
+                v = monthly[s][col].dropna()
+                if len(v):
+                    ath[t] = float(v.max())
+            except Exception:
+                continue
+    assets = {}
+    for t, s in sym.items():
+        try:
+            c = daily[s]["Close"].dropna()
+            if len(c) < 30:
+                continue
+            last_day = c.index[-1]
+            px = float(c.iloc[-1])
+            series = {}
+            for key, days in (("w", 7), ("m", 30), ("y", 365)):
+                win = c[c.index >= last_day - pd.Timedelta(days=days)]
+                if len(win) < 2:
+                    win = c.iloc[-2:]
+                series[key] = _mxi_resample([float(x) for x in win.values])
+            h = hourly[s]["Close"].dropna()
+            if len(h):
+                bars = h[h.index.date == h.index[-1].date()]
+                if len(bars) < 4:
+                    bars = h.iloc[-8:]
+                series["d"] = _mxi_resample([float(x) for x in bars.values])
+            else:
+                series["d"] = series["w"][-12:] and _mxi_resample(series["w"][-12:])
+            if not series["d"]:
+                continue
+            wk = (series["w"][-1] / series["w"][0] - 1) * 100
+            assets[t] = {"px": _mxi_round(px), "ath": _mxi_round(max(ath.get(t, px), px, max(series["y"]))), "wk": round(wk, 2),
+                         "s": {k: [_mxi_round(x) for x in v] for k, v in series.items()}}
+        except Exception:
+            continue
+    if len(assets) < 50:
+        return None
+    try:
+        gbp = float(daily["GBPUSD=X"]["Close"].dropna().iloc[-1])
+    except Exception:
+        gbp = None
+    with _mxi_lock:
+        if not ath_fresh:
+            _mxi_cache["ath"] = ath
+            _mxi_cache["ath_at"] = time.monotonic()
+    return {"updated_at": _dt.datetime.utcnow().isoformat() + "Z", "gbpusd": gbp, "total": len(sym), "assets": assets}
+
+
+def _mxi_refresh() -> None:
+    try:
+        data = _mxi_build()
+    except Exception as e:
+        app.logger.warning("market-xi live fetch failed: %s", e)
+        data = None
+    with _mxi_lock:
+        if data:
+            _mxi_cache.update(at=time.monotonic(), data=data)
+        _mxi_cache["busy"] = False
+
+
+def _mxi_warm() -> None:
+    with _mxi_lock:
+        if _mxi_cache["busy"] or _mxi_cache["data"]:
+            return
+        _mxi_cache["busy"] = True
+    _mxi_refresh()
+
+
+_mxi_warm_timer = threading.Timer(30, _mxi_warm)  # first build takes ~40s; do it before a visitor has to wait
+_mxi_warm_timer.daemon = True
+_mxi_warm_timer.start()
+
+
+@app.route("/api/dataviz/market-xi-scout/live", methods=["GET"])
+def api_market_xi_live():
+    with _mxi_lock:
+        data, stale = _mxi_cache["data"], time.monotonic() - _mxi_cache["at"] >= 300
+        start = (stale or not data) and not _mxi_cache["busy"]
+        if start:
+            _mxi_cache["busy"] = True
+    if start and data:
+        threading.Thread(target=_mxi_refresh, daemon=True).start()  # serve the stale copy, refresh behind it
+    elif start:
+        _mxi_refresh()
+        data = _mxi_cache["data"]
+    elif not data:
+        for _ in range(60):  # another request is building the first copy; wait for it
+            time.sleep(1)
+            if _mxi_cache["data"]:
+                data = _mxi_cache["data"]
+                break
+    if not data:
+        return jsonify({"error": "unavailable"}), 502
+    return jsonify(data)
 
 
 @app.route("/api/dataviz/gold-silver-ratio/live", methods=["GET"])

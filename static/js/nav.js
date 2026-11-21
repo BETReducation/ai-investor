@@ -132,6 +132,7 @@
       ['REIT Map', '/tools/data-visualisation/reit-map']
     ] },
     { name: 'Other', pages: [
+      ['Market XI Scout', '/tools/data-visualisation/market-xi-scout'],
       ['Barrel Map', '/tools/data-visualisation/barrel-map'],
       ['The Finance Map', '/tools/data-visualisation/finance-map']
     ] }
