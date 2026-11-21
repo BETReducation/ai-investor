@@ -4265,7 +4265,7 @@ def api_login():
 
 # ── Google sign-in ───────────────────────────────────────────────────────────
 # Optional extra way in; username/password login is untouched. Needs GOOGLE_CLIENT_ID and
-# GOOGLE_CLIENT_SECRET (redirect URI: <site>/auth/google/callback, or set GOOGLE_REDIRECT_URI).
+# GOOGLE_CLIENT_SECRET (redirect URI: <site>/auth/google/callback, or set GOOGLE_LOGIN_REDIRECT_URI).
 # Until they're set the button stays hidden. Accounts link by Google's stable `sub`; a first
 # Google sign-in is matched to an existing account by *verified* email only. Anything unsure
 # (unverified account email, several accounts, no account) goes through a confirmation screen
@@ -4340,7 +4340,7 @@ def google_start():
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(24)
     session["google_oauth"] = {"state": state, "nonce": nonce, "t": time.time(),
                                "next": _safe_next(request.args.get("next", ""))}
-    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    redirect_uri = os.environ.get("GOOGLE_LOGIN_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
     return redirect(GOOGLE_AUTH_URL + "?" + urlencode({
         "client_id": os.environ["GOOGLE_CLIENT_ID"], "redirect_uri": redirect_uri, "response_type": "code",
         "scope": "openid email profile", "state": state, "nonce": nonce,
@@ -4359,7 +4359,7 @@ def google_callback():
             or not hmac.compare_digest(st["state"], request.args.get("state", ""))
             or not request.args.get("code") or not _google_enabled()):
         return redirect("/login?gerror=expired")
-    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
+    redirect_uri = os.environ.get("GOOGLE_LOGIN_REDIRECT_URI") or request.host_url.rstrip("/") + "/auth/google/callback"
     try:
         resp = requests.post(GOOGLE_TOKEN_URL, timeout=10, data={
             "code": request.args["code"], "client_id": os.environ["GOOGLE_CLIENT_ID"],
