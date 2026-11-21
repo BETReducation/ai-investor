@@ -509,6 +509,9 @@ function switchTab(tab) {
   document.getElementById('tabRegister').classList.toggle('active', !isLogin);
 }
 
+// Market XI's "forgot password" link: /login?forgot=1 opens the reset form directly.
+if (new URLSearchParams(window.location.search).get('forgot') === '1') showForgot();
+
 // Pop-up and pricing links open the Register tab directly.
 if (new URLSearchParams(window.location.search).get('tab') === 'register') switchTab('register');
 
