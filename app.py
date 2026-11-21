@@ -4164,35 +4164,40 @@ def newsletter_unsubscribe():
 
 # ── Auth endpoints ───────────────────────────────────────────────────────────
 
-@app.route("/api/register", methods=["POST"])
-def api_register():
-    if _rate_limited("register", _client_ip(), 5, 3600):
-        return _too_many_requests()
-    data = request.get_json() or {}
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
-    email    = data.get("email", "").strip()
+def _create_member(data: dict, source: str = ""):
+    """Validate a sign-up body and create a Free member. Returns (username, None) on success or
+    (None, (response, status)) on a validation problem. Shared by /api/register and the Market XI endpoint."""
+    username = str(data.get("username", "")).strip()
+    password = str(data.get("password", ""))
+    email    = str(data.get("email", "")).strip()
     newsletter_opt_in = bool(data.get("newsletter_opt_in", False))
     first_name = _clip(data.get("first_name"), 60)
     country = _clip(data.get("country"), 60)
     referral_source = data.get("referral_source") if data.get("referral_source") in REFERRAL_SOURCES else ""
     age_band = data.get("age_band") if data.get("age_band") in AGE_BANDS else ""
 
+    def bad(msg, status=400, code=""):
+        return None, (jsonify({"error": msg, **({"code": code} if code else {})}), status)
+
     if not username or not password:
-        return jsonify({"error": "Username and password required"}), 400
+        return bad("Username and password required")
     if not first_name:
-        return jsonify({"error": "Please tell us your first name"}), 400
+        return bad("Please tell us your first name")
     if not email:
-        return jsonify({"error": "Email address required"}), 400
+        return bad("Email address required")
     if not _EMAIL_RE.match(email):
-        return jsonify({"error": "That doesn't look like a valid email address"}), 400
-    if "email_confirm" in data and data["email_confirm"].strip().lower() != email.lower():
-        return jsonify({"error": "The two email addresses do not match"}), 400
+        return bad("That doesn't look like a valid email address")
+    if "email_confirm" in data and str(data["email_confirm"]).strip().lower() != email.lower():
+        return bad("The two email addresses do not match")
     if len(password) < 6:
-        return jsonify({"error": "Password must be at least 6 characters"}), 400
+        return bad("Password must be at least 6 characters")
 
     if _load_user(username) is not None:
-        return jsonify({"error": "Username already taken"}), 409
+        return bad("Username already taken", 409, "username_taken")
+    if _find_users_by_profile_field("email", email):
+        return bad("An account already uses this email, so we won't create a second one. Sign in instead, "
+                   "or use Forgot password if you can't remember how you joined (Google, a password, or Market XI).",
+                   409, "email_in_use")
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode("utf-8")
     new_user = {
@@ -4213,15 +4218,46 @@ def api_register():
             "referral_source": referral_source,
             "age_band": age_band,
             "email_verified": False,
+            **({"signup_source": source} if source else {}),
         },
     }
     _save_user(username, new_user)
-    gcg_notify.record("member_joined", username, f"{username} joined", "/admin")
+    gcg_notify.record("member_joined", username, f"{username} joined" + (" via Market XI" if source == "market_xi" else ""), "/admin")
     _send_verification_email(username, email)
+    return username, None
+
+
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    if _rate_limited("register", _client_ip(), 5, 3600):
+        return _too_many_requests()
+    username, err = _create_member(request.get_json() or {})
+    if err:
+        return err
 
     session.permanent = True
     login_user(User(username, "free"), remember=True)
     return jsonify({"success": True, "username": username, "tier": "free", "preferences": {}, "landing_page": "/welcome"})
+
+
+def _login_failure(user_data):
+    """Descriptive 401 for a failed password login (None = no matching account)."""
+    if not user_data:
+        return jsonify({
+            "error": "No account matches that username or email. Check the spelling, try the email you signed up with, "
+                     "or use Continue with Google if that's how you joined. Market XI uses your Growth Capital Group login, "
+                     "so use the same details here.",
+            "code": "no_account"}), 401
+    profile = user_data.get("profile", {}) or {}
+    if profile.get("has_password") is False:
+        return jsonify({"error": "This account was created with Google and has no password yet. Use Continue with Google, "
+                                 "or choose Forgot password to set one.", "code": "google_only"}), 401
+    if profile.get("google_email"):
+        return jsonify({"error": f"That password doesn't match. This account is also linked to Google "
+                                 f"({_mask_email(profile['google_email'])}), so try Continue with Google, or use Forgot password.",
+                        "code": "bad_password"}), 401
+    return jsonify({"error": "That password doesn't match this account. Try again, or use Forgot password.",
+                    "code": "bad_password"}), 401
 
 
 @app.route("/api/login", methods=["POST"])
@@ -4238,23 +4274,10 @@ def api_login():
     if user_data:
         username = found_username
     if not user_data:
-        return jsonify({
-            "error": "No account matches that username or email. Check the spelling, try the email you signed up with, "
-                     "or use Continue with Google if that's how you joined. Market XI uses your Growth Capital Group login, "
-                     "so use the same details here.",
-            "code": "no_account"}), 401
+        return _login_failure(None)
 
     if not bcrypt.checkpw(password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
-        profile = user_data.get("profile", {}) or {}
-        if profile.get("has_password") is False:
-            return jsonify({"error": "This account was created with Google and has no password yet. Use Continue with Google, "
-                                     "or choose Forgot password to set one.", "code": "google_only"}), 401
-        if profile.get("google_email"):
-            return jsonify({"error": f"That password doesn't match. This account is also linked to Google "
-                                     f"({_mask_email(profile['google_email'])}), so try Continue with Google, or use Forgot password.",
-                            "code": "bad_password"}), 401
-        return jsonify({"error": "That password doesn't match this account. Try again, or use Forgot password.",
-                        "code": "bad_password"}), 401
+        return _login_failure(user_data)
 
     stay_signed_in = user_data.get("preferences", {}).get("stay_signed_in", True)
     session.permanent = bool(stay_signed_in)
@@ -5442,6 +5465,56 @@ def market_xi_play():
     return _market_xi_no_store(redirect(f"{MARKET_XI_SSO_URL}?token={quote(token)}"))
 
 
+def _market_xi_auth_ok() -> bool:
+    secret = os.environ.get("MARKET_XI_SHARED_SECRET", "")
+    supplied = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    return bool(secret) and hmac.compare_digest(supplied, secret)
+
+
+def _market_xi_member(username: str, user: dict) -> dict:
+    """What Market XI needs to start its own session: the member's facts and a short-lived signed token."""
+    profile = user.get("profile", {}) or {}
+    return {"member": {"username": username, "email": profile.get("email", ""),
+                       "email_verified": bool(profile.get("email_verified")), "tier": user.get("tier") or "free"},
+            "token": _market_xi_token(username, user)}
+
+
+@app.route("/api/market-xi/register", methods=["POST"])
+def api_market_xi_register():
+    """Server-to-server password sign-up from Market XI's own form. The password is stored here only; the
+    account is a Free GCG member and the response lets Market XI log them in straight away."""
+    if not _market_xi_auth_ok():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    if _rate_limited("mxi-register", _clip(data.get("client_ip"), 64) or "mxi", 5, 3600):
+        return _too_many_requests()
+    username, err = _create_member(data, source="market_xi")
+    if err:
+        return err
+    return jsonify({"created": True, **_market_xi_member(username, _load_user(username))}), 201
+
+
+@app.route("/api/market-xi/login", methods=["POST"])
+def api_market_xi_login():
+    """Server-to-server password check for Market XI's own sign-in form. Same errors and limits as the
+    GCG login; Market XI passes the player's IP as client_ip so limits are per player, not per server."""
+    if not _market_xi_auth_ok():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    identifier = str(data.get("identifier") or "").strip()
+    password = str(data.get("password") or "")
+    ip = _clip(data.get("client_ip"), 64) or "mxi"
+    if _rate_limited("mxi-login-ip", ip, 20, 600) or (identifier and _rate_limited("mxi-login-id", identifier.lower(), 10, 600)):
+        return _too_many_requests()
+    if not identifier or not password:
+        return jsonify({"error": "Username (or email) and password required"}), 400
+    username, user = _find_user_by_login(identifier)
+    if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password_hash"].encode("utf-8")):
+        return _login_failure(user)
+    log_event(username, "login", "market_xi")
+    return jsonify(_market_xi_member(username, user))
+
+
 @app.route("/api/market-xi/link-user", methods=["POST"])
 def api_market_xi_link_user():
     """Server-to-server: Market XI reports a new signup. Finds the GCG account with that email,
@@ -5465,7 +5538,10 @@ def api_market_xi_link_user():
             profile["email_verified"] = True
             user["profile"] = profile
             _save_user(existing, user)
-        return jsonify({"created": False, "username": existing, "tier": user.get("tier") or "free"})
+        out = {"created": False, "username": existing, "tier": user.get("tier") or "free"}
+        if data["email_verified"]:  # only hand out a login token when Market XI vouches for the email
+            out.update(_market_xi_member(existing, user))
+        return jsonify(out)
 
     if not data["email_verified"]:
         return jsonify({"error": "Invalid request"}), 400  # only create accounts for emails Market XI has verified
@@ -5478,6 +5554,7 @@ def api_market_xi_link_user():
         username = f"{base}{n}"
 
     token = secrets.token_urlsafe(32)
+    via_google = data.get("via_google") is True
     new_user = {
         "password_hash": bcrypt.hashpw(secrets.token_urlsafe(24).encode(), bcrypt.gensalt()).decode("utf-8"),
         "preferences": {},
@@ -5488,13 +5565,15 @@ def api_market_xi_link_user():
             "profile_picture": "", "newsletter_opt_in": False, "marketing_consent": False,
             "first_name": _clip(data.get("first_name"), 60), "country": "", "referral_source": "other", "age_band": "",
             "email_verified": True,
-            "reset_token_hash": hashlib.sha256(token.encode()).hexdigest(),
-            "reset_token_expires": time.time() + 7 * 86400,
             "signup_source": "market_xi",
+            **({"has_password": False} if via_google else
+               {"reset_token_hash": hashlib.sha256(token.encode()).hexdigest(), "reset_token_expires": time.time() + 7 * 86400}),
         },
     }
     _save_user(username, new_user)
     gcg_notify.record("member_joined", username, f"{username} joined via Market XI", "/admin")
+    if via_google:  # no password email: they sign in with Google (or set a password later from their profile)
+        return jsonify({"created": True, "username": username, "tier": "free", **_market_xi_member(username, new_user)}), 201
 
     from urllib.parse import quote
     link = f"{request.host_url.rstrip('/')}/reset-password?u={quote(username)}&t={token}"
@@ -5505,7 +5584,7 @@ def api_market_xi_link_user():
         f"After that, one login covers both sites.",
         sender=os.environ.get("RESEND_FROM_RESET", "Growth Capital Group <passwordreset@growthcapitalgroup.co>"),
     )
-    return jsonify({"created": True, "username": username, "tier": "free"}), 201
+    return jsonify({"created": True, "username": username, "tier": "free", **_market_xi_member(username, new_user)}), 201
 
 
 @app.route("/api/reset-password", methods=["POST"])

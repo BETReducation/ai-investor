@@ -43,6 +43,9 @@ def store(monkeypatch):
                             ((n, d) for n, d in users.items()
                              if n.lower() == ident.lower() or (d.get("profile", {}).get("email", "").lower() == ident.lower())),
                             (None, None)))
+    monkeypatch.setattr(gcg, "DATABASE_URL", "")
+    monkeypatch.setattr(gcg, "_load_users", lambda: users)
+    monkeypatch.setattr(gcg, "log_event", lambda *a, **k: None)
     monkeypatch.setattr(gcg, "_send_email", lambda *a, **k: None)
     monkeypatch.setattr(gcg.gcg_notify, "record", lambda *a, **k: None)
     return users
@@ -91,6 +94,10 @@ def test_unmapped_tier_fails_closed():
         gcg._market_xi_token("a", {"tier": "platinum", "profile": {}})
 
 
+def _decode_token(t):
+    return _decode(t)
+
+
 def _link(c, **body):
     return c.post("/api/market-xi/link-user", json=body, headers={"Authorization": "Bearer test-secret"})
 
@@ -98,12 +105,15 @@ def _link(c, **body):
 def test_link_user_creates_then_is_idempotent_and_never_downgrades(store):
     c = gcg.app.test_client()
     r = _link(c, email="new@x.co", username="newbie", first_name="N", email_verified=True)
-    assert r.status_code == 201 and r.get_json() == {"created": True, "username": "newbie", "tier": "free"}
+    j = r.get_json()
+    assert r.status_code == 201 and (j["created"], j["username"], j["tier"]) == (True, "newbie", "free")
+    assert _decode_token(j["token"])["sub"] == "newbie" and j["member"]["email_verified"] is True
     r2 = _link(c, email="new@x.co", username="other", first_name="N", email_verified=True)
-    assert r2.get_json() == {"created": False, "username": "newbie", "tier": "free"} and len(store) == 1
+    j2 = r2.get_json()
+    assert (j2["created"], j2["username"], j2["tier"]) == (False, "newbie", "free") and len(store) == 1
     _member(store, "paid", tier="pro")
     r3 = _link(c, email="paid@x.co", username="paid", first_name="P", email_verified=False)
-    assert r3.get_json() == {"created": False, "username": "paid", "tier": "pro"} and store["paid"]["tier"] == "pro"
+    assert r3.get_json() == {"created": False, "username": "paid", "tier": "pro"} and store["paid"]["tier"] == "pro"  # unverified: no token
 
 
 def test_link_user_rejects_non_boolean_verified(store):
@@ -149,3 +159,38 @@ def test_link_user_verifies_email_keeps_tier_and_refuses_unverified_creation(sto
     assert r.get_json()["tier"] == "free" and store["fr"]["profile"]["email_verified"] is True
     assert _link(c, email="ghost@x.co", username="g", first_name="G", email_verified=False).status_code == 400
     assert len(store) == 1
+
+
+PW = "-".join(["test", "pw1"])  # dummy test value
+
+
+def _mxi(c, path, **body):
+    return c.post(f"/api/market-xi/{path}", json=body, headers={"Authorization": "Bearer test-secret"})
+
+
+def test_mxi_register_creates_free_member_and_rejects_duplicates(store):
+    c = gcg.app.test_client()
+    body = dict(username="pl1", password=PW, email="pl1@x.co", first_name="P", client_ip="1.2.3.4")
+    r = _mxi(c, "register", **body)
+    j = r.get_json()
+    assert r.status_code == 201 and j["member"]["tier"] == "free" and j["member"]["email_verified"] is False
+    assert _decode(j["token"])["sub"] == "pl1" and store["pl1"]["profile"]["signup_source"] == "market_xi"
+    assert _mxi(c, "register", **{**body, "username": "pl2"}).get_json()["code"] == "email_in_use"
+    assert _mxi(c, "register", **{**body, "email": "other@x.co"}).get_json()["code"] == "username_taken"
+    assert c.post("/api/market-xi/register", json=body).status_code == 401
+
+
+def test_mxi_login_checks_password_with_descriptive_errors(store):
+    c = gcg.app.test_client()
+    _mxi(c, "register", username="pl1", password=PW, email="pl1@x.co", first_name="P")
+    ok = _mxi(c, "login", identifier="pl1@x.co", password=PW)
+    assert ok.status_code == 200 and _decode(ok.get_json()["token"])["sub"] == "pl1"
+    assert _mxi(c, "login", identifier="pl1", password=PW + "x").get_json()["code"] == "bad_password"
+    assert _mxi(c, "login", identifier="ghost", password="x").get_json()["code"] == "no_account"
+
+
+def test_link_user_via_google_has_no_password_and_sends_no_email(store, monkeypatch):
+    sent = []
+    monkeypatch.setattr(gcg, "_send_email", lambda *a, **k: sent.append(a))
+    r = _link(gcg.app.test_client(), email="g@x.co", username="gg", first_name="G", email_verified=True, via_google=True)
+    assert r.status_code == 201 and store["gg"]["profile"]["has_password"] is False and not sent

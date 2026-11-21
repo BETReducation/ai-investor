@@ -39,7 +39,7 @@ def test_entitlements_per_tier():
     e = A.default_entitlements
     assert e("beginner")["backtester"] == "basic" and e("beginner")["market_xi"] == "entered"
     assert e("intermediate")["backtester"] == "pro" and e("intermediate")["signals"] == "basic"
-    assert e("pro")["signals"] == "pro" and e("free")["market_xi"] == "not_entered"
+    assert e("pro")["signals"] == "pro" and e("free")["market_xi"] == "entered"
 
 
 def test_tools_are_gated_by_plan():
